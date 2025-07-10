@@ -39,11 +39,11 @@ const fullName = degree ? `${name}, ${degree}` : name;
 // Remove the automatic photo link behavior
 const primaryLink = null;
 
-// Check if image exists, use placeholder if not
-const placeholderPath = '/images/headshots/placeholder.svg';
+// Use initials as fallback instead of placeholder image
+const placeholderPath = null;
 
 // Determine the image path - prefer WebP format
-let imagePath = placeholderPath;
+let imagePath = null;
 if (image) {
   const baseName = image.replace(/\.(jpg|jpeg|webp|png)$/i, '');
   // Default to WebP format for better performance
@@ -74,34 +74,38 @@ const hasSocialLinks = socialLinks.length > 0;
     primaryLink ? (
       <a href={primaryLink} class="mb-3 transition-all">
         <div
-          class={`relative rounded-full ${sizeClasses[size]} overflow-hidden bg-clif-burgundy flex items-center justify-center text-white font-bold shadow-md group-hover:shadow-lg transition-all`}
+          class={`relative rounded-full ${sizeClasses[size]} overflow-hidden bg-gradient-to-br from-clif-burgundy to-clif-burgundy/80 flex items-center justify-center text-white font-bold shadow-lg group-hover:shadow-xl transition-all border-2 border-white`}
         >
-          <OptimizedImage
-            src={imagePath}
-            alt={name}
-            class={`w-full h-full object-cover`}
-            loading="lazy"
-            fallbackSrc={placeholderPath}
-          />
-          <div class="absolute inset-0 flex items-center justify-center text-white font-bold text-2xl bg-clif-burgundy opacity-0 fallback-initials">
-            {initials}
-          </div>
+          {imagePath ? (
+            <OptimizedImage
+              src={imagePath}
+              alt={name}
+              class={`w-full h-full object-cover rounded-full`}
+              loading="lazy"
+            />
+          ) : (
+            <div class="flex items-center justify-center text-white font-bold text-xl w-full h-full">
+              {initials}
+            </div>
+          )}
         </div>
       </a>
     ) : (
       <div
-        class={`relative rounded-full ${sizeClasses[size]} overflow-hidden bg-clif-burgundy flex items-center justify-center text-white font-bold mb-3 shadow-md group-hover:shadow-lg transition-all`}
+        class={`relative rounded-full ${sizeClasses[size]} overflow-hidden bg-gradient-to-br from-clif-burgundy to-clif-burgundy/80 flex items-center justify-center text-white font-bold mb-3 shadow-lg group-hover:shadow-xl transition-all border-2 border-white`}
       >
-        <OptimizedImage
-          src={imagePath}
-          alt={name}
-          class={`w-full h-full object-cover`}
-          loading="lazy"
-          fallbackSrc={placeholderPath}
-        />
-        <div class="absolute inset-0 flex items-center justify-center text-white font-bold text-2xl bg-clif-burgundy opacity-0 fallback-initials">
-          {initials}
-        </div>
+        {imagePath ? (
+          <OptimizedImage
+            src={imagePath}
+            alt={name}
+            class={`w-full h-full object-cover rounded-full`}
+            loading="lazy"
+          />
+        ) : (
+          <div class="flex items-center justify-center text-white font-bold text-xl w-full h-full">
+            {initials}
+          </div>
+        )}
       </div>
     )
   }

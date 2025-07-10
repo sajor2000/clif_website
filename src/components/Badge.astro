@@ -22,6 +22,11 @@ const badges = {
 };
 
 const badge = badges[type];
+
+// Handle invalid badge type
+if (!badge) {
+  throw new Error(`Invalid badge type: ${type}. Must be one of: beta, concept, deprecated`);
+}
 ---
 
 <img

@@ -50,9 +50,13 @@ const sizeClasses = {
 const fullName = degree ? `${name}, ${degree}` : name;
 const primaryLink = scholarLink || linkedinLink || websiteLink;
 
-// Check if image exists, use placeholder if not
-const imagePath = `/images/headshots/${image}`;
-const placeholderPath = '/images/headshots/placeholder.svg';
+// Determine the image path - prefer WebP format
+let imagePath = null;
+if (image) {
+  const baseName = image.replace(/\.(jpg|jpeg|webp|png)$/i, '');
+  // Default to WebP format for better performance
+  imagePath = `/images/headshots/${baseName}.webp`;
+}
 
 // Get initials for placeholder
 const getInitials = (name: string) => {
@@ -85,21 +89,22 @@ const uniqueId = `profile-${Math.random().toString(36).substring(2, 10)}`;
     <!-- Profile Image -->
     <div class="flex-shrink-0">
       <div
-        class={`relative rounded-full ${sizeClasses[size]} overflow-hidden bg-clif-burgundy flex items-center justify-center text-white font-bold shadow-md transition-all`}
+        class={`relative rounded-full ${sizeClasses[size]} overflow-hidden bg-gradient-to-br from-clif-burgundy to-clif-burgundy/80 flex items-center justify-center text-white font-bold shadow-lg transition-all border-2 border-white`}
       >
-        <OptimizedImage
-          src={imagePath}
-          alt={name}
-          class={`w-full h-full object-cover`}
-          loading="lazy"
-          width={size === 'large' ? 192 : size === 'medium' ? 160 : 128}
-          height={size === 'large' ? 192 : size === 'medium' ? 160 : 128}
-        />
-        <div
-          class="absolute inset-0 flex items-center justify-center text-white font-bold text-2xl bg-clif-burgundy opacity-0 fallback-initials"
-        >
-          {initials}
-        </div>
+        {imagePath ? (
+          <OptimizedImage
+            src={imagePath}
+            alt={name}
+            class={`w-full h-full object-cover rounded-full`}
+            loading="lazy"
+            width={size === 'large' ? 192 : size === 'medium' ? 160 : 128}
+            height={size === 'large' ? 192 : size === 'medium' ? 160 : 128}
+          />
+        ) : (
+          <div class="flex items-center justify-center text-white font-bold text-xl w-full h-full">
+            {initials}
+          </div>
+        )}
       </div>
     </div>
 
