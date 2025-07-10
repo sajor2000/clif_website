@@ -1,0 +1,290 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import CohortDashboardReal from '../components/cohort/CohortDashboardReal.astro';
+import OptimizedImage from '../components/OptimizedImage.astro';
+import CTAButton from '../components/shared/CTAButton.astro';
+---
+
+<BaseLayout
+  title="CLIF Consortium - Cohort Dashboard"
+  description="Explore aggregated ICU patient data from the CLIF Consortium - 680,158 unique patients, 862,400 ICU encounters across 46 hospitals in 12 leading institutions."
+>
+  <div class="container mx-auto px-4 py-8 max-w-7xl">
+    <!-- Hero Section -->
+    <div class="text-center mb-12">
+      <h1 class="text-5xl font-bold text-clif-burgundy mb-4">CLIF Cohort Dashboard</h1>
+      <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+        Real-time insights from 680,158 unique ICU patients across 46 hospitals and 12 leading institutions
+      </p>
+      <div class="mt-4 text-sm text-gray-500">
+        Data span: 2011-2024 | Last updated: January 2025
+      </div>
+    </div>
+
+    <!-- Real Cohort Dashboard -->
+    <CohortDashboardReal />
+
+    <!-- Call to Action -->
+    <section class="mb-12">
+      <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+        <div class="p-8">
+          <h2 class="text-3xl font-bold mb-6 text-gray-800">Participating Sites Map</h2>
+          <div class="relative">
+            <OptimizedImage
+              src="/images/cohort/clif_map.png"
+              alt="Map showing 11 CLIF Consortium participating institutions across North America"
+              class="w-full rounded-lg shadow-md"
+              sizes="(max-width: 1280px) 100vw, 1280px"
+              loading="eager"
+            />
+            <div class="absolute top-4 right-4 bg-white/90 backdrop-blur p-4 rounded-lg shadow-lg">
+              <h3 class="font-bold text-lg mb-2">11 Institutions</h3>
+              <p class="text-gray-600">Across North America</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Stats Grid -->
+    <section class="mb-12">
+      <h2 class="text-3xl font-bold mb-8 text-center text-gray-800">Cohort Statistics</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div
+          class="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-xl shadow-lg"
+        >
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-blue-100 text-sm">Total Patients</p>
+              <p class="text-3xl font-bold">1.2M+</p>
+            </div>
+            <svg
+              class="w-12 h-12 text-blue-200"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+              aria-hidden="true"
+            >
+              <path
+                d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"
+              ></path>
+            </svg>
+          </div>
+        </div>
+
+        <div
+          class="bg-gradient-to-br from-green-500 to-green-600 text-white p-6 rounded-xl shadow-lg"
+        >
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-green-100 text-sm">ICU Admissions</p>
+              <p class="text-3xl font-bold">2.5M+</p>
+            </div>
+            <svg
+              class="w-12 h-12 text-green-200"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+              aria-hidden="true"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 0l-2 2a1 1 0 101.414 1.414L8 10.414l1.293 1.293a1 1 0 001.414 0l4-4z"
+              ></path>
+            </svg>
+          </div>
+        </div>
+
+        <div
+          class="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-6 rounded-xl shadow-lg"
+        >
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-purple-100 text-sm">Data Points</p>
+              <p class="text-3xl font-bold">10B+</p>
+            </div>
+            <svg
+              class="w-12 h-12 text-purple-200"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+              aria-hidden="true"
+            >
+              <path
+                d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"
+              ></path>
+            </svg>
+          </div>
+        </div>
+
+        <div
+          class="bg-gradient-to-br from-orange-500 to-orange-600 text-white p-6 rounded-xl shadow-lg"
+        >
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-orange-100 text-sm">Years of Data</p>
+              <p class="text-3xl font-bold">10+</p>
+            </div>
+            <svg
+              class="w-12 h-12 text-orange-200"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+              aria-hidden="true"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
+              ></path>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Interactive Charts -->
+    <section class="mb-12">
+      <h2 class="text-3xl font-bold mb-8 text-center text-gray-800">Data Visualizations</h2>
+      <CohortChartsEnhanced />
+    </section>
+
+    <!-- Interactive Dashboard -->
+    <section class="mb-12">
+      <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+        <div class="bg-gradient-to-r from-clif-burgundy to-clif-burgundy-dark text-white p-6">
+          <h2 class="text-2xl font-bold mb-2">Interactive Cohort Explorer</h2>
+          <p class="text-clif-gray-200">
+            Dive deeper into the aggregated CLIF cohort data with our interactive dashboard
+          </p>
+        </div>
+        <div class="p-8">
+          <div class="bg-gray-50 rounded-lg p-12 text-center">
+            <svg
+              class="w-16 h-16 text-gray-400 mx-auto mb-4"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+              aria-hidden="true"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11 4a1 1 0 10-2 0v6a1 1 0 102 0V7zm-3 1a1 1 0 10-2 0v5a1 1 0 102 0V8zM8 9a1 1 0 00-2 0v4a1 1 0 102 0V9z"
+              ></path>
+            </svg>
+            <h3 class="text-xl font-bold mb-2">Shiny Dashboard</h3>
+            <p class="text-gray-600 mb-6">
+              Access our comprehensive R Shiny dashboard for detailed cohort analysis and
+              visualization
+            </p>
+            <CTAButton
+              href="https://clif-consortium.shinyapps.io/clif-cohort-dashboard/"
+              external={true}
+              ariaLabel="Launch interactive CLIF cohort dashboard in new window"
+            >
+              Launch Dashboard
+              <svg
+                class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+              </svg>
+            </CTAButton>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Member Institutions -->
+    <section class="mb-12">
+      <h2 class="text-3xl font-bold mb-8 text-center text-gray-800">Contributing Institutions</h2>
+      <div class="bg-white rounded-2xl shadow-xl p-8">
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+          <div class="text-center">
+            <InstitutionLogo
+              name="University of Chicago"
+              src="/images/uchicago.png"
+              size="medium"
+            />
+            <p class="text-sm text-gray-600 mt-2">University of Chicago</p>
+          </div>
+          <div class="text-center">
+            <InstitutionLogo name="Harvard University" src="/images/harvard.png" size="medium" />
+            <p class="text-sm text-gray-600 mt-2">Harvard University</p>
+          </div>
+          <div class="text-center">
+            <InstitutionLogo name="Stanford University" src="/images/stanford.png" size="medium" />
+            <p class="text-sm text-gray-600 mt-2">Stanford University</p>
+          </div>
+          <div class="text-center">
+            <InstitutionLogo name="Duke University" src="/images/duke.png" size="medium" />
+            <p class="text-sm text-gray-600 mt-2">Duke University</p>
+          </div>
+          <div class="text-center">
+            <InstitutionLogo name="Emory University" src="/images/emory.png" size="medium" />
+            <p class="text-sm text-gray-600 mt-2">Emory University</p>
+          </div>
+          <div class="text-center">
+            <InstitutionLogo name="Johns Hopkins" src="/images/jhu.png" size="medium" />
+            <p class="text-sm text-gray-600 mt-2">Johns Hopkins</p>
+          </div>
+          <div class="text-center">
+            <InstitutionLogo name="Mayo Clinic" src="/images/mayo.png" size="medium" />
+            <p class="text-sm text-gray-600 mt-2">Mayo Clinic</p>
+          </div>
+          <div class="text-center">
+            <InstitutionLogo name="MIT" src="/images/mit.png" size="medium" />
+            <p class="text-sm text-gray-600 mt-2">MIT</p>
+          </div>
+          <div class="text-center">
+            <InstitutionLogo name="Northwestern" src="/images/northwestern.png" size="medium" />
+            <p class="text-sm text-gray-600 mt-2">Northwestern</p>
+          </div>
+          <div class="text-center">
+            <InstitutionLogo name="UCSF" src="/images/ucsf.png" size="medium" />
+            <p class="text-sm text-gray-600 mt-2">UCSF</p>
+          </div>
+          <div class="text-center">
+            <InstitutionLogo name="UPenn" src="/images/upenn.png" size="medium" />
+            <p class="text-sm text-gray-600 mt-2">UPenn</p>
+          </div>
+          <div class="text-center">
+            <InstitutionLogo name="Vanderbilt" src="/images/vanderbilt.png" size="medium" />
+            <p class="text-sm text-gray-600 mt-2">Vanderbilt</p>
+          </div>
+          <div class="text-center">
+            <InstitutionLogo name="Michigan" src="/images/michigan.png" size="medium" />
+            <p class="text-sm text-gray-600 mt-2">Michigan</p>
+          </div>
+          <div class="text-center">
+            <InstitutionLogo name="UCSD" src="/images/ucsd.png" size="medium" />
+            <p class="text-sm text-gray-600 mt-2">UCSD</p>
+          </div>
+          <div class="text-center">
+            <InstitutionLogo name="Pittsburgh" src="/images/pitt.png" size="medium" />
+            <p class="text-sm text-gray-600 mt-2">Pittsburgh</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Call to Action -->
+    <div
+      class="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-8 rounded-2xl text-center"
+    >
+      <h3 class="text-2xl font-bold mb-4">Join the CLIF Consortium</h3>
+      <p class="text-lg mb-6 max-w-2xl mx-auto">
+        Interested in contributing your institution's data to advance critical care research?
+      </p>
+      <CTAButton
+        href="/team"
+        variant="outline"
+        class="bg-white text-blue-600 hover:bg-gray-100 border-white"
+        ariaLabel="Contact the CLIF team about joining the consortium"
+      >
+        Contact Our Team
+      </CTAButton>
+    </div>
+  </div>
+</BaseLayout>

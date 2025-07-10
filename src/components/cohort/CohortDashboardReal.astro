@@ -1,0 +1,247 @@
+---
+// Real CLIF Cohort Dashboard with actual data from CLIF Cohort Dashboard.csv
+---
+
+<div class="cohort-dashboard">
+  <!-- Key Statistics Overview -->
+  <section class="mb-12">
+    <h2 class="text-3xl font-bold mb-8 text-center text-gray-800">Consortium Overview</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div class="bg-gradient-to-br from-clif-burgundy to-clif-burgundy/80 text-white p-6 rounded-xl shadow-lg">
+        <div class="text-3xl font-bold mb-2">680,158</div>
+        <div class="text-sm opacity-90">Unique ICU Patients</div>
+        <div class="text-xs opacity-75 mt-1">Across all participating sites</div>
+      </div>
+      
+      <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-xl shadow-lg">
+        <div class="text-3xl font-bold mb-2">862,400</div>
+        <div class="text-sm opacity-90">ICU Encounters</div>
+        <div class="text-xs opacity-75 mt-1">Total admissions recorded</div>
+      </div>
+      
+      <div class="bg-gradient-to-br from-green-500 to-green-600 text-white p-6 rounded-xl shadow-lg">
+        <div class="text-3xl font-bold mb-2">46</div>
+        <div class="text-sm opacity-90">Hospitals</div>
+        <div class="text-xs opacity-75 mt-1">Contributing data</div>
+      </div>
+      
+      <div class="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-6 rounded-xl shadow-lg">
+        <div class="text-3xl font-bold mb-2">2011-2024</div>
+        <div class="text-sm opacity-90">Data Timespan</div>
+        <div class="text-xs opacity-75 mt-1">13 years of data</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Demographics Summary -->
+  <section class="mb-12">
+    <h2 class="text-3xl font-bold mb-8 text-center text-gray-800">Patient Demographics</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      
+      <!-- Gender Distribution -->
+      <div class="bg-white p-6 rounded-xl shadow-lg">
+        <h3 class="text-xl font-semibold mb-4 text-gray-800">Gender Distribution</h3>
+        <div class="space-y-3">
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600">Female</span>
+            <span class="font-semibold">306,200 (45.0%)</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-3">
+            <div class="bg-pink-500 h-3 rounded-full" style="width: 45%"></div>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600">Male</span>
+            <span class="font-semibold">373,958 (55.0%)</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-3">
+            <div class="bg-blue-500 h-3 rounded-full" style="width: 55%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Race Distribution -->
+      <div class="bg-white p-6 rounded-xl shadow-lg">
+        <h3 class="text-xl font-semibold mb-4 text-gray-800">Race Distribution</h3>
+        <div class="space-y-3">
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600">White</span>
+            <span class="font-semibold">431,473 (63.4%)</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2">
+            <div class="bg-blue-400 h-2 rounded-full" style="width: 63.4%"></div>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600">Black</span>
+            <span class="font-semibold">141,142 (20.8%)</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2">
+            <div class="bg-green-400 h-2 rounded-full" style="width: 20.8%"></div>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600">Other</span>
+            <span class="font-semibold">107,543 (15.8%)</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2">
+            <div class="bg-purple-400 h-2 rounded-full" style="width: 15.8%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ethnicity -->
+      <div class="bg-white p-6 rounded-xl shadow-lg">
+        <h3 class="text-xl font-semibold mb-4 text-gray-800">Hispanic Ethnicity</h3>
+        <div class="space-y-3">
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600">Hispanic</span>
+            <span class="font-semibold">40,777 (6.0%)</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-3">
+            <div class="bg-orange-500 h-3 rounded-full" style="width: 6%"></div>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600">Non-Hispanic</span>
+            <span class="font-semibold">639,381 (94.0%)</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-3">
+            <div class="bg-gray-500 h-3 rounded-full" style="width: 94%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Clinical Outcomes -->
+  <section class="mb-12">
+    <h2 class="text-3xl font-bold mb-8 text-center text-gray-800">Clinical Outcomes</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      
+      <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-red-500">
+        <h3 class="text-lg font-semibold mb-2 text-gray-800">Hospital Mortality</h3>
+        <div class="text-3xl font-bold text-red-600 mb-1">13.9%</div>
+        <div class="text-sm text-gray-600">119,966 patients</div>
+      </div>
+      
+      <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-blue-500">
+        <h3 class="text-lg font-semibold mb-2 text-gray-800">Median ICU Stay</h3>
+        <div class="text-3xl font-bold text-blue-600 mb-1">1.6</div>
+        <div class="text-sm text-gray-600">days [0.8, 3.1]</div>
+      </div>
+      
+      <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-green-500">
+        <h3 class="text-lg font-semibold mb-2 text-gray-800">Median Hospital Stay</h3>
+        <div class="text-3xl font-bold text-green-600 mb-1">6.9</div>
+        <div class="text-sm text-gray-600">days [3.2, 13.9]</div>
+      </div>
+      
+      <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-purple-500">
+        <h3 class="text-lg font-semibold mb-2 text-gray-800">Vasopressor Use</h3>
+        <div class="text-3xl font-bold text-purple-600 mb-1">36.8%</div>
+        <div class="text-sm text-gray-600">317,628 encounters</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Top Contributing Institutions -->
+  <section class="mb-12">
+    <h2 class="text-3xl font-bold mb-8 text-center text-gray-800">Top Contributing Institutions</h2>
+    <div class="bg-white p-6 rounded-xl shadow-lg">
+      <div class="space-y-4">
+        <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+          <div>
+            <h3 class="font-semibold text-gray-800">University of Minnesota</h3>
+            <p class="text-sm text-gray-600">11 hospitals</p>
+          </div>
+          <div class="text-right">
+            <div class="text-2xl font-bold text-clif-burgundy">144,747</div>
+            <div class="text-sm text-gray-600">ICU encounters</div>
+          </div>
+        </div>
+        
+        <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+          <div>
+            <h3 class="font-semibold text-gray-800">University of Pennsylvania</h3>
+            <p class="text-sm text-gray-600">6 hospitals</p>
+          </div>
+          <div class="text-right">
+            <div class="text-2xl font-bold text-clif-burgundy">125,249</div>
+            <div class="text-sm text-gray-600">ICU encounters</div>
+          </div>
+        </div>
+        
+        <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+          <div>
+            <h3 class="font-semibold text-gray-800">Emory University</h3>
+            <p class="text-sm text-gray-600">4 hospitals</p>
+          </div>
+          <div class="text-right">
+            <div class="text-2xl font-bold text-clif-burgundy">121,782</div>
+            <div class="text-sm text-gray-600">ICU encounters</div>
+          </div>
+        </div>
+        
+        <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+          <div>
+            <h3 class="font-semibold text-gray-800">Northwestern University</h3>
+            <p class="text-sm text-gray-600">8 hospitals</p>
+          </div>
+          <div class="text-right">
+            <div class="text-2xl font-bold text-clif-burgundy">105,721</div>
+            <div class="text-sm text-gray-600">ICU encounters</div>
+          </div>
+        </div>
+        
+        <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+          <div>
+            <h3 class="font-semibold text-gray-800">Johns Hopkins University</h3>
+            <p class="text-sm text-gray-600">5 hospitals</p>
+          </div>
+          <div class="text-right">
+            <div class="text-2xl font-bold text-clif-burgundy">104,641</div>
+            <div class="text-sm text-gray-600">ICU encounters</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Data Quality Note -->
+  <section class="mb-12">
+    <div class="bg-blue-50 border-l-4 border-blue-400 p-6 rounded-lg">
+      <div class="flex">
+        <div class="flex-shrink-0">
+          <svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+          </svg>
+        </div>
+        <div class="ml-3">
+          <h3 class="text-lg font-medium text-blue-800">Data Sources & Quality</h3>
+          <div class="mt-2 text-sm text-blue-700">
+            <p>This dashboard presents aggregated, de-identified data from the CLIF Consortium spanning 2011-2024. All data has been standardized according to CLIF data format specifications and undergoes rigorous quality assurance processes. MIMIC IV data is included for benchmarking purposes.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<style>
+  .cohort-dashboard {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  
+  .cohort-dashboard h2 {
+    position: relative;
+  }
+  
+  .cohort-dashboard h2::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--clif-burgundy), var(--clif-burgundy)/0.5);
+    border-radius: 2px;
+  }
+</style>
