@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import CohortDashboardReal from '../components/cohort/CohortDashboardReal.astro';
+import ConsortiumMapStatic from '../components/home/ConsortiumMapStatic.astro';
 import CTAButton from '../components/shared/CTAButton.astro';
 ---
 
@@ -19,6 +20,15 @@ import CTAButton from '../components/shared/CTAButton.astro';
         Data span: 2011-2024 | Last updated: January 2025
       </div>
     </div>
+
+    <!-- Consortium Map -->
+    <section class="mb-12">
+      <div class="text-center mb-8">
+        <h2 class="text-3xl font-bold text-gray-800">Participating Institutions</h2>
+        <p class="text-lg text-gray-600 mt-2">Geographic distribution of CLIF Consortium members</p>
+      </div>
+      <ConsortiumMapStatic />
+    </section>
 
     <!-- Real Cohort Dashboard -->
     <CohortDashboardReal />
