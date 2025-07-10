@@ -1,0 +1,97 @@
+---
+interface TableItem {
+  id: string;
+  name: string;
+  maturity: 'beta' | 'concept';
+}
+
+interface Props {
+  tables: TableItem[];
+}
+
+const { tables } = Astro.props;
+---
+
+<nav
+  class="sticky top-4 bg-white rounded-lg shadow-md p-4 max-h-[calc(100vh-2rem)] overflow-y-auto"
+>
+  <h3 class="text-lg font-bold mb-4 text-gray-800">Table of Contents</h3>
+
+  <div class="space-y-4">
+    <div>
+      <h4 class="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-2">Beta Tables</h4>
+      <ul class="space-y-1">
+        {
+          tables
+            .filter((t) => t.maturity === 'beta')
+            .map((table) => (
+              <li>
+                <a
+                  href={`#${table.id}`}
+                  class="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-clif-burgundy rounded transition-colors"
+                  data-table-link={table.id}
+                >
+                  {table.name}
+                </a>
+              </li>
+            ))
+        }
+      </ul>
+    </div>
+
+    <div>
+      <h4 class="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-2">
+        Concept Tables
+      </h4>
+      <p class="text-sm text-gray-500 italic px-3">Coming soon...</p>
+    </div>
+  </div>
+</nav>
+
+<script>
+  // Smooth scroll and highlight active section
+  document.addEventListener('DOMContentLoaded', () => {
+    const links = document.querySelectorAll('[data-table-link]');
+    const sections = document.querySelectorAll('section[id]');
+
+    // Smooth scroll on click
+    links.forEach((link) => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const target = document.querySelector(
+          (e.currentTarget as HTMLAnchorElement).getAttribute('href')!
+        );
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+
+    // Highlight active section on scroll
+    const observerOptions = {
+      root: null,
+      rootMargin: '-20% 0px -60% 0px',
+      threshold: 0,
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        const id = entry.target.getAttribute('id');
+        const link = document.querySelector(`[data-table-link="${id}"]`);
+
+        if (entry.isIntersecting) {
+          links.forEach((l) => l.classList.remove('bg-clif-burgundy', 'text-white'));
+          link?.classList.add('bg-clif-burgundy', 'text-white');
+          link?.classList.remove('text-gray-700', 'hover:bg-gray-100', 'hover:text-clif-burgundy');
+        } else {
+          link?.classList.remove('bg-clif-burgundy', 'text-white');
+          link?.classList.add('text-gray-700', 'hover:bg-gray-100', 'hover:text-clif-burgundy');
+        }
+      });
+    }, observerOptions);
+
+    sections.forEach((section) => {
+      observer.observe(section);
+    });
+  });
+</script>

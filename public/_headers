@@ -1,0 +1,38 @@
+# Cache and security headers for CLIF Consortium website
+
+# Global headers applied to all pages
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  X-XSS-Protection: 1; mode=block
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com; connect-src 'self'; frame-ancestors 'none';
+
+# Cache assets with a long-term caching strategy
+/images/*.webp
+  Cache-Control: public, max-age=31536000, immutable
+
+/images/*.jpg
+  Cache-Control: public, max-age=604800
+
+/images/*.png
+  Cache-Control: public, max-age=604800
+
+/images/*.svg
+  Cache-Control: public, max-age=31536000, immutable
+
+# Font files can be cached for a long time
+/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# CSS and JS generated with content hashes can be cached indefinitely
+/*.*.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.*.css
+  Cache-Control: public, max-age=31536000, immutable
+
+# HTML files should be revalidated more frequently
+*.html
+  Cache-Control: public, max-age=0, must-revalidate

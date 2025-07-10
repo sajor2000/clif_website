@@ -1,0 +1,220 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import OptimizedImage from '../components/OptimizedImage.astro';
+import CTAButton from '../components/shared/CTAButton.astro';
+import StatsCounter from '../components/home/StatsCounter.astro';
+import FeatureCard from '../components/shared/FeatureCard.astro';
+import GrowthTimeline from '../components/home/GrowthTimeline.astro';
+import ConsortiumMap from '../components/home/ConsortiumMap.astro';
+---
+
+<BaseLayout
+  title="CLIF Consortium"
+  description="The Common Longitudinal ICU data Format (CLIF) - A standardized framework for organizing critical care EHR data across multiple institutions, enabling federated multicenter research."
+>
+  <div class="container mx-auto px-4 py-8">
+    <!-- Hero Section with Enhanced Messaging -->
+    <div class="text-center mb-12">
+      <OptimizedImage
+        src="/images/logos/clif-logo.png"
+        alt="CLIF Logo"
+        class="mx-auto mb-6 h-32 w-32 animate-float"
+        width={128}
+        height={128}
+        loading="eager"
+      />
+      <h1 class="text-5xl font-bold mb-4 text-clif-burgundy">
+        Common Longitudinal ICU data Format
+      </h1>
+      <p class="text-2xl gradient-text font-medium mb-2">
+        Transforming Critical Care Through Federated Data Science
+      </p>
+      <p class="text-lg text-gray-600 max-w-3xl mx-auto">
+        Pioneering the future of ICU research with standardized, harmonized data across leading
+        academic medical centers
+      </p>
+    </div>
+
+    <!-- Impact Statistics -->
+    <section class="mb-16">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        <StatsCounter
+          value="11"
+          suffix=""
+          label="Leading Academic Medical Centers"
+          icon='<svg class="w-12 h-12 mx-auto" fill="currentColor" viewBox="0 0 20 20"><path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z"/></svg>'
+        />
+        <StatsCounter
+          value="1200000"
+          prefix=""
+          suffix="+"
+          label="Critically Ill Patients"
+          icon='<svg class="w-12 h-12 mx-auto" fill="currentColor" viewBox="0 0 20 20"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/></svg>'
+        />
+        <StatsCounter
+          value="10"
+          prefix=""
+          suffix="B+"
+          label="Standardized Data Points"
+          icon='<svg class="w-12 h-12 mx-auto" fill="currentColor" viewBox="0 0 20 20"><path d="M3 12v3c0 1.657 3.134 3 7 3s7-1.343 7-3v-3c0 1.657-3.134 3-7 3s-7-1.343-7-3z"/><path d="M3 7v3c0 1.657 3.134 3 7 3s7-1.343 7-3V7c0 1.657-3.134 3-7 3S3 8.657 3 7z"/><path d="M17 5c0 1.657-3.134 3-7 3S3 6.657 3 5s3.134-3 7-3 7 1.343 7 3z"/></svg>'
+        />
+        <StatsCounter
+          value="7"
+          prefix=""
+          suffix="+"
+          label="Active NIH-Funded Projects"
+          icon='<svg class="w-12 h-12 mx-auto" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"/></svg>'
+        />
+      </div>
+    </section>
+
+    <!-- Growth Timeline -->
+    <section class="mb-16">
+      <GrowthTimeline />
+    </section>
+
+    <!-- Main Content with Enhanced Messaging -->
+    <section class="mb-16">
+      <div class="glass-dark text-white p-8 rounded-2xl shadow-xl mb-12 glow animate-pulse-slow">
+        <h2 class="text-3xl font-bold mb-4">Pioneering Federated Critical Care Research</h2>
+        <p class="text-lg leading-relaxed">
+          CLIF represents a paradigm shift in how we approach multi-center critical care research.
+          By standardizing data at the source while preserving patient privacy through federated
+          analytics, we're enabling breakthrough discoveries that save lives.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+        <div>
+          <h3 class="text-2xl font-semibold mb-4 text-gray-800">The Challenge We Solve</h3>
+          <p class="mb-4 text-gray-700">
+            Multicenter critical care research has long been hindered by fragmented data systems,
+            complex legal barriers, and incompatible data formats. These challenges have slowed
+            scientific progress and limited our ability to improve ICU outcomes at scale.
+          </p>
+          <p class="text-gray-700">
+            Traditional approaches require months of negotiations, custom data transformations for
+            each study, and centralized data repositories that raise privacy concerns.
+          </p>
+        </div>
+
+        <div>
+          <h3 class="text-2xl font-semibold mb-4 text-gray-800">The CLIF Solution</h3>
+          <p class="mb-4 text-gray-700">
+            CLIF revolutionizes critical care research by providing a standardized,
+            privacy-preserving framework that enables instant multi-center analyses. Our harmonized
+            data model and federated architecture mean researchers can test hypotheses across
+            millions of ICU encounters in days, not years.
+          </p>
+          <p class="text-gray-700">
+            With CLIF 2.0.0, we've created the most comprehensive longitudinal ICU data standard,
+            incorporating lessons from analyzing over 10 billion data points across our consortium.
+          </p>
+        </div>
+      </div>
+
+      <!-- Key Benefits -->
+      <div class="mb-12">
+        <h3 class="text-2xl font-semibold mb-6 text-center">
+          Why Leading Institutions Choose CLIF
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <FeatureCard
+            title="Accelerate Discovery"
+            description="Go from hypothesis to multi-center analysis in days, not years. Our standardized format eliminates months of data wrangling."
+            variant="gradient"
+            icon='<svg class="w-8 h-8 text-clif-burgundy" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"/></svg>'
+          />
+          <FeatureCard
+            title="Preserve Privacy"
+            description="Federated architecture means patient data never leaves your institution. Achieve collaboration without compromising security."
+            variant="gradient"
+            icon='<svg class="w-8 h-8 text-clif-burgundy" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"/></svg>'
+          />
+          <FeatureCard
+            title="Ensure Reproducibility"
+            description="Standardized variables and harmonized vocabularies through mCIDE guarantee your research can be validated and extended."
+            variant="gradient"
+            icon='<svg class="w-8 h-8 text-clif-burgundy" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/></svg>'
+          />
+        </div>
+      </div>
+
+      <nav aria-label="Primary actions" class="flex flex-wrap justify-center gap-4 mt-12">
+        <CTAButton
+          href="https://link.springer.com/article/10.1007/s00134-025-07848-7"
+          external={true}
+          ariaLabel="Read the full study in Intensive Care Medicine (opens in new tab)"
+        >
+          Read the full study in Intensive Care Medicine
+        </CTAButton>
+        <CTAButton href="/data-dictionary" ariaLabel="View CLIF version 2.0.0 Data Dictionary">
+          View CLIF-2.0.0 Data Dictionary
+        </CTAButton>
+        <CTAButton
+          href="https://clif-consortium.shinyapps.io/clif-cohort-dashboard/"
+          external={true}
+          ariaLabel="Explore interactive Cohort Dashboard (opens in new tab)"
+        >
+          Explore Cohort Dashboard
+        </CTAButton>
+      </nav>
+    </section>
+
+    <!-- Featured Publication -->
+    <section class="mb-16">
+      <div class="glass rounded-2xl p-8 shadow-lg">
+        <h3 class="text-2xl font-semibold mb-4 text-center">Latest Breakthrough Publication</h3>
+        <div class="flex flex-col md:flex-row items-center gap-6">
+          <div class="flex-1">
+            <p class="text-lg mb-4">
+              Our comprehensive framework paper in <em>Intensive Care Medicine</em> details how CLIF
+              is transforming critical care research through standardized data formats and federated
+              analytics.
+            </p>
+            <div class="flex items-center gap-4">
+              <CTAButton
+                href="https://link.springer.com/article/10.1007/s00134-025-07848-7"
+                external={true}
+                ariaLabel="Read the full CLIF framework paper in Intensive Care Medicine (opens in new tab)"
+                size="small"
+              >
+                Read the Paper
+              </CTAButton>
+              <span class="text-sm text-gray-600">Published in Intensive Care Medicine, 2025</span>
+            </div>
+          </div>
+          <div class="flex-shrink-0">
+            <div class="glass-dark text-white p-6 rounded-lg glow">
+              <p class="text-3xl font-bold">Q1</p>
+              <p class="text-sm">Journal Ranking</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Interactive Consortium Map -->
+    <section class="mb-16">
+      <ConsortiumMap />
+    </section>
+
+    <!-- Participating Sites with Enhanced Design -->
+    <section>
+      <h3 class="text-2xl font-semibold mb-6 text-center">Our Growing Network of Excellence</h3>
+      <p class="text-center text-gray-600 mb-8 max-w-3xl mx-auto">
+        Leading academic medical centers across North America have joined CLIF to advance critical
+        care through collaborative, data-driven research
+      </p>
+      <div class="card-modern rounded-2xl p-8 glow-hover">
+        <OptimizedImage
+          src="/images/member_logos_new.png"
+          alt="CLIF Consortium Member Institutions including University of Chicago, Northwestern, Rush, Johns Hopkins, and other leading medical centers"
+          class="w-full max-w-5xl mx-auto"
+          sizes="(max-width: 1280px) 100vw, 1280px"
+          loading="lazy"
+        />
+      </div>
+    </section>
+  </div>
+</BaseLayout>

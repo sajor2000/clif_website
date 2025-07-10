@@ -1,0 +1,338 @@
+---
+import Badge from './Badge.astro';
+
+interface Field {
+  name: string;
+  type: string;
+  description: string;
+  values?: string[];
+  restrictions?: string;
+}
+
+interface Props {
+  id: string;
+  name: string;
+  description: string;
+  fields: Field[];
+  maturity?: 'beta' | 'concept';
+  notes?: string[];
+  example?: string;
+}
+
+const { id, name, description, fields, maturity = 'beta', notes, example } = Astro.props;
+const tableId = `table-${id}`;
+---
+
+<section id={id} class="glass p-6 rounded-lg shadow-md mb-8">
+  <div class="mb-4">
+    <h3 class="text-xl font-bold mb-2 flex items-center">
+      {name}
+      <Badge maturity={maturity} class="ml-3" />
+    </h3>
+    <p class="mb-4 text-gray-700">
+      {description}
+    </p>
+
+    <!-- Search input -->
+    <div class="relative mb-4">
+      <input
+        type="text"
+        id={`search-${tableId}`}
+        placeholder="Search fields..."
+        class="w-full md:w-64 px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent"
+      />
+      <svg
+        class="absolute right-3 top-2.5 h-5 w-5 text-gray-400"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+      </svg>
+    </div>
+  </div>
+
+  <div class="overflow-x-auto rounded-lg border border-gray-200">
+    <table id={tableId} class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50 sticky top-0 z-10">
+        <tr>
+          <th
+            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50"
+            >Field</th
+          >
+          <th
+            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50"
+            >Type</th
+          >
+          <th
+            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50"
+            >Description</th
+          >
+          <th
+            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50"
+            >Restrictions/Values</th
+          >
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-200">
+        {
+          fields.map((field) => (
+            <tr class="hover:bg-gray-50 transition-colors">
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
+                {field.name}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  {field.type}
+                </span>
+              </td>
+              <td class="px-6 py-4 text-sm text-gray-900">{field.description}</td>
+              <td class="px-6 py-4 text-sm text-gray-500">
+                {field.values ? (
+                  <div class="flex flex-wrap gap-1">
+                    {field.values.map((value) => (
+                      <code class="text-xs bg-gray-100 px-2 py-1 rounded">{value}</code>
+                    ))}
+                  </div>
+                ) : field.restrictions ? (
+                  <span class="text-xs">{field.restrictions}</span>
+                ) : (
+                  <span class="text-gray-400">-</span>
+                )}
+              </td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+
+  {/* Notes section */}
+  {
+    notes && notes.length > 0 && (
+      <div class="mt-4 bg-blue-50 p-4 rounded-lg">
+        <h4 class="font-semibold text-sm text-blue-900 mb-2">Notes:</h4>
+        <ul class="list-disc list-inside space-y-1">
+          {notes.map((note) => (
+            <li class="text-sm text-blue-800">{note}</li>
+          ))}
+        </ul>
+      </div>
+    )
+  }
+
+  {/* Example section */}
+  {
+    example && (
+      <div class="mt-4">
+        <h4 class="font-semibold text-sm text-gray-700 mb-2">Example:</h4>
+        <div class="overflow-x-auto">
+          <pre class="text-xs bg-gray-100 p-3 rounded-lg overflow-x-auto">
+            <code>{example}</code>
+          </pre>
+        </div>
+      </div>
+    )
+  }
+
+  <!-- Export buttons -->
+  <div class="mt-4 flex gap-2">
+    <button
+      class="export-csv px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-clif-burgundy"
+      data-table-id={tableId}
+      data-table-name={name}
+    >
+      <svg
+        class="inline-block w-4 h-4 mr-1 -mt-0.5"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+        ></path>
+      </svg>
+      Export CSV
+    </button>
+    <button
+      class="export-json px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-clif-burgundy"
+      data-table-id={tableId}
+      data-table-name={name}
+    >
+      <svg
+        class="inline-block w-4 h-4 mr-1 -mt-0.5"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+        ></path>
+      </svg>
+      Export JSON
+    </button>
+  </div>
+</section>
+
+<script>
+  // Search functionality
+  document.addEventListener('DOMContentLoaded', () => {
+    const searchInputs = document.querySelectorAll('[id^="search-table-"]');
+
+    searchInputs.forEach((input) => {
+      const tableId = input.id.replace('search-', '');
+      const table = document.getElementById(tableId);
+      const tbody = table?.querySelector('tbody');
+      const rows = tbody?.querySelectorAll('tr');
+
+      input.addEventListener('input', (e) => {
+        const searchTerm = (e.target as HTMLInputElement).value.toLowerCase();
+
+        rows?.forEach((row) => {
+          const text = row.textContent?.toLowerCase() || '';
+          row.style.display = text.includes(searchTerm) ? '' : 'none';
+        });
+      });
+    });
+
+    // Export functionality
+    const exportCsvButtons = document.querySelectorAll('.export-csv');
+    const exportJsonButtons = document.querySelectorAll('.export-json');
+
+    exportCsvButtons.forEach((button) => {
+      button.addEventListener('click', (e) => {
+        const btn = e.currentTarget as HTMLButtonElement;
+        const tableId = btn.dataset.tableId;
+        const tableName = btn.dataset.tableName;
+        const table = document.getElementById(tableId!);
+
+        if (table) {
+          exportTableToCSV(table, tableName!);
+        }
+      });
+    });
+
+    exportJsonButtons.forEach((button) => {
+      button.addEventListener('click', (e) => {
+        const btn = e.currentTarget as HTMLButtonElement;
+        const tableId = btn.dataset.tableId;
+        const tableName = btn.dataset.tableName;
+        const table = document.getElementById(tableId!);
+
+        if (table) {
+          exportTableToJSON(table, tableName!);
+        }
+      });
+    });
+  });
+
+  function exportTableToCSV(table: HTMLElement, name: string) {
+    const rows = table.querySelectorAll('tr');
+    let csv = [];
+
+    for (let row of rows) {
+      const cols = row.querySelectorAll('td, th');
+      const rowData = Array.from(cols).map((col) => {
+        let text = col.textContent?.trim() || '';
+        // Escape quotes and wrap in quotes if contains comma
+        text = text.replace(/"/g, '""');
+        if (text.includes(',') || text.includes('"') || text.includes('\n')) {
+          text = `"${text}"`;
+        }
+        return text;
+      });
+      csv.push(rowData.join(','));
+    }
+
+    downloadFile(csv.join('\n'), `${name.replace(/\s+/g, '_')}.csv`, 'text/csv');
+  }
+
+  function exportTableToJSON(table: HTMLElement, name: string) {
+    const headers = Array.from(table.querySelectorAll('thead th')).map(
+      (th) => th.textContent?.trim().toLowerCase().replace(/\s+/g, '_') || ''
+    );
+
+    const rows = table.querySelectorAll('tbody tr');
+    const data = Array.from(rows).map((row) => {
+      const cols = row.querySelectorAll('td');
+      const rowData: any = {};
+
+      cols.forEach((col, index) => {
+        let value = col.textContent?.trim() || '';
+        if (value === '-') value = null;
+        rowData[headers[index]] = value;
+      });
+
+      return rowData;
+    });
+
+    downloadFile(
+      JSON.stringify(data, null, 2),
+      `${name.replace(/\s+/g, '_')}.json`,
+      'application/json'
+    );
+  }
+
+  function downloadFile(content: string, filename: string, mimeType: string) {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+</script>
+
+<style>
+  /* Ensure sticky header works properly */
+  section {
+    position: relative;
+  }
+
+  /* Mobile-friendly horizontal scroll indicator */
+  @media (max-width: 768px) {
+    .overflow-x-auto {
+      position: relative;
+    }
+
+    .overflow-x-auto::after {
+      content: '→';
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      background: linear-gradient(to right, transparent, white);
+      padding: 0.5rem;
+      font-size: 1.5rem;
+      color: #6b7280;
+      pointer-events: none;
+      opacity: 0.8;
+    }
+
+    .overflow-x-auto::-webkit-scrollbar {
+      height: 8px;
+    }
+
+    .overflow-x-auto::-webkit-scrollbar-track {
+      background: #f3f4f6;
+    }
+
+    .overflow-x-auto::-webkit-scrollbar-thumb {
+      background: #9ca3af;
+      border-radius: 4px;
+    }
+  }
+</style>

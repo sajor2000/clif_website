@@ -1,0 +1,224 @@
+---
+import OptimizedImage from '../OptimizedImage.astro';
+
+interface Props {
+  name: string;
+  degree?: string;
+  role?: string;
+  image: string;
+  email?: string;
+  scholarLink?: string;
+  linkedinLink?: string;
+  githubLink?: string;
+  websiteLink?: string;
+  otherLink?: string;
+  size?: 'small' | 'medium' | 'large';
+}
+
+const {
+  name,
+  degree,
+  role,
+  image,
+  email,
+  scholarLink,
+  linkedinLink,
+  githubLink,
+  websiteLink,
+  otherLink,
+  size = 'medium',
+} = Astro.props;
+
+const sizeClasses = {
+  small: 'w-32 h-32',
+  medium: 'w-40 h-40',
+  large: 'w-48 h-48',
+};
+
+const fullName = degree ? `${name}, ${degree}` : name;
+// Remove the automatic photo link behavior
+const primaryLink = null;
+
+// Check if image exists, use placeholder if not
+const placeholderPath = '/images/headshots/placeholder.svg';
+
+// Determine the image path - prefer WebP format
+let imagePath = placeholderPath;
+if (image) {
+  const baseName = image.replace(/\.(jpg|jpeg|webp|png)$/i, '');
+  // Default to WebP format for better performance
+  imagePath = `/images/headshots/${baseName}.webp`;
+}
+
+// Get initials for placeholder
+const getInitials = (name: string) => {
+  return name
+    .split(' ')
+    .map((part) => part.charAt(0))
+    .join('')
+    .toUpperCase()
+    .slice(0, 2); // Limit to 2 characters
+};
+
+const initials = getInitials(name);
+
+// Determine which social links to show
+const socialLinks = [scholarLink, linkedinLink, githubLink, websiteLink, otherLink, email].filter(
+  Boolean
+);
+const hasSocialLinks = socialLinks.length > 0;
+---
+
+<div class="flex flex-col items-center group transition-all duration-300 hover:-translate-y-1">
+  {
+    primaryLink ? (
+      <a href={primaryLink} class="mb-3 transition-all">
+        <div
+          class={`relative rounded-full ${sizeClasses[size]} overflow-hidden bg-clif-burgundy flex items-center justify-center text-white font-bold shadow-md group-hover:shadow-lg transition-all`}
+        >
+          <OptimizedImage
+            src={imagePath}
+            alt={name}
+            class={`w-full h-full object-cover`}
+            loading="lazy"
+            fallbackSrc={placeholderPath}
+          />
+          <div class="absolute inset-0 flex items-center justify-center text-white font-bold text-2xl bg-clif-burgundy opacity-0 fallback-initials">
+            {initials}
+          </div>
+        </div>
+      </a>
+    ) : (
+      <div
+        class={`relative rounded-full ${sizeClasses[size]} overflow-hidden bg-clif-burgundy flex items-center justify-center text-white font-bold mb-3 shadow-md group-hover:shadow-lg transition-all`}
+      >
+        <OptimizedImage
+          src={imagePath}
+          alt={name}
+          class={`w-full h-full object-cover`}
+          loading="lazy"
+          fallbackSrc={placeholderPath}
+        />
+        <div class="absolute inset-0 flex items-center justify-center text-white font-bold text-2xl bg-clif-burgundy opacity-0 fallback-initials">
+          {initials}
+        </div>
+      </div>
+    )
+  }
+
+  <h4
+    class={`font-semibold text-center ${size === 'large' ? 'text-xl' : 'text-lg'} group-hover:text-clif-burgundy transition-colors`}
+  >
+    {fullName}
+  </h4>
+
+  {role && <p class="text-sm text-gray-600 text-center mt-1">{role}</p>}
+
+  {
+    hasSocialLinks && (
+      <div class="flex gap-2 mt-2 justify-center">
+        {scholarLink && (
+          <a
+            href={scholarLink}
+            class="opacity-70 hover:opacity-100 transition-opacity"
+            aria-label={`${name}'s Google Scholar profile`}
+            target="_blank"
+            rel="noopener"
+          >
+            <img src="/images/scholar_icon.png" alt="Google Scholar" class="w-6 h-6" />
+          </a>
+        )}
+
+        {linkedinLink && (
+          <a
+            href={linkedinLink}
+            class="opacity-70 hover:opacity-100 transition-opacity"
+            aria-label={`${name}'s LinkedIn profile`}
+            target="_blank"
+            rel="noopener"
+          >
+            <img src="/images/linkedin_icon.png" alt="LinkedIn" class="w-6 h-6" />
+          </a>
+        )}
+
+        {email && (
+          <a
+            href={`mailto:${email}`}
+            class="w-6 h-6 rounded-full bg-gray-600 bg-opacity-70 flex items-center justify-center text-white hover:bg-opacity-100 transition-all"
+            aria-label={`Email ${name}`}
+          >
+            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+              <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+            </svg>
+          </a>
+        )}
+
+        {githubLink && (
+          <a
+            href={githubLink}
+            class="w-6 h-6 rounded-full bg-gray-600 bg-opacity-70 flex items-center justify-center text-white hover:bg-opacity-100 transition-all"
+            aria-label={`${name}'s GitHub profile`}
+            target="_blank"
+            rel="noopener"
+          >
+            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+            </svg>
+          </a>
+        )}
+
+        {websiteLink && (
+          <a
+            href={websiteLink}
+            class="w-6 h-6 rounded-full bg-gray-600 bg-opacity-70 flex items-center justify-center text-white hover:bg-opacity-100 transition-all"
+            aria-label={`${name}'s personal website`}
+            target="_blank"
+            rel="noopener"
+          >
+            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fill-rule="evenodd"
+                d="M4.083 9h1.946c.089-1.546.383-2.97.837-4.118A6.004 6.004 0 004.083 9zM10 2a8 8 0 100 16 8 8 0 000-16zm0 2c-.076 0-.232.032-.465.262-.238.234-.497.623-.737 1.182-.389.907-.673 2.142-.766 3.556h3.936c-.093-1.414-.377-2.649-.766-3.556-.24-.56-.5-.948-.737-1.182C10.232 4.032 10.076 4 10 4zm3.971 5c-.089-1.546-.383-2.97-.837-4.118A6.004 6.004 0 0115.917 9h-1.946zm-2.003 2H8.032c.093 1.414.377 2.649.766 3.556.24.56.5.948.737 1.182.233.23.389.262.465.262.076 0 .232-.032.465-.262.238-.234.498-.623.737-1.182.389-.907.673-2.142.766-3.556zm1.166 4.118c.454-1.147.748-2.572.837-4.118h1.946a6.004 6.004 0 01-2.783 4.118zm-6.268 0C6.412 13.97 6.118 12.546 6.03 11H4.083a6.004 6.004 0 002.783 4.118z"
+                clip-rule="evenodd"
+              />
+            </svg>
+          </a>
+        )}
+
+        {otherLink && (
+          <a
+            href={otherLink}
+            class="w-6 h-6 rounded-full bg-gray-600 bg-opacity-70 flex items-center justify-center text-white hover:bg-opacity-100 transition-all"
+            aria-label={`${name}'s profile`}
+            target="_blank"
+            rel="noopener"
+          >
+            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fill-rule="evenodd"
+                d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z"
+                clip-rule="evenodd"
+              />
+            </svg>
+          </a>
+        )}
+      </div>
+    )
+  }
+</div>
+
+<style>
+  /* Show initials when image fails to load */
+  img:not([src]),
+  img[src=''],
+  img.error {
+    display: none;
+  }
+
+  img:not([src]) ~ .fallback-initials,
+  img[src=''] ~ .fallback-initials,
+  img.error ~ .fallback-initials {
+    opacity: 1 !important;
+  }
+</style>

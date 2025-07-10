@@ -1,0 +1,87 @@
+---
+interface Props {
+  title: string;
+  description: string;
+  icon?: string;
+  iconAlt?: string;
+  href?: string;
+  external?: boolean;
+  variant?: 'default' | 'gradient' | 'bordered';
+  class?: string;
+  ariaLabel?: string;
+}
+
+const {
+  title,
+  description,
+  icon,
+  iconAlt = '',
+  href,
+  external = false,
+  variant = 'default',
+  class: className = '',
+  ariaLabel,
+} = Astro.props;
+
+const variantClasses = {
+  default: 'glass border border-gray-200/30 hover:border-clif-burgundy/50',
+  gradient: 'card-modern glow-hover',
+  bordered: 'glass-dark border-2 border-clif-burgundy',
+};
+
+const baseClasses = 'rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl';
+
+const Component = href ? 'a' : 'div';
+const linkProps = href
+  ? {
+      href,
+      'aria-label': ariaLabel || `${title} - ${description}`,
+      ...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {}),
+    }
+  : {};
+---
+
+<Component
+  class={`${baseClasses} ${variantClasses[variant]} ${className} ${href ? 'block hover:-translate-y-1' : ''}`}
+  {...linkProps}
+>
+  {
+    icon && (
+      <div class="mb-4 text-clif-burgundy">
+        {icon.startsWith('<svg') ? (
+          <Fragment set:html={icon} />
+        ) : (
+          <img src={icon} alt={iconAlt} class="w-12 h-12" loading="lazy" width="48" height="48" />
+        )}
+      </div>
+    )
+  }
+
+  <h3 class="text-xl font-semibold mb-2 text-gray-900">
+    {title}
+    {
+      external && (
+        <svg
+          class="inline-block ml-1 w-4 h-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+          />
+        </svg>
+      )
+    }
+  </h3>
+
+  <p class="text-gray-600">
+    {description}
+  </p>
+
+  <slot />
+</Component>

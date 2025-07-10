@@ -1,0 +1,130 @@
+---
+interface Props {
+  src: string;
+  alt: string;
+  class?: string;
+  loading?: 'lazy' | 'eager';
+  width?: number;
+  height?: number;
+  sizes?: string;
+  fallbackSrc?: string;
+}
+
+const {
+  src,
+  alt,
+  class: className = '',
+  loading = 'lazy',
+  width,
+  height,
+  sizes = '100vw',
+  fallbackSrc = '/images/headshots/placeholder.svg',
+} = Astro.props;
+
+// Generate WebP and fallback sources for picture element
+const generateImageSources = (imagePath: string) => {
+  const isExternal = imagePath.startsWith('http');
+  const isSvg = imagePath.endsWith('.svg');
+
+  if (isExternal || isSvg) {
+    return { webpSrc: null, fallbackSrc: imagePath };
+  }
+
+  // Extract base path and extension
+  const baseUrl = imagePath.split('?')[0];
+  const fileExtension = baseUrl.split('.').pop() || '';
+  const basePath = baseUrl.substring(0, baseUrl.lastIndexOf('.'));
+
+  // Generate WebP and fallback sources
+  const webpSrc = `${basePath}.webp`;
+  const jpgSrc = fileExtension === 'jpeg' ? imagePath : `${basePath}.jpg`;
+
+  return { webpSrc, fallbackSrc: jpgSrc };
+};
+
+const { webpSrc, fallbackSrc: generatedFallback } = generateImageSources(src);
+
+// Add blur placeholder for better UX
+const placeholderStyle = `
+  background-image: linear-gradient(to right, #f3f4f6 0%, #e5e7eb 50%, #f3f4f6 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+`;
+---
+
+<picture>
+  {webpSrc && <source srcset={webpSrc} type="image/webp" sizes={sizes} />}
+  {
+    !src.endsWith('.svg') && (
+      <source
+        srcset={generatedFallback || src}
+        type={src.includes('.png') ? 'image/png' : 'image/jpeg'}
+        sizes={sizes}
+      />
+    )
+  }
+  <img
+    src={src}
+    alt={alt}
+    class={`${className} transition-opacity duration-300`}
+    loading={loading}
+    width={width}
+    height={height}
+    sizes={sizes}
+    onload="this.style.opacity='1'"
+    onerror={`this.style.opacity='0'; this.classList.add('error'); if(this.src !== '${fallbackSrc}') { this.src = '${fallbackSrc}'; this.style.opacity='1'; }`}
+    style="opacity: 0;"
+  />
+</picture>
+
+<style>
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
+  picture {
+    display: contents;
+  }
+
+  img {
+    background-color: #f3f4f6;
+  }
+</style>
+
+<script>
+  // Intersection Observer for lazy loading with native loading fallback
+  if ('IntersectionObserver' in window) {
+    const images = document.querySelectorAll('img[loading="lazy"]');
+    const imageObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const img = entry.target as HTMLImageElement;
+            // Native lazy loading is already handling this
+            imageObserver.unobserve(img);
+          }
+        });
+      },
+      {
+        rootMargin: '50px 0px',
+      }
+    );
+
+    images.forEach((img) => imageObserver.observe(img));
+  }
+
+  // Add error handling for all images
+  document.addEventListener('DOMContentLoaded', () => {
+    const allImages = document.querySelectorAll('img');
+    allImages.forEach((img) => {
+      img.addEventListener('error', function () {
+        this.classList.add('error');
+      });
+    });
+  });
+</script>

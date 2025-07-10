@@ -1,0 +1,335 @@
+---
+// Simple version for testing
+const institutions = [
+  {
+    name: 'UChicago Medicine',
+    shortName: 'UChicago',
+    location: { city: 'Chicago', state: 'IL', lat: 41.7892, lng: -87.6048 },
+    stats: { patients: '150K+', researchers: 14 },
+    joinedYear: 2019,
+    website: 'https://www.uchicagomedicine.org',
+  },
+  {
+    name: 'Rush University Medical Center',
+    shortName: 'Rush',
+    location: { city: 'Chicago', state: 'IL', lat: 41.8749, lng: -87.6688 },
+    stats: { patients: '80K+', researchers: 2 },
+    joinedYear: 2019,
+    website: 'https://www.rush.edu',
+  },
+  {
+    name: 'Northwestern Medicine',
+    shortName: 'Northwestern',
+    location: { city: 'Chicago', state: 'IL', lat: 41.8957, lng: -87.6189 },
+    stats: { patients: '120K+', researchers: 5 },
+    joinedYear: 2019,
+    website: 'https://www.nm.org',
+  },
+  {
+    name: 'M Health Fairview University of Minnesota Medical Center',
+    shortName: 'U of M',
+    location: { city: 'Minneapolis', state: 'MN', lat: 44.9719, lng: -93.242 },
+    stats: { patients: '90K+', researchers: 3 },
+    joinedYear: 2020,
+    website: 'https://www.mhealth.org',
+  },
+  {
+    name: 'The Johns Hopkins Hospital',
+    shortName: 'Johns Hopkins',
+    location: { city: 'Baltimore', state: 'MD', lat: 39.2969, lng: -76.5922 },
+    stats: { patients: '100K+', researchers: 1 },
+    joinedYear: 2020,
+    website: 'https://www.hopkinsmedicine.org',
+  },
+  {
+    name: 'Oregon Health & Science University',
+    shortName: 'OHSU',
+    location: { city: 'Portland', state: 'OR', lat: 45.499, lng: -122.6855 },
+    stats: { patients: '70K+', researchers: 2 },
+    joinedYear: 2020,
+    website: 'https://www.ohsu.edu',
+  },
+  {
+    name: 'Michigan Medicine',
+    shortName: 'Michigan',
+    location: { city: 'Ann Arbor', state: 'MI', lat: 42.2838, lng: -83.7263 },
+    stats: { patients: '110K+', researchers: 2 },
+    joinedYear: 2021,
+    website: 'https://www.uofmhealth.org',
+  },
+  {
+    name: 'Emory Healthcare',
+    shortName: 'Emory',
+    location: { city: 'Atlanta', state: 'GA', lat: 33.7925, lng: -84.324 },
+    stats: { patients: '85K+', researchers: 1 },
+    joinedYear: 2021,
+    website: 'https://www.emoryhealthcare.org',
+  },
+  {
+    name: 'Penn Medicine',
+    shortName: 'Penn',
+    location: { city: 'Philadelphia', state: 'PA', lat: 39.9496, lng: -75.1938 },
+    stats: { patients: '130K+', researchers: 5 },
+    joinedYear: 2021,
+    website: 'https://www.pennmedicine.org',
+  },
+  {
+    name: 'Sunnybrook Health Sciences Centre',
+    shortName: 'Sunnybrook',
+    location: { city: 'Toronto', state: 'ON', lat: 43.7237, lng: -79.3762 },
+    stats: { patients: '60K+', researchers: 1 },
+    joinedYear: 2022,
+    website: 'https://sunnybrook.ca',
+  },
+  {
+    name: 'UCSF Health',
+    shortName: 'UCSF',
+    location: { city: 'San Francisco', state: 'CA', lat: 37.7631, lng: -122.4586 },
+    stats: { patients: '95K+', researchers: 2 },
+    joinedYear: 2022,
+    website: 'https://www.ucsfhealth.org',
+  },
+];
+
+const totalResearchers = institutions.reduce(
+  (sum, inst) => sum + (inst.stats?.researchers || 0),
+  0
+);
+---
+
+<div class="consortium-map-container">
+  <h3 class="text-2xl font-bold mb-6 text-center text-gray-800">
+    Our Network Across North America
+  </h3>
+
+  <!-- Map Container -->
+  <div class="relative glass rounded-2xl p-6 shadow-xl">
+    <div id="map" class="w-full h-[500px] rounded-lg"></div>
+
+    <!-- Map Legend -->
+    <div class="absolute bottom-4 left-4 glass-dark text-white p-4 rounded-lg shadow-lg max-w-xs">
+      <h4 class="font-semibold mb-2">CLIF Network Stats</h4>
+      <div class="grid grid-cols-2 gap-2 text-sm">
+        <div>
+          <span class="block text-2xl font-bold">{institutions.length}</span>
+          <span class="text-gray-300">Institutions</span>
+        </div>
+        <div>
+          <span class="block text-2xl font-bold">{totalResearchers}+</span>
+          <span class="text-gray-300">Researchers</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Institution List -->
+  <div class="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    {
+      institutions.map((institution) => (
+        <div
+          class="glass p-4 rounded-lg hover:shadow-lg transition-all duration-300 institution-card"
+          data-institution={institution.shortName}
+        >
+          <h4 class="font-semibold text-gray-800 mb-1">{institution.name}</h4>
+          <p class="text-sm text-gray-600 mb-2">
+            {institution.location.city}, {institution.location.state}
+          </p>
+          {institution.stats && (
+            <div class="flex justify-between text-xs text-gray-500">
+              <span>{institution.stats.patients} patients</span>
+              <span>Joined {institution.joinedYear}</span>
+            </div>
+          )}
+        </div>
+      ))
+    }
+  </div>
+</div>
+
+<!-- Include Leaflet CSS and JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script define:vars={{ institutions }}>
+  document.addEventListener('DOMContentLoaded', () => {
+    // Initialize the map centered on the US
+    const map = L.map('map').setView([39.8283, -98.5795], 4);
+
+    // Add map tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
+      maxZoom: 19,
+    }).addTo(map);
+
+    // Custom marker icon
+    const clifIcon = L.divIcon({
+      className: 'clif-marker',
+      html: '<div class="marker-pin"></div>',
+      iconSize: [30, 40],
+      iconAnchor: [15, 40],
+      popupAnchor: [0, -35],
+    });
+
+    // Add markers for each institution
+    const markers = {};
+    institutions.forEach((inst) => {
+      const { lat, lng } = inst.location;
+      const marker = L.marker([lat, lng], { icon: clifIcon }).addTo(map);
+
+      // Create popup content
+      const popupContent = `
+        <div class="institution-popup">
+          <h4 class="font-bold text-lg mb-2">${inst.name}</h4>
+          <p class="text-sm mb-2">${inst.location.city}, ${inst.location.state}</p>
+          ${
+            inst.stats
+              ? `
+            <div class="grid grid-cols-2 gap-2 text-xs">
+              <div>
+                <span class="font-semibold">Patients:</span> ${inst.stats.patients}
+              </div>
+              <div>
+                <span class="font-semibold">Researchers:</span> ${inst.stats.researchers}
+              </div>
+            </div>
+            <div class="mt-2 text-xs">
+              <span class="font-semibold">Joined:</span> ${inst.joinedYear}
+            </div>
+          `
+              : ''
+          }
+          <a href="${inst.website}" target="_blank" rel="noopener" class="inline-block mt-3 text-clif-burgundy hover:underline text-sm">
+            Visit Website →
+          </a>
+        </div>
+      `;
+
+      marker.bindPopup(popupContent, {
+        maxWidth: 300,
+        className: 'clif-popup',
+      });
+
+      markers[inst.shortName] = marker;
+    });
+
+    // Add hover interactions with institution cards
+    const cards = document.querySelectorAll('.institution-card');
+    cards.forEach((card) => {
+      const instName = card.dataset.institution;
+      const marker = markers[instName];
+
+      card.addEventListener('mouseenter', () => {
+        if (marker) {
+          marker.openPopup();
+          // Add highlight class to marker
+          const markerElement = marker.getElement();
+          if (markerElement) {
+            markerElement.classList.add('marker-highlighted');
+          }
+        }
+      });
+
+      card.addEventListener('mouseleave', () => {
+        if (marker) {
+          marker.closePopup();
+          // Remove highlight class
+          const markerElement = marker.getElement();
+          if (markerElement) {
+            markerElement.classList.remove('marker-highlighted');
+          }
+        }
+      });
+
+      card.addEventListener('click', () => {
+        if (marker) {
+          map.setView(marker.getLatLng(), 8, {
+            animate: true,
+            duration: 1,
+          });
+          marker.openPopup();
+        }
+      });
+    });
+
+    // Fit map to show all markers with padding
+    const group = new L.featureGroup(Object.values(markers));
+    map.fitBounds(group.getBounds().pad(0.1));
+  });
+</script>
+
+<style>
+  /* Custom marker styles */
+  .clif-marker {
+    background: transparent;
+  }
+
+  .marker-pin {
+    width: 30px;
+    height: 30px;
+    background: var(--clif-burgundy);
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    position: relative;
+    transition: all 0.3s ease;
+  }
+
+  .marker-pin::after {
+    content: '';
+    width: 10px;
+    height: 10px;
+    background: white;
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  .clif-marker:hover .marker-pin,
+  .marker-highlighted .marker-pin {
+    transform: rotate(-45deg) scale(1.2);
+    background: #a01f1f;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+  }
+
+  /* Custom popup styles */
+  .clif-popup .leaflet-popup-content-wrapper {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  }
+
+  .clif-popup .leaflet-popup-tip {
+    background: rgba(255, 255, 255, 0.95);
+  }
+
+  .institution-popup {
+    padding: 4px;
+  }
+
+  /* Card hover effects */
+  .institution-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .institution-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Mobile responsive */
+  @media (max-width: 768px) {
+    #map {
+      height: 400px;
+    }
+
+    .consortium-map-container .absolute.bottom-4 {
+      position: relative;
+      margin-top: 1rem;
+      max-width: 100%;
+    }
+  }
+</style>

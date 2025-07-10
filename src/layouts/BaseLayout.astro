@@ -1,0 +1,126 @@
+---
+import Header from '../components/layout/Header.astro';
+import Footer from '../components/layout/Footer.astro';
+import WebVitalsReporter from '../components/WebVitalsReporter.astro';
+import DevWebVitalsDisplay from '../components/DevWebVitalsDisplay.astro';
+import Breadcrumbs from '../components/shared/Breadcrumbs.astro';
+import '../styles/global.css';
+
+// Determine if we're in development mode
+const isDev = import.meta.env.DEV;
+
+interface Props {
+  title: string;
+  description?: string;
+  image?: string;
+  showBreadcrumbs?: boolean;
+}
+
+const {
+  title,
+  description = 'Common Longitudinal ICU data Format - A standardized format for critical care data enabling multi-center research',
+  image = '/images/logos/clif-logo.png',
+  showBreadcrumbs = true,
+} = Astro.props;
+
+// Generate absolute URLs for meta tags
+const canonicalURL = new URL(Astro.url.pathname, Astro.site || 'https://clif-consortium.org');
+const imageURL = new URL(image, Astro.site || 'https://clif-consortium.org');
+
+// Don't show breadcrumbs on homepage
+const isHomepage = Astro.url.pathname === '/';
+const shouldShowBreadcrumbs = showBreadcrumbs && !isHomepage;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#841839" />
+    <meta name="color-scheme" content="light" />
+    <meta name="format-detection" content="telephone=no" />
+
+    <!-- Favicon and app icons -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" href="/images/clif-icon-192.png" />
+
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+
+    <title>{title} | CLIF</title>
+    <meta name="description" content={description} />
+    <meta name="author" content="CLIF Consortium" />
+    <meta
+      name="keywords"
+      content="CLIF, Critical Care, ICU, Research, Data Format, Healthcare, Data Harmonization"
+    />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href={canonicalURL.href} />
+
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalURL.href} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={imageURL.href} />
+    <meta property="og:site_name" content="CLIF Consortium" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content={canonicalURL.href} />
+    <meta property="twitter:title" content={title} />
+    <meta property="twitter:description" content={description} />
+    <meta property="twitter:image" content={imageURL.href} />
+
+    <!-- Preload fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap&subset=latin"
+      rel="stylesheet"
+    />
+
+    <!-- Resource hints -->
+    <link rel="preconnect" href="https://clif-consortium.shinyapps.io" />
+    <link rel="dns-prefetch" href="https://clif-consortium.shinyapps.io" />
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "CLIF Consortium",
+        "url": "https://clif-consortium.org",
+        "logo": "https://clif-consortium.org/images/logos/clif-logo.png",
+        "description": "Common Longitudinal ICU data Format - Standardized framework for critical care research",
+        "sameAs": ["https://github.com/clif-consortium"]
+      }
+    </script>
+  </head>
+  <body class="min-h-screen flex flex-col bg-clif-gray-50 text-clif-gray-900">
+    <!-- Skip to content link for accessibility -->
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-clif-burgundy text-white px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-clif-burgundy"
+    >
+      Skip to main content
+    </a>
+
+    <Header />
+    <main id="main-content" class="flex-grow">
+      {
+        shouldShowBreadcrumbs && (
+          <div class="container mx-auto px-4 py-4">
+            <Breadcrumbs />
+          </div>
+        )
+      }
+      <slot />
+    </main>
+    <Footer />
+    <WebVitalsReporter />
+    {isDev && <DevWebVitalsDisplay />}
+  </body>
+</html>

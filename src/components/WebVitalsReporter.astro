@@ -1,0 +1,67 @@
+---
+// WebVitalsReporter.astro - Measures and reports Core Web Vitals
+---
+
+<script>
+  import { onCLS, onINP, onLCP, onFCP, onTTFB } from 'web-vitals';
+
+  /**
+   * Send the web vitals metrics to analytics
+   * @param {Object} metric - The web vital metric
+   */
+  function sendToAnalytics(metric) {
+    // Log to console only in development mode
+    if (import.meta.env.DEV) {
+      console.log(`Web Vital: ${metric.name}`, metric);
+    }
+
+    // In production, send to an analytics endpoint
+    if (import.meta.env.PROD) {
+      const url = '/api/vitals';
+
+      // Use the Beacon API if available for better performance during page unload
+      const useBeacon = navigator.sendBeacon && navigator.sendBeacon.bind(navigator);
+
+      const data = {
+        name: metric.name,
+        value: metric.value,
+        rating: metric.rating,
+        id: metric.id,
+        navigationType: performance?.getEntriesByType('navigation')[0]?.type || 'unknown',
+        page: window.location.pathname,
+      };
+
+      try {
+        if (useBeacon) {
+          const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+          navigator.sendBeacon(url, blob);
+        } else {
+          // Fall back to fetch for older browsers
+          fetch(url, {
+            method: 'POST',
+            body: JSON.stringify(data),
+            headers: { 'Content-Type': 'application/json' },
+            keepalive: true,
+          });
+        }
+      } catch (error) {
+        // Silent fail - we don't want to affect user experience if analytics fails
+        if (import.meta.env.DEV) {
+          console.error('Failed to send web vitals:', error);
+        }
+      }
+    }
+  }
+
+  // Wait until after page load to avoid interfering with metrics
+  window.addEventListener('load', () => {
+    // Report Core Web Vitals
+    onCLS(sendToAnalytics);
+    onINP(sendToAnalytics); // Using INP instead of FID (which was replaced in web-vitals v3+)
+    onLCP(sendToAnalytics);
+
+    // Report additional metrics
+    onFCP(sendToAnalytics);
+    onTTFB(sendToAnalytics);
+  });
+</script>

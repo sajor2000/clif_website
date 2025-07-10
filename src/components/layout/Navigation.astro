@@ -1,0 +1,126 @@
+---
+// src/components/layout/Navigation.astro
+const navItems = [
+  { label: 'Home', href: '/', active: Astro.url.pathname === '/' },
+  { label: 'Mission', href: '/mission', active: Astro.url.pathname === '/mission' },
+  { label: 'Team', href: '/team', active: Astro.url.pathname === '/team' },
+  { label: 'Cohort', href: '/cohort', active: Astro.url.pathname === '/cohort' },
+  { label: 'Projects', href: '/projects', active: Astro.url.pathname === '/projects' },
+  { label: 'Tools', href: '/tools', active: Astro.url.pathname === '/tools' },
+  {
+    label: 'Data Dictionary',
+    href: '/data-dictionary',
+    active: Astro.url.pathname === '/data-dictionary',
+  },
+];
+---
+
+<nav class="hidden md:flex items-center gap-8" aria-label="Main navigation">
+  {
+    navItems.map((item) => (
+      <a
+        href={item.href}
+        class={`text-sm font-medium transition-colors hover:text-clif-burgundy
+              ${item.active ? 'text-clif-burgundy' : 'text-gray-700'}`}
+        aria-current={item.active ? 'page' : undefined}
+      >
+        {item.label}
+      </a>
+    ))
+  }
+</nav>
+
+<!-- Mobile Navigation -->
+<div class="md:hidden">
+  <button
+    id="mobile-menu-button"
+    class="text-gray-700 hover:text-clif-burgundy"
+    aria-label="Open menu"
+    aria-expanded="false"
+    aria-controls="mobile-menu"
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <line x1="4" x2="20" y1="12" y2="12"></line>
+      <line x1="4" x2="20" y1="6" y2="6"></line>
+      <line x1="4" x2="20" y1="18" y2="18"></line>
+    </svg>
+  </button>
+
+  <div
+    id="mobile-menu"
+    class="hidden fixed inset-0 bg-white z-50 p-6"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="mobile-menu-heading"
+  >
+    <div class="flex justify-between items-center mb-8">
+      <h2 id="mobile-menu-heading" class="sr-only">Navigation menu</h2>
+      <button
+        id="mobile-menu-close"
+        class="text-gray-700 hover:text-clif-burgundy ml-auto"
+        aria-label="Close menu"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    <nav class="flex flex-col gap-6" aria-label="Mobile navigation">
+      {
+        navItems.map((item) => (
+          <a
+            href={item.href}
+            class={`text-lg font-medium transition-colors hover:text-clif-burgundy
+                  ${item.active ? 'text-clif-burgundy' : 'text-gray-700'}`}
+            aria-current={item.active ? 'page' : undefined}
+          >
+            {item.label}
+          </a>
+        ))
+      }
+    </nav>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const mobileMenuClose = document.getElementById('mobile-menu-close');
+    const mobileMenu = document.getElementById('mobile-menu');
+
+    mobileMenuButton?.addEventListener('click', () => {
+      mobileMenu?.classList.remove('hidden');
+      mobileMenuButton.setAttribute('aria-expanded', 'true');
+      document.body.style.overflow = 'hidden';
+    });
+
+    mobileMenuClose?.addEventListener('click', () => {
+      mobileMenu?.classList.add('hidden');
+      mobileMenuButton?.setAttribute('aria-expanded', 'false');
+      document.body.style.overflow = '';
+    });
+  });
+</script>

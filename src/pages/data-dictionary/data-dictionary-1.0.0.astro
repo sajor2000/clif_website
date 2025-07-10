@@ -1,0 +1,444 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Badge from '../../components/Badge.astro';
+---
+
+<BaseLayout
+  title="CLIF-1.0.0 Data Dictionary (Deprecated)"
+  description="Original version of the Common Longitudinal ICU data Format - Now Deprecated"
+>
+  <div class="container mx-auto px-6 py-12">
+    <div class="bg-yellow-50 border-2 border-yellow-200 p-4 rounded-lg mb-8">
+      <p class="text-lg font-semibold text-yellow-800">
+        ⚠️ This version is deprecated. Please use <a
+          href="/data-dictionary"
+          class="text-clif-burgundy hover:underline">CLIF v2.0.0</a
+        > for current implementations.
+      </p>
+    </div>
+
+    <h1 class="text-4xl font-bold text-clif-burgundy mb-2">
+      CLIF-1.0.0 Data Dictionary
+      <Badge type="deprecated" class="ml-3 align-middle" />
+    </h1>
+
+    <div class="prose prose-lg max-w-none">
+      <p class="text-xl mb-8">
+        Below is the entity-relationship diagram (ERD) that provides an overview of the relational
+        CLIF database structure. This was the first official release of the Common Longitudinal ICU
+        data Format.
+      </p>
+
+      <div class="my-8">
+        <img
+          src="/images/data-dictionary/ERD-1.0.0.png"
+          alt="Entity Relationship Diagram v1.0.0"
+          class="w-full max-w-4xl mx-auto border shadow-lg"
+        />
+      </div>
+
+      <p class="mb-8">
+        Relational CLIF tables are organized into clinically relevant column categories -
+        demographics, objective measures, respiratory support, orders, and inputs-outputs. Below are
+        sample templates for each table in R-CLIF. Here you can find detailed descriptions of each
+        table and their fields.
+      </p>
+
+      <p class="mb-8">
+        You can use our custom GPT - <a
+          href="https://chatgpt.com/g/g-h1nk6d3eR-clif-assistant"
+          class="text-clif-burgundy hover:underline">CLIF Assistant</a
+        >
+        to learn more about CLIF.
+      </p>
+
+      <!-- Patient Encounters Table -->
+      <section class="mb-12">
+        <h2 id="patient_encounters" class="text-2xl font-bold text-clif-burgundy mb-4">
+          Patient_encounters
+        </h2>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200 mb-4">
+            <thead class="bg-gray-50">
+              <tr>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >Field</th
+                >
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >Type</th
+                >
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >Description</th
+                >
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">patient_id</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm"
+                  >ID variable for each patient. Every patient assigned a unique identifier is
+                  presumed to be a distinct individual</td
+                >
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">encounter_id</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm"
+                  >ID variable for each patient encounter (a given patient can have multiple
+                  encounters). Each encounter_id represents a unique hospitalization for a patient,
+                  capturing the entire duration of the hospital stay. This is the primary key for
+                  most other tables</td
+                >
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h4 class="font-semibold mb-2">Example:</h4>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200 text-sm">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-4 py-2 text-left">patient_id</th>
+                <th class="px-4 py-2 text-left">encounter_id</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr><td class="px-4 py-2">1</td><td class="px-4 py-2">1</td></tr>
+              <tr><td class="px-4 py-2">1</td><td class="px-4 py-2">2</td></tr>
+              <tr><td class="px-4 py-2">1</td><td class="px-4 py-2">3</td></tr>
+              <tr><td class="px-4 py-2">5</td><td class="px-4 py-2">10</td></tr>
+              <tr><td class="px-4 py-2">6</td><td class="px-4 py-2">11</td></tr>
+              <tr><td class="px-4 py-2">6</td><td class="px-4 py-2">12</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Patient Demographics Table -->
+      <section class="mb-12">
+        <h2 id="patient_demographics" class="text-2xl font-bold text-clif-burgundy mb-4">
+          Patient_demographics
+        </h2>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200 mb-4">
+            <thead class="bg-gray-50">
+              <tr>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >Field</th
+                >
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >Type</th
+                >
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >Description</th
+                >
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >Permissible Values</th
+                >
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">encounter_id</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">ID variable for each patient encounter</td>
+                <td class="px-6 py-4 text-sm">-</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">race</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm"
+                  >Description of patient's race. Each site could have different strings in source
+                  data</td
+                >
+                <td class="px-6 py-4 text-sm"
+                  ><code class="text-xs bg-gray-100 px-1 py-0.5 rounded"
+                    >Black, White, American Indian or Alaska Native, Asian, Native Hawaiian or Other
+                    Pacific Islander, Unknown, Other</code
+                  ></td
+                >
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">ethnicity</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">Description of patient's ethnicity</td>
+                <td class="px-6 py-4 text-sm"
+                  ><code class="text-xs bg-gray-100 px-1 py-0.5 rounded"
+                    >Hispanic, Non-Hispanic, Unknown</code
+                  ></td
+                >
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">sex</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">Patient's biological sex</td>
+                <td class="px-6 py-4 text-sm"
+                  ><code class="text-xs bg-gray-100 px-1 py-0.5 rounded">Male, Female, Unknown</code
+                  ></td
+                >
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Limited Identifiers Table -->
+      <section class="mb-12">
+        <h2 id="limited_identifiers" class="text-2xl font-bold text-clif-burgundy mb-4">
+          Limited_identifiers
+        </h2>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200 mb-4">
+            <thead class="bg-gray-50">
+              <tr>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >Field</th
+                >
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >Type</th
+                >
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >Description</th
+                >
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">encounter_id</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm"
+                  >ID variable for each patient encounter. Each encounter_id represents a unique
+                  hospitalization for a patient</td
+                >
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">admission_dttm</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">DATETIME</td>
+                <td class="px-6 py-4 text-sm"
+                  >Date and time the patient is admitted (in the format %Y-%m-%d %H:%M:%S)</td
+                >
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">discharge_dttm</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">DATETIME</td>
+                <td class="px-6 py-4 text-sm"
+                  >Date and time the patient is discharged (in the format %Y-%m-%d %H:%M:%S)</td
+                >
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">birth_date</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">DATETIME</td>
+                <td class="px-6 py-4 text-sm"
+                  >Patient date of birth. This variable is used to calculate age at admission</td
+                >
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">zipcode_9digit</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm"
+                  >Patient zipcode. Used to link the database with other indices like ADI, SVI etc</td
+                >
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ADT Table -->
+      <section class="mb-12">
+        <h2 id="adt" class="text-2xl font-bold text-clif-burgundy mb-4">ADT</h2>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200 mb-4">
+            <thead class="bg-gray-50">
+              <tr>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >Field</th
+                >
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >Type</th
+                >
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >Description</th
+                >
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >Permissible Values</th
+                >
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">encounter_id</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">ID variable for each patient encounter</td>
+                <td class="px-6 py-4 text-sm">-</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">hospital_id</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm"
+                  >Assign an ID to each hospital in the hospital system</td
+                >
+                <td class="px-6 py-4 text-sm">-</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">in_dttm</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">DATETIME</td>
+                <td class="px-6 py-4 text-sm">Start date and time at a particular location</td>
+                <td class="px-6 py-4 text-sm">Format: %Y-%m-%d %H:%M:%S</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">out_dttm</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">DATETIME</td>
+                <td class="px-6 py-4 text-sm">End date and time at a particular location</td>
+                <td class="px-6 py-4 text-sm">Format: %Y-%m-%d %H:%M:%S</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">location_name</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm"
+                  >Location of the patient inside the hospital (source data)</td
+                >
+                <td class="px-6 py-4 text-sm">No restriction</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">location_category</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">Map location_name to CLIF categories</td>
+                <td class="px-6 py-4 text-sm"
+                  ><code class="text-xs bg-gray-100 px-1 py-0.5 rounded"
+                    >ER, OR, ICU, Ward, Other</code
+                  ></td
+                >
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Vitals Table -->
+      <section class="mb-12">
+        <h2 id="vitals" class="text-2xl font-bold text-clif-burgundy mb-4">Vitals</h2>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200 mb-4">
+            <thead class="bg-gray-50">
+              <tr>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >Field</th
+                >
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >Type</th
+                >
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >Description</th
+                >
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >Permissible Values</th
+                >
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">encounter_id</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">ID variable for each patient encounter</td>
+                <td class="px-6 py-4 text-sm">-</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">recorded_dttm</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">DATETIME</td>
+                <td class="px-6 py-4 text-sm">Date and time when the vital is recorded</td>
+                <td class="px-6 py-4 text-sm">Format: %Y-%m-%d %H:%M:%S</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">vital_name</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm"
+                  >Description of the flowsheet measure from source data</td
+                >
+                <td class="px-6 py-4 text-sm">No restriction</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">vital_category</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">Map vital_name to CLIF categories</td>
+                <td class="px-6 py-4 text-sm"
+                  ><code class="text-xs bg-gray-100 px-1 py-0.5 rounded"
+                    >temp_c, pulse, sbp, dbp, spo2, respiratory_rate, map, height_inches, weight_kg</code
+                  ></td
+                >
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">vital_value</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">DOUBLE</td>
+                <td class="px-6 py-4 text-sm">Recorded value of the vital</td>
+                <td class="px-6 py-4 text-sm"
+                  >Units: temp_c=Celsius, height_inches=Inch, weight_kg=Kg, map=mm/Hg, spo2=%</td
+                >
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">meas_site_name</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">Site where vital is recorded</td>
+                <td class="px-6 py-4 text-sm">No restrictions</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <div class="mt-12 p-6 bg-gray-100 rounded-lg">
+        <h3 class="text-lg font-semibold mb-4">Additional Tables in v1.0.0</h3>
+        <p class="mb-4">
+          The complete v1.0.0 specification also includes the following tables (not shown in detail
+          here):
+        </p>
+        <ul class="list-disc list-inside space-y-2 text-gray-700">
+          <li>Encounter_demographics_disposition</li>
+          <li>Labs</li>
+          <li>Medications</li>
+          <li>Medication_admin</li>
+          <li>ECMO_MCS</li>
+          <li>CRRT</li>
+          <li>Respiratory_support</li>
+          <li>Diagnostic_imaging_codes</li>
+          <li>ICD_codes</li>
+          <li>Microbiology_cultures</li>
+          <li>Microbiology_noncultures</li>
+          <li>Intake_output</li>
+        </ul>
+      </div>
+
+      <div class="mt-8 flex justify-between items-center">
+        <a href="/data-dictionary/change-log" class="text-clif-burgundy hover:underline">
+          ← View Change Log
+        </a>
+        <a
+          href="/data-dictionary"
+          class="bg-clif-burgundy hover:bg-clif-burgundy-dark text-white font-medium py-2 px-4 rounded"
+        >
+          View Current Version (v2.0.0) →
+        </a>
+      </div>
+    </div>
+  </div>
+</BaseLayout>

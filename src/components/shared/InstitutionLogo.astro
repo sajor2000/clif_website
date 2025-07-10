@@ -1,0 +1,40 @@
+---
+interface Props {
+  name: string;
+  src: string;
+  href?: string;
+  size?: 'small' | 'medium' | 'large';
+  class?: string;
+}
+
+const { name, src, href, size = 'medium', class: className = '' } = Astro.props;
+
+const sizeClasses = {
+  small: 'h-12 w-auto',
+  medium: 'h-16 w-auto',
+  large: 'h-20 w-auto',
+};
+
+const Component = href ? 'a' : 'div';
+const linkProps = href
+  ? {
+      href,
+      target: '_blank',
+      rel: 'noopener noreferrer',
+      'aria-label': `Visit ${name} website (opens in new tab)`,
+    }
+  : {};
+---
+
+<Component
+  class={`inline-flex items-center justify-center p-2 transition-opacity duration-200 hover:opacity-80 ${className}`}
+  {...linkProps}
+>
+  <img
+    src={src}
+    alt={`${name} logo`}
+    class={`${sizeClasses[size]} object-contain`}
+    loading="lazy"
+    decoding="async"
+  />
+</Component>

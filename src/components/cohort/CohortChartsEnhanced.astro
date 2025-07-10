@@ -1,0 +1,472 @@
+---
+// Enhanced cohort charts with lazy loading and accessibility features
+---
+
+<div class="space-y-8" data-charts-container>
+  <!-- Demographics Chart -->
+  <div class="bg-white rounded-lg shadow-md p-6">
+    <h3 class="text-xl font-bold mb-4">Patient Demographics</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="chart-container">
+        <canvas
+          id="ageChart"
+          width="400"
+          height="300"
+          aria-label="Age distribution chart showing patient counts by age group"
+          role="img"></canvas>
+        <noscript>
+          <div class="p-4 bg-gray-100 rounded">
+            <p class="font-semibold mb-2">Age Distribution:</p>
+            <ul class="space-y-1 text-sm">
+              <li>18-29: 45,000 patients</li>
+              <li>30-39: 78,000 patients</li>
+              <li>40-49: 156,000 patients</li>
+              <li>50-59: 245,000 patients</li>
+              <li>60-69: 312,000 patients</li>
+              <li>70-79: 267,000 patients</li>
+              <li>80+: 97,000 patients</li>
+            </ul>
+          </div>
+        </noscript>
+      </div>
+      <div class="chart-container">
+        <canvas
+          id="genderChart"
+          width="400"
+          height="300"
+          aria-label="Gender distribution pie chart"
+          role="img"></canvas>
+        <noscript>
+          <div class="p-4 bg-gray-100 rounded">
+            <p class="font-semibold mb-2">Gender Distribution:</p>
+            <ul class="space-y-1 text-sm">
+              <li>Male: 648,000 (54%)</li>
+              <li>Female: 552,000 (46%)</li>
+              <li>Unknown: 5,000 (<1%)</li>
+            </ul>
+          </div>
+        </noscript>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admissions Over Time -->
+  <div class="bg-white rounded-lg shadow-md p-6">
+    <h3 class="text-xl font-bold mb-4">ICU Admissions Trend</h3>
+    <div class="chart-container">
+      <canvas
+        id="admissionsChart"
+        width="800"
+        height="400"
+        aria-label="Line chart showing ICU admissions from 2014 to 2023"
+        role="img"></canvas>
+      <noscript>
+        <div class="p-4 bg-gray-100 rounded">
+          <p class="font-semibold mb-2">Annual ICU Admissions:</p>
+          <ul class="space-y-1 text-sm">
+            <li>2014: 180,000</li>
+            <li>2015: 195,000</li>
+            <li>2016: 210,000</li>
+            <li>2017: 225,000</li>
+            <li>2018: 240,000</li>
+            <li>2019: 255,000</li>
+            <li>2020: 320,000 (COVID-19 spike)</li>
+            <li>2021: 295,000</li>
+            <li>2022: 270,000</li>
+            <li>2023: 285,000</li>
+          </ul>
+        </div>
+      </noscript>
+    </div>
+  </div>
+
+  <!-- Outcomes Chart -->
+  <div class="bg-white rounded-lg shadow-md p-6">
+    <h3 class="text-xl font-bold mb-4">Patient Outcomes</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="chart-container">
+        <canvas
+          id="mortalityChart"
+          width="400"
+          height="300"
+          aria-label="Pie chart showing patient survival outcomes"
+          role="img"></canvas>
+        <noscript>
+          <div class="p-4 bg-gray-100 rounded">
+            <p class="font-semibold mb-2">Patient Outcomes:</p>
+            <ul class="space-y-1 text-sm">
+              <li>Survived: 1,020,000 (85%)</li>
+              <li>In-Hospital Mortality: 180,000 (15%)</li>
+            </ul>
+          </div>
+        </noscript>
+      </div>
+      <div class="chart-container">
+        <canvas
+          id="losChart"
+          width="400"
+          height="300"
+          aria-label="Bar chart showing ICU length of stay distribution"
+          role="img"></canvas>
+        <noscript>
+          <div class="p-4 bg-gray-100 rounded">
+            <p class="font-semibold mb-2">Length of Stay:</p>
+            <ul class="space-y-1 text-sm">
+              <li>&lt;2 days: 240,000 patients</li>
+              <li>2-5 days: 480,000 patients</li>
+              <li>6-10 days: 300,000 patients</li>
+              <li>11-20 days: 150,000 patients</li>
+              <li>&gt;20 days: 30,000 patients</li>
+            </ul>
+          </div>
+        </noscript>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div id="charts-loading" class="text-center py-8">
+    <div class="inline-flex items-center">
+      <svg
+        class="animate-spin h-8 w-8 text-clif-burgundy mr-3"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"
+        ></circle>
+        <path
+          class="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+        ></path>
+      </svg>
+      <span class="text-lg">Loading interactive charts...</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Lazy load Chart.js when charts container is in viewport
+  const loadCharts = () => {
+    const container = document.querySelector('[data-charts-container]');
+    if (!container) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            observer.unobserve(entry.target);
+
+            // Load Chart.js with integrity check
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js';
+            script.integrity =
+              'sha384-dJIhOKF3N0OlEOmQI5jxNVC3zN7m8XxjPOk0XkzDe89NYM8p8yDwWxZn8I1M5hGH';
+            script.crossOrigin = 'anonymous';
+
+            script.onload = () => {
+              initializeCharts();
+              // Hide loading state
+              const loadingEl = document.getElementById('charts-loading');
+              if (loadingEl) loadingEl.style.display = 'none';
+            };
+
+            script.onerror = () => {
+              // Show error state
+              const loadingEl = document.getElementById('charts-loading');
+              if (loadingEl) {
+                loadingEl.innerHTML =
+                  '<p class="text-red-600">Failed to load charts. Please check your connection and refresh the page.</p>';
+              }
+            };
+
+            document.head.appendChild(script);
+          }
+        });
+      },
+      {
+        rootMargin: '200px', // Start loading before charts are visible
+      }
+    );
+
+    observer.observe(container);
+  };
+
+  const initializeCharts = () => {
+    // Common chart options with improved accessibility
+    const commonOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            padding: 20,
+            font: {
+              size: 14,
+            },
+          },
+        },
+        tooltip: {
+          callbacks: {
+            label: function (context) {
+              let label = context.dataset.label || '';
+              if (label) {
+                label += ': ';
+              }
+              if (context.parsed !== null) {
+                label += new Intl.NumberFormat('en-US').format(context.parsed);
+              }
+              return label;
+            },
+          },
+        },
+      },
+      animation: {
+        duration: 1000,
+      },
+    };
+
+    // Age Distribution Chart
+    const ageCtx = document.getElementById('ageChart')?.getContext('2d');
+    if (ageCtx) {
+      new Chart(ageCtx, {
+        type: 'bar',
+        data: {
+          labels: ['18-29', '30-39', '40-49', '50-59', '60-69', '70-79', '80+'],
+          datasets: [
+            {
+              label: 'Number of Patients',
+              data: [45000, 78000, 156000, 245000, 312000, 267000, 97000],
+              backgroundColor: 'rgba(132, 24, 57, 0.6)',
+              borderColor: 'rgba(132, 24, 57, 1)',
+              borderWidth: 1,
+            },
+          ],
+        },
+        options: {
+          ...commonOptions,
+          plugins: {
+            ...commonOptions.plugins,
+            title: {
+              display: true,
+              text: 'Age Distribution',
+              font: {
+                size: 16,
+              },
+            },
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function (value) {
+                  return value.toLocaleString();
+                },
+              },
+            },
+          },
+        },
+      });
+    }
+
+    // Gender Distribution Chart
+    const genderCtx = document.getElementById('genderChart')?.getContext('2d');
+    if (genderCtx) {
+      new Chart(genderCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Male', 'Female', 'Unknown'],
+          datasets: [
+            {
+              data: [648000, 552000, 5000],
+              backgroundColor: [
+                'rgba(54, 162, 235, 0.8)',
+                'rgba(255, 99, 132, 0.8)',
+                'rgba(201, 203, 207, 0.8)',
+              ],
+              borderColor: [
+                'rgba(54, 162, 235, 1)',
+                'rgba(255, 99, 132, 1)',
+                'rgba(201, 203, 207, 1)',
+              ],
+              borderWidth: 1,
+            },
+          ],
+        },
+        options: {
+          ...commonOptions,
+          plugins: {
+            ...commonOptions.plugins,
+            title: {
+              display: true,
+              text: 'Gender Distribution',
+              font: {
+                size: 16,
+              },
+            },
+          },
+        },
+      });
+    }
+
+    // Admissions Over Time
+    const admissionsCtx = document.getElementById('admissionsChart')?.getContext('2d');
+    if (admissionsCtx) {
+      new Chart(admissionsCtx, {
+        type: 'line',
+        data: {
+          labels: ['2014', '2015', '2016', '2017', '2018', '2019', '2020', '2021', '2022', '2023'],
+          datasets: [
+            {
+              label: 'Annual ICU Admissions',
+              data: [
+                180000, 195000, 210000, 225000, 240000, 255000, 320000, 295000, 270000, 285000,
+              ],
+              borderColor: 'rgba(132, 24, 57, 1)',
+              backgroundColor: 'rgba(132, 24, 57, 0.1)',
+              tension: 0.1,
+              fill: true,
+            },
+          ],
+        },
+        options: {
+          ...commonOptions,
+          plugins: {
+            ...commonOptions.plugins,
+            title: {
+              display: true,
+              text: 'ICU Admissions by Year',
+              font: {
+                size: 16,
+              },
+            },
+            annotation: {
+              annotations: {
+                covid: {
+                  type: 'label',
+                  xValue: '2020',
+                  yValue: 320000,
+                  content: ['COVID-19', 'spike'],
+                  font: {
+                    size: 12,
+                  },
+                },
+              },
+            },
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function (value) {
+                  return value.toLocaleString();
+                },
+              },
+            },
+          },
+        },
+      });
+    }
+
+    // Mortality Chart
+    const mortalityCtx = document.getElementById('mortalityChart')?.getContext('2d');
+    if (mortalityCtx) {
+      new Chart(mortalityCtx, {
+        type: 'pie',
+        data: {
+          labels: ['Survived', 'In-Hospital Mortality'],
+          datasets: [
+            {
+              data: [1020000, 180000],
+              backgroundColor: ['rgba(75, 192, 192, 0.8)', 'rgba(255, 99, 132, 0.8)'],
+              borderColor: ['rgba(75, 192, 192, 1)', 'rgba(255, 99, 132, 1)'],
+              borderWidth: 1,
+            },
+          ],
+        },
+        options: {
+          ...commonOptions,
+          plugins: {
+            ...commonOptions.plugins,
+            title: {
+              display: true,
+              text: 'Patient Outcomes',
+              font: {
+                size: 16,
+              },
+            },
+          },
+        },
+      });
+    }
+
+    // Length of Stay Chart
+    const losCtx = document.getElementById('losChart')?.getContext('2d');
+    if (losCtx) {
+      new Chart(losCtx, {
+        type: 'bar',
+        data: {
+          labels: ['<2 days', '2-5 days', '6-10 days', '11-20 days', '>20 days'],
+          datasets: [
+            {
+              label: 'Number of Patients',
+              data: [240000, 480000, 300000, 150000, 30000],
+              backgroundColor: 'rgba(255, 206, 86, 0.6)',
+              borderColor: 'rgba(255, 206, 86, 1)',
+              borderWidth: 1,
+            },
+          ],
+        },
+        options: {
+          ...commonOptions,
+          plugins: {
+            ...commonOptions.plugins,
+            title: {
+              display: true,
+              text: 'ICU Length of Stay Distribution',
+              font: {
+                size: 16,
+              },
+            },
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function (value) {
+                  return value.toLocaleString();
+                },
+              },
+            },
+          },
+        },
+      });
+    }
+  };
+
+  // Initialize lazy loading on page load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadCharts);
+  } else {
+    loadCharts();
+  }
+</script>
+
+<style>
+  canvas {
+    max-height: 400px;
+  }
+
+  .chart-container {
+    position: relative;
+    min-height: 300px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :global(.chart-container canvas) {
+      animation-duration: 0s !important;
+    }
+  }
+</style>

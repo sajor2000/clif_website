@@ -1,0 +1,1842 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Badge from '../components/Badge.astro';
+import DataTableEnhanced from '../components/DataTableEnhanced.astro';
+import TableOfContents from '../components/TableOfContents.astro';
+import OptimizedImage from '../components/OptimizedImage.astro';
+
+// Define all Beta tables data with complete information from archive
+const betaTables = [
+  {
+    id: 'adt',
+    name: 'ADT',
+    description:
+      "The admission, discharge, and transfer (ADT) table is a start-stop longitudinal dataset that contains information about each patient's movement within the hospital. It also has a hospital_id field to distinguish between different hospitals within a health system.",
+    fields: [
+      {
+        name: 'hospitalization_id',
+        type: 'VARCHAR',
+        description: 'ID variable for each patient encounter',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'hospital_id',
+        type: 'VARCHAR',
+        description: 'Assign a unique ID to each hospital within a healthsystem',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'hospital_type',
+        type: 'VARCHAR',
+        description: 'Maps hospital_id to a standardized list of hospital types',
+        values: ['academic', 'community', 'LTACH'],
+      },
+      {
+        name: 'in_dttm',
+        type: 'DATETIME',
+        description:
+          'Start date and time at a particular location. All datetime variables must be timezone-aware and set to UTC.',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
+      },
+      {
+        name: 'out_dttm',
+        type: 'DATETIME',
+        description:
+          'End date and time at a particular location. All datetime variables must be timezone-aware and set to UTC.',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
+      },
+      {
+        name: 'location_name',
+        type: 'VARCHAR',
+        description:
+          'Location of the patient inside the hospital. This field is used to store the patient location from the source data. It is not used for analysis.',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'location_category',
+        type: 'VARCHAR',
+        description: 'Maps location_name to a standardized list of ADT location categories',
+        values: [
+          'ed',
+          'ward',
+          'stepdown',
+          'icu',
+          'procedural',
+          'l&d',
+          'hospice',
+          'psych',
+          'rehab',
+          'radiology',
+          'dialysis',
+          'other',
+        ],
+      },
+      {
+        name: 'location_type',
+        type: 'VARCHAR',
+        description: 'Maps ICU type to a standardized list of ICU categories',
+        restrictions: 'List of ICU categories in CLIF',
+      },
+    ],
+    notes: [
+      'ADT represents the patient\'s physical location, NOT the patient "status".',
+      'Procedural areas and operating rooms should be mapped to "Procedural". Pre/Intra/Post-procedural/OR EHR data (such as anesthesia flowsheet records from Labs, Vitals, Scores, Respiratory Support) are not currently represented in CLIF.',
+    ],
+    example: `| hospitalization_id | hospital_id | hospital_type | in_dttm | out_dttm | location_name | location_category |
+|---|---|---|---|---|---|---|
+| 20010012 | ABC | academic | 2024-12-01 10:00:00+00:00 | 2024-12-01 14:00:00+00:00 | B06F | icu |
+| 20010012 | ABC | academic | 2024-12-01 14:30:00+00:00 | 2024-12-02 08:00:00+00:00 | B78D | ward |`,
+  },
+  {
+    id: 'hospitalization',
+    name: 'Hospitalization',
+    description:
+      'The hospitalization table contains information about each hospitalization event. Each row in this table represents a unique hospitalization event for a patient. This table is inspired by the visit_occurance OMOP table but is specific to inpatient hospitalizations (including those that begin in the emergency room).',
+    fields: [
+      {
+        name: 'patient_id',
+        type: 'VARCHAR',
+        description: 'Unique identifier for each patient, linking to the patient table',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'hospitalization_id',
+        type: 'VARCHAR',
+        description:
+          'Unique identifier for each hospitalization encounter. Each hospitalization_id represents a unique stay in the hospital',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'hospitalization_joined_id',
+        type: 'VARCHAR',
+        description:
+          'Unique identifier for each continuous inpatient stay in a health system which may span different hospitals (Optional)',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'admission_dttm',
+        type: 'DATETIME',
+        description:
+          'Date and time the patient is admitted to the hospital. All datetime variables must be timezone-aware and set to UTC.',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
+      },
+      {
+        name: 'discharge_dttm',
+        type: 'DATETIME',
+        description:
+          'Date and time the patient is discharged from the hospital. All datetime variables must be timezone-aware and set to UTC.',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
+      },
+      {
+        name: 'age_at_admission',
+        type: 'INT',
+        description: 'Age of the patient at the time of admission, in years',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'admission_type_name',
+        type: 'VARCHAR',
+        description: 'Type of inpatient admission. Original string from the source data',
+        restrictions: 'e.g. "Direct admission", "Transfer", "Pre-op surgical"',
+      },
+      {
+        name: 'admission_type_category',
+        type: 'VARCHAR',
+        description: 'Admission disposition mapped to mCIDE categories',
+        restrictions: 'List of admission type categories in CLIF',
+      },
+      {
+        name: 'discharge_name',
+        type: 'VARCHAR',
+        description: 'Original discharge disposition name string recorded in the raw data',
+        restrictions: 'No restriction, e.g. "home"',
+      },
+      {
+        name: 'discharge_category',
+        type: 'VARCHAR',
+        description: 'Maps discharge_name to a standardized list of discharge categories',
+        values: [
+          'Home',
+          'Skilled Nursing Facility (SNF)',
+          'Expired',
+          'Acute Inpatient Rehab Facility',
+          'Hospice',
+          'Long Term Care Hospital (LTACH)',
+          'Acute Care Hospital',
+          'Group Home',
+          'Chemical Dependency',
+          'Against Medical Advice (AMA)',
+          'Assisted Living',
+          'Still Admitted',
+          'Missing',
+          'Other',
+          'Psychiatric Hospital',
+          'Shelter',
+          'Jail',
+        ],
+      },
+      {
+        name: 'zipcode_nine_digit',
+        type: 'VARCHAR',
+        description:
+          "Patient's 9 digit zip code, used to link with other indices such as ADI and SVI",
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'zipcode_five_digit',
+        type: 'VARCHAR',
+        description:
+          "Patient's 5 digit zip code, used to link with other indices such as ADI and SVI",
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'census_block_code',
+        type: 'VARCHAR',
+        description: '15 digit FIPS code',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'census_block_group_code',
+        type: 'VARCHAR',
+        description: '12 digit FIPS code',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'census_tract',
+        type: 'VARCHAR',
+        description: '11 digit FIPS code',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'state_code',
+        type: 'VARCHAR',
+        description: '2 digit FIPS code',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'county_code',
+        type: 'VARCHAR',
+        description: '5 digit FIPS code',
+        restrictions: 'No restriction',
+      },
+    ],
+    notes: [
+      'If a patient is discharged to Home/Hospice, then discharge_category == Hospice.',
+      'The geographical indicators (zipcode_nine_digit, zipcode_five_digit, census_block_code, census_block_group_code, census_tract, state_code, county_code) should be added if they are available in your source dataset. zipcode_nine_digit is preferred over zipcode_five_digit, and census_block_code is ideal for census based indicators. The choice of geographical indicators may differ depending on the project.',
+      'If a patient is transferred between different hospitals within a health system, a new hospitalization_id should be created',
+      'If a patient is initially seen in an ER in hospital A and then admitted to inpatient status in hospital B, one hospitalization_id should be created for data from both stays',
+      'A hospitalization_joined_id can also be created from a CLIF table from contiguous hospitalization_ids',
+    ],
+  },
+  {
+    id: 'labs',
+    name: 'Labs',
+    description: 'The labs table is a long form (one lab result per row) longitudinal table.',
+    fields: [
+      {
+        name: 'hospitalization_id',
+        type: 'VARCHAR',
+        description: 'ID variable for each patient encounter.',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'lab_order_dttm',
+        type: 'DATETIME',
+        description:
+          'Date and time when the lab is ordered. All datetime variables must be timezone-aware and set to UTC.',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
+      },
+      {
+        name: 'lab_collect_dttm',
+        type: 'DATETIME',
+        description:
+          'Date and time when the specimen is collected. All datetime variables must be timezone-aware and set to UTC.',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
+      },
+      {
+        name: 'lab_result_dttm',
+        type: 'DATETIME',
+        description:
+          'Date and time when the lab results are available. All datetime variables must be timezone-aware and set to UTC.',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
+      },
+      {
+        name: 'lab_order_name',
+        type: 'VARCHAR',
+        description: 'Procedure name for the lab, e.g. "Complete blood count w/ diff"',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'lab_order_category',
+        type: 'VARCHAR',
+        description:
+          'Maps lab_order_name to standardized list of common lab order names, e.g. "CBC"',
+        restrictions: 'List of lab order categories in CLIF',
+      },
+      {
+        name: 'lab_name',
+        type: 'VARCHAR',
+        description: 'Original lab component as recorded in the raw data, e.g. "AST (SGOT)".',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'lab_category',
+        type: 'VARCHAR',
+        description:
+          'Maps lab_name to a minimum set of standardized labs identified by the CLIF consortium as minimum necessary labs for the study of critical illness.',
+        restrictions: 'List of lab categories in CLIF',
+      },
+      {
+        name: 'lab_value',
+        type: 'VARCHAR',
+        description:
+          'Recorded value corresponding to a lab. Lab values are often strings that can contain non-numeric results (e.g. "> upper limit of detection").',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'lab_value_numeric',
+        type: 'DOUBLE',
+        description: 'Parse out numeric part of the lab_value variable (optional).',
+        restrictions: 'Numeric',
+      },
+      {
+        name: 'reference_unit',
+        type: 'VARCHAR',
+        description: 'Unit of measurement for that lab.',
+        restrictions: 'Permissible reference values for each lab_category listed in CLIF',
+      },
+      {
+        name: 'lab_specimen_name',
+        type: 'VARCHAR',
+        description:
+          'Original fluid or tissue name the lab was collected from as given in the source data',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'lab_specimen_category',
+        type: 'VARCHAR',
+        description:
+          'Fluid or tissue the lab was collected from, analogous to the LOINC "system" component.',
+        values: ['blood/plasma/serum', 'urine', 'csf', 'other'],
+      },
+      {
+        name: 'lab_loinc_code',
+        type: 'VARCHAR',
+        description: 'LOINC code for the lab',
+        restrictions: 'No restrictions',
+      },
+    ],
+    notes: [
+      'The lab_value field often has non-numeric entries that are useful to make project-specific decisions. A site may choose to keep the lab_value field as a character and create a new field lab_value_numeric that only parses the character field to extract the numeric part of the string.',
+    ],
+    example: `| hospitalization_id | lab_order_dttm | lab_collect_dttm | lab_result_dttm | lab_order_name | lab_name | lab_category | lab_value | lab_value_numeric | reference_unit | lab_loinc_code | lab_specimen_category |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 12345 | 2024-12-01 08:15:00+00:00 | 2024-12-01 08:30:00+00:00 | 2024-12-01 09:00:00+00:00 | Complete Blood Count | Hemoglobin | hemoglobin | 12.3 | 12.3 | g/dL | 718-7 | blood |`,
+  },
+  {
+    id: 'medication-admin-continuous',
+    name: 'Medication Admin Continuous',
+    description:
+      'The medication admin continuous table is a long-form (one medication administration record per) longitudinal table designed for continuous infusions of common ICU medications such as vasopressors and sedation (Boluses of these drugs should be recorded in med_admin_intermittent). Note that it only reflects dose changes of the continuous medication and does not have a specific "end_time" variable to indicate the medication being stopped. The end of a continuous infusion should be recorded as a new row with med_dose = 0 and an appropriate mar_action_name (e.g. "stopped" or "paused").',
+    fields: [
+      {
+        name: 'hospitalization_id',
+        type: 'VARCHAR',
+        description: 'ID variable for each patient encounter',
+        restrictions: '',
+      },
+      {
+        name: 'med_order_id',
+        type: 'VARCHAR',
+        description:
+          'Medication order ID. Foreign key to link this table to other medication tables',
+        restrictions: '',
+      },
+      {
+        name: 'admin_dttm',
+        type: 'DATETIME',
+        description:
+          'Date and time when the medicine was administered. All datetime variables must be timezone-aware and set to UTC.',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
+      },
+      {
+        name: 'med_name',
+        type: 'VARCHAR',
+        description:
+          'Original med name string recorded in the raw data which often contains concentration e.g. "NOREPInephrine 8 mg/250 mL"',
+        restrictions: '',
+      },
+      {
+        name: 'med_category',
+        type: 'VARCHAR',
+        description:
+          'Maps med_name to a limited set of active ingredients for important ICU medications, e.g. "norepinephrine"',
+        restrictions: 'List of continuous medication categories in CLIF',
+      },
+      {
+        name: 'med_group',
+        type: 'VARCHAR',
+        description:
+          'Limited number of ICU medication groups identified by the CLIF consortium, e.g. "vasoactives"',
+        restrictions: 'List of continuous medication groups in CLIF',
+      },
+      {
+        name: 'med_route_name',
+        type: 'VARCHAR',
+        description: 'Medicine delivery route',
+        restrictions: 'e.g. IV, enteral',
+      },
+      {
+        name: 'med_route_category',
+        type: 'VARCHAR',
+        description: 'Maps med_route_name to a standardized list of medication delivery routes',
+        restrictions: 'Under-development',
+      },
+      { name: 'med_dose', type: 'DOUBLE', description: 'Quantity taken in dose', restrictions: '' },
+      {
+        name: 'med_dose_unit',
+        type: 'VARCHAR',
+        description:
+          'Unit of dose. It must be a rate, e.g. mcg/min. Boluses should be mapped to med_admin_intermittent',
+        restrictions: '',
+      },
+      {
+        name: 'mar_action_name',
+        type: 'VARCHAR',
+        description: 'MAR (medication administration record) action, e.g. "stopped"',
+        restrictions: '',
+      },
+      {
+        name: 'mar_action_category',
+        type: 'VARCHAR',
+        description: 'Maps mar_action_name to a standardized list of MAR actions',
+        restrictions: 'Under-development',
+      },
+    ],
+    example: `| hospitalization_id | admin_dttm | med_name | med_category | med_group | med_route_name | med_dose | med_dose_unit | mar_action_name |
+|---|---|---|---|---|---|---|---|---|
+| 792391 | 2123-11-13 12:28:00+00:00 | PROPOFOL 10 MG/ML INTRAVENOUS EMULSION | propofol | sedation | Intravenous | 75.0000 | mcg/kg/min | New Bag |
+| 792391 | 2123-11-13 14:03:00+00:00 | PROPOFOL 10 MG/ML INTRAVENOUS EMULSION | propofol | sedation | Intravenous | 0.0000 | mcg/kg/min | Stopped |`,
+  },
+  {
+    id: 'patient',
+    name: 'Patient',
+    description:
+      'This table contains demographic information about the patient that does not vary between hospitalizations. It is inspired by the OMOP Person table.',
+    fields: [
+      {
+        name: 'patient_id',
+        type: 'VARCHAR',
+        description:
+          'Unique identifier for each patient. This is presumed to be a distinct individual.',
+        restrictions: '',
+      },
+      {
+        name: 'race_name',
+        type: 'VARCHAR',
+        description: 'Patient race string from source data',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'race_category',
+        type: 'VARCHAR',
+        description:
+          "A standardized CDE description of patient's race per the US Census permissible values. The source data may contain different strings for race.",
+        values: [
+          'Black or African American',
+          'White',
+          'American Indian or Alaska Native',
+          'Asian',
+          'Native Hawaiian or Other Pacific Islander',
+          'Unknown',
+          'Other',
+        ],
+      },
+      {
+        name: 'ethnicity_name',
+        type: 'VARCHAR',
+        description: 'Patient ethnicity string from source data',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'ethnicity_category',
+        type: 'VARCHAR',
+        description:
+          "Description of patient's ethnicity per the US census definition. The source data may contain different strings for ethnicity.",
+        values: ['Hispanic', 'Non-Hispanic', 'Unknown'],
+      },
+      {
+        name: 'sex_name',
+        type: 'VARCHAR',
+        description: "Patient's biological sex as given in the source data.",
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'sex_category',
+        type: 'VARCHAR',
+        description: "Patient's biological sex.",
+        values: ['Male', 'Female', 'Unknown'],
+      },
+      {
+        name: 'birth_date',
+        type: 'DATETIME',
+        description: "Patient's date of birth.",
+        restrictions: 'Date format should be YYYY-MM-DD',
+      },
+      {
+        name: 'death_dttm',
+        type: 'DATETIME',
+        description: "Patient's death date, including time.",
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
+      },
+      {
+        name: 'language_name',
+        type: 'VARCHAR',
+        description: "Patient's preferred language.",
+        restrictions: 'Original string from the source data',
+      },
+      {
+        name: 'language_category',
+        type: 'VARCHAR',
+        description: 'Maps language_name to a standardized list of spoken languages',
+        restrictions: 'List of language categories in CLIF',
+      },
+    ],
+    example: `| patient_id | race_name | race_category | ethnicity_name | ethnicity_category | sex_name | sex_category | birth_date | death_dttm | language_name | language_category |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 132424 | Black or African-American | Black or African American | Not Hispanic, Latino/a, or Spanish origin | Non-Hispanic | Male | Male | 2145-05-09 | NA | English | English |`,
+  },
+  {
+    id: 'patient-assessments',
+    name: 'Patient Assessments',
+    description:
+      'The patient_assessments table captures various assessments performed on patients across different domains, including neurological status, sedation levels, pain, and withdrawal. The table is designed to provide detailed information about the assessments, such as the name of the assessment, the category, and the recorded values.',
+    fields: [
+      {
+        name: 'hospitalization_id',
+        type: 'VARCHAR',
+        description:
+          'Primary Identifier. Unique identifier linking assessments to a specific patient hospitalization.',
+        restrictions: '',
+      },
+      {
+        name: 'recorded_dttm',
+        type: 'DATETIME',
+        description:
+          'The exact date and time when the assessment was recorded, ensuring temporal accuracy.',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
+      },
+      {
+        name: 'assessment_name',
+        type: 'VARCHAR',
+        description:
+          'Assessment Tool Name. The primary name of the assessment tool used (e.g., GCS, NRS, SAT Screen).',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'assessment_category',
+        type: 'VARCHAR',
+        description: 'Maps assessment_name to a standardized list of patient assessments',
+        restrictions: 'List of permissible assessment categories in CLIF',
+      },
+      {
+        name: 'assessment_group',
+        type: 'VARCHAR',
+        description:
+          'Broader Assessment Group. This groups the assessments into categories such as "Sedation," "Neurologic," "Pain," etc.',
+        restrictions: 'List of permissible assessment groups in CLIF',
+      },
+      {
+        name: 'numerical_value',
+        type: 'DOUBLE',
+        description:
+          'Numerical Assessment Result. The numerical result or score from the assessment component.',
+        restrictions: 'Applicable for assessments with numerical outcomes (e.g., 0-10, 3-15).',
+      },
+      {
+        name: 'categorical_value',
+        type: 'VARCHAR',
+        description:
+          'Categorical Assessment Result. The categorical outcome from the assessment component.',
+        restrictions:
+          'Applicable for assessments with categorical outcomes (e.g., Pass/Fail, Yes/No).',
+      },
+      {
+        name: 'text_value',
+        type: 'VARCHAR',
+        description:
+          'Textual Assessment Result. The textual explanation or notes from the assessment component.',
+        restrictions: 'Applicable for assessments requiring textual data.',
+      },
+    ],
+    example: `| hospitalization_id | recorded_dttm | assessment_name | assessment_category | assessment_group | numerical_value | categorical_value | text_value |
+|---|---|---|---|---|---|---|---|
+| 12345 | 2024-12-01 08:15:00+00:00 | NUR RA GLASGOW ADULT EYE OPENING | gcs_eye | Neurological | 4 | NA | NA |
+| 12345 | 2024-12-01 08:15:00+00:00 | NUR RA GLASGOW ADULT TOTAL | gcs_total | Neurological | 15 | NA | NA |`,
+  },
+  {
+    id: 'position',
+    name: 'Position',
+    description:
+      'The position table is a long form (one position per row) longitudinal table that captures all documented position changes of the patient. The table is designed for the explicit purpose of constructing the position_category CDE and identifying patients in prone position.',
+    fields: [
+      {
+        name: 'hospitalization_id',
+        type: 'VARCHAR',
+        description:
+          'ID variable for each patient encounter. This table only includes those encounters that have proning documented ever.',
+        restrictions: '',
+      },
+      {
+        name: 'recorded_dttm',
+        type: 'DATETIME',
+        description:
+          'Date and time when the vital is recorded. All datetime variables must be timezone-aware and set to UTC.',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00',
+      },
+      {
+        name: 'position_name',
+        type: 'VARCHAR',
+        description:
+          'This field is used to store the description of the position from the source data. This field is not used for analysis.',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'position_category',
+        type: 'VARCHAR',
+        description: 'Maps position_name to either prone or not prone.',
+        values: ['prone', 'not_prone'],
+      },
+    ],
+    example: `| hospitalization_id | recorded_dttm | position_name | position_category |
+|---|---|---|---|
+| 84 | 2123-06-20 00:00:00+00:00 | Supine–turn R | not_prone |
+| 84 | 2123-06-20 06:00:00+00:00 | Supine–turn L | not_prone |`,
+  },
+  {
+    id: 'respiratory-support',
+    name: 'Respiratory Support',
+    description:
+      'The respiratory support table is a wider longitudinal table that captures simultaneously recorded ventilator settings and observed ventilator parameters. The table is designed to capture the most common respiratory support devices and modes used in the ICU. It will be sparse for patients who are not on mechanical ventilation.',
+    fields: [
+      {
+        name: 'hospitalization_id',
+        type: 'VARCHAR',
+        description: 'ID variable for each patient encounter',
+        restrictions: '',
+      },
+      {
+        name: 'recorded_dttm',
+        type: 'DATETIME',
+        description: 'Date and time when the device settings and/or measurement was recorded.',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
+      },
+      {
+        name: 'device_name',
+        type: 'VARCHAR',
+        description: 'Includes raw string of the devices. Not used for analysis',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'device_category',
+        type: 'VARCHAR',
+        description:
+          'Maps device_name to a standardized list of respiratory support device categories',
+        values: [
+          'IMV',
+          'NIPPV',
+          'CPAP',
+          'High Flow NC',
+          'Face Mask',
+          'Trach Collar',
+          'Nasal Cannula',
+          'Room Air',
+          'Other',
+        ],
+      },
+      {
+        name: 'vent_brand_name',
+        type: 'VARCHAR',
+        description: 'Ventilator model name when device_category is IMV or NIPPV (Optional)',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'mode_name',
+        type: 'VARCHAR',
+        description: 'Includes raw string of the modes, e.g. "CMV volume control"',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'mode_category',
+        type: 'VARCHAR',
+        description: 'Maps mode_name to a standardized list of modes of mechanical ventilation',
+        values: [
+          'Assist Control-Volume Control',
+          'Pressure Control',
+          'Pressure-Regulated Volume Control',
+          'SIMV',
+          'Pressure Support/CPAP',
+          'Volume Support',
+          'Blow by',
+          'Other',
+        ],
+      },
+      {
+        name: 'tracheostomy',
+        type: 'INT',
+        description: 'Indicates if tracheostomy is present',
+        restrictions: '0 = No, 1 = Yes',
+      },
+      {
+        name: 'fio2_set',
+        type: 'DOUBLE',
+        description: 'Fraction of inspired oxygen set in decimals (e.g. 0.21)',
+        restrictions: 'See expected _set values for each device_category and mode_category',
+      },
+      {
+        name: 'lpm_set',
+        type: 'DOUBLE',
+        description: 'Liters per minute set',
+        restrictions: 'See expected _set values for each device_category and mode_category',
+      },
+      {
+        name: 'tidal_volume_set',
+        type: 'DOUBLE',
+        description: 'Tidal volume set (in mL)',
+        restrictions: 'See expected _set values for each device_category and mode_category',
+      },
+      {
+        name: 'resp_rate_set',
+        type: 'DOUBLE',
+        description: 'Respiratory rate set (in bpm)',
+        restrictions: 'See expected _set values for each device_category and mode_category',
+      },
+      {
+        name: 'pressure_control_set',
+        type: 'DOUBLE',
+        description: 'Pressure control set (in cmH2O)',
+        restrictions: 'See expected _set values for each device_category and mode_category',
+      },
+      {
+        name: 'pressure_support_set',
+        type: 'DOUBLE',
+        description: 'Pressure support set (in cmH2O)',
+        restrictions: 'See expected _set values for each device_category and mode_category',
+      },
+      {
+        name: 'flow_rate_set',
+        type: 'DOUBLE',
+        description: 'Flow rate set',
+        restrictions: 'See expected _set values for each device_category and mode_category',
+      },
+      {
+        name: 'peak_inspiratory_pressure_set',
+        type: 'DOUBLE',
+        description: 'Peak inspiratory pressure set (in cmH2O)',
+        restrictions: 'See expected _set values for each device_category and mode_category',
+      },
+      {
+        name: 'inspiratory_time_set',
+        type: 'DOUBLE',
+        description: 'Inspiratory time set (in seconds)',
+        restrictions: 'See expected _set values for each device_category and mode_category',
+      },
+      {
+        name: 'peep_set',
+        type: 'DOUBLE',
+        description: 'Positive-end-expiratory pressure set (in cmH2O)',
+        restrictions: 'See expected _set values for each device_category and mode_category',
+      },
+      {
+        name: 'tidal_volume_obs',
+        type: 'DOUBLE',
+        description: 'Observed tidal volume (in mL)',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'resp_rate_obs',
+        type: 'DOUBLE',
+        description: 'Observed respiratory rate (in bpm)',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'plateau_pressure_obs',
+        type: 'DOUBLE',
+        description: 'Observed plateau pressure (in cmH2O)',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'peak_inspiratory_pressure_obs',
+        type: 'DOUBLE',
+        description: 'Observed peak inspiratory pressure (in cmH2O)',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'peep_obs',
+        type: 'DOUBLE',
+        description: 'Observed positive-end-expiratory pressure (in cmH2O)',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'minute_vent_obs',
+        type: 'DOUBLE',
+        description: 'Observed minute ventilation (in liters)',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'mean_airway_pressure_obs',
+        type: 'DOUBLE',
+        description: 'Observed mean airway pressure',
+        restrictions: 'No restriction',
+      },
+    ],
+    notes: [
+      'Expected ventilator settings vary by device_category and mode_category. E = Expected, P = Possible',
+      'For IMV devices: Different modes require different settings (e.g., Volume Control requires tidal_volume_set, Pressure Control requires pressure_control_set)',
+      'For NIPPV: mode_category is Pressure Support/CPAP with fio2_set, peep_set, and pressure_support_set or peak_inspiratory_pressure_set required',
+      'For CPAP: mode_category is Pressure Support/CPAP with fio2_set and peep_set required',
+      'For High Flow NC: mode_category is NA with fio2_set and lpm_set required',
+      'For Face Mask: mode_category is NA with lpm_set required, fio2_set possible',
+      'For Trach Collar or Nasal Cannula: mode_category is NA with lpm_set required',
+    ],
+  },
+  {
+    id: 'vitals',
+    name: 'Vitals',
+    description: 'The vitals table is a long-form (one vital sign per row) longitudinal table.',
+    fields: [
+      {
+        name: 'hospitalization_id',
+        type: 'VARCHAR',
+        description: 'ID variable for each patient encounter.',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'recorded_dttm',
+        type: 'DATETIME',
+        description:
+          'Date and time when the vital is recorded. All datetime variables must be timezone-aware and set to UTC.',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
+      },
+      {
+        name: 'vital_name',
+        type: 'VARCHAR',
+        description:
+          'This field is used to store the description of the flowsheet measure from the source data. This field is not used for analysis.',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'vital_category',
+        type: 'VARCHAR',
+        description: 'Maps vital_name to a list standard vital sign categories',
+        values: [
+          'temp_c',
+          'heart_rate',
+          'sbp',
+          'dbp',
+          'spo2',
+          'respiratory_rate',
+          'map',
+          'height_cm',
+          'weight_kg',
+        ],
+      },
+      {
+        name: 'vital_value',
+        type: 'DOUBLE',
+        description:
+          'Recorded value of the vital. Ensure that the measurement unit is aligned with the permissible units of measurements.',
+        restrictions:
+          'temp_c = Celsius, height_cm = Centimeters, weight_kg = Kg, map = mm/Hg, spo2 = %. No unit for heart_rate, sbp, dbp, and respiratory_rate',
+      },
+      {
+        name: 'meas_site_name',
+        type: 'VARCHAR',
+        description:
+          'Site where the vital is recorded. No CDE corresponding to this variable (Optional field)',
+        restrictions: 'No restrictions. Note: no _category CDE variable exists yet',
+      },
+    ],
+    example: `| hospitalization_id | recorded_dttm | vital_name | vital_category | vital_value | meas_site_name |
+|---|---|---|---|---|---|
+| 20010012 | 2024-12-01 08:00:00+00:00 | HEIGHT | height_cm | 170.0 | unspecified |
+| 20010012 | 2024-12-01 08:30:00+00:00 | PULSE | heart_rate | 72.0 | unspecified |`,
+  },
+];
+
+// Define Concept tables
+const conceptTables = [
+  {
+    id: 'admission-diagnosis',
+    name: 'Admission Diagnosis',
+    description:
+      'Record of all diagnoses associated with the hospitalization. Expect breaking changes to this table as we seek to align it with existing diagnosis ontologies.',
+    fields: [
+      {
+        name: 'patient_id',
+        type: 'VARCHAR',
+        description: 'Unique identifier for each patient',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'diagnostic_code',
+        type: 'DOUBLE',
+        description: 'Numeric diagnosis code',
+        restrictions: 'Valid code in the diagnostic_code_format',
+      },
+      {
+        name: 'diagnosis_code_format',
+        type: 'VARCHAR',
+        description: 'Description of the diagnostic code format',
+        values: ['icd9', 'icd10'],
+      },
+      {
+        name: 'start_dttm',
+        type: 'DATETIME',
+        description: 'Date time the diagnosis was recorded',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00',
+      },
+      {
+        name: 'end_dttm',
+        type: 'DATETIME',
+        description: 'Date time the diagnosis was noted as resolved (if resolved)',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00',
+      },
+    ],
+  },
+  {
+    id: 'code-status',
+    name: 'Code Status',
+    description:
+      "This table provides a longitudinal record of changes in a patient's code status during their hospitalization. It tracks the timeline and categorization of code status updates, facilitating the analysis of care preferences and decisions.",
+    fields: [
+      {
+        name: 'hospitalization_id',
+        type: 'VARCHAR',
+        description:
+          'Unique identifier linking the code status event to a specific hospitalization in the CLIF database.',
+        restrictions: 'Unique identifier, e.g., 123456',
+      },
+      {
+        name: 'start_dttm',
+        type: 'DATETIME',
+        description: 'The date and time when the specific code status was initiated.',
+        restrictions: 'Example: 2024-12-03 08:30:00+00:00',
+      },
+      {
+        name: 'code_status_name',
+        type: 'VARCHAR',
+        description: 'The name/description of the code status.',
+        restrictions: 'Free text to describe the code status.',
+      },
+      {
+        name: 'code_status_category',
+        type: 'VARCHAR',
+        description: 'Categorical variable specifying the code status during the hospitalization.',
+        values: ['DNR', 'UDNR', 'DNR/DNI', 'Full', 'Presume Full', 'Other'],
+      },
+    ],
+    notes: ['The code_status_category set of permissible values is under development'],
+  },
+  {
+    id: 'crrt-therapy',
+    name: 'CRRT Therapy',
+    description:
+      'The crrt_therapy table captures Continuous Renal Replacement Therapy (CRRT) data, including different CRRT modalities, operational parameters, and fluid exchange details. The intermittent HD, peritoneal dialysis, PERT, and SLED tables are under development.',
+    fields: [
+      {
+        name: 'hospitalization_id',
+        type: 'VARCHAR',
+        description: 'Unique identifier for hospitalization episode',
+      },
+      { name: 'device_id', type: 'VARCHAR', description: 'Unique identifier for dialysis machine' },
+      {
+        name: 'recorded_dttm',
+        type: 'DATETIME',
+        description: 'Timestamp when CRRT parameters were recorded',
+      },
+      {
+        name: 'crrt_mode_name',
+        type: 'VARCHAR',
+        description: 'Name of CRRT mode (e.g., "CVVHDF")',
+      },
+      {
+        name: 'crrt_mode_category',
+        type: 'VARCHAR',
+        description: 'Standardized CRRT mode',
+        values: ['scuf', 'cvvh', 'cvvhd', 'cvvhdf'],
+      },
+      {
+        name: 'dialysis_machine_name',
+        type: 'VARCHAR',
+        description: 'Unique identifier for the dialysis machine',
+      },
+      {
+        name: 'blood_flow_rate',
+        type: 'DOUBLE',
+        description: 'Rate of blood flow through the CRRT circuit (mL/hr)',
+      },
+      {
+        name: 'pre_filter_replacement_fluid_rate',
+        type: 'DOUBLE',
+        description: 'Rate of pre-filter replacement fluid infusion (mL/hr)',
+      },
+      {
+        name: 'post_filter_replacement_fluid_rate',
+        type: 'DOUBLE',
+        description: 'Rate of post-filter replacement fluid infusion (mL/hr)',
+      },
+      {
+        name: 'dialysate_flow_rate',
+        type: 'DOUBLE',
+        description: 'Flow rate of dialysate solution (mL/hr)',
+      },
+      {
+        name: 'ultrafiltration_out',
+        type: 'DOUBLE',
+        description: 'Net ultrafiltration output (mL)',
+      },
+    ],
+    notes: [
+      'SCUF: Slow Continuous Ultrafiltration',
+      'CVVH: Continuous Veno-Venous Hemofiltration',
+      'CVVHD: Continuous Veno-Venous Hemodialysis',
+      'CVVHDF: Continuous Venous-Venous Hemodiafiltration',
+      "Different modalities require different parameters (e.g., SCUF doesn't use replacement fluids or dialysate)",
+    ],
+  },
+  {
+    id: 'ecmo-mcs',
+    name: 'ECMO/MCS',
+    description:
+      'The ECMO/MCS table is a wider longitudinal table that captures the start and stop times of ECMO/MCS support, the type of device used, and the work rate of the device.',
+    fields: [
+      {
+        name: 'hospitalization_id',
+        type: 'VARCHAR',
+        description: 'Unique identifier for the hospitalization event.',
+      },
+      {
+        name: 'recorded_dttm',
+        type: 'DATETIME',
+        description: 'Date and time when the device settings and/or measurement was recorded.',
+      },
+      {
+        name: 'device_name',
+        type: 'VARCHAR',
+        description:
+          'Name of the ECMO/MCS device used including brand information, e.g. "Centrimag"',
+      },
+      {
+        name: 'device_category',
+        type: 'VARCHAR',
+        description: 'Maps device_name to a standardized mCIDE',
+        values: ['Impella', 'Centrimag', 'TandemHeart', 'HeartMate', 'ECMO', 'Other'],
+      },
+      {
+        name: 'mcs_group',
+        type: 'VARCHAR',
+        description: 'Maps device_category to a standardized mCIDE of MCS types',
+        values: ['durable_LVAD', 'temporary_LVAD', 'RVAD', 'IABP', 'ECMO'],
+      },
+      {
+        name: 'device_metric_name',
+        type: 'VARCHAR',
+        description: 'String that captures the measure of work rate of the device, e.g., RPMs.',
+      },
+      {
+        name: 'device_rate',
+        type: 'DOUBLE',
+        description: 'Numeric value of work rate, e.g., 3000 RPMs.',
+      },
+      { name: 'flow', type: 'DOUBLE', description: 'Blood flow in L/min.' },
+      { name: 'sweep', type: 'DOUBLE', description: 'Gas flow rate in L/min.' },
+      { name: 'fdO2', type: 'DOUBLE', description: 'Fraction of delivered oxygen.' },
+    ],
+  },
+  {
+    id: 'intake-output',
+    name: 'Intake/Output',
+    description:
+      'The intake_output table is long form table that captures the times intake and output events were recorded, the type of fluid administered or recorded as "out", and the amount of fluid.',
+    fields: [
+      {
+        name: 'hospitalization_id',
+        type: 'VARCHAR',
+        description: 'Unique identifier for the hospitalization event.',
+      },
+      { name: 'intake_dttm', type: 'DATETIME', description: 'Date and time of intake.' },
+      { name: 'fluid_name', type: 'VARCHAR', description: 'Name of the fluid administered.' },
+      { name: 'amount', type: 'DOUBLE', description: 'Amount of fluid administered (in mL).' },
+      {
+        name: 'in_out_flag',
+        type: 'INT',
+        description: 'Indicator for intake or output (1 for intake, 0 for output).',
+      },
+    ],
+  },
+  {
+    id: 'invasive-hemodynamics',
+    name: 'Invasive Hemodynamics',
+    description:
+      "The invasive_hemodynamics table records invasive hemodynamic measurements during a patient's hospitalization. These measurements represent pressures recorded via invasive monitoring and are expressed in millimeters of mercury (mmHg).",
+    fields: [
+      {
+        name: 'hospitalization_id',
+        type: 'VARCHAR',
+        description: 'Unique identifier linking to the specific hospitalization.',
+      },
+      {
+        name: 'recorded_dttm',
+        type: 'DATETIME',
+        description: 'The date and time when the measurement was recorded.',
+      },
+      {
+        name: 'measure_name',
+        type: 'VARCHAR',
+        description: 'Description of the site or context of the invasive hemodynamic measurement.',
+        restrictions: 'Free text (e.g., "Right Atrium")',
+      },
+      {
+        name: 'measure_category',
+        type: 'VARCHAR',
+        description:
+          'Categorical variable specifying the type of invasive hemodynamic measurement.',
+        values: ['CVP', 'RA', 'RV', 'PA_systolic', 'PA_diastolic', 'PA_mean', 'PCWP'],
+      },
+      {
+        name: 'measure_value',
+        type: 'DOUBLE',
+        description: 'The numerical value of the invasive hemodynamic measurement in mmHg.',
+        restrictions: 'Positive decimal values (e.g., 5.00, 25.65)',
+      },
+    ],
+    notes: [
+      'All measure_value entries should be recorded in mmHg.',
+      'CVP - Central Venous Pressure',
+      'RA - Right Atrial Pressure',
+      'RV - Right Ventricular Pressure',
+      'PA_systolic - Pulmonary Artery Systolic Pressure',
+      'PA_diastolic - Pulmonary Artery Diastolic Pressure',
+      'PA_mean - Pulmonary Artery Mean Pressure',
+      'PCWP - Pulmonary Capillary Wedge Pressure',
+    ],
+  },
+  {
+    id: 'key-icu-orders',
+    name: 'Key ICU Orders',
+    description:
+      'The key_icu_orders table captures key orders related to physical therapy (PT) and occupational therapy (OT) during ICU stays. It includes details about the hospitalization, the timing of the order, the specific name of the order, its category, and the status of the order (completed or sent).',
+    fields: [
+      {
+        name: 'hospitalization_id',
+        type: 'VARCHAR',
+        description: 'Unique identifier linking the order to a specific hospitalization.',
+      },
+      {
+        name: 'order_dttm',
+        type: 'DATETIME',
+        description: 'Date and time when the order was placed.',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00',
+      },
+      {
+        name: 'order_name',
+        type: 'VARCHAR',
+        description: 'Name of the specific order (e.g., "PT Evaluation", "OT Treatment").',
+      },
+      {
+        name: 'order_category',
+        type: 'VARCHAR',
+        description: 'Category of the order.',
+        restrictions:
+          'Under-development. Examples: PT_evaluation, PT_treat, OT_evaluation, OT_treat',
+      },
+      {
+        name: 'order_status_name',
+        type: 'VARCHAR',
+        description: 'Status of the order.',
+        values: ['sent', 'completed'],
+      },
+    ],
+  },
+  {
+    id: 'medication-admin-intermittent',
+    name: 'Medication Admin Intermittent',
+    description:
+      'This table has exactly the same schema as medication_admin_continuous. The consortium decided to separate the medications that are administered intermittently from the continuously administered medications.',
+    fields: [
+      {
+        name: 'hospitalization_id',
+        type: 'VARCHAR',
+        description: 'ID variable for each patient encounter',
+      },
+      {
+        name: 'med_order_id',
+        type: 'VARCHAR',
+        description:
+          'Medication order ID. Foreign key to link this table to other medication tables',
+      },
+      {
+        name: 'admin_dttm',
+        type: 'DATETIME',
+        description:
+          'Date and time when the medicine was administered. All datetime variables must be timezone-aware and set to UTC.',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
+      },
+      {
+        name: 'med_name',
+        type: 'VARCHAR',
+        description: 'Original med name string recorded in the raw data',
+      },
+      {
+        name: 'med_category',
+        type: 'VARCHAR',
+        description:
+          'Maps med_name to a limited set of active ingredients for important ICU medications',
+        restrictions: 'List of intermittent medication categories in CLIF',
+      },
+      {
+        name: 'med_group',
+        type: 'VARCHAR',
+        description: 'Limited number of ICU medication groups identified by the CLIF consortium',
+      },
+      { name: 'med_route_name', type: 'VARCHAR', description: 'Medicine delivery route' },
+      {
+        name: 'med_route_category',
+        type: 'VARCHAR',
+        description: 'Maps med_route_name to a standardized list of medication delivery routes',
+        restrictions: 'Under-development',
+      },
+      { name: 'med_dose', type: 'DOUBLE', description: 'Quantity taken in dose' },
+      { name: 'med_dose_unit', type: 'VARCHAR', description: 'Unit of dose' },
+      {
+        name: 'mar_action_name',
+        type: 'VARCHAR',
+        description: 'MAR (medication administration record) action',
+      },
+      {
+        name: 'mar_action_category',
+        type: 'VARCHAR',
+        description: 'Maps mar_action_name to a standardized list of MAR actions',
+        restrictions: 'Under-development',
+      },
+    ],
+  },
+  {
+    id: 'medication-orders',
+    name: 'Medication Orders',
+    description:
+      'This table records the ordering (not administration) of medications. The table is in long form (one medication order per row) longitudinal table. Linkage to the medication_admin_continuous and medication_admin_intermittent tables is through the med_order_id field.',
+    fields: [
+      {
+        name: 'hospitalization_id',
+        type: 'VARCHAR',
+        description:
+          'Unique identifier for each hospitalization, linking medication orders to a specific encounter',
+        restrictions: 'No restrictions',
+      },
+      {
+        name: 'med_order_id',
+        type: 'VARCHAR',
+        description: 'Unique identifier for each medication order',
+        restrictions: 'No restrictions',
+      },
+      {
+        name: 'order_start_dttm',
+        type: 'DATETIME',
+        description: 'Date and time when the medication order was initiated',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00',
+      },
+      {
+        name: 'order_end_dttm',
+        type: 'DATETIME',
+        description: 'Date and time when the medication order ended or was discontinued',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00',
+      },
+      {
+        name: 'ordered_dttm',
+        type: 'DATETIME',
+        description: 'Date and time when the medication was actually ordered',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00',
+      },
+      {
+        name: 'med_name',
+        type: 'VARCHAR',
+        description: 'Name of the medication ordered',
+        restrictions: 'No restrictions',
+      },
+      {
+        name: 'med_category',
+        type: 'VARCHAR',
+        description: 'Maps med_name to a list of permissible medication names',
+        restrictions:
+          'Combined CDE of medication_admin_continuous and medication_admin_intermittent',
+      },
+      {
+        name: 'med_group',
+        type: 'VARCHAR',
+        description: 'Limited number of medication groups identified by the CLIF consortium',
+      },
+      {
+        name: 'med_order_status_name',
+        type: 'VARCHAR',
+        description: 'Status of the medication order, e.g. "held", or "given"',
+        restrictions: 'No restrictions',
+      },
+      {
+        name: 'med_order_status_category',
+        type: 'VARCHAR',
+        description:
+          'Maps med_order_status_name to a standardized list of medication order statuses',
+        restrictions: 'Under-development',
+      },
+      {
+        name: 'med_route_name',
+        type: 'VARCHAR',
+        description: 'Route of administration for the medication',
+        restrictions: 'No restrictions, Examples include Oral, Intravenous',
+      },
+      {
+        name: 'med_dose',
+        type: 'DOUBLE',
+        description: 'Dosage of the medication ordered',
+        restrictions: 'Numeric',
+      },
+      {
+        name: 'med_dose_unit',
+        type: 'VARCHAR',
+        description: 'Unit of measurement for the medication dosage',
+        restrictions: 'Examples include mg, mL, units',
+      },
+      {
+        name: 'med_frequency',
+        type: 'VARCHAR',
+        description: 'Frequency with which the medication is administered, as per the order',
+        restrictions: 'Examples include Once Daily, Every 6 hours',
+      },
+      {
+        name: 'prn',
+        type: 'BOOLEAN',
+        description: 'Indicates whether the medication is to be given "as needed" (PRN)',
+        restrictions: '0 (No), 1 (Yes)',
+      },
+    ],
+  },
+  {
+    id: 'microbiology-culture',
+    name: 'Microbiology Culture',
+    description:
+      'The microbiology culture table is a wide longitudinal table that captures the order and result times of microbiology culture tests, the type of fluid collected, the component of the test, and the organism identified.',
+    fields: [
+      {
+        name: 'hospitalization_id',
+        type: 'VARCHAR',
+        description: 'ID variable for each patient encounter.',
+      },
+      {
+        name: 'order_dttm',
+        type: 'DATETIME',
+        description: 'Date and time when the test is ordered.',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00',
+      },
+      {
+        name: 'collect_dttm',
+        type: 'DATETIME',
+        description: 'Date and time when the specimen is collected.',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00',
+      },
+      {
+        name: 'result_dttm',
+        type: 'DATETIME',
+        description: 'Date and time when the results are available.',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00',
+      },
+      {
+        name: 'fluid_name',
+        type: 'VARCHAR',
+        description:
+          'Cleaned fluid name string from the raw data. This field is not used for analysis.',
+        restrictions: 'No restriction. Check file for examples',
+      },
+      {
+        name: 'fluid_category',
+        type: 'VARCHAR',
+        description: 'Fluid categories defined according to the NIH common data elements.',
+        restrictions: 'CDE NIH Infection Site',
+      },
+      {
+        name: 'method_name',
+        type: 'VARCHAR',
+        description: 'Original method names from the source data.',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'method_category',
+        type: 'VARCHAR',
+        description: 'Maps method_name to a standardized list of method categories',
+        values: ['culture', 'gram stain', 'smear'],
+      },
+      {
+        name: 'organism_category',
+        type: 'VARCHAR',
+        description:
+          'Cleaned organism name string from the raw data. This field is not used for analysis.',
+        restrictions: 'No restriction. Check file for examples',
+      },
+      {
+        name: 'organism_group',
+        type: 'VARCHAR',
+        description: 'Maps organism_name to the standardized list of organisms in the NIH CDE',
+        restrictions: 'CDE NIH Organism',
+      },
+    ],
+  },
+  {
+    id: 'microbiology-non-culture',
+    name: 'Microbiology Non-culture',
+    description:
+      'The microbiology non-culture table is a wide longitudinal table that captures the order and result times of non-culture microbiology tests, the type of fluid collected, the component of the test, and the result of the test.',
+    fields: [
+      {
+        name: 'hospitalization_id',
+        type: 'VARCHAR',
+        description: 'Unique identifier for the hospitalization event.',
+      },
+      {
+        name: 'result_dttm',
+        type: 'DATETIME',
+        description: 'Date and time when the non-culture result was obtained.',
+      },
+      {
+        name: 'collect_dttm',
+        type: 'DATETIME',
+        description: 'Date and time when the sample was collected.',
+      },
+      {
+        name: 'order_dttm',
+        type: 'DATETIME',
+        description: 'Date and time when the test was ordered.',
+      },
+      { name: 'fluid_name', type: 'VARCHAR', description: 'Name of the fluid sample.' },
+      {
+        name: 'component_category',
+        type: 'VARCHAR',
+        description: 'Category of the component tested.',
+      },
+      {
+        name: 'result_unit_category',
+        type: 'VARCHAR',
+        description: 'Unit category of the test result.',
+      },
+      { name: 'result_category', type: 'VARCHAR', description: 'Category of the test result.' },
+    ],
+  },
+  {
+    id: 'procedures',
+    name: 'Procedures',
+    description:
+      'A longitudinal record of each bedside ICU procedure performed on the patient (e.g. central line placement, chest tube placement). Note that this table is not intended to capture the full set of procedures performed on inpatients.',
+    fields: [
+      {
+        name: 'hospitalization_id',
+        type: 'VARCHAR',
+        description:
+          'Unique identifier for each hospitalization, linking the procedure to a specific encounter',
+      },
+      {
+        name: 'procedure_name',
+        type: 'VARCHAR',
+        description: 'Name of the procedure performed on the patient',
+        restrictions: 'Examples include "Central Line Placement"',
+      },
+      {
+        name: 'procedure_category',
+        type: 'VARCHAR',
+        description: 'Maps procedure_name to a list of standardized procedures',
+        restrictions: 'CDE under development',
+      },
+      {
+        name: 'diagnosis',
+        type: 'VARCHAR',
+        description: 'The diagnosis or reason for performing the procedure',
+      },
+      {
+        name: 'start_dttm',
+        type: 'DATETIME',
+        description: 'Date and time when the procedure was initiated',
+      },
+    ],
+  },
+  {
+    id: 'provider',
+    name: 'Provider',
+    description: 'Continuous start stop record of every provider who cared for the patient.',
+    fields: [
+      {
+        name: 'hospitalization_id',
+        type: 'VARCHAR',
+        description:
+          'Unique identifier for each hospitalization, linking the provider to a specific encounter',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'provider_id',
+        type: 'VARCHAR',
+        description:
+          'Unique identifier for each provider. This represents individual healthcare providers',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'start_dttm',
+        type: 'DATETIME',
+        description:
+          "Date and time when the provider's care or involvement in the patient's case began",
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00',
+      },
+      {
+        name: 'stop_dttm',
+        type: 'DATETIME',
+        description:
+          "Date and time when the provider's care or involvement in the patient's case ended",
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00',
+      },
+      {
+        name: 'provider_role_name',
+        type: 'VARCHAR',
+        description:
+          'The original string describing the role or specialty of the provider during the hospitalization',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'provider_role_category',
+        type: 'VARCHAR',
+        description: 'Maps provider_role_name to list of standardized provider roles',
+        restrictions: 'under development',
+      },
+    ],
+  },
+  {
+    id: 'sensitivity',
+    name: 'Sensitivity',
+    description:
+      'This table is used to store the susceptibility results of the organisms identified in the Microbiology Culture table and may be renamed to Microbiology_Susceptibility',
+    fields: [
+      {
+        name: 'culture_id',
+        type: 'VARCHAR',
+        description:
+          'Unique identifier linking to the culture from which the sensitivity test was performed',
+      },
+      {
+        name: 'antibiotic',
+        type: 'VARCHAR',
+        description: 'Name of the antibiotic tested for sensitivity',
+        restrictions: 'Examples include Penicillin, Vancomycin',
+      },
+      {
+        name: 'sensitivity',
+        type: 'VARCHAR',
+        description:
+          "The result of the sensitivity test, indicating the organism's resistance or susceptibility",
+        values: ['Resistant', 'Intermediate', 'Susceptible'],
+      },
+      {
+        name: 'mic',
+        type: 'DOUBLE',
+        description:
+          'Minimum Inhibitory Concentration (MIC) value, which measures the lowest concentration of an antibiotic needed to inhibit growth',
+      },
+    ],
+  },
+  {
+    id: 'therapy-details',
+    name: 'Therapy Details',
+    description:
+      'The therapy_details table is a wide longitudinal table that captures the details of therapy sessions. The table is designed to capture and categorize the most common therapy elements used in the ICU.',
+    fields: [
+      {
+        name: 'hospitalization_id',
+        type: 'VARCHAR',
+        description: 'Unique identifier for the hospitalization event.',
+      },
+      {
+        name: 'session_start_dttm',
+        type: 'DATETIME',
+        description: 'Date and time when the therapy session started.',
+      },
+      {
+        name: 'therapy_element_name',
+        type: 'VARCHAR',
+        description: 'Name of the therapy element.',
+      },
+      {
+        name: 'therapy_element_category',
+        type: 'VARCHAR',
+        description: 'Category of the therapy element.',
+      },
+      {
+        name: 'therapy_element_value',
+        type: 'DOUBLE',
+        description: 'Value associated with the therapy element.',
+      },
+    ],
+  },
+  {
+    id: 'transfusion',
+    name: 'Transfusion',
+    description:
+      'This table provides detailed information about transfusion events linked to specific hospitalizations.',
+    fields: [
+      {
+        name: 'hospitalization_id',
+        type: 'VARCHAR',
+        description:
+          'Unique identifier linking the transfusion event to a specific hospitalization in the CLIF database.',
+        restrictions: 'Unique identifier, e.g., 123456',
+      },
+      {
+        name: 'transfusion_start_dttm',
+        type: 'DATETIME',
+        description: 'The date and time the transfusion of the blood component began.',
+        restrictions: 'Example: 2024-12-03 08:30:00+00:00',
+      },
+      {
+        name: 'transfusion_end_dttm',
+        type: 'DATETIME',
+        description: 'The date and time the transfusion of the blood component ended.',
+        restrictions: 'Example: 2024-12-03 10:00:00+00:00',
+      },
+      {
+        name: 'component_name',
+        type: 'VARCHAR',
+        description: 'The name of the blood component transfused.',
+        restrictions: 'E.g., Red Blood Cells, Plasma, Platelets',
+      },
+      {
+        name: 'attribute_name',
+        type: 'VARCHAR',
+        description: 'Attributes describing modifications to the component.',
+        restrictions: 'E.g., Leukocyte Reduced, Irradiated',
+      },
+      {
+        name: 'volume_transfused',
+        type: 'DOUBLE',
+        description: 'The volume of the blood component transfused.',
+        restrictions: 'Example: 300',
+      },
+      {
+        name: 'volume_units',
+        type: 'VARCHAR',
+        description: 'The unit of measurement for the transfused volume.',
+        restrictions: 'Example: mL',
+      },
+      {
+        name: 'product_code',
+        type: 'VARCHAR',
+        description: 'ISBT 128 Product Description Code representing the specific blood product.',
+        restrictions: 'Example: E0382',
+      },
+    ],
+  },
+];
+
+// Prepare table items for navigation
+const allTables = [
+  ...betaTables.map((t) => ({ id: t.id, name: t.name, maturity: 'beta' as const })),
+  ...conceptTables.map((t) => ({ id: t.id, name: t.name, maturity: 'concept' as const })),
+];
+---
+
+<BaseLayout
+  title="Data Dictionary"
+  description="CLIF-2.1.0 Data Dictionary - A comprehensive guide to the Common Longitudinal ICU data Format"
+>
+  <div class="container mx-auto px-6 py-12 flex gap-8">
+    <!-- Sidebar -->
+    <aside class="hidden lg:block w-64 flex-shrink-0">
+      <TableOfContents tables={allTables} />
+    </aside>
+
+    <!-- Main content -->
+    <div class="flex-1 min-w-0">
+      <h1 class="text-4xl font-bold text-clif-burgundy mb-6">CLIF-2.1.0 Data Dictionary</h1>
+
+      <div class="prose prose-lg max-w-none">
+        <p class="text-xl mb-8">
+          The CLIF Data Dictionary serves as a comprehensive guide to the Common Longitudinal ICU
+          data Format, detailing the structure and purpose of each table within the framework.
+          Designed to standardize and harmonize electronic health record data across multiple
+          institutions, the dictionary outlines the entity-relationship model, variable definitions,
+          and permissible values.
+        </p>
+
+        <div class="my-8">
+          <OptimizedImage
+            src="/images/ERD-2.1.0.png"
+            alt="CLIF Entity Relationship Diagram showing connections between all tables including Patient, Hospitalization, ADT, Labs, Vitals, Medications, and other clinical data tables"
+            class="w-full max-w-5xl mx-auto border shadow-lg rounded-lg"
+            sizes="(max-width: 1280px) 100vw, 1280px"
+          />
+        </div>
+
+        <h2 class="text-3xl font-bold text-clif-burgundy mt-12 mb-4">Beta Tables</h2>
+        <div class="mb-8 p-4 bg-amber-50 border-l-4 border-amber-400 rounded-lg">
+          <p class="flex items-start gap-2">
+            <Badge maturity="beta" />
+            <span>
+              The table purpose, structure, and field names for beta tables is complete and used in
+              at least one federated CLIF project. The <a
+                href="/mCIDE"
+                class="text-clif-burgundy hover:underline font-semibold"
+                >minimum Common ICU Data Elements (mCIDE)</a
+              >
+              for category variables is defined. Actively testing the table's practical use in projects.
+              Breaking changes unlikely, but backward compatible updates in future minor versions possible.
+            </span>
+          </p>
+        </div>
+
+        <div class="space-y-8">
+          {
+            betaTables.map((table) => (
+              <DataTableEnhanced
+                id={table.id}
+                name={table.name}
+                description={table.description}
+                fields={table.fields}
+                maturity="beta"
+                notes={table.notes}
+                example={table.example}
+              />
+            ))
+          }
+        </div>
+
+        <h2 class="text-3xl font-bold text-clif-burgundy mt-16 mb-4">Concept Tables</h2>
+        <div class="mb-8 p-4 bg-orange-50 border-l-4 border-orange-400 rounded-lg">
+          <p class="flex items-start gap-2">
+            <Badge maturity="concept" />
+            <span>
+              A planned future CLIF table that has yet to be used in a federated project. The table
+              structure and CDE elements are in draft form. Permissible values of category variables
+              may still need to be defined. Seeking conceptual feedback. Significant changes to all
+              aspects of the table are possible.
+            </span>
+          </p>
+        </div>
+
+        <div class="space-y-8">
+          {
+            conceptTables.map((table) => (
+              <DataTableEnhanced
+                id={table.id}
+                name={table.name}
+                description={table.description}
+                fields={table.fields}
+                maturity="concept"
+                notes={table.notes}
+                example={table.example}
+              />
+            ))
+          }
+        </div>
+
+        <h2 class="text-3xl font-bold text-clif-burgundy mt-16 mb-4">Future Proposed Tables</h2>
+        <div class="bg-gray-100 p-6 rounded-lg mb-8">
+          <p class="text-gray-700 mb-4">
+            These are tables without any defined structure that the consortium has not yet committed
+            to implementing:
+          </p>
+          <ul class="list-disc list-inside text-gray-700">
+            <li>
+              <strong>Clinical Decision Support</strong>: This table will capture the actions of
+              clinical decision support tools embedded in the EHR. The table will have the following
+              fields: cds_name, cds_category, cds_value, cds_trigger_ddtm.
+            </li>
+          </ul>
+        </div>
+
+        <h2 class="text-3xl font-bold text-clif-burgundy mt-16 mb-4">Data Standards</h2>
+        <div class="bg-blue-50 p-6 rounded-lg mb-8">
+          <h3 class="text-xl font-semibold mb-3">Important Implementation Notes:</h3>
+          <ul class="list-disc list-inside space-y-2 text-gray-700">
+            <li>
+              All datetime fields must be timezone-aware and set to UTC with format: <code
+                class="bg-gray-200 px-2 py-1 rounded text-sm">YYYY-MM-DD HH:MM:SS+00:00</code
+              >
+            </li>
+            <li>
+              Category fields map raw name fields to standardized values for consistency across
+              institutions
+            </li>
+            <li>
+              Several category mappings are marked as "under development" and will be refined in
+              future releases
+            </li>
+            <li>
+              Tables use <code class="bg-gray-200 px-2 py-1 rounded text-sm"
+                >hospitalization_id</code
+              > as the primary linking field
+            </li>
+            <li>
+              Original source data is preserved in <code
+                class="bg-gray-200 px-2 py-1 rounded text-sm">_name</code
+              > fields while standardized values are in <code
+                class="bg-gray-200 px-2 py-1 rounded text-sm">_category</code
+              > fields
+            </li>
+            <li>
+              The mCIDE (minimum Common ICU Data Elements) define the essential standardized
+              variables for critical care research
+            </li>
+          </ul>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+          <div class="glass rounded-lg p-6">
+            <h3 class="text-lg font-semibold mb-2 text-clif-burgundy">Version Information</h3>
+            <p class="text-gray-700">
+              This documentation represents CLIF version 2.1.0, which includes enhancements to
+              support federated analytics and improved data harmonization capabilities.
+            </p>
+          </div>
+          <div class="glass rounded-lg p-6">
+            <h3 class="text-lg font-semibold mb-2 text-clif-burgundy">GitHub Repository</h3>
+            <p class="text-gray-700">
+              Access the complete CLIF specification, mCIDE mappings, and implementation examples
+              at:
+              <a
+                href="https://github.com/clif-consortium/CLIF"
+                class="text-clif-burgundy hover:underline block mt-1"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                github.com/clif-consortium/CLIF
+              </a>
+            </p>
+          </div>
+        </div>
+
+        <div
+          class="mt-12 p-6 bg-gradient-to-r from-clif-burgundy to-clif-burgundy-dark text-white rounded-lg text-center"
+        >
+          <p class="text-lg mb-4">Need to reference previous versions or track changes?</p>
+          <div class="flex justify-center gap-4">
+            <a
+              href="/data-dictionary/data-dictionary-2.0.0"
+              class="bg-white text-clif-burgundy px-6 py-2 rounded-lg hover:bg-gray-100 transition-colors font-semibold"
+            >
+              View v2.0.0
+            </a>
+            <a
+              href="/data-dictionary/change-log"
+              class="bg-white text-clif-burgundy px-6 py-2 rounded-lg hover:bg-gray-100 transition-colors font-semibold"
+            >
+              View Change Log
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>

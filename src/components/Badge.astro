@@ -1,0 +1,34 @@
+---
+export interface Props {
+  type: 'beta' | 'concept' | 'deprecated';
+  class?: string;
+}
+
+const { type, class: className = '' } = Astro.props;
+
+const badges = {
+  beta: {
+    src: '/images/badge_maturity_beta.png',
+    alt: 'Maturity: Beta',
+  },
+  concept: {
+    src: '/images/badge_maturity_concept.png',
+    alt: 'Maturity: Concept',
+  },
+  deprecated: {
+    src: '/images/badge_maturity_deprecated.png',
+    alt: 'Maturity: Deprecated',
+  },
+};
+
+const badge = badges[type];
+---
+
+<img
+  src={badge.src}
+  alt={badge.alt}
+  class={`inline-block ${className}`}
+  width="90"
+  height="20"
+  loading="lazy"
+/>

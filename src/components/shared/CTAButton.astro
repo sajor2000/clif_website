@@ -1,0 +1,69 @@
+---
+interface Props {
+  href: string;
+  variant?: 'primary' | 'secondary' | 'outline';
+  size?: 'small' | 'medium' | 'large';
+  external?: boolean;
+  class?: string;
+  ariaLabel?: string;
+}
+
+const {
+  href,
+  variant = 'primary',
+  size = 'medium',
+  external = false,
+  class: className = '',
+  ariaLabel,
+} = Astro.props;
+
+const variantClasses = {
+  primary: 'bg-clif-burgundy hover:bg-clif-burgundy-dark text-white',
+  secondary: 'bg-gray-600 hover:bg-gray-700 text-white',
+  outline:
+    'border-2 border-clif-burgundy text-clif-burgundy hover:bg-clif-burgundy hover:text-white',
+};
+
+const sizeClasses = {
+  small: 'py-1 px-3 text-sm',
+  medium: 'py-2 px-4',
+  large: 'py-3 px-6 text-lg',
+};
+
+const baseClasses =
+  'inline-flex items-center justify-center font-medium rounded transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-clif-burgundy';
+
+const externalProps = external
+  ? {
+      target: '_blank',
+      rel: 'noopener noreferrer',
+    }
+  : {};
+---
+
+<a
+  href={href}
+  class={`${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
+  aria-label={ariaLabel}
+  {...externalProps}
+>
+  <slot />
+  {
+    external && (
+      <svg
+        class="ml-2 -mr-1 w-4 h-4"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+        />
+      </svg>
+    )
+  }
+</a>

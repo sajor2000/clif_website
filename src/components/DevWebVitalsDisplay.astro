@@ -1,0 +1,124 @@
+---
+// DevWebVitalsDisplay.astro - Visual display of Web Vitals metrics for development only
+---
+
+<div
+  id="web-vitals-display"
+  class="fixed bottom-4 right-4 bg-white/90 backdrop-blur-sm dark:bg-gray-800/90 rounded-lg shadow-lg p-3 z-50 text-sm border border-gray-200 dark:border-gray-700 font-mono transition-opacity duration-300 opacity-70 hover:opacity-100"
+>
+  <div class="flex items-center justify-between mb-2">
+    <h3 class="text-xs font-bold text-gray-800 dark:text-gray-200">Core Web Vitals</h3>
+    <button
+      id="close-vitals"
+      class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-xs"
+    >
+      &times;
+    </button>
+  </div>
+  <div class="grid grid-cols-1 gap-1">
+    <div class="flex items-center justify-between">
+      <span class="text-xs text-gray-600 dark:text-gray-400">LCP</span>
+      <span id="lcp-value" class="text-xs font-medium">-</span>
+    </div>
+    <div class="flex items-center justify-between">
+      <span class="text-xs text-gray-600 dark:text-gray-400">CLS</span>
+      <span id="cls-value" class="text-xs font-medium">-</span>
+    </div>
+    <div class="flex items-center justify-between">
+      <span class="text-xs text-gray-600 dark:text-gray-400">INP</span>
+      <span id="inp-value" class="text-xs font-medium">-</span>
+    </div>
+    <div class="flex items-center justify-between">
+      <span class="text-xs text-gray-600 dark:text-gray-400">FCP</span>
+      <span id="fcp-value" class="text-xs font-medium">-</span>
+    </div>
+    <div class="flex items-center justify-between">
+      <span class="text-xs text-gray-600 dark:text-gray-400">TTFB</span>
+      <span id="ttfb-value" class="text-xs font-medium">-</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Only run in development
+  if (import.meta.env.DEV) {
+    // Use dynamic import for web-vitals
+    const loadWebVitals = async () => {
+      const { onCLS, onLCP, onINP, onFCP, onTTFB } = await import('web-vitals');
+
+      // Helper to format time values
+      const formatTime = (ms) => {
+        if (ms < 1000) return `${ms.toFixed(1)}ms`;
+        return `${(ms / 1000).toFixed(2)}s`;
+      };
+
+      // Helper to determine color based on performance
+      const getMetricColor = (name, value) => {
+        // Thresholds based on Google Core Web Vitals
+        const thresholds = {
+          LCP: { good: 2500, poor: 4000 }, // ms
+          CLS: { good: 0.1, poor: 0.25 }, // score (unitless)
+          INP: { good: 200, poor: 500 }, // ms
+          FCP: { good: 1800, poor: 3000 }, // ms
+          TTFB: { good: 800, poor: 1800 }, // ms
+        };
+
+        const metric = thresholds[name];
+        if (!metric) return 'text-gray-800 dark:text-gray-200';
+
+        if (value <= metric.good) return 'text-green-600 dark:text-green-400';
+        if (value <= metric.poor) return 'text-amber-600 dark:text-amber-400';
+        return 'text-red-600 dark:text-red-400';
+      };
+
+      // Update the display when metrics are available
+      onLCP((metric) => {
+        const element = document.getElementById('lcp-value');
+        if (element) {
+          element.textContent = formatTime(metric.value);
+          element.className = `text-xs font-medium ${getMetricColor('LCP', metric.value)}`;
+        }
+      });
+
+      onCLS((metric) => {
+        const element = document.getElementById('cls-value');
+        if (element) {
+          element.textContent = metric.value.toFixed(3);
+          element.className = `text-xs font-medium ${getMetricColor('CLS', metric.value)}`;
+        }
+      });
+
+      onINP((metric) => {
+        const element = document.getElementById('inp-value');
+        if (element) {
+          element.textContent = formatTime(metric.value);
+          element.className = `text-xs font-medium ${getMetricColor('INP', metric.value)}`;
+        }
+      });
+
+      onFCP((metric) => {
+        const element = document.getElementById('fcp-value');
+        if (element) {
+          element.textContent = formatTime(metric.value);
+          element.className = `text-xs font-medium ${getMetricColor('FCP', metric.value)}`;
+        }
+      });
+
+      onTTFB((metric) => {
+        const element = document.getElementById('ttfb-value');
+        if (element) {
+          element.textContent = formatTime(metric.value);
+          element.className = `text-xs font-medium ${getMetricColor('TTFB', metric.value)}`;
+        }
+      });
+
+      // Allow closing the display
+      document.getElementById('close-vitals')?.addEventListener('click', () => {
+        document.getElementById('web-vitals-display')?.remove();
+      });
+    };
+
+    // Execute the async function
+    loadWebVitals();
+  }
+</script>

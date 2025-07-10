@@ -1,0 +1,73 @@
+---
+import Badge from './Badge.astro';
+
+interface Field {
+  name: string;
+  type: string;
+  description: string;
+  values?: string[];
+}
+
+interface Props {
+  id: string;
+  name: string;
+  description: string;
+  fields: Field[];
+  maturity?: 'beta' | 'concept';
+}
+
+const { id, name, description, fields, maturity = 'beta' } = Astro.props;
+---
+
+<section id={id} class="bg-white p-6 rounded-lg shadow-md mb-8">
+  <h3 class="text-xl font-bold mb-2 flex items-center">
+    {name}
+    <Badge type={maturity} class="ml-3" />
+  </h3>
+  <p class="mb-4 text-gray-700">
+    {description}
+  </p>
+
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >Field</th
+          >
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >Type</th
+          >
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >Description</th
+          >
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >Permissible Values</th
+          >
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-200">
+        {
+          fields.map((field) => (
+            <tr>
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
+                {field.name}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{field.type}</td>
+              <td class="px-6 py-4 text-sm text-gray-900">{field.description}</td>
+              <td class="px-6 py-4 text-sm text-gray-500">
+                {field.values ? (
+                  <code class="text-xs bg-gray-100 px-1 py-0.5 rounded">
+                    {field.values.join(', ')}
+                  </code>
+                ) : (
+                  '-'
+                )}
+              </td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+</section>

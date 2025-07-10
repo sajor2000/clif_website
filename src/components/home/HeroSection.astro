@@ -1,0 +1,43 @@
+---
+// src/components/home/HeroSection.astro
+import Button from '../shared/Button.astro';
+---
+
+<section class="relative min-h-[600px] flex items-center">
+  <div class="container mx-auto px-6 py-20">
+    <div class="grid lg:grid-cols-2 gap-12 items-center">
+      <div>
+        <!-- CLIF Logo -->
+        <div class="flex items-center gap-4 mb-8">
+          <img src="/images/logos/clif-logo.svg" alt="CLIF" class="h-20 w-20" />
+        </div>
+
+        <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-6">
+          Common Longitudinal ICU data Format
+        </h2>
+
+        <p class="text-lg text-gray-600 mb-8 leading-relaxed">
+          A standardized format for critical care data enabling multi-center research and improving
+          patient outcomes through collaborative analysis.
+        </p>
+
+        <div class="flex flex-wrap gap-4">
+          <Button href="/research" variant="primary">Read the Study</Button>
+          <Button href="/dashboard" variant="outline">Explore Dashboard</Button>
+        </div>
+      </div>
+
+      <div class="relative">
+        <div class="bg-gray-100 rounded-2xl p-8 shadow-lg">
+          <div class="text-center">
+            <p class="text-sm text-gray-500 mb-2">Medical Data Visualization</p>
+            <!-- Placeholder for animated visualization -->
+            <div class="h-64 flex items-center justify-center">
+              <div class="animate-pulse text-gray-400">Interactive visualization coming soon</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

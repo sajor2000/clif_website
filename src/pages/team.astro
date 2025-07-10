@@ -1,0 +1,721 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import TeamMember from '../components/team/TeamMember.astro';
+import TeamMemberProfileCard from '../components/team/TeamMemberProfileCard.astro';
+import ErrorBoundary from '../components/ErrorBoundary.astro';
+---
+
+<BaseLayout
+  title="CLIF Consortium - Team"
+  description="Meet the CLIF Consortium team - Leading researchers and clinicians from 11 institutions working together to advance critical care research through standardized data formats."
+>
+  <div class="container mx-auto px-4 py-8">
+    <!-- Page Title -->
+    <div class="text-center mb-12">
+      <h1 class="text-5xl font-bold text-gray-900 mb-4">CLIF Team</h1>
+      <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+        Leading researchers and clinicians from 11 institutions working together to advance critical
+        care research through standardized data formats
+      </p>
+    </div>
+
+    <!-- Steering Committee -->
+    <section id="steering-committee" class="mb-16">
+      <div class="border-b-4 border-clif-burgundy pb-2 mb-8">
+        <h2 class="text-3xl font-bold text-gray-800">CLIF Steering Committee</h2>
+      </div>
+
+      <ErrorBoundary
+        fallback="Unable to load steering committee data. Please try refreshing the page."
+      >
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <TeamMemberProfileCard
+            name="Nicholas Ingraham"
+            degree="MD"
+            role="Co-Chair"
+            image="nicholas_ingraham.webp"
+            email="ningraham@uchicago.edu"
+            linkedinLink="https://www.linkedin.com/in/nicholas-ingraham/"
+            institution="UChicago Medicine"
+            department="Department of Medicine"
+            biography="Dr. Nicholas Ingraham is a physician-scientist and critical care specialist focusing on data standards and ICU informatics."
+            research={[
+              'Critical care data standards',
+              'Machine learning applications in ICU',
+              'CLIF Consortium leadership',
+            ]}
+            size="large"
+            expandable={true}
+            scholarLink="https://scholar.google.com/citations?user=ZKMVVHkAAAAJ&hl=en"
+          />
+
+          <TeamMemberProfileCard
+            name="Catherine Gao"
+            degree="MD"
+            role="Co-Chair"
+            image="catherine_gao.webp"
+            email="cgao@northwestern.edu"
+            linkedinLink="https://www.linkedin.com/in/catherine-gao"
+            institution="Northwestern Medicine"
+            department="Department of Medicine"
+            biography="Dr. Catherine Gao specializes in pulmonary and critical care medicine with research interests in health data standardization and interoperability."
+            research={['ICU data interoperability', 'Medical NLP', 'Clinical informatics']}
+            size="large"
+            expandable={true}
+            scholarLink="https://scholar.google.com/citations?user=IwClOEIAAAAJ&hl=en"
+          />
+
+          <TeamMember
+            name="Chad Hochberg"
+            degree="MD"
+            role="Vice-chair for New Member Integration"
+            image="chad_hochberg.webp"
+            scholarLink="https://scholar.google.com/citations?user=J4DvU4oAAAAJ&hl=en"
+            size="large"
+            linkedinLink="https://www.linkedin.com/in/ruth-iban-arias"
+          />
+
+          <TeamMember
+            name="Kaveri Chhikara"
+            degree="MS"
+            role="Vice-chair for Software Development"
+            image="kaveri_chhikara.webp"
+            linkedinLink="https://www.linkedin.com/in/kaverichhikara"
+            size="large"
+          />
+
+          <TeamMember
+            name="Vaishvik C."
+            degree="MS"
+            role="Vice-chair and Technical Lead"
+            image="vaishvik_chaudhary.webp"
+            linkedinLink="https://in.linkedin.com/in/vaishvik-chaudhary-71815b116?trk=people_directory"
+            size="large"
+          />
+
+          <TeamMember
+            name="Pat Lyons"
+            degree="MD"
+            role="Founding Vice-Chair"
+            image="pat_lyons.webp"
+            linkedinLink="https://nz.linkedin.com/in/pat-lyons-5689a926"
+            size="large"
+          />
+
+          <TeamMember
+            name="J.C. Rojas"
+            degree="MD"
+            role="Founding Vice-Chair"
+            image="jc_rojas.webp"
+            linkedinLink="https://www.linkedin.com/in/juan-rojas-911a55100"
+            size="large"
+            scholarLink="https://scholar.google.com/citations?user=cgsawgkAAAAJ&hl=ca"
+          />
+
+          <TeamMemberProfileCard
+            name="William Parker"
+            degree="MD, PhD"
+            role="Founding Executive Director"
+            image="william_parker.webp"
+            linkedinLink="https://www.linkedin.com/in/william-parker-md-phd-3057a9236/"
+            scholarLink="https://scholar.google.com/citations?user=jaBF4DEAAAAJ"
+            institution="UChicago Medicine"
+            department="Department of Medicine"
+            biography="Dr. William Parker is a physician-scientist whose work focuses on improving ICU care through data science and standardization. As Founding Executive Director of CLIF, he has helped establish critical data standards for ICU research."
+            research={[
+              'Critical care data science',
+              'ICU outcomes',
+              'Healthcare AI',
+              'Data standardization',
+            ]}
+            size="large"
+            expandable={true}
+          />
+        </div>
+      </ErrorBoundary>
+
+      <!-- Steering Committee Members -->
+      <section id="committee-members" class="mb-16">
+        <div class="border-b-4 border-clif-burgundy pb-2 mb-8">
+          <h2 class="text-3xl font-bold text-gray-800">CLIF Steering Committee Members</h2>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8">
+          <TeamMember
+            name="Alexander Ortiz"
+            degree="MD"
+            image="alexander_ortiz.webp"
+            linkedinLink="https://www.linkedin.com/in/aortiz38"
+          />
+
+          <TeamMember
+            name="Anna Barker"
+            degree="MD, PhD"
+            image="anna_barker.webp"
+            scholarLink="https://scholar.google.com/citations?user=F4kupm0AAAAJ&hl=en"
+            linkedinLink="https://uk.linkedin.com/in/dr-anna-barker"
+          />
+
+          <TeamMember
+            name="Casey Eddington"
+            degree="PhD"
+            image="casey_eddington.jpeg"
+            linkedinLink="https://www.linkedin.com/in/mailto-raymond-hastings-0519479a"
+          />
+
+          <TeamMember
+            name="Edward Schenck"
+            degree="MD"
+            image="edward_j_schenck.webp"
+            scholarLink="https://scholar.google.com/citations?user=AndXGDsAAAAJ&hl=en"
+            linkedinLink="https://www.linkedin.com/in/dbachar"
+          />
+
+          <TeamMember
+            name="Kevin Buell"
+            degree="MBBS"
+            image="kevin_buell.webp"
+            scholarLink="https://scholar.google.com/citations?hl=en&user=svuM0vcAAAAJ"
+            linkedinLink="https://www.linkedin.com/in/kevinbuell"
+          />
+
+          <TeamMember
+            name="Nathan Mesfin"
+            degree="MD"
+            image="nathan_mesfin.webp"
+            otherLink="https://med.umn.edu/bio/nathan-mesfin"
+            linkedinLink="https://www.linkedin.com/in/semariakebede"
+            scholarLink="https://scholar.google.com/citations?user=AndXGDsAAAAJ&hl=en"
+          />
+
+          <TeamMember
+            name="Siva Bhavani"
+            degree="MD"
+            image="siva_bhavani.webp"
+            scholarLink="https://scholar.google.com/citations?user=xSuWGTIAAAAJ&hl=en"
+            linkedinLink="https://www.linkedin.com/in/siva-bhavani-96124848"
+          />
+
+          <TeamMember
+            name="Snigdha Jain"
+            degree="MD"
+            image="snigdha_jain.webp"
+            linkedinLink="https://in.linkedin.com/in/snigdhaj13"
+          />
+        </div>
+      </section>
+    </section>
+
+    <!-- Collaborators by Site -->
+    <section id="collaborators" class="mb-16">
+      <div class="border-b-4 border-clif-burgundy pb-2 mb-8">
+        <h2 class="text-3xl font-bold text-gray-800">CLIF Collaborators by Site</h2>
+      </div>
+
+      <ErrorBoundary fallback="Unable to load collaborator data. Please try refreshing the page.">
+        <!-- University of Chicago -->
+        <div class="mb-12">
+          <h3
+            id="uchicago-medicine"
+            class="text-2xl font-bold mb-6 text-clif-burgundy border-b-2 border-gray-200 pb-2"
+          >
+            UChicago Medicine
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <TeamMemberProfileCard
+              name="William Parker"
+              degree="MD, PhD"
+              image="william_parker.webp"
+              scholarLink="https://scholar.google.com/citations?user=jaBF4DEAAAAJ&hl=en&oi=ao"
+              institution="UChicago Medicine"
+              size="small"
+              linkedinLink="https://www.linkedin.com/in/william-parker-md-phd-3057a9236/"
+            />
+            <TeamMemberProfileCard
+              name="Jay Koyner"
+              degree="MD"
+              image="jay_koyner.webp"
+              scholarLink="https://scholar.google.com/citations?hl=en&user=O_b_5pAAAAAJ"
+              institution="UChicago Medicine"
+              size="small"
+            />
+            <TeamMemberProfileCard
+              name="Kevin Smith"
+              degree="MD"
+              image="kevin_smith.webp"
+              websiteLink="https://hdsi.uchicago.edu/team/kevin-smith-md-ms/"
+              institution="UChicago Medicine"
+              size="small"
+            />
+            <TeamMember
+              name="Kevin Buell"
+              degree="MBBS"
+              image="kevin_buell.webp"
+              scholarLink="https://scholar.google.com/citations?hl=en&user=svuM0vcAAAAJ"
+              size="small"
+              linkedinLink="https://www.linkedin.com/in/kevinbuell"
+            />
+            <TeamMember
+              name="Bhakti Patel"
+              degree="MD"
+              image="bhakti_patel.webp"
+              scholarLink="https://scholar.google.com/citations?hl=en&user=Me-p5jkAAAAJ"
+              size="small"
+              linkedinLink="https://www.linkedin.com/in/bhakti-patel-a94092104"
+            />
+            <TeamMember
+              name="Kaveri Chhikara"
+              degree="MS"
+              image="kaveri_chhikara.webp"
+              linkedinLink="https://www.linkedin.com/in/kaverichhikara/"
+              size="small"
+            />
+            <TeamMember
+              name="Rachel Baccile"
+              degree="MPP"
+              image="rachel_baccile.webp"
+              linkedinLink="https://www.linkedin.com/in/milesjackson"
+              size="small"
+            />
+            <TeamMember
+              name="Kyle Carey"
+              degree="MS"
+              image="kyle_carey.webp"
+              linkedinLink="https://www.linkedin.com/in/kyle-carey-653687107/"
+              size="small"
+            />
+            <TeamMember
+              name="Haley Beck"
+              degree="MA"
+              image="haley_beck.webp"
+              linkedinLink="https://www.linkedin.com/in/haley-beck-m-a-559b46263/"
+              size="small"
+            />
+            <TeamMember
+              name="Zewei ('Whiskey') Liao"
+              degree="MS"
+              image="wan_ting_liao.webp"
+              linkedinLink="https://www.linkedin.com/in/zewei-whiskey-liao"
+              size="small"
+            />
+            <TeamMember
+              name="Dema Therese"
+              degree="MS"
+              image="dema_therese.webp"
+              linkedinLink="https://www.linkedin.com/in/dematherese"
+              size="small"
+            />
+            <TeamMember
+              name="Brett Beaulieu-Jones"
+              degree="PhD"
+              image="brett_beaulieu_jones.webp"
+              scholarLink="https://scholar.google.com/citations?user=2SvHNeQAAAAJ&hl=en"
+              size="small"
+            />
+            <TeamMember
+              name="Michael Burkhart"
+              degree="PhD"
+              image="michael_burkhart.webp"
+              linkedinLink="https://www.linkedin.com/in/burkh4rt/"
+              size="small"
+            />
+          </div>
+        </div>
+
+        <!-- Rush University -->
+        <div class="mb-12">
+          <h3
+            id="rush-university"
+            class="text-2xl font-bold mb-6 text-clif-burgundy border-b-2 border-gray-200 pb-2"
+          >
+            Rush University
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <TeamMember
+              name="J.C. Rojas"
+              degree="MD"
+              image="jc_rojas.webp"
+              scholarLink="https://scholar.google.com/citations?user=XXHTvWEAAAAJ&hl=en"
+              size="small"
+              linkedinLink="https://www.linkedin.com/in/juan-c-rojas-md-ms-3a7345190/"
+            />
+            <TeamMember
+              name="Vaishvik C."
+              degree="MS"
+              image="vaishvik_chaudhary.webp"
+              linkedinLink="https://www.linkedin.com/in/vgc25/"
+              size="small"
+            />
+          </div>
+        </div>
+
+        <!-- Northwestern University -->
+        <div class="mb-12">
+          <h3
+            id="northwestern-medicine"
+            class="text-2xl font-bold mb-6 text-clif-burgundy border-b-2 border-gray-200 pb-2"
+          >
+            Northwestern Medicine
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <TeamMember
+              name="Catherine Gao"
+              degree="MD"
+              image="catherine_gao.webp"
+              scholarLink="https://scholar.google.com/citations?hl=en&user=IwClOEIAAAAJ"
+              size="small"
+              linkedinLink="https://www.linkedin.com/in/cathyagao/"
+            />
+            <TeamMember
+              name="Yuan Luo"
+              degree="PhD"
+              image="yuan_luo.webp"
+              scholarLink="https://scholar.google.com/citations?hl=en&user=txsHQx4AAAAJ"
+              size="small"
+            />
+            <TeamMember
+              name="Chengsheng Mao"
+              degree="PhD"
+              image="chengsheng_mao.webp"
+              scholarLink="https://scholar.google.com/citations?user=vFO2btcAAAAJ&hl=en"
+              size="small"
+            />
+            <TeamMember
+              name="Saki Amagai"
+              degree="PhD"
+              image="saki_amagai.webp"
+              linkedinLink="https://www.linkedin.com/in/saki-amagai-25461ab5/"
+              size="small"
+            />
+            <TeamMember
+              name="Wan-Ting Liao"
+              degree="MS"
+              image="wan_ting_liao.webp"
+              linkedinLink="https://www.linkedin.com/in/wan-ting-liao/"
+              size="small"
+            />
+          </div>
+        </div>
+
+        <!-- Oregon Health & Science University -->
+        <div class="mb-12">
+          <h3
+            id="oregon-health-science-university"
+            class="text-2xl font-bold mb-6 text-clif-burgundy border-b-2 border-gray-200 pb-2"
+          >
+            Oregon Health & Science University
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <TeamMember
+              name="Pat Lyons"
+              degree="MD"
+              image="pat_lyons.webp"
+              scholarLink="https://scholar.google.com/citations?user=1S-Nm9cAAAAJ&hl=en&oi=sra"
+              size="small"
+              linkedinLink="https://www.linkedin.com/in/patrick-lyons-79183147/"
+            />
+            <TeamMember
+              name="Brenna Park-Egan"
+              degree="MS"
+              image="brenna_park_egan.webp"
+              size="small"
+            />
+          </div>
+        </div>
+
+        <!-- Johns Hopkins University -->
+        <div class="mb-12">
+          <h3
+            id="johns-hopkins-hospital"
+            class="text-2xl font-bold mb-6 text-clif-burgundy border-b-2 border-gray-200 pb-2"
+          >
+            The Johns Hopkins Hospital
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <TeamMember
+              name="Chad Hochberg"
+              degree="MD"
+              image="chad_hochberg.webp"
+              scholarLink="https://scholar.google.com/citations?hl=en&user=Yc6Zh2kAAAAJ"
+              size="small"
+            />
+          </div>
+        </div>
+
+        <!-- University of Minnesota -->
+        <div class="mb-12">
+          <h3
+            id="m-health-fairview"
+            class="text-2xl font-bold mb-6 text-clif-burgundy border-b-2 border-gray-200 pb-2"
+          >
+            M Health Fairview University of Minnesota Medical Center
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <TeamMember
+              name="Nicholas Ingraham"
+              degree="MD"
+              image="nicholas_ingraham.webp"
+              scholarLink="https://scholar.google.com/citations?hl=en&user=ZKMVVHkAAAAJ"
+              size="small"
+              linkedinLink="https://www.linkedin.com/in/nicholas-ingraham/"
+            />
+            <TeamMember
+              name="Nathan Mesfin"
+              degree="MD"
+              image="nathan_mesfin.webp"
+              otherLink="https://med.umn.edu/bio/nathan-mesfin"
+              size="small"
+            />
+            <TeamMember
+              name="Casey Eddington"
+              degree="PhD"
+              image="casey_eddington.webp"
+              linkedinLink="https://www.linkedin.com/in/casey-eddington/"
+              size="small"
+            />
+          </div>
+        </div>
+
+        <!-- Emory University -->
+        <div class="mb-12">
+          <h3
+            id="emory-healthcare"
+            class="text-2xl font-bold mb-6 text-clif-burgundy border-b-2 border-gray-200 pb-2"
+          >
+            Emory Healthcare
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <TeamMember
+              name="Siva Bhavani"
+              degree="MD"
+              image="siva_bhavani.webp"
+              scholarLink="https://scholar.google.com/citations?user=xSuWGTIAAAAJ&hl=en"
+              size="small"
+            />
+          </div>
+        </div>
+
+        <!-- Tufts University -->
+        <div class="mb-12">
+          <h3
+            id="tufts-university"
+            class="text-2xl font-bold mb-6 text-clif-burgundy border-b-2 border-gray-200 pb-2"
+          >
+            Tufts University
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <TeamMember
+              name="Susan Han"
+              degree="MD"
+              image="susan_han.webp"
+              scholarLink="https://scholar.google.com/citations?hl=en&user=qnzL2JUAAAAJ"
+              size="small"
+            />
+          </div>
+        </div>
+
+        <!-- University of Michigan -->
+        <div class="mb-12">
+          <h3
+            id="michigan-medicine"
+            class="text-2xl font-bold mb-6 text-clif-burgundy border-b-2 border-gray-200 pb-2"
+          >
+            Michigan Medicine
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <TeamMember
+              name="Anna Barker"
+              degree="MD, PhD"
+              image="anna_barker.webp"
+              scholarLink="https://scholar.google.com/citations?user=F4kupm0AAAAJ&hl=en"
+              size="small"
+            />
+            <TeamMember name="Mark Nuppnau" degree="MS" image="mark_nuppnau.webp" size="small" />
+          </div>
+        </div>
+
+        <!-- University of Pennsylvania -->
+        <div class="mb-12">
+          <h3
+            id="university-of-pennsylvania"
+            class="text-2xl font-bold mb-6 text-clif-burgundy border-b-2 border-gray-200 pb-2"
+          >
+            University of Pennsylvania
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <TeamMember
+              name="Gary E. Weissman"
+              degree="MD"
+              image="gary_e_weissman.webp"
+              scholarLink="https://scholar.google.com/citations?user=Ollx0JMAAAAJ&hl=en"
+              size="small"
+            />
+            <TeamMember
+              name="Alexander Ortiz"
+              degree="MD"
+              image="alexander_ortiz.webp"
+              linkedinLink="https://www.linkedin.com/in/alexander-ortiz-md-ms-124a5241/"
+              size="small"
+            />
+            <TeamMember
+              name="Katie Connell"
+              degree="PhD"
+              image="katie_connell_ms.webp"
+              scholarLink="https://scholar.google.com/citations?user=c_Ng2TQAAAAJ&hl=en"
+              size="small"
+            />
+            <TeamMember
+              name="Anuradha Vyas"
+              degree="MD, MPH"
+              image="anuradha_vyas_md_mph.webp"
+              linkedinLink="https://www.linkedin.com/in/dr-anuradha-vyas/"
+              size="small"
+            />
+            <TeamMember
+              name="Benjamin Schmid"
+              degree="MS"
+              image="benjamin_schmid_ms.webp"
+              linkedinLink="https://www.linkedin.com/in/benjamin-schmid-09199518a/?trk=public_post_feed-actor-name"
+              size="small"
+            />
+          </div>
+        </div>
+
+        <!-- Cornell University -->
+        <div class="mb-12">
+          <h3
+            id="cornell-university"
+            class="text-2xl font-bold mb-6 text-clif-burgundy border-b-2 border-gray-200 pb-2"
+          >
+            Cornell University
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <TeamMember
+              name="Edward J. Schenck"
+              degree="MD"
+              image="edward_j_schenck.webp"
+              scholarLink="https://scholar.google.com/citations?user=AndXGDsAAAAJ&hl=en"
+              size="small"
+            />
+          </div>
+        </div>
+
+        <!-- University of California San Francisco -->
+        <div class="mb-12">
+          <h3
+            id="ucsf-health"
+            class="text-2xl font-bold mb-6 text-clif-burgundy border-b-2 border-gray-200 pb-2"
+          >
+            UCSF Health
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <TeamMember
+              name="Aartik Sarma"
+              degree="MD"
+              image="aartik_sarma.webp"
+              scholarLink="https://scholar.google.com/citations?user=BCmu_34AAAAJ&hl=en"
+              size="small"
+            />
+            <TeamMember
+              name="Andrew Wilmore"
+              degree="MS"
+              image="andrew_wilmore.webp"
+              linkedinLink="https://www.linkedin.com/in/andrewwillmore/"
+              size="small"
+            />
+          </div>
+        </div>
+
+        <!-- University of Colorado -->
+        <div class="mb-12">
+          <h3
+            id="university-of-colorado"
+            class="text-2xl font-bold mb-6 text-clif-burgundy border-b-2 border-gray-200 pb-2"
+          >
+            University of Colorado
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <TeamMember
+              name="Jennifer Ginestra"
+              degree="MD"
+              image="jennifer_ginestra.webp"
+              scholarLink="https://scholar.google.com/citations?user=YRo_t84AAAAJ&hl=en"
+              size="small"
+            />
+          </div>
+        </div>
+
+        <!-- Yale University -->
+        <div class="mb-12">
+          <h3
+            id="yale-university"
+            class="text-2xl font-bold mb-6 text-clif-burgundy border-b-2 border-gray-200 pb-2"
+          >
+            Yale University
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <TeamMember
+              name="Snigdha Jain"
+              degree="MD"
+              image="snigdha_jain.webp"
+              linkedinLink="https://www.linkedin.com/in/snigdha-jain-5179a2327/"
+              size="small"
+            />
+          </div>
+        </div>
+
+        <!-- Harvard University -->
+        <div class="mb-12">
+          <h3
+            id="harvard-university"
+            class="text-2xl font-bold mb-6 text-clif-burgundy border-b-2 border-gray-200 pb-2"
+          >
+            Harvard University
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <TeamMember
+              name="Claire N Shappell"
+              degree="MD"
+              image="claireshappell.webp"
+              scholarLink="https://scholar.google.com/citations?hl=en&user=DvBE3dEAAAAJ"
+              size="small"
+            />
+          </div>
+        </div>
+
+        <!-- University of Alabama -->
+        <div class="mb-12">
+          <h3
+            id="university-of-alabama"
+            class="text-2xl font-bold mb-6 text-clif-burgundy border-b-2 border-gray-200 pb-2"
+          >
+            University of Alabama
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <TeamMember
+              name="Amy Wang"
+              degree="MD"
+              image="amy_wang.webp"
+              linkedinLink="https://www.linkedin.com/in/amywangmd"
+              size="small"
+            />
+            <TeamMember
+              name="Sandeep Bodduluri"
+              degree="PhD"
+              image="sandeep_bodduluri.webp"
+              scholarLink="https://scholar.google.com/citations?user=5o7e9KkAAAAJ&hl=en"
+              size="small"
+            />
+            <TeamMember
+              name="Javier Neyra"
+              degree="MD, MSCS"
+              image="javier_neyra.webp"
+              scholarLink="https://scholar.google.com/citations?user=SX_y2d4AAAAJ&hl=en"
+              size="small"
+            />
+          </div>
+        </div>
+      </ErrorBoundary>
+    </section>
+  </div>
+</BaseLayout>

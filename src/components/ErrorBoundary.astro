@@ -1,0 +1,120 @@
+---
+interface Props {
+  fallback?: string;
+}
+
+const { fallback = 'Something went wrong. Please try again later.' } = Astro.props;
+---
+
+<div id="error-boundary">
+  <slot />
+</div>
+
+<template id="error-fallback-template">
+  <div class="error-fallback bg-white p-6 rounded-lg shadow-lg max-w-xl mx-auto my-8 text-center">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      class="h-12 w-12 text-red-500 mx-auto mb-4"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+      ></path>
+    </svg>
+    <h2 class="text-xl font-semibold text-clif-burgundy mb-2">Oops!</h2>
+    <p class="text-gray-600 mb-4" id="error-message">{fallback}</p>
+    <button
+      class="bg-clif-burgundy text-white px-4 py-2 rounded hover:bg-clif-burgundy-dark transition-colors"
+      onclick="window.location.reload()"
+    >
+      Reload Page
+    </button>
+  </div>
+</template>
+
+<script>
+  class ErrorBoundary extends HTMLElement {
+    constructor() {
+      super();
+      this.attachShadow({ mode: 'open' });
+    }
+
+    connectedCallback() {
+      try {
+        const slot = document.createElement('slot');
+        this.shadowRoot.appendChild(slot);
+
+        // Handle errors in child components
+        window.addEventListener('error', (event) => {
+          if (this.contains(event.target)) {
+            this.handleError(event.error);
+            event.preventDefault();
+          }
+        });
+      } catch (error) {
+        this.handleError(error);
+      }
+    }
+
+    handleError(error) {
+      console.error('Error caught by boundary:', error);
+
+      // Replace content with fallback
+      const template = document.getElementById('error-fallback-template');
+      if (!template) return;
+
+      const content = template.content.cloneNode(true);
+      const errorMessage = content.querySelector('#error-message');
+
+      if (errorMessage && error?.message) {
+        errorMessage.textContent = `${errorMessage.textContent} (${error.message})`;
+      }
+
+      this.shadowRoot.innerHTML = '';
+      this.shadowRoot.appendChild(content);
+
+      // Report to Sentry if available
+      try {
+        if (window.Sentry) {
+          window.Sentry.captureException(error);
+        } else if (window.sentryOnLoad) {
+          // Wait for Sentry to load if it's not ready yet
+          window.addEventListener('sentry-initialized', () => {
+            window.Sentry?.captureException(error);
+          });
+        }
+
+        // Add additional context if available
+        if (window.Sentry?.setContext) {
+          window.Sentry.setContext('component', {
+            name: this.getAttribute('data-component-name') || 'Unknown',
+            path: window.location.pathname,
+          });
+        }
+      } catch (sentryError) {
+        console.error('Failed to report error to Sentry:', sentryError);
+      }
+    }
+  }
+
+  // Define custom element after DOM is fully loaded to ensure template is available
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      customElements.define('error-boundary', ErrorBoundary);
+    });
+  } else {
+    customElements.define('error-boundary', ErrorBoundary);
+  }
+</script>
+
+<style>
+  /* This ensures the error boundary container takes the full width */
+  #error-boundary {
+    display: contents;
+  }
+</style>

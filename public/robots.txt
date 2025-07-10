@@ -1,0 +1,32 @@
+# robots.txt for CLIF Consortium website
+# https://clif-consortium.org/
+
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://clif-consortium.org/sitemap-index.xml
+
+# Prevent crawling of admin pages if they exist in the future
+User-agent: *
+Disallow: /admin/
+Disallow: /dashboard/
+
+# Allow all bots to all files
+User-agent: *
+Allow: /*.js$
+Allow: /*.css$
+Allow: /*.png$
+Allow: /*.jpg$
+Allow: /*.jpeg$
+Allow: /*.gif$
+Allow: /*.svg$
+Allow: /*.webp$
+Allow: /*.pdf$
+
+# Crawl delay for heavy bots
+User-agent: AhrefsBot
+Crawl-delay: 10
+
+User-agent: SemrushBot
+Crawl-delay: 10

@@ -1,0 +1,67 @@
+---
+interface Props {
+  value: string;
+  label: string;
+  prefix?: string;
+  suffix?: string;
+  icon?: string;
+}
+
+const { value, label, prefix = '', suffix = '', icon } = Astro.props;
+---
+
+<div
+  class="text-center p-6 glass rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border-t-4 border-clif-burgundy glow-hover animate-float"
+>
+  {icon && <div class="mb-4 text-clif-burgundy" set:html={icon} />}
+  <div class="text-4xl font-bold text-clif-burgundy mb-2" data-counter data-target={value}>
+    {prefix}<span class="counter-value">0</span>{suffix}
+  </div>
+  <p class="text-gray-600 font-medium">{label}</p>
+</div>
+
+<script>
+  // Animate counters when they come into view
+  const observerOptions = {
+    threshold: 0.5,
+    rootMargin: '0px',
+  };
+
+  const animateCounter = (element: Element) => {
+    const target = parseInt(element.getAttribute('data-target') || '0');
+    const valueElement = element.querySelector('.counter-value');
+    if (!valueElement) return;
+
+    let current = 0;
+    const increment = target / 50; // 50 steps
+    const duration = 2000; // 2 seconds
+    const stepTime = duration / 50;
+
+    const updateCounter = () => {
+      current += increment;
+      if (current < target) {
+        valueElement.textContent = Math.floor(current).toLocaleString();
+        setTimeout(updateCounter, stepTime);
+      } else {
+        valueElement.textContent = target.toLocaleString();
+      }
+    };
+
+    updateCounter();
+  };
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        animateCounter(entry.target);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, observerOptions);
+
+  // Observe all counter elements
+  document.addEventListener('DOMContentLoaded', () => {
+    const counters = document.querySelectorAll('[data-counter]');
+    counters.forEach((counter) => observer.observe(counter));
+  });
+</script>

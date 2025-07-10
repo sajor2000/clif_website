@@ -1,0 +1,31 @@
+---
+export interface Props {
+  type: 'linkedin' | 'scholar';
+  href: string;
+  class?: string;
+}
+
+const { type, href, class: className = '' } = Astro.props;
+
+const icons = {
+  linkedin: {
+    src: '/images/linkedin_icon.png',
+    alt: 'LinkedIn Profile',
+  },
+  scholar: {
+    src: '/images/scholar_icon.png',
+    alt: 'Google Scholar Profile',
+  },
+};
+
+const icon = icons[type];
+---
+
+<a
+  href={href}
+  target="_blank"
+  rel="noopener noreferrer"
+  class={`inline-block transition-opacity hover:opacity-75 ${className}`}
+>
+  <img src={icon.src} alt={icon.alt} width="24" height="24" loading="lazy" />
+</a>

@@ -1,0 +1,163 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Change Log - CLIF Data Dictionary"
+  description="Version history and changes to the Common Longitudinal ICU data Format"
+>
+  <div class="container mx-auto px-6 py-12">
+    <h1 class="text-4xl font-bold text-clif-burgundy mb-8">CLIF Data Dictionary Change Log</h1>
+
+    <div class="prose prose-lg max-w-none">
+      <p class="text-xl mb-8">
+        Track the evolution of the Common Longitudinal ICU data Format (CLIF) through its version
+        history. This change log documents all updates, improvements, and structural changes to the
+        data dictionary.
+      </p>
+
+      <!-- Version 2.2.0 -->
+      <section class="mb-12 bg-gray-50 p-6 rounded-lg">
+        <h2 class="text-2xl font-bold text-clif-burgundy mb-4">
+          Version 2.2.0 <span class="text-lg font-normal text-gray-600">(TBD)</span>
+        </h2>
+
+        <h3 class="text-xl font-semibold mt-4 mb-2">Beta Status Updates</h3>
+        <ul class="list-disc list-inside space-y-2 ml-4">
+          <li>Add Code status to Beta Status</li>
+          <li>Add ICD codes table to Beta Status</li>
+        </ul>
+      </section>
+
+      <!-- Version 2.1.0 -->
+      <section class="mb-12 bg-gray-50 p-6 rounded-lg">
+        <h2 class="text-2xl font-bold text-clif-burgundy mb-4">
+          Version 2.1.0 <span class="text-lg font-normal text-gray-600">(September 2025)</span>
+        </h2>
+
+        <h3 class="text-xl font-semibold mt-4 mb-2">Data Structure Updates</h3>
+        <ul class="list-disc list-inside space-y-2 ml-4">
+          <li>Move CRRT therapy to Beta status</li>
+          <li>Move ECMO MCS to Beta status</li>
+          <li>
+            Move Micro non-culture to Beta status
+            <a
+              href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/65"
+              class="text-clif-burgundy hover:underline">(Issue #65)</a
+            >
+          </li>
+          <li>
+            Finalize patient language category mCIDE
+            <a
+              href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/13"
+              class="text-clif-burgundy hover:underline">(Issue #13)</a
+            >
+          </li>
+          <li>
+            Add ADT location type field with finalized mCIDE
+            <a
+              href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/39"
+              class="text-clif-burgundy hover:underline">(Issues #39,</a
+            >
+            <a
+              href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/64"
+              class="text-clif-burgundy hover:underline">#64)</a
+            >
+          </li>
+          <li>
+            Finalize hospitalization admission type mCIDE
+            <a
+              href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/16"
+              class="text-clif-burgundy hover:underline">(Issue #16)</a
+            >
+          </li>
+          <li>Add LTACH to admission_type mCIDE</li>
+        </ul>
+      </section>
+
+      <!-- Version 2.0.0 -->
+      <section
+        class="mb-12 bg-clif-burgundy-light/10 p-6 rounded-lg border-2 border-clif-burgundy/20"
+      >
+        <h2 class="text-2xl font-bold text-clif-burgundy mb-4">
+          Version 2.0.0
+          <span class="text-lg font-normal text-gray-600">(February 2025)</span>
+          <span class="ml-2 bg-clif-burgundy text-white text-sm px-3 py-1 rounded-full"
+            >Current Version</span
+          >
+        </h2>
+
+        <h3 class="text-xl font-semibold mt-4 mb-2">Major ERD Upgrade</h3>
+        <ul class="list-disc list-inside space-y-2 ml-4">
+          <li>Combined patient and hospitalization tables for improved data structure</li>
+          <li>Introduced maturity concept for ERD and tables (Beta, Concept, Future)</li>
+          <li>Added comprehensive Beta tables with production-ready structures</li>
+          <li>Defined concept tables for future implementation</li>
+          <li>Standardized mCIDE (minimum Common ICU Data Elements) across all tables</li>
+          <li>
+            Standardized all datetime variables to be time zone aware with UTC format
+            <a
+              href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/40"
+              class="text-clif-burgundy hover:underline">(Issue #40)</a
+            >
+          </li>
+        </ul>
+
+        <div class="mt-4 p-4 bg-clif-burgundy-light/15 rounded">
+          <p class="text-sm">
+            <strong>Note:</strong> This version represents a major restructuring of the CLIF data format
+            with significant improvements to standardization and interoperability across institutions.
+          </p>
+        </div>
+      </section>
+
+      <!-- Version 1.0.0 -->
+      <section class="mb-12 bg-gray-50 p-6 rounded-lg">
+        <h2 class="text-2xl font-bold text-clif-burgundy mb-4">Version 1.0.0</h2>
+
+        <p class="mb-4">First official release of the Common Longitudinal ICU data Format (CLIF)</p>
+        <ul class="list-disc list-inside space-y-2 ml-4">
+          <li>Initial table structure definitions</li>
+          <li>Core entity-relationship model</li>
+          <li>Foundation for multi-institutional critical care data standardization</li>
+        </ul>
+      </section>
+
+      <!-- Links Section -->
+      <section class="mt-12 p-6 bg-gray-100 rounded-lg">
+        <h2 class="text-xl font-semibold mb-4">Related Resources</h2>
+        <div class="space-y-2">
+          <p>
+            <a href="/data-dictionary" class="text-clif-burgundy hover:underline font-medium">
+              → View Current Data Dictionary (v2.0.0)
+            </a>
+          </p>
+          <p>
+            <a
+              href="/data-dictionary/data-dictionary-2.1.0"
+              class="text-clif-burgundy hover:underline font-medium"
+            >
+              → View Data Dictionary v2.1.0 (Coming Soon)
+            </a>
+          </p>
+          <p>
+            <a
+              href="/data-dictionary/data-dictionary-1.0.0"
+              class="text-clif-burgundy hover:underline font-medium"
+            >
+              → View Data Dictionary v1.0.0 (Deprecated)
+            </a>
+          </p>
+          <p>
+            <a
+              href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues"
+              class="text-clif-burgundy hover:underline font-medium"
+            >
+              → GitHub Issues Tracker
+            </a>
+          </p>
+        </div>
+      </section>
+    </div>
+  </div>
+</BaseLayout>
