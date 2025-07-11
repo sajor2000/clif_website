@@ -12,6 +12,7 @@ interface Props {
   githubLink?: string;
   websiteLink?: string;
   otherLink?: string;
+  primaryLink?: string;
   size?: 'small' | 'medium' | 'large';
 }
 
@@ -26,6 +27,7 @@ const {
   githubLink,
   websiteLink,
   otherLink,
+  primaryLink,
   size = 'medium',
 } = Astro.props;
 
@@ -36,8 +38,6 @@ const sizeClasses = {
 };
 
 const fullName = degree ? `${name}, ${degree}` : name;
-// Remove the automatic photo link behavior
-const primaryLink = null;
 
 // Use initials as fallback instead of placeholder image
 const placeholderPath = null;
