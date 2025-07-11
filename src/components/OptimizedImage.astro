@@ -72,8 +72,8 @@ const placeholderStyle = `
     height={height}
     sizes={sizes}
     onload="this.style.opacity='1'"
-    onerror={`this.style.opacity='0'; this.classList.add('error'); if(this.src !== '${fallbackSrc}') { this.src = '${fallbackSrc}'; this.style.opacity='1'; }`}
-    style="opacity: 0;"
+    onerror={`this.classList.add('error'); if(this.src !== '${fallbackSrc}') { this.src = '${fallbackSrc}'; }`}
+    style="opacity: 1;"
   />
 </picture>
 

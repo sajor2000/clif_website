@@ -428,6 +428,624 @@ import Badge from '../../components/Badge.astro';
         </ul>
       </div>
 
+      <!-- Encounter Demographics Disposition Table -->
+      <section class="mb-12">
+        <h2 id="encounter_demographics_disposition" class="text-2xl font-bold text-clif-burgundy mb-4">
+          Encounter_demographics_disposition
+        </h2>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200 mb-4">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Field</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Permissible Values</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">encounter_id</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">ID variable for each patient encounter.</td>
+                <td class="px-6 py-4 text-sm">-</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">age_at_admission</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">INT</td>
+                <td class="px-6 py-4 text-sm">Age of the patient at the time of admission. Calculated using the admission_dttm and birth_date from the limited identifiers table.</td>
+                <td class="px-6 py-4 text-sm">-</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">disposition_name</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">Original disposition name string recorded in the raw data. This field allows for the storing of the dispostion value as it appears in the source data. This field is not used for analysis.</td>
+                <td class="px-6 py-4 text-sm">-</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">disposition_category</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">Description of disposition when discharged. Map source values stored in disposition_name to the mCIDE categories.</td>
+                <td class="px-6 py-4 text-sm"><code class="text-xs bg-gray-100 px-1 py-0.5 rounded">Home, Hospice, Discharged to another facility, Dead, Admitted, Other</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Labs Table -->
+      <section class="mb-12">
+        <h2 id="labs" class="text-2xl font-bold text-clif-burgundy mb-4">Labs</h2>
+        <p class="mb-4">Laboratory test results and measurements</p>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200 mb-4">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Field</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Permissible Values</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">encounter_id</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">ID variable for each patient encounter.</td>
+                <td class="px-6 py-4 text-sm">-</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">lab_order_dttm</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">DATETIME</td>
+                <td class="px-6 py-4 text-sm">Date and time when the lab is ordered.</td>
+                <td class="px-6 py-4 text-sm">Datetime format should be %Y-%m-%d %H:%M:%S</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">lab_collect_dttm</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">DATETIME</td>
+                <td class="px-6 py-4 text-sm">Date and time when the specimen is collected.</td>
+                <td class="px-6 py-4 text-sm">Datetime format should be %Y-%m-%d %H:%M:%S</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">lab_result_dttm</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">DATETIME</td>
+                <td class="px-6 py-4 text-sm">Date and time when the lab results are available.</td>
+                <td class="px-6 py-4 text-sm">Datetime format should be %Y-%m-%d %H:%M:%S</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">lab_name</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">Original lab name string recorded in the raw data. This field is not used for analysis.</td>
+                <td class="px-6 py-4 text-sm">-</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">lab_category</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">43 labs identified by the CLIF consortium.</td>
+                <td class="px-6 py-4 text-sm">List of lab categories in CLIF (see reference)</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">lab_group</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">Lab categories roll up to form lab groups.</td>
+                <td class="px-6 py-4 text-sm"><code class="text-xs bg-gray-100 px-1 py-0.5 rounded">ABG, BMP, CBC, Coags, LFT, Lactic Acid, Misc, VBG</code></td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">lab_value</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">DOUBLE</td>
+                <td class="px-6 py-4 text-sm">Recorded value corresponding to a lab.</td>
+                <td class="px-6 py-4 text-sm">-</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">reference_unit</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">Unit of measurement for that lab.</td>
+                <td class="px-6 py-4 text-sm">Permissible reference values for each lab_category listed in reference</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">lab_type_name</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">Type of lab.</td>
+                <td class="px-6 py-4 text-sm"><code class="text-xs bg-gray-100 px-1 py-0.5 rounded">arterial, venous, standard, poc</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+          <p class="text-sm"><strong>Note:</strong> The lab_value field often has non-numeric entries that are useful to make project-specific decisions. A site may choose to keep the lab_value field as a character and create a new field lab_value_numeric that only parses the character field to extract the numeric part of the string.</p>
+        </div>
+      </section>
+
+      <!-- Microbiology Table -->
+      <section class="mb-12">
+        <h2 id="microbiology" class="text-2xl font-bold text-clif-burgundy mb-4">Microbiology</h2>
+        <p class="mb-4">Microbiology culture and organism results</p>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200 mb-4">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Field</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Permissible Values</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">encounter_id</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">ID variable for each patient encounter.</td>
+                <td class="px-6 py-4 text-sm">-</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">test_id</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">An ID for a specific component, such as a gram culture smear, taken from a fluid sample with a unique order and collection time, if two different pathogens are identified, the result will be recorded as two separate rows, each sharing the same test_id.</td>
+                <td class="px-6 py-4 text-sm">-</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">order_dttm</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">DATETIME</td>
+                <td class="px-6 py-4 text-sm">Date and time when the test is ordered.</td>
+                <td class="px-6 py-4 text-sm">Datetime format should be %Y-%m-%d %H:%M:%S</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">collect_dttm</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">DATETIME</td>
+                <td class="px-6 py-4 text-sm">Date and time when the specimen is collected.</td>
+                <td class="px-6 py-4 text-sm">Datetime format should be %Y-%m-%d %H:%M:%S</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">result_dttm</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">DATETIME</td>
+                <td class="px-6 py-4 text-sm">Date and time when the results are available.</td>
+                <td class="px-6 py-4 text-sm">Datetime format should be %Y-%m-%d %H:%M:%S</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">fluid_name</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">Cleaned fluid name string from the raw data. This field is not used for analysis.</td>
+                <td class="px-6 py-4 text-sm">No restriction. Check reference file for examples</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">fluid_category</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">Fluid categories defined according to the NIH common data elements.</td>
+                <td class="px-6 py-4 text-sm">CDE NIH Infection Site (see reference)</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">component_name</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">Original componenet names from the source data.</td>
+                <td class="px-6 py-4 text-sm">No restriction</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">component_category</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">Map component names to the categories identified under CLIF.</td>
+                <td class="px-6 py-4 text-sm"><code class="text-xs bg-gray-100 px-1 py-0.5 rounded">culture, gram stain, smear</code></td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">organism_name</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">Cleaned oragnism name string from the raw data. This field is not used for analysis.</td>
+                <td class="px-6 py-4 text-sm">No restriction. Check reference file for examples</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">organism_category</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">Organism categories defined according to the NIH common data elements.</td>
+                <td class="px-6 py-4 text-sm">CDE NIH Organism (see reference)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Respiratory Support Table -->
+      <section class="mb-12">
+        <h2 id="respiratory_support" class="text-2xl font-bold text-clif-burgundy mb-4">Respiratory_support</h2>
+        <p class="mb-4">Respiratory support devices and ventilator settings</p>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200 mb-4">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Field</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Permissible Values</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">encounter_id</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">ID variable for each patient encounter</td>
+                <td class="px-6 py-4 text-sm">-</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">recorded_dttm</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">DATETIME</td>
+                <td class="px-6 py-4 text-sm">Date and time when the device started</td>
+                <td class="px-6 py-4 text-sm">Datetime format should be %Y-%m-%d %H:%M:%S</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">device_name</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">Includes raw string of the devices. Not used for analysis</td>
+                <td class="px-6 py-4 text-sm">Example mapping for device name to device category (see reference)</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">device_category</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">Includes a limited number of devices identified by the CLIF consortium</td>
+                <td class="px-6 py-4 text-sm"><code class="text-xs bg-gray-100 px-1 py-0.5 rounded">Vent, NIPPV, CPAP, High Flow NC, Face Mask, Trach Collar, Nasal Cannula, Room Air, Other</code></td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">mode_name</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">Includes raw string of the modes. Not used for analysis</td>
+                <td class="px-6 py-4 text-sm">Example mapping for mode name to mode category (see reference)</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">mode_category</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">Limited number of modes identified by the CLIF consortium</td>
+                <td class="px-6 py-4 text-sm"><code class="text-xs bg-gray-100 px-1 py-0.5 rounded">Assist Control-Volume Control, Pressure Support/CPAP, Pressure Control, Pressure-Regulated Volume Control, Other, SIMV, Blow by</code></td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">tracheostomy</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">BOOLEAN</td>
+                <td class="px-6 py-4 text-sm">Indicates if tracheostomy is performed</td>
+                <td class="px-6 py-4 text-sm">0 = No, 1 = Yes</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">fio2_set</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">DOUBLE</td>
+                <td class="px-6 py-4 text-sm">Fraction of inspired oxygen set</td>
+                <td class="px-6 py-4 text-sm">-</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">lpm_set</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">DOUBLE</td>
+                <td class="px-6 py-4 text-sm">Liters per minute set</td>
+                <td class="px-6 py-4 text-sm">-</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">tidal_volume_set</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">DOUBLE</td>
+                <td class="px-6 py-4 text-sm">Tidal volume set (in mL)</td>
+                <td class="px-6 py-4 text-sm">-</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">resp_rate_set</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">DOUBLE</td>
+                <td class="px-6 py-4 text-sm">Respiratory rate set (in bpm)</td>
+                <td class="px-6 py-4 text-sm">-</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">pressure_control_set</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">DOUBLE</td>
+                <td class="px-6 py-4 text-sm">Pressure control set (in cmH2O)</td>
+                <td class="px-6 py-4 text-sm">-</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">pressure_support_set</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">DOUBLE</td>
+                <td class="px-6 py-4 text-sm">Pressure support set (in cmH2O)</td>
+                <td class="px-6 py-4 text-sm">-</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">flow_rate_set</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">DOUBLE</td>
+                <td class="px-6 py-4 text-sm">Flow rate set</td>
+                <td class="px-6 py-4 text-sm">-</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">peak_inspiratory_pressure_set</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">DOUBLE</td>
+                <td class="px-6 py-4 text-sm">Peak inspiratory pressure set (in cmH2O)</td>
+                <td class="px-6 py-4 text-sm">-</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">inspiratory_time_set</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">DOUBLE</td>
+                <td class="px-6 py-4 text-sm">Inspiratory time set (in seconds)</td>
+                <td class="px-6 py-4 text-sm">-</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">peep_set</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">DOUBLE</td>
+                <td class="px-6 py-4 text-sm">Positive-end-expiratory pressure set (in cmH2O)</td>
+                <td class="px-6 py-4 text-sm">-</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">tidal_volume_obs</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">DOUBLE</td>
+                <td class="px-6 py-4 text-sm">Observed tidal volume (in mL)</td>
+                <td class="px-6 py-4 text-sm">-</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">resp_rate_obs</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">DOUBLE</td>
+                <td class="px-6 py-4 text-sm">Observed respiratory rate (in bpm)</td>
+                <td class="px-6 py-4 text-sm">-</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">plateau_pressure_obs</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">DOUBLE</td>
+                <td class="px-6 py-4 text-sm">Observed plateau pressure (in cmH2O)</td>
+                <td class="px-6 py-4 text-sm">-</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">peak_inspiratory_pressure_obs</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">DOUBLE</td>
+                <td class="px-6 py-4 text-sm">Observed peak inspiratory pressure (in cmH2O)</td>
+                <td class="px-6 py-4 text-sm">-</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">peep_obs</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">DOUBLE</td>
+                <td class="px-6 py-4 text-sm">Observed positive-end-expiratory pressure (in cmH2O)</td>
+                <td class="px-6 py-4 text-sm">-</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">minute_vent_obs</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">DOUBLE</td>
+                <td class="px-6 py-4 text-sm">Observed minute ventilation (in liters)</td>
+                <td class="px-6 py-4 text-sm">-</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Medication Admin Continuous Table -->
+      <section class="mb-12">
+        <h2 id="medication_admin_continuous" class="text-2xl font-bold text-clif-burgundy mb-4">
+          Medication_admin_continuous
+        </h2>
+        <p class="mb-4">Continuous medication administration records</p>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200 mb-4">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Field</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Permissible Values</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">encounter_id</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">ID variable for each patient encounter</td>
+                <td class="px-6 py-4 text-sm">-</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">med_order_id</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">Medication order id. Foreign key to link this table to other medication tables</td>
+                <td class="px-6 py-4 text-sm">-</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">admin_dttm</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">DATETIME</td>
+                <td class="px-6 py-4 text-sm">Date and time when the medicine was administered</td>
+                <td class="px-6 py-4 text-sm">Datetime format should be %Y-%m-%d %H:%M:%S</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">med_name</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">Original med name string recorded in the raw data for a limited number of labs identified by the CLIF consortium</td>
+                <td class="px-6 py-4 text-sm">Example mapping of med_name to med_category (see reference)</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">med_category</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">Limited number of medication categories identified by the CLIF consortium</td>
+                <td class="px-6 py-4 text-sm">List of continuous medication categories in CLIF (see reference)</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">med_route</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">Method of medicine delivery</td>
+                <td class="px-6 py-4 text-sm">-</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">med_dose</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">Quantity taken in dose</td>
+                <td class="px-6 py-4 text-sm">-</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">med_dose_unit</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">Unit of dose</td>
+                <td class="px-6 py-4 text-sm">-</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+          <p class="text-sm"><strong>Note:</strong> The medication_admin_intermittent table has exactly the same schema. The consortium decided to separate the medications that are administered intermittently from the continuously administered medications.</p>
+        </div>
+      </section>
+
+      <!-- Medication Admin Intermittent Table -->
+      <section class="mb-12">
+        <h2 id="medication_admin_intermittent" class="text-2xl font-bold text-clif-burgundy mb-4">
+          Medication_admin_intermittent
+        </h2>
+        <p class="mb-4">Intermittent medication administration records</p>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200 mb-4">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Field</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Permissible Values</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">encounter_id</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">ID variable for each patient encounter</td>
+                <td class="px-6 py-4 text-sm">-</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">med_order_id</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">Medication order id. Foreign key to link this table to other medication tables</td>
+                <td class="px-6 py-4 text-sm">-</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">admin_dttm</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">DATETIME</td>
+                <td class="px-6 py-4 text-sm">Date and time when the medicine was administered</td>
+                <td class="px-6 py-4 text-sm">Datetime format should be %Y-%m-%d %H:%M:%S</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">med_name</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">Original med name string recorded in the raw data for a limited number of labs identified by the CLIF consortium</td>
+                <td class="px-6 py-4 text-sm">Example mapping of med_name to med_category (see reference)</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">med_category</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">Limited number of medication categories identified by the CLIF consortium</td>
+                <td class="px-6 py-4 text-sm">List of intermittent medication categories in CLIF (see reference)</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">med_route</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">Method of medicine delivery</td>
+                <td class="px-6 py-4 text-sm">-</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">med_dose</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">Quantity taken in dose</td>
+                <td class="px-6 py-4 text-sm">-</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">med_dose_unit</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">Unit of dose</td>
+                <td class="px-6 py-4 text-sm">-</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+          <p class="text-sm"><strong>Note:</strong> The medication_admin_intermittent table has exactly the same schema as medication_admin_continuous. The consortium decided to separate the medications that are administered intermittently from the continuously administered medications.</p>
+        </div>
+      </section>
+
+      <!-- Dialysis Table -->
+      <section class="mb-12">
+        <h2 id="dialysis" class="text-2xl font-bold text-clif-burgundy mb-4">Dialysis</h2>
+        <p class="mb-4">Dialysis treatment sessions and parameters</p>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200 mb-4">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Field</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Permissible Values</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">encounter_id</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">ID variable for each patient encounter</td>
+                <td class="px-6 py-4 text-sm">-</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">start_dttm</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">DATETIME</td>
+                <td class="px-6 py-4 text-sm">Start date and time of dialysis session</td>
+                <td class="px-6 py-4 text-sm">Datetime format should be %Y-%m-%d %H:%M:%S</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">stop_dttm</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">DATETIME</td>
+                <td class="px-6 py-4 text-sm">Stop date and time of dialysis session</td>
+                <td class="px-6 py-4 text-sm">Datetime format should be %Y-%m-%d %H:%M:%S</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">dialysis_type</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">Type of dialysis performed</td>
+                <td class="px-6 py-4 text-sm"><code class="text-xs bg-gray-100 px-1 py-0.5 rounded">intermittent, peritoneal, crrt</code></td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">dialysate_flow_amount</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">DOUBLE</td>
+                <td class="px-6 py-4 text-sm">Amount of dialysate flow</td>
+                <td class="px-6 py-4 text-sm">-</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">ultrafiltration_amount</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">DOUBLE</td>
+                <td class="px-6 py-4 text-sm">Amount of ultrafiltration</td>
+                <td class="px-6 py-4 text-sm">-</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Position Table -->
+      <section class="mb-12">
+        <h2 id="position" class="text-2xl font-bold text-clif-burgundy mb-4">Position</h2>
+        <p class="mb-4">Patient positioning records</p>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200 mb-4">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Field</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Permissible Values</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">encounter_id</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">ID variable for each patient encounter. This table only includes those encounters that have proning documented ever.</td>
+                <td class="px-6 py-4 text-sm">-</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">recorded_dttm</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">DATETIME</td>
+                <td class="px-6 py-4 text-sm">Date and time when the vital is recorded.</td>
+                <td class="px-6 py-4 text-sm">Datetime format should be %Y-%m-%d %H:%M:%S</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">position_name</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">This field is used to store the description of the position from the source data. This field is not used for analysis.</td>
+                <td class="px-6 py-4 text-sm">No restriction</td>
+              </tr>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">position_category</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">VARCHAR</td>
+                <td class="px-6 py-4 text-sm">Map position_name to the to categories identified under CLIF.</td>
+                <td class="px-6 py-4 text-sm"><code class="text-xs bg-gray-100 px-1 py-0.5 rounded">prone, not_prone</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
       <div class="mt-8 flex justify-between items-center">
         <a href="/data-dictionary/change-log" class="text-clif-burgundy hover:underline">
           ← View Change Log

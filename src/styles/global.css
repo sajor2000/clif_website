@@ -65,10 +65,10 @@
   }
 
   .glass-dark {
-    background: rgba(132, 24, 57, 0.15);
+    background: rgba(139, 26, 26, 0.7); /* Use clif-burgundy with higher opacity */
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(132, 24, 57, 0.18);
+    border: 1px solid rgba(139, 26, 26, 0.25);
   }
 
   /* Gradient Text */
@@ -145,5 +145,127 @@
   .focus-visible:focus {
     outline: 2px solid var(--clif-burgundy);
     outline-offset: 2px;
+  }
+
+  /* Badge styles */
+  .badge-maturity {
+    @apply px-3 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1.5;
+  }
+
+  .badge-beta {
+    @apply bg-amber-100 text-amber-800 border border-amber-200;
+  }
+
+  .badge-concept {
+    @apply bg-orange-100 text-orange-800 border border-orange-200;
+  }
+
+  .badge-deprecated {
+    @apply bg-gray-100 text-gray-600 border border-gray-200;
+  }
+
+  /* Fade in animation */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.6s ease-out;
+  }
+
+  /* Scroll-triggered animations */
+  .scroll-section {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.8s ease-out;
+  }
+
+  .scroll-section.in-view {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Enhanced focus states */
+  a:focus-visible,
+  button:focus-visible {
+    outline: 2px solid var(--clif-burgundy);
+    outline-offset: 2px;
+  }
+
+  /* Smooth hover transitions */
+  a,
+  button {
+    transition: all 0.2s ease;
+  }
+
+  /* Loading skeleton animation */
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      #f3f4f6 25%,
+      #e5e7eb 50%,
+      #f3f4f6 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  /* Enhanced card hover effects */
+  .hover-lift {
+    transition: all 0.3s ease;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  }
+
+  /* Gradient text animation */
+  @keyframes gradient-shift {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+
+  .gradient-text-animated {
+    background: linear-gradient(135deg, var(--clif-burgundy), var(--clif-burgundy-light), var(--clif-burgundy));
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradient-shift 3s ease infinite;
+  }
+
+  /* Progress bar animations */
+  @keyframes progress-fill {
+    from {
+      width: 0%;
+    }
+  }
+
+  .progress-animate {
+    animation: progress-fill 1.5s ease-out;
   }
 }

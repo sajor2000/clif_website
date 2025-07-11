@@ -1,7 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import TeamMember from '../components/team/TeamMember.astro';
-import TeamMemberProfileCard from '../components/team/TeamMemberProfileCard.astro';
 import ErrorBoundary from '../components/ErrorBoundary.astro';
 ---
 
@@ -29,39 +28,25 @@ import ErrorBoundary from '../components/ErrorBoundary.astro';
         fallback="Unable to load steering committee data. Please try refreshing the page."
       >
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          <TeamMemberProfileCard
+          <TeamMember
             name="Nicholas Ingraham"
             degree="MD"
             role="Co-Chair"
             image="nicholas_ingraham.webp"
             email="ningraham@uchicago.edu"
             linkedinLink="https://www.linkedin.com/in/nicholas-ingraham/"
-            institution="UChicago Medicine"
-            department="Department of Medicine"
-            biography="Dr. Nicholas Ingraham is a physician-scientist and critical care specialist focusing on data standards and ICU informatics."
-            research={[
-              'Critical care data standards',
-              'Machine learning applications in ICU',
-              'CLIF Consortium leadership',
-            ]}
             size="large"
-            expandable={true}
             scholarLink="https://scholar.google.com/citations?user=ZKMVVHkAAAAJ&hl=en"
           />
 
-          <TeamMemberProfileCard
+          <TeamMember
             name="Catherine Gao"
             degree="MD"
             role="Co-Chair"
             image="catherine_gao.webp"
             email="cgao@northwestern.edu"
-            linkedinLink="https://www.linkedin.com/in/catherine-gao"
-            institution="Northwestern Medicine"
-            department="Department of Medicine"
-            biography="Dr. Catherine Gao specializes in pulmonary and critical care medicine with research interests in health data standardization and interoperability."
-            research={['ICU data interoperability', 'Medical NLP', 'Clinical informatics']}
+            linkedinLink="https://www.linkedin.com/in/cathyagao/"
             size="large"
-            expandable={true}
             scholarLink="https://scholar.google.com/citations?user=IwClOEIAAAAJ&hl=en"
           />
 
@@ -72,7 +57,7 @@ import ErrorBoundary from '../components/ErrorBoundary.astro';
             image="chad_hochberg.webp"
             scholarLink="https://scholar.google.com/citations?user=J4DvU4oAAAAJ&hl=en"
             size="large"
-            linkedinLink="https://www.linkedin.com/in/ruth-iban-arias"
+            linkedinLink="https://www.linkedin.com/in/chad-hochberg-md"
           />
 
           <TeamMember
@@ -112,24 +97,14 @@ import ErrorBoundary from '../components/ErrorBoundary.astro';
             scholarLink="https://scholar.google.com/citations?user=cgsawgkAAAAJ&hl=ca"
           />
 
-          <TeamMemberProfileCard
+          <TeamMember
             name="William Parker"
             degree="MD, PhD"
             role="Founding Executive Director"
             image="william_parker.webp"
             linkedinLink="https://www.linkedin.com/in/william-parker-md-phd-3057a9236/"
             scholarLink="https://scholar.google.com/citations?user=jaBF4DEAAAAJ"
-            institution="UChicago Medicine"
-            department="Department of Medicine"
-            biography="Dr. William Parker is a physician-scientist whose work focuses on improving ICU care through data science and standardization. As Founding Executive Director of CLIF, he has helped establish critical data standards for ICU research."
-            research={[
-              'Critical care data science',
-              'ICU outcomes',
-              'Healthcare AI',
-              'Data standardization',
-            ]}
             size="large"
-            expandable={true}
           />
         </div>
       </ErrorBoundary>
@@ -159,8 +134,8 @@ import ErrorBoundary from '../components/ErrorBoundary.astro';
           <TeamMember
             name="Casey Eddington"
             degree="PhD"
-            image="casey_eddington.jpeg"
-            linkedinLink="https://www.linkedin.com/in/mailto-raymond-hastings-0519479a"
+            image="casey_eddington.webp"
+            linkedinLink="https://www.linkedin.com/in/casey-eddington/"
           />
 
           <TeamMember
@@ -168,7 +143,7 @@ import ErrorBoundary from '../components/ErrorBoundary.astro';
             degree="MD"
             image="edward_j_schenck.webp"
             scholarLink="https://scholar.google.com/citations?user=AndXGDsAAAAJ&hl=en"
-            linkedinLink="https://www.linkedin.com/in/dbachar"
+            linkedinLink="https://www.linkedin.com/in/edward-schenck-md"
           />
 
           <TeamMember
@@ -184,7 +159,7 @@ import ErrorBoundary from '../components/ErrorBoundary.astro';
             degree="MD"
             image="nathan_mesfin.webp"
             otherLink="https://med.umn.edu/bio/nathan-mesfin"
-            linkedinLink="https://www.linkedin.com/in/semariakebede"
+            linkedinLink="https://www.linkedin.com/in/nathan-mesfin-md"
             scholarLink="https://scholar.google.com/citations?user=AndXGDsAAAAJ&hl=en"
           />
 
@@ -222,29 +197,26 @@ import ErrorBoundary from '../components/ErrorBoundary.astro';
             UChicago Medicine
           </h3>
           <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            <TeamMemberProfileCard
+            <TeamMember
               name="William Parker"
               degree="MD, PhD"
               image="william_parker.webp"
               scholarLink="https://scholar.google.com/citations?user=jaBF4DEAAAAJ&hl=en&oi=ao"
-              institution="UChicago Medicine"
               size="small"
               linkedinLink="https://www.linkedin.com/in/william-parker-md-phd-3057a9236/"
             />
-            <TeamMemberProfileCard
+            <TeamMember
               name="Jay Koyner"
               degree="MD"
               image="jay_koyner.webp"
               scholarLink="https://scholar.google.com/citations?hl=en&user=O_b_5pAAAAAJ"
-              institution="UChicago Medicine"
               size="small"
             />
-            <TeamMemberProfileCard
+            <TeamMember
               name="Kevin Smith"
               degree="MD"
               image="kevin_smith.webp"
               websiteLink="https://hdsi.uchicago.edu/team/kevin-smith-md-ms/"
-              institution="UChicago Medicine"
               size="small"
             />
             <TeamMember
@@ -274,7 +246,7 @@ import ErrorBoundary from '../components/ErrorBoundary.astro';
               name="Rachel Baccile"
               degree="MPP"
               image="rachel_baccile.webp"
-              linkedinLink="https://www.linkedin.com/in/milesjackson"
+              linkedinLink="https://www.linkedin.com/in/rachel-baccile"
               size="small"
             />
             <TeamMember
@@ -294,7 +266,7 @@ import ErrorBoundary from '../components/ErrorBoundary.astro';
             <TeamMember
               name="Zewei ('Whiskey') Liao"
               degree="MS"
-              image="wan_ting_liao.webp"
+              image="zewei_liao.webp"
               linkedinLink="https://www.linkedin.com/in/zewei-whiskey-liao"
               size="small"
             />

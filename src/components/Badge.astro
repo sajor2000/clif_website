@@ -2,9 +2,10 @@
 export interface Props {
   type: 'beta' | 'concept' | 'deprecated';
   class?: string;
+  size?: 'small' | 'medium' | 'large';
 }
 
-const { type, class: className = '' } = Astro.props;
+const { type, class: className = '', size = 'medium' } = Astro.props;
 
 const badges = {
   beta: {

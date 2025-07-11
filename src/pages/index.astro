@@ -5,7 +5,6 @@ import CTAButton from '../components/shared/CTAButton.astro';
 import StatsCounter from '../components/home/StatsCounter.astro';
 import FeatureCard from '../components/shared/FeatureCard.astro';
 import GrowthTimeline from '../components/home/GrowthTimeline.astro';
-import ConsortiumMapStatic from '../components/home/ConsortiumMapStatic.astro';
 ---
 
 <BaseLayout
@@ -15,14 +14,7 @@ import ConsortiumMapStatic from '../components/home/ConsortiumMapStatic.astro';
   <div class="container mx-auto px-4 py-8">
     <!-- Hero Section with Enhanced Messaging -->
     <div class="text-center mb-12">
-      <OptimizedImage
-        src="/images/logos/clif-logo.png"
-        alt="CLIF Logo"
-        class="mx-auto mb-6 h-32 w-32 animate-float"
-        width={128}
-        height={128}
-        loading="eager"
-      />
+
       <h1 class="text-5xl font-bold mb-4 text-clif-burgundy">
         Common Longitudinal ICU data Format
       </h1>
@@ -75,7 +67,7 @@ import ConsortiumMapStatic from '../components/home/ConsortiumMapStatic.astro';
 
     <!-- Main Content with Enhanced Messaging -->
     <section class="mb-16">
-      <div class="glass-dark text-white p-8 rounded-2xl shadow-xl mb-12 glow animate-pulse-slow">
+      <div class="bg-clif-burgundy-dark text-white p-8 rounded-2xl shadow-xl mb-12">
         <h2 class="text-3xl font-bold mb-4">Pioneering Federated Critical Care Research</h2>
         <p class="text-lg leading-relaxed">
           CLIF represents a paradigm shift in how we approach multi-center critical care research.
@@ -184,20 +176,11 @@ import ConsortiumMapStatic from '../components/home/ConsortiumMapStatic.astro';
               <span class="text-sm text-gray-600">Published in Intensive Care Medicine, 2025</span>
             </div>
           </div>
-          <div class="flex-shrink-0">
-            <div class="glass-dark text-white p-6 rounded-lg glow">
-              <p class="text-3xl font-bold">Q1</p>
-              <p class="text-sm">Journal Ranking</p>
-            </div>
-          </div>
+
         </div>
       </div>
     </section>
 
-    <!-- Interactive Consortium Map -->
-    <section class="mb-16">
-      <ConsortiumMapStatic />
-    </section>
 
     <!-- Participating Sites with Enhanced Design -->
     <section>
@@ -214,6 +197,32 @@ import ConsortiumMapStatic from '../components/home/ConsortiumMapStatic.astro';
           sizes="(max-width: 1280px) 100vw, 1280px"
           loading="lazy"
         />
+      </div>
+
+      <!-- CLIF Consortium Geographic Map -->
+      <div class="mt-12">
+      <div class="max-w-6xl mx-auto">
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+          <img src="/images/ClIFsites copy.jpg" alt="Map of CLIF Consortium Sites" class="mx-auto my-8 rounded-lg shadow-xl" />
+        </div>
+        <!-- Legend Info Box -->
+        <div class="mt-6 bg-gray-50 rounded-lg p-4">
+          <div class="flex items-center justify-between flex-wrap gap-4">
+            <div class="flex items-center space-x-6">
+              <div class="flex items-center space-x-2">
+                <div class="w-4 h-4 bg-red-600 rounded-full"></div>
+                <span class="text-sm font-medium text-gray-700">CLIF data ready</span>
+              </div>
+              <div class="flex items-center space-x-2">
+                <div class="w-4 h-4 bg-gray-400 rounded-full"></div>
+                <span class="text-sm font-medium text-gray-600">Soon to be CLIF site</span>
+              </div>
+            </div>
+            <div class="text-sm text-gray-600">
+              <span class="font-semibold">12 institutions</span> • <span class="font-semibold">46 hospitals</span>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   </div>

@@ -2,64 +2,90 @@
 interface TimelineItem {
   year: string;
   milestone: string;
+  description?: string;
   stats?: {
     institutions?: number;
     patients?: string;
     dataPoints?: string;
   };
+  highlight?: boolean;
+}
+
+interface Principle {
+  icon: string;
+  title: string;
+  description: string;
 }
 
 const timeline: TimelineItem[] = [
   {
-    year: '2011',
-    milestone: 'Initial Data Collection Begins',
-    stats: {
-      institutions: 3,
-      patients: '50K+',
-      dataPoints: '10M+',
-    },
+    year: 'July 2023',
+    milestone: 'Consortium Assembly Begins',
+    description: 'Geographically diverse group of U.S.-based clinician-scientists and data scientists convene virtually',
+    highlight: true,
   },
   {
-    year: '2017',
-    milestone: 'Multi-Site Collaboration Expands',
-    stats: {
-      institutions: 6,
-      patients: '200K+',
-      dataPoints: '100M+',
-    },
-  },
-  {
-    year: '2019',
-    milestone: 'CLIF Consortium Formally Founded',
-    stats: {
-      institutions: 9,
-      patients: '400K+',
-      dataPoints: '500M+',
-    },
-  },
-  {
-    year: '2021',
-    milestone: 'CLIF 2.0.0 Standard Released',
-    stats: {
-      institutions: 11,
-      patients: '600K+',
-      dataPoints: '750M+',
-    },
+    year: '2023-2024',
+    milestone: 'Challenge Identification & Solution Development',
+    description: 'Identified practical challenges of using EHR data for critical illness research across institutions',
   },
   {
     year: '2024',
-    milestone: 'CLIF 2.1.0 & Comprehensive Dataset Complete',
+    milestone: 'Standardized Framework Established',
+    description: 'Developed standardized operating procedures, shared terminologies, and robust quality control methods',
     stats: {
-      institutions: 12,
-      patients: '680K',
+      institutions: 11,
+      patients: '680K+',
       dataPoints: '862K encounters',
     },
+  },
+  {
+    year: '2025',
+    milestone: 'Publication & Implementation',
+    description: 'Framework published in Intensive Care Medicine, enabling critical care research across all hospital settings',
+    highlight: true,
+  },
+];
+
+const principles: Principle[] = [
+  {
+    icon: '<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"/></svg>',
+    title: 'Efficient',
+    description: 'Clinically meaningful data structures',
+  },
+  {
+    icon: '<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/></svg>',
+    title: 'Consistent',
+    description: 'Harmonizable data elements',
+  },
+  {
+    icon: '<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z"/></svg>',
+    title: 'Scalable',
+    description: 'Flexible for future innovations',
+  },
+  {
+    icon: '<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"/></svg>',
+    title: 'Federated',
+    description: 'Privacy-preserving collaborative research',
+  },
+  {
+    icon: '<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-9.707a1 1 0 011.414 0L9 8.586V3a1 1 0 112 0v5.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"/></svg>',
+    title: 'Open Source',
+    description: 'FAIR data principles & NIH compliance',
   },
 ];
 ---
 
 <div class="relative">
-  <h3 class="text-2xl font-bold mb-8 text-center text-gray-800">Our Journey of Impact</h3>
+  <h3 class="text-2xl font-bold mb-8 text-center text-gray-800">Building a Foundation for Critical Care Research</h3>
+  
+  <!-- Introduction -->  
+  <div class="glass rounded-2xl p-6 mb-12 max-w-4xl mx-auto">
+    <p class="text-lg text-gray-700 leading-relaxed">
+      We assembled a geographically diverse group of U.S.-based clinician-scientists and data scientists 
+      with deep experience in EHR-based clinical outcomes research and AI applications.
+    </p>
+  </div>
 
   <!-- Timeline Container -->
   <div class="relative">
@@ -79,10 +105,12 @@ const timeline: TimelineItem[] = [
           >
             <div class="absolute left-1/2 transform -translate-x-1/2 w-6 h-6 bg-clif-burgundy rounded-full border-4 border-white shadow-lg timeline-dot" />
             <div
-              class={`glass rounded-xl p-6 shadow-lg mx-4 md:mx-0 ${index % 2 === 0 ? 'md:mr-auto md:pr-16' : 'md:ml-auto md:pl-16'} md:w-5/12 timeline-content`}
+              class={`glass rounded-xl p-6 shadow-lg mx-4 md:mx-0 ${index % 2 === 0 ? 'md:mr-auto md:pr-16' : 'md:ml-auto md:pl-16'} md:w-5/12 timeline-content ${
+                item.highlight ? 'ring-2 ring-clif-burgundy ring-opacity-50' : ''
+              }`}
             >
               <div class="flex items-center justify-between mb-3">
-                <span class="text-3xl font-bold gradient-text">{item.year}</span>
+                <span class="text-2xl font-bold gradient-text">{item.year}</span>
                 {item.stats && (
                   <div class="text-right">
                     <div class="text-sm text-gray-600">Institutions</div>
@@ -94,6 +122,10 @@ const timeline: TimelineItem[] = [
               </div>
 
               <h4 class="text-lg font-semibold mb-2 text-gray-800">{item.milestone}</h4>
+              
+              {item.description && (
+                <p class="text-sm text-gray-600 mb-3">{item.description}</p>
+              )}
 
               {item.stats && (
                 <div class="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-gray-200">
@@ -114,12 +146,31 @@ const timeline: TimelineItem[] = [
     </div>
   </div>
 
+  <!-- Guiding Principles -->
+  <div class="mt-16">
+    <h3 class="text-2xl font-bold mb-8 text-center text-gray-800">Our Guiding Principles</h3>
+    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 max-w-6xl mx-auto">
+      {
+        principles.map((principle) => (
+          <div class="glass rounded-lg p-4 text-center hover:shadow-lg transition-shadow">
+            <div class="text-clif-burgundy mb-2 flex justify-center" set:html={principle.icon} />
+            <h4 class="font-semibold text-gray-800 mb-1">{principle.title}</h4>
+            <p class="text-sm text-gray-600">{principle.description}</p>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+  
   <!-- Future Vision -->
-  <div class="mt-16 text-center">
-    <div
-      class="inline-block glass-dark text-white px-8 py-4 rounded-full shadow-xl animate-pulse-slow"
-    >
-      <span class="text-lg font-semibold">Next Milestone: 15+ Institutions by 2026</span>
+  <div class="mt-12 text-center">
+    <div class="bg-clif-burgundy-dark text-white p-6 rounded-2xl shadow-xl max-w-4xl mx-auto">
+      <h4 class="text-xl font-semibold mb-3">Our Overarching Goal</h4>
+      <p class="text-lg leading-relaxed">
+        To provide a standardized framework for representing critical illness data across all hospital 
+        care settings — from ICUs to emergency departments and hospital wards — enabling researchers to 
+        accomplish essential critical care informatics tasks wherever and whenever critical illness begins.
+      </p>
     </div>
   </div>
 </div>
@@ -154,6 +205,20 @@ const timeline: TimelineItem[] = [
     animation: popIn 0.5s ease-out 0.4s forwards;
   }
 
+  .timeline-line {
+    background: linear-gradient(
+      to bottom,
+      rgba(139, 0, 33, 0.2) 0%,
+      rgba(139, 0, 33, 0.8) 50%,
+      rgba(139, 0, 33, 0.2) 100%
+    );
+  }
+
+  .glass {
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.95);
+  }
+
   @keyframes fadeInUp {
     to {
       opacity: 1;
@@ -171,6 +236,12 @@ const timeline: TimelineItem[] = [
     to {
       transform: scale(1);
     }
+  }
+
+  /* Principle cards hover effect */
+  .glass:hover {
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 1);
   }
 
   /* Mobile Adjustments */

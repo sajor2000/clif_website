@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import CohortDashboardReal from '../components/cohort/CohortDashboardReal.astro';
-import ConsortiumMapStatic from '../components/home/ConsortiumMapStatic.astro';
+import ConsortiumMapOriginal from '../components/home/ConsortiumMapOriginal.astro';
 import CTAButton from '../components/shared/CTAButton.astro';
 ---
 
@@ -9,54 +9,97 @@ import CTAButton from '../components/shared/CTAButton.astro';
   title="CLIF Consortium - Cohort Dashboard"
   description="Explore aggregated ICU patient data from the CLIF Consortium - 680,158 unique patients, 862,400 ICU encounters across 46 hospitals in 12 leading institutions."
 >
-  <div class="container mx-auto px-4 py-8 max-w-7xl">
-    <!-- Hero Section -->
-    <div class="text-center mb-12">
-      <h1 class="text-5xl font-bold text-clif-burgundy mb-4">CLIF Cohort Dashboard</h1>
-      <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-        Real-time insights from 680,158 unique ICU patients across 46 hospitals and 12 leading institutions
-      </p>
-      <div class="mt-4 text-sm text-gray-500">
-        Data span: 2011-2024 | Last updated: January 2025
+  <div class="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+    <div class="container mx-auto px-4 py-8 max-w-7xl">
+      <!-- Enhanced Hero Section -->
+      <div class="text-center mb-12 animate-fade-in">
+        <h1 class="text-4xl md:text-5xl font-bold text-clif-burgundy mb-4 bg-clip-text text-transparent bg-gradient-to-r from-clif-burgundy to-clif-burgundy-dark">
+          CLIF Cohort Dashboard
+        </h1>
+        <p class="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto mb-6">
+          Real-time insights from <span class="font-semibold text-clif-burgundy">680,158</span> unique ICU patients 
+          across <span class="font-semibold text-clif-burgundy">46</span> hospitals in 
+          <span class="font-semibold text-clif-burgundy">12</span> leading institutions
+        </p>
+        <div class="inline-flex items-center gap-6 text-sm text-gray-600 bg-white px-6 py-3 rounded-full shadow-sm">
+          <span class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-clif-burgundy" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zM4 8h12v8H4V8z" clip-rule="evenodd"/>
+            </svg>
+            Data span: 2011-2024
+          </span>
+          <span class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+            </svg>
+            Last updated: January 2025
+          </span>
+        </div>
       </div>
+
+      <!-- Live Dashboard Link -->
+      <div class="mb-12 text-center">
+        <div class="glass-dark text-white p-6 rounded-xl shadow-lg inline-block">
+          <h3 class="text-xl font-semibold mb-3">Interactive Shiny Dashboard</h3>
+          <p class="mb-4 text-gray-200">
+            Explore the full interactive dashboard with real-time filtering and analysis capabilities
+          </p>
+          <CTAButton
+            href="https://clif-consortium.shinyapps.io/clif-cohort-dashboard/"
+            external={true}
+            ariaLabel="Open CLIF Cohort Dashboard in new tab"
+            class="bg-white text-clif-burgundy hover:bg-gray-100"
+          >
+            Open Live Dashboard
+          </CTAButton>
+        </div>
+      </div>
+
+      <!-- Enhanced Consortium Map Section -->
+      <section class="mb-16 scroll-section">
+        <div class="text-center mb-8">
+          <h2 class="text-3xl font-bold text-gray-800 mb-3">Participating Institutions</h2>
+          <p class="text-lg text-gray-600">Geographic distribution of CLIF Consortium members</p>
+        </div>
+        <div class="glass rounded-2xl p-4 shadow-xl hover:shadow-2xl transition-shadow duration-300">
+          <ConsortiumMapOriginal />
+        </div>
+      </section>
+
+      <!-- Enhanced Cohort Dashboard -->
+      <section class="mb-16">
+        <CohortDashboardReal />
+      </section>
+
+      <!-- Enhanced Call to Action -->
+      <section class="relative overflow-hidden rounded-3xl">
+        <div class="absolute inset-0 bg-gradient-to-br from-clif-burgundy via-clif-burgundy-dark to-clif-burgundy-darker opacity-90"></div>
+        <div class="relative text-center text-white p-12">
+          <h2 class="text-3xl md:text-4xl font-bold mb-4">Explore CLIF Research</h2>
+          <p class="text-lg md:text-xl mb-8 opacity-90 max-w-3xl mx-auto">
+            This dashboard presents real, aggregated data from our consortium. Discover how CLIF enables 
+            groundbreaking research while preserving patient privacy through federated analytics.
+          </p>
+          <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <CTAButton
+              href="/tools"
+              variant="outline"
+              class="bg-white text-clif-burgundy hover:bg-gray-100 border-white transform hover:scale-105 transition-all duration-200"
+              ariaLabel="Learn about CLIF tools and data access"
+            >
+              Explore CLIF Tools
+            </CTAButton>
+            <CTAButton
+              href="/research"
+              variant="outline"
+              class="bg-transparent text-white hover:bg-white/20 border-white transform hover:scale-105 transition-all duration-200"
+              ariaLabel="View current research projects using CLIF data"
+            >
+              View Research Projects
+            </CTAButton>
+          </div>
+        </div>
+      </section>
     </div>
-
-    <!-- Consortium Map -->
-    <section class="mb-12">
-      <div class="text-center mb-8">
-        <h2 class="text-3xl font-bold text-gray-800">Participating Institutions</h2>
-        <p class="text-lg text-gray-600 mt-2">Geographic distribution of CLIF Consortium members</p>
-      </div>
-      <ConsortiumMapStatic />
-    </section>
-
-    <!-- Real Cohort Dashboard -->
-    <CohortDashboardReal />
-
-    <!-- Call to Action -->
-    <section class="text-center bg-gradient-to-r from-clif-burgundy to-clif-burgundy/80 text-white p-8 rounded-2xl shadow-xl">
-      <h2 class="text-3xl font-bold mb-4">Explore CLIF Research</h2>
-      <p class="text-xl mb-6 opacity-90">
-        This dashboard presents real, aggregated data from our consortium. Discover how CLIF enables groundbreaking research while preserving patient privacy.
-      </p>
-      <div class="flex flex-col sm:flex-row gap-4 justify-center">
-        <CTAButton
-          href="/tools"
-          variant="outline"
-          class="bg-white text-clif-burgundy hover:bg-gray-100 border-white"
-          ariaLabel="Learn about CLIF tools and data access"
-        >
-          Explore CLIF Tools
-        </CTAButton>
-        <CTAButton
-          href="/research"
-          variant="outline"
-          class="bg-transparent text-white hover:bg-white/20 border-white"
-          ariaLabel="View current research projects using CLIF data"
-        >
-          View Research Projects
-        </CTAButton>
-      </div>
-    </section>
   </div>
 </BaseLayout>
