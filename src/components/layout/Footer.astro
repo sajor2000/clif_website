@@ -1,5 +1,6 @@
 ---
 const currentYear = new Date().getFullYear();
+const lastUpdated = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 ---
 
 <footer class="bg-clif-burgundy text-white py-12">
@@ -96,8 +97,8 @@ const currentYear = new Date().getFullYear();
       </div>
     </div>
 
-    <div class="border-t border-clif-burgundy-dark mt-8 pt-8 text-center text-white text-sm">
-      <p>© 2025 · CLIF Consortium</p>
+        <div class="border-t border-clif-burgundy-dark mt-8 pt-8 text-center text-white text-sm">
+      <p>© {currentYear} · CLIF Consortium</p>
       <p class="mt-2"><a href="mailto:clif_consortium@uchicago.edu" class="hover:underline">✉️ clif_consortium@uchicago.edu</a></p>
       <p class="mt-2">
         CLIF is open source software licensed under the{' '}
@@ -108,6 +109,7 @@ const currentYear = new Date().getFullYear();
           Apache License 2.0
         </a>
       </p>
+      <p class="text-xs text-gray-400 mt-4">Last Updated: {lastUpdated}</p>
     </div>
   </div>
 </footer>

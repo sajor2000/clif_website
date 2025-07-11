@@ -37,23 +37,29 @@ import CTAButton from '../components/shared/CTAButton.astro';
         </div>
       </div>
 
-      <!-- Live Dashboard Link -->
-      <div class="mb-12 text-center">
-        <div class="glass-dark text-white p-6 rounded-xl shadow-lg inline-block">
-          <h3 class="text-xl font-semibold mb-3">Interactive Shiny Dashboard</h3>
-          <p class="mb-4 text-gray-200">
-            Explore the full interactive dashboard with real-time filtering and analysis capabilities
-          </p>
-          <CTAButton
-            href="https://clif-consortium.shinyapps.io/clif-cohort-dashboard/"
-            external={true}
-            ariaLabel="Open CLIF Cohort Dashboard in new tab"
-            class="bg-white text-clif-burgundy hover:bg-gray-100"
-          >
-            Open Live Dashboard
-          </CTAButton>
+      <!-- Interactive Dashboard CTA -->
+      <section class="mb-16">
+        <div class="relative bg-gradient-to-r from-clif-burgundy to-clif-burgundy-dark rounded-2xl shadow-xl overflow-hidden text-white p-8 md:p-12 text-center">
+          <div class="absolute inset-0 bg-grid-pattern opacity-10"></div>
+          <div class="relative">
+            <h2 class="text-3xl md:text-4xl font-bold mb-4">
+              Explore the Interactive Dashboard
+            </h2>
+            <p class="text-lg md:text-xl max-w-3xl mx-auto mb-8 opacity-90">
+              Dive into the CLIF cohort data with our live, interactive dashboard. Filter, analyze, and visualize data from over 680,000 ICU patients in real-time.
+            </p>
+            <CTAButton
+              href="/dashboard"
+              ariaLabel="Launch the interactive CLIF Cohort Dashboard"
+              class="bg-white text-clif-burgundy hover:bg-gray-100 transform hover:scale-105 transition-transform duration-200"
+              size="large"
+            >
+              Launch Dashboard
+            </CTAButton>
+
+          </div>
         </div>
-      </div>
+      </section>
 
       <!-- Enhanced Consortium Map Section -->
       <section class="mb-16 scroll-section">
