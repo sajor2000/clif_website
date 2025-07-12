@@ -1,0 +1,1288 @@
+---
+/**
+ * Interactive ERD Component - Astro-Compatible Version
+ * Production-ready, accessible, and performant ERD visualization
+ */
+import type { TableDefinition } from '../types/ERDTypes';
+
+export interface Props {
+  tables: TableDefinition[];
+  width?: number;
+  height?: number;
+  className?: string;
+}
+
+const { 
+  tables, 
+  width = 1800, 
+  height = 2200,
+  className = ''
+} = Astro.props;
+
+// Generate unique IDs for this component instance
+const componentId = `erd-${Math.random().toString(36).substr(2, 9)}`;
+const searchId = `${componentId}-search`;
+const diagramId = `${componentId}-diagram`;
+const panelId = `${componentId}-panel`;
+---
+
+<div 
+  class={`erd-component ${className}`}
+  data-testid="interactive-erd"
+  role="application"
+  aria-label="Interactive Entity Relationship Diagram"
+  data-component-id={componentId}
+>
+  <!-- Header -->
+  <div class="erd-header">
+    <h2 class="erd-title">Interactive Entity Relationship Diagram</h2>
+    <p class="erd-description">
+      Explore the relationships between all CLIF 2.0.0 tables. 
+      Use keyboard navigation: Tab to navigate, Enter to select, Escape to close.
+    </p>
+  </div>
+
+  <!-- Main Container -->
+  <div class="erd-container" role="main">
+    <!-- Controls -->
+    <div class="erd-controls" role="toolbar" aria-label="Diagram controls">
+      <div class="erd-search-wrapper">
+        <label for={searchId} class="sr-only">Search tables and fields</label>
+        <input
+          type="search"
+          id={searchId}
+          class="erd-search"
+          placeholder="Search tables or fields..."
+          aria-describedby={`${searchId}-help`}
+        />
+        <span id={`${searchId}-help`} class="sr-only">
+          Type to search for tables or fields. Press Enter to select first result.
+        </span>
+      </div>
+      
+      <div class="erd-button-group">
+        <button 
+          class="erd-button"
+          data-action="reset-view"
+          aria-label="Reset view to default position and zoom"
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zM3 8a5 5 0 0 1 8.5-3.5L10 6h4V2l-1.5 1.5A7 7 0 0 0 1 8h2z"/>
+          </svg>
+          Reset View
+        </button>
+        
+        <button 
+          class="erd-button"
+          data-action="toggle-relationships"
+          aria-label="Toggle relationship visibility"
+          aria-pressed="true"
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M6 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM10 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM6 8l4 4"/>
+          </svg>
+          <span data-relationship-text>Hide Relationships</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Diagram Wrapper -->
+    <div 
+      class="erd-diagram-wrapper"
+      role="img"
+      aria-label="Entity relationship diagram"
+      tabindex="0"
+    >
+      <svg 
+        id={diagramId}
+        class="erd-diagram"
+        viewBox={`0 0 ${width} ${height}`}
+        preserveAspectRatio="xMidYMid meet"
+        aria-labelledby={`${diagramId}-title ${diagramId}-desc`}
+      >
+        <title id={`${diagramId}-title`}>Entity Relationship Diagram</title>
+        <desc id={`${diagramId}-desc`}>
+          Interactive diagram showing database tables and their relationships
+        </desc>
+        
+        <!-- Definitions -->
+        <defs>
+          <marker 
+            id={`${componentId}-arrow`}
+            markerWidth="10" 
+            markerHeight="10" 
+            refX="9" 
+            refY="3" 
+            orient="auto" 
+            markerUnits="strokeWidth"
+          >
+            <path d="M0,0 L0,6 L9,3 z" fill="#333" />
+          </marker>
+        </defs>
+
+        <!-- Content groups -->
+        <g class="erd-relationships" aria-hidden="true"></g>
+        <g class="erd-entities" role="group" aria-label="Database tables"></g>
+      </svg>
+      
+      <!-- Loading indicator -->
+      <div class="erd-loading" role="status" aria-live="polite">
+        <span class="erd-loading-spinner"></span>
+        <span class="erd-loading-text">Loading diagram...</span>
+      </div>
+    </div>
+
+    <!-- Details Panel -->
+    <aside 
+      id={panelId}
+      class="erd-details-panel"
+      role="complementary"
+      aria-label="Entity details"
+      aria-hidden="true"
+    >
+      <div class="erd-panel-header">
+        <h3 class="erd-panel-title">Entity Details</h3>
+        <button 
+          class="erd-panel-close"
+          aria-label="Close details panel"
+        >
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      
+      <div class="erd-panel-content">
+        <section class="erd-panel-section">
+          <h4>Fields</h4>
+          <ul class="erd-field-list" role="list"></ul>
+        </section>
+        
+        <section class="erd-panel-section">
+          <h4>Relationships</h4>
+          <ul class="erd-relationship-list" role="list"></ul>
+        </section>
+      </div>
+    </aside>
+
+    <!-- Legend -->
+    <div class="erd-legend" role="note" aria-label="Diagram legend">
+      <h4 class="erd-legend-title">Maturity Levels</h4>
+      <ul class="erd-legend-items" role="list">
+        <li class="erd-legend-item">
+          <span class="erd-legend-color erd-legend-beta" aria-hidden="true"></span>
+          <span>Beta</span>
+        </li>
+        <li class="erd-legend-item">
+          <span class="erd-legend-color erd-legend-concept" aria-hidden="true"></span>
+          <span>Concept</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Zoom Controls -->
+    <div class="erd-zoom-controls" role="toolbar" aria-label="Zoom controls">
+      <button 
+        class="erd-zoom-button"
+        data-action="zoom-in"
+        aria-label="Zoom in"
+      >+</button>
+      <button 
+        class="erd-zoom-button"
+        data-action="zoom-out"
+        aria-label="Zoom out"
+      >−</button>
+      <button 
+        class="erd-zoom-button"
+        data-action="zoom-fit"
+        aria-label="Fit to view"
+      >⊡</button>
+    </div>
+
+    <!-- Screen reader announcements -->
+    <div class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+  </div>
+</div>
+
+<style>
+  /* CSS custom properties for theming */
+  .erd-component {
+    --erd-bg: #f5f5f5;
+    --erd-entity-bg: white;
+    --erd-entity-border: #ddd;
+    --erd-text: #333;
+    --erd-text-secondary: #666;
+    --erd-highlight: #841839;
+    --erd-relationship: #999;
+    --erd-beta: #E67E22;
+    --erd-concept: #B0B0B0;
+    --erd-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    --erd-radius: 8px;
+    --erd-transition: 300ms ease;
+    
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    color: var(--erd-text);
+  }
+
+  /* Dark mode support */
+  @media (prefers-color-scheme: dark) {
+    .erd-component {
+      --erd-bg: #1a1a1a;
+      --erd-entity-bg: #2d2d2d;
+      --erd-entity-border: #444;
+      --erd-text: #e0e0e0;
+      --erd-text-secondary: #999;
+      --erd-relationship: #666;
+    }
+  }
+
+  /* High contrast mode */
+  @media (prefers-contrast: high) {
+    .erd-component {
+      --erd-bg: white;
+      --erd-entity-bg: white;
+      --erd-entity-border: black;
+      --erd-text: black;
+      --erd-text-secondary: black;
+      --erd-highlight: black;
+      --erd-relationship: black;
+    }
+  }
+
+  .erd-header {
+    margin-bottom: 1.5rem;
+  }
+
+  .erd-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem;
+    color: var(--erd-text);
+  }
+
+  .erd-description {
+    margin: 0;
+    color: var(--erd-text-secondary);
+    font-size: 0.875rem;
+  }
+
+  .erd-container {
+    position: relative;
+    height: 800px;
+    background-color: var(--erd-bg);
+    border-radius: var(--erd-radius);
+    overflow: hidden;
+    box-shadow: var(--erd-shadow);
+  }
+
+  /* Controls */
+  .erd-controls {
+    position: absolute;
+    top: 1.25rem;
+    left: 1.25rem;
+    z-index: 10;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  .erd-search {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--erd-entity-border);
+    border-radius: 4px;
+    background: var(--erd-entity-bg);
+    color: var(--erd-text);
+    font-size: 0.875rem;
+    width: 250px;
+    transition: border-color var(--erd-transition);
+  }
+
+  .erd-search:focus {
+    outline: 2px solid var(--erd-highlight);
+    outline-offset: 2px;
+    border-color: var(--erd-highlight);
+  }
+
+  .erd-button-group {
+    display: flex;
+    gap: 0.5rem;
+    background: var(--erd-entity-bg);
+    padding: 0.25rem;
+    border-radius: 4px;
+    box-shadow: var(--erd-shadow);
+  }
+
+  .erd-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--erd-highlight);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all var(--erd-transition);
+  }
+
+  .erd-button:hover {
+    background: color-mix(in srgb, var(--erd-highlight) 85%, black);
+    transform: translateY(-1px);
+  }
+
+  .erd-button:focus {
+    outline: 2px solid var(--erd-highlight);
+    outline-offset: 2px;
+  }
+
+  /* Diagram */
+  .erd-diagram-wrapper {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+    cursor: grab;
+  }
+
+  .erd-diagram-wrapper:active {
+    cursor: grabbing;
+  }
+
+  .erd-diagram-wrapper:focus {
+    outline: 2px solid var(--erd-highlight);
+    outline-offset: -2px;
+  }
+
+  .erd-diagram {
+    width: 100%;
+    height: 100%;
+    transition: transform var(--erd-transition);
+  }
+
+  /* SVG Entity Styles */
+  .erd-entity {
+    cursor: pointer;
+    transition: all var(--erd-transition);
+  }
+
+  .erd-entity:hover .erd-entity-rect {
+    stroke: var(--erd-beta);
+    stroke-width: 2;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+  }
+
+  .erd-entity.erd-highlighted .erd-entity-rect {
+    stroke: var(--erd-highlight);
+    stroke-width: 3;
+    filter: drop-shadow(0 4px 8px rgba(132, 24, 57, 0.3));
+  }
+
+  .erd-entity.erd-dimmed {
+    opacity: 0.3;
+  }
+
+  .erd-relationship {
+    transition: all var(--erd-transition);
+  }
+
+  .erd-relationship.erd-highlighted {
+    stroke: var(--erd-highlight);
+    stroke-width: 2.5;
+  }
+
+  .erd-relationship.erd-dimmed {
+    opacity: 0.2;
+  }
+
+  /* Loading */
+  .erd-loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: none;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .erd-loading.active {
+    display: flex;
+  }
+
+  .erd-loading-spinner {
+    width: 2rem;
+    height: 2rem;
+    border: 3px solid var(--erd-entity-border);
+    border-top-color: var(--erd-highlight);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* Details Panel */
+  .erd-details-panel {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 400px;
+    height: 100%;
+    background: var(--erd-entity-bg);
+    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+    transform: translateX(100%);
+    transition: transform var(--erd-transition);
+    overflow-y: auto;
+    z-index: 20;
+  }
+
+  .erd-details-panel[aria-hidden="false"] {
+    transform: translateX(0);
+  }
+
+  .erd-panel-header {
+    padding: 1.25rem;
+    background: var(--erd-bg);
+    border-bottom: 1px solid var(--erd-entity-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+
+  .erd-panel-title {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+  }
+
+  .erd-panel-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--erd-text-secondary);
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all var(--erd-transition);
+  }
+
+  .erd-panel-close:hover {
+    background: var(--erd-bg);
+    color: var(--erd-text);
+  }
+
+  .erd-panel-content {
+    padding: 1.25rem;
+  }
+
+  .erd-panel-section {
+    margin-bottom: 2rem;
+  }
+
+  .erd-panel-section h4 {
+    margin: 0 0 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--erd-text-secondary);
+  }
+
+  .erd-field-list,
+  .erd-relationship-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Legend */
+  .erd-legend {
+    position: absolute;
+    bottom: 1.25rem;
+    left: 1.25rem;
+    background: var(--erd-entity-bg);
+    padding: 1rem;
+    border-radius: var(--erd-radius);
+    box-shadow: var(--erd-shadow);
+  }
+
+  .erd-legend-title {
+    margin: 0 0 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  .erd-legend-items {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .erd-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  .erd-legend-item:last-child {
+    margin-bottom: 0;
+  }
+
+  .erd-legend-color {
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 2px;
+    border: 1px solid var(--erd-entity-border);
+  }
+
+  .erd-legend-beta { background: var(--erd-beta); }
+  .erd-legend-concept { background: var(--erd-concept); }
+
+  /* Zoom Controls */
+  .erd-zoom-controls {
+    position: absolute;
+    bottom: 1.25rem;
+    right: 1.25rem;
+    background: var(--erd-entity-bg);
+    border-radius: var(--erd-radius);
+    box-shadow: var(--erd-shadow);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .erd-zoom-button {
+    background: none;
+    border: none;
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1.25rem;
+    cursor: pointer;
+    transition: background var(--erd-transition);
+    color: var(--erd-text);
+    border-bottom: 1px solid var(--erd-entity-border);
+  }
+
+  .erd-zoom-button:last-child {
+    border-bottom: none;
+  }
+
+  .erd-zoom-button:hover {
+    background: var(--erd-bg);
+  }
+
+  .erd-zoom-button:focus {
+    outline: 2px solid var(--erd-highlight);
+    outline-offset: -2px;
+  }
+
+  /* Utility classes */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .erd-container {
+      height: 600px;
+    }
+
+    .erd-controls {
+      flex-direction: column;
+      align-items: flex-start;
+      max-width: calc(100% - 2.5rem);
+    }
+
+    .erd-search {
+      width: 100%;
+    }
+
+    .erd-details-panel {
+      width: 100%;
+    }
+  }
+</style>
+
+<script is:inline define:vars={{ tables, componentId }}>
+  // Inline script that works with Astro build
+  (function() {
+    'use strict';
+    
+    // Configuration
+    const CONFIG = {
+      dimensions: {
+        entityWidth: 250,
+        headerHeight: 35,
+        fieldHeight: 25,
+        padding: 10,
+        minScale: 0.5,
+        maxScale: 3
+      },
+      colors: {
+        beta: '#E67E22',
+        concept: '#B0B0B0'
+      }
+    };
+
+    // Utility functions
+    function debounce(func, delay) {
+      let timeoutId;
+      return function(...args) {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => func.apply(this, args), delay);
+      };
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function tablesToEntities(tables) {
+      // Define exact maturity levels matching the CLIF website exactly
+      const betaTableIds = new Set([
+        'adt', 'hospitalization', 'labs', 'medication_admin_continuous', 
+        'patient', 'patient_assessments', 'position', 'respiratory_support', 'vitals'
+      ]);
+      
+      const conceptTableIds = new Set([
+        'code_status', 'crrt_therapy', 'ecmo_mcs', 'hospital_diagnosis', 'intake_output',
+        'invasive_hemodynamics', 'key_icu_orders', 'medication_admin_intermittent', 
+        'medication_orders', 'microbiology_culture', 'microbiology_non_culture', 
+        'procedures', 'provider', 'sensitivity', 'therapy_details', 'transfusion'
+      ]);
+      
+      return tables.map((table, index) => {
+        let maturity = 'concept'; // Default to concept
+        if (betaTableIds.has(table.id)) {
+          maturity = 'beta';
+        }
+        // All other tables are concept - no special handling needed
+        
+        return {
+          id: table.id,
+          name: table.name,
+          maturity: maturity,
+          position: calculatePosition(index, tables.length, table.id),
+          fields: (table.fields || []).map(field => ({
+            name: field.name,
+            type: field.type,
+            isPK: field.name.toLowerCase().endsWith('_id') && 
+                  (field.name === 'patient_id' || field.name === 'hospitalization_id' || 
+                   field.name.includes(table.name.toLowerCase())),
+            isFK: field.name.toLowerCase().endsWith('_id') && 
+                  field.name !== 'patient_id' && field.name !== 'hospitalization_id'
+          }))
+        };
+      });
+    }
+
+    function calculatePosition(index, total, tableId) {
+      // Custom positioning matching the CLIF website structure
+      const positions = {
+        // Beta tables (orange) - Top rows, prominently displayed
+        'patient': { x: 50, y: 50 },
+        'hospitalization': { x: 350, y: 50 },
+        'adt': { x: 650, y: 50 },
+        'labs': { x: 950, y: 50 },
+        'medication_admin_continuous': { x: 1250, y: 50 },
+        
+        // Beta tables continued - Second row
+        'patient_assessments': { x: 50, y: 400 },
+        'position': { x: 350, y: 400 },
+        'respiratory_support': { x: 650, y: 400 },
+        'vitals': { x: 950, y: 400 },
+        
+        // Concept tables (gray) - Third row and below
+        'code_status': { x: 1250, y: 400 },
+        'crrt_therapy': { x: 50, y: 750 },
+        'ecmo_mcs': { x: 350, y: 750 },
+        'hospital_diagnosis': { x: 650, y: 750 },
+        'intake_output': { x: 950, y: 750 },
+        'invasive_hemodynamics': { x: 1250, y: 750 },
+        
+        'key_icu_orders': { x: 50, y: 1100 },
+        'medication_admin_intermittent': { x: 350, y: 1100 },
+        'medication_orders': { x: 650, y: 1100 },
+        'microbiology_culture': { x: 950, y: 1100 },
+        'microbiology_non_culture': { x: 1250, y: 1100 },
+        
+        'procedures': { x: 50, y: 1450 },
+        'provider': { x: 350, y: 1450 },
+        'sensitivity': { x: 650, y: 1450 },
+        'therapy_details': { x: 950, y: 1450 },
+        'transfusion': { x: 1250, y: 1450 }
+      };
+      
+      // Use predefined position if available, otherwise calculate
+      if (tableId && positions[tableId]) {
+        return positions[tableId];
+      }
+      
+      // Fallback calculation
+      const col = index % 5;
+      const row = Math.floor(index / 5);
+      return {
+        x: 50 + (col * 300),
+        y: 50 + (row * 350)
+      };
+    }
+
+    function extractRelationships(entities) {
+      const relationships = [];
+      const entityMap = new Map(entities.map(e => [e.id, e]));
+      
+      entities.forEach(entity => {
+        entity.fields.forEach(field => {
+          if (field.isFK) {
+            const referencedEntityName = field.name.replace(/_id$/, '');
+            const referencedEntity = Array.from(entityMap.values())
+              .find(e => e.name === referencedEntityName);
+            
+            if (referencedEntity) {
+              relationships.push({
+                from: entity.id,
+                to: referencedEntity.id,
+                field: field.name
+              });
+            }
+          }
+        });
+      });
+      
+      return relationships;
+    }
+
+    // ERD Component Class
+    class ERDComponent {
+      constructor(container, tables) {
+        this.container = container;
+        this.tables = tables;
+        this.state = {
+          selectedEntity: null,
+          highlightedEntities: new Set(),
+          dimmedEntities: new Set(),
+          searchQuery: '',
+          showRelationships: true,
+          transform: { x: 0, y: 0, scale: 0.8 }
+        };
+        this.entities = [];
+        this.relationships = [];
+        this.entityElements = new Map();
+        this.relationshipElements = new Map();
+        
+        this.init();
+      }
+
+      init() {
+        try {
+          this.setLoading(true);
+          
+          // Convert data
+          this.entities = tablesToEntities(this.tables);
+          this.relationships = extractRelationships(this.entities);
+          
+          // Setup
+          this.setupEventListeners();
+          this.render();
+          
+          this.setLoading(false);
+          this.announce('Entity relationship diagram loaded');
+        } catch (error) {
+          console.error('Failed to initialize ERD:', error);
+          this.showError('Failed to load diagram');
+        }
+      }
+
+      setupEventListeners() {
+        // Search
+        const searchInput = this.container.querySelector('.erd-search');
+        const debouncedSearch = debounce((query) => {
+          this.handleSearch(query);
+        }, 300);
+        
+        if (searchInput) {
+          searchInput.addEventListener('input', (e) => {
+            debouncedSearch(e.target.value);
+          });
+        }
+
+        // Controls
+        this.container.addEventListener('click', (e) => {
+          const action = e.target.closest('[data-action]')?.dataset.action;
+          if (action) this.handleAction(action);
+          
+          const closeBtn = e.target.closest('.erd-panel-close');
+          if (closeBtn) this.closeDetailsPanel();
+        });
+
+        // Keyboard
+        this.container.addEventListener('keydown', (e) => {
+          this.handleKeyboard(e);
+        });
+
+        // Pan and zoom
+        this.setupPanZoom();
+      }
+
+      setupPanZoom() {
+        const wrapper = this.container.querySelector('.erd-diagram-wrapper');
+        if (!wrapper) return;
+
+        let isPanning = false;
+        let startX, startY;
+
+        wrapper.addEventListener('mousedown', (e) => {
+          if (e.target === wrapper || e.target.closest('.erd-diagram')) {
+            isPanning = true;
+            startX = e.clientX - this.state.transform.x;
+            startY = e.clientY - this.state.transform.y;
+          }
+        });
+
+        wrapper.addEventListener('mousemove', (e) => {
+          if (isPanning) {
+            this.state.transform.x = e.clientX - startX;
+            this.state.transform.y = e.clientY - startY;
+            this.updateTransform();
+          }
+        });
+
+        wrapper.addEventListener('mouseup', () => {
+          isPanning = false;
+        });
+
+        wrapper.addEventListener('wheel', (e) => {
+          e.preventDefault();
+          const delta = e.deltaY > 0 ? 0.9 : 1.1;
+          this.state.transform.scale = clamp(
+            this.state.transform.scale * delta,
+            CONFIG.dimensions.minScale,
+            CONFIG.dimensions.maxScale
+          );
+          this.updateTransform();
+        });
+      }
+
+      render() {
+        const svg = this.container.querySelector('.erd-diagram');
+        const entitiesGroup = svg.querySelector('.erd-entities');
+        const relationshipsGroup = svg.querySelector('.erd-relationships');
+
+        // Clear existing
+        entitiesGroup.innerHTML = '';
+        relationshipsGroup.innerHTML = '';
+        this.entityElements.clear();
+        this.relationshipElements.clear();
+
+        // Render entities
+        this.entities.forEach(entity => {
+          const element = this.createEntityElement(entity);
+          entitiesGroup.appendChild(element);
+          this.entityElements.set(entity.id, element);
+        });
+
+        // Render relationships
+        this.relationships.forEach(rel => {
+          const element = this.createRelationshipElement(rel);
+          relationshipsGroup.appendChild(element);
+          this.relationshipElements.set(`${rel.from}-${rel.to}`, element);
+        });
+
+        this.updateTransform();
+      }
+
+      createEntityElement(entity) {
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        g.classList.add('erd-entity', `maturity-${entity.maturity}`);
+        g.setAttribute('data-entity', entity.id);
+        g.setAttribute('transform', `translate(${entity.position.x}, ${entity.position.y})`);
+        g.setAttribute('role', 'button');
+        g.setAttribute('tabindex', '0');
+        g.setAttribute('aria-label', `Table ${entity.name}`);
+
+        const { dimensions, colors } = CONFIG;
+        const width = dimensions.entityWidth;
+        const headerHeight = dimensions.headerHeight;
+        const fieldHeight = dimensions.fieldHeight;
+        const padding = dimensions.padding;
+        const height = headerHeight + (entity.fields.length * fieldHeight) + padding * 2;
+
+        // Background
+        const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        bgRect.classList.add('erd-entity-rect');
+        bgRect.setAttribute('width', width);
+        bgRect.setAttribute('height', height);
+        bgRect.setAttribute('rx', '4');
+        bgRect.setAttribute('fill', 'white');
+        bgRect.setAttribute('stroke', '#ddd');
+        bgRect.setAttribute('stroke-width', '1');
+        g.appendChild(bgRect);
+
+        // Header
+        const headerRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        headerRect.setAttribute('width', width);
+        headerRect.setAttribute('height', headerHeight);
+        headerRect.setAttribute('rx', '4');
+        headerRect.setAttribute('fill', colors[entity.maturity] || colors.beta);
+        g.appendChild(headerRect);
+
+        // Entity name
+        const nameText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        nameText.setAttribute('x', '10');
+        nameText.setAttribute('y', headerHeight / 2 + 5);
+        nameText.setAttribute('fill', 'white');
+        nameText.setAttribute('font-weight', 'bold');
+        nameText.setAttribute('font-size', '14');
+        nameText.textContent = entity.name.toUpperCase();
+        g.appendChild(nameText);
+
+        // Maturity badge
+        const badgeText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        badgeText.setAttribute('x', width - 10);
+        badgeText.setAttribute('y', headerHeight / 2 + 4);
+        badgeText.setAttribute('text-anchor', 'end');
+        badgeText.setAttribute('fill', 'white');
+        badgeText.setAttribute('font-size', '10');
+        badgeText.setAttribute('font-weight', 'bold');
+        badgeText.textContent = entity.maturity.toUpperCase();
+        g.appendChild(badgeText);
+
+        // Fields
+        entity.fields.forEach((field, index) => {
+          const yPos = headerHeight + padding + (index * fieldHeight) + fieldHeight / 2;
+
+          // Field name
+          const fieldText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          fieldText.setAttribute('x', '10');
+          fieldText.setAttribute('y', yPos + 3);
+          fieldText.setAttribute('fill', '#333');
+          fieldText.setAttribute('font-size', '12');
+          if (field.isPK || field.isFK) {
+            fieldText.setAttribute('font-weight', 'bold');
+          }
+          fieldText.textContent = field.name;
+          g.appendChild(fieldText);
+
+          // Field type
+          const typeText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          typeText.setAttribute('x', width - 10);
+          typeText.setAttribute('y', yPos + 3);
+          typeText.setAttribute('text-anchor', 'end');
+          typeText.setAttribute('fill', '#666');
+          typeText.setAttribute('font-size', '11');
+          typeText.setAttribute('font-family', 'monospace');
+          typeText.textContent = field.type;
+          g.appendChild(typeText);
+        });
+
+        // Add event listeners
+        g.addEventListener('click', () => this.selectEntity(entity.id));
+        g.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            this.selectEntity(entity.id);
+          }
+        });
+
+        return g;
+      }
+
+      createRelationshipElement(rel) {
+        const fromEntity = this.entities.find(e => e.id === rel.from);
+        const toEntity = this.entities.find(e => e.id === rel.to);
+        
+        if (!fromEntity || !toEntity) return null;
+
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.classList.add('erd-relationship');
+        path.setAttribute('data-from', rel.from);
+        path.setAttribute('data-to', rel.to);
+
+        // Calculate path
+        const startX = fromEntity.position.x + CONFIG.dimensions.entityWidth;
+        const startY = fromEntity.position.y + 50;
+        const endX = toEntity.position.x;
+        const endY = toEntity.position.y + 50;
+        
+        const midX = (startX + endX) / 2;
+        const midY = (startY + endY) / 2;
+        
+        const d = `M ${startX} ${startY} Q ${midX} ${midY} ${endX} ${endY}`;
+        path.setAttribute('d', d);
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke', '#999');
+        path.setAttribute('stroke-width', '1.5');
+        path.setAttribute('marker-end', `url(#${componentId}-arrow)`);
+
+        return path;
+      }
+
+      selectEntity(entityId) {
+        const entity = this.entities.find(e => e.id === entityId);
+        if (!entity) return;
+
+        this.state.selectedEntity = entityId;
+        
+        // Update highlights
+        this.updateHighlights();
+        
+        // Show details panel
+        this.showDetailsPanel(entity);
+        
+        this.announce(`Selected ${entity.name} table`);
+      }
+
+      updateHighlights() {
+        // Clear previous highlights
+        this.entityElements.forEach((element) => {
+          element.classList.remove('erd-highlighted', 'erd-dimmed', 'erd-selected');
+        });
+        
+        this.relationshipElements.forEach((element) => {
+          element.classList.remove('erd-highlighted', 'erd-dimmed');
+        });
+
+        if (this.state.selectedEntity) {
+          // Highlight selected entity
+          const selectedElement = this.entityElements.get(this.state.selectedEntity);
+          if (selectedElement) {
+            selectedElement.classList.add('erd-selected');
+          }
+
+          // Get related entities
+          const relatedIds = new Set();
+          this.relationships.forEach(rel => {
+            if (rel.from === this.state.selectedEntity) relatedIds.add(rel.to);
+            if (rel.to === this.state.selectedEntity) relatedIds.add(rel.from);
+          });
+
+          // Dim unrelated entities
+          this.entityElements.forEach((element, id) => {
+            if (id !== this.state.selectedEntity && !relatedIds.has(id)) {
+              element.classList.add('erd-dimmed');
+            }
+          });
+
+          // Highlight related relationships
+          this.relationshipElements.forEach((element, key) => {
+            const [from, to] = key.split('-');
+            if (from === this.state.selectedEntity || to === this.state.selectedEntity) {
+              element.classList.add('erd-highlighted');
+            } else {
+              element.classList.add('erd-dimmed');
+            }
+          });
+        }
+
+        // Handle search highlights
+        if (this.state.highlightedEntities.size > 0) {
+          this.entityElements.forEach((element, id) => {
+            if (this.state.highlightedEntities.has(id)) {
+              element.classList.add('erd-highlighted');
+            } else if (!this.state.selectedEntity) {
+              element.classList.add('erd-dimmed');
+            }
+          });
+        }
+      }
+
+      showDetailsPanel(entity) {
+        const panel = this.container.querySelector('.erd-details-panel');
+        const titleEl = panel.querySelector('.erd-panel-title');
+        const fieldList = panel.querySelector('.erd-field-list');
+        const relList = panel.querySelector('.erd-relationship-list');
+
+        // Update title
+        titleEl.textContent = entity.name.toUpperCase();
+
+        // Update fields
+        fieldList.innerHTML = '';
+        entity.fields.forEach(field => {
+          const li = document.createElement('li');
+          li.className = 'erd-field-item';
+          li.innerHTML = `
+            <div style="display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid var(--erd-entity-border);">
+              <span style="font-weight: 500;">${field.name}</span>
+              <span style="display: flex; gap: 8px; align-items: center;">
+                <span style="color: var(--erd-text-secondary); font-size: 0.9em;">${field.type}</span>
+                ${field.isPK ? '<span style="background: var(--erd-highlight); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75em;">PK</span>' : ''}
+                ${field.isFK ? '<span style="background: var(--erd-text-secondary); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75em;">FK</span>' : ''}
+              </span>
+            </div>
+          `;
+          fieldList.appendChild(li);
+        });
+
+        // Update relationships
+        relList.innerHTML = '';
+        const entityRels = this.relationships.filter(r => r.from === entity.id || r.to === entity.id);
+        entityRels.forEach(rel => {
+          const li = document.createElement('li');
+          li.className = 'erd-relationship-item';
+          const isFrom = rel.from === entity.id;
+          li.innerHTML = `
+            <div style="display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid var(--erd-entity-border);">
+              <span>${isFrom ? 'References' : 'Referenced by'}</span>
+              <span style="color: var(--erd-text-secondary);">${isFrom ? rel.to : rel.from}</span>
+            </div>
+          `;
+          relList.appendChild(li);
+        });
+
+        // Show panel
+        panel.setAttribute('aria-hidden', 'false');
+      }
+
+      closeDetailsPanel() {
+        const panel = this.container.querySelector('.erd-details-panel');
+        panel.setAttribute('aria-hidden', 'true');
+        
+        this.state.selectedEntity = null;
+        this.state.highlightedEntities.clear();
+        this.state.dimmedEntities.clear();
+        
+        this.updateHighlights();
+        this.announce('Details panel closed');
+      }
+
+      handleSearch(query) {
+        this.state.searchQuery = query;
+        this.state.highlightedEntities.clear();
+
+        if (!query.trim()) {
+          this.updateHighlights();
+          return;
+        }
+
+        const normalizedQuery = query.toLowerCase();
+        this.entities.forEach(entity => {
+          if (entity.name.toLowerCase().includes(normalizedQuery) ||
+              entity.fields.some(f => f.name.toLowerCase().includes(normalizedQuery))) {
+            this.state.highlightedEntities.add(entity.id);
+          }
+        });
+
+        this.updateHighlights();
+      }
+
+      handleAction(action) {
+        switch (action) {
+          case 'reset-view':
+            this.state.transform = { x: 0, y: 0, scale: 0.8 };
+            this.updateTransform();
+            this.announce('View reset');
+            break;
+          case 'toggle-relationships':
+            this.state.showRelationships = !this.state.showRelationships;
+            const relationshipsGroup = this.container.querySelector('.erd-relationships');
+            relationshipsGroup.style.display = this.state.showRelationships ? 'block' : 'none';
+            const button = this.container.querySelector('[data-action="toggle-relationships"]');
+            const text = button.querySelector('[data-relationship-text]');
+            text.textContent = this.state.showRelationships ? 'Hide Relationships' : 'Show Relationships';
+            button.setAttribute('aria-pressed', this.state.showRelationships);
+            this.announce(`Relationships ${this.state.showRelationships ? 'shown' : 'hidden'}`);
+            break;
+          case 'zoom-in':
+            this.zoom(1.2);
+            break;
+          case 'zoom-out':
+            this.zoom(0.8);
+            break;
+          case 'zoom-fit':
+            this.fitToView();
+            break;
+        }
+      }
+
+      handleKeyboard(e) {
+        switch (e.key) {
+          case 'Escape':
+            if (this.state.selectedEntity) {
+              this.closeDetailsPanel();
+            } else if (this.state.searchQuery) {
+              const searchInput = this.container.querySelector('.erd-search');
+              searchInput.value = '';
+              this.handleSearch('');
+            }
+            break;
+          case '/':
+            if (e.target.tagName !== 'INPUT') {
+              e.preventDefault();
+              this.container.querySelector('.erd-search')?.focus();
+            }
+            break;
+        }
+      }
+
+      zoom(factor) {
+        this.state.transform.scale = clamp(
+          this.state.transform.scale * factor,
+          CONFIG.dimensions.minScale,
+          CONFIG.dimensions.maxScale
+        );
+        this.updateTransform();
+      }
+
+      fitToView() {
+        this.state.transform = { x: 0, y: 0, scale: 0.8 };
+        this.updateTransform();
+        this.announce('View fitted');
+      }
+
+      updateTransform() {
+        const svg = this.container.querySelector('.erd-diagram');
+        const { x, y, scale } = this.state.transform;
+        svg.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
+      }
+
+      setLoading(loading) {
+        const loader = this.container.querySelector('.erd-loading');
+        if (loader) {
+          loader.classList.toggle('active', loading);
+        }
+      }
+
+      showError(message) {
+        this.announce(`Error: ${message}`);
+      }
+
+      announce(message) {
+        const announcer = this.container.querySelector('[role="status"]');
+        if (announcer) {
+          announcer.textContent = message;
+        }
+      }
+    }
+
+    // Initialize when DOM is ready
+    function initERD() {
+      const container = document.querySelector(`[data-component-id="${componentId}"]`);
+      if (container && tables) {
+        new ERDComponent(container, tables);
+      }
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initERD);
+    } else {
+      initERD();
+    }
+  })();
+</script>

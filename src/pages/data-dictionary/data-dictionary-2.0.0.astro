@@ -2,7 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Badge from '../../components/Badge.astro';
 import OptimizedImage from '../../components/OptimizedImage.astro';
-import InteractiveERD from '../../components/InteractiveERD.astro';
+import InteractiveERDWorking from '../../components/InteractiveERDWorking.astro';
 
 // Define all Beta tables data
 const betaTables = [
@@ -738,7 +738,7 @@ const futureTables = [
     </div>
 
     <!-- Interactive ERD Section -->
-    <InteractiveERD tables={betaTables} />
+    <InteractiveERDWorking tables={[...betaTables, ...conceptTables, ...futureTables]} />
 
     <!-- Stats Section -->
     <div class="mb-12">
