@@ -604,11 +604,13 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
     diagramContainer.style.cssText = `
       display: none;
       width: 100%;
-      height: 100%;
+      height: 600px;
       position: relative;
       background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
       overflow: auto;
       min-height: 600px;
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
     `;
 
     // Calculate SVG dimensions based on entity positions
@@ -620,15 +622,19 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
 
     // Create SVG element
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('width', '100%');
-    svg.setAttribute('height', '100%');
+    svg.setAttribute('width', svgWidth);
+    svg.setAttribute('height', svgHeight);
     svg.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
     svg.style.cssText = `
       display: block;
       margin: 0 auto;
-      max-width: 100%;
-      height: auto;
+      width: 100%;
+      height: 100%;
+      min-height: 600px;
+      background: rgba(255, 255, 255, 0.8);
     `;
+    
+    console.log(`SVG created with dimensions: ${svgWidth}x${svgHeight}`);
 
     // Add zoom and pan controls (responsive)
     const controlsDiv = document.createElement('div');
@@ -684,6 +690,16 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
     defs.appendChild(marker);
     svg.appendChild(defs);
 
+    // Add a test rectangle to ensure SVG is visible
+    const testRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    testRect.setAttribute('x', '10');
+    testRect.setAttribute('y', '10');
+    testRect.setAttribute('width', '100');
+    testRect.setAttribute('height', '50');
+    testRect.setAttribute('fill', '#ff0000');
+    testRect.setAttribute('opacity', '0.5');
+    svg.appendChild(testRect);
+
     // Draw relationships first (so they appear behind entities)
     relationships.forEach(rel => {
       const fromEntity = entities.find(e => e.id === rel.from);
@@ -698,9 +714,15 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
     });
 
     // Draw entities
-    entities.forEach(entity => {
+    console.log(`Drawing ${entities.length} entities`);
+    entities.forEach((entity, index) => {
+      console.log(`Drawing entity ${index + 1}: ${entity.name} at position (${entity.position.x}, ${entity.position.y})`);
       const entityBox = createEntityBox(entity, colors);
-      svg.appendChild(entityBox);
+      if (entityBox) {
+        svg.appendChild(entityBox);
+      } else {
+        console.warn(`Failed to create entity box for ${entity.name}`);
+      }
     });
 
     diagramContainer.appendChild(controlsDiv);
@@ -754,8 +776,15 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
   }
 
   function createEntityBox(entity, colors) {
+    if (!entity || !entity.position) {
+      console.error('Invalid entity or missing position:', entity);
+      return null;
+    }
+    
     const boxWidth = 250;
     const boxHeight = 120;
+    
+    console.log(`Creating entity box for ${entity.name} with color ${colors[entity.maturity]}`);
     
     // Create group for the entity
     const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');

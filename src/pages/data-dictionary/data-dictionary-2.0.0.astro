@@ -1411,26 +1411,26 @@ const futureTables = [
   title="CLIF-2.0.0 Data Dictionary"
   description="Comprehensive guide to the Common Longitudinal ICU data Format version 2.0.0, detailing structure and purpose of each table"
 >
-  <!-- Sticky Navigation Bar -->
-  <nav class="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm">
+  <!-- Sticky Navigation Bar with Layout Stability -->
+  <nav class="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm will-change-transform">
     <div class="container mx-auto px-6 py-4">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center space-x-6">
-          <h2 class="text-lg font-semibold text-gray-800">CLIF 2.0.0</h2>
-          <div class="hidden md:flex items-center space-x-6">
-            <a href="#beta-tables" class="text-sm text-gray-600 hover:text-clif-burgundy transition-colors">Beta Tables (9)</a>
-            <a href="#concept-tables" class="text-sm text-gray-600 hover:text-clif-burgundy transition-colors">Concept Tables (16)</a>
-            <a href="#future-tables" class="text-sm text-gray-600 hover:text-clif-burgundy transition-colors">Future Tables (1)</a>
+      <div class="flex items-center justify-between min-h-[2.5rem]">
+        <div class="flex items-center space-x-6 flex-shrink-0">
+          <h2 class="text-lg font-semibold text-gray-800 whitespace-nowrap">CLIF 2.0.0</h2>
+          <div class="hidden md:flex items-center space-x-6 flex-shrink-0">
+            <a href="#beta-tables" class="text-sm text-gray-600 hover:text-clif-burgundy transition-colors duration-150 whitespace-nowrap">Beta Tables (9)</a>
+            <a href="#concept-tables" class="text-sm text-gray-600 hover:text-clif-burgundy transition-colors duration-150 whitespace-nowrap">Concept Tables (16)</a>
+            <a href="#future-tables" class="text-sm text-gray-600 hover:text-clif-burgundy transition-colors duration-150 whitespace-nowrap">Future Tables (1)</a>
           </div>
         </div>
-        <div class="flex items-center space-x-4">
-          <a href="/data-dictionary" class="text-sm text-gray-600 hover:text-clif-burgundy transition-colors">← Back to Versions</a>
+        <div class="flex items-center space-x-4 flex-shrink-0">
+          <a href="/data-dictionary" class="text-sm text-gray-600 hover:text-clif-burgundy transition-colors duration-150 whitespace-nowrap">← Back to Versions</a>
           <button
             id="search-toggle"
-            class="p-2 text-gray-600 hover:text-clif-burgundy transition-colors"
+            class="p-2 text-gray-600 hover:text-clif-burgundy transition-colors duration-150 flex-shrink-0 w-9 h-9 flex items-center justify-center"
             aria-label="Search tables"
           >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
             </svg>
           </button>
@@ -2208,6 +2208,30 @@ const futureTables = [
       }
     }
 
+    /* Layout stability and performance fixes */
+    nav.sticky {
+      contain: layout style paint;
+      transform: translateZ(0);
+    }
+    
+    /* Prevent layout shift on navigation hover */
+    nav a, nav button {
+      will-change: color;
+      transform: translateZ(0);
+    }
+    
+    /* Force layer creation for smooth transitions */
+    .transition-colors {
+      will-change: color;
+      backface-visibility: hidden;
+    }
+    
+    /* Prevent icon flutter */
+    svg {
+      will-change: auto;
+      backface-visibility: hidden;
+    }
+    
     /* Print styles */
     @media print {
       nav, #search-toggle, .collapse-toggle, #expand-all-beta {
