@@ -1,7 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import CohortDashboardReal from '../components/cohort/CohortDashboardReal.astro';
-import ConsortiumMapOriginal from '../components/home/ConsortiumMapOriginal.astro';
 import CTAButton from '../components/shared/CTAButton.astro';
 ---
 
@@ -58,7 +57,7 @@ import CTAButton from '../components/shared/CTAButton.astro';
             <CTAButton
               href="https://clif-consortium.shinyapps.io/clif-cohort-dashboard/"
               ariaLabel="Launch the interactive CLIF Cohort Dashboard"
-              class="bg-white text-clif-burgundy hover:bg-gray-100 transform hover:scale-105 transition-transform duration-200"
+              class="bg-clif-burgundy text-white hover:bg-clif-burgundy-dark transform hover:scale-105 transition-all duration-200 shadow-lg"
               size="large"
               external={true}
             >
@@ -66,17 +65,6 @@ import CTAButton from '../components/shared/CTAButton.astro';
             </CTAButton>
 
           </div>
-        </div>
-      </section>
-
-      <!-- Enhanced Consortium Map Section -->
-      <section class="mb-16 scroll-section">
-        <div class="text-center mb-8">
-          <h2 class="text-3xl font-bold text-gray-800 mb-3">Participating Institutions</h2>
-          <p class="text-lg text-gray-600">Geographic distribution of CLIF Consortium members</p>
-        </div>
-        <div class="glass rounded-2xl p-4 shadow-xl hover:shadow-2xl transition-shadow duration-300">
-          <ConsortiumMapOriginal />
         </div>
       </section>
 
