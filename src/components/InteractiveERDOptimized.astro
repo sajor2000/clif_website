@@ -1015,6 +1015,12 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
   }
 
   function showDetailedTableView(entity, colors, card) {
+    // Format display name to match diagram style
+    const displayName = entity.name
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+    
     // Create modal overlay
     const modalOverlay = document.createElement('div');
     modalOverlay.style.cssText = `
@@ -1023,64 +1029,76 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.5);
+      background: rgba(0, 0, 0, 0.8);
       z-index: 1000;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 20px;
+      backdrop-filter: blur(4px);
     `;
 
     const modalContent = document.createElement('div');
     modalContent.style.cssText = `
       background: white;
-      border-radius: 12px;
+      border-radius: 6px;
       max-width: 900px;
       max-height: 90vh;
       width: 100%;
       overflow-y: auto;
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      border: 2px solid #374151;
     `;
 
     // Determine text color for modal header
-    const modalTextColor = entity.maturity === 'concept' ? '#374151' : 'white';
-    const modalButtonBg = entity.maturity === 'concept' ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.2)';
+    const modalTextColor = entity.maturity === 'concept' ? '#1f2937' : 'white';
+    const modalButtonBg = entity.maturity === 'concept' ? 'rgba(31,41,55,0.1)' : 'rgba(255,255,255,0.2)';
     
     modalContent.innerHTML = `
-      <div style="background: ${colors[entity.maturity]}; padding: 20px; color: ${modalTextColor}; position: sticky; top: 0; z-index: 10;">
+      <div style="background: ${colors[entity.maturity]}; padding: 16px 20px; color: ${modalTextColor}; position: sticky; top: 0; z-index: 10; border-bottom: 1px solid rgba(255,255,255,0.2);">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-          <h2 style="margin: 0; font-size: 24px; font-weight: bold;">${entity.name} - Detailed Specifications</h2>
-          <button id="closeModal" style="background: ${modalButtonBg}; border: none; color: ${modalTextColor}; font-size: 24px; cursor: pointer; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">×</button>
+          <div>
+            <h2 style="margin: 0; font-size: 18px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">${displayName}</h2>
+            <div style="margin-top: 4px;">
+              <span style="display: inline-block; padding: 2px 8px; font-size: 10px; font-weight: bold; letter-spacing: 0.5px; text-transform: uppercase; border-radius: 3px; background: ${entity.maturity === 'concept' ? '#F3F4F6' : 'rgba(255,255,255,0.2)'}; color: ${entity.maturity === 'concept' ? '#374151' : 'white'}; border: 1px solid ${entity.maturity === 'concept' ? '#D1D5DB' : 'rgba(255,255,255,0.3)'};">
+                ${entity.maturity} Table
+              </span>
+              <span style="margin-left: 8px; font-size: 13px; opacity: 0.9;">${entity.fields?.length || 0} fields</span>
+            </div>
+          </div>
+          <button id="closeModal" style="background: ${modalButtonBg}; border: none; color: ${modalTextColor}; font-size: 24px; cursor: pointer; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-weight: 300; transition: all 0.2s;">×</button>
         </div>
-        <p style="margin: 8px 0 0 0; opacity: 0.9;">${entity.description}</p>
+        <p style="margin: 10px 0 0 0; opacity: 0.85; font-size: 13px; line-height: 1.5;">${entity.description}</p>
       </div>
       
-      <div style="padding: 24px;">
-        <h3 style="margin: 0 0 16px 0; color: #374151; font-size: 18px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">Field Specifications</h3>
+      <div style="padding: 20px;">
+        <h3 style="margin: 0 0 16px 0; color: #1f2937; font-size: 16px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #374151; padding-bottom: 8px;">Field Specifications</h3>
         
         <div style="overflow-x: auto;">
-          <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 13px; border: 1px solid #e5e7eb;">
             <thead>
-              <tr style="background: #f8f9fa;">
-                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6; font-weight: 600; color: #495057;">Field Name</th>
-                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6; font-weight: 600; color: #495057;">Type</th>
-                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6; font-weight: 600; color: #495057;">Description</th>
-                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6; font-weight: 600; color: #495057;">Values/Restrictions</th>
+              <tr style="background: #f3f4f6;">
+                <th style="padding: 10px 12px; text-align: left; border-bottom: 2px solid #374151; font-weight: 600; color: #1f2937; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px;">Field Name</th>
+                <th style="padding: 10px 12px; text-align: left; border-bottom: 2px solid #374151; font-weight: 600; color: #1f2937; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px;">Type</th>
+                <th style="padding: 10px 12px; text-align: left; border-bottom: 2px solid #374151; font-weight: 600; color: #1f2937; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px;">Description</th>
+                <th style="padding: 10px 12px; text-align: left; border-bottom: 2px solid #374151; font-weight: 600; color: #1f2937; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px;">Values/Restrictions</th>
               </tr>
             </thead>
             <tbody>
               ${entity.fields.map((field, index) => `
-                <tr style="border-bottom: 1px solid #e9ecef; ${index % 2 === 0 ? 'background: #f8f9fa;' : ''}">
-                  <td style="padding: 12px; font-family: 'Monaco', monospace; font-weight: 500; color: #212529;">${field.name}</td>
-                  <td style="padding: 12px; font-family: 'Monaco', monospace; color: #6c757d; background: #e9ecef; border-radius: 4px; font-size: 12px; margin: 2px;">${field.type}</td>
-                  <td style="padding: 12px; color: #495057; line-height: 1.4;">${field.description || 'No description'}</td>
-                  <td style="padding: 12px; color: #6c757d; font-size: 12px;">
+                <tr style="border-bottom: 1px solid #e5e7eb; ${index % 2 === 0 ? 'background: #fafafa;' : 'background: white;'}">
+                  <td style="padding: 10px 12px; font-family: 'Consolas', 'Monaco', monospace; font-weight: 500; color: #1f2937; font-size: 12px;">${field.name}</td>
+                  <td style="padding: 10px 12px;">
+                    <span style="display: inline-block; padding: 2px 6px; font-family: 'Consolas', 'Monaco', monospace; color: #374151; background: #e5e7eb; border-radius: 3px; font-size: 11px; font-weight: 500;">${field.type}</span>
+                  </td>
+                  <td style="padding: 10px 12px; color: #4b5563; line-height: 1.4; font-size: 12px;">${field.description || 'No description'}</td>
+                  <td style="padding: 10px 12px; font-size: 11px;">
                     ${field.values ? 
-                      `<div style="background: #e3f2fd; padding: 6px; border-radius: 4px; margin-bottom: 4px;"><strong>Values:</strong> ${field.values.join(', ')}</div>` : 
+                      `<div style="background: #dbeafe; padding: 4px 8px; border-radius: 3px; margin-bottom: 4px; border: 1px solid #93c5fd;"><strong style="color: #1e40af;">Values:</strong> <span style="color: #3730a3;">${field.values.join(', ')}</span></div>` : 
                       ''
                     }
                     ${field.restrictions ? 
-                      `<div style="background: #fff3e0; padding: 6px; border-radius: 4px;"><strong>Restrictions:</strong> ${field.restrictions}</div>` : 
+                      `<div style="background: #fed7aa; padding: 4px 8px; border-radius: 3px; border: 1px solid #fb923c;"><strong style="color: #c2410c;">Restrictions:</strong> <span style="color: #7c2d12;">${field.restrictions}</span></div>` : 
                       ''
                     }
                   </td>
@@ -1091,19 +1109,19 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
         </div>
 
         ${entity.notes && entity.notes.length > 0 ? `
-          <div style="margin-top: 24px;">
-            <h3 style="margin: 0 0 12px 0; color: #374151; font-size: 16px;">Implementation Notes</h3>
-            <ul style="margin: 0; padding-left: 20px; color: #495057;">
-              ${entity.notes.map(note => `<li style="margin-bottom: 8px; line-height: 1.4;">${note}</li>`).join('')}
+          <div style="margin-top: 20px; padding: 16px; background: #f9fafb; border-radius: 6px; border: 1px solid #e5e7eb;">
+            <h3 style="margin: 0 0 12px 0; color: #1f2937; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Implementation Notes</h3>
+            <ul style="margin: 0; padding-left: 20px; color: #4b5563; font-size: 13px;">
+              ${entity.notes.map(note => `<li style="margin-bottom: 6px; line-height: 1.5;">${note}</li>`).join('')}
             </ul>
           </div>
         ` : ''}
 
         ${entity.example ? `
-          <div style="margin-top: 24px;">
-            <h3 style="margin: 0 0 12px 0; color: #374151; font-size: 16px;">Example Data</h3>
-            <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; overflow-x: auto; font-family: 'Monaco', monospace; font-size: 12px; line-height: 1.6; border: 1px solid #dee2e6;">
-              <pre style="margin: 0; white-space: pre-wrap;">${entity.example}</pre>
+          <div style="margin-top: 20px;">
+            <h3 style="margin: 0 0 12px 0; color: #1f2937; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Example Data</h3>
+            <div style="background: #1f2937; padding: 16px; border-radius: 6px; overflow-x: auto; border: 2px solid #374151;">
+              <pre style="margin: 0; white-space: pre-wrap; font-family: 'Consolas', 'Monaco', monospace; font-size: 11px; line-height: 1.6; color: #e5e7eb;">${entity.example}</pre>
             </div>
           </div>
         ` : ''}
