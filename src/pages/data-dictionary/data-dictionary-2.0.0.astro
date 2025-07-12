@@ -2,7 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Badge from '../../components/Badge.astro';
 import OptimizedImage from '../../components/OptimizedImage.astro';
-import InteractiveERDWorking from '../../components/InteractiveERDWorking.astro';
+import InteractiveERDOptimized from '../../components/InteractiveERDOptimized.astro';
 
 // Define all Beta tables data
 const betaTables = [
@@ -582,81 +582,779 @@ const conceptTables = [
     id: 'code_status',
     name: 'Code Status',
     description: 'This table provides a longitudinal record of changes in a patient\'s code status during their hospitalization. It tracks the timeline and categorization of code status updates, facilitating the analysis of care preferences and decisions.',
+    fields: [
+      {
+        name: 'hospitalization_id',
+        type: 'VARCHAR',
+        description: 'Unique identifier for each hospitalization encounter',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'recorded_dttm',
+        type: 'DATETIME',
+        description: 'Date and time when code status was documented',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
+      },
+      {
+        name: 'code_status',
+        type: 'VARCHAR',
+        description: 'Patient\'s resuscitation preference',
+        values: ['full_code', 'dnr', 'dnh', 'dni', 'comfort_care', 'other'],
+      },
+    ],
+    notes: [
+      'Code status changes are tracked longitudinally',
+      'Facilitates analysis of care preferences and advance directives',
+    ],
+    example: `| hospitalization_id | recorded_dttm | code_status |
+|---|---|---|
+| 20010012 | 2024-12-01 10:00:00+00:00 | full_code |
+| 20010012 | 2024-12-02 08:30:00+00:00 | dnr |`,
   },
   {
     id: 'crrt_therapy',
     name: 'CRRT Therapy',
     description: 'The crrt_therapy table captures Continuous Renal Replacement Therapy (CRRT) data, including different CRRT modalities, operational parameters, and fluid exchange details. The intermittent HD, peritoneal dialysis, PERT, and SLED tables are under development.',
+    fields: [
+      {
+        name: 'hospitalization_id',
+        type: 'VARCHAR',
+        description: 'Unique identifier for each hospitalization encounter',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'therapy_start_dttm',
+        type: 'DATETIME',
+        description: 'Start date and time of CRRT therapy',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
+      },
+      {
+        name: 'therapy_end_dttm',
+        type: 'DATETIME',
+        description: 'End date and time of CRRT therapy',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
+      },
+      {
+        name: 'crrt_modality',
+        type: 'VARCHAR',
+        description: 'Type of CRRT modality used',
+        values: ['cvvh', 'cvvhd', 'cvvhdf', 'scuf', 'other'],
+      },
+      {
+        name: 'blood_flow_rate',
+        type: 'DOUBLE',
+        description: 'Blood flow rate in mL/min',
+        restrictions: 'Numeric',
+      },
+      {
+        name: 'dialysate_flow_rate',
+        type: 'DOUBLE',
+        description: 'Dialysate flow rate in mL/hr',
+        restrictions: 'Numeric',
+      },
+    ],
+    notes: [
+      'Captures continuous renal replacement therapy parameters',
+      'Intermittent HD, peritoneal dialysis, PERT, and SLED tables under development',
+    ],
+    example: `| hospitalization_id | therapy_start_dttm | therapy_end_dttm | crrt_modality | blood_flow_rate | dialysate_flow_rate |
+|---|---|---|---|---|---|
+| 20010012 | 2024-12-01 12:00:00+00:00 | 2024-12-02 12:00:00+00:00 | cvvhd | 200 | 2000 |`,
   },
   {
     id: 'ecmo_mcs',
     name: 'ECMO_MCS',
     description: 'The ECMO/MCS table is a wider longitudinal table that captures the start and stop times of ECMO/MCS support, the type of device used, and the work rate of the device.',
+    fields: [
+      {
+        name: 'hospitalization_id',
+        type: 'VARCHAR',
+        description: 'Unique identifier for each hospitalization encounter',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'device_start_dttm',
+        type: 'DATETIME',
+        description: 'Start date and time of ECMO/MCS support',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
+      },
+      {
+        name: 'device_end_dttm',
+        type: 'DATETIME',
+        description: 'End date and time of ECMO/MCS support',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
+      },
+      {
+        name: 'device_type',
+        type: 'VARCHAR',
+        description: 'Type of mechanical circulatory support device',
+        values: ['va_ecmo', 'vv_ecmo', 'iabp', 'impella', 'lvad', 'other'],
+      },
+      {
+        name: 'device_flow_rate',
+        type: 'DOUBLE',
+        description: 'Device flow rate or work rate',
+        restrictions: 'Numeric',
+      },
+    ],
+    notes: [
+      'Captures extracorporeal membrane oxygenation and mechanical circulatory support',
+      'Tracks device parameters and support duration',
+    ],
+    example: `| hospitalization_id | device_start_dttm | device_end_dttm | device_type | device_flow_rate |
+|---|---|---|---|---|
+| 20010012 | 2024-12-01 14:00:00+00:00 | 2024-12-05 10:00:00+00:00 | vv_ecmo | 4.5 |`,
   },
   {
     id: 'hospital_diagnosis',
     name: 'Hospital Diagnosis',
     description: 'Record of all diagnoses associated with the hospitalization. Expect breaking changes to this table as we seek to align it with existing diagnosis ontologies',
+    fields: [
+      {
+        name: 'hospitalization_id',
+        type: 'VARCHAR',
+        description: 'Unique identifier for each hospitalization encounter',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'diagnosis_dttm',
+        type: 'DATETIME',
+        description: 'Date and time when diagnosis was recorded',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
+      },
+      {
+        name: 'diagnosis_code',
+        type: 'VARCHAR',
+        description: 'Diagnosis code (ICD-10, ICD-9, etc.)',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'diagnosis_description',
+        type: 'VARCHAR',
+        description: 'Text description of the diagnosis',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'diagnosis_type',
+        type: 'VARCHAR',
+        description: 'Type of diagnosis',
+        values: ['primary', 'secondary', 'admission', 'discharge', 'working'],
+      },
+      {
+        name: 'diagnosis_sequence',
+        type: 'INTEGER',
+        description: 'Sequence number for diagnosis ordering',
+        restrictions: 'Numeric',
+      },
+    ],
+    notes: [
+      'Expect breaking changes as we align with existing diagnosis ontologies',
+      'Supports multiple diagnosis coding systems',
+    ],
+    example: `| hospitalization_id | diagnosis_dttm | diagnosis_code | diagnosis_description | diagnosis_type | diagnosis_sequence |
+|---|---|---|---|---|---|
+| 20010012 | 2024-12-01 10:00:00+00:00 | J44.1 | COPD with acute exacerbation | primary | 1 |`,
   },
   {
     id: 'intake_output',
     name: 'Intake_Output',
     description: 'The intake_output table captures detailed data on patient fluid intake and output.',
+    fields: [
+      {
+        name: 'hospitalization_id',
+        type: 'VARCHAR',
+        description: 'Unique identifier for each hospitalization encounter',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'recorded_dttm',
+        type: 'DATETIME',
+        description: 'Date and time when intake/output was recorded',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
+      },
+      {
+        name: 'io_category',
+        type: 'VARCHAR',
+        description: 'Category of intake or output',
+        values: ['intake', 'output'],
+      },
+      {
+        name: 'io_type',
+        type: 'VARCHAR',
+        description: 'Specific type of intake or output',
+        values: ['oral', 'iv', 'ng', 'urine', 'drain', 'other'],
+      },
+      {
+        name: 'io_volume',
+        type: 'DOUBLE',
+        description: 'Volume in mL',
+        restrictions: 'Numeric',
+      },
+      {
+        name: 'io_description',
+        type: 'VARCHAR',
+        description: 'Description of the intake or output',
+        restrictions: 'No restriction',
+      },
+    ],
+    notes: [
+      'Captures detailed fluid balance data',
+      'Supports both intake and output tracking',
+    ],
+    example: `| hospitalization_id | recorded_dttm | io_category | io_type | io_volume | io_description |
+|---|---|---|---|---|---|
+| 20010012 | 2024-12-01 08:00:00+00:00 | intake | iv | 1000 | Normal saline |
+| 20010012 | 2024-12-01 12:00:00+00:00 | output | urine | 800 | Urine output |`,
   },
   {
     id: 'invasive_hemodynamics',
     name: 'Invasive Hemodynamics',
     description: 'This table captures hemodynamic monitoring data from invasive devices such as arterial lines, central venous catheters, and pulmonary artery catheters.',
+    fields: [
+      {
+        name: 'hospitalization_id',
+        type: 'VARCHAR',
+        description: 'Unique identifier for each hospitalization encounter',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'recorded_dttm',
+        type: 'DATETIME',
+        description: 'Date and time when measurement was recorded',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
+      },
+      {
+        name: 'measurement_name',
+        type: 'VARCHAR',
+        description: 'Name of the hemodynamic measurement',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'measurement_category',
+        type: 'VARCHAR',
+        description: 'Category of hemodynamic measurement',
+        values: ['arterial_pressure', 'central_venous_pressure', 'pulmonary_artery_pressure', 'cardiac_output', 'other'],
+      },
+      {
+        name: 'measurement_value',
+        type: 'DOUBLE',
+        description: 'Numeric value of the measurement',
+        restrictions: 'Numeric',
+      },
+      {
+        name: 'measurement_unit',
+        type: 'VARCHAR',
+        description: 'Unit of measurement',
+        restrictions: 'No restriction',
+      },
+    ],
+    notes: [
+      'Captures invasive hemodynamic monitoring data',
+      'Includes arterial lines, central lines, and PA catheters',
+    ],
+    example: `| hospitalization_id | recorded_dttm | measurement_name | measurement_category | measurement_value | measurement_unit |
+|---|---|---|---|---|---|
+| 20010012 | 2024-12-01 10:15:00+00:00 | CVP | central_venous_pressure | 8 | mmHg |`,
   },
   {
     id: 'key_icu_orders',
     name: 'Key ICU orders',
     description: 'This table captures key orders placed in the ICU that impact patient care and outcomes.',
+    fields: [
+      {
+        name: 'hospitalization_id',
+        type: 'VARCHAR',
+        description: 'Unique identifier for each hospitalization encounter',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'order_dttm',
+        type: 'DATETIME',
+        description: 'Date and time when order was placed',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
+      },
+      {
+        name: 'order_category',
+        type: 'VARCHAR',
+        description: 'Category of the order',
+        values: ['nutrition', 'activity', 'isolation', 'monitoring', 'therapy', 'other'],
+      },
+      {
+        name: 'order_description',
+        type: 'VARCHAR',
+        description: 'Description of the order',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'order_status',
+        type: 'VARCHAR',
+        description: 'Status of the order',
+        values: ['active', 'completed', 'discontinued', 'cancelled'],
+      },
+    ],
+    notes: [
+      'Captures key ICU orders impacting patient care',
+      'Focuses on orders relevant to critical care outcomes',
+    ],
+    example: `| hospitalization_id | order_dttm | order_category | order_description | order_status |
+|---|---|---|---|---|
+| 20010012 | 2024-12-01 09:00:00+00:00 | nutrition | NPO for procedure | active |`,
   },
   {
     id: 'medication_admin_intermittent',
     name: 'Medication Admin Intermittent',
     description: 'This table contains information about medications given as single doses or intermittent administrations (not continuous infusions).',
+    fields: [
+      {
+        name: 'hospitalization_id',
+        type: 'VARCHAR',
+        description: 'Unique identifier for each hospitalization encounter',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'admin_dttm',
+        type: 'DATETIME',
+        description: 'Date and time when medication was administered',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
+      },
+      {
+        name: 'medication_name',
+        type: 'VARCHAR',
+        description: 'Name of the medication',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'medication_category',
+        type: 'VARCHAR',
+        description: 'Category of medication',
+        values: ['antibiotic', 'analgesic', 'sedative', 'vasopressor', 'diuretic', 'other'],
+      },
+      {
+        name: 'dose_value',
+        type: 'DOUBLE',
+        description: 'Dose amount',
+        restrictions: 'Numeric',
+      },
+      {
+        name: 'dose_unit',
+        type: 'VARCHAR',
+        description: 'Unit of the dose',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'route',
+        type: 'VARCHAR',
+        description: 'Route of administration',
+        values: ['iv', 'po', 'im', 'sc', 'ng', 'pr', 'other'],
+      },
+    ],
+    notes: [
+      'Covers single doses and intermittent administrations',
+      'Excludes continuous infusions (see medication_admin_continuous)',
+    ],
+    example: `| hospitalization_id | admin_dttm | medication_name | medication_category | dose_value | dose_unit | route |
+|---|---|---|---|---|---|---|
+| 20010012 | 2024-12-01 08:00:00+00:00 | Acetaminophen | analgesic | 1000 | mg | po |`,
   },
   {
     id: 'medication_orders',
     name: 'Medication Orders',
     description: 'This table captures all medication orders placed for patients, including start and stop times.',
+    fields: [
+      {
+        name: 'hospitalization_id',
+        type: 'VARCHAR',
+        description: 'Unique identifier for each hospitalization encounter',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'order_dttm',
+        type: 'DATETIME',
+        description: 'Date and time when order was placed',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
+      },
+      {
+        name: 'start_dttm',
+        type: 'DATETIME',
+        description: 'Start date and time of medication order',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
+      },
+      {
+        name: 'stop_dttm',
+        type: 'DATETIME',
+        description: 'Stop date and time of medication order',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
+      },
+      {
+        name: 'medication_name',
+        type: 'VARCHAR',
+        description: 'Name of the medication',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'order_status',
+        type: 'VARCHAR',
+        description: 'Status of the order',
+        values: ['active', 'completed', 'discontinued', 'cancelled', 'suspended'],
+      },
+    ],
+    notes: [
+      'Captures all medication orders with timing',
+      'Includes both continuous and intermittent orders',
+    ],
+    example: `| hospitalization_id | order_dttm | start_dttm | stop_dttm | medication_name | order_status |
+|---|---|---|---|---|---|
+| 20010012 | 2024-12-01 08:00:00+00:00 | 2024-12-01 09:00:00+00:00 | 2024-12-03 09:00:00+00:00 | Vancomycin | active |`,
   },
   {
     id: 'microbiology_culture',
     name: 'Microbiology Culture',
     description: 'This table contains results from microbiological cultures including blood, urine, sputum, and other specimens.',
+    fields: [
+      {
+        name: 'hospitalization_id',
+        type: 'VARCHAR',
+        description: 'Unique identifier for each hospitalization encounter',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'culture_dttm',
+        type: 'DATETIME',
+        description: 'Date and time when culture was collected',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
+      },
+      {
+        name: 'specimen_type',
+        type: 'VARCHAR',
+        description: 'Type of specimen cultured',
+        values: ['blood', 'urine', 'sputum', 'wound', 'csf', 'other'],
+      },
+      {
+        name: 'organism_name',
+        type: 'VARCHAR',
+        description: 'Name of identified organism',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'culture_result',
+        type: 'VARCHAR',
+        description: 'Result of culture',
+        values: ['positive', 'negative', 'contaminated', 'pending'],
+      },
+      {
+        name: 'result_dttm',
+        type: 'DATETIME',
+        description: 'Date and time when result was available',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
+      },
+    ],
+    notes: [
+      'Captures microbiological culture results',
+      'Links to sensitivity table for antimicrobial testing',
+    ],
+    example: `| hospitalization_id | culture_dttm | specimen_type | organism_name | culture_result | result_dttm |
+|---|---|---|---|---|---|
+| 20010012 | 2024-12-01 10:00:00+00:00 | blood | Staphylococcus aureus | positive | 2024-12-02 08:00:00+00:00 |`,
   },
   {
     id: 'microbiology_non_culture',
     name: 'Microbiology Non-culture',
     description: 'This table captures non-culture based microbiology results including PCR, antigens, and other rapid diagnostics.',
+    fields: [
+      {
+        name: 'hospitalization_id',
+        type: 'VARCHAR',
+        description: 'Unique identifier for each hospitalization encounter',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'test_dttm',
+        type: 'DATETIME',
+        description: 'Date and time when test was performed',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
+      },
+      {
+        name: 'test_name',
+        type: 'VARCHAR',
+        description: 'Name of the test',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'test_category',
+        type: 'VARCHAR',
+        description: 'Category of test',
+        values: ['pcr', 'antigen', 'molecular', 'rapid', 'other'],
+      },
+      {
+        name: 'test_result',
+        type: 'VARCHAR',
+        description: 'Result of the test',
+        values: ['positive', 'negative', 'indeterminate', 'pending'],
+      },
+      {
+        name: 'result_dttm',
+        type: 'DATETIME',
+        description: 'Date and time when result was available',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
+      },
+    ],
+    notes: [
+      'Captures non-culture microbiology diagnostics',
+      'Includes PCR, antigens, and rapid tests',
+    ],
+    example: `| hospitalization_id | test_dttm | test_name | test_category | test_result | result_dttm |
+|---|---|---|---|---|---|
+| 20010012 | 2024-12-01 10:00:00+00:00 | COVID-19 PCR | pcr | negative | 2024-12-01 14:00:00+00:00 |`,
   },
   {
     id: 'procedures',
     name: 'Procedures',
     description: 'This table documents all procedures performed during the hospitalization.',
+    fields: [
+      {
+        name: 'hospitalization_id',
+        type: 'VARCHAR',
+        description: 'Unique identifier for each hospitalization encounter',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'procedure_dttm',
+        type: 'DATETIME',
+        description: 'Date and time when procedure was performed',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
+      },
+      {
+        name: 'procedure_code',
+        type: 'VARCHAR',
+        description: 'Procedure code (CPT, ICD-10-PCS, etc.)',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'procedure_description',
+        type: 'VARCHAR',
+        description: 'Description of the procedure',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'procedure_category',
+        type: 'VARCHAR',
+        description: 'Category of procedure',
+        values: ['surgical', 'diagnostic', 'therapeutic', 'monitoring', 'other'],
+      },
+      {
+        name: 'provider_specialty',
+        type: 'VARCHAR',
+        description: 'Specialty of performing provider',
+        restrictions: 'No restriction',
+      },
+    ],
+    notes: [
+      'Documents all procedures during hospitalization',
+      'Supports multiple procedure coding systems',
+    ],
+    example: `| hospitalization_id | procedure_dttm | procedure_code | procedure_description | procedure_category | provider_specialty |
+|---|---|---|---|---|---|
+| 20010012 | 2024-12-01 14:00:00+00:00 | 31500 | Intubation | therapeutic | Anesthesiology |`,
   },
   {
     id: 'provider',
     name: 'Provider',
     description: 'This table links healthcare providers to patient encounters and captures provider specialty and role information.',
+    fields: [
+      {
+        name: 'hospitalization_id',
+        type: 'VARCHAR',
+        description: 'Unique identifier for each hospitalization encounter',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'provider_id',
+        type: 'VARCHAR',
+        description: 'Unique identifier for healthcare provider',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'provider_role',
+        type: 'VARCHAR',
+        description: 'Role of the provider',
+        values: ['attending', 'resident', 'fellow', 'nurse', 'pharmacist', 'therapist', 'other'],
+      },
+      {
+        name: 'provider_specialty',
+        type: 'VARCHAR',
+        description: 'Specialty of the provider',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'encounter_start_dttm',
+        type: 'DATETIME',
+        description: 'Start of provider involvement',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
+      },
+      {
+        name: 'encounter_end_dttm',
+        type: 'DATETIME',
+        description: 'End of provider involvement',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
+      },
+    ],
+    notes: [
+      'Links providers to patient encounters',
+      'Captures provider roles and specialties',
+    ],
+    example: `| hospitalization_id | provider_id | provider_role | provider_specialty | encounter_start_dttm | encounter_end_dttm |
+|---|---|---|---|---|---|
+| 20010012 | PROV001 | attending | Critical Care Medicine | 2024-12-01 07:00:00+00:00 | 2024-12-05 19:00:00+00:00 |`,
   },
   {
     id: 'sensitivity',
     name: 'Sensitivity',
     description: 'This table contains antimicrobial sensitivity testing results linked to positive cultures.',
+    fields: [
+      {
+        name: 'hospitalization_id',
+        type: 'VARCHAR',
+        description: 'Unique identifier for each hospitalization encounter',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'culture_dttm',
+        type: 'DATETIME',
+        description: 'Date and time when original culture was collected',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
+      },
+      {
+        name: 'organism_name',
+        type: 'VARCHAR',
+        description: 'Name of the organism tested',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'antibiotic_name',
+        type: 'VARCHAR',
+        description: 'Name of antibiotic tested',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'sensitivity_result',
+        type: 'VARCHAR',
+        description: 'Result of sensitivity testing',
+        values: ['sensitive', 'resistant', 'intermediate', 'not_tested'],
+      },
+      {
+        name: 'mic_value',
+        type: 'DOUBLE',
+        description: 'Minimum inhibitory concentration',
+        restrictions: 'Numeric',
+      },
+    ],
+    notes: [
+      'Linked to positive cultures from microbiology_culture table',
+      'Provides antimicrobial susceptibility data',
+    ],
+    example: `| hospitalization_id | culture_dttm | organism_name | antibiotic_name | sensitivity_result | mic_value |
+|---|---|---|---|---|---|
+| 20010012 | 2024-12-01 10:00:00+00:00 | Staphylococcus aureus | Vancomycin | sensitive | 1.0 |`,
   },
   {
     id: 'therapy_details',
     name: 'Therapy Details',
     description: 'This table provides granular details about specific therapies and interventions.',
+    fields: [
+      {
+        name: 'hospitalization_id',
+        type: 'VARCHAR',
+        description: 'Unique identifier for each hospitalization encounter',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'therapy_start_dttm',
+        type: 'DATETIME',
+        description: 'Start date and time of therapy',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
+      },
+      {
+        name: 'therapy_end_dttm',
+        type: 'DATETIME',
+        description: 'End date and time of therapy',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
+      },
+      {
+        name: 'therapy_name',
+        type: 'VARCHAR',
+        description: 'Name of the therapy',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'therapy_category',
+        type: 'VARCHAR',
+        description: 'Category of therapy',
+        values: ['respiratory', 'renal', 'cardiac', 'neurological', 'other'],
+      },
+      {
+        name: 'therapy_parameters',
+        type: 'VARCHAR',
+        description: 'JSON or text description of therapy parameters',
+        restrictions: 'No restriction',
+      },
+    ],
+    notes: [
+      'Captures detailed therapy and intervention data',
+      'Flexible structure for various therapy types',
+    ],
+    example: `| hospitalization_id | therapy_start_dttm | therapy_end_dttm | therapy_name | therapy_category | therapy_parameters |
+|---|---|---|---|---|---|
+| 20010012 | 2024-12-01 12:00:00+00:00 | 2024-12-02 12:00:00+00:00 | Prone positioning | respiratory | {"duration_hours": 16, "frequency": "daily"} |`,
   },
   {
     id: 'transfusion',
     name: 'Transfusion',
     description: 'This table provides detailed information about transfusion events linked to specific hospitalizations.',
+    fields: [
+      {
+        name: 'hospitalization_id',
+        type: 'VARCHAR',
+        description: 'Unique identifier for each hospitalization encounter',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'transfusion_dttm',
+        type: 'DATETIME',
+        description: 'Date and time when transfusion was administered',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
+      },
+      {
+        name: 'blood_product_type',
+        type: 'VARCHAR',
+        description: 'Type of blood product transfused',
+        values: ['packed_rbc', 'fresh_frozen_plasma', 'platelets', 'cryoprecipitate', 'whole_blood', 'other'],
+      },
+      {
+        name: 'units_transfused',
+        type: 'DOUBLE',
+        description: 'Number of units transfused',
+        restrictions: 'Numeric',
+      },
+      {
+        name: 'volume_ml',
+        type: 'DOUBLE',
+        description: 'Volume transfused in mL',
+        restrictions: 'Numeric',
+      },
+      {
+        name: 'indication',
+        type: 'VARCHAR',
+        description: 'Indication for transfusion',
+        restrictions: 'No restriction',
+      },
+    ],
+    notes: [
+      'Captures all blood product transfusions',
+      'Links transfusions to specific hospitalizations',
+    ],
+    example: `| hospitalization_id | transfusion_dttm | blood_product_type | units_transfused | volume_ml | indication |
+|---|---|---|---|---|---|
+| 20010012 | 2024-12-01 16:00:00+00:00 | packed_rbc | 2 | 700 | Anemia with hemoglobin < 7 g/dL |`,
   },
 ];
 
@@ -738,7 +1436,17 @@ const futureTables = [
     </div>
 
     <!-- Interactive ERD Section -->
-    <InteractiveERDWorking tables={[...betaTables, ...conceptTables, ...futureTables]} />
+    <div class="mb-16">
+      <InteractiveERDOptimized 
+        tables={[...betaTables, ...conceptTables, ...futureTables]}
+        height="min(800px, 80vh)"
+        enableKeyboardNavigation={true}
+        enableSearch={true}
+        showLegend={true}
+        showFullscreenButton={true}
+        className="shadow-xl"
+      />
+    </div>
 
     <!-- Stats Section -->
     <div class="mb-12">

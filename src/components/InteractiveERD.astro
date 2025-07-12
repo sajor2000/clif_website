@@ -1,5 +1,5 @@
 ---
-// Interactive ERD Component for CLIF 2.0.0
+// Interactive ERD Component for CLIF 2.0.0 - Complete version matching static ERD
 export interface Props {
   tables?: any[];
 }
@@ -22,11 +22,11 @@ const { tables } = Astro.props;
     </div>
 
     <div id="diagram-wrapper">
-      <svg id="er-diagram" viewBox="0 0 3000 2000" preserveAspectRatio="xMidYMid meet">
+      <svg id="er-diagram" viewBox="0 0 4000 2500" preserveAspectRatio="xMidYMid meet">
         <!-- Define markers for relationship arrows -->
         <defs>
-          <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
-            <path d="M0,0 L0,6 L9,3 z" fill="#333" />
+          <marker id="arrow" markerWidth="12" markerHeight="12" refX="11" refY="6" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,12 L12,6 z" fill="#333" />
           </marker>
         </defs>
 
@@ -55,16 +55,16 @@ const { tables } = Astro.props;
     <div class="legend">
       <h4 style="margin: 0 0 10px 0; font-size: 14px;">Maturity Levels</h4>
       <div class="legend-item">
-        <div class="legend-color" style="background: #E67E22; border: 1px solid #D35400;"></div>
+        <div class="legend-color" style="background: #8B1538; border: 1px solid #7A122F;"></div>
         <span>Beta</span>
       </div>
       <div class="legend-item">
-        <div class="legend-color" style="background: #F39C12; border: 1px solid #E67E22;"></div>
-        <span>New</span>
+        <div class="legend-color" style="background: #E67E22; border: 1px solid #D35400;"></div>
+        <span>Concept</span>
       </div>
       <div class="legend-item">
         <div class="legend-color" style="background: #95A5A6; border: 1px solid #7F8C8D;"></div>
-        <span>Concept</span>
+        <span>Future</span>
       </div>
     </div>
 
@@ -152,9 +152,9 @@ const { tables } = Astro.props;
   }
 
   .entity-rect {
-    fill: white;
-    stroke: #ddd;
-    stroke-width: 1;
+    fill: #ffffff;
+    stroke: #333;
+    stroke-width: 2;
   }
 
   .entity-header {
@@ -162,20 +162,20 @@ const { tables } = Astro.props;
   }
 
   .entity.maturity-beta .entity-header {
-    fill: #E67E22;
-  }
-
-  .entity.maturity-new .entity-header {
-    fill: #F39C12;
+    fill: #8B1538;
   }
 
   .entity.maturity-concept .entity-header {
+    fill: #E67E22;
+  }
+
+  .entity.maturity-future .entity-header {
     fill: #95A5A6;
   }
 
   .entity:hover .entity-rect {
     stroke: #E67E22;
-    stroke-width: 2;
+    stroke-width: 3;
     filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
   }
 
@@ -223,13 +223,13 @@ const { tables } = Astro.props;
 
   .relationship path {
     fill: none;
-    stroke: #999;
-    stroke-width: 1.5;
+    stroke: #333;
+    stroke-width: 2.5;
   }
 
   .relationship.highlighted path {
     stroke: #841839;
-    stroke-width: 2.5;
+    stroke-width: 3.5;
   }
 
   .relationship.dimmed {
@@ -410,165 +410,349 @@ const { tables } = Astro.props;
   }
 
   function initializeERD() {
-    // Data structure for CLIF 2.0.0 entities
+    // Complete data structure for CLIF 2.0.0 entities matching static ERD
     const entities = [
-    {
-      id: 'patient',
-      name: 'patient',
-      maturity: 'beta',
-      position: { x: 100, y: 100 },
-      fields: [
-        { name: 'patient_id', type: 'VARCHAR', isPK: true },
-        { name: 'race_name', type: 'VARCHAR' },
-        { name: 'race_category', type: 'VARCHAR' },
-        { name: 'ethnicity_name', type: 'VARCHAR' },
-        { name: 'ethnicity_category', type: 'VARCHAR' },
-        { name: 'sex_name', type: 'VARCHAR' },
-        { name: 'sex_category', type: 'VARCHAR' },
-        { name: 'birth_date', type: 'DATE' },
-        { name: 'death_dttm', type: 'DATETIME' }
-      ]
-    },
-    {
-      id: 'hospitalization',
-      name: 'hospitalization',
-      maturity: 'beta',
-      position: { x: 500, y: 100 },
-      fields: [
-        { name: 'patient_id', type: 'VARCHAR', isFK: true },
-        { name: 'hospitalization_id', type: 'VARCHAR', isPK: true },
-        { name: 'admission_dttm', type: 'DATETIME' },
-        { name: 'discharge_dttm', type: 'DATETIME' },
-        { name: 'age_at_admission', type: 'INT' },
-        { name: 'admission_type_name', type: 'VARCHAR' },
-        { name: 'admission_type_category', type: 'VARCHAR' },
-        { name: 'discharge_name', type: 'VARCHAR' },
-        { name: 'discharge_category', type: 'VARCHAR' }
-      ]
-    },
-    {
-      id: 'adt',
-      name: 'adt',
-      maturity: 'beta',
-      position: { x: 900, y: 100 },
-      fields: [
-        { name: 'hospitalization_id', type: 'VARCHAR', isPK: true, isFK: true },
-        { name: 'hospital_id', type: 'VARCHAR' },
-        { name: 'hospital_type', type: 'VARCHAR' },
-        { name: 'in_dttm', type: 'DATETIME' },
-        { name: 'out_dttm', type: 'DATETIME' },
-        { name: 'location_name', type: 'VARCHAR' },
-        { name: 'location_category', type: 'VARCHAR' }
-      ]
-    },
-    {
-      id: 'vitals',
-      name: 'vitals',
-      maturity: 'beta',
-      position: { x: 1300, y: 100 },
-      fields: [
-        { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
-        { name: 'recorded_dttm', type: 'DATETIME' },
-        { name: 'vital_name', type: 'VARCHAR' },
-        { name: 'vital_category', type: 'VARCHAR' },
-        { name: 'vital_value', type: 'DOUBLE' },
-        { name: 'vital_units', type: 'VARCHAR' }
-      ]
-    },
-    {
-      id: 'labs',
-      name: 'labs',
-      maturity: 'beta',
-      position: { x: 100, y: 450 },
-      fields: [
-        { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
-        { name: 'lab_order_id', type: 'VARCHAR' },
-        { name: 'lab_order_name', type: 'VARCHAR' },
-        { name: 'lab_order_type', type: 'VARCHAR' },
-        { name: 'lab_name', type: 'VARCHAR' },
-        { name: 'lab_category', type: 'VARCHAR' },
-        { name: 'lab_loinc', type: 'VARCHAR' },
-        { name: 'specimen_name', type: 'VARCHAR' },
-        { name: 'specimen_category', type: 'VARCHAR' },
-        { name: 'lab_value_text', type: 'VARCHAR' },
-        { name: 'lab_value_numeric', type: 'DOUBLE' },
-        { name: 'lab_units_name', type: 'VARCHAR' },
-        { name: 'reference_range_upper', type: 'DOUBLE' },
-        { name: 'reference_range_lower', type: 'DOUBLE' }
-      ]
-    },
-    {
-      id: 'medication_admin',
-      name: 'medication_admin',
-      maturity: 'beta',
-      position: { x: 500, y: 450 },
-      fields: [
-        { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
-        { name: 'admin_dttm', type: 'DATETIME' },
-        { name: 'med_name', type: 'VARCHAR' },
-        { name: 'med_category', type: 'VARCHAR' },
-        { name: 'med_route_name', type: 'VARCHAR' },
-        { name: 'med_route_category', type: 'VARCHAR' },
-        { name: 'med_dose', type: 'DOUBLE' },
-        { name: 'med_dose_unit', type: 'VARCHAR' }
-      ]
-    },
-    {
-      id: 'scores',
-      name: 'scores',
-      maturity: 'beta',
-      position: { x: 900, y: 450 },
-      fields: [
-        { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
-        { name: 'recorded_dttm', type: 'DATETIME' },
-        { name: 'score_name', type: 'VARCHAR' },
-        { name: 'score_category', type: 'VARCHAR' },
-        { name: 'score_value', type: 'DOUBLE' },
-        { name: 'score_unit', type: 'VARCHAR' }
-      ]
-    },
-    {
-      id: 'respiratory_support',
-      name: 'respiratory_support',
-      maturity: 'beta',
-      position: { x: 1300, y: 450 },
-      fields: [
-        { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
-        { name: 'recorded_dttm', type: 'DATETIME' },
-        { name: 'device_name', type: 'VARCHAR' },
-        { name: 'device_category', type: 'VARCHAR' },
-        { name: 'mode_name', type: 'VARCHAR' },
-        { name: 'mode_category', type: 'VARCHAR' },
-        { name: 'fio2_set', type: 'DOUBLE' }
-      ]
-    },
-    {
-      id: 'position',
-      name: 'position',
-      maturity: 'beta',
-      position: { x: 700, y: 800 },
-      fields: [
-        { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
-        { name: 'recorded_dttm', type: 'DATETIME' },
-        { name: 'position_name', type: 'VARCHAR' },
-        { name: 'position_category', type: 'VARCHAR' }
-      ]
-    }
-  ];
+      // Row 1 - Beta tables
+      {
+        id: 'patient',
+        name: 'patient',
+        maturity: 'beta',
+        position: { x: 50, y: 50 },
+        fields: [
+          { name: 'patient_id', type: 'VARCHAR', isPK: true },
+          { name: 'race_name', type: 'VARCHAR' },
+          { name: 'race_category', type: 'VARCHAR' },
+          { name: 'ethnicity_name', type: 'VARCHAR' },
+          { name: 'ethnicity_category', type: 'VARCHAR' },
+          { name: 'sex_name', type: 'VARCHAR' },
+          { name: 'sex_category', type: 'VARCHAR' },
+          { name: 'birth_date', type: 'DATE' },
+          { name: 'death_dttm', type: 'DATETIME' }
+        ]
+      },
+      {
+        id: 'hospitalization',
+        name: 'hospitalization',
+        maturity: 'beta',
+        position: { x: 320, y: 50 },
+        fields: [
+          { name: 'patient_id', type: 'VARCHAR', isFK: true },
+          { name: 'hospitalization_id', type: 'VARCHAR', isPK: true },
+          { name: 'admission_dttm', type: 'DATETIME' },
+          { name: 'discharge_dttm', type: 'DATETIME' },
+          { name: 'age_at_admission', type: 'INT' }
+        ]
+      },
+      {
+        id: 'adt',
+        name: 'adt',
+        maturity: 'beta',
+        position: { x: 590, y: 50 },
+        fields: [
+          { name: 'hospitalization_id', type: 'VARCHAR', isPK: true, isFK: true },
+          { name: 'hospital_id', type: 'VARCHAR' },
+          { name: 'in_dttm', type: 'DATETIME' },
+          { name: 'out_dttm', type: 'DATETIME' }
+        ]
+      },
+      {
+        id: 'vitals',
+        name: 'vitals',
+        maturity: 'beta',
+        position: { x: 860, y: 50 },
+        fields: [
+          { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
+          { name: 'recorded_dttm', type: 'DATETIME' },
+          { name: 'vital_name', type: 'VARCHAR' },
+          { name: 'vital_value', type: 'DOUBLE' }
+        ]
+      },
+      {
+        id: 'medication_admin_continuous',
+        name: 'medication_admin_continuous',
+        maturity: 'beta',
+        position: { x: 1130, y: 50 },
+        fields: [
+          { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
+          { name: 'med_name', type: 'VARCHAR' },
+          { name: 'start_dttm', type: 'DATETIME' },
+          { name: 'med_dose', type: 'DOUBLE' }
+        ]
+      },
 
-  // Relationships between entities
-  const relationships = [
-    { from: 'patient', to: 'hospitalization', field: 'patient_id' },
-    { from: 'hospitalization', to: 'adt', field: 'hospitalization_id' },
-    { from: 'hospitalization', to: 'vitals', field: 'hospitalization_id' },
-    { from: 'hospitalization', to: 'labs', field: 'hospitalization_id' },
-    { from: 'hospitalization', to: 'medication_admin', field: 'hospitalization_id' },
-    { from: 'hospitalization', to: 'scores', field: 'hospitalization_id' },
-    { from: 'hospitalization', to: 'respiratory_support', field: 'hospitalization_id' },
-    { from: 'hospitalization', to: 'position', field: 'hospitalization_id' }
-  ];
+      // Row 2 - Beta tables continued
+      {
+        id: 'labs',
+        name: 'labs',
+        maturity: 'beta',
+        position: { x: 50, y: 280 },
+        fields: [
+          { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
+          { name: 'lab_name', type: 'VARCHAR' },
+          { name: 'lab_value_numeric', type: 'DOUBLE' },
+          { name: 'lab_units_name', type: 'VARCHAR' }
+        ]
+      },
+      {
+        id: 'patient_assessments',
+        name: 'patient_assessments',
+        maturity: 'beta',
+        position: { x: 320, y: 280 },
+        fields: [
+          { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
+          { name: 'assessment_name', type: 'VARCHAR' },
+          { name: 'assessment_value', type: 'DOUBLE' }
+        ]
+      },
+      {
+        id: 'position',
+        name: 'position',
+        maturity: 'beta',
+        position: { x: 590, y: 280 },
+        fields: [
+          { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
+          { name: 'recorded_dttm', type: 'DATETIME' },
+          { name: 'position_name', type: 'VARCHAR' }
+        ]
+      },
+      {
+        id: 'respiratory_support',
+        name: 'respiratory_support',
+        maturity: 'beta',
+        position: { x: 860, y: 280 },
+        fields: [
+          { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
+          { name: 'device_name', type: 'VARCHAR' },
+          { name: 'mode_name', type: 'VARCHAR' }
+        ]
+      },
 
-  // Initialize the diagram
+      // Row 3 - Concept tables
+      {
+        id: 'code_status',
+        name: 'code_status',
+        maturity: 'concept',
+        position: { x: 50, y: 510 },
+        fields: [
+          { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
+          { name: 'recorded_dttm', type: 'DATETIME' },
+          { name: 'code_status', type: 'VARCHAR' }
+        ]
+      },
+      {
+        id: 'crrt_therapy',
+        name: 'crrt_therapy',
+        maturity: 'concept',
+        position: { x: 320, y: 510 },
+        fields: [
+          { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
+          { name: 'therapy_start_dttm', type: 'DATETIME' },
+          { name: 'therapy_type', type: 'VARCHAR' }
+        ]
+      },
+      {
+        id: 'ecmo_mcs',
+        name: 'ecmo_mcs',
+        maturity: 'concept',
+        position: { x: 590, y: 510 },
+        fields: [
+          { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
+          { name: 'device_type', type: 'VARCHAR' },
+          { name: 'start_dttm', type: 'DATETIME' }
+        ]
+      },
+      {
+        id: 'hospital_diagnosis',
+        name: 'hospital_diagnosis',
+        maturity: 'concept',
+        position: { x: 860, y: 510 },
+        fields: [
+          { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
+          { name: 'diagnosis_code', type: 'VARCHAR' },
+          { name: 'diagnosis_name', type: 'VARCHAR' }
+        ]
+      },
+      {
+        id: 'intake_output',
+        name: 'intake_output',
+        maturity: 'concept',
+        position: { x: 1130, y: 510 },
+        fields: [
+          { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
+          { name: 'recorded_dttm', type: 'DATETIME' },
+          { name: 'io_type', type: 'VARCHAR' }
+        ]
+      },
+
+      // Row 4 - More concept tables
+      {
+        id: 'invasive_hemodynamics',
+        name: 'invasive_hemodynamics',
+        maturity: 'concept',
+        position: { x: 50, y: 740 },
+        fields: [
+          { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
+          { name: 'recorded_dttm', type: 'DATETIME' },
+          { name: 'parameter_name', type: 'VARCHAR' }
+        ]
+      },
+      {
+        id: 'key_icu_orders',
+        name: 'key_icu_orders',
+        maturity: 'concept',
+        position: { x: 320, y: 740 },
+        fields: [
+          { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
+          { name: 'order_dttm', type: 'DATETIME' },
+          { name: 'order_name', type: 'VARCHAR' }
+        ]
+      },
+      {
+        id: 'medication_admin_intermittent',
+        name: 'medication_admin_intermittent',
+        maturity: 'concept',
+        position: { x: 590, y: 740 },
+        fields: [
+          { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
+          { name: 'admin_dttm', type: 'DATETIME' },
+          { name: 'med_name', type: 'VARCHAR' }
+        ]
+      },
+      {
+        id: 'medication_orders',
+        name: 'medication_orders',
+        maturity: 'concept',
+        position: { x: 860, y: 740 },
+        fields: [
+          { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
+          { name: 'order_dttm', type: 'DATETIME' },
+          { name: 'med_name', type: 'VARCHAR' }
+        ]
+      },
+      {
+        id: 'microbiology_culture',
+        name: 'microbiology_culture',
+        maturity: 'concept',
+        position: { x: 1130, y: 740 },
+        fields: [
+          { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
+          { name: 'collection_dttm', type: 'DATETIME' },
+          { name: 'organism_name', type: 'VARCHAR' }
+        ]
+      },
+
+      // Row 5 - More concept tables
+      {
+        id: 'microbiology_non_culture',
+        name: 'microbiology_non_culture',
+        maturity: 'concept',
+        position: { x: 50, y: 970 },
+        fields: [
+          { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
+          { name: 'test_name', type: 'VARCHAR' },
+          { name: 'result', type: 'VARCHAR' }
+        ]
+      },
+      {
+        id: 'procedures',
+        name: 'procedures',
+        maturity: 'concept',
+        position: { x: 320, y: 970 },
+        fields: [
+          { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
+          { name: 'procedure_dttm', type: 'DATETIME' },
+          { name: 'procedure_name', type: 'VARCHAR' }
+        ]
+      },
+      {
+        id: 'provider',
+        name: 'provider',
+        maturity: 'concept',
+        position: { x: 590, y: 970 },
+        fields: [
+          { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
+          { name: 'provider_type', type: 'VARCHAR' },
+          { name: 'specialty', type: 'VARCHAR' }
+        ]
+      },
+      {
+        id: 'sensitivity',
+        name: 'sensitivity',
+        maturity: 'concept',
+        position: { x: 860, y: 970 },
+        fields: [
+          { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
+          { name: 'antibiotic', type: 'VARCHAR' },
+          { name: 'sensitivity_result', type: 'VARCHAR' }
+        ]
+      },
+      {
+        id: 'therapy_details',
+        name: 'therapy_details',
+        maturity: 'concept',
+        position: { x: 1130, y: 970 },
+        fields: [
+          { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
+          { name: 'therapy_type', type: 'VARCHAR' },
+          { name: 'details', type: 'VARCHAR' }
+        ]
+      },
+
+      // Row 6 - Final concept tables and future
+      {
+        id: 'transfusion',
+        name: 'transfusion',
+        maturity: 'concept',
+        position: { x: 50, y: 1200 },
+        fields: [
+          { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
+          { name: 'transfusion_dttm', type: 'DATETIME' },
+          { name: 'product_type', type: 'VARCHAR' }
+        ]
+      },
+      {
+        id: 'clinical_decision_support',
+        name: 'clinical_decision_support',
+        maturity: 'future',
+        position: { x: 320, y: 1200 },
+        fields: [
+          { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
+          { name: 'alert_type', type: 'VARCHAR' },
+          { name: 'alert_dttm', type: 'DATETIME' }
+        ]
+      }
+    ];
+
+    // Relationships between entities
+    const relationships = [
+      { from: 'patient', to: 'hospitalization', field: 'patient_id' },
+      { from: 'hospitalization', to: 'adt', field: 'hospitalization_id' },
+      { from: 'hospitalization', to: 'vitals', field: 'hospitalization_id' },
+      { from: 'hospitalization', to: 'labs', field: 'hospitalization_id' },
+      { from: 'hospitalization', to: 'medication_admin_continuous', field: 'hospitalization_id' },
+      { from: 'hospitalization', to: 'patient_assessments', field: 'hospitalization_id' },
+      { from: 'hospitalization', to: 'position', field: 'hospitalization_id' },
+      { from: 'hospitalization', to: 'respiratory_support', field: 'hospitalization_id' },
+      { from: 'hospitalization', to: 'code_status', field: 'hospitalization_id' },
+      { from: 'hospitalization', to: 'crrt_therapy', field: 'hospitalization_id' },
+      { from: 'hospitalization', to: 'ecmo_mcs', field: 'hospitalization_id' },
+      { from: 'hospitalization', to: 'hospital_diagnosis', field: 'hospitalization_id' },
+      { from: 'hospitalization', to: 'intake_output', field: 'hospitalization_id' },
+      { from: 'hospitalization', to: 'invasive_hemodynamics', field: 'hospitalization_id' },
+      { from: 'hospitalization', to: 'key_icu_orders', field: 'hospitalization_id' },
+      { from: 'hospitalization', to: 'medication_admin_intermittent', field: 'hospitalization_id' },
+      { from: 'hospitalization', to: 'medication_orders', field: 'hospitalization_id' },
+      { from: 'hospitalization', to: 'microbiology_culture', field: 'hospitalization_id' },
+      { from: 'hospitalization', to: 'microbiology_non_culture', field: 'hospitalization_id' },
+      { from: 'hospitalization', to: 'procedures', field: 'hospitalization_id' },
+      { from: 'hospitalization', to: 'provider', field: 'hospitalization_id' },
+      { from: 'hospitalization', to: 'sensitivity', field: 'hospitalization_id' },
+      { from: 'hospitalization', to: 'therapy_details', field: 'hospitalization_id' },
+      { from: 'hospitalization', to: 'transfusion', field: 'hospitalization_id' },
+      { from: 'hospitalization', to: 'clinical_decision_support', field: 'hospitalization_id' }
+    ];
+
+    // Initialize the diagram
     const svg = document.getElementById('er-diagram');
     const diagramWrapper = document.getElementById('diagram-wrapper');
     const entitiesGroup = document.getElementById('entities');
@@ -582,7 +766,7 @@ const { tables } = Astro.props;
     const zoomFitBtn = document.getElementById('zoom-fit');
     const tooltip = document.getElementById('tooltip');
 
-    let currentTransform = { x: 0, y: 0, scale: 1 };
+    let currentTransform = { x: 0, y: 0, scale: 0.6 };
     let isDragging = false;
     let startX, startY;
     let selectedEntity = null;
@@ -599,9 +783,9 @@ const { tables } = Astro.props;
       // Calculate entity dimensions
       const width = 250;
       const headerHeight = 35;
-      const fieldHeight = 25;
-      const padding = 10;
-      const height = headerHeight + (entity.fields.length * fieldHeight) + padding * 2;
+      const fieldHeight = 20;
+      const padding = 8;
+      const height = headerHeight + Math.max(entity.fields.length * fieldHeight, 60) + padding * 2;
 
       // Entity background
       const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
@@ -609,9 +793,9 @@ const { tables } = Astro.props;
       rect.setAttribute('width', width);
       rect.setAttribute('height', height);
       rect.setAttribute('rx', '4');
-      rect.setAttribute('fill', 'white');
-      rect.setAttribute('stroke', '#ddd');
-      rect.setAttribute('stroke-width', '1');
+      rect.setAttribute('fill', '#ffffff');
+      rect.setAttribute('stroke', '#333');
+      rect.setAttribute('stroke-width', '2');
       g.appendChild(rect);
 
       // Header background
@@ -620,10 +804,10 @@ const { tables } = Astro.props;
       headerRect.setAttribute('width', width);
       headerRect.setAttribute('height', headerHeight);
       headerRect.setAttribute('rx', '4');
-      // Set header color based on maturity
-      const headerColor = entity.maturity === 'beta' ? '#E67E22' : 
-                         entity.maturity === 'new' ? '#F39C12' : 
-                         entity.maturity === 'concept' ? '#95A5A6' : '#E67E22';
+      // Set header color based on maturity to match static ERD
+      const headerColor = entity.maturity === 'beta' ? '#8B1538' : 
+                         entity.maturity === 'concept' ? '#E67E22' : 
+                         entity.maturity === 'future' ? '#95A5A6' : '#8B1538';
       headerRect.setAttribute('fill', headerColor);
       g.appendChild(headerRect);
 
@@ -635,7 +819,7 @@ const { tables } = Astro.props;
       nameText.setAttribute('text-anchor', 'start');
       nameText.setAttribute('fill', 'white');
       nameText.setAttribute('font-weight', 'bold');
-      nameText.setAttribute('font-size', '14');
+      nameText.setAttribute('font-size', '12');
       nameText.textContent = entity.name;
       g.appendChild(nameText);
 
@@ -650,17 +834,18 @@ const { tables } = Astro.props;
         g.appendChild(badgeText);
       }
 
-      // Fields
-      entity.fields.forEach((field, index) => {
+      // Fields (show fewer to match static ERD)
+      const fieldsToShow = entity.fields.slice(0, 4);
+      fieldsToShow.forEach((field, index) => {
         const yPos = headerHeight + padding + (index * fieldHeight) + fieldHeight/2;
 
         // Field name
         const fieldText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         fieldText.classList.add('field-text');
-        fieldText.setAttribute('x', '10');
+        fieldText.setAttribute('x', '8');
         fieldText.setAttribute('y', yPos + 3);
         fieldText.setAttribute('fill', '#333');
-        fieldText.setAttribute('font-size', '12');
+        fieldText.setAttribute('font-size', '11');
         fieldText.textContent = field.name;
         if (field.isPK || field.isFK) {
           fieldText.setAttribute('font-weight', 'bold');
@@ -670,11 +855,11 @@ const { tables } = Astro.props;
         // Field type
         const typeText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         typeText.classList.add('field-type');
-        typeText.setAttribute('x', width - 10);
+        typeText.setAttribute('x', width - 8);
         typeText.setAttribute('y', yPos + 3);
         typeText.setAttribute('text-anchor', 'end');
         typeText.setAttribute('fill', '#666');
-        typeText.setAttribute('font-size', '11');
+        typeText.setAttribute('font-size', '10');
         typeText.textContent = field.type;
         g.appendChild(typeText);
       });
@@ -696,17 +881,45 @@ const { tables } = Astro.props;
       path.classList.add('relationship');
       path.setAttribute('data-from', rel.from);
       path.setAttribute('data-to', rel.to);
+      path.setAttribute('stroke', '#333');
+      path.setAttribute('stroke-width', '2');
+      path.setAttribute('fill', 'none');
       
-      // Calculate path
-      const fromX = fromEntity.position.x + 250;
-      const fromY = fromEntity.position.y + 50;
-      const toX = toEntity.position.x;
-      const toY = toEntity.position.y + 50;
+      // Calculate connection points more intelligently
+      const fromCenterX = fromEntity.position.x + 125;
+      const fromCenterY = fromEntity.position.y + 50;
+      const toCenterX = toEntity.position.x + 125;
+      const toCenterY = toEntity.position.y + 50;
       
-      const midX = (fromX + toX) / 2;
-      const midY = (fromY + toY) / 2;
+      // Determine best connection points
+      let fromX, fromY, toX, toY;
       
-      const d = `M ${fromX} ${fromY} Q ${midX} ${midY} ${toX} ${toY}`;
+      if (Math.abs(fromCenterX - toCenterX) > Math.abs(fromCenterY - toCenterY)) {
+        // Horizontal connection
+        if (fromCenterX < toCenterX) {
+          fromX = fromEntity.position.x + 250;
+          toX = toEntity.position.x;
+        } else {
+          fromX = fromEntity.position.x;
+          toX = toEntity.position.x + 250;
+        }
+        fromY = fromCenterY;
+        toY = toCenterY;
+      } else {
+        // Vertical connection
+        fromX = fromCenterX;
+        toX = toCenterX;
+        if (fromCenterY < toCenterY) {
+          fromY = fromEntity.position.y + 100;
+          toY = toEntity.position.y;
+        } else {
+          fromY = fromEntity.position.y;
+          toY = toEntity.position.y + 100;
+        }
+      }
+      
+      // Create straight line for cleaner appearance
+      const d = `M ${fromX} ${fromY} L ${toX} ${toY}`;
       path.setAttribute('d', d);
       path.setAttribute('marker-end', 'url(#arrow)');
       
@@ -754,7 +967,7 @@ const { tables } = Astro.props;
     diagramWrapper.addEventListener('wheel', (e) => {
       e.preventDefault();
       const delta = e.deltaY > 0 ? 0.9 : 1.1;
-      currentTransform.scale = Math.min(Math.max(0.5, currentTransform.scale * delta), 3);
+      currentTransform.scale = Math.min(Math.max(0.3, currentTransform.scale * delta), 3);
       updateTransform();
     });
 
@@ -879,7 +1092,7 @@ const { tables } = Astro.props;
 
     // Controls
     resetViewBtn.addEventListener('click', () => {
-      currentTransform = { x: 0, y: 0, scale: 1 };
+      currentTransform = { x: 0, y: 0, scale: 0.6 };
       updateTransform();
     });
 
@@ -895,13 +1108,13 @@ const { tables } = Astro.props;
     });
 
     zoomOutBtn.addEventListener('click', () => {
-      currentTransform.scale = Math.max(0.5, currentTransform.scale * 0.8);
+      currentTransform.scale = Math.max(0.3, currentTransform.scale * 0.8);
       updateTransform();
     });
 
     zoomFitBtn.addEventListener('click', () => {
       // Simple fit to view
-      currentTransform = { x: 0, y: 0, scale: 0.8 };
+      currentTransform = { x: 0, y: 0, scale: 0.6 };
       updateTransform();
     });
 
@@ -932,7 +1145,6 @@ const { tables } = Astro.props;
     }
 
     // Initial view
-    currentTransform.scale = 0.8;
     updateTransform();
   }
 </script>

@@ -35,18 +35,5 @@ export default [
       'no-debugger': 'error',
     },
   },
-  {
-    files: ['**/*.astro'],
-    plugins: {
-      astro: astroPlugin,
-    },
-    languageOptions: {
-      parser: astroPlugin.parsers.astro,
-    },
-    rules: {
-      ...astroPlugin.configs.recommended.rules,
-      'astro/no-set-html-directive': 'error',
-      'astro/no-unused-css-selector': 'warn',
-    },
-  },
+  ...astroPlugin.configs.recommended,
 ];

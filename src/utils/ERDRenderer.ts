@@ -296,7 +296,7 @@ export class ERDRenderer {
       path.setAttribute('stroke-width', '1.5');
       path.setAttribute('marker-end', `url(#${this.getMarkerId()})`);
       
-      this.relationshipsGroup.appendChild(path);
+      this.relationshipsGroup!.appendChild(path);
       this.relationshipElements.set(`${rel.from}-${rel.to}`, path);
     });
   }
