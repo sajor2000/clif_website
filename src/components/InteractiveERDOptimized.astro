@@ -29,7 +29,7 @@ function transformTableToEntity(table: any, maturity: 'beta' | 'concept' | 'futu
     name: table.name || table.id,
     maturity,
     position: getEntityPosition(table.id),
-    fields: table.fields?.slice(0, 8) || [], // Limit fields for performance
+    fields: table.fields || [], // Keep all fields for complete specifications
     description: table.description,
     notes: table.notes
   };
@@ -339,10 +339,13 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
   }
 </style>
 
+<!-- Pass data to client-side script -->
+<script type="application/json" id={`${containerId}-entities`} data-entities set:html={JSON.stringify(entities)}></script>
+
+<script type="application/json" id={`${containerId}-relationships`} data-relationships set:html={JSON.stringify(relationships)}></script>
+
 <script>
-  import { initializeERD } from './erd/ERDClient';
-  
-  // Client-side initialization with proper Astro integration
+  // Simple ERD implementation without external imports
   document.addEventListener('DOMContentLoaded', () => {
     // Find all ERD containers that need initialization
     const erdContainers = document.querySelectorAll('[data-erd-auto-init]');
@@ -357,58 +360,307 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
         
         if (!entitiesScript || !relationshipsScript) {
           console.warn(`ERD data scripts not found for container: ${containerId}`);
+          showError(container, 'ERD Data Loading Error', 'Unable to find data scripts');
           return;
         }
 
-        const entities = JSON.parse(entitiesScript.textContent || '[]');
-        const relationships = JSON.parse(relationshipsScript.textContent || '[]');
-        
-        // Get configuration from data attributes
-        const enableAnalytics = container.getAttribute('data-enable-analytics') === 'true';
-        const enableKeyboardNavigation = container.getAttribute('data-enable-keyboard') !== 'false';
-        const enableSearch = container.getAttribute('data-enable-search') !== 'false';
-
-        // Initialize ERD
-        const erdResult = initializeERD({
-          containerId,
-          entities,
-          relationships,
-          enableAnalytics,
-          enableKeyboardNavigation,
-          enableSearch
-        });
-
-        if (erdResult) {
-          // Announce successful load to screen readers
-          const announcement = document.createElement('div');
-          announcement.setAttribute('aria-live', 'polite');
-          announcement.setAttribute('aria-atomic', 'true');
-          announcement.style.position = 'absolute';
-          announcement.style.left = '-10000px';
-          announcement.textContent = `Interactive ERD loaded successfully with ${entities.length} entities and ${relationships.length} relationships.`;
-          document.body.appendChild(announcement);
-          
-          setTimeout(() => {
-            if (document.body.contains(announcement)) {
-              document.body.removeChild(announcement);
-            }
-          }, 1000);
+        let entities, relationships;
+        try {
+          entities = JSON.parse(entitiesScript.textContent || '[]');
+          relationships = JSON.parse(relationshipsScript.textContent || '[]');
+        } catch (parseError) {
+          console.error('Failed to parse ERD data:', parseError);
+          showError(container, 'ERD Data Parsing Error', 'Unable to parse ERD data');
+          return;
         }
+
+        console.log(`Initializing ERD with ${entities.length} entities and ${relationships.length} relationships`);
+        
+        // Initialize simple ERD
+        initializeSimpleERD(container, entities, relationships);
 
       } catch (error) {
         console.error(`Failed to initialize ERD for container ${containerId}:`, error);
+        showError(container, 'ERD Loading Error', 'Unable to load the interactive ERD. Please refresh the page or try again later.');
       }
     });
   });
-</script>
 
-<!-- Pass data to client-side script -->
-<script type="application/json" id={`${containerId}-entities`}>
-  {JSON.stringify(entities)}
-</script>
+  function showError(container, title, message) {
+    // Remove loading state
+    const loadingState = container.querySelector('.erd-loading-state');
+    if (loadingState) {
+      loadingState.remove();
+    }
+    
+    const errorDiv = document.createElement('div');
+    errorDiv.innerHTML = `
+      <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: #dc2626; background: #fef2f2; padding: 2rem; border-radius: 8px; border: 1px solid #fecaca; max-width: 400px;">
+        <h3 style="margin: 0 0 1rem 0; font-size: 1.25rem; font-weight: 600;">${title}</h3>
+        <p style="margin: 0 0 1rem 0; font-size: 0.875rem;">${message}</p>
+        <button onclick="window.location.reload()" style="margin-top: 1rem; padding: 0.5rem 1rem; background: #dc2626; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.875rem;">
+          Refresh Page
+        </button>
+      </div>
+    `;
+    container.appendChild(errorDiv);
+  }
 
-<script type="application/json" id={`${containerId}-relationships`}>
-  {JSON.stringify(relationships)}
+  function initializeSimpleERD(container, entities, relationships) {
+    // Remove loading state
+    const loadingState = container.querySelector('.erd-loading-state');
+    if (loadingState) {
+      loadingState.remove();
+    }
+
+    // Create a simplified visual ERD
+    const erdContainer = document.createElement('div');
+    erdContainer.style.cssText = `
+      width: 100%;
+      height: 100%;
+      position: relative;
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      overflow: auto;
+      padding: 20px;
+    `;
+
+    // Create grid of entities
+    const gridContainer = document.createElement('div');
+    gridContainer.style.cssText = `
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      max-width: 1400px;
+      margin: 0 auto;
+    `;
+
+    entities.forEach(entity => {
+      const entityCard = createEntityCard(entity);
+      gridContainer.appendChild(entityCard);
+    });
+
+    erdContainer.appendChild(gridContainer);
+
+    // Add title and legend
+    const titleDiv = document.createElement('div');
+    titleDiv.innerHTML = `
+      <div style="text-align: center; margin-bottom: 30px;">
+        <h2 style="color: #841839; font-size: 24px; font-weight: bold; margin: 0 0 10px 0;">CLIF 2.0.0 Entity Relationship Diagram</h2>
+        <p style="color: #666; margin: 0;">Interactive view of all ${entities.length} tables and their relationships</p>
+      </div>
+      <div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 30px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="width: 20px; height: 20px; background: #fbbf24; border-radius: 4px;"></div>
+          <span style="font-size: 14px; color: #666;">Beta Tables</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="width: 20px; height: 20px; background: #a855f7; border-radius: 4px;"></div>
+          <span style="font-size: 14px; color: #666;">Concept Tables</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="width: 20px; height: 20px; background: #3b82f6; border-radius: 4px;"></div>
+          <span style="font-size: 14px; color: #666;">Future Tables</span>
+        </div>
+      </div>
+    `;
+    
+    erdContainer.insertBefore(titleDiv, gridContainer);
+    container.appendChild(erdContainer);
+
+    console.log('Simple ERD initialized successfully');
+  }
+
+  function createEntityCard(entity) {
+    const colors = {
+      beta: '#fbbf24',
+      concept: '#a855f7', 
+      future: '#3b82f6'
+    };
+
+    const card = document.createElement('div');
+    card.style.cssText = `
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+      border: 2px solid #e5e7eb;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    `;
+
+    // Create initial preview content
+    const previewContent = createEntityPreview(entity, colors);
+    card.innerHTML = previewContent;
+
+    // Add click handler to show detailed view for concept tables
+    card.addEventListener('click', () => {
+      if (entity.maturity === 'concept' && entity.fields && entity.fields.length > 0) {
+        showDetailedTableView(entity, colors, card);
+      }
+    });
+
+    // Add hover effect
+    card.addEventListener('mouseenter', () => {
+      card.style.transform = 'translateY(-2px)';
+      card.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1)';
+      card.style.borderColor = colors[entity.maturity];
+    });
+
+    card.addEventListener('mouseleave', () => {
+      card.style.transform = 'translateY(0)';
+      card.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
+      card.style.borderColor = '#e5e7eb';
+    });
+
+    return card;
+  }
+
+  function createEntityPreview(entity, colors) {
+    return `
+      <div style="background: ${colors[entity.maturity]}; padding: 16px; color: white;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <h3 style="margin: 0; font-size: 18px; font-weight: bold; flex: 1;">${entity.name}</h3>
+          <span style="background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 12px; font-size: 11px; text-transform: uppercase; font-weight: 600;">${entity.maturity}</span>
+        </div>
+      </div>
+      <div style="padding: 16px;">
+        <p style="margin: 0 0 12px 0; color: #666; font-size: 13px; line-height: 1.4;">${entity.description || 'No description available'}</p>
+        <div style="border-top: 1px solid #e5e7eb; padding-top: 12px;">
+          <h4 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #374151;">Fields (${entity.fields.length})</h4>
+          <div style="max-height: 150px; overflow-y: auto;">
+            ${entity.fields.slice(0, 6).map(field => `
+              <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid #f3f4f6;">
+                <span style="font-family: 'Monaco', 'Menlo', monospace; font-size: 12px; color: #1f2937; font-weight: 500;">${field.name}</span>
+                <span style="font-size: 11px; color: #6b7280; background: #f3f4f6; padding: 2px 6px; border-radius: 4px;">${field.type}</span>
+              </div>
+            `).join('')}
+            ${entity.fields.length > 6 ? `<div style="padding: 8px 0; text-align: center; color: #6b7280; font-size: 12px;">... and ${entity.fields.length - 6} more fields</div>` : ''}
+          </div>
+        </div>
+        ${entity.maturity === 'concept' ? `
+          <div style="margin-top: 12px; padding: 8px; background: #f8f9fa; border-radius: 6px; text-align: center;">
+            <span style="font-size: 12px; color: #6b7280; font-weight: 500;">Click to view detailed specifications</span>
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }
+
+  function showDetailedTableView(entity, colors, card) {
+    // Create modal overlay
+    const modalOverlay = document.createElement('div');
+    modalOverlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    `;
+
+    const modalContent = document.createElement('div');
+    modalContent.style.cssText = `
+      background: white;
+      border-radius: 12px;
+      max-width: 900px;
+      max-height: 90vh;
+      width: 100%;
+      overflow-y: auto;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    `;
+
+    modalContent.innerHTML = `
+      <div style="background: ${colors[entity.maturity]}; padding: 20px; color: white; position: sticky; top: 0; z-index: 10;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <h2 style="margin: 0; font-size: 24px; font-weight: bold;">${entity.name} - Detailed Specifications</h2>
+          <button id="closeModal" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 24px; cursor: pointer; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">×</button>
+        </div>
+        <p style="margin: 8px 0 0 0; opacity: 0.9;">${entity.description}</p>
+      </div>
+      
+      <div style="padding: 24px;">
+        <h3 style="margin: 0 0 16px 0; color: #374151; font-size: 18px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">Field Specifications</h3>
+        
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+            <thead>
+              <tr style="background: #f8f9fa;">
+                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6; font-weight: 600; color: #495057;">Field Name</th>
+                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6; font-weight: 600; color: #495057;">Type</th>
+                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6; font-weight: 600; color: #495057;">Description</th>
+                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6; font-weight: 600; color: #495057;">Values/Restrictions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${entity.fields.map((field, index) => `
+                <tr style="border-bottom: 1px solid #e9ecef; ${index % 2 === 0 ? 'background: #f8f9fa;' : ''}">
+                  <td style="padding: 12px; font-family: 'Monaco', monospace; font-weight: 500; color: #212529;">${field.name}</td>
+                  <td style="padding: 12px; font-family: 'Monaco', monospace; color: #6c757d; background: #e9ecef; border-radius: 4px; font-size: 12px; margin: 2px;">${field.type}</td>
+                  <td style="padding: 12px; color: #495057; line-height: 1.4;">${field.description || 'No description'}</td>
+                  <td style="padding: 12px; color: #6c757d; font-size: 12px;">
+                    ${field.values ? 
+                      `<div style="background: #e3f2fd; padding: 6px; border-radius: 4px; margin-bottom: 4px;"><strong>Values:</strong> ${field.values.join(', ')}</div>` : 
+                      ''
+                    }
+                    ${field.restrictions ? 
+                      `<div style="background: #fff3e0; padding: 6px; border-radius: 4px;"><strong>Restrictions:</strong> ${field.restrictions}</div>` : 
+                      ''
+                    }
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+
+        ${entity.notes && entity.notes.length > 0 ? `
+          <div style="margin-top: 24px;">
+            <h3 style="margin: 0 0 12px 0; color: #374151; font-size: 16px;">Implementation Notes</h3>
+            <ul style="margin: 0; padding-left: 20px; color: #495057;">
+              ${entity.notes.map(note => `<li style="margin-bottom: 8px; line-height: 1.4;">${note}</li>`).join('')}
+            </ul>
+          </div>
+        ` : ''}
+
+        ${entity.example ? `
+          <div style="margin-top: 24px;">
+            <h3 style="margin: 0 0 12px 0; color: #374151; font-size: 16px;">Example Data</h3>
+            <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; overflow-x: auto; font-family: 'Monaco', monospace; font-size: 12px; line-height: 1.6; border: 1px solid #dee2e6;">
+              <pre style="margin: 0; white-space: pre-wrap;">${entity.example}</pre>
+            </div>
+          </div>
+        ` : ''}
+      </div>
+    `;
+
+    modalOverlay.appendChild(modalContent);
+    document.body.appendChild(modalOverlay);
+
+    // Close modal handlers
+    const closeBtn = modalContent.querySelector('#closeModal');
+    const closeModal = () => {
+      document.body.removeChild(modalOverlay);
+    };
+
+    closeBtn.addEventListener('click', closeModal);
+    modalOverlay.addEventListener('click', (e) => {
+      if (e.target === modalOverlay) closeModal();
+    });
+
+    // Escape key handler
+    const escHandler = (e) => {
+      if (e.key === 'Escape') {
+        closeModal();
+        document.removeEventListener('keydown', escHandler);
+      }
+    };
+    document.addEventListener('keydown', escHandler);
+  }
 </script>
 
 <!-- Preload critical resources -->
