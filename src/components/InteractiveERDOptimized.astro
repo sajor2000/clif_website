@@ -6,8 +6,6 @@ export interface Props {
   tables?: any[];
   height?: string;
   className?: string;
-  showFullscreenButton?: boolean;
-  showLegend?: boolean;
   enableKeyboardNavigation?: boolean;
   enableSearch?: boolean;
 }
@@ -16,8 +14,6 @@ const {
   tables = [], 
   height = '800px',
   className = '',
-  showFullscreenButton = true,
-  showLegend = true,
   enableKeyboardNavigation = true,
   enableSearch = true
 } = Astro.props;
@@ -26,7 +22,6 @@ const {
 function transformTableToEntity(table: any, maturity: 'beta' | 'concept' | 'future'): ERDEntity {
   // Validate required fields
   if (!table || !table.id) {
-    console.warn('Invalid table data:', table);
     return null;
   }
   
@@ -358,28 +353,21 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
     entities: erdEntities || [],
     relationships: erdRelationships || []
   };
-  console.log('ERD data stored for container:', erdContainerId);
-  console.log('Entities count:', window.erdData[erdContainerId].entities.length);
-  console.log('Relationships count:', window.erdData[erdContainerId].relationships.length);
+  // ERD data stored for container
 </script>
 
 <script is:inline>
   // Simple ERD implementation without external imports
   document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM loaded, initializing ERDs...');
-    
     // Find all ERD containers that need initialization
     const erdContainers = document.querySelectorAll('[data-erd-auto-init]');
-    console.log(`Found ${erdContainers.length} ERD containers to initialize`);
     
     erdContainers.forEach((container) => {
       const containerId = container.id;
-      console.log(`Initializing ERD container: ${containerId}`);
       
       try {
         // Get data from global window object
         if (!window.erdData || !window.erdData[containerId]) {
-          console.warn(`ERD data not found for container: ${containerId}`);
           showError(container, 'ERD Data Loading Error', 'Unable to find ERD data');
           return;
         }
@@ -393,20 +381,14 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
         }
         
         if (entities.length === 0) {
-          console.warn('No valid entities found');
           showError(container, 'ERD Data Warning', 'No table data available to display');
           return;
         }
-        
-        console.log(`Successfully loaded ${entities.length} entities and ${relationships.length} relationships`);
-
-        console.log(`Initializing ERD with ${entities.length} entities and ${relationships.length} relationships`);
         
         // Initialize simple ERD
         initializeSimpleERD(container, entities, relationships, containerId);
 
       } catch (error) {
-        console.error(`Failed to initialize ERD for container ${containerId}:`, error);
         showError(container, 'ERD Loading Error', 'Unable to load the interactive ERD. Please refresh the page or try again later.');
       }
     });
@@ -565,14 +547,7 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
       const diagramViewBtn = container.querySelector(`#diagram-view-btn-${containerId}`);
       const erdContainer = container.querySelector('.erd-astro-container > div:last-child');
       
-      console.log('Toggle elements found:', {
-        cardViewBtn: !!cardViewBtn,
-        diagramViewBtn: !!diagramViewBtn,
-        erdContainer: !!erdContainer
-      });
-      
       if (!cardViewBtn || !diagramViewBtn || !erdContainer) {
-        console.error('Failed to find ERD view toggle elements');
         return;
       }
       
@@ -580,7 +555,6 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
       let diagramContainer = null;
 
     cardViewBtn.addEventListener('click', () => {
-      console.log('Card view button clicked, current view:', currentView);
       if (currentView === 'card') return;
       
       // Update button styles
@@ -611,7 +585,6 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
       
       // Create diagram view if it doesn't exist
       if (!diagramContainer) {
-        console.log('Creating new diagram view');
         diagramContainer = createDiagramView(entities, relationships, containerId);
         container.querySelector('.erd-astro-container').appendChild(diagramContainer);
       }
@@ -621,17 +594,15 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
       diagramContainer.style.display = 'block';
       
       currentView = 'diagram';
-      console.log('Switched to diagram view');
     });
     
     } catch (error) {
-      console.error('Error setting up view toggle:', error);
+      // Error setting up view toggle
     }
   }
 
   function createDiagramView(entities, relationships, containerId) {
     try {
-      console.log(`Creating HTML/CSS diagram view for ${entities.length} entities and ${relationships.length} relationships`);
       
       const colors = {
         beta: '#CC5500',    // Darker orange matching static ERD
@@ -839,7 +810,6 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
       if (currentScale < maxScale) {
         currentScale = Math.min(maxScale, currentScale + 0.2);
         diagramInner.style.transform = `scale(${currentScale})`;
-        console.log('Zoomed in to scale:', currentScale);
       }
     };
 
@@ -847,14 +817,12 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
       if (currentScale > minScale) {
         currentScale = Math.max(minScale, currentScale - 0.2);
         diagramInner.style.transform = `scale(${currentScale})`;
-        console.log('Zoomed out to scale:', currentScale);
       }
     };
 
     const zoomFit = () => {
       currentScale = 1;
       diagramInner.style.transform = 'scale(1)';
-      console.log('Reset zoom to fit');
     };
 
     // Setup zoom controls
@@ -901,7 +869,8 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
     const dx = toCenterX - fromCenterX;
     const dy = toCenterY - fromCenterY;
     const angle = Math.atan2(dy, dx);
-    const distance = Math.sqrt(dx * dx + dy * dy);
+    // Calculate distance for potential future use
+    // const distance = Math.sqrt(dx * dx + dy * dy);
     
     // Calculate where line should start and end (at box edges)
     const fromEdgeX = fromCenterX + (boxWidth / 2) * Math.cos(angle);
@@ -959,7 +928,7 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
     // Add click handler to show detailed view for concept tables
     card.addEventListener('click', () => {
       if (entity.maturity === 'concept' && entity.fields && entity.fields.length > 0) {
-        showDetailedTableView(entity, colors, card);
+        showDetailedTableView(entity, colors);
       }
     });
 
@@ -1014,7 +983,7 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
     `;
   }
 
-  function showDetailedTableView(entity, colors, card) {
+  function showDetailedTableView(entity, colors) {
     // Format display name to match diagram style
     const displayName = entity.name
       .split('_')
@@ -1163,8 +1132,8 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
       const observer = new PerformanceObserver((list) => {
         const entries = list.getEntries();
         entries.forEach((entry) => {
-          if (entry.name.includes('erd') && typeof gtag !== 'undefined') {
-            gtag('event', 'erd_performance', {
+          if (entry.name.includes('erd') && typeof window.gtag !== 'undefined') {
+            window.gtag('event', 'erd_performance', {
               metric_name: entry.name,
               duration: Math.round(entry.duration),
               custom_parameters: {
