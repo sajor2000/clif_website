@@ -390,7 +390,7 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
         console.log(`Initializing ERD with ${entities.length} entities and ${relationships.length} relationships`);
         
         // Initialize simple ERD
-        initializeSimpleERD(container, entities, relationships);
+        initializeSimpleERD(container, entities, relationships, containerId);
 
       } catch (error) {
         console.error(`Failed to initialize ERD for container ${containerId}:`, error);
@@ -419,7 +419,7 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
     container.appendChild(errorDiv);
   }
 
-  function initializeSimpleERD(container, entities, relationships) {
+  function initializeSimpleERD(container, entities, relationships, containerId) {
     // Remove loading state
     const loadingState = container.querySelector('.erd-loading-state');
     if (loadingState) {
