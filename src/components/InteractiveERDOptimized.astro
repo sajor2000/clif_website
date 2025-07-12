@@ -340,9 +340,9 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
 </style>
 
 <!-- Pass data to client-side script -->
-<script type="application/json" id={`${containerId}-entities`} data-entities set:html={JSON.stringify(entities)}></script>
+<script type="application/json" id={`${containerId}-entities`} data-entities>{JSON.stringify(entities)}</script>
 
-<script type="application/json" id={`${containerId}-relationships`} data-relationships set:html={JSON.stringify(relationships)}></script>
+<script type="application/json" id={`${containerId}-relationships`} data-relationships>{JSON.stringify(relationships)}</script>
 
 <script>
   // Simple ERD implementation without external imports
@@ -373,19 +373,27 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
 
         let entities, relationships;
         try {
-          const entitiesText = entitiesScript.textContent || '[]';
-          const relationshipsText = relationshipsScript.textContent || '[]';
+          const entitiesText = entitiesScript.textContent || entitiesScript.innerHTML || '[]';
+          const relationshipsText = relationshipsScript.textContent || relationshipsScript.innerHTML || '[]';
           
-          console.log('Entities text:', entitiesText.substring(0, 100) + '...');
-          console.log('Relationships text:', relationshipsText.substring(0, 100) + '...');
+          console.log('Entities raw text length:', entitiesText.length);
+          console.log('Relationships raw text length:', relationshipsText.length);
+          console.log('Entities first 200 chars:', entitiesText.substring(0, 200));
+          console.log('Relationships first 200 chars:', relationshipsText.substring(0, 200));
           
-          entities = JSON.parse(entitiesText);
-          relationships = JSON.parse(relationshipsText);
+          // Clean any potential HTML encoding issues
+          const cleanEntitiesText = entitiesText.replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+          const cleanRelationshipsText = relationshipsText.replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
           
-          console.log(`Parsed ${entities.length} entities and ${relationships.length} relationships`);
+          entities = JSON.parse(cleanEntitiesText);
+          relationships = JSON.parse(cleanRelationshipsText);
+          
+          console.log(`Successfully parsed ${entities.length} entities and ${relationships.length} relationships`);
         } catch (parseError) {
           console.error('Failed to parse ERD data:', parseError);
-          showError(container, 'ERD Data Parsing Error', 'Unable to parse ERD data');
+          console.error('Entities text that failed:', entitiesText);
+          console.error('Relationships text that failed:', relationshipsText);
+          showError(container, 'ERD Data Parsing Error', `JSON parsing failed: ${parseError.message}`);
           return;
         }
 
@@ -678,8 +686,7 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
   }
 </script>
 
-<!-- Preload critical resources -->
-<link rel="preload" as="style" href="/fonts/inter.css" />
+<!-- Critical resources will be loaded as needed -->
 
 <!-- Performance monitoring -->
 {import.meta.env.PROD && (
