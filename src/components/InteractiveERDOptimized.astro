@@ -347,16 +347,23 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
 <script>
   // Simple ERD implementation without external imports
   document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, initializing ERDs...');
+    
     // Find all ERD containers that need initialization
     const erdContainers = document.querySelectorAll('[data-erd-auto-init]');
+    console.log(`Found ${erdContainers.length} ERD containers to initialize`);
     
     erdContainers.forEach((container) => {
       const containerId = container.id;
+      console.log(`Initializing ERD container: ${containerId}`);
       
       try {
         // Get data from embedded JSON scripts
         const entitiesScript = document.querySelector(`#${containerId}-entities`);
         const relationshipsScript = document.querySelector(`#${containerId}-relationships`);
+        
+        console.log('Entities script found:', !!entitiesScript);
+        console.log('Relationships script found:', !!relationshipsScript);
         
         if (!entitiesScript || !relationshipsScript) {
           console.warn(`ERD data scripts not found for container: ${containerId}`);
@@ -366,8 +373,16 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
 
         let entities, relationships;
         try {
-          entities = JSON.parse(entitiesScript.textContent || '[]');
-          relationships = JSON.parse(relationshipsScript.textContent || '[]');
+          const entitiesText = entitiesScript.textContent || '[]';
+          const relationshipsText = relationshipsScript.textContent || '[]';
+          
+          console.log('Entities text:', entitiesText.substring(0, 100) + '...');
+          console.log('Relationships text:', relationshipsText.substring(0, 100) + '...');
+          
+          entities = JSON.parse(entitiesText);
+          relationships = JSON.parse(relationshipsText);
+          
+          console.log(`Parsed ${entities.length} entities and ${relationships.length} relationships`);
         } catch (parseError) {
           console.error('Failed to parse ERD data:', parseError);
           showError(container, 'ERD Data Parsing Error', 'Unable to parse ERD data');
