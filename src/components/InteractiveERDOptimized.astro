@@ -528,15 +528,50 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
     setupViewToggle(container, containerId, entities, relationships);
 
     console.log('Simple ERD initialized successfully');
+    console.log('Available views: Card (default), Diagram (toggle)');
+    
+    // Add a small indicator to show ERD is ready
+    const readyIndicator = document.createElement('div');
+    readyIndicator.style.cssText = `
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: #22c55e;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      z-index: 100;
+      opacity: 1;
+      transition: opacity 2s ease;
+    `;
+    readyIndicator.textContent = 'ERD Ready';
+    container.appendChild(readyIndicator);
+    
+    // Auto-hide the indicator after 3 seconds
+    setTimeout(() => {
+      readyIndicator.style.opacity = '0';
+      setTimeout(() => {
+        if (readyIndicator.parentNode) {
+          readyIndicator.parentNode.removeChild(readyIndicator);
+        }
+      }, 2000);
+    }, 3000);
   }
 
   function setupViewToggle(container, containerId, entities, relationships) {
     try {
       const cardViewBtn = container.querySelector(`#card-view-btn-${containerId}`);
       const diagramViewBtn = container.querySelector(`#diagram-view-btn-${containerId}`);
-      const gridContainer = container.querySelector('.erd-astro-container > div:last-child');
+      const erdContainer = container.querySelector('.erd-astro-container > div:last-child');
       
-      if (!cardViewBtn || !diagramViewBtn || !gridContainer) {
+      console.log('Toggle elements found:', {
+        cardViewBtn: !!cardViewBtn,
+        diagramViewBtn: !!diagramViewBtn,
+        erdContainer: !!erdContainer
+      });
+      
+      if (!cardViewBtn || !diagramViewBtn || !erdContainer) {
         console.error('Failed to find ERD view toggle elements');
         return;
       }
@@ -545,6 +580,7 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
       let diagramContainer = null;
 
     cardViewBtn.addEventListener('click', () => {
+      console.log('Card view button clicked, current view:', currentView);
       if (currentView === 'card') return;
       
       // Update button styles
@@ -554,15 +590,17 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
       diagramViewBtn.style.color = '#666';
       
       // Show card view, hide diagram view
-      gridContainer.style.display = 'grid';
+      erdContainer.style.display = 'block';
       if (diagramContainer) {
         diagramContainer.style.display = 'none';
       }
       
       currentView = 'card';
+      console.log('Switched to card view');
     });
 
     diagramViewBtn.addEventListener('click', () => {
+      console.log('Diagram view button clicked, current view:', currentView);
       if (currentView === 'diagram') return;
       
       // Update button styles
@@ -573,15 +611,17 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
       
       // Create diagram view if it doesn't exist
       if (!diagramContainer) {
+        console.log('Creating new diagram view');
         diagramContainer = createDiagramView(entities, relationships, containerId);
         container.querySelector('.erd-astro-container').appendChild(diagramContainer);
       }
       
       // Hide card view, show diagram view
-      gridContainer.style.display = 'none';
+      erdContainer.style.display = 'none';
       diagramContainer.style.display = 'block';
       
       currentView = 'diagram';
+      console.log('Switched to diagram view');
     });
     
     } catch (error) {
@@ -738,6 +778,7 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
         currentScale = Math.min(maxScale, currentScale + 0.2);
         svg.style.transform = `scale(${currentScale})`;
         svg.style.transformOrigin = 'center center';
+        console.log('Zoomed in to scale:', currentScale);
       }
     };
 
@@ -746,6 +787,7 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
         currentScale = Math.max(minScale, currentScale - 0.2);
         svg.style.transform = `scale(${currentScale})`;
         svg.style.transformOrigin = 'center center';
+        console.log('Zoomed out to scale:', currentScale);
       }
     };
 
@@ -753,11 +795,22 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
       currentScale = 1;
       svg.style.transform = 'scale(1)';
       svg.style.transformOrigin = 'center center';
+      console.log('Reset zoom to fit');
     };
 
-    diagramContainer.querySelector(`#zoom-in-${containerId}`).addEventListener('click', zoomIn);
-    diagramContainer.querySelector(`#zoom-out-${containerId}`).addEventListener('click', zoomOut);
-    diagramContainer.querySelector(`#zoom-fit-${containerId}`).addEventListener('click', zoomFit);
+    // Setup zoom controls with error handling
+    const zoomInBtn = diagramContainer.querySelector(`#zoom-in-${containerId}`);
+    const zoomOutBtn = diagramContainer.querySelector(`#zoom-out-${containerId}`);
+    const zoomFitBtn = diagramContainer.querySelector(`#zoom-fit-${containerId}`);
+    
+    if (zoomInBtn && zoomOutBtn && zoomFitBtn) {
+      zoomInBtn.addEventListener('click', zoomIn);
+      zoomOutBtn.addEventListener('click', zoomOut);
+      zoomFitBtn.addEventListener('click', zoomFit);
+      console.log('Zoom controls setup successfully');
+    } else {
+      console.error('Failed to find zoom control buttons');
+    }
 
     console.log('Diagram view created successfully');
     return diagramContainer;
