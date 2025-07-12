@@ -45,16 +45,24 @@ import CTAButton from '../components/shared/CTAButton.astro';
             <h2 class="text-3xl md:text-4xl font-bold mb-4">
               Explore the Interactive Dashboard
             </h2>
-            <p class="text-lg md:text-xl max-w-3xl mx-auto mb-8 opacity-90">
+            <p class="text-lg md:text-xl max-w-3xl mx-auto mb-6 opacity-90">
               Dive into the CLIF cohort data with our live, interactive dashboard. Filter, analyze, and visualize data from over 680,000 ICU patients in real-time.
             </p>
+            <p class="text-sm opacity-75 mb-8">
+              <svg class="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"/>
+                <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z"/>
+              </svg>
+              Opens in a new window - Powered by R Shiny
+            </p>
             <CTAButton
-              href="/dashboard"
+              href="https://clif-consortium.shinyapps.io/clif-cohort-dashboard/"
               ariaLabel="Launch the interactive CLIF Cohort Dashboard"
               class="bg-white text-clif-burgundy hover:bg-gray-100 transform hover:scale-105 transition-transform duration-200"
               size="large"
+              external={true}
             >
-              Launch Dashboard
+              Launch Interactive Dashboard
             </CTAButton>
 
           </div>
@@ -72,9 +80,60 @@ import CTAButton from '../components/shared/CTAButton.astro';
         </div>
       </section>
 
-      <!-- Enhanced Cohort Dashboard -->
+      <!-- Static Summary Dashboard -->
       <section class="mb-16">
+        <div class="text-center mb-8">
+          <h2 class="text-3xl font-bold text-gray-800 mb-3">Summary Statistics</h2>
+          <p class="text-lg text-gray-600">Overview of the CLIF consortium cohort characteristics</p>
+        </div>
         <CohortDashboardReal />
+      </section>
+      
+      <!-- Interactive Dashboard Features -->
+      <section class="mb-16 bg-gray-50 rounded-2xl p-8">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Interactive Dashboard Features</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          <div class="bg-white p-6 rounded-lg shadow-sm">
+            <div class="w-12 h-12 bg-clif-burgundy/10 rounded-lg flex items-center justify-center mb-4">
+              <svg class="w-6 h-6 text-clif-burgundy" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+              </svg>
+            </div>
+            <h3 class="font-semibold text-lg mb-2">Advanced Filtering</h3>
+            <p class="text-gray-600">Filter cohorts by demographics, diagnosis, outcomes, and time periods</p>
+          </div>
+          <div class="bg-white p-6 rounded-lg shadow-sm">
+            <div class="w-12 h-12 bg-clif-burgundy/10 rounded-lg flex items-center justify-center mb-4">
+              <svg class="w-6 h-6 text-clif-burgundy" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+              </svg>
+            </div>
+            <h3 class="font-semibold text-lg mb-2">Real-time Visualization</h3>
+            <p class="text-gray-600">Interactive charts and graphs that update as you filter the data</p>
+          </div>
+          <div class="bg-white p-6 rounded-lg shadow-sm">
+            <div class="w-12 h-12 bg-clif-burgundy/10 rounded-lg flex items-center justify-center mb-4">
+              <svg class="w-6 h-6 text-clif-burgundy" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+            </div>
+            <h3 class="font-semibold text-lg mb-2">Export Capabilities</h3>
+            <p class="text-gray-600">Download filtered cohort summaries and visualizations for your research</p>
+          </div>
+        </div>
+        <div class="text-center mt-8">
+          <CTAButton
+            href="https://clif-consortium.shinyapps.io/clif-cohort-dashboard/"
+            variant="primary"
+            size="large"
+            external={true}
+            ariaLabel="Access the full interactive dashboard"
+            class="transform hover:scale-105 transition-transform duration-200"
+          >
+            Access Full Interactive Dashboard
+          </CTAButton>
+        </div>
       </section>
 
       <!-- Enhanced Call to Action -->
