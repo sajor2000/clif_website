@@ -36,9 +36,16 @@
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js" async></script>
 <script>
-  document.addEventListener('DOMContentLoaded', () => {
+  // Wait for both Chart.js and DOM to be ready
+  function initCharts() {
+    if (typeof Chart === 'undefined') {
+      // Chart.js not loaded yet, wait and retry
+      setTimeout(initCharts, 100);
+      return;
+    }
+    
     // Common chart options
     const commonOptions = {
       responsive: true,
@@ -51,8 +58,10 @@
     };
 
     // Age Distribution Chart
-    const ageCtx = document.getElementById('ageChart').getContext('2d');
-    new Chart(ageCtx, {
+    const ageChart = document.getElementById('ageChart');
+    if (ageChart) {
+      const ageCtx = ageChart.getContext('2d');
+      new Chart(ageCtx, {
       type: 'bar',
       data: {
         labels: ['18-29', '30-39', '40-49', '50-59', '60-69', '70-79', '80+'],
@@ -87,10 +96,13 @@
         },
       },
     });
+    }
 
     // Gender Distribution Chart
-    const genderCtx = document.getElementById('genderChart').getContext('2d');
-    new Chart(genderCtx, {
+    const genderChart = document.getElementById('genderChart');
+    if (genderChart) {
+      const genderCtx = genderChart.getContext('2d');
+      new Chart(genderCtx, {
       type: 'doughnut',
       data: {
         labels: ['Male', 'Female', 'Unknown'],
@@ -122,10 +134,13 @@
         },
       },
     });
+    }
 
     // Admissions Over Time
-    const admissionsCtx = document.getElementById('admissionsChart').getContext('2d');
-    new Chart(admissionsCtx, {
+    const admissionsChart = document.getElementById('admissionsChart');
+    if (admissionsChart) {
+      const admissionsCtx = admissionsChart.getContext('2d');
+      new Chart(admissionsCtx, {
       type: 'line',
       data: {
         labels: ['2014', '2015', '2016', '2017', '2018', '2019', '2020', '2021', '2022', '2023'],
@@ -161,10 +176,13 @@
         },
       },
     });
+    }
 
     // Mortality Chart
-    const mortalityCtx = document.getElementById('mortalityChart').getContext('2d');
-    new Chart(mortalityCtx, {
+    const mortalityChart = document.getElementById('mortalityChart');
+    if (mortalityChart) {
+      const mortalityCtx = mortalityChart.getContext('2d');
+      new Chart(mortalityCtx, {
       type: 'pie',
       data: {
         labels: ['Survived', 'In-Hospital Mortality'],
@@ -188,10 +206,13 @@
         },
       },
     });
+    }
 
     // Length of Stay Chart
-    const losCtx = document.getElementById('losChart').getContext('2d');
-    new Chart(losCtx, {
+    const losChart = document.getElementById('losChart');
+    if (losChart) {
+      const losCtx = losChart.getContext('2d');
+      new Chart(losCtx, {
       type: 'bar',
       data: {
         labels: ['<2 days', '2-5 days', '6-10 days', '11-20 days', '>20 days'],
@@ -226,7 +247,15 @@
         },
       },
     });
-  });
+    }
+  }
+  
+  // Initialize charts when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initCharts);
+  } else {
+    initCharts();
+  }
 </script>
 
 <style>

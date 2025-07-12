@@ -82,6 +82,7 @@
   /* Smooth Animations */
   .animate-float {
     animation: float 6s ease-in-out infinite;
+    will-change: transform;
   }
 
   @keyframes float {
@@ -267,5 +268,66 @@
 
   .progress-animate {
     animation: progress-fill 1.5s ease-out;
+  }
+
+  /* Performance optimizations */
+  .contain-layout {
+    contain: layout;
+  }
+
+  .contain-paint {
+    contain: paint;
+  }
+
+  .contain-strict {
+    contain: strict;
+  }
+
+  .contain-content {
+    contain: content;
+  }
+
+  /* Prevent layout shift for animated elements */
+  .will-change-transform {
+    will-change: transform;
+  }
+
+  .will-change-opacity {
+    will-change: opacity;
+  }
+
+  /* Disable pointer events during animations */
+  .animating {
+    pointer-events: none;
+  }
+
+  /* Optimize scroll animations */
+  .scroll-section {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+    will-change: opacity, transform;
+  }
+
+  .scroll-section.in-view {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Image optimization */
+  img {
+    content-visibility: auto;
+  }
+
+  /* Reduce motion for accessibility */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }

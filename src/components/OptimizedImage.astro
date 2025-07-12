@@ -66,14 +66,13 @@ const placeholderStyle = `
   <img
     src={src}
     alt={alt}
-    class={`${className} transition-opacity duration-300`}
+    class={className}
     loading={loading}
     width={width}
     height={height}
     sizes={sizes}
-    onload="this.style.opacity='1'"
+    decoding="async"
     onerror={`this.classList.add('error'); if(this.src !== '${fallbackSrc}') { this.src = '${fallbackSrc}'; }`}
-    style="opacity: 1;"
   />
 </picture>
 

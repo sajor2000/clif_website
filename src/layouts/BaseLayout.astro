@@ -44,7 +44,7 @@ const shouldShowBreadcrumbs = showBreadcrumbs && !isHomepage;
     <!-- Favicon and app icons -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-    <link rel="apple-touch-icon" href="/images/clif-icon-192.png" />
+    <link rel="apple-touch-icon" href="/images/icons/clif-icon-192.png" />
 
     <!-- Web App Manifest -->
     <link rel="manifest" href="/manifest.json" />
@@ -77,6 +77,9 @@ const shouldShowBreadcrumbs = showBreadcrumbs && !isHomepage;
     <!-- Preload fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    
+    <!-- Preload critical font weights -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap&subset=latin" />
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap&subset=latin"
       rel="stylesheet"
@@ -85,6 +88,8 @@ const shouldShowBreadcrumbs = showBreadcrumbs && !isHomepage;
     <!-- Resource hints -->
     <link rel="preconnect" href="https://clif-consortium.shinyapps.io" />
     <link rel="dns-prefetch" href="https://clif-consortium.shinyapps.io" />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
 
     <!-- Structured Data -->
     <script type="application/ld+json">
@@ -124,7 +129,7 @@ const shouldShowBreadcrumbs = showBreadcrumbs && !isHomepage;
     {isDev && <DevWebVitalsDisplay />}
     
     <script>
-      // Scroll-triggered animations
+      // Scroll-triggered animations with performance optimizations
       document.addEventListener('DOMContentLoaded', () => {
         const observerOptions = {
           threshold: 0.1,
@@ -134,7 +139,12 @@ const shouldShowBreadcrumbs = showBreadcrumbs && !isHomepage;
         const observer = new IntersectionObserver((entries) => {
           entries.forEach(entry => {
             if (entry.isIntersecting) {
-              entry.target.classList.add('in-view');
+              // Use requestAnimationFrame for smoother animations
+              requestAnimationFrame(() => {
+                entry.target.classList.add('in-view');
+                // Stop observing after animation triggers
+                observer.unobserve(entry.target);
+              });
             }
           });
         }, observerOptions);
