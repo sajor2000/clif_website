@@ -1,5 +1,9 @@
 ---
 // Interactive ERD Component for CLIF 2.0.0
+export interface Props {
+  tables?: any[];
+}
+const { tables } = Astro.props;
 ---
 
 <div class="erd-section">
@@ -397,9 +401,17 @@
   }
 </style>
 
-<script>
-  // Data structure for CLIF 2.0.0 entities
-  const entities = [
+<script is:inline>
+  // Ensure the script runs after styles are loaded
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeERD);
+  } else {
+    initializeERD();
+  }
+
+  function initializeERD() {
+    // Data structure for CLIF 2.0.0 entities
+    const entities = [
     {
       id: 'patient',
       name: 'patient',
@@ -557,7 +569,6 @@
   ];
 
   // Initialize the diagram
-  document.addEventListener('DOMContentLoaded', () => {
     const svg = document.getElementById('er-diagram');
     const diagramWrapper = document.getElementById('diagram-wrapper');
     const entitiesGroup = document.getElementById('entities');
@@ -598,6 +609,9 @@
       rect.setAttribute('width', width);
       rect.setAttribute('height', height);
       rect.setAttribute('rx', '4');
+      rect.setAttribute('fill', 'white');
+      rect.setAttribute('stroke', '#ddd');
+      rect.setAttribute('stroke-width', '1');
       g.appendChild(rect);
 
       // Header background
@@ -606,6 +620,11 @@
       headerRect.setAttribute('width', width);
       headerRect.setAttribute('height', headerHeight);
       headerRect.setAttribute('rx', '4');
+      // Set header color based on maturity
+      const headerColor = entity.maturity === 'beta' ? '#E67E22' : 
+                         entity.maturity === 'new' ? '#F39C12' : 
+                         entity.maturity === 'concept' ? '#95A5A6' : '#E67E22';
+      headerRect.setAttribute('fill', headerColor);
       g.appendChild(headerRect);
 
       // Entity name
@@ -614,6 +633,9 @@
       nameText.setAttribute('x', '10');
       nameText.setAttribute('y', headerHeight / 2 + 5);
       nameText.setAttribute('text-anchor', 'start');
+      nameText.setAttribute('fill', 'white');
+      nameText.setAttribute('font-weight', 'bold');
+      nameText.setAttribute('font-size', '14');
       nameText.textContent = entity.name;
       g.appendChild(nameText);
 
@@ -637,9 +659,11 @@
         fieldText.classList.add('field-text');
         fieldText.setAttribute('x', '10');
         fieldText.setAttribute('y', yPos + 3);
+        fieldText.setAttribute('fill', '#333');
+        fieldText.setAttribute('font-size', '12');
         fieldText.textContent = field.name;
         if (field.isPK || field.isFK) {
-          fieldText.style.fontWeight = 'bold';
+          fieldText.setAttribute('font-weight', 'bold');
         }
         g.appendChild(fieldText);
 
@@ -649,6 +673,8 @@
         typeText.setAttribute('x', width - 10);
         typeText.setAttribute('y', yPos + 3);
         typeText.setAttribute('text-anchor', 'end');
+        typeText.setAttribute('fill', '#666');
+        typeText.setAttribute('font-size', '11');
         typeText.textContent = field.type;
         g.appendChild(typeText);
       });
@@ -908,5 +934,5 @@
     // Initial view
     currentTransform.scale = 0.8;
     updateTransform();
-  });
+  }
 </script>
