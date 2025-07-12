@@ -24,14 +24,20 @@ const {
 
 // Transform CLIF table data to ERD entities
 function transformTableToEntity(table: any, maturity: 'beta' | 'concept' | 'future'): ERDEntity {
+  // Validate required fields
+  if (!table || !table.id) {
+    console.warn('Invalid table data:', table);
+    return null;
+  }
+  
   return {
     id: table.id,
     name: table.name || table.id,
     maturity,
     position: getEntityPosition(table.id),
-    fields: table.fields || [], // Keep all fields for complete specifications
-    description: table.description,
-    notes: table.notes
+    fields: Array.isArray(table.fields) ? table.fields : [], // Ensure fields is an array
+    description: table.description || '',
+    notes: Array.isArray(table.notes) ? table.notes : []
   };
 }
 
@@ -93,6 +99,7 @@ function getMaturityLevel(table: any): 'beta' | 'concept' | 'future' {
 // Create entities from table data
 const entities: ERDEntity[] = tables && tables.length > 0 
   ? tables.map(table => transformTableToEntity(table, getMaturityLevel(table)))
+      .filter(entity => entity !== null) // Remove invalid entities
   : [];
 
 // Log for debugging
@@ -385,6 +392,12 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
           return;
         }
         
+        if (entities.length === 0) {
+          console.warn('No valid entities found');
+          showError(container, 'ERD Data Warning', 'No table data available to display');
+          return;
+        }
+        
         console.log(`Successfully loaded ${entities.length} entities and ${relationships.length} relationships`);
 
         console.log(`Initializing ERD with ${entities.length} entities and ${relationships.length} relationships`);
@@ -458,23 +471,39 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
     const titleDiv = document.createElement('div');
     titleDiv.innerHTML = `
       <div style="text-align: center; margin-bottom: 30px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-          <div style="flex: 1;"></div>
-          <div style="text-align: center;">
-            <h2 style="color: #841839; font-size: 24px; font-weight: bold; margin: 0;">CLIF 2.0.0 Entity Relationship Diagram</h2>
-            <p style="color: #666; margin: 5px 0 0 0;">Interactive view of all ${entities.length} tables and their relationships</p>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+          <div style="flex: 1; min-width: 50px;"></div>
+          <div style="text-align: center; flex: 2; min-width: 300px;">
+            <h2 style="color: #841839; font-size: clamp(18px, 4vw, 24px); font-weight: bold; margin: 0;">CLIF 2.0.0 Entity Relationship Diagram</h2>
+            <p style="color: #666; margin: 5px 0 0 0; font-size: clamp(12px, 2.5vw, 14px);">Interactive view of all ${entities.length} tables and their relationships</p>
           </div>
-          <div style="flex: 1; display: flex; justify-content: flex-end;">
-            <div id="view-toggle-${containerId}" style="display: flex; background: #f3f4f6; border-radius: 8px; padding: 4px;">
-              <button id="card-view-btn-${containerId}" style="padding: 8px 16px; border: none; background: #841839; color: white; border-radius: 6px; font-size: 14px; cursor: pointer; transition: all 0.2s;">
+          <div style="flex: 1; display: flex; justify-content: flex-end; min-width: 200px;">
+            <div id="view-toggle-${containerId}" style="display: flex; background: #f3f4f6; border-radius: 8px; padding: 4px; width: 100%; max-width: 200px;">
+              <button id="card-view-btn-${containerId}" style="padding: 8px 12px; border: none; background: #841839; color: white; border-radius: 6px; font-size: clamp(12px, 2vw, 14px); cursor: pointer; transition: all 0.2s; flex: 1;">
                 Card View
               </button>
-              <button id="diagram-view-btn-${containerId}" style="padding: 8px 16px; border: none; background: transparent; color: #666; border-radius: 6px; font-size: 14px; cursor: pointer; transition: all 0.2s;">
+              <button id="diagram-view-btn-${containerId}" style="padding: 8px 12px; border: none; background: transparent; color: #666; border-radius: 6px; font-size: clamp(12px, 2vw, 14px); cursor: pointer; transition: all 0.2s; flex: 1;">
                 Diagram View
               </button>
             </div>
           </div>
         </div>
+        
+        <!-- Mobile: Stack title and toggle vertically -->
+        <style>
+          @media (max-width: 768px) {
+            #view-toggle-${containerId} {
+              order: 3;
+              width: 100% !important;
+              max-width: 300px !important;
+              margin: 10px auto 0 auto !important;
+            }
+            #view-toggle-${containerId} button {
+              padding: 10px 16px !important;
+              font-size: 14px !important;
+            }
+          }
+        </style>
       </div>
       <div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 30px; flex-wrap: wrap;">
         <div style="display: flex; align-items: center; gap: 8px;">
@@ -502,12 +531,18 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
   }
 
   function setupViewToggle(container, containerId, entities, relationships) {
-    const cardViewBtn = container.querySelector(`#card-view-btn-${containerId}`);
-    const diagramViewBtn = container.querySelector(`#diagram-view-btn-${containerId}`);
-    const gridContainer = container.querySelector('.erd-astro-container > div:last-child');
-    
-    let currentView = 'card';
-    let diagramContainer = null;
+    try {
+      const cardViewBtn = container.querySelector(`#card-view-btn-${containerId}`);
+      const diagramViewBtn = container.querySelector(`#diagram-view-btn-${containerId}`);
+      const gridContainer = container.querySelector('.erd-astro-container > div:last-child');
+      
+      if (!cardViewBtn || !diagramViewBtn || !gridContainer) {
+        console.error('Failed to find ERD view toggle elements');
+        return;
+      }
+      
+      let currentView = 'card';
+      let diagramContainer = null;
 
     cardViewBtn.addEventListener('click', () => {
       if (currentView === 'card') return;
@@ -548,14 +583,21 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
       
       currentView = 'diagram';
     });
+    
+    } catch (error) {
+      console.error('Error setting up view toggle:', error);
+    }
   }
 
   function createDiagramView(entities, relationships, containerId) {
-    const colors = {
-      beta: '#FF8C00',    // Orange/amber color matching static ERD
-      concept: '#E5E7EB', // Light gray color matching static ERD
-      future: '#9CA3AF'   // Darker gray color matching static ERD
-    };
+    try {
+      console.log(`Creating diagram view for ${entities.length} entities and ${relationships.length} relationships`);
+      
+      const colors = {
+        beta: '#FF8C00',    // Orange/amber color matching static ERD
+        concept: '#E5E7EB', // Light gray color matching static ERD
+        future: '#9CA3AF'   // Darker gray color matching static ERD
+      };
 
     // Create diagram container
     const diagramContainer = document.createElement('div');
@@ -588,7 +630,7 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
       height: auto;
     `;
 
-    // Add zoom and pan controls
+    // Add zoom and pan controls (responsive)
     const controlsDiv = document.createElement('div');
     controlsDiv.style.cssText = `
       position: absolute;
@@ -597,13 +639,50 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
       display: flex;
       gap: 8px;
       z-index: 10;
+      flex-wrap: wrap;
     `;
     
     controlsDiv.innerHTML = `
-      <button id="zoom-in-${containerId}" style="width: 40px; height: 40px; border: none; background: white; border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.15); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold;">+</button>
-      <button id="zoom-out-${containerId}" style="width: 40px; height: 40px; border: none; background: white; border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.15); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold;">−</button>
-      <button id="zoom-fit-${containerId}" style="padding: 8px 12px; border: none; background: white; border-radius: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); cursor: pointer; font-size: 12px; font-weight: 500;">Fit</button>
+      <button id="zoom-in-${containerId}" style="width: clamp(36px, 8vw, 40px); height: clamp(36px, 8vw, 40px); border: none; background: white; border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.15); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: clamp(16px, 4vw, 18px); font-weight: bold;">+</button>
+      <button id="zoom-out-${containerId}" style="width: clamp(36px, 8vw, 40px); height: clamp(36px, 8vw, 40px); border: none; background: white; border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.15); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: clamp(16px, 4vw, 18px); font-weight: bold;">−</button>
+      <button id="zoom-fit-${containerId}" style="padding: clamp(6px, 2vw, 8px) clamp(10px, 3vw, 12px); border: none; background: white; border-radius: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); cursor: pointer; font-size: clamp(10px, 2.5vw, 12px); font-weight: 500;">Fit</button>
+      
+      <style>
+        @media (max-width: 768px) {
+          div[style*="position: absolute"][style*="top: 20px"] {
+            position: fixed !important;
+            top: auto !important;
+            bottom: 20px !important;
+            right: 20px !important;
+            left: 20px !important;
+            justify-content: center !important;
+            background: rgba(255, 255, 255, 0.9) !important;
+            backdrop-filter: blur(10px) !important;
+            padding: 10px !important;
+            border-radius: 15px !important;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15) !important;
+          }
+        }
+      </style>
     `;
+
+    // Create shared arrowhead marker for all arrows
+    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+    marker.setAttribute('id', `arrowhead-${containerId}`);
+    marker.setAttribute('markerWidth', '10');
+    marker.setAttribute('markerHeight', '7');
+    marker.setAttribute('refX', '9');
+    marker.setAttribute('refY', '3.5');
+    marker.setAttribute('orient', 'auto');
+    
+    const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+    polygon.setAttribute('points', '0 0, 10 3.5, 0 7');
+    polygon.setAttribute('fill', '#000000');
+    
+    marker.appendChild(polygon);
+    defs.appendChild(marker);
+    svg.appendChild(defs);
 
     // Draw relationships first (so they appear behind entities)
     relationships.forEach(rel => {
@@ -611,8 +690,10 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
       const toEntity = entities.find(e => e.id === rel.to);
       
       if (fromEntity && toEntity) {
-        const arrow = createArrow(fromEntity, toEntity);
-        svg.appendChild(arrow);
+        const arrow = createArrow(fromEntity, toEntity, containerId);
+        if (arrow) {
+          svg.appendChild(arrow);
+        }
       }
     });
 
@@ -656,7 +737,20 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
     diagramContainer.querySelector(`#zoom-out-${containerId}`).addEventListener('click', zoomOut);
     diagramContainer.querySelector(`#zoom-fit-${containerId}`).addEventListener('click', zoomFit);
 
+    console.log('Diagram view created successfully');
     return diagramContainer;
+    
+    } catch (error) {
+      console.error('Error creating diagram view:', error);
+      const errorContainer = document.createElement('div');
+      errorContainer.innerHTML = `
+        <div style="padding: 20px; text-align: center; color: #dc2626;">
+          <h3>Diagram View Error</h3>
+          <p>Unable to create diagram view. Please try the card view instead.</p>
+        </div>
+      `;
+      return errorContainer;
+    }
   }
 
   function createEntityBox(entity, colors) {
@@ -759,17 +853,66 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
     return group;
   }
 
-  function createArrow(fromEntity, toEntity) {
-    const fromX = fromEntity.position.x + 125; // Center of box
-    const fromY = fromEntity.position.y + 60;
-    const toX = toEntity.position.x + 125;
-    const toY = toEntity.position.y + 60;
+  function createArrow(fromEntity, toEntity, containerId) {
+    const boxWidth = 250;
+    const boxHeight = 120;
+    
+    const fromCenterX = fromEntity.position.x + boxWidth / 2;
+    const fromCenterY = fromEntity.position.y + boxHeight / 2;
+    const toCenterX = toEntity.position.x + boxWidth / 2;
+    const toCenterY = toEntity.position.y + boxHeight / 2;
 
-    // Calculate connection points on box edges
-    const fromConnectX = fromEntity.position.x + (fromX < toX ? 250 : 0);
-    const fromConnectY = fromY;
-    const toConnectX = toEntity.position.x + (fromX < toX ? 0 : 250);
-    const toConnectY = toY;
+    // Calculate the direction vector
+    const dx = toCenterX - fromCenterX;
+    const dy = toCenterY - fromCenterY;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    // Avoid zero-length arrows
+    if (distance < 10) {
+      console.warn('Entities too close for arrow:', fromEntity.id, toEntity.id);
+      return null;
+    }
+    
+    // Normalize direction
+    const unitX = dx / distance;
+    const unitY = dy / distance;
+
+    // Calculate connection points on box edges with proper offset
+    const offset = 8; // Small offset from box edge
+    let fromConnectX, fromConnectY, toConnectX, toConnectY;
+
+    // Determine which side of the box to connect to
+    if (Math.abs(unitX) > Math.abs(unitY)) {
+      // Horizontal connection
+      if (unitX > 0) {
+        // Connect from right side of from-box to left side of to-box
+        fromConnectX = fromEntity.position.x + boxWidth;
+        fromConnectY = fromCenterY;
+        toConnectX = toEntity.position.x - offset;
+        toConnectY = toCenterY;
+      } else {
+        // Connect from left side of from-box to right side of to-box
+        fromConnectX = fromEntity.position.x;
+        fromConnectY = fromCenterY;
+        toConnectX = toEntity.position.x + boxWidth + offset;
+        toConnectY = toCenterY;
+      }
+    } else {
+      // Vertical connection
+      if (unitY > 0) {
+        // Connect from bottom of from-box to top of to-box
+        fromConnectX = fromCenterX;
+        fromConnectY = fromEntity.position.y + boxHeight;
+        toConnectX = toCenterX;
+        toConnectY = toEntity.position.y - offset;
+      } else {
+        // Connect from top of from-box to bottom of to-box
+        fromConnectX = fromCenterX;
+        fromConnectY = fromEntity.position.y;
+        toConnectX = toCenterX;
+        toConnectY = toEntity.position.y + boxHeight + offset;
+      }
+    }
 
     // Create arrow group
     const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
@@ -783,30 +926,26 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
     line.setAttribute('y2', toConnectY);
     line.setAttribute('stroke', '#000000');
     line.setAttribute('stroke-width', '2');
-    line.setAttribute('marker-end', 'url(#arrowhead)');
+    line.setAttribute('marker-end', `url(#arrowhead-${containerId})`);
+    line.setAttribute('opacity', '0.8');
 
-    // Create arrowhead marker (define it in defs)
-    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-    const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
-    marker.setAttribute('id', 'arrowhead');
-    marker.setAttribute('markerWidth', '10');
-    marker.setAttribute('markerHeight', '7');
-    marker.setAttribute('refX', '9');
-    marker.setAttribute('refY', '3.5');
-    marker.setAttribute('orient', 'auto');
+    // Add hover effect
+    line.addEventListener('mouseenter', () => {
+      line.setAttribute('stroke-width', '3');
+      line.setAttribute('opacity', '1');
+    });
     
-    const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-    polygon.setAttribute('points', '0 0, 10 3.5, 0 7');
-    polygon.setAttribute('fill', '#000000');
-    
-    marker.appendChild(polygon);
-    defs.appendChild(marker);
-    group.appendChild(defs);
+    line.addEventListener('mouseleave', () => {
+      line.setAttribute('stroke-width', '2');
+      line.setAttribute('opacity', '0.8');
+    });
+
     group.appendChild(line);
 
     return group;
   }
 
+  // Performance optimization: limit initial field display
   function createEntityCard(entity) {
     const colors = {
       beta: '#FF8C00',    // Orange/amber color matching static ERD

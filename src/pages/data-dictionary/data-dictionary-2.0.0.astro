@@ -1364,6 +1364,45 @@ const futureTables = [
     id: 'clinical_decision_support',
     name: 'Clinical Decision Support',
     description: 'This table will capture the actions of clinical decision support tools embedded in the EHR. The table will have the following fields: cds_name, cds_category, cds_value, cds_trigger_ddtm.',
+    fields: [
+      {
+        name: 'hospitalization_id',
+        type: 'VARCHAR',
+        description: 'Unique identifier for each hospitalization encounter',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'cds_name',
+        type: 'VARCHAR',
+        description: 'Name of the clinical decision support tool',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'cds_category',
+        type: 'VARCHAR',
+        description: 'Category of the clinical decision support',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'cds_value',
+        type: 'VARCHAR',
+        description: 'Value or result from the decision support tool',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'cds_trigger_dttm',
+        type: 'DATETIME',
+        description: 'Date and time when the decision support was triggered',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
+      },
+    ],
+    notes: [
+      'Future implementation planned for clinical decision support integration',
+      'Will capture automated alerts, recommendations, and interventions',
+    ],
+    example: `| hospitalization_id | cds_name | cds_category | cds_value | cds_trigger_dttm |
+|---|---|---|---|---|
+| 20010012 | Sepsis Alert | infection | High Risk | 2024-12-01 15:30:00+00:00 |`,
   },
 ];
 ---
