@@ -91,9 +91,13 @@ function getMaturityLevel(table: any): 'beta' | 'concept' | 'future' {
 }
 
 // Create entities from table data
-const entities: ERDEntity[] = tables.map(table => 
-  transformTableToEntity(table, getMaturityLevel(table))
-);
+const entities: ERDEntity[] = tables && tables.length > 0 
+  ? tables.map(table => transformTableToEntity(table, getMaturityLevel(table)))
+  : [];
+
+// Log for debugging
+console.log('Tables provided:', tables?.length || 0);
+console.log('Entities created:', entities.length);
 
 // Create relationships (all tables connect to hospitalization)
 const relationships: ERDRelationship[] = entities
@@ -340,9 +344,17 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
 </style>
 
 <!-- Pass data to client-side script -->
-<script is:inline type="application/json" id={`${containerId}-entities`} data-entities>{JSON.stringify(entities)}</script>
-
-<script is:inline type="application/json" id={`${containerId}-relationships`} data-relationships>{JSON.stringify(relationships)}</script>
+<script define:vars={{ erdEntities: entities, erdRelationships: relationships, erdContainerId: containerId }}>
+  // Store ERD data in a global object to avoid JSON parsing issues
+  window.erdData = window.erdData || {};
+  window.erdData[erdContainerId] = {
+    entities: erdEntities || [],
+    relationships: erdRelationships || []
+  };
+  console.log('ERD data stored for container:', erdContainerId);
+  console.log('Entities count:', window.erdData[erdContainerId].entities.length);
+  console.log('Relationships count:', window.erdData[erdContainerId].relationships.length);
+</script>
 
 <script is:inline>
   // Simple ERD implementation without external imports
@@ -358,55 +370,22 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
       console.log(`Initializing ERD container: ${containerId}`);
       
       try {
-        // Get data from embedded JSON scripts
-        const entitiesScript = document.querySelector(`#${containerId}-entities`);
-        const relationshipsScript = document.querySelector(`#${containerId}-relationships`);
-        
-        console.log('Entities script found:', !!entitiesScript);
-        console.log('Relationships script found:', !!relationshipsScript);
-        
-        if (!entitiesScript || !relationshipsScript) {
-          console.warn(`ERD data scripts not found for container: ${containerId}`);
-          showError(container, 'ERD Data Loading Error', 'Unable to find data scripts');
+        // Get data from global window object
+        if (!window.erdData || !window.erdData[containerId]) {
+          console.warn(`ERD data not found for container: ${containerId}`);
+          showError(container, 'ERD Data Loading Error', 'Unable to find ERD data');
           return;
         }
 
-        let entities, relationships;
-        let entitiesText = '';
-        let relationshipsText = '';
+        const { entities, relationships } = window.erdData[containerId];
         
-        try {
-          entitiesText = entitiesScript.textContent || entitiesScript.innerHTML || '[]';
-          relationshipsText = relationshipsScript.textContent || relationshipsScript.innerHTML || '[]';
-          
-          console.log('Entities raw text length:', entitiesText.length);
-          console.log('Relationships raw text length:', relationshipsText.length);
-          console.log('Entities first 200 chars:', entitiesText.substring(0, 200));
-          console.log('Relationships first 200 chars:', relationshipsText.substring(0, 200));
-          
-          // Check for common JSON issues
-          if (entitiesText.startsWith('\n') || entitiesText.startsWith(' ')) {
-            console.warn('Entities text starts with whitespace, trimming...');
-          }
-          if (relationshipsText.startsWith('\n') || relationshipsText.startsWith(' ')) {
-            console.warn('Relationships text starts with whitespace, trimming...');
-          }
-          
-          // Clean any potential HTML encoding issues and trim whitespace
-          const cleanEntitiesText = entitiesText.trim().replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#39;/g, "'");
-          const cleanRelationshipsText = relationshipsText.trim().replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#39;/g, "'");
-          
-          entities = JSON.parse(cleanEntitiesText);
-          relationships = JSON.parse(cleanRelationshipsText);
-          
-          console.log(`Successfully parsed ${entities.length} entities and ${relationships.length} relationships`);
-        } catch (parseError) {
-          console.error('Failed to parse ERD data:', parseError);
-          console.error('Entities text that failed:', entitiesText);
-          console.error('Relationships text that failed:', relationshipsText);
-          showError(container, 'ERD Data Parsing Error', `JSON parsing failed: ${parseError.message}`);
+        if (!entities || !relationships) {
+          console.error('ERD data is missing entities or relationships');
+          showError(container, 'ERD Data Error', 'Invalid ERD data structure');
           return;
         }
+        
+        console.log(`Successfully loaded ${entities.length} entities and ${relationships.length} relationships`);
 
         console.log(`Initializing ERD with ${entities.length} entities and ${relationships.length} relationships`);
         
