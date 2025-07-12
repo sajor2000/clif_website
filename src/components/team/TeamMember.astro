@@ -6,7 +6,7 @@ interface Props {
   degree?: string;
   role?: string;
   image: string;
-  email?: string;
+
   scholarLink?: string;
   linkedinLink?: string;
   githubLink?: string;
@@ -21,7 +21,7 @@ const {
   degree,
   role,
   image,
-  email,
+
   scholarLink,
   linkedinLink,
   githubLink,
@@ -63,7 +63,7 @@ const getInitials = (name: string) => {
 const initials = getInitials(name);
 
 // Determine which social links to show
-const socialLinks = [scholarLink, linkedinLink, githubLink, websiteLink, otherLink, email].filter(
+const socialLinks = [scholarLink, linkedinLink, githubLink, websiteLink, otherLink].filter(
   Boolean
 );
 const hasSocialLinks = socialLinks.length > 0;
@@ -145,18 +145,7 @@ const hasSocialLinks = socialLinks.length > 0;
           </a>
         )}
 
-        {email && (
-          <a
-            href={`mailto:${email}`}
-            class="w-6 h-6 rounded-full bg-gray-600 bg-opacity-70 flex items-center justify-center text-white hover:bg-opacity-100 transition-all"
-            aria-label={`Email ${name}`}
-          >
-            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-              <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-            </svg>
-          </a>
-        )}
+
 
         {githubLink && (
           <a

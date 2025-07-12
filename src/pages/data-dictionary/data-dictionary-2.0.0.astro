@@ -1412,13 +1412,17 @@ const futureTables = [
             </svg>
           </button>
         </div>
+        <label for="global-search" class="sr-only">Search CLIF data dictionary tables, fields, or descriptions</label>
         <input
           type="text"
           id="global-search"
           placeholder="Search tables, fields, or descriptions..."
+          aria-label="Search CLIF data dictionary tables, fields, or descriptions"
+          aria-describedby="search-instructions"
           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent"
           autofocus
         />
+        <span id="search-instructions" class="sr-only">Enter keywords to search across all tables and fields in the CLIF data dictionary</span>
         <div id="search-results" class="mt-4 max-h-96 overflow-y-auto"></div>
       </div>
     </div>

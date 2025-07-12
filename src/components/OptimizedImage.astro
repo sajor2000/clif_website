@@ -66,7 +66,7 @@ const placeholderStyle = `
   <img
     src={src}
     alt={alt}
-    class={className}
+    class={`${className} ${loading === 'eager' ? 'no-placeholder' : ''}`}
     loading={loading}
     width={width}
     height={height}
@@ -92,6 +92,11 @@ const placeholderStyle = `
 
   img {
     background-color: #f3f4f6;
+  }
+
+  img.no-placeholder {
+    background-color: transparent;
+    animation: none;
   }
 </style>
 

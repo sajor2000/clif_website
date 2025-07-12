@@ -1,13 +1,21 @@
 ---
 import Navigation from './Navigation.astro';
+import OptimizedImage from '../OptimizedImage.astro';
 ---
 
 <header class="bg-white shadow-sm sticky top-0 z-30">
   <div class="container mx-auto px-6 py-4">
     <div class="flex items-center justify-between">
       <!-- Logo -->
-      <a href="/" class="flex items-center gap-3">
-        <img src="/images/clif_logo.png" alt="CLIF Logo" class="h-14" width="192" height="56" />
+      <a href="/" class="flex items-center gap-3 transition-all duration-200 transform hover:scale-105">
+        <OptimizedImage
+          src="/images/clif_logo.png"
+          alt="CLIF Logo"
+          class="h-14"
+          width={192}
+          height={56}
+          loading="eager"
+        />
       </a>
 
       <!-- Navigation -->

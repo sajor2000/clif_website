@@ -2,6 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import TeamMember from '../components/team/TeamMember.astro';
 import ErrorBoundary from '../components/ErrorBoundary.astro';
+import CTAButton from '../components/shared/CTAButton.astro';
 ---
 
 <BaseLayout
@@ -16,6 +17,16 @@ import ErrorBoundary from '../components/ErrorBoundary.astro';
         Leading researchers and clinicians from 11 institutions working together to advance critical
         care research through standardized data formats
       </p>
+      <div class="mt-8">
+        <CTAButton
+          href="mailto:clif_consortium@uchicago.edu"
+          ariaLabel="Contact the CLIF Consortium"
+          class="bg-clif-burgundy text-white hover:bg-clif-burgundy-dark transform hover:scale-105 transition-all duration-200 shadow-lg"
+          size="large"
+        >
+          Contact Us
+        </CTAButton>
+      </div>
     </div>
 
     <!-- Steering Committee -->
@@ -33,7 +44,6 @@ import ErrorBoundary from '../components/ErrorBoundary.astro';
             degree="MD"
             role="Co-Chair"
             image="nicholas_ingraham.webp"
-            email="ningraham@uchicago.edu"
             linkedinLink="https://www.linkedin.com/in/nicholas-ingraham/"
             primaryLink="https://www.linkedin.com/in/nicholas-ingraham/"
             size="large"
@@ -45,7 +55,6 @@ import ErrorBoundary from '../components/ErrorBoundary.astro';
             degree="MD"
             role="Co-Chair"
             image="catherine_gao.webp"
-            email="cgao@northwestern.edu"
             linkedinLink="https://www.linkedin.com/in/cathyagao/"
             primaryLink="https://www.linkedin.com/in/cathyagao/"
             size="large"
@@ -372,6 +381,14 @@ import ErrorBoundary from '../components/ErrorBoundary.astro';
             Oregon Health & Science University
           </h3>
           <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+
+            <TeamMember
+              name="Pat Lyons"
+              degree="MD"
+              image="pat_lyons.webp"
+              linkedinLink="https://www.linkedin.com/in/patrick-lyons-79183147/"
+              size="small"
+            />
 
             <TeamMember
               name="Brenna Park-Egan"

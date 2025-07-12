@@ -35,12 +35,16 @@ const tableId = `table-${id}`;
 
     <!-- Search input -->
     <div class="relative mb-4">
+      <label for={`search-${tableId}`} class="sr-only">Search {name} table fields</label>
       <input
         type="text"
         id={`search-${tableId}`}
         placeholder="Search fields..."
+        aria-label={`Search ${name} table fields`}
+        aria-describedby={`search-help-${tableId}`}
         class="w-full md:w-64 px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent"
       />
+      <span id={`search-help-${tableId}`} class="sr-only">Type to filter table rows by field name, type, or description</span>
       <svg
         class="absolute right-3 top-2.5 h-5 w-5 text-gray-400"
         fill="none"
@@ -142,9 +146,10 @@ const tableId = `table-${id}`;
   <!-- Export buttons -->
   <div class="mt-4 flex gap-2">
     <button
-      class="export-csv px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-clif-burgundy"
+      class="export-csv px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-clif-burgundy disabled:opacity-50 disabled:cursor-not-allowed relative"
       data-table-id={tableId}
       data-table-name={name}
+      aria-label="Export table as CSV file"
     >
       <svg
         class="inline-block w-4 h-4 mr-1 -mt-0.5"
@@ -159,12 +164,20 @@ const tableId = `table-${id}`;
           d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
         ></path>
       </svg>
-      Export CSV
+      <span class="button-text">Export CSV</span>
+      <span class="loading-spinner hidden absolute inset-0 flex items-center justify-center bg-white bg-opacity-90">
+        <svg class="animate-spin h-5 w-5 text-clif-burgundy" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span class="sr-only">Exporting CSV...</span>
+      </span>
     </button>
     <button
-      class="export-json px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-clif-burgundy"
+      class="export-json px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-clif-burgundy disabled:opacity-50 disabled:cursor-not-allowed relative"
       data-table-id={tableId}
       data-table-name={name}
+      aria-label="Export table as JSON file"
     >
       <svg
         class="inline-block w-4 h-4 mr-1 -mt-0.5"
@@ -179,7 +192,14 @@ const tableId = `table-${id}`;
           d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
         ></path>
       </svg>
-      Export JSON
+      <span class="button-text">Export JSON</span>
+      <span class="loading-spinner hidden absolute inset-0 flex items-center justify-center bg-white bg-opacity-90">
+        <svg class="animate-spin h-5 w-5 text-clif-burgundy" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span class="sr-only">Exporting JSON...</span>
+      </span>
     </button>
   </div>
 </section>
@@ -210,31 +230,89 @@ const tableId = `table-${id}`;
     const exportJsonButtons = document.querySelectorAll('.export-json');
 
     exportCsvButtons.forEach((button) => {
-      button.addEventListener('click', (e) => {
+      button.addEventListener('click', async (e) => {
         const btn = e.currentTarget as HTMLButtonElement;
         const tableId = btn.dataset.tableId;
         const tableName = btn.dataset.tableName;
         const table = document.getElementById(tableId!);
 
         if (table) {
-          exportTableToCSV(table, tableName!);
+          // Show loading state
+          showLoadingState(btn, true);
+          
+          // Small delay to show loading state
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          try {
+            exportTableToCSV(table, tableName!);
+            // Show success toast if available
+            if (window.toastManager) {
+              window.toastManager.success('CSV exported successfully');
+            }
+          } catch (error) {
+            console.error('Export failed:', error);
+            if (window.toastManager) {
+              window.toastManager.error('Failed to export CSV');
+            }
+          } finally {
+            showLoadingState(btn, false);
+          }
         }
       });
     });
 
     exportJsonButtons.forEach((button) => {
-      button.addEventListener('click', (e) => {
+      button.addEventListener('click', async (e) => {
         const btn = e.currentTarget as HTMLButtonElement;
         const tableId = btn.dataset.tableId;
         const tableName = btn.dataset.tableName;
         const table = document.getElementById(tableId!);
 
         if (table) {
-          exportTableToJSON(table, tableName!);
+          // Show loading state
+          showLoadingState(btn, true);
+          
+          // Small delay to show loading state
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          try {
+            exportTableToJSON(table, tableName!);
+            // Show success toast if available
+            if (window.toastManager) {
+              window.toastManager.success('JSON exported successfully');
+            }
+          } catch (error) {
+            console.error('Export failed:', error);
+            if (window.toastManager) {
+              window.toastManager.error('Failed to export JSON');
+            }
+          } finally {
+            showLoadingState(btn, false);
+          }
         }
       });
     });
   });
+
+  function showLoadingState(button: HTMLButtonElement, isLoading: boolean) {
+    const spinner = button.querySelector('.loading-spinner');
+    const buttonText = button.querySelector('.button-text');
+    const svgIcon = button.querySelector('svg:not(.animate-spin)');
+    
+    if (isLoading) {
+      button.disabled = true;
+      button.setAttribute('aria-busy', 'true');
+      spinner?.classList.remove('hidden');
+      buttonText?.classList.add('opacity-0');
+      svgIcon?.classList.add('opacity-0');
+    } else {
+      button.disabled = false;
+      button.setAttribute('aria-busy', 'false');
+      spinner?.classList.add('hidden');
+      buttonText?.classList.remove('opacity-0');
+      svgIcon?.classList.remove('opacity-0');
+    }
+  }
 
   function exportTableToCSV(table: HTMLElement, name: string) {
     const rows = table.querySelectorAll('tr');

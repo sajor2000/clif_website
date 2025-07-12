@@ -154,11 +154,11 @@
   }
 
   .badge-beta {
-    @apply bg-amber-100 text-amber-800 border border-amber-200;
+    @apply bg-orange-100 text-orange-800 border border-orange-200;
   }
 
   .badge-concept {
-    @apply bg-orange-100 text-orange-800 border border-orange-200;
+    @apply bg-gray-100 text-gray-700 border border-gray-200;
   }
 
   .badge-deprecated {
@@ -195,9 +195,17 @@
 
   /* Enhanced focus states */
   a:focus-visible,
-  button:focus-visible {
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
     outline: 2px solid var(--clif-burgundy);
     outline-offset: 2px;
+  }
+  
+  /* Ensure focus-visible polyfill support */
+  .js-focus-visible :focus:not(.focus-visible) {
+    outline: none;
   }
 
   /* Smooth hover transitions */
