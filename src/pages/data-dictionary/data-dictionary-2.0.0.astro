@@ -2,6 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Badge from '../../components/Badge.astro';
 import OptimizedImage from '../../components/OptimizedImage.astro';
+import InteractiveERD from '../../components/InteractiveERD.astro';
 
 // Define all Beta tables data
 const betaTables = [
@@ -734,7 +735,13 @@ const futureTables = [
         </h1>
         <Badge type="beta" class="ml-4" />
       </div>
-      
+    </div>
+
+    <!-- Interactive ERD Section -->
+    <InteractiveERD />
+
+    <!-- Stats Section -->
+    <div class="mb-12">
       <!-- Quick Stats with Enhanced Design -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
         <div class="group relative overflow-hidden bg-white rounded-2xl border border-yellow-200 shadow-sm hover:shadow-xl transition-all duration-300">
@@ -807,31 +814,6 @@ const futureTables = [
         </p>
       </div>
 
-      <!-- ERD Section with Enhanced Presentation -->
-      <div class="mb-10">
-        <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">Entity Relationship Diagram</h2>
-        <p class="text-center text-gray-600 mb-6">
-          Click the diagram to view full size. This ERD illustrates the relationships between all CLIF 2.0.0 tables.
-        </p>
-        <div class="relative group">
-          <div class="absolute inset-0 bg-gradient-to-r from-clif-burgundy/10 to-blue-500/10 rounded-xl blur-xl group-hover:blur-2xl transition-all duration-300"></div>
-          <div class="relative bg-white p-4 rounded-xl shadow-lg">
-            <OptimizedImage
-              src="/images/data-dictionary/ERD-2.0.0.png"
-              alt="CLIF 2.0.0 Entity Relationship Diagram - Click to enlarge"
-              class="w-full max-w-6xl mx-auto rounded-lg cursor-pointer transition-transform hover:scale-[1.02]"
-              loading="eager"
-              id="erd-image"
-            />
-            <div class="absolute bottom-4 right-4 bg-gray-900/70 text-white px-3 py-1 rounded-lg text-sm pointer-events-none">
-              <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"></path>
-              </svg>
-              Click to enlarge
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
 
     <!-- Beta Tables Section -->
@@ -1140,33 +1122,6 @@ const futureTables = [
         }
       });
 
-      // ERD Modal functionality
-      const erdImage = document.getElementById('erd-image');
-      const erdModal = document.createElement('div');
-      erdModal.className = 'fixed inset-0 z-50 bg-black/90 backdrop-blur-sm hidden flex items-center justify-center p-4';
-      erdModal.innerHTML = `
-        <div class="relative max-w-[95vw] max-h-[95vh]">
-          <button class="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors">
-            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-            </svg>
-          </button>
-          <img src="/images/data-dictionary/ERD-2.0.0.png" alt="CLIF 2.0.0 Entity Relationship Diagram" class="max-w-full max-h-full rounded-lg shadow-2xl" width="2204" height="2171" loading="lazy">
-        </div>
-      `;
-      document.body.appendChild(erdModal);
-
-      erdImage?.addEventListener('click', () => {
-        erdModal.classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-      });
-
-      erdModal.addEventListener('click', (e) => {
-        if (e.target === erdModal || e.target.closest('button')) {
-          erdModal.classList.add('hidden');
-          document.body.style.overflow = '';
-        }
-      });
 
       // Global search implementation
       globalSearch?.addEventListener('input', (e) => {

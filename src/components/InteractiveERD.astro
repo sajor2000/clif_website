@@ -1,0 +1,1009 @@
+---
+// Interactive ERD Component for CLIF 2.0.0
+---
+
+<div class="erd-section">
+  <div class="erd-header">
+    <h2 class="text-2xl font-bold mb-2">Interactive Entity Relationship Diagram</h2>
+    <p class="text-gray-600 mb-4">
+      Explore the relationships between all CLIF 2.0.0 tables. Click on entities to view details, search for specific tables or fields, and zoom/pan to navigate.
+    </p>
+  </div>
+
+  <div class="er-diagram-container">
+    <div class="controls">
+      <input type="search" id="search" placeholder="Search entities or fields..." />
+      <button id="reset-view">Reset View</button>
+      <button id="toggle-relationships">Toggle Relationships</button>
+    </div>
+
+    <div id="diagram-wrapper">
+      <svg id="er-diagram" viewBox="0 0 3000 2000" preserveAspectRatio="xMidYMid meet">
+        <!-- Define markers for relationship arrows -->
+        <defs>
+          <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#333" />
+          </marker>
+        </defs>
+
+        <!-- Relationships will be drawn first (behind entities) -->
+        <g id="relationships"></g>
+        
+        <!-- Entities -->
+        <g id="entities"></g>
+      </svg>
+    </div>
+
+    <aside id="details-panel">
+      <div class="panel-header">
+        <h2 id="entity-name">Entity Details</h2>
+        <button class="close-btn" id="close-details-btn">&times;</button>
+      </div>
+      <div class="panel-content">
+        <h3>Fields</h3>
+        <ul id="field-list" class="field-list"></ul>
+        
+        <h3 style="margin-top: 20px;">Relationships</h3>
+        <ul id="relationship-list" class="field-list"></ul>
+      </div>
+    </aside>
+
+    <div class="legend">
+      <h4 style="margin: 0 0 10px 0; font-size: 14px;">Maturity Levels</h4>
+      <div class="legend-item">
+        <div class="legend-color" style="background: #FFE4B5; border-color: #333;"></div>
+        <span>Beta</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background: #FFD700; border-color: #333;"></div>
+        <span>New</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background: #E0E0E0; border-color: #333;"></div>
+        <span>Concept</span>
+      </div>
+    </div>
+
+    <div class="zoom-controls">
+      <button class="zoom-btn" id="zoom-in">+</button>
+      <button class="zoom-btn" id="zoom-out">−</button>
+      <button class="zoom-btn" id="zoom-fit">⊡</button>
+    </div>
+
+    <div class="tooltip" id="tooltip"></div>
+  </div>
+</div>
+
+<style>
+  .erd-section {
+    margin-bottom: 3rem;
+  }
+
+  .er-diagram-container {
+    position: relative;
+    height: 800px;
+    background-color: #f0f0f0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+
+  .controls {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 10;
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    max-width: 400px;
+  }
+
+  .controls input {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .controls button {
+    padding: 8px 16px;
+    background: #841839;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+
+  .controls button:hover {
+    background: #6b1414;
+  }
+
+  #diagram-wrapper {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    cursor: grab;
+  }
+
+  #diagram-wrapper.grabbing {
+    cursor: grabbing;
+  }
+
+  #er-diagram {
+    width: 100%;
+    height: 100%;
+    transition: transform 0.3s ease;
+  }
+
+  .entity {
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .entity rect {
+    fill: white;
+    stroke: #333;
+    stroke-width: 2;
+  }
+
+  .entity.maturity-beta rect {
+    fill: #FFE4B5;
+  }
+
+  .entity.maturity-new rect {
+    fill: #FFD700;
+  }
+
+  .entity.maturity-concept rect {
+    fill: #E0E0E0;
+  }
+
+  .entity:hover rect {
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
+    stroke-width: 3;
+    stroke: #841839;
+  }
+
+  .entity.highlighted rect {
+    stroke: #841839;
+    stroke-width: 4;
+    filter: drop-shadow(0 6px 16px rgba(132, 24, 57, 0.4));
+  }
+
+  .entity.dimmed {
+    opacity: 0.3;
+  }
+
+  .relationship {
+    transition: all 0.3s ease;
+  }
+
+  .relationship.highlighted path {
+    stroke: #841839;
+    stroke-width: 2.5;
+  }
+
+  .relationship.dimmed {
+    opacity: 0.2;
+  }
+
+  #details-panel {
+    position: absolute;
+    right: -400px;
+    top: 0;
+    width: 400px;
+    height: 100%;
+    background: white;
+    box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+    transition: right 0.3s ease;
+    overflow-y: auto;
+    z-index: 9;
+  }
+
+  #details-panel.show {
+    right: 0;
+  }
+
+  .panel-header {
+    padding: 20px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .panel-content {
+    padding: 20px;
+  }
+
+  .field-list {
+    list-style: none;
+    margin-top: 10px;
+    padding: 0;
+  }
+
+  .field-item {
+    padding: 8px;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .field-name {
+    font-weight: 500;
+  }
+
+  .field-type {
+    color: #6c757d;
+    font-size: 0.9em;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75em;
+    font-weight: 500;
+    margin-left: 8px;
+  }
+
+  .badge-pk {
+    background: #841839;
+    color: white;
+  }
+
+  .badge-fk {
+    background: #6c757d;
+    color: white;
+  }
+
+  .close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #6c757d;
+  }
+
+  .legend {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .legend-item:last-child {
+    margin-bottom: 0;
+  }
+
+  .legend-color {
+    width: 20px;
+    height: 20px;
+    border: 1px solid #333;
+    margin-right: 10px;
+  }
+
+  .zoom-controls {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .zoom-btn {
+    background: none;
+    border: none;
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+
+  .zoom-btn:hover {
+    background: #f8f9fa;
+  }
+
+  .tooltip {
+    position: absolute;
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 14px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 11;
+  }
+
+  .tooltip.show {
+    opacity: 1;
+  }
+
+  @media (max-width: 768px) {
+    .er-diagram-container {
+      height: 600px;
+    }
+
+    .controls {
+      max-width: 300px;
+    }
+
+    #details-panel {
+      width: 320px;
+      right: -320px;
+    }
+  }
+</style>
+
+<script>
+  // Data structure for CLIF 2.0.0 entities
+  const entities = [
+    {
+      id: 'patient',
+      name: 'patient',
+      maturity: 'beta',
+      position: { x: 100, y: 100 },
+      fields: [
+        { name: 'patient_id', type: 'VARCHAR', isPK: true },
+        { name: 'race_name', type: 'VARCHAR' },
+        { name: 'race_category', type: 'VARCHAR' },
+        { name: 'ethnicity_name', type: 'VARCHAR' },
+        { name: 'ethnicity_category', type: 'VARCHAR' },
+        { name: 'sex_name', type: 'VARCHAR' },
+        { name: 'sex_category', type: 'VARCHAR' },
+        { name: 'birth_date', type: 'DATE' },
+        { name: 'death_dttm', type: 'DATETIME' }
+      ]
+    },
+    {
+      id: 'hospitalization',
+      name: 'hospitalization',
+      maturity: 'beta',
+      position: { x: 500, y: 100 },
+      fields: [
+        { name: 'patient_id', type: 'VARCHAR', isFK: true },
+        { name: 'hospitalization_id', type: 'VARCHAR', isPK: true },
+        { name: 'admission_dttm', type: 'DATETIME' },
+        { name: 'discharge_dttm', type: 'DATETIME' },
+        { name: 'age_at_admission', type: 'INT' },
+        { name: 'admission_type_name', type: 'VARCHAR' },
+        { name: 'admission_type_category', type: 'VARCHAR' },
+        { name: 'discharge_name', type: 'VARCHAR' },
+        { name: 'discharge_category', type: 'VARCHAR' }
+      ]
+    },
+    {
+      id: 'adt',
+      name: 'adt',
+      maturity: 'beta',
+      position: { x: 100, y: 400 },
+      fields: [
+        { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
+        { name: 'hospital_id', type: 'VARCHAR' },
+        { name: 'hospital_type', type: 'VARCHAR' },
+        { name: 'in_dttm', type: 'DATETIME' },
+        { name: 'out_dttm', type: 'DATETIME' },
+        { name: 'location_name', type: 'VARCHAR' },
+        { name: 'location_category', type: 'VARCHAR' }
+      ]
+    },
+    {
+      id: 'vitals',
+      name: 'vitals',
+      maturity: 'beta',
+      position: { x: 900, y: 100 },
+      fields: [
+        { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
+        { name: 'recorded_dttm', type: 'DATETIME' },
+        { name: 'vital_name', type: 'VARCHAR' },
+        { name: 'vital_category', type: 'VARCHAR' },
+        { name: 'vital_value', type: 'DOUBLE' },
+        { name: 'meas_site_name', type: 'VARCHAR' },
+        { name: 'meas_site_category', type: 'VARCHAR' }
+      ]
+    },
+    {
+      id: 'labs',
+      name: 'labs',
+      maturity: 'beta',
+      position: { x: 1300, y: 100 },
+      fields: [
+        { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
+        { name: 'lab_order_dttm', type: 'DATETIME' },
+        { name: 'lab_collect_dttm', type: 'DATETIME' },
+        { name: 'lab_result_dttm', type: 'DATETIME' },
+        { name: 'lab_name', type: 'VARCHAR' },
+        { name: 'lab_category', type: 'VARCHAR' },
+        { name: 'lab_value', type: 'VARCHAR' },
+        { name: 'lab_value_numeric', type: 'DOUBLE' },
+        { name: 'reference_unit', type: 'VARCHAR' }
+      ]
+    },
+    {
+      id: 'hospital_diagnosis',
+      name: 'hospital_diagnosis',
+      maturity: 'beta',
+      position: { x: 500, y: 400 },
+      fields: [
+        { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
+        { name: 'diagnosis_name', type: 'VARCHAR' },
+        { name: 'diagnosis_category', type: 'VARCHAR' },
+        { name: 'diagnosis_code', type: 'VARCHAR' },
+        { name: 'diagnosis_type', type: 'VARCHAR' },
+        { name: 'diagnosis_priority', type: 'INT' }
+      ]
+    },
+    {
+      id: 'medication_admin_continuous',
+      name: 'medication_admin_continuous',
+      maturity: 'beta',
+      position: { x: 1700, y: 100 },
+      fields: [
+        { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
+        { name: 'admin_dttm', type: 'DATETIME' },
+        { name: 'med_name', type: 'VARCHAR' },
+        { name: 'med_category', type: 'VARCHAR' },
+        { name: 'med_route_name', type: 'VARCHAR' },
+        { name: 'med_dose', type: 'DOUBLE' },
+        { name: 'med_dose_unit', type: 'VARCHAR' }
+      ]
+    },
+    {
+      id: 'patient_assessments',
+      name: 'patient_assessments',
+      maturity: 'beta',
+      position: { x: 900, y: 400 },
+      fields: [
+        { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
+        { name: 'recorded_dttm', type: 'DATETIME' },
+        { name: 'assessment_name', type: 'VARCHAR' },
+        { name: 'assessment_category', type: 'VARCHAR' },
+        { name: 'assessment_value', type: 'VARCHAR' },
+        { name: 'assessment_numeric_value', type: 'DOUBLE' }
+      ]
+    },
+    {
+      id: 'respiratory_support',
+      name: 'respiratory_support',
+      maturity: 'beta',
+      position: { x: 1300, y: 400 },
+      fields: [
+        { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
+        { name: 'recorded_dttm', type: 'DATETIME' },
+        { name: 'device_name', type: 'VARCHAR' },
+        { name: 'device_category', type: 'VARCHAR' },
+        { name: 'mode_name', type: 'VARCHAR' },
+        { name: 'mode_category', type: 'VARCHAR' }
+      ]
+    },
+    // Concept tables
+    {
+      id: 'intake_output',
+      name: 'intake_output',
+      maturity: 'concept',
+      position: { x: 100, y: 700 },
+      fields: [
+        { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
+        { name: 'recorded_dttm', type: 'DATETIME' },
+        { name: 'intake_output_name', type: 'VARCHAR' },
+        { name: 'intake_output_category', type: 'VARCHAR' },
+        { name: 'value', type: 'DOUBLE' }
+      ]
+    },
+    {
+      id: 'position',
+      name: 'position',
+      maturity: 'concept',
+      position: { x: 500, y: 700 },
+      fields: [
+        { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
+        { name: 'recorded_dttm', type: 'DATETIME' },
+        { name: 'position_name', type: 'VARCHAR' },
+        { name: 'position_category', type: 'VARCHAR' }
+      ]
+    },
+    {
+      id: 'lines',
+      name: 'lines',
+      maturity: 'concept',
+      position: { x: 900, y: 700 },
+      fields: [
+        { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
+        { name: 'recorded_dttm', type: 'DATETIME' },
+        { name: 'line_name', type: 'VARCHAR' },
+        { name: 'line_category', type: 'VARCHAR' },
+        { name: 'line_site', type: 'VARCHAR' }
+      ]
+    },
+    {
+      id: 'medication_admin_intermittent',
+      name: 'medication_admin_intermittent',
+      maturity: 'concept',
+      position: { x: 1300, y: 700 },
+      fields: [
+        { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
+        { name: 'admin_dttm', type: 'DATETIME' },
+        { name: 'med_name', type: 'VARCHAR' },
+        { name: 'med_category', type: 'VARCHAR' },
+        { name: 'med_dose', type: 'DOUBLE' },
+        { name: 'med_dose_unit', type: 'VARCHAR' }
+      ]
+    },
+    {
+      id: 'microbiology_culture',
+      name: 'microbiology_culture',
+      maturity: 'concept',
+      position: { x: 1700, y: 400 },
+      fields: [
+        { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
+        { name: 'culture_dttm', type: 'DATETIME' },
+        { name: 'organism_name', type: 'VARCHAR' },
+        { name: 'organism_category', type: 'VARCHAR' }
+      ]
+    },
+    {
+      id: 'sensitivity',
+      name: 'sensitivity',
+      maturity: 'concept',
+      position: { x: 1700, y: 700 },
+      fields: [
+        { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
+        { name: 'antibiotic_name', type: 'VARCHAR' },
+        { name: 'antibiotic_category', type: 'VARCHAR' },
+        { name: 'sensitivity_value', type: 'VARCHAR' }
+      ]
+    },
+    {
+      id: 'medication_orders',
+      name: 'medication_orders',
+      maturity: 'concept',
+      position: { x: 2100, y: 100 },
+      fields: [
+        { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
+        { name: 'order_dttm', type: 'DATETIME' },
+        { name: 'med_name', type: 'VARCHAR' },
+        { name: 'med_category', type: 'VARCHAR' }
+      ]
+    }
+  ];
+
+  const relationships = [
+    { source: 'patient', target: 'hospitalization', label: 'has' },
+    { source: 'hospitalization', target: 'adt', label: 'tracks' },
+    { source: 'hospitalization', target: 'vitals', label: 'records' },
+    { source: 'hospitalization', target: 'labs', label: 'has' },
+    { source: 'hospitalization', target: 'hospital_diagnosis', label: 'has' },
+    { source: 'hospitalization', target: 'medication_admin_continuous', label: 'receives' },
+    { source: 'hospitalization', target: 'patient_assessments', label: 'has' },
+    { source: 'hospitalization', target: 'respiratory_support', label: 'receives' },
+    { source: 'hospitalization', target: 'intake_output', label: 'has' },
+    { source: 'hospitalization', target: 'position', label: 'has' },
+    { source: 'hospitalization', target: 'lines', label: 'has' },
+    { source: 'hospitalization', target: 'medication_admin_intermittent', label: 'receives' },
+    { source: 'hospitalization', target: 'microbiology_culture', label: 'has' },
+    { source: 'hospitalization', target: 'sensitivity', label: 'has' },
+    { source: 'hospitalization', target: 'medication_orders', label: 'has' }
+  ];
+
+  // State management
+  let currentScale = 1;
+  let currentTranslateX = 0;
+  let currentTranslateY = 0;
+  let isPanning = false;
+  let startX = 0;
+  let startY = 0;
+  let selectedEntity = null;
+  let showRelationships = true;
+
+  // Initialize the diagram
+  function initDiagram() {
+    const svg = document.getElementById('er-diagram');
+    const entitiesGroup = document.getElementById('entities');
+    const relationshipsGroup = document.getElementById('relationships');
+
+    // Draw relationships
+    relationships.forEach(rel => {
+      const sourceEntity = entities.find(e => e.id === rel.source);
+      const targetEntity = entities.find(e => e.id === rel.target);
+
+      if (sourceEntity && targetEntity) {
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        const d = calculatePath(sourceEntity.position, targetEntity.position);
+        path.setAttribute('d', d);
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke', '#333');
+        path.setAttribute('stroke-width', '1.5');
+        path.setAttribute('marker-end', 'url(#arrow)');
+        path.classList.add('relationship');
+        path.setAttribute('data-source', rel.source);
+        path.setAttribute('data-target', rel.target);
+        relationshipsGroup.appendChild(path);
+      }
+    });
+
+    // Draw entities
+    entities.forEach(entity => {
+      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      g.classList.add('entity');
+      g.classList.add(`maturity-${entity.maturity}`);
+      g.setAttribute('data-entity', entity.id);
+      g.setAttribute('transform', `translate(${entity.position.x}, ${entity.position.y})`);
+
+      // Calculate entity dimensions
+      const width = 250;
+      const headerHeight = 40;
+      const fieldHeight = 25;
+      const height = headerHeight + (entity.fields.length * fieldHeight) + 20;
+
+      // Entity rectangle
+      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.setAttribute('width', width);
+      rect.setAttribute('height', height);
+      rect.setAttribute('rx', '4');
+      g.appendChild(rect);
+
+      // Entity header
+      const headerRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      headerRect.setAttribute('width', width);
+      headerRect.setAttribute('height', headerHeight);
+      
+      // Set header color based on maturity
+      let headerColor = '#f8f9fa';
+      if (entity.maturity === 'beta') {
+        headerColor = '#FFA500';
+      } else if (entity.maturity === 'new') {
+        headerColor = '#FFD700';
+      } else if (entity.maturity === 'concept') {
+        headerColor = '#C0C0C0';
+      }
+      
+      headerRect.setAttribute('fill', headerColor);
+      headerRect.setAttribute('rx', '4');
+      g.appendChild(headerRect);
+
+      // Entity name
+      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      text.setAttribute('x', width / 2);
+      text.setAttribute('y', 25);
+      text.setAttribute('text-anchor', 'middle');
+      text.setAttribute('font-weight', 'bold');
+      text.setAttribute('font-size', '14');
+      text.textContent = entity.name;
+      g.appendChild(text);
+
+      // Fields
+      entity.fields.forEach((field, index) => {
+        const fieldY = headerHeight + 15 + (index * fieldHeight);
+        
+        const fieldText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        fieldText.setAttribute('x', 10);
+        fieldText.setAttribute('y', fieldY);
+        fieldText.setAttribute('font-size', '12');
+        fieldText.textContent = field.name;
+        g.appendChild(fieldText);
+
+        const typeText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        typeText.setAttribute('x', width - 10);
+        typeText.setAttribute('y', fieldY);
+        typeText.setAttribute('text-anchor', 'end');
+        typeText.setAttribute('font-size', '11');
+        typeText.setAttribute('fill', '#666');
+        typeText.textContent = field.type;
+        g.appendChild(typeText);
+
+        if (field.isPK) {
+          const pk = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          pk.setAttribute('x', width - 60);
+          pk.setAttribute('y', fieldY);
+          pk.setAttribute('text-anchor', 'end');
+          pk.setAttribute('font-size', '10');
+          pk.setAttribute('fill', '#841839');
+          pk.setAttribute('font-weight', 'bold');
+          pk.textContent = 'PK';
+          g.appendChild(pk);
+        }
+
+        if (field.isFK) {
+          const fk = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          fk.setAttribute('x', width - 60);
+          fk.setAttribute('y', fieldY);
+          fk.setAttribute('text-anchor', 'end');
+          fk.setAttribute('font-size', '10');
+          fk.setAttribute('fill', '#6c757d');
+          fk.setAttribute('font-weight', 'bold');
+          fk.textContent = 'FK';
+          g.appendChild(fk);
+        }
+      });
+
+      // Event listeners
+      g.addEventListener('click', () => selectEntity(entity));
+      g.addEventListener('mouseenter', (e) => showTooltip(e, entity));
+      g.addEventListener('mouseleave', hideTooltip);
+
+      entitiesGroup.appendChild(g);
+    });
+
+    // Set up event listeners
+    setupEventListeners();
+  }
+
+  function calculatePath(start, end) {
+    const startX = start.x + 250;
+    const startY = start.y + 50;
+    const endX = end.x;
+    const endY = end.y + 50;
+    
+    const midX = (startX + endX) / 2;
+    
+    return `M${startX},${startY} C${midX},${startY} ${midX},${endY} ${endX},${endY}`;
+  }
+
+  function setupEventListeners() {
+    const wrapper = document.getElementById('diagram-wrapper');
+    const svg = document.getElementById('er-diagram');
+
+    // Pan functionality
+    wrapper.addEventListener('mousedown', startPan);
+    wrapper.addEventListener('mousemove', pan);
+    wrapper.addEventListener('mouseup', endPan);
+    wrapper.addEventListener('mouseleave', endPan);
+
+    // Touch events for mobile
+    wrapper.addEventListener('touchstart', (e) => {
+      const touch = e.touches[0];
+      startPan({ clientX: touch.clientX, clientY: touch.clientY });
+    });
+    wrapper.addEventListener('touchmove', (e) => {
+      const touch = e.touches[0];
+      pan({ clientX: touch.clientX, clientY: touch.clientY, preventDefault: () => e.preventDefault() });
+    });
+    wrapper.addEventListener('touchend', endPan);
+
+    // Search functionality
+    document.getElementById('search').addEventListener('input', (e) => {
+      const query = e.target.value.toLowerCase();
+      searchDiagram(query);
+    });
+
+    // Button event listeners
+    document.getElementById('reset-view').addEventListener('click', resetView);
+    document.getElementById('toggle-relationships').addEventListener('click', toggleRelationships);
+    document.getElementById('zoom-in').addEventListener('click', zoomIn);
+    document.getElementById('zoom-out').addEventListener('click', zoomOut);
+    document.getElementById('zoom-fit').addEventListener('click', zoomFit);
+    document.getElementById('close-details-btn').addEventListener('click', closeDetailsPanel);
+  }
+
+  function startPan(e) {
+    if (e.target.closest('.entity')) return;
+    isPanning = true;
+    startX = e.clientX - currentTranslateX;
+    startY = e.clientY - currentTranslateY;
+    document.getElementById('diagram-wrapper').classList.add('grabbing');
+  }
+
+  function pan(e) {
+    if (!isPanning) return;
+    e.preventDefault();
+    currentTranslateX = e.clientX - startX;
+    currentTranslateY = e.clientY - startY;
+    updateTransform();
+  }
+
+  function endPan() {
+    isPanning = false;
+    document.getElementById('diagram-wrapper').classList.remove('grabbing');
+  }
+
+  function updateTransform() {
+    const svg = document.getElementById('er-diagram');
+    svg.style.transform = `translate(${currentTranslateX}px, ${currentTranslateY}px) scale(${currentScale})`;
+  }
+
+  function zoomIn() {
+    currentScale = Math.min(currentScale * 1.2, 3);
+    updateTransform();
+  }
+
+  function zoomOut() {
+    currentScale = Math.max(currentScale / 1.2, 0.3);
+    updateTransform();
+  }
+
+  function zoomFit() {
+    currentScale = 0.6;
+    currentTranslateX = 0;
+    currentTranslateY = 0;
+    updateTransform();
+  }
+
+  function resetView() {
+    currentScale = 1;
+    currentTranslateX = 0;
+    currentTranslateY = 0;
+    updateTransform();
+    document.getElementById('search').value = '';
+    searchDiagram('');
+    closeDetailsPanel();
+  }
+
+  function searchDiagram(query) {
+    const entities = document.querySelectorAll('.entity');
+    const relationships = document.querySelectorAll('.relationship');
+
+    if (!query) {
+      entities.forEach(e => {
+        e.classList.remove('highlighted', 'dimmed');
+      });
+      relationships.forEach(r => {
+        r.classList.remove('highlighted', 'dimmed');
+      });
+      return;
+    }
+
+    entities.forEach(entityEl => {
+      const entityId = entityEl.getAttribute('data-entity');
+      const entity = window.entities.find(e => e.id === entityId);
+      
+      const matches = entity.name.toLowerCase().includes(query) ||
+                     entity.fields.some(f => 
+                         f.name.toLowerCase().includes(query) ||
+                         f.type.toLowerCase().includes(query)
+                     );
+
+      if (matches) {
+        entityEl.classList.add('highlighted');
+        entityEl.classList.remove('dimmed');
+      } else {
+        entityEl.classList.add('dimmed');
+        entityEl.classList.remove('highlighted');
+      }
+    });
+
+    // Update relationships
+    relationships.forEach(rel => {
+      const source = rel.getAttribute('data-source');
+      const target = rel.getAttribute('data-target');
+      const sourceHighlighted = document.querySelector(`.entity[data-entity="${source}"]`).classList.contains('highlighted');
+      const targetHighlighted = document.querySelector(`.entity[data-entity="${target}"]`).classList.contains('highlighted');
+
+      if (sourceHighlighted || targetHighlighted) {
+        rel.classList.remove('dimmed');
+      } else {
+        rel.classList.add('dimmed');
+      }
+    });
+  }
+
+  function selectEntity(entity) {
+    selectedEntity = entity;
+    
+    // Update entity highlighting
+    document.querySelectorAll('.entity').forEach(e => {
+      e.classList.remove('highlighted');
+      if (e.getAttribute('data-entity') === entity.id) {
+        e.classList.add('highlighted');
+      }
+    });
+
+    // Update relationship highlighting
+    document.querySelectorAll('.relationship').forEach(r => {
+      const source = r.getAttribute('data-source');
+      const target = r.getAttribute('data-target');
+      if (source === entity.id || target === entity.id) {
+        r.classList.add('highlighted');
+      } else {
+        r.classList.remove('highlighted');
+      }
+    });
+
+    // Show details panel
+    showDetailsPanel(entity);
+  }
+
+  function showDetailsPanel(entity) {
+    const panel = document.getElementById('details-panel');
+    const nameEl = document.getElementById('entity-name');
+    const fieldList = document.getElementById('field-list');
+    const relationshipList = document.getElementById('relationship-list');
+
+    nameEl.textContent = entity.name;
+    
+    // Clear and populate fields
+    fieldList.innerHTML = '';
+    entity.fields.forEach(field => {
+      const li = document.createElement('li');
+      li.className = 'field-item';
+      li.innerHTML = `
+        <span class="field-name">${field.name}</span>
+        <span>
+          <span class="field-type">${field.type}</span>
+          ${field.isPK ? '<span class="badge badge-pk">PK</span>' : ''}
+          ${field.isFK ? '<span class="badge badge-fk">FK</span>' : ''}
+        </span>
+      `;
+      fieldList.appendChild(li);
+    });
+
+    // Clear and populate relationships
+    relationshipList.innerHTML = '';
+    relationships.filter(r => r.source === entity.id || r.target === entity.id).forEach(rel => {
+      const li = document.createElement('li');
+      li.className = 'field-item';
+      const otherEntity = rel.source === entity.id ? rel.target : rel.source;
+      const direction = rel.source === entity.id ? '→' : '←';
+      li.innerHTML = `<span>${direction} ${rel.label} ${otherEntity}</span>`;
+      relationshipList.appendChild(li);
+    });
+
+    panel.classList.add('show');
+  }
+
+  function closeDetailsPanel() {
+    document.getElementById('details-panel').classList.remove('show');
+    document.querySelectorAll('.entity').forEach(e => e.classList.remove('highlighted'));
+    document.querySelectorAll('.relationship').forEach(r => r.classList.remove('highlighted'));
+    selectedEntity = null;
+  }
+
+  function toggleRelationships() {
+    showRelationships = !showRelationships;
+    const relationships = document.getElementById('relationships');
+    relationships.style.display = showRelationships ? 'block' : 'none';
+  }
+
+  function showTooltip(e, entity) {
+    const tooltip = document.getElementById('tooltip');
+    tooltip.textContent = `${entity.name} (${entity.fields.length} fields)`;
+    tooltip.style.left = e.pageX + 10 + 'px';
+    tooltip.style.top = e.pageY + 10 + 'px';
+    tooltip.classList.add('show');
+  }
+
+  function hideTooltip() {
+    document.getElementById('tooltip').classList.remove('show');
+  }
+
+  // Initialize on load
+  document.addEventListener('DOMContentLoaded', initDiagram);
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeDetailsPanel();
+    } else if (e.key === '=' || e.key === '+') {
+      zoomIn();
+    } else if (e.key === '-') {
+      zoomOut();
+    } else if (e.key === '0' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      resetView();
+    }
+  });
+</script>
