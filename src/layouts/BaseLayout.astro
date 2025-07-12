@@ -1,7 +1,7 @@
 ---
 import Header from '../components/layout/Header.astro';
 import Footer from '../components/layout/Footer.astro';
-import WebVitalsReporter from '../components/WebVitalsReporter.astro';
+// Removed WebVitalsReporter to eliminate 404 errors for /api/vitals endpoint
 import DevWebVitalsDisplay from '../components/DevWebVitalsDisplay.astro';
 import Breadcrumbs from '../components/shared/Breadcrumbs.astro';
 import '../styles/global.css';
@@ -125,7 +125,7 @@ const shouldShowBreadcrumbs = showBreadcrumbs && !isHomepage;
       <slot />
     </main>
     <Footer />
-    <WebVitalsReporter />
+    <!-- WebVitalsReporter removed to eliminate 404 errors -->
     {isDev && <DevWebVitalsDisplay />}
     
     <script>
