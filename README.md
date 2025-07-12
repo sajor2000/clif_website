@@ -18,7 +18,7 @@ CLIF is a standardized framework for organizing electronic health record (EHR) d
 
 ```bash
 # Clone the repository
-git clone https://github.com/[your-org]/clif-consortium-website.git
+git clone https://github.com/Common-Longitudinal-ICU-data-Format/CLIF.git
 cd clif-consortium-website
 
 # Install dependencies
@@ -87,7 +87,7 @@ This project is licensed under the ISC License.
 ## 🔗 Links
 
 - [CLIF Consortium Website](https://clif-consortium.org)
-- [CLIF GitHub Organization](https://github.com/Common-Longitudinal-ICU-data-Format)
+- [CLIF GitHub Repository](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF)
 - [Research Paper](https://link.springer.com/article/10.1007/s00134-025-07848-7)
 
 ## 👥 Maintainers

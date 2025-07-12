@@ -1,6 +1,6 @@
 ---
 export interface Props {
-  type: 'beta' | 'concept' | 'deprecated';
+  type: 'beta' | 'concept' | 'deprecated' | 'future';
   class?: string;
   size?: 'small' | 'medium' | 'large';
 }
@@ -9,32 +9,58 @@ const { type, class: className = '', size = 'medium' } = Astro.props;
 
 const badges = {
   beta: {
-    src: '/images/badge_maturity_beta.png',
-    alt: 'Maturity: Beta',
+    text: 'BETA',
+    bgColor: 'bg-gradient-to-r from-yellow-400 to-yellow-500',
+    textColor: 'text-yellow-900',
+    borderColor: 'border-yellow-600',
+    icon: '⚡',
   },
   concept: {
-    src: '/images/badge_maturity_concept.png',
-    alt: 'Maturity: Concept',
+    text: 'CONCEPT',
+    bgColor: 'bg-gradient-to-r from-purple-400 to-purple-500',
+    textColor: 'text-purple-900',
+    borderColor: 'border-purple-600',
+    icon: '💡',
   },
   deprecated: {
-    src: '/images/badge_maturity_deprecated.png',
-    alt: 'Maturity: Deprecated',
+    text: 'DEPRECATED',
+    bgColor: 'bg-gradient-to-r from-gray-400 to-gray-500',
+    textColor: 'text-gray-900',
+    borderColor: 'border-gray-600',
+    icon: '⚠️',
+  },
+  future: {
+    text: 'FUTURE',
+    bgColor: 'bg-gradient-to-r from-blue-400 to-blue-500',
+    textColor: 'text-blue-900',
+    borderColor: 'border-blue-600',
+    icon: '🚀',
   },
 };
 
 const badge = badges[type];
 
-// Handle invalid badge type
 if (!badge) {
-  throw new Error(`Invalid badge type: ${type}. Must be one of: beta, concept, deprecated`);
+  throw new Error(`Invalid badge type: ${type}. Must be one of: beta, concept, deprecated, future`);
 }
+
+const sizeClasses = {
+  small: 'text-xs px-2 py-0.5',
+  medium: 'text-sm px-3 py-1',
+  large: 'text-base px-4 py-1.5',
+};
+
+const iconSizes = {
+  small: 'text-xs',
+  medium: 'text-sm',
+  large: 'text-base',
+};
 ---
 
-<img
-  src={badge.src}
-  alt={badge.alt}
-  class={`inline-block ${className}`}
-  width="90"
-  height="20"
-  loading="lazy"
-/>
+<span
+  class={`inline-flex items-center gap-1 font-bold rounded-full border ${badge.bgColor} ${badge.textColor} ${badge.borderColor} ${sizeClasses[size]} shadow-sm hover:shadow-md transition-shadow duration-200 ${className}`}
+  title={`Maturity: ${badge.text}`}
+>
+  <span class={`${iconSizes[size]}`}>{badge.icon}</span>
+  <span class="tracking-wider">{badge.text}</span>
+</span>
