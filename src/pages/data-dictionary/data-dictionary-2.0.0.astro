@@ -1698,7 +1698,8 @@ const futureTables = [
           conceptTables.map((table, index) => (
             <div
               id={table.id}
-              class="group relative bg-white rounded-2xl border-2 border-purple-100 p-6 hover:border-purple-400 hover:shadow-xl transition-all duration-300 scroll-mt-28 overflow-hidden"
+              data-table-id={table.id}
+              class="concept-table-card group relative bg-white rounded-2xl border-2 border-purple-100 p-6 hover:border-purple-400 hover:shadow-xl transition-all duration-300 scroll-mt-28 overflow-hidden cursor-pointer"
             >
               <div class="absolute -top-2 -right-2 w-16 h-16 bg-gradient-to-br from-purple-100 to-purple-200 rounded-bl-2xl flex items-center justify-center">
                 <span class="text-xl font-bold text-purple-700">{String(index + 1).padStart(2, '0')}</span>
@@ -1710,6 +1711,16 @@ const futureTables = [
                 {table.name}
               </h3>
               <p class="text-sm text-gray-600 leading-relaxed line-clamp-3">{table.description}</p>
+              
+              <!-- Click prompt -->
+              <div class="mt-3 flex items-center text-xs text-purple-600 font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                </svg>
+                Click to view detailed specifications
+              </div>
+              
               <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-400 to-purple-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></div>
             </div>
           ))
@@ -1800,9 +1811,10 @@ const futureTables = [
   </style>
 
   <!-- JavaScript for interactivity -->
-  <script define:vars={{ betaTables }}>
+  <script define:vars={{ betaTables, conceptTables }}>
     // Make tables data available globally
     window.betaTables = betaTables;
+    window.conceptTables = conceptTables;
   </script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -1979,7 +1991,142 @@ const futureTables = [
       document.querySelectorAll('section[id]').forEach((section) => {
         observer.observe(section);
       });
+
+      // Concept table click handlers
+      const conceptTableCards = document.querySelectorAll('.concept-table-card');
+      conceptTableCards.forEach(card => {
+        card.addEventListener('click', () => {
+          const tableId = card.getAttribute('data-table-id');
+          const conceptTables = window.conceptTables || [];
+          const table = conceptTables.find(t => t.id === tableId);
+          
+          if (table) {
+            showConceptTableModal(table);
+          }
+        });
+      });
     });
+
+    // Modal function for concept tables (reused from ERD component)
+    function showConceptTableModal(table) {
+      const colors = {
+        concept: '#a855f7'
+      };
+
+      // Create modal overlay
+      const modalOverlay = document.createElement('div');
+      modalOverlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      `;
+
+      const modalContent = document.createElement('div');
+      modalContent.style.cssText = `
+        background: white;
+        border-radius: 12px;
+        max-width: 900px;
+        max-height: 90vh;
+        width: 100%;
+        overflow-y: auto;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      `;
+
+      modalContent.innerHTML = `
+        <div style="background: ${colors.concept}; padding: 20px; color: white; position: sticky; top: 0; z-index: 10;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h2 style="margin: 0; font-size: 24px; font-weight: bold;">${table.name} - Detailed Specifications</h2>
+            <button id="closeConceptModal" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 24px; cursor: pointer; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">×</button>
+          </div>
+          <p style="margin: 8px 0 0 0; opacity: 0.9;">${table.description}</p>
+        </div>
+        
+        <div style="padding: 24px;">
+          <h3 style="margin: 0 0 16px 0; color: #374151; font-size: 18px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">Field Specifications</h3>
+          
+          <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+              <thead>
+                <tr style="background: #f8f9fa;">
+                  <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6; font-weight: 600; color: #495057;">Field Name</th>
+                  <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6; font-weight: 600; color: #495057;">Type</th>
+                  <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6; font-weight: 600; color: #495057;">Description</th>
+                  <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6; font-weight: 600; color: #495057;">Values/Restrictions</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${table.fields.map((field, index) => `
+                  <tr style="border-bottom: 1px solid #e9ecef; ${index % 2 === 0 ? 'background: #f8f9fa;' : ''}">
+                    <td style="padding: 12px; font-family: 'Monaco', monospace; font-weight: 500; color: #212529;">${field.name}</td>
+                    <td style="padding: 12px; font-family: 'Monaco', monospace; color: #6c757d; background: #e9ecef; border-radius: 4px; font-size: 12px; margin: 2px;">${field.type}</td>
+                    <td style="padding: 12px; color: #495057; line-height: 1.4;">${field.description || 'No description'}</td>
+                    <td style="padding: 12px; color: #6c757d; font-size: 12px;">
+                      ${field.values ? 
+                        `<div style="background: #e3f2fd; padding: 6px; border-radius: 4px; margin-bottom: 4px;"><strong>Values:</strong> ${field.values.join(', ')}</div>` : 
+                        ''
+                      }
+                      ${field.restrictions ? 
+                        `<div style="background: #fff3e0; padding: 6px; border-radius: 4px;"><strong>Restrictions:</strong> ${field.restrictions}</div>` : 
+                        ''
+                      }
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+
+          ${table.notes && table.notes.length > 0 ? `
+            <div style="margin-top: 24px;">
+              <h3 style="margin: 0 0 12px 0; color: #374151; font-size: 16px;">Implementation Notes</h3>
+              <ul style="margin: 0; padding-left: 20px; color: #495057;">
+                ${table.notes.map(note => `<li style="margin-bottom: 8px; line-height: 1.4;">${note}</li>`).join('')}
+              </ul>
+            </div>
+          ` : ''}
+
+          ${table.example ? `
+            <div style="margin-top: 24px;">
+              <h3 style="margin: 0 0 12px 0; color: #374151; font-size: 16px;">Example Data</h3>
+              <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; overflow-x: auto; font-family: 'Monaco', monospace; font-size: 12px; line-height: 1.6; border: 1px solid #dee2e6;">
+                <pre style="margin: 0; white-space: pre-wrap;">${table.example}</pre>
+              </div>
+            </div>
+          ` : ''}
+        </div>
+      `;
+
+      modalOverlay.appendChild(modalContent);
+      document.body.appendChild(modalOverlay);
+
+      // Close modal handlers
+      const closeBtn = modalContent.querySelector('#closeConceptModal');
+      const closeModal = () => {
+        document.body.removeChild(modalOverlay);
+      };
+
+      closeBtn.addEventListener('click', closeModal);
+      modalOverlay.addEventListener('click', (e) => {
+        if (e.target === modalOverlay) closeModal();
+      });
+
+      // Escape key handler
+      const escHandler = (e) => {
+        if (e.key === 'Escape') {
+          closeModal();
+          document.removeEventListener('keydown', escHandler);
+        }
+      };
+      document.addEventListener('keydown', escHandler);
+    }
   </script>
 
   <style>
