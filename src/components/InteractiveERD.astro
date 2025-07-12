@@ -51,15 +51,15 @@
     <div class="legend">
       <h4 style="margin: 0 0 10px 0; font-size: 14px;">Maturity Levels</h4>
       <div class="legend-item">
-        <div class="legend-color" style="background: #FFE4B5; border-color: #333;"></div>
+        <div class="legend-color" style="background: #E67E22; border: 1px solid #D35400;"></div>
         <span>Beta</span>
       </div>
       <div class="legend-item">
-        <div class="legend-color" style="background: #FFD700; border-color: #333;"></div>
+        <div class="legend-color" style="background: #F39C12; border: 1px solid #E67E22;"></div>
         <span>New</span>
       </div>
       <div class="legend-item">
-        <div class="legend-color" style="background: #E0E0E0; border-color: #333;"></div>
+        <div class="legend-color" style="background: #95A5A6; border: 1px solid #7F8C8D;"></div>
         <span>Concept</span>
       </div>
     </div>
@@ -82,10 +82,10 @@
   .er-diagram-container {
     position: relative;
     height: 800px;
-    background-color: #f0f0f0;
-    border-radius: 12px;
+    background-color: #f5f5f5;
+    border-radius: 8px;
     overflow: hidden;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
 
   .controls {
@@ -99,16 +99,15 @@
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     display: flex;
     gap: 10px;
-    flex-wrap: wrap;
-    max-width: 400px;
+    align-items: center;
   }
 
-  .controls input {
+  .controls input[type="search"] {
     padding: 8px 12px;
     border: 1px solid #ddd;
     border-radius: 4px;
-    flex: 1;
-    min-width: 200px;
+    width: 250px;
+    font-size: 14px;
   }
 
   .controls button {
@@ -118,22 +117,22 @@
     border: none;
     border-radius: 4px;
     cursor: pointer;
+    font-size: 14px;
     transition: background 0.3s;
   }
 
   .controls button:hover {
-    background: #6b1414;
+    background: #6d1430;
   }
 
   #diagram-wrapper {
     width: 100%;
     height: 100%;
-    position: relative;
     overflow: hidden;
     cursor: grab;
   }
 
-  #diagram-wrapper.grabbing {
+  #diagram-wrapper:active {
     cursor: grabbing;
   }
 
@@ -148,34 +147,66 @@
     transition: all 0.3s ease;
   }
 
-  .entity rect {
+  .entity-rect {
     fill: white;
-    stroke: #333;
+    stroke: #ddd;
+    stroke-width: 1;
+  }
+
+  .entity-header {
+    stroke-width: 0;
+  }
+
+  .entity.maturity-beta .entity-header {
+    fill: #E67E22;
+  }
+
+  .entity.maturity-new .entity-header {
+    fill: #F39C12;
+  }
+
+  .entity.maturity-concept .entity-header {
+    fill: #95A5A6;
+  }
+
+  .entity:hover .entity-rect {
+    stroke: #E67E22;
     stroke-width: 2;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
   }
 
-  .entity.maturity-beta rect {
-    fill: #FFE4B5;
-  }
-
-  .entity.maturity-new rect {
-    fill: #FFD700;
-  }
-
-  .entity.maturity-concept rect {
-    fill: #E0E0E0;
-  }
-
-  .entity:hover rect {
-    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
+  .entity.highlighted .entity-rect {
+    stroke: #841839;
     stroke-width: 3;
-    stroke: #841839;
+    filter: drop-shadow(0 4px 8px rgba(132, 24, 57, 0.3));
   }
 
-  .entity.highlighted rect {
-    stroke: #841839;
-    stroke-width: 4;
-    filter: drop-shadow(0 6px 16px rgba(132, 24, 57, 0.4));
+  .entity-name {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    font-weight: bold;
+    fill: white;
+    font-size: 14px;
+    text-transform: uppercase;
+  }
+
+  .field-text {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    fill: #333;
+    font-size: 12px;
+  }
+
+  .field-type {
+    font-family: 'Courier New', Courier, monospace;
+    fill: #666;
+    font-size: 11px;
+  }
+
+  .maturity-badge {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 10px;
+    font-weight: bold;
+    fill: white;
+    text-transform: uppercase;
   }
 
   .entity.dimmed {
@@ -184,6 +215,12 @@
 
   .relationship {
     transition: all 0.3s ease;
+  }
+
+  .relationship path {
+    fill: none;
+    stroke: #999;
+    stroke-width: 1.5;
   }
 
   .relationship.highlighted path {
@@ -298,7 +335,7 @@
   .legend-color {
     width: 20px;
     height: 20px;
-    border: 1px solid #333;
+    border-radius: 2px;
     margin-right: 10px;
   }
 
@@ -401,9 +438,9 @@
       id: 'adt',
       name: 'adt',
       maturity: 'beta',
-      position: { x: 100, y: 400 },
+      position: { x: 900, y: 100 },
       fields: [
-        { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
+        { name: 'hospitalization_id', type: 'VARCHAR', isPK: true, isFK: true },
         { name: 'hospital_id', type: 'VARCHAR' },
         { name: 'hospital_type', type: 'VARCHAR' },
         { name: 'in_dttm', type: 'DATETIME' },
@@ -416,238 +453,132 @@
       id: 'vitals',
       name: 'vitals',
       maturity: 'beta',
-      position: { x: 900, y: 100 },
+      position: { x: 1300, y: 100 },
       fields: [
         { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
         { name: 'recorded_dttm', type: 'DATETIME' },
         { name: 'vital_name', type: 'VARCHAR' },
         { name: 'vital_category', type: 'VARCHAR' },
         { name: 'vital_value', type: 'DOUBLE' },
-        { name: 'meas_site_name', type: 'VARCHAR' },
-        { name: 'meas_site_category', type: 'VARCHAR' }
+        { name: 'vital_units', type: 'VARCHAR' }
       ]
     },
     {
       id: 'labs',
       name: 'labs',
       maturity: 'beta',
-      position: { x: 1300, y: 100 },
+      position: { x: 100, y: 450 },
       fields: [
         { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
-        { name: 'lab_order_dttm', type: 'DATETIME' },
-        { name: 'lab_collect_dttm', type: 'DATETIME' },
-        { name: 'lab_result_dttm', type: 'DATETIME' },
+        { name: 'lab_order_id', type: 'VARCHAR' },
+        { name: 'lab_order_name', type: 'VARCHAR' },
+        { name: 'lab_order_type', type: 'VARCHAR' },
         { name: 'lab_name', type: 'VARCHAR' },
         { name: 'lab_category', type: 'VARCHAR' },
-        { name: 'lab_value', type: 'VARCHAR' },
+        { name: 'lab_loinc', type: 'VARCHAR' },
+        { name: 'specimen_name', type: 'VARCHAR' },
+        { name: 'specimen_category', type: 'VARCHAR' },
+        { name: 'lab_value_text', type: 'VARCHAR' },
         { name: 'lab_value_numeric', type: 'DOUBLE' },
-        { name: 'reference_unit', type: 'VARCHAR' }
+        { name: 'lab_units_name', type: 'VARCHAR' },
+        { name: 'reference_range_upper', type: 'DOUBLE' },
+        { name: 'reference_range_lower', type: 'DOUBLE' }
       ]
     },
     {
-      id: 'hospital_diagnosis',
-      name: 'hospital_diagnosis',
+      id: 'medication_admin',
+      name: 'medication_admin',
       maturity: 'beta',
-      position: { x: 500, y: 400 },
-      fields: [
-        { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
-        { name: 'diagnosis_name', type: 'VARCHAR' },
-        { name: 'diagnosis_category', type: 'VARCHAR' },
-        { name: 'diagnosis_code', type: 'VARCHAR' },
-        { name: 'diagnosis_type', type: 'VARCHAR' },
-        { name: 'diagnosis_priority', type: 'INT' }
-      ]
-    },
-    {
-      id: 'medication_admin_continuous',
-      name: 'medication_admin_continuous',
-      maturity: 'beta',
-      position: { x: 1700, y: 100 },
+      position: { x: 500, y: 450 },
       fields: [
         { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
         { name: 'admin_dttm', type: 'DATETIME' },
         { name: 'med_name', type: 'VARCHAR' },
         { name: 'med_category', type: 'VARCHAR' },
         { name: 'med_route_name', type: 'VARCHAR' },
+        { name: 'med_route_category', type: 'VARCHAR' },
         { name: 'med_dose', type: 'DOUBLE' },
         { name: 'med_dose_unit', type: 'VARCHAR' }
       ]
     },
     {
-      id: 'patient_assessments',
-      name: 'patient_assessments',
+      id: 'scores',
+      name: 'scores',
       maturity: 'beta',
-      position: { x: 900, y: 400 },
+      position: { x: 900, y: 450 },
       fields: [
         { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
         { name: 'recorded_dttm', type: 'DATETIME' },
-        { name: 'assessment_name', type: 'VARCHAR' },
-        { name: 'assessment_category', type: 'VARCHAR' },
-        { name: 'assessment_value', type: 'VARCHAR' },
-        { name: 'assessment_numeric_value', type: 'DOUBLE' }
+        { name: 'score_name', type: 'VARCHAR' },
+        { name: 'score_category', type: 'VARCHAR' },
+        { name: 'score_value', type: 'DOUBLE' },
+        { name: 'score_unit', type: 'VARCHAR' }
       ]
     },
     {
       id: 'respiratory_support',
       name: 'respiratory_support',
       maturity: 'beta',
-      position: { x: 1300, y: 400 },
+      position: { x: 1300, y: 450 },
       fields: [
         { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
         { name: 'recorded_dttm', type: 'DATETIME' },
         { name: 'device_name', type: 'VARCHAR' },
         { name: 'device_category', type: 'VARCHAR' },
         { name: 'mode_name', type: 'VARCHAR' },
-        { name: 'mode_category', type: 'VARCHAR' }
-      ]
-    },
-    // Concept tables
-    {
-      id: 'intake_output',
-      name: 'intake_output',
-      maturity: 'concept',
-      position: { x: 100, y: 700 },
-      fields: [
-        { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
-        { name: 'recorded_dttm', type: 'DATETIME' },
-        { name: 'intake_output_name', type: 'VARCHAR' },
-        { name: 'intake_output_category', type: 'VARCHAR' },
-        { name: 'value', type: 'DOUBLE' }
+        { name: 'mode_category', type: 'VARCHAR' },
+        { name: 'fio2_set', type: 'DOUBLE' }
       ]
     },
     {
       id: 'position',
       name: 'position',
-      maturity: 'concept',
-      position: { x: 500, y: 700 },
+      maturity: 'beta',
+      position: { x: 700, y: 800 },
       fields: [
         { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
         { name: 'recorded_dttm', type: 'DATETIME' },
         { name: 'position_name', type: 'VARCHAR' },
         { name: 'position_category', type: 'VARCHAR' }
       ]
-    },
-    {
-      id: 'lines',
-      name: 'lines',
-      maturity: 'concept',
-      position: { x: 900, y: 700 },
-      fields: [
-        { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
-        { name: 'recorded_dttm', type: 'DATETIME' },
-        { name: 'line_name', type: 'VARCHAR' },
-        { name: 'line_category', type: 'VARCHAR' },
-        { name: 'line_site', type: 'VARCHAR' }
-      ]
-    },
-    {
-      id: 'medication_admin_intermittent',
-      name: 'medication_admin_intermittent',
-      maturity: 'concept',
-      position: { x: 1300, y: 700 },
-      fields: [
-        { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
-        { name: 'admin_dttm', type: 'DATETIME' },
-        { name: 'med_name', type: 'VARCHAR' },
-        { name: 'med_category', type: 'VARCHAR' },
-        { name: 'med_dose', type: 'DOUBLE' },
-        { name: 'med_dose_unit', type: 'VARCHAR' }
-      ]
-    },
-    {
-      id: 'microbiology_culture',
-      name: 'microbiology_culture',
-      maturity: 'concept',
-      position: { x: 1700, y: 400 },
-      fields: [
-        { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
-        { name: 'culture_dttm', type: 'DATETIME' },
-        { name: 'organism_name', type: 'VARCHAR' },
-        { name: 'organism_category', type: 'VARCHAR' }
-      ]
-    },
-    {
-      id: 'sensitivity',
-      name: 'sensitivity',
-      maturity: 'concept',
-      position: { x: 1700, y: 700 },
-      fields: [
-        { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
-        { name: 'antibiotic_name', type: 'VARCHAR' },
-        { name: 'antibiotic_category', type: 'VARCHAR' },
-        { name: 'sensitivity_value', type: 'VARCHAR' }
-      ]
-    },
-    {
-      id: 'medication_orders',
-      name: 'medication_orders',
-      maturity: 'concept',
-      position: { x: 2100, y: 100 },
-      fields: [
-        { name: 'hospitalization_id', type: 'VARCHAR', isFK: true },
-        { name: 'order_dttm', type: 'DATETIME' },
-        { name: 'med_name', type: 'VARCHAR' },
-        { name: 'med_category', type: 'VARCHAR' }
-      ]
     }
   ];
 
+  // Relationships between entities
   const relationships = [
-    { source: 'patient', target: 'hospitalization', label: 'has' },
-    { source: 'hospitalization', target: 'adt', label: 'tracks' },
-    { source: 'hospitalization', target: 'vitals', label: 'records' },
-    { source: 'hospitalization', target: 'labs', label: 'has' },
-    { source: 'hospitalization', target: 'hospital_diagnosis', label: 'has' },
-    { source: 'hospitalization', target: 'medication_admin_continuous', label: 'receives' },
-    { source: 'hospitalization', target: 'patient_assessments', label: 'has' },
-    { source: 'hospitalization', target: 'respiratory_support', label: 'receives' },
-    { source: 'hospitalization', target: 'intake_output', label: 'has' },
-    { source: 'hospitalization', target: 'position', label: 'has' },
-    { source: 'hospitalization', target: 'lines', label: 'has' },
-    { source: 'hospitalization', target: 'medication_admin_intermittent', label: 'receives' },
-    { source: 'hospitalization', target: 'microbiology_culture', label: 'has' },
-    { source: 'hospitalization', target: 'sensitivity', label: 'has' },
-    { source: 'hospitalization', target: 'medication_orders', label: 'has' }
+    { from: 'patient', to: 'hospitalization', field: 'patient_id' },
+    { from: 'hospitalization', to: 'adt', field: 'hospitalization_id' },
+    { from: 'hospitalization', to: 'vitals', field: 'hospitalization_id' },
+    { from: 'hospitalization', to: 'labs', field: 'hospitalization_id' },
+    { from: 'hospitalization', to: 'medication_admin', field: 'hospitalization_id' },
+    { from: 'hospitalization', to: 'scores', field: 'hospitalization_id' },
+    { from: 'hospitalization', to: 'respiratory_support', field: 'hospitalization_id' },
+    { from: 'hospitalization', to: 'position', field: 'hospitalization_id' }
   ];
 
-  // State management
-  let currentScale = 1;
-  let currentTranslateX = 0;
-  let currentTranslateY = 0;
-  let isPanning = false;
-  let startX = 0;
-  let startY = 0;
-  let selectedEntity = null;
-  let showRelationships = true;
-
   // Initialize the diagram
-  function initDiagram() {
+  document.addEventListener('DOMContentLoaded', () => {
     const svg = document.getElementById('er-diagram');
+    const diagramWrapper = document.getElementById('diagram-wrapper');
     const entitiesGroup = document.getElementById('entities');
     const relationshipsGroup = document.getElementById('relationships');
+    const detailsPanel = document.getElementById('details-panel');
+    const searchInput = document.getElementById('search');
+    const resetViewBtn = document.getElementById('reset-view');
+    const toggleRelBtn = document.getElementById('toggle-relationships');
+    const zoomInBtn = document.getElementById('zoom-in');
+    const zoomOutBtn = document.getElementById('zoom-out');
+    const zoomFitBtn = document.getElementById('zoom-fit');
+    const tooltip = document.getElementById('tooltip');
 
-    // Draw relationships
-    relationships.forEach(rel => {
-      const sourceEntity = entities.find(e => e.id === rel.source);
-      const targetEntity = entities.find(e => e.id === rel.target);
+    let currentTransform = { x: 0, y: 0, scale: 1 };
+    let isDragging = false;
+    let startX, startY;
+    let selectedEntity = null;
+    let showRelationships = true;
 
-      if (sourceEntity && targetEntity) {
-        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        const d = calculatePath(sourceEntity.position, targetEntity.position);
-        path.setAttribute('d', d);
-        path.setAttribute('fill', 'none');
-        path.setAttribute('stroke', '#333');
-        path.setAttribute('stroke-width', '1.5');
-        path.setAttribute('marker-end', 'url(#arrow)');
-        path.classList.add('relationship');
-        path.setAttribute('data-source', rel.source);
-        path.setAttribute('data-target', rel.target);
-        relationshipsGroup.appendChild(path);
-      }
-    });
-
-    // Draw entities
-    entities.forEach(entity => {
+    // Create entity elements
+    function createEntityElement(entity) {
       const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
       g.classList.add('entity');
       g.classList.add(`maturity-${entity.maturity}`);
@@ -656,354 +587,326 @@
 
       // Calculate entity dimensions
       const width = 250;
-      const headerHeight = 40;
+      const headerHeight = 35;
       const fieldHeight = 25;
-      const height = headerHeight + (entity.fields.length * fieldHeight) + 20;
+      const padding = 10;
+      const height = headerHeight + (entity.fields.length * fieldHeight) + padding * 2;
 
-      // Entity rectangle
+      // Entity background
       const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.classList.add('entity-rect');
       rect.setAttribute('width', width);
       rect.setAttribute('height', height);
       rect.setAttribute('rx', '4');
       g.appendChild(rect);
 
-      // Entity header
+      // Header background
       const headerRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      headerRect.classList.add('entity-header');
       headerRect.setAttribute('width', width);
       headerRect.setAttribute('height', headerHeight);
-      
-      // Set header color based on maturity
-      let headerColor = '#f8f9fa';
-      if (entity.maturity === 'beta') {
-        headerColor = '#FFA500';
-      } else if (entity.maturity === 'new') {
-        headerColor = '#FFD700';
-      } else if (entity.maturity === 'concept') {
-        headerColor = '#C0C0C0';
-      }
-      
-      headerRect.setAttribute('fill', headerColor);
       headerRect.setAttribute('rx', '4');
       g.appendChild(headerRect);
 
       // Entity name
-      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      text.setAttribute('x', width / 2);
-      text.setAttribute('y', 25);
-      text.setAttribute('text-anchor', 'middle');
-      text.setAttribute('font-weight', 'bold');
-      text.setAttribute('font-size', '14');
-      text.textContent = entity.name;
-      g.appendChild(text);
+      const nameText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      nameText.classList.add('entity-name');
+      nameText.setAttribute('x', '10');
+      nameText.setAttribute('y', headerHeight / 2 + 5);
+      nameText.setAttribute('text-anchor', 'start');
+      nameText.textContent = entity.name;
+      g.appendChild(nameText);
+
+      // Maturity badge
+      if (entity.maturity) {
+        const badgeText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        badgeText.classList.add('maturity-badge');
+        badgeText.setAttribute('x', width - 10);
+        badgeText.setAttribute('y', headerHeight / 2 + 4);
+        badgeText.setAttribute('text-anchor', 'end');
+        badgeText.textContent = entity.maturity.toUpperCase();
+        g.appendChild(badgeText);
+      }
 
       // Fields
       entity.fields.forEach((field, index) => {
-        const fieldY = headerHeight + 15 + (index * fieldHeight);
-        
+        const yPos = headerHeight + padding + (index * fieldHeight) + fieldHeight/2;
+
+        // Field name
         const fieldText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        fieldText.setAttribute('x', 10);
-        fieldText.setAttribute('y', fieldY);
-        fieldText.setAttribute('font-size', '12');
+        fieldText.classList.add('field-text');
+        fieldText.setAttribute('x', '10');
+        fieldText.setAttribute('y', yPos + 3);
         fieldText.textContent = field.name;
+        if (field.isPK || field.isFK) {
+          fieldText.style.fontWeight = 'bold';
+        }
         g.appendChild(fieldText);
 
+        // Field type
         const typeText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        typeText.classList.add('field-type');
         typeText.setAttribute('x', width - 10);
-        typeText.setAttribute('y', fieldY);
+        typeText.setAttribute('y', yPos + 3);
         typeText.setAttribute('text-anchor', 'end');
-        typeText.setAttribute('font-size', '11');
-        typeText.setAttribute('fill', '#666');
         typeText.textContent = field.type;
         g.appendChild(typeText);
-
-        if (field.isPK) {
-          const pk = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-          pk.setAttribute('x', width - 60);
-          pk.setAttribute('y', fieldY);
-          pk.setAttribute('text-anchor', 'end');
-          pk.setAttribute('font-size', '10');
-          pk.setAttribute('fill', '#841839');
-          pk.setAttribute('font-weight', 'bold');
-          pk.textContent = 'PK';
-          g.appendChild(pk);
-        }
-
-        if (field.isFK) {
-          const fk = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-          fk.setAttribute('x', width - 60);
-          fk.setAttribute('y', fieldY);
-          fk.setAttribute('text-anchor', 'end');
-          fk.setAttribute('font-size', '10');
-          fk.setAttribute('fill', '#6c757d');
-          fk.setAttribute('font-weight', 'bold');
-          fk.textContent = 'FK';
-          g.appendChild(fk);
-        }
       });
 
-      // Event listeners
+      // Add event listeners
       g.addEventListener('click', () => selectEntity(entity));
       g.addEventListener('mouseenter', (e) => showTooltip(e, entity));
-      g.addEventListener('mouseleave', hideTooltip);
+      g.addEventListener('mouseleave', () => hideTooltip());
 
-      entitiesGroup.appendChild(g);
+      return g;
+    }
+
+    // Create relationship paths
+    function createRelationshipPath(rel) {
+      const fromEntity = entities.find(e => e.id === rel.from);
+      const toEntity = entities.find(e => e.id === rel.to);
+      
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.classList.add('relationship');
+      path.setAttribute('data-from', rel.from);
+      path.setAttribute('data-to', rel.to);
+      
+      // Calculate path
+      const fromX = fromEntity.position.x + 250;
+      const fromY = fromEntity.position.y + 50;
+      const toX = toEntity.position.x;
+      const toY = toEntity.position.y + 50;
+      
+      const midX = (fromX + toX) / 2;
+      const midY = (fromY + toY) / 2;
+      
+      const d = `M ${fromX} ${fromY} Q ${midX} ${midY} ${toX} ${toY}`;
+      path.setAttribute('d', d);
+      path.setAttribute('marker-end', 'url(#arrow)');
+      
+      return path;
+    }
+
+    // Initialize entities and relationships
+    entities.forEach(entity => {
+      const entityEl = createEntityElement(entity);
+      entitiesGroup.appendChild(entityEl);
     });
 
-    // Set up event listeners
-    setupEventListeners();
-  }
-
-  function calculatePath(start, end) {
-    const startX = start.x + 250;
-    const startY = start.y + 50;
-    const endX = end.x;
-    const endY = end.y + 50;
-    
-    const midX = (startX + endX) / 2;
-    
-    return `M${startX},${startY} C${midX},${startY} ${midX},${endY} ${endX},${endY}`;
-  }
-
-  function setupEventListeners() {
-    const wrapper = document.getElementById('diagram-wrapper');
-    const svg = document.getElementById('er-diagram');
-
-    // Pan functionality
-    wrapper.addEventListener('mousedown', startPan);
-    wrapper.addEventListener('mousemove', pan);
-    wrapper.addEventListener('mouseup', endPan);
-    wrapper.addEventListener('mouseleave', endPan);
-
-    // Touch events for mobile
-    wrapper.addEventListener('touchstart', (e) => {
-      const touch = e.touches[0];
-      startPan({ clientX: touch.clientX, clientY: touch.clientY });
+    relationships.forEach(rel => {
+      const relPath = createRelationshipPath(rel);
+      relationshipsGroup.appendChild(relPath);
     });
-    wrapper.addEventListener('touchmove', (e) => {
-      const touch = e.touches[0];
-      pan({ clientX: touch.clientX, clientY: touch.clientY, preventDefault: () => e.preventDefault() });
+
+    // Pan and zoom functionality
+    function updateTransform() {
+      svg.style.transform = `translate(${currentTransform.x}px, ${currentTransform.y}px) scale(${currentTransform.scale})`;
+    }
+
+    diagramWrapper.addEventListener('mousedown', (e) => {
+      if (e.target === diagramWrapper || e.target === svg) {
+        isDragging = true;
+        startX = e.clientX - currentTransform.x;
+        startY = e.clientY - currentTransform.y;
+        diagramWrapper.style.cursor = 'grabbing';
+      }
     });
-    wrapper.addEventListener('touchend', endPan);
+
+    diagramWrapper.addEventListener('mousemove', (e) => {
+      if (isDragging) {
+        currentTransform.x = e.clientX - startX;
+        currentTransform.y = e.clientY - startY;
+        updateTransform();
+      }
+    });
+
+    diagramWrapper.addEventListener('mouseup', () => {
+      isDragging = false;
+      diagramWrapper.style.cursor = 'grab';
+    });
+
+    diagramWrapper.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? 0.9 : 1.1;
+      currentTransform.scale = Math.min(Math.max(0.5, currentTransform.scale * delta), 3);
+      updateTransform();
+    });
+
+    // Entity selection
+    function selectEntity(entity) {
+      // Update highlight
+      document.querySelectorAll('.entity').forEach(el => {
+        el.classList.remove('highlighted');
+      });
+      document.querySelector(`[data-entity="${entity.id}"]`).classList.add('highlighted');
+
+      // Update details panel
+      document.getElementById('entity-name').textContent = entity.name.toUpperCase();
+      
+      const fieldList = document.getElementById('field-list');
+      fieldList.innerHTML = '';
+      
+      entity.fields.forEach(field => {
+        const li = document.createElement('li');
+        li.classList.add('field-item');
+        li.innerHTML = `
+          <span class="field-name">${field.name}</span>
+          <span>
+            <span class="field-type">${field.type}</span>
+            ${field.isPK ? '<span class="badge badge-pk">PK</span>' : ''}
+            ${field.isFK ? '<span class="badge badge-fk">FK</span>' : ''}
+          </span>
+        `;
+        fieldList.appendChild(li);
+      });
+
+      // Show relationships
+      const relList = document.getElementById('relationship-list');
+      relList.innerHTML = '';
+      
+      const entityRels = relationships.filter(r => r.from === entity.id || r.to === entity.id);
+      entityRels.forEach(rel => {
+        const li = document.createElement('li');
+        li.classList.add('field-item');
+        const isFrom = rel.from === entity.id;
+        li.innerHTML = `
+          <span>${isFrom ? 'References' : 'Referenced by'}</span>
+          <span class="field-type">${isFrom ? rel.to : rel.from}</span>
+        `;
+        relList.appendChild(li);
+      });
+
+      // Show panel
+      detailsPanel.classList.add('show');
+      selectedEntity = entity;
+
+      // Highlight related entities
+      highlightRelatedEntities(entity.id);
+    }
+
+    // Highlight related entities
+    function highlightRelatedEntities(entityId) {
+      const relatedIds = new Set();
+      relationships.forEach(rel => {
+        if (rel.from === entityId) relatedIds.add(rel.to);
+        if (rel.to === entityId) relatedIds.add(rel.from);
+      });
+
+      document.querySelectorAll('.entity').forEach(el => {
+        const id = el.getAttribute('data-entity');
+        if (id === entityId || relatedIds.has(id)) {
+          el.classList.remove('dimmed');
+        } else {
+          el.classList.add('dimmed');
+        }
+      });
+
+      document.querySelectorAll('.relationship').forEach(el => {
+        const from = el.getAttribute('data-from');
+        const to = el.getAttribute('data-to');
+        if (from === entityId || to === entityId) {
+          el.classList.add('highlighted');
+          el.classList.remove('dimmed');
+        } else {
+          el.classList.add('dimmed');
+          el.classList.remove('highlighted');
+        }
+      });
+    }
 
     // Search functionality
-    document.getElementById('search').addEventListener('input', (e) => {
+    searchInput.addEventListener('input', (e) => {
       const query = e.target.value.toLowerCase();
-      searchDiagram(query);
-    });
-
-    // Button event listeners
-    document.getElementById('reset-view').addEventListener('click', resetView);
-    document.getElementById('toggle-relationships').addEventListener('click', toggleRelationships);
-    document.getElementById('zoom-in').addEventListener('click', zoomIn);
-    document.getElementById('zoom-out').addEventListener('click', zoomOut);
-    document.getElementById('zoom-fit').addEventListener('click', zoomFit);
-    document.getElementById('close-details-btn').addEventListener('click', closeDetailsPanel);
-  }
-
-  function startPan(e) {
-    if (e.target.closest('.entity')) return;
-    isPanning = true;
-    startX = e.clientX - currentTranslateX;
-    startY = e.clientY - currentTranslateY;
-    document.getElementById('diagram-wrapper').classList.add('grabbing');
-  }
-
-  function pan(e) {
-    if (!isPanning) return;
-    e.preventDefault();
-    currentTranslateX = e.clientX - startX;
-    currentTranslateY = e.clientY - startY;
-    updateTransform();
-  }
-
-  function endPan() {
-    isPanning = false;
-    document.getElementById('diagram-wrapper').classList.remove('grabbing');
-  }
-
-  function updateTransform() {
-    const svg = document.getElementById('er-diagram');
-    svg.style.transform = `translate(${currentTranslateX}px, ${currentTranslateY}px) scale(${currentScale})`;
-  }
-
-  function zoomIn() {
-    currentScale = Math.min(currentScale * 1.2, 3);
-    updateTransform();
-  }
-
-  function zoomOut() {
-    currentScale = Math.max(currentScale / 1.2, 0.3);
-    updateTransform();
-  }
-
-  function zoomFit() {
-    currentScale = 0.6;
-    currentTranslateX = 0;
-    currentTranslateY = 0;
-    updateTransform();
-  }
-
-  function resetView() {
-    currentScale = 1;
-    currentTranslateX = 0;
-    currentTranslateY = 0;
-    updateTransform();
-    document.getElementById('search').value = '';
-    searchDiagram('');
-    closeDetailsPanel();
-  }
-
-  function searchDiagram(query) {
-    const entities = document.querySelectorAll('.entity');
-    const relationships = document.querySelectorAll('.relationship');
-
-    if (!query) {
-      entities.forEach(e => {
-        e.classList.remove('highlighted', 'dimmed');
-      });
-      relationships.forEach(r => {
-        r.classList.remove('highlighted', 'dimmed');
-      });
-      return;
-    }
-
-    entities.forEach(entityEl => {
-      const entityId = entityEl.getAttribute('data-entity');
-      const entity = window.entities.find(e => e.id === entityId);
       
-      const matches = entity.name.toLowerCase().includes(query) ||
-                     entity.fields.some(f => 
-                         f.name.toLowerCase().includes(query) ||
-                         f.type.toLowerCase().includes(query)
-                     );
-
-      if (matches) {
-        entityEl.classList.add('highlighted');
-        entityEl.classList.remove('dimmed');
-      } else {
-        entityEl.classList.add('dimmed');
-        entityEl.classList.remove('highlighted');
+      if (query.length === 0) {
+        document.querySelectorAll('.entity').forEach(el => {
+          el.classList.remove('dimmed');
+          el.classList.remove('highlighted');
+        });
+        document.querySelectorAll('.relationship').forEach(el => {
+          el.classList.remove('dimmed');
+          el.classList.remove('highlighted');
+        });
+        return;
       }
+
+      const matchingEntities = new Set();
+      
+      entities.forEach(entity => {
+        if (entity.name.toLowerCase().includes(query) ||
+            entity.fields.some(f => f.name.toLowerCase().includes(query))) {
+          matchingEntities.add(entity.id);
+        }
+      });
+
+      document.querySelectorAll('.entity').forEach(el => {
+        const id = el.getAttribute('data-entity');
+        if (matchingEntities.has(id)) {
+          el.classList.add('highlighted');
+          el.classList.remove('dimmed');
+        } else {
+          el.classList.add('dimmed');
+          el.classList.remove('highlighted');
+        }
+      });
     });
 
-    // Update relationships
-    relationships.forEach(rel => {
-      const source = rel.getAttribute('data-source');
-      const target = rel.getAttribute('data-target');
-      const sourceHighlighted = document.querySelector(`.entity[data-entity="${source}"]`).classList.contains('highlighted');
-      const targetHighlighted = document.querySelector(`.entity[data-entity="${target}"]`).classList.contains('highlighted');
-
-      if (sourceHighlighted || targetHighlighted) {
-        rel.classList.remove('dimmed');
-      } else {
-        rel.classList.add('dimmed');
-      }
-    });
-  }
-
-  function selectEntity(entity) {
-    selectedEntity = entity;
-    
-    // Update entity highlighting
-    document.querySelectorAll('.entity').forEach(e => {
-      e.classList.remove('highlighted');
-      if (e.getAttribute('data-entity') === entity.id) {
-        e.classList.add('highlighted');
-      }
+    // Controls
+    resetViewBtn.addEventListener('click', () => {
+      currentTransform = { x: 0, y: 0, scale: 1 };
+      updateTransform();
     });
 
-    // Update relationship highlighting
-    document.querySelectorAll('.relationship').forEach(r => {
-      const source = r.getAttribute('data-source');
-      const target = r.getAttribute('data-target');
-      if (source === entity.id || target === entity.id) {
-        r.classList.add('highlighted');
-      } else {
-        r.classList.remove('highlighted');
-      }
+    toggleRelBtn.addEventListener('click', () => {
+      showRelationships = !showRelationships;
+      relationshipsGroup.style.display = showRelationships ? 'block' : 'none';
+      toggleRelBtn.textContent = showRelationships ? 'Hide Relationships' : 'Show Relationships';
     });
 
-    // Show details panel
-    showDetailsPanel(entity);
-  }
-
-  function showDetailsPanel(entity) {
-    const panel = document.getElementById('details-panel');
-    const nameEl = document.getElementById('entity-name');
-    const fieldList = document.getElementById('field-list');
-    const relationshipList = document.getElementById('relationship-list');
-
-    nameEl.textContent = entity.name;
-    
-    // Clear and populate fields
-    fieldList.innerHTML = '';
-    entity.fields.forEach(field => {
-      const li = document.createElement('li');
-      li.className = 'field-item';
-      li.innerHTML = `
-        <span class="field-name">${field.name}</span>
-        <span>
-          <span class="field-type">${field.type}</span>
-          ${field.isPK ? '<span class="badge badge-pk">PK</span>' : ''}
-          ${field.isFK ? '<span class="badge badge-fk">FK</span>' : ''}
-        </span>
-      `;
-      fieldList.appendChild(li);
+    zoomInBtn.addEventListener('click', () => {
+      currentTransform.scale = Math.min(3, currentTransform.scale * 1.2);
+      updateTransform();
     });
 
-    // Clear and populate relationships
-    relationshipList.innerHTML = '';
-    relationships.filter(r => r.source === entity.id || r.target === entity.id).forEach(rel => {
-      const li = document.createElement('li');
-      li.className = 'field-item';
-      const otherEntity = rel.source === entity.id ? rel.target : rel.source;
-      const direction = rel.source === entity.id ? '→' : '←';
-      li.innerHTML = `<span>${direction} ${rel.label} ${otherEntity}</span>`;
-      relationshipList.appendChild(li);
+    zoomOutBtn.addEventListener('click', () => {
+      currentTransform.scale = Math.max(0.5, currentTransform.scale * 0.8);
+      updateTransform();
     });
 
-    panel.classList.add('show');
-  }
+    zoomFitBtn.addEventListener('click', () => {
+      // Simple fit to view
+      currentTransform = { x: 0, y: 0, scale: 0.8 };
+      updateTransform();
+    });
 
-  function closeDetailsPanel() {
-    document.getElementById('details-panel').classList.remove('show');
-    document.querySelectorAll('.entity').forEach(e => e.classList.remove('highlighted'));
-    document.querySelectorAll('.relationship').forEach(r => r.classList.remove('highlighted'));
-    selectedEntity = null;
-  }
+    // Close details panel
+    document.getElementById('close-details-btn').addEventListener('click', () => {
+      detailsPanel.classList.remove('show');
+      document.querySelectorAll('.entity').forEach(el => {
+        el.classList.remove('highlighted');
+        el.classList.remove('dimmed');
+      });
+      document.querySelectorAll('.relationship').forEach(el => {
+        el.classList.remove('highlighted');
+        el.classList.remove('dimmed');
+      });
+    });
 
-  function toggleRelationships() {
-    showRelationships = !showRelationships;
-    const relationships = document.getElementById('relationships');
-    relationships.style.display = showRelationships ? 'block' : 'none';
-  }
-
-  function showTooltip(e, entity) {
-    const tooltip = document.getElementById('tooltip');
-    tooltip.textContent = `${entity.name} (${entity.fields.length} fields)`;
-    tooltip.style.left = e.pageX + 10 + 'px';
-    tooltip.style.top = e.pageY + 10 + 'px';
-    tooltip.classList.add('show');
-  }
-
-  function hideTooltip() {
-    document.getElementById('tooltip').classList.remove('show');
-  }
-
-  // Initialize on load
-  document.addEventListener('DOMContentLoaded', initDiagram);
-
-  // Keyboard shortcuts
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      closeDetailsPanel();
-    } else if (e.key === '=' || e.key === '+') {
-      zoomIn();
-    } else if (e.key === '-') {
-      zoomOut();
-    } else if (e.key === '0' && (e.ctrlKey || e.metaKey)) {
-      e.preventDefault();
-      resetView();
+    // Tooltip
+    function showTooltip(e, entity) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      tooltip.textContent = `${entity.name} (${entity.fields.length} fields)`;
+      tooltip.style.left = rect.left + rect.width / 2 + 'px';
+      tooltip.style.top = rect.top - 10 + 'px';
+      tooltip.classList.add('show');
     }
+
+    function hideTooltip() {
+      tooltip.classList.remove('show');
+    }
+
+    // Initial view
+    currentTransform.scale = 0.8;
+    updateTransform();
   });
 </script>
