@@ -4,9 +4,9 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        'clif-burgundy': '#8B1A1A',
-        'clif-burgundy-dark': '#6B1414',
-        'clif-burgundy-light': '#A62828',
+        'clif-burgundy': '#8B1538',
+        'clif-burgundy-dark': '#6B1028',
+        'clif-burgundy-light': '#A62048',
         'clif-white': '#ffffff',
         'clif-gray': {
           50: '#f8fafc',

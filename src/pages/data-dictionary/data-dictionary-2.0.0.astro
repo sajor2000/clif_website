@@ -1,9 +1,29 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Badge from '../../components/Badge.astro';
-import OptimizedImage from '../../components/OptimizedImage.astro';
-import InteractiveERDOptimized from '../../components/InteractiveERDOptimized.astro';
-import D3ForceERD from '../../components/D3ForceERD.astro';
+import StatsCounter from '../../components/home/StatsCounter.astro';
+import CTAButton from '../../components/shared/CTAButton.astro';
+
+// Function to parse markdown table for static rendering
+function parseMarkdownTableStatic(markdownTable) {
+  if (!markdownTable) return null;
+  const lines = markdownTable.trim().split('\n');
+  if (lines.length < 3) return null;
+  
+  // Parse headers
+  const headers = lines[0].split('|').map(h => h.trim()).filter(h => h);
+  
+  // Parse data rows
+  const rows = [];
+  for (let i = 2; i < lines.length; i++) {
+    const cells = lines[i].split('|').map(c => c.trim()).filter(c => c !== '');
+    if (cells.length === headers.length) {
+      rows.push(cells);
+    }
+  }
+  
+  return { headers, rows };
+}
 
 // Define all Beta tables data
 const betaTables = [
@@ -79,13 +99,16 @@ const betaTables = [
     example: `| hospitalization_id | hospital_id | hospital_type | in_dttm | out_dttm | location_name | location_category |
 |---|---|---|---|---|---|---|
 | 20010012 | ABC | academic | 2024-12-01 10:00:00+00:00 | 2024-12-01 14:00:00+00:00 | B06F | icu |
-| 20010012 | ABC | academic | 2024-12-01 14:30:00+00:00 | 2024-12-02 08:00:00+00:00 | B78D | ward |`,
+| 20010012 | ABC | academic | 2024-12-01 14:30:00+00:00 | 2024-12-02 08:00:00+00:00 | B78D | ward |
+| 20010015 | ABC | academic | 2024-11-30 16:45:00+00:00 | 2024-12-01 12:00:00+00:00 | B06T | icu |
+| 20010015 | ABC | academic | 2024-12-01 12:30:00+00:00 | 2024-12-02 07:00:00+00:00 | N23E | procedural |
+| 20010020 | EFG | community | 2024-11-28 09:00:00+00:00 | 2024-11-29 17:00:00+00:00 | B78D | ward |`,
   },
   {
     id: 'hospitalization',
     name: 'Hospitalization',
     description:
-      'The hospitalization table contains information about each hospitalization event. Each row in this table represents a unique hospitalization event for a patient. This table is inspired by the visit_occurance OMOP table but is specific to inpatient hospitalizations (including those that begin in the emergency room).',
+      'The hospitalization table contains information about each hospitalization event. Each row in this table represents a unique hospitalization event for a patient. This table is inspired by the visit_occurrence OMOP table but is specific to inpatient hospitalizations (including those that begin in the emergency room).',
     fields: [
       {
         name: 'patient_id',
@@ -197,6 +220,11 @@ const betaTables = [
       'If a patient is initially seen in an ER in hospital A and then admitted to inpatient status in hospital B, one hospitalization_id should be created for data from both stays',
       'A hospitalization_joined_id can also be created from a CLIF table from contiguous hospitalization_ids',
     ],
+    example: `| patient_id | hospitalization_id | hospitalization_joined_id | admission_dttm | discharge_dttm | age_at_admission | admission_type_name | admission_type_category | discharge_name | discharge_category | zipcode_five_digit | zipcode_nine_digit | census_block_group_code | latitude | longitude |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 101001 | 12345678 | 22334455 | 2024-11-01 08:15:00+00:00 | 2024-11-04 14:30:00+00:00 | 65 | Direct admission | Inpatient | Discharged to Home or Self Care (Routine Discharge) | Home | 60637 | 606370000 | 170313202001 | 41.81030 | -87.59697 |
+| 101002 | 87654321 | 22334455 | 2024-11-04 15:00:00+00:00 | 2024-11-07 11:00:00+00:00 | 72 | Transfer from another hospital | Acute Care Transfer | Transferred to Acute Inpatient Rehab Facility | Acute Inpatient Rehab Facility | 46311 | 463110000 | 170313301002 | 41.55030 | -87.30101 |
+| 101003 | 11223344 | 11223344 | 2024-10-20 07:45:00+00:00 | 2024-10-22 10:20:00+00:00 | 59 | Pre-op surgical | Pre-op | Expired | Expired | 60446 | 604460000 | 170313401003 | 41.70010 | -87.60315 |`,
   },
   {
     id: 'labs',
@@ -268,12 +296,40 @@ const betaTables = [
         name: 'reference_unit',
         type: 'VARCHAR',
         description: 'Unit of measurement for that lab.',
-        restrictions: 'Permissible reference values for each lab_category',
+        restrictions: 'Permissible reference values for each lab_category listed here',
+      },
+      {
+        name: 'lab_specimen_name',
+        type: 'VARCHAR',
+        description: 'Original fluid or tissue name the lab was collected from as given in the source data',
+        restrictions: 'No restriction',
+      },
+      {
+        name: 'lab_specimen_category',
+        type: 'VARCHAR',
+        description: 'fluid or tissue the lab was collected from, analogous to the LOINC "system" component.',
+        values: ['blood/plasma/serum', 'urine', 'csf', 'other'],
+      },
+      {
+        name: 'lab_loinc_code',
+        type: 'VARCHAR',
+        description: 'LOINC code for the lab',
+        restrictions: 'No restriction',
       },
     ],
     notes: [
-      'The lab_value field can contain non-numeric text, so a separate lab_value_numeric field is provided for numeric analyses.',
+      'The lab_value field often has non-numeric entries that are useful to make project-specific decisions. A site may choose to keep the lab_value field as a character and create a new field lab_value_numeric that only parses the character field to extract the numeric part of the string.',
     ],
+    example: `| hospitalization_id | lab_order_dttm | lab_collect_dttm | lab_result_dttm | lab_order_name | lab_name | lab_category | lab_value | lab_value_numeric | reference_unit | lab_loinc_code | lab_specimen_name | lab_specimen_category |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 12345 | 2024-12-01 08:15:00+00:00 | 2024-12-01 08:30:00+00:00 | 2024-12-01 09:00:00+00:00 | Complete Blood Count | Hemoglobin | hemoglobin | 12.3 | 12.3 | g/dL | 718-7 | Complete Blood Count | blood |
+| 12345 | 2024-12-01 08:15:00+00:00 | 2024-12-01 08:30:00+00:00 | 2024-12-01 09:05:00+00:00 | Complete Blood Count | White Blood Cell Count | wbc | 5.6 | 5.6 | 10^3/uL | 6690-2 | Complete Blood Count | blood |
+| 12345 | 2024-12-01 08:15:00+00:00 | 2024-12-01 08:30:00+00:00 | 2024-12-01 09:10:00+00:00 | Metabolic Panel | Sodium | sodium | 138 | 138 | mmol/L | 2951-2 | Metabolic Panel | serum |
+| 12345 | 2024-12-01 08:15:00+00:00 | 2024-12-01 08:30:00+00:00 | 2024-12-01 09:20:00+00:00 | Metabolic Panel | Potassium | potassium | 4.1 | 4.1 | mmol/L | 2823-3 | Metabolic Panel | serum |
+| 67890 | 2024-12-01 09:30:00+00:00 | 2024-12-01 09:45:00+00:00 | 2024-12-01 10:15:00+00:00 | Arterial Blood Gas | pH | ph | 7.35 | 7.35 |  | 2744-1 | Arterial Blood Gas | blood |
+| 67890 | 2024-12-01 09:30:00+00:00 | 2024-12-01 09:45:00+00:00 | 2024-12-01 10:20:00+00:00 | Arterial Blood Gas | pCO2 | pco2 | 40 | 40 | mmHg | 2019-8 | Arterial Blood Gas | blood |
+| 67890 | 2024-12-01 09:30:00+00:00 | 2024-12-01 09:45:00+00:00 | 2024-12-01 10:25:00+00:00 | Arterial Blood Gas | pO2 | po2 | 90 | 90 | mmHg | 2703-7 | Arterial Blood Gas | blood |
+| 67890 | 2024-12-01 09:30:00+00:00 | 2024-12-01 09:45:00+00:00 | 2024-12-01 10:30:00+00:00 | Arterial Blood Gas | Bicarbonate | bicarbonate | 24 | 24 | mmol/L | 2028-3 | Arterial Blood Gas | blood |`,
   },
   {
     id: 'medication_admin_continuous',
@@ -330,6 +386,17 @@ const betaTables = [
         restrictions: 'No restriction',
       },
     ],
+    notes: [
+      'Continuous infusion rates are captured as numeric values with units',
+      'Standardized rates help with cross-institutional comparisons',
+    ],
+    example: `| hospitalization_id | med_admin_dttm | med_name | med_category | med_value | med_unit | med_rate | med_rate_unit |
+|---|---|---|---|---|---|---|---|
+| 12345 | 2024-12-01 10:00:00+00:00 | Norepinephrine | adrenergic_agents | 0.05 | mcg/kg/min | 0.05 | mcg/kg/min |
+| 12345 | 2024-12-01 11:00:00+00:00 | Norepinephrine | adrenergic_agents | 0.08 | mcg/kg/min | 0.08 | mcg/kg/min |
+| 67890 | 2024-12-01 14:30:00+00:00 | Propofol | sedatives | 20 | mcg/kg/min | 20 | mcg/kg/min |
+| 67890 | 2024-12-01 15:00:00+00:00 | Fentanyl | sedatives | 1.5 | mcg/kg/hr | 1.5 | mcg/kg/hr |
+| 11111 | 2024-12-01 08:00:00+00:00 | Insulin | insulin | 5 | units/hr | 5 | units/hr |`,
   },
   {
     id: 'patient',
@@ -374,6 +441,16 @@ const betaTables = [
         values: ['Hispanic or Latino', 'Not Hispanic or Latino', 'Unknown'],
       },
     ],
+    notes: [
+      'Static demographic data for each patient',
+      'Race and ethnicity mapping follows standard healthcare categories',
+    ],
+    example: `| patient_id | sex | race_name | race_category | ethnicity_name | ethnicity_category |
+|---|---|---|---|---|---|
+| 001 | Female | Caucasian | White | Non-Hispanic | Not Hispanic or Latino |
+| 002 | Male | African American | Black or African American | Hispanic | Hispanic or Latino |
+| 003 | Female | Asian | Asian | Non-Hispanic | Not Hispanic or Latino |
+| 004 | Male | Native American | American Indian or Alaska Native | Unknown | Unknown |`,
   },
   {
     id: 'patient_assessments',
@@ -418,6 +495,17 @@ const betaTables = [
         restrictions: 'Numeric',
       },
     ],
+    notes: [
+      'Assessment scores are critical for clinical decision making',
+      'Numeric values provided when applicable for analysis',
+    ],
+    example: `| hospitalization_id | assessment_dttm | assessment_name | assessment_category | assessment_value | assessment_numeric |
+|---|---|---|---|---|---|
+| 12345 | 2024-12-01 08:00:00+00:00 | Glasgow Coma Scale | gcs_total | 15 | 15 |
+| 12345 | 2024-12-01 08:00:00+00:00 | Eye Opening | gcs_eye | 4 | 4 |
+| 12345 | 2024-12-01 12:00:00+00:00 | RASS Score | rass | -2 | -2 |
+| 67890 | 2024-12-01 09:30:00+00:00 | CAM-ICU | cam_icu | Negative | 0 |
+| 67890 | 2024-12-01 16:00:00+00:00 | Pain Scale | pain | 3/10 | 3 |`,
   },
   {
     id: 'position',
@@ -450,6 +538,16 @@ const betaTables = [
         values: ['supine', 'prone', 'lateral_right', 'lateral_left', 'sitting', 'standing', 'other'],
       },
     ],
+    notes: [
+      'Patient positioning is crucial for respiratory management',
+      'Prone positioning particularly important for ARDS patients',
+    ],
+    example: `| hospitalization_id | position_dttm | position_name | position_category |
+|---|---|---|---|
+| 12345 | 2024-12-01 08:00:00+00:00 | Supine | supine |
+| 12345 | 2024-12-01 12:00:00+00:00 | Prone Position | prone |
+| 67890 | 2024-12-01 10:30:00+00:00 | Right Side | lateral_right |
+| 67890 | 2024-12-01 18:00:00+00:00 | Semi-Fowlers | sitting |`,
   },
   {
     id: 'respiratory_support',
@@ -530,6 +628,17 @@ const betaTables = [
         restrictions: 'Numeric',
       },
     ],
+    notes: [
+      'Comprehensive respiratory support tracking across all modalities',
+      'Critical for understanding ventilator management strategies',
+    ],
+    example: `| hospitalization_id | recorded_dttm | device_name | device_category | mode_name | mode_category | fiO2_set | peep_set | tidal_volume_set | respiratory_rate_set | pressure_support | flow_rate |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 12345 | 2024-12-01 08:00:00+00:00 | Ventilator | invasive_vent | Volume Control | volume_control | 0.6 | 8 | 450 | 16 | NULL | NULL |
+| 12345 | 2024-12-01 12:00:00+00:00 | Ventilator | invasive_vent | Pressure Support | pressure_support | 0.5 | 5 | NULL | NULL | 10 | NULL |
+| 67890 | 2024-12-01 10:00:00+00:00 | BiPAP | niv_bpap | BiPAP | pressure_control | 0.4 | 5 | NULL | 14 | NULL | NULL |
+| 11111 | 2024-12-01 14:00:00+00:00 | High Flow Nasal Cannula | hfnc | NULL | NULL | 0.35 | NULL | NULL | NULL | NULL | 40 |
+| 22222 | 2024-12-01 16:00:00+00:00 | Nasal Cannula | nasal_cannula | NULL | NULL | NULL | NULL | NULL | NULL | NULL | 3 |`,
   },
   {
     id: 'vitals',
@@ -574,8 +683,24 @@ const betaTables = [
         restrictions: 'No restriction',
       },
     ],
+    notes: [
+      'Longitudinal vital sign tracking for patient monitoring',
+      'Essential for identifying clinical trends and deterioration',
+    ],
+    example: `| hospitalization_id | recorded_dttm | vital_name | vital_category | vital_value | vital_unit |
+|---|---|---|---|---|---|
+| 12345 | 2024-12-01 08:00:00+00:00 | Heart Rate | heart_rate | 88 | bpm |
+| 12345 | 2024-12-01 08:00:00+00:00 | Systolic BP | sbp | 120 | mmHg |
+| 12345 | 2024-12-01 08:00:00+00:00 | Diastolic BP | dbp | 75 | mmHg |
+| 12345 | 2024-12-01 08:00:00+00:00 | Mean Arterial Pressure | map | 90 | mmHg |
+| 12345 | 2024-12-01 08:00:00+00:00 | Respiratory Rate | respiratory_rate | 16 | breaths/min |
+| 12345 | 2024-12-01 08:00:00+00:00 | Oxygen Saturation | spo2 | 98 | % |
+| 12345 | 2024-12-01 08:00:00+00:00 | Temperature | temperature | 37.1 | °C |
+| 67890 | 2024-12-01 09:00:00+00:00 | Weight | weight | 70 | kg |
+| 67890 | 2024-12-01 09:00:00+00:00 | Height | height | 175 | cm |`,
   },
 ];
+
 
 // Define Concept tables
 const conceptTables = [
@@ -707,54 +832,50 @@ const conceptTables = [
 | 20010012 | 2024-12-01 14:00:00+00:00 | 2024-12-05 10:00:00+00:00 | vv_ecmo | 4.5 |`,
   },
   {
-    id: 'hospital_diagnosis',
-    name: 'Hospital Diagnosis',
+    id: 'admission_diagnosis',
+    name: 'Admission Diagnosis',
     description: 'Record of all diagnoses associated with the hospitalization. Expect breaking changes to this table as we seek to align it with existing diagnosis ontologies',
     fields: [
       {
-        name: 'hospitalization_id',
+        name: 'patient_id',
         type: 'VARCHAR',
-        description: 'Unique identifier for each hospitalization encounter',
+        description: 'Unique identifier for each patient',
         restrictions: 'No restriction',
       },
       {
-        name: 'diagnosis_dttm',
+        name: 'diagnostic_code',
+        type: 'DOUBLE',
+        description: 'Numeric diagnosis code',
+        restrictions: 'Valid code in the diagnostic_code_format',
+      },
+      {
+        name: 'diagnosis_code_format',
+        type: 'VARCHAR',
+        description: 'Description of the diagnostic code format',
+        values: ['icd9', 'icd10'],
+      },
+      {
+        name: 'start_dttm',
         type: 'DATETIME',
-        description: 'Date and time when diagnosis was recorded',
+        description: 'Date time the diagnosis was recorded',
         restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
       },
       {
-        name: 'diagnosis_code',
-        type: 'VARCHAR',
-        description: 'Diagnosis code (ICD-10, ICD-9, etc.)',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'diagnosis_description',
-        type: 'VARCHAR',
-        description: 'Text description of the diagnosis',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'diagnosis_type',
-        type: 'VARCHAR',
-        description: 'Type of diagnosis',
-        values: ['primary', 'secondary', 'admission', 'discharge', 'working'],
-      },
-      {
-        name: 'diagnosis_sequence',
-        type: 'INTEGER',
-        description: 'Sequence number for diagnosis ordering',
-        restrictions: 'Numeric',
+        name: 'end_dttm',
+        type: 'DATETIME',
+        description: 'Date time the diagnosis was noted as resolved (if resolved)',
+        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
       },
     ],
     notes: [
-      'Expect breaking changes as we align with existing diagnosis ontologies',
-      'Supports multiple diagnosis coding systems',
+      'Record of all diagnoses associated with the hospitalization',
+      'Breaking changes expected as we align with existing diagnosis ontologies',
     ],
-    example: `| hospitalization_id | diagnosis_dttm | diagnosis_code | diagnosis_description | diagnosis_type | diagnosis_sequence |
-|---|---|---|---|---|---|
-| 20010012 | 2024-12-01 10:00:00+00:00 | J44.1 | COPD with acute exacerbation | primary | 1 |`,
+    example: `| patient_id | diagnostic_code | diagnosis_code_format | start_dttm | end_dttm |
+|---|---|---|---|---|
+| 1001014 | 250.00 | icd9 | 2023-05-01 08:00:00+00:00 | 2023-05-10 08:00:00+00:00 |
+| 1001014 | J45.909 | icd10 | 2023-05-01 08:00:00+00:00 | 2023-05-15 08:00:00+00:00 |
+| 1002025 | 401.9 | icd9 | 2023-06-10 09:00:00+00:00 | 2023-06-12 09:00:00+00:00 |`,
   },
   {
     id: 'intake_output',
@@ -1408,332 +1529,442 @@ const futureTables = [
 ];
 ---
 
-<BaseLayout
-  title="CLIF-2.0.0 Data Dictionary"
-  description="Comprehensive guide to the Common Longitudinal ICU data Format version 2.0.0, detailing structure and purpose of each table"
->
-  <!-- Sticky Navigation Bar with Layout Stability -->
-  <nav class="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm will-change-transform">
-    <div class="container mx-auto px-6 py-4">
-      <div class="flex items-center justify-between min-h-[2.5rem]">
-        <div class="flex items-center space-x-6 flex-shrink-0">
-          <h2 class="text-lg font-semibold text-gray-800 whitespace-nowrap">CLIF 2.0.0</h2>
-          <div class="hidden md:flex items-center space-x-6 flex-shrink-0">
-            <a href="#erd" class="text-sm text-gray-600 hover:text-clif-burgundy transition-colors duration-150 whitespace-nowrap">ERD</a>
-            <a href="#beta-tables" class="text-sm text-gray-600 hover:text-clif-burgundy transition-colors duration-150 whitespace-nowrap">Beta Tables (9)</a>
-            <a href="#concept-tables" class="text-sm text-gray-600 hover:text-clif-burgundy transition-colors duration-150 whitespace-nowrap">Concept Tables (16)</a>
-            <a href="#future-tables" class="text-sm text-gray-600 hover:text-clif-burgundy transition-colors duration-150 whitespace-nowrap">Future Tables (1)</a>
+<BaseLayout title="Data Dictionary" description="CLIF Data Dictionary">
+  <!-- Navigation Bar -->
+  <nav class="sticky top-0 z-30 bg-white border-b border-gray-200 shadow-sm">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex items-center space-x-8">
+          <span class="text-lg font-semibold text-clif-burgundy">Data Dictionary</span>
+          <div class="hidden md:flex space-x-6">
+            <a href="#erd" class="text-gray-600 hover:text-clif-burgundy">ERD</a>
+            <a href="#overview" class="text-gray-600 hover:text-clif-burgundy">Overview</a>
+            <a href="#beta-tables" class="text-gray-600 hover:text-clif-burgundy">Beta Tables</a>
+            <a href="#concept-tables" class="text-gray-600 hover:text-clif-burgundy">Concept Tables</a>
+            <a href="#future-tables" class="text-gray-600 hover:text-clif-burgundy">Future Tables</a>
           </div>
         </div>
-        <div class="flex items-center space-x-4 flex-shrink-0">
-          <a href="/data-dictionary" class="text-sm text-gray-600 hover:text-clif-burgundy transition-colors duration-150 whitespace-nowrap">← Back to Versions</a>
+        <div class="flex items-center space-x-4">
           <button
             id="search-toggle"
-            class="p-2 text-gray-600 hover:text-clif-burgundy transition-colors duration-150 flex-shrink-0 w-9 h-9 flex items-center justify-center"
-            aria-label="Search tables"
+            class="flex items-center px-4 py-2 bg-clif-burgundy text-white rounded-lg hover:bg-clif-burgundy-dark"
+            aria-label="Open search"
           >
-            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
             </svg>
+            Search
           </button>
         </div>
       </div>
     </div>
   </nav>
 
-  <!-- Search Overlay -->
-  <div id="search-overlay" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm">
-    <div class="container mx-auto px-6 py-20">
-      <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-2xl p-6">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-semibold text-gray-800">Search Tables</h3>
-          <button id="search-close" class="text-gray-400 hover:text-gray-600">
+  <!-- Enhanced Search Overlay -->
+  <div id="search-overlay" class="hidden fixed inset-0 z-50 bg-black/60">
+    <div class="container mx-auto px-6 py-8 h-full flex items-start justify-center pt-20">
+      <div class="bg-white rounded-2xl max-w-4xl w-full border border-gray-300">
+        <!-- Header -->
+        <div class="flex items-center justify-between p-6 border-b border-white/10">
+          <div class="flex items-center">
+            <div class="p-2 bg-clif-burgundy/10 rounded-lg mr-3">
+              <svg class="w-6 h-6 text-clif-burgundy" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+              </svg>
+            </div>
+            <h3 class="text-2xl font-bold text-gray-800">Search Data Dictionary</h3>
+          </div>
+          <button id="search-close" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
             </svg>
           </button>
         </div>
-        <label for="global-search" class="sr-only">Search CLIF data dictionary tables, fields, or descriptions</label>
-        <input
-          type="text"
-          id="global-search"
-          placeholder="Search tables, fields, or descriptions..."
-          aria-label="Search CLIF data dictionary tables, fields, or descriptions"
-          aria-describedby="search-instructions"
-          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent"
-          autofocus
-        />
-        <span id="search-instructions" class="sr-only">Enter keywords to search across all tables and fields in the CLIF data dictionary</span>
-        <div id="search-results" class="mt-4 max-h-96 overflow-y-auto"></div>
+
+        <!-- Search Input -->
+        <div class="p-6">
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+              </svg>
+            </div>
+            <input
+              type="text"
+              id="global-search"
+              placeholder="Search tables, fields, descriptions, or examples..."
+              aria-label="Search CLIF data dictionary tables, fields, or descriptions"
+              class="w-full pl-12 pr-4 py-4 text-lg border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent"
+              autofocus
+            />
+          </div>
+          
+          <!-- Search Filters -->
+          <div class="flex flex-wrap gap-3 mt-4">
+            <button class="search-filter px-4 py-2 text-sm rounded-full border border-gray-300 hover:border-clif-burgundy hover:text-clif-burgundy" data-filter="all">
+              All Categories
+            </button>
+            <button class="search-filter px-4 py-2 text-sm rounded-full border border-orange-300 text-orange-600 hover:bg-orange-50" data-filter="beta">
+              Beta Tables
+            </button>
+            <button class="search-filter px-4 py-2 text-sm rounded-full border border-purple-300 text-purple-600 hover:bg-purple-50" data-filter="concept">
+              Concept Tables
+            </button>
+            <button class="search-filter px-4 py-2 text-sm rounded-full border border-blue-300 text-blue-600 hover:bg-blue-50" data-filter="future">
+              Future Tables
+            </button>
+          </div>
+
+          <!-- Quick Search Suggestions -->
+          <div class="mt-4">
+            <p class="text-sm text-gray-600 mb-2">Popular searches:</p>
+            <div class="flex flex-wrap gap-2">
+              <button class="quick-search px-3 py-1 text-xs bg-gray-100 text-gray-600 rounded-full hover:bg-clif-burgundy hover:text-white" data-query="hospitalization_id">
+                hospitalization_id
+              </button>
+              <button class="quick-search px-3 py-1 text-xs bg-gray-100 text-gray-600 rounded-full hover:bg-clif-burgundy hover:text-white" data-query="vitals">
+                vitals
+              </button>
+              <button class="quick-search px-3 py-1 text-xs bg-gray-100 text-gray-600 rounded-full hover:bg-clif-burgundy hover:text-white" data-query="medication">
+                medication
+              </button>
+              <button class="quick-search px-3 py-1 text-xs bg-gray-100 text-gray-600 rounded-full hover:bg-clif-burgundy hover:text-white" data-query="datetime">
+                datetime
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Search Results -->
+        <div id="search-results" class="max-h-96 overflow-y-auto border-t border-white/10">
+          <div id="search-empty" class="p-8 text-center text-gray-500">
+            <div class="mb-4">
+              <svg class="w-16 h-16 mx-auto text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+              </svg>
+            </div>
+            <p class="text-lg font-medium mb-2">Start typing to search</p>
+            <p class="text-sm">Search across table names, field descriptions, examples, and more</p>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
-  <div class="container mx-auto px-6 py-12">
-    <!-- Header Section with Enhanced Design -->
-    <div class="mb-8">
-      <div class="flex items-center mb-4">
-        <h1 class="text-4xl font-bold text-clif-burgundy">
-          CLIF-2.0.0 Data Dictionary
-        </h1>
-        <Badge type="beta" class="ml-4" />
-      </div>
-    </div>
-
-    <!-- Interactive ERD Section (Moved to top) -->
-    <div id="erd" class="mb-12 scroll-mt-20">
-      <!-- ERD Header with Description -->
-      <div class="text-center mb-8">
-        <h2 class="text-2xl font-bold text-gray-800 mb-3">Entity Relationship Diagram</h2>
-        <p class="text-gray-600 max-w-3xl mx-auto">
-          Explore the relationships between CLIF tables interactively. Switch between Card View for detailed browsing 
-          or Diagram View for a visual force-directed graph representation.
-        </p>
-        <p class="text-sm text-gray-500 mt-2">
-          <span class="font-medium">Tip:</span> In Diagram View, drag nodes to reposition, zoom with controls, and click tables for details.
-        </p>
-      </div>
-
-      <!-- View Toggle -->
-      <div class="flex justify-center mb-6">
-        <div class="inline-flex flex-col sm:flex-row rounded-lg bg-gray-100 p-1 shadow-sm">
-          <button
-            id="cardViewBtn"
-            class="px-6 py-2 rounded-md text-sm font-medium transition-all duration-200 bg-clif-burgundy text-white shadow-sm w-full sm:w-auto"
-            onclick="showCardView()"
-          >
-            <svg class="w-4 h-4 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
-            </svg>
-            Card View
-          </button>
-          <button
-            id="diagramViewBtn"
-            class="px-6 py-2 rounded-md text-sm font-medium transition-all duration-200 text-gray-700 hover:text-gray-900 hover:bg-gray-50 w-full sm:w-auto mt-1 sm:mt-0 sm:ml-1"
-            onclick="showDiagramView()"
-          >
-            <svg class="w-4 h-4 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"></path>
-            </svg>
-            Diagram View
-          </button>
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-6 py-8">
+    <!-- Hero Section -->
+    <div class="text-center mb-16">
+      <div class="relative mb-16">
+        <div class="hidden"></div>
+        <div class="relative bg-white rounded-3xl px-8 py-16 shadow-lg border border-gray-200">
+          <div class="flex items-center justify-center mb-8">
+            <h1 class="text-5xl md:text-6xl font-bold text-clif-burgundy">
+              CLIF Data Dictionary 2.0.0
+            </h1>
+          </div>
+          
+          <p class="text-2xl md:text-3xl text-gray-700 font-medium mb-6">
+            Your Complete Guide to Standardized Critical Care Data
+          </p>
+          
+          <p class="text-lg md:text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
+            Explore 26 meticulously designed tables that standardize ICU data across institutions. 
+            From Beta-ready production tables to concept designs, discover how CLIF transforms 
+            critical care research through harmonized data structures.
+          </p>
         </div>
       </div>
 
-      <!-- Card View (default visible) -->
-      <div id="cardViewContainer" class="erd-view-container">
-        <InteractiveERDOptimized 
-          tables={[...betaTables, ...conceptTables, ...futureTables]}
-          height="min(800px, 80vh)"
-          enableKeyboardNavigation={true}
-          enableSearch={true}
-          className="shadow-xl rounded-xl"
-        />
-      </div>
-
-      <!-- Diagram View (hidden by default) -->
-      <div id="diagramViewContainer" class="erd-view-container" style="display: none;">
-        <div class="w-full" style="max-width: 1400px; margin: 0 auto;">
-          <D3ForceERD 
-            tables={[...betaTables, ...conceptTables, ...futureTables]}
-            width={1200}
-            height={800}
-            className="shadow-xl rounded-xl"
+      <!-- Impact Statistics -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
+        <div class="bg-white rounded-xl p-6 border border-gray-200">
+          <StatsCounter
+            value="26"
+            suffix=""
+            label="Total Tables"
+            icon='<svg class="w-12 h-12 mx-auto" fill="currentColor" viewBox="0 0 20 20"><path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/></svg>'
+          />
+        </div>
+        <div class="bg-white rounded-xl p-6 border-2 border-clif-burgundy/20">
+          <StatsCounter
+            value="9"
+            suffix=""
+            label="Beta Tables"
+            icon='<svg class="w-12 h-12 mx-auto text-clif-burgundy" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/></svg>'
+          />
+        </div>
+        <div class="bg-white rounded-xl p-6 border-2 border-purple-200">
+          <StatsCounter
+            value="16"
+            suffix=""
+            label="Concept Tables"
+            icon='<svg class="w-12 h-12 mx-auto text-purple-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>'
+          />
+        </div>
+        <div class="bg-white rounded-xl p-6 border-2 border-blue-200">
+          <StatsCounter
+            value="1"
+            suffix=""
+            label="Future Table"
+            icon='<svg class="w-12 h-12 mx-auto text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"/></svg>'
           />
         </div>
       </div>
 
-      <!-- View Tables Button -->
-      <div class="text-center mt-8">
-        <a 
-          href="#overview" 
-          class="inline-flex items-center px-6 py-3 bg-white border-2 border-gray-300 rounded-lg text-gray-700 font-medium hover:border-clif-burgundy hover:text-clif-burgundy transition-all duration-200 shadow-sm hover:shadow-md"
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <CTAButton
+          href="#beta-tables"
+          size="large"
         >
-          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+          <svg class="w-5 h-5 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
           </svg>
-          View Table Details
-        </a>
+          Explore Beta Tables
+        </CTAButton>
+        <CTAButton
+          href="https://chatgpt.com/g/g-h1nk6d3eR-clif-assistant"
+          variant="outline"
+          size="large"
+          external={true}
+        >
+          <svg class="w-5 h-5 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+          </svg>
+          Get AI Help
+        </CTAButton>
       </div>
     </div>
 
-    <script is:inline>
-      window.showCardView = function() {
-        document.getElementById('cardViewContainer').style.display = 'block';
-        document.getElementById('diagramViewContainer').style.display = 'none';
-        
-        const cardBtn = document.getElementById('cardViewBtn');
-        const diagramBtn = document.getElementById('diagramViewBtn');
-        
-        cardBtn.classList.add('bg-clif-burgundy', 'text-white', 'shadow-sm');
-        cardBtn.classList.remove('text-gray-700', 'hover:text-gray-900', 'hover:bg-gray-50');
-        diagramBtn.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-sm');
-        diagramBtn.classList.add('text-gray-700', 'hover:text-gray-900', 'hover:bg-gray-50');
-      }
-
-      window.showDiagramView = function() {
-        document.getElementById('cardViewContainer').style.display = 'none';
-        document.getElementById('diagramViewContainer').style.display = 'block';
-        
-        const cardBtn = document.getElementById('cardViewBtn');
-        const diagramBtn = document.getElementById('diagramViewBtn');
-        
-        diagramBtn.classList.add('bg-clif-burgundy', 'text-white', 'shadow-sm');
-        diagramBtn.classList.remove('text-gray-700', 'hover:text-gray-900', 'hover:bg-gray-50');
-        cardBtn.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-sm');
-        cardBtn.classList.add('text-gray-700', 'hover:text-gray-900', 'hover:bg-gray-50');
-        
-        // Trigger a resize event to ensure D3.js renders properly
-        setTimeout(() => {
-          window.dispatchEvent(new Event('resize'));
-        }, 100);
-      }
-    </script>
-
-    <!-- Overview Section -->
-    <div id="overview" class="mb-12 scroll-mt-20">
-      <!-- Quick Stats with Enhanced Design -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-        <div class="group relative overflow-hidden bg-white rounded-2xl border border-yellow-200 shadow-sm hover:shadow-xl transition-all duration-300">
-          <div class="absolute inset-0 bg-gradient-to-br from-yellow-50 via-yellow-100/50 to-transparent opacity-60"></div>
-          <div class="relative p-6">
-            <div class="flex items-center justify-between mb-3">
-              <div class="p-3 bg-yellow-100 rounded-xl">
-                <svg class="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                </svg>
-              </div>
-              <Badge type="beta" size="small" />
-            </div>
-            <div>
-              <p class="text-3xl font-bold text-gray-900 mb-1">9</p>
-              <p class="text-sm text-gray-600 font-medium">Beta Tables</p>
-              <p class="text-xs text-gray-500 mt-1">Production-ready</p>
-            </div>
-          </div>
-          <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-yellow-400 to-yellow-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></div>
-        </div>
-        
-        <div class="group relative overflow-hidden bg-white rounded-2xl border border-purple-200 shadow-sm hover:shadow-xl transition-all duration-300">
-          <div class="absolute inset-0 bg-gradient-to-br from-purple-50 via-purple-100/50 to-transparent opacity-60"></div>
-          <div class="relative p-6">
-            <div class="flex items-center justify-between mb-3">
-              <div class="p-3 bg-purple-100 rounded-xl">
-                <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-                </svg>
-              </div>
-              <Badge type="concept" size="small" />
-            </div>
-            <div>
-              <p class="text-3xl font-bold text-gray-900 mb-1">16</p>
-              <p class="text-sm text-gray-600 font-medium">Concept Tables</p>
-              <p class="text-xs text-gray-500 mt-1">In development</p>
-            </div>
-          </div>
-          <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-400 to-purple-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></div>
-        </div>
-        
-        <div class="group relative overflow-hidden bg-white rounded-2xl border border-blue-200 shadow-sm hover:shadow-xl transition-all duration-300">
-          <div class="absolute inset-0 bg-gradient-to-br from-blue-50 via-blue-100/50 to-transparent opacity-60"></div>
-          <div class="relative p-6">
-            <div class="flex items-center justify-between mb-3">
-              <div class="p-3 bg-blue-100 rounded-xl">
-                <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-              </div>
-              <Badge type="future" size="small" />
-            </div>
-            <div>
-              <p class="text-3xl font-bold text-gray-900 mb-1">1</p>
-              <p class="text-sm text-gray-600 font-medium">Future Tables</p>
-              <p class="text-xs text-gray-500 mt-1">Proposed</p>
-            </div>
-          </div>
-          <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-400 to-blue-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></div>
-      </div>
-
-      <div class="prose prose-lg max-w-none mb-8">
-        <p class="text-xl text-gray-700 leading-relaxed">
-          The CLIF Data Dictionary serves as a comprehensive guide to the Common Longitudinal ICU
-          data Format, detailing the structure and purpose of each table within the framework.
-          Designed to standardize and harmonize electronic health record data across multiple
-          institutions, the dictionary outlines the entity-relationship model, variable definitions,
-          and permissible values.
-        </p>
-      </div>
-
-    </div>
-
-    <!-- Beta Tables Section -->
-    <section id="beta-tables" class="mb-16 scroll-mt-20">
-      <div class="mb-8">
-        <div class="flex items-center justify-between mb-6">
-          <h2 class="text-3xl font-bold text-clif-burgundy flex items-center">
-            Beta Tables
-            <Badge type="beta" class="ml-3" />
-          </h2>
-          <button
-            id="expand-all-beta"
-            class="text-sm text-gray-600 hover:text-clif-burgundy transition-colors flex items-center gap-2"
-          >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+    <!-- Static ERD Diagram at Top -->
+    <section class="mb-16">
+      <div class="glass rounded-2xl overflow-hidden border border-gray-200 shadow-xl">
+        <div class="glass-dark px-8 py-6">
+          <h2 class="text-2xl font-bold text-white flex items-center justify-center">
+            <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"></path>
             </svg>
-            Expand All
-          </button>
+            CLIF 2.0.0 Entity Relationship Diagram
+          </h2>
+          <p class="text-white/80 mt-2 text-center">
+            Visual overview of table relationships and data flow
+          </p>
         </div>
-        <p class="text-lg text-gray-700 leading-relaxed">
-          The table purpose, structure, and field names for beta tables is complete and used in at
-          least one federated CLIF project. The <a href="/mCIDE" class="text-clif-burgundy hover:underline font-medium">minimum Common ICU Data Elements (mCIDE)</a> for category variables is defined. Actively testing the table's practical use in projects.
-          Breaking changes unlikely, but backward compatible updates in future minor versions possible.
-        </p>
-      </div>
-
-      <!-- Enhanced Table Grid Navigation -->
-      <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-10">
-        {betaTables.map((table, index) => (
-          <a
-            href={`#${table.id}`}
-            class="group relative p-5 bg-white border-2 border-gray-200 rounded-xl hover:border-yellow-400 hover:shadow-lg transition-all duration-200 overflow-hidden"
-          >
-            <div class="absolute top-2 right-2 text-5xl font-bold text-gray-100 group-hover:text-yellow-100 transition-colors">
-              {String(index + 1).padStart(2, '0')}
+        <div class="p-8 bg-gray-50">
+          <div class="rounded-xl overflow-hidden shadow-lg">
+            <img
+              src="/images/data-dictionary/ERD-2.0.0-071125_NEW.png"
+              alt="CLIF 2.0.0 Entity Relationship Diagram showing connections between all 26 tables including Beta tables (ADT, Hospitalization, Patient, Vitals, Labs, Medication Administration, Respiratory Support, Position, and Scores), Concept tables, and Future tables"
+              class="w-full h-auto"
+              loading="eager"
+            />
+          </div>
+          <div class="mt-6 flex flex-wrap gap-4 justify-center">
+            <div class="flex items-center">
+              <div class="w-4 h-4 bg-clif-burgundy rounded-full mr-2"></div>
+              <span class="text-sm font-medium text-gray-700">Beta Tables (9) - Production Ready</span>
             </div>
-            <div class="relative">
-              <h3 class="font-bold text-gray-800 group-hover:text-gray-900 transition-colors mb-1">
-                {table.name}
-              </h3>
-              <div class="flex items-center gap-2">
-                <Badge type="beta" size="small" />
-                <p class="text-xs text-gray-500">View details →</p>
+            <div class="flex items-center">
+              <div class="w-4 h-4 bg-purple-500 rounded-full mr-2"></div>
+              <span class="text-sm font-medium text-gray-700">Concept Tables (16) - In Development</span>
+            </div>
+            <div class="flex items-center">
+              <div class="w-4 h-4 bg-blue-500 rounded-full mr-2"></div>
+              <span class="text-sm font-medium text-gray-700">Future Tables (1) - Proposed</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+      <!-- Overview Section -->
+      <div id="overview" class="mb-16 scroll-mt-20">
+        <div class="text-center mb-12">
+          <h2 class="text-4xl font-bold text-clif-burgundy mb-4">Table Categories Overview</h2>
+          <p class="text-lg text-gray-600 max-w-3xl mx-auto">
+            CLIF organizes data into three categories based on development maturity and implementation readiness.
+            Each category serves different research needs and implementation timelines.
+          </p>
+        </div>
+
+        <!-- Enhanced Quick Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+          <div class="group bg-white rounded-2xl overflow-hidden border border-gray-200">
+            <div class="relative p-8 text-center">
+              <div class="flex items-center justify-center mb-4">
+                <div class="p-3 bg-clif-burgundy/10 rounded-xl">
+                  <svg class="w-8 h-8 text-clif-burgundy" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                  </svg>
+                </div>
+              </div>
+              <div>
+                <p class="text-4xl font-bold text-clif-burgundy mb-2">9</p>
+                <p class="text-lg font-semibold text-gray-800 mb-1">Beta Tables</p>
+                <p class="text-sm text-gray-600">Production-ready & battle-tested</p>
+              </div>
+              <div class="mt-4">
+                <CTAButton href="#beta-tables" size="small" variant="outline">
+                  Explore Beta
+                </CTAButton>
               </div>
             </div>
-            <div class="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-yellow-400 to-yellow-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></div>
-          </a>
-        ))}
+            <div class="hidden"></div>
+          </div>
+          
+          <div class="group bg-white rounded-2xl overflow-hidden border border-gray-200">
+            <div class="relative p-8 text-center">
+              <div class="flex items-center justify-center mb-4">
+                <div class="p-3 bg-purple-500/10 rounded-xl">
+                  <svg class="w-8 h-8 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                  </svg>
+                </div>
+                <Badge type="concept" size="small" />
+              </div>
+              <div>
+                <p class="text-4xl font-bold text-purple-600 mb-2">15</p>
+                <p class="text-lg font-semibold text-gray-800 mb-1">Concept Tables</p>
+                <p class="text-sm text-gray-600">In active development</p>
+              </div>
+              <div class="mt-4">
+                <CTAButton href="#concept-tables" size="small" variant="outline">
+                  View Concepts
+                </CTAButton>
+              </div>
+            </div>
+            <div class="hidden"></div>
+          </div>
+          
+          <div class="group bg-white rounded-2xl overflow-hidden border border-gray-200">
+            <div class="relative p-8 text-center">
+              <div class="flex items-center justify-center mb-4">
+                <div class="p-3 bg-blue-500/10 rounded-xl">
+                  <svg class="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                  </svg>
+                </div>
+                <Badge type="concept" size="small" />
+              </div>
+              <div>
+                <p class="text-4xl font-bold text-blue-600 mb-2">1</p>
+                <p class="text-lg font-semibold text-gray-800 mb-1">Future Tables</p>
+                <p class="text-sm text-gray-600">Proposed concepts</p>
+              </div>
+              <div class="mt-4">
+                <CTAButton href="#future-tables" size="small" variant="outline">
+                  See Future
+                </CTAButton>
+              </div>
+            </div>
+            <div class="hidden"></div>
+          </div>
+        </div>
       </div>
 
-      {betaTables.map((table, index) => (
+      <!-- Beta Tables Section -->
+      <section id="beta-tables" class="mb-16 scroll-mt-20">
+        <div class="text-center mb-12">
+          <h2 class="text-4xl font-bold text-clif-burgundy mb-4 flex items-center justify-center">
+            Beta Tables
+          </h2>
+          <p class="text-lg text-gray-600 max-w-4xl mx-auto mb-6">
+            Production-ready tables tested in federated CLIF projects. These tables have defined 
+            <a href="/mCIDE" class="text-clif-burgundy hover:underline font-medium">mCIDE standards</a> 
+            and stable field structures with minimal breaking changes expected.
+          </p>
+          <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <button
+              id="expand-all-beta"
+              class="bg-white px-6 py-3 rounded-xl text-clif-burgundy font-medium flex items-center gap-2 justify-center border border-clif-burgundy hover:bg-clif-burgundy hover:text-white"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+              </svg>
+              Expand All Details
+            </button>
+            <CTAButton href="/mCIDE" size="medium" variant="outline">
+              View mCIDE Standards
+            </CTAButton>
+          </div>
+        </div>
+
+        <!-- Enhanced Card Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          {betaTables.map((table, index) => (
+            <div 
+              data-table-id={table.id}
+              class="group bg-white rounded-2xl overflow-hidden border border-gray-200 cursor-pointer"
+            >
+              <div class="relative p-6">
+                <!-- Header -->
+                <div class="flex items-start justify-between mb-4">
+                  <div class="flex items-center">
+                    <div class="p-2 bg-clif-burgundy/10 rounded-lg mr-3">
+                      <svg class="w-6 h-6 text-clif-burgundy" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"></path>
+                      </svg>
+                    </div>
+                  </div>
+                  <span class="text-3xl font-bold text-gray-200 select-none">{String(index + 1).padStart(2, '0')}</span>
+                </div>
+
+                <!-- Content -->
+                <h3 class="text-xl font-bold text-gray-800 mb-3 group-hover:text-clif-burgundy">
+                  {table.name}
+                </h3>
+                <p class="text-gray-600 text-sm mb-4 line-clamp-2">
+                  {table.description}
+                </p>
+
+                <!-- Stats -->
+                <div class="flex items-center justify-between text-xs text-gray-500 mb-4">
+                  <span class="bg-clif-burgundy/10 text-clif-burgundy px-2 py-1 rounded-full font-medium">
+                    {table.fields.length} fields
+                  </span>
+                  <span class="flex items-center">
+                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Production Ready
+                  </span>
+                </div>
+
+                <!-- Action -->
+                <a 
+                  href={`#${table.id}`} 
+                  class="inline-flex items-center text-clif-burgundy hover:underline font-medium text-sm"
+                >
+                  View Full Specification 
+                  <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                  </svg>
+                </a>
+              </div>
+              <div class="hidden"></div>
+            </div>
+          ))}
+        </div>
+        {betaTables.map((table, index) => (
         <div
           id={table.id}
           class="mb-12 scroll-mt-28 group"
           data-table-section
         >
           <div class="border-l-4 border-clif-burgundy pl-6">
-            <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center justify-between mb-6">
               <h3 class="text-2xl font-semibold text-gray-800 flex items-center">
                 <span class="text-clif-burgundy mr-3">{index + 1}.</span>
                 {table.name}
                 <Badge type="beta" class="ml-3" size="small" />
               </h3>
               <button
-                class="collapse-toggle text-gray-400 hover:text-gray-600 transition-colors"
+                class="collapse-toggle text-gray-400 hover:text-gray-600"
                 aria-label="Toggle table visibility"
                 data-table-id={table.id}
               >
-                <svg class="w-6 h-6 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                 </svg>
               </button>
@@ -1742,39 +1973,39 @@ const futureTables = [
           </div>
 
           <div class="collapsible-content">
-            <div class="overflow-x-auto rounded-xl border border-gray-200 shadow-md hover:shadow-lg transition-shadow duration-200">
-              <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gradient-to-r from-gray-50 to-gray-100 sticky top-0 z-10">
+            <div class="overflow-x-auto rounded-xl border-2 border-gray-200 shadow-lg">
+              <table class="min-w-full divide-y-2 divide-gray-200">
+                <thead class="bg-gray-50">
                   <tr>
-                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Field</th>
-                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-32">Type</th>
+                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Field Name</th>
+                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-32">Data Type</th>
                     <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Description</th>
-                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-64">Permissible Values</th>
+                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-72">Permissible Values</th>
                   </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                  {table.fields.map((field) => (
-                    <tr class="hover:bg-gray-50 transition-colors">
-                      <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
+                  {table.fields.map((field, index) => (
+                    <tr class={`hover:bg-orange-50 ${index % 2 === 0 ? 'bg-gray-50/50' : 'bg-white'}`}>
+                      <td class="px-6 py-4 text-sm font-mono font-semibold text-orange-700">
                         {field.name}
                       </td>
-                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      <td class="px-6 py-4 text-sm">
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-300">
                           {field.type}
                         </span>
                       </td>
-                      <td class="px-6 py-4 text-sm text-gray-900">{field.description}</td>
-                      <td class="px-6 py-4 text-sm text-gray-500">
+                      <td class="px-6 py-4 text-sm text-gray-800 leading-relaxed">{field.description}</td>
+                      <td class="px-6 py-4 text-sm">
                         {field.values ? (
-                          <div class="flex flex-wrap gap-1">
+                          <div class="flex flex-wrap gap-1.5">
                             {field.values.map((value) => (
-                              <code class="inline-block text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded font-mono">{value}</code>
+                              <code class="inline-block text-xs bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md font-mono border border-blue-200">{value}</code>
                             ))}
                           </div>
                         ) : field.restrictions ? (
-                          <span class="text-sm text-gray-600">{field.restrictions}</span>
+                          <span class="text-sm text-gray-600 italic">{field.restrictions}</span>
                         ) : (
-                          <span class="text-gray-400">No restrictions</span>
+                          <span class="text-gray-400 italic">No restrictions</span>
                         )}
                       </td>
                     </tr>
@@ -1782,38 +2013,82 @@ const futureTables = [
                 </tbody>
               </table>
             </div>
-            {/* Notes section with improved styling */}
+            {/* Notes section */}
             {table.notes && table.notes.length > 0 && (
-              <div class="mt-6 bg-gradient-to-r from-blue-50 to-blue-100/50 p-5 rounded-lg border border-blue-200">
-                <h4 class="font-semibold text-blue-900 mb-3 flex items-center">
-                  <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                  </svg>
-                  Important Notes
-                </h4>
-                <ul class="space-y-2">
-                  {table.notes.map((note) => (
-                    <li class="flex items-start">
-                      <span class="text-blue-500 mr-2 mt-0.5">•</span>
-                      <span class="text-sm text-blue-800">{note}</span>
-                    </li>
-                  ))}
-                </ul>
+              <div class="mt-6 mb-8">
+                <div class="bg-amber-50 border border-amber-200 rounded-xl p-6">
+                  <div class="flex items-start">
+                    <div class="flex-shrink-0 p-2 bg-amber-100 rounded-lg mr-4">
+                      <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                      </svg>
+                    </div>
+                    <div class="flex-1">
+                      <h4 class="font-semibold text-amber-900 mb-2">Important Notes</h4>
+                      <ul class="space-y-2 text-sm text-amber-800">
+                        {table.notes.map((note) => (
+                          <li class="flex items-start">
+                            <span class="text-amber-600 mr-2">•</span>
+                            <span>{note}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
-            {/* Example section with syntax highlighting */}
+
+            {/* Example section with interactive table */}
             {table.example && (
-              <div class="mt-6">
-                <h4 class="font-semibold text-gray-700 mb-3 flex items-center">
-                  <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
-                  </svg>
-                  Example Data
-                </h4>
-                <div class="overflow-x-auto bg-gray-900 rounded-lg shadow-inner">
-                  <pre class="text-xs text-gray-300 p-4">
-                    <code>{table.example}</code>
-                  </pre>
+              <div class="mt-8">
+                <div class="flex items-center justify-between mb-4">
+                  <h4 class="text-lg font-semibold text-gray-800 flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+                    </svg>
+                    Sample {table.name} Data
+                  </h4>
+                  <button 
+                    class="copy-csv-btn text-sm text-gray-600 hover:text-gray-900 flex items-center gap-2 px-3 py-1 rounded-lg hover:bg-gray-100"
+                    data-table-id={table.id}
+                  >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                    </svg>
+                    Copy as CSV
+                  </button>
+                </div>
+                <div class="sample-data-wrapper">
+                  <div class="bg-white border-2 border-gray-200 rounded-xl shadow-md overflow-hidden">
+                    <div class="overflow-x-auto bg-white">
+                      {(() => {
+                        const tableData = parseMarkdownTableStatic(table.example);
+                        if (!tableData) return <p class="text-gray-500 p-4">No sample data available</p>;
+                        
+                        return (
+                          <table class="w-full text-sm">
+                            <thead>
+                              <tr class="bg-gray-50 border-b">
+                                {tableData.headers.map(header => (
+                                  <th class="px-4 py-2 text-left font-medium text-gray-700">{header}</th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {tableData.rows.map((row, rowIndex) => (
+                                <tr class={`border-b ${rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-orange-50`}>
+                                  {row.map(cell => (
+                                    <td class="px-4 py-2 text-gray-800">{cell}</td>
+                                  ))}
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        );
+                      })()}
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -1824,87 +2099,355 @@ const futureTables = [
 
     <!-- Concept Tables Section -->
     <section id="concept-tables" class="mb-16 scroll-mt-20">
-      <div class="mb-8">
-        <h2 class="text-3xl font-bold text-clif-burgundy mb-6 flex items-center">
+      <div class="text-center mb-12">
+        <h2 class="text-4xl font-bold text-clif-burgundy mb-4 flex items-center justify-center">
           Concept Tables
-          <Badge type="concept" class="ml-3" />
+          <Badge type="concept" class="ml-4" size="large" />
         </h2>
-        <p class="text-lg text-gray-700 leading-relaxed">
-          A planned future CLIF table that has yet to be used in a federated project. The table structure and CDE elements are in draft form. Permissible values of category variables may still need to be defined. Seeking conceptual feedback. Significant changes to all aspects of the table are possible.
+        <p class="text-lg text-gray-600 max-w-4xl mx-auto mb-6">
+          Future CLIF tables in active development. These tables are seeking conceptual feedback 
+          and may undergo significant changes. Table structures and field definitions are in draft form.
         </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <button
+            id="expand-all-concept"
+            class="bg-white px-6 py-3 rounded-xl text-clif-burgundy font-medium flex items-center gap-2 justify-center border border-clif-burgundy hover:bg-clif-burgundy hover:text-white"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+            View All Concepts
+          </button>
+          <CTAButton href="mailto:clif_consortium@uchicago.edu" size="medium" variant="outline">
+            Provide Feedback
+          </CTAButton>
+        </div>
       </div>
       
-      <!-- Concept Tables Grid with Enhanced Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+      <!-- Enhanced Concept Tables Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
         {
           conceptTables.map((table, index) => (
             <div
               id={table.id}
               data-table-id={table.id}
-              class="concept-table-card group relative bg-white rounded-2xl border-2 border-purple-100 p-6 hover:border-purple-400 hover:shadow-xl transition-all duration-300 scroll-mt-28 overflow-hidden cursor-pointer"
+              class="group bg-white rounded-2xl overflow-hidden border border-purple-200 cursor-pointer"
             >
-              <div class="absolute -top-2 -right-2 w-16 h-16 bg-gradient-to-br from-purple-100 to-purple-200 rounded-bl-2xl flex items-center justify-center">
-                <span class="text-xl font-bold text-purple-700">{String(index + 1).padStart(2, '0')}</span>
+              <div class="hidden"></div>
+              <div class="relative p-6">
+                <!-- Header -->
+                <div class="flex items-start justify-between mb-4">
+                  <div class="flex items-center">
+                    <div class="p-2 bg-purple-100 rounded-lg mr-3">
+                      <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                      </svg>
+                    </div>
+                    <Badge type="concept" size="small" />
+                  </div>
+                  <span class="text-3xl font-bold text-purple-200 select-none">{String(index + 1).padStart(2, '0')}</span>
+                </div>
+
+                <!-- Content -->
+                <h3 class="text-xl font-bold text-gray-800 mb-3 group-hover:text-purple-700 transition-colors">
+                  {table.name}
+                </h3>
+                <p class="text-gray-600 text-sm mb-4 line-clamp-2">
+                  {table.description}
+                </p>
+
+                <!-- Stats -->
+                <div class="flex items-center justify-between text-xs text-gray-500 mb-4">
+                  <span class="bg-purple-50 text-purple-700 px-2 py-1 rounded-full font-medium">
+                    {table.fields ? table.fields.length : 'TBD'} fields
+                  </span>
+                  <span class="flex items-center">
+                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/>
+                    </svg>
+                    In Development
+                  </span>
+                </div>
+
+                <!-- Action -->
+                <div class="flex items-center justify-between">
+                  <a 
+                    href={`#${table.id}-detail`}
+                    class="inline-flex items-center text-purple-600 hover:text-purple-700 font-medium text-sm"
+                  >
+                    View Details
+                    <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                  </a>
+                  <div class="flex items-center text-xs text-gray-400">
+                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10m0 0V6a2 2 0 00-2-2H9a2 2 0 00-2 2v2m0 0v10a2 2 0 002 2h6a2 2 0 002-2V8"/>
+                    </svg>
+                    Draft
+                  </div>
+                </div>
               </div>
-              <div class="mb-3">
-                <Badge type="concept" size="small" />
-              </div>
-              <h3 class="text-lg font-bold text-gray-800 mb-2 pr-12 group-hover:text-purple-700 transition-colors">
-                {table.name}
-              </h3>
-              <p class="text-sm text-gray-600 leading-relaxed line-clamp-3">{table.description}</p>
-              
-              <!-- Click prompt -->
-              <div class="mt-3 flex items-center text-xs text-purple-600 font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                </svg>
-                Click to view detailed specifications
-              </div>
-              
-              <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-400 to-purple-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></div>
+              <div class="hidden"></div>
             </div>
           ))
         }
       </div>
+      
+      <!-- Detailed Concept Tables Sections -->
+      <div class="mt-16 space-y-8">
+        <h3 class="text-2xl font-bold text-gray-800 mb-6">Concept Table Details</h3>
+        {conceptTables.map((table, index) => (
+          <div
+            id={`${table.id}-detail`}
+            class="mb-12 scroll-mt-28 group"
+            data-table-section
+          >
+            <div class="border-l-4 border-purple-600 pl-6">
+              <div class="flex items-center justify-between mb-6">
+                <h3 class="text-2xl font-semibold text-gray-800 flex items-center">
+                  <span class="text-purple-600 mr-3">{index + 1}.</span>
+                  {table.name}
+                  <Badge type="concept" class="ml-3" size="small" />
+                </h3>
+                <button
+                  class="collapse-toggle text-gray-400 hover:text-gray-600"
+                  aria-label="Toggle table visibility"
+                  data-table-id={`${table.id}-detail`}
+                >
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                  </svg>
+                </button>
+              </div>
+              <div class="collapsible-content">
+                <p class="mb-6 text-gray-700 leading-relaxed">{table.description}</p>
+                
+                {table.fields && table.fields.length > 0 ? (
+                  <div class="overflow-x-auto mb-8">
+                    <div class="rounded-xl border-2 border-purple-200 shadow-lg overflow-hidden">
+                      <table class="min-w-full divide-y-2 divide-purple-200">
+                        <thead class="bg-purple-50">
+                          <tr>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Field Name</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-32">Data Type</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Description</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-72">Values/Restrictions</th>
+                          </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-purple-100">
+                          {table.fields.map((field, index) => (
+                            <tr class={`hover:bg-purple-50 ${index % 2 === 0 ? 'bg-purple-50/30' : 'bg-white'}`}>
+                              <td class="px-6 py-4 font-mono text-sm font-semibold text-purple-700">{field.name}</td>
+                              <td class="px-6 py-4 text-sm">
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800 border border-gray-300">
+                                  {field.type}
+                                </span>
+                              </td>
+                              <td class="px-6 py-4 text-sm text-gray-800 leading-relaxed">{field.description}</td>
+                              <td class="px-6 py-4 text-sm">
+                                {field.values ? (
+                                  <div class="flex flex-wrap gap-1.5">
+                                    {field.values.map((value) => (
+                                      <code class="inline-block text-xs bg-purple-50 text-purple-700 px-2.5 py-1 rounded-md font-mono border border-purple-200">
+                                        {value}
+                                      </code>
+                                    ))}
+                                  </div>
+                                ) : field.restrictions ? (
+                                  <span class="text-sm text-gray-600 italic">{field.restrictions}</span>
+                                ) : (
+                                  <span class="text-gray-400 italic">—</span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ) : (
+                  <div class="bg-purple-50 rounded-lg p-6 mb-8 text-center">
+                    <svg class="w-12 h-12 text-purple-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                    </svg>
+                    <p class="text-purple-700 font-medium">Field structure under development</p>
+                    <p class="text-sm text-purple-600 mt-2">Detailed field specifications will be added as the table design is finalized</p>
+                  </div>
+                )}
+
+
+                {/* Notes section for concept tables */}
+                {table.notes && table.notes.length > 0 && (
+                  <div class="mt-6 mb-8">
+                    <div class="bg-purple-50 border border-purple-200 rounded-xl p-6">
+                      <div class="flex items-start">
+                        <div class="flex-shrink-0 p-2 bg-purple-100 rounded-lg mr-4">
+                          <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                          </svg>
+                        </div>
+                        <div class="flex-1">
+                          <h4 class="font-semibold text-purple-900 mb-2">Implementation Notes</h4>
+                          <ul class="space-y-2 text-sm text-purple-800">
+                            {table.notes.map((note) => (
+                              <li class="flex items-start">
+                                <span class="text-purple-600 mr-2">•</span>
+                                <span>{note}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Example section for concept tables */}
+                {table.example && (
+                  <div class="mt-8">
+                    <div class="flex items-center justify-between mb-4">
+                      <h4 class="text-lg font-semibold text-gray-800 flex items-center">
+                        <svg class="w-5 h-5 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+                        </svg>
+                        Sample Data Structure
+                      </h4>
+                      <button 
+                        class="copy-csv-btn text-sm text-gray-600 hover:text-gray-900 flex items-center gap-2 px-3 py-1 rounded-lg hover:bg-gray-100"
+                        data-table-id={table.id}
+                      >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                        </svg>
+                        Copy as CSV
+                      </button>
+                    </div>
+                    <div class="sample-data-wrapper">
+                      <div class="bg-white border-2 border-purple-200 rounded-xl shadow-md overflow-hidden">
+                        <div class="bg-purple-700 px-4 py-3">
+                          <span class="text-xs font-mono text-purple-200">
+                            <span class="text-purple-300">SELECT</span> <span class="text-purple-100">*</span> <span class="text-purple-300">FROM</span> <span class="text-white">{table.name.toLowerCase().replace(/ /g, '_')}</span> <span class="text-purple-300">LIMIT</span> <span class="text-purple-100">5;</span>
+                          </span>
+                        </div>
+                        <div class="overflow-x-auto bg-white">
+                          {(() => {
+                            const tableData = parseMarkdownTableStatic(table.example);
+                            if (!tableData) return <p class="text-gray-500 p-4">No sample data available</p>;
+                            
+                            return (
+                              <table class="w-full text-sm">
+                                <thead>
+                                  <tr class="bg-purple-50 border-b border-purple-200">
+                                    {tableData.headers.map(header => (
+                                      <th class="px-4 py-2 text-left font-medium text-gray-700">{header}</th>
+                                    ))}
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {tableData.rows.map((row, rowIndex) => (
+                                    <tr class={`border-b border-purple-100 ${rowIndex % 2 === 0 ? 'bg-white' : 'bg-purple-50/30'} hover:bg-purple-50`}>
+                                      {row.map(cell => (
+                                        <td class="px-4 py-2 text-gray-800">{cell}</td>
+                                      ))}
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            );
+                          })()}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
     </section>
 
-    <!-- Future Tables Section -->
+    <!-- Future Proposed Tables Section -->
     <section id="future-tables" class="mb-16 scroll-mt-20">
-      <div class="mb-8">
-        <h2 class="text-3xl font-bold text-clif-burgundy mb-6">Future Proposed Tables</h2>
-        <p class="text-lg text-gray-700 leading-relaxed">
-          These are tables without any defined structure that the consortium has not yet committed to implementing.
+      <div class="text-center mb-12">
+        <h2 class="text-4xl font-bold text-clif-burgundy mb-4 flex items-center justify-center">
+          Future Proposed Tables
+          <Badge type="future" class="ml-4" size="large" />
+        </h2>
+        <p class="text-lg text-gray-600 max-w-4xl mx-auto mb-6">
+          Early-stage concepts without defined structure. These represent ideas the consortium 
+          is considering for future development. No implementation timeline has been established.
         </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <CTAButton href="mailto:clif_consortium@uchicago.edu" size="medium" variant="outline">
+            Suggest New Tables
+          </CTAButton>
+          <CTAButton href="/research" size="medium" variant="outline">
+            View Research Projects
+          </CTAButton>
+        </div>
       </div>
-      <div class="max-w-3xl mx-auto">
+      
+      <!-- Enhanced Future Tables Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
         {
           futureTables.map((table) => (
             <div
               id={table.id}
-              class="relative bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-dashed border-blue-300 rounded-2xl p-8 hover:border-blue-400 hover:shadow-lg transition-all duration-300 group"
+              data-table-id={table.id}
+              class="group bg-white rounded-2xl overflow-hidden border border-blue-200"
             >
-              <div class="absolute -top-3 left-8">
-                <Badge type="future" size="small" />
-              </div>
-              <div class="flex items-start gap-4">
-                <div class="p-3 bg-blue-100 rounded-xl group-hover:bg-blue-200 transition-colors">
-                  <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
-                  </svg>
+              <div class="hidden"></div>
+              <div class="relative p-6">
+                <!-- Header -->
+                <div class="flex items-start justify-between mb-4">
+                  <div class="flex items-center">
+                    <div class="p-2 bg-blue-100 rounded-lg mr-3">
+                      <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                      </svg>
+                    </div>
+                    <Badge type="future" size="small" />
+                  </div>
+                  <span class="text-3xl font-bold text-blue-200 select-none">01</span>
                 </div>
-                <div class="flex-1">
-                  <h3 class="text-2xl font-bold text-gray-800 mb-3">{table.name}</h3>
-                  <p class="text-gray-700 leading-relaxed">{table.description}</p>
-                  <div class="mt-4 inline-flex items-center text-sm text-blue-600 font-medium">
-                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+
+                <!-- Content -->
+                <h3 class="text-xl font-bold text-gray-800 mb-3 group-hover:text-blue-700">
+                  {table.name}
+                </h3>
+                <p class="text-gray-600 text-sm mb-4 line-clamp-3">
+                  {table.description}
+                </p>
+
+                <!-- Stats -->
+                <div class="flex items-center justify-between text-xs text-gray-500 mb-4">
+                  <span class="bg-blue-50 text-blue-700 px-2 py-1 rounded-full font-medium">
+                    Early Concept
+                  </span>
+                  <span class="flex items-center">
+                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
                     </svg>
-                    Coming in future releases
+                    Future
+                  </span>
+                </div>
+
+                <!-- Action -->
+                <div class="flex items-center justify-between">
+                  <span class="text-blue-600 font-medium text-sm">
+                    Awaiting Development
+                  </span>
+                  <div class="flex items-center text-xs text-gray-400">
+                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                    </svg>
+                    Idea Stage
                   </div>
                 </div>
               </div>
+              <div class="hidden"></div>
             </div>
           ))
         }
@@ -1912,10 +2455,10 @@ const futureTables = [
     </section>
 
     <!-- Additional Information -->
-    <section class="mt-16 p-8 bg-gradient-to-r from-clif-burgundy to-clif-burgundy-dark text-white rounded-xl shadow-xl">
+    <section class="mt-12 p-6 bg-clif-burgundy text-white rounded-xl shadow-xl">
       <div class="flex items-center justify-between flex-wrap gap-6">
         <div class="flex-1">
-          <h2 class="text-2xl font-bold mb-4">Need Help Understanding CLIF?</h2>
+          <h2 class="text-2xl font-bold mb-6">Need Help Understanding CLIF?</h2>
           <p class="mb-6 text-white/90">
             Our custom AI assistant can help you understand CLIF table structures, field definitions,
             and implementation best practices.
@@ -1927,364 +2470,817 @@ const futureTables = [
           </svg>
         </div>
       </div>
-      <a
-        href="https://chatgpt.com/g/g-h1nk6d3eR-clif-assistant"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="inline-flex items-center px-6 py-3 bg-white text-clif-burgundy font-semibold rounded-lg hover:bg-gray-100 transition-colors"
-      >
-        <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-          <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
-          <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
-        </svg>
-        Chat with CLIF Assistant
-      </a>
+      <div class="flex flex-col sm:flex-row gap-4">
+        <a
+          href="https://chatgpt.com/g/g-h1nk6d3eR-clif-assistant"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center px-6 py-3 bg-white text-clif-burgundy font-semibold rounded-lg hover:bg-gray-100 transition-colors"
+        >
+          <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
+            <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
+          </svg>
+          Chat with CLIF Assistant
+        </a>
+        <button
+          id="guided-tour-btn"
+          class="inline-flex items-center px-6 py-3 bg-white/10 text-white font-semibold rounded-lg hover:bg-white/20 transition-colors border border-white/20"
+        >
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          Take Guided Tour
+        </button>
+      </div>
     </section>
+  </main>
+
+  <!-- Content Layout Wrapper -->
+  <div class="relative flex max-w-7xl mx-auto">
+    <!-- Right Sidebar -->
+    <aside class="hidden lg:block w-64 shrink-0 pt-16 border-l border-gray-200">
+        <div class="p-6">
+          <h3 class="text-lg font-semibold text-gray-800 mb-4">On this page</h3>
+          <nav id="page-nav">
+            <ul class="space-y-2">
+              <li><a href="#erd" class="block py-1 text-gray-600 hover:text-clif-burgundy border-l-2 border-transparent pl-2">ERD</a></li>
+              <li><a href="#overview" class="block py-1 text-gray-600 hover:text-clif-burgundy border-l-2 border-transparent pl-2">Overview</a></li>
+              <li>
+                <a href="#beta-tables" class="block py-1 text-gray-600 hover:text-clif-burgundy border-l-2 border-transparent pl-2">Beta Tables</a>
+                <ul class="pl-4 mt-2 space-y-1 border-l border-gray-200">
+                  {betaTables.map(table => (
+                    <li><a href={`#${table.id}`} class="block py-1 text-sm text-gray-500 hover:text-gray-800">{table.name}</a></li>
+                  ))}
+                </ul>
+              </li>
+              <li>
+                <a href="#concept-tables" class="block py-1 text-gray-600 hover:text-clif-burgundy border-l-2 border-transparent pl-2">Concept Tables</a>
+              </li>
+              <li>
+                <a href="#future-tables" class="block py-1 text-gray-600 hover:text-clif-burgundy border-l-2 border-transparent pl-2">Future Proposed Tables</a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </aside>
   </div>
 
-  <style>
-    /* Utility class for line clamping */
-    .line-clamp-3 {
-      display: -webkit-box;
-      -webkit-line-clamp: 3;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-  </style>
+<style>
+  /* Custom styles for enhanced UI */
+  #page-nav a.active {
+    color: #8A1538; /* clif-burgundy */
+    font-weight: 600;
+    border-left-color: #8A1538;
+  }
+  .collapsible-content {
+    max-height: none;
+    overflow: visible;
+    transition: max-height 0.5s ease-in-out;
+  }
+  .collapsible-content.collapsed {
+    max-height: 0;
+    overflow: hidden;
+  }
+  .prose-sm pre {
+    font-size: 0.8em;
+    padding: 0.8rem;
+  }
+  #erd-container:fullscreen {
+    background-color: #f9fafb;
+  }
+  
+  /* Simple table styles */
+  .overflow-x-auto {
+    overflow-x: auto;
+  }
+  
+  /* Copy button feedback */
+  .copy-csv-btn.copied {
+    color: #059669;
+  }
+</style>
 
-  <!-- JavaScript for interactivity -->
-  <script define:vars={{ betaTables, conceptTables }}>
-    // Make tables data available globally
-    window.betaTables = betaTables;
-    window.conceptTables = conceptTables;
-  </script>
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      // Search functionality
-      const searchToggle = document.getElementById('search-toggle');
-      const searchOverlay = document.getElementById('search-overlay');
-      const searchClose = document.getElementById('search-close');
-      const globalSearch = document.getElementById('global-search');
-      const searchResults = document.getElementById('search-results');
+<script define:vars={{ betaTables, conceptTables }}>
+  // Make tables data available globally
+  window.betaTables = betaTables;
+  window.conceptTables = conceptTables;
+</script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // Active nav link highlighting
+    const sections = document.querySelectorAll('section[id]');
+    const navLinks = document.querySelectorAll('#page-nav a');
 
-      searchToggle?.addEventListener('click', () => {
-        searchOverlay?.classList.remove('hidden');
-        globalSearch?.focus();
-      });
-
-      searchClose?.addEventListener('click', () => {
-        searchOverlay?.classList.add('hidden');
-        globalSearch!.value = '';
-        searchResults!.innerHTML = '';
-      });
-
-      searchOverlay?.addEventListener('click', (e) => {
-        if (e.target === searchOverlay) {
-          searchOverlay.classList.add('hidden');
+    const observer = new IntersectionObserver((entries) => {
+      let visibleSectionId = '';
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          if (!visibleSectionId) { // Only set for the first intersecting section
+            visibleSectionId = entry.target.id;
+          }
         }
       });
 
+      navLinks.forEach(link => {
+        const href = link.getAttribute('href');
+        if (!href) return;
+        const id = href.substring(1);
 
-      // Global search implementation
-      globalSearch?.addEventListener('input', (e) => {
-        const query = (e.target as HTMLInputElement).value.toLowerCase();
-        if (query.length < 2) {
-          searchResults!.innerHTML = '';
+        if (id === visibleSectionId) {
+          link.classList.add('active');
+          // If it's a main link, also activate it
+          const parentLink = link.closest('ul.pl-4')?.previousElementSibling;
+          parentLink?.classList.add('active');
+
+        } else {
+          link.classList.remove('active');
+        }
+      });
+
+    }, { rootMargin: '-20% 0px -70% 0px', threshold: 0.1 });
+
+    sections.forEach(section => {
+      observer.observe(section);
+    });
+
+    // Other scripts from original file...
+    const searchToggle = document.getElementById('search-toggle');
+    const searchOverlay = document.getElementById('search-overlay');
+    const searchClose = document.getElementById('search-close');
+    const globalSearch = document.getElementById('global-search');
+    const searchResults = document.getElementById('search-results');
+
+    searchToggle?.addEventListener('click', () => {
+      searchOverlay?.classList.remove('hidden');
+      globalSearch?.focus();
+    });
+
+    searchClose?.addEventListener('click', () => {
+      searchOverlay?.classList.add('hidden');
+      globalSearch.value = '';
+      searchResults.innerHTML = '';
+    });
+
+    searchOverlay?.addEventListener('click', (e) => {
+      if (e.target === searchOverlay) {
+        searchOverlay.classList.add('hidden');
+      }
+    });
+
+    let currentFilter = 'all';
+    let currentTableFilter = 'all';
+
+    // Enhanced search with advanced filtering
+    const performSearch = () => {
+      const query = globalSearch?.value.toLowerCase() || '';
+      if (query.length < 2) {
+        searchResults.innerHTML = '';
+        return;
+      }
+
+      const results = [];
+      const allTables = [...(window.betaTables || []), ...(window.conceptTables || [])];
+
+      allTables.forEach(table => {
+        const tableType = window.betaTables?.includes(table) ? 'beta' : 'concept';
+        
+        // Apply table type filter
+        if (currentTableFilter !== 'all' && currentTableFilter !== tableType) {
           return;
         }
 
-        const results: any[] = [];
+        // Search in table names and descriptions
+        if (table.name.toLowerCase().includes(query) || table.description.toLowerCase().includes(query)) {
+          results.push({ 
+            type: 'table', 
+            tableType,
+            score: table.name.toLowerCase().includes(query) ? 2 : 1,
+            ...table 
+          });
+        }
 
-        // Search through beta tables
-        const betaTables = window.betaTables || [];
-        betaTables.forEach((table: any) => {
-          if (table.name.toLowerCase().includes(query) || 
-              table.description.toLowerCase().includes(query)) {
-            results.push({
-              type: 'table',
-              category: 'beta',
-              name: table.name,
-              id: table.id,
-              description: table.description.substring(0, 100) + '...'
-            });
-          }
+        // Search in fields
+        if (table.fields) {
+          table.fields.forEach(field => {
+            const matchesFieldFilter = currentFilter === 'all' || 
+              (currentFilter === 'datetime' && field.type?.includes('DATETIME')) ||
+              (currentFilter === 'varchar' && field.type?.includes('VARCHAR')) ||
+              (currentFilter === 'beta' && tableType === 'beta') ||
+              (currentFilter === 'concept' && tableType === 'concept');
 
-          table.fields.forEach((field: any) => {
-            if (field.name.toLowerCase().includes(query) ||
-                field.description.toLowerCase().includes(query)) {
-              results.push({
-                type: 'field',
-                category: 'beta',
-                tableName: table.name,
+            if (!matchesFieldFilter) return;
+
+            const fieldMatches = field.name.toLowerCase().includes(query) || 
+                               field.description.toLowerCase().includes(query) ||
+                               field.type?.toLowerCase().includes(query);
+
+            if (fieldMatches) {
+              results.push({ 
+                type: 'field', 
+                tableType,
+                tableName: table.name, 
                 tableId: table.id,
-                name: field.name,
-                description: field.description.substring(0, 100) + '...'
+                score: field.name.toLowerCase().includes(query) ? 3 : 1,
+                ...field 
               });
             }
           });
-        });
+        }
+      });
 
-        // Display results
-        if (results.length > 0) {
-          searchResults!.innerHTML = results.slice(0, 10).map(result => {
-            if (result.type === 'table') {
-              return `
-                <a href="#${result.id}" class="block p-3 hover:bg-gray-50 rounded-lg transition-colors" onclick="document.getElementById('search-overlay').classList.add('hidden')">
-                  <div class="flex items-start">
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${result.category === 'beta' ? 'bg-yellow-100 text-yellow-800' : 'bg-purple-100 text-purple-800'} mr-3">
-                      ${result.category}
+      // Sort results by relevance score
+      results.sort((a, b) => b.score - a.score);
+
+      if (results.length > 0) {
+        searchResults.innerHTML = results.slice(0, 15).map(result => {
+          const typeColor = result.tableType === 'beta' ? 'orange' : 'purple';
+          const typeIcon = result.tableType === 'beta' ? '⚡' : '💡';
+          
+          return `
+            <a href="#${result.type === 'table' ? result.id : result.tableId}" 
+               class="block p-4 hover:bg-gray-50 rounded-lg border-l-4 border-transparent hover:border-${typeColor}-400 transition-all" 
+               onclick="document.getElementById('search-overlay').classList.add('hidden')">
+              <div class="flex items-start justify-between">
+                <div class="flex-1">
+                  <h4 class="font-semibold text-gray-900 flex items-center">
+                    <span class="mr-2">${typeIcon}</span>
+                    ${result.name}
+                    ${result.type === 'field' ? `<span class="ml-2 text-xs text-gray-500">(field)</span>` : ''}
+                  </h4>
+                  <p class="text-sm text-gray-600 mt-1">
+                    ${result.type === 'field' 
+                      ? `${result.type ? result.type + ' field in ' : 'Field in '}${result.tableName}` 
+                      : result.description.substring(0, 120) + (result.description.length > 120 ? '...' : '')
+                    }
+                  </p>
+                  ${result.type === 'field' && result.type ? `
+                    <span class="inline-block mt-2 px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded font-mono">
+                      ${result.type}
                     </span>
-                    <div>
-                      <h4 class="font-semibold text-gray-900">${result.name}</h4>
-                      <p class="text-sm text-gray-600 mt-1">${result.description}</p>
-                    </div>
-                  </div>
-                </a>
-              `;
-            } else {
-              return `
-                <a href="#${result.tableId}" class="block p-3 hover:bg-gray-50 rounded-lg transition-colors" onclick="document.getElementById('search-overlay').classList.add('hidden')">
-                  <div class="flex items-start">
-                    <svg class="w-5 h-5 text-gray-400 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                    </svg>
-                    <div>
-                      <h4 class="font-semibold text-gray-900">${result.name}</h4>
-                      <p class="text-sm text-gray-500">Field in ${result.tableName}</p>
-                      <p class="text-sm text-gray-600 mt-1">${result.description}</p>
-                    </div>
-                  </div>
-                </a>
-              `;
-            }
-          }).join('');
-        } else {
-          searchResults!.innerHTML = '<p class="p-4 text-gray-500 text-center">No results found</p>';
-        }
-      });
+                  ` : ''}
+                </div>
+                <span class="ml-3 px-2 py-1 bg-${typeColor}-100 text-${typeColor}-800 text-xs rounded-full font-medium">
+                  ${result.tableType.toUpperCase()}
+                </span>
+              </div>
+            </a>
+          `;
+        }).join('');
+      } else {
+        searchResults.innerHTML = `
+          <div class="text-center py-8">
+            <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            <p class="text-gray-500 text-lg font-medium">No results found</p>
+            <p class="text-gray-400 text-sm mt-2">Try adjusting your search terms or filters</p>
+          </div>
+        `;
+      }
+    };
 
-      // Collapse/expand functionality
-      const collapseToggles = document.querySelectorAll('.collapse-toggle');
-      const expandAllBtn = document.getElementById('expand-all-beta');
-      let allExpanded = true;
+    globalSearch?.addEventListener('input', performSearch);
 
-      collapseToggles.forEach(toggle => {
-        toggle.addEventListener('click', () => {
-          const content = toggle.closest('[data-table-section]')?.querySelector('.collapsible-content');
-          const icon = toggle.querySelector('svg');
-          
-          if (content?.classList.contains('hidden')) {
-            content.classList.remove('hidden');
-            icon?.classList.remove('rotate-180');
-          } else {
-            content?.classList.add('hidden');
-            icon?.classList.add('rotate-180');
-          }
-        });
-      });
-
-      expandAllBtn?.addEventListener('click', () => {
-        const contents = document.querySelectorAll('.collapsible-content');
-        const icons = document.querySelectorAll('.collapse-toggle svg');
+    // Enhanced filter system
+    document.querySelectorAll('.search-filter').forEach(btn => {
+      btn.addEventListener('click', () => {
+        // Update active state
+        document.querySelectorAll('.search-filter').forEach(b => b.classList.remove('bg-blue-600', 'text-white'));
+        btn.classList.add('bg-blue-600', 'text-white');
         
-        if (allExpanded) {
-          contents.forEach(content => content.classList.add('hidden'));
-          icons.forEach(icon => icon.classList.add('rotate-180'));
-          expandAllBtn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path></svg>Collapse All';
-        } else {
-          contents.forEach(content => content.classList.remove('hidden'));
-          icons.forEach(icon => icon.classList.remove('rotate-180'));
-          expandAllBtn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>Expand All';
-        }
-        allExpanded = !allExpanded;
-      });
-
-
-      // Smooth scroll for navigation links
-      document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function (e) {
-          e.preventDefault();
-          const target = document.querySelector(this.getAttribute('href')!);
-          if (target) {
-            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }
-        });
-      });
-
-      // Active section highlighting
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            const id = entry.target.getAttribute('id');
-            const navLink = document.querySelector(`nav a[href="#${id}"]`);
-            
-            if (entry.isIntersecting) {
-              navLink?.classList.add('text-clif-burgundy', 'font-semibold');
-              navLink?.classList.remove('text-gray-600');
-            } else {
-              navLink?.classList.remove('text-clif-burgundy', 'font-semibold');
-              navLink?.classList.add('text-gray-600');
-            }
-          });
-        },
-        { rootMargin: '-20% 0px -60% 0px' }
-      );
-
-      document.querySelectorAll('section[id]').forEach((section) => {
-        observer.observe(section);
-      });
-
-      // Concept table click handlers
-      const conceptTableCards = document.querySelectorAll('.concept-table-card');
-      conceptTableCards.forEach(card => {
-        card.addEventListener('click', () => {
-          const tableId = card.getAttribute('data-table-id');
-          const conceptTables = window.conceptTables || [];
-          const table = conceptTables.find(t => t.id === tableId);
-          
-          if (table) {
-            showConceptTableModal(table);
-          }
-        });
+        // Update filter
+        currentTableFilter = btn.getAttribute('data-filter');
+        performSearch();
       });
     });
 
-    // Modal function for concept tables (reused from ERD component)
-    function showConceptTableModal(table) {
-      const colors = {
-        concept: '#a855f7'
-      };
-
-      // Create modal overlay
-      const modalOverlay = document.createElement('div');
-      modalOverlay.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        z-index: 1000;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-      `;
-
-      const modalContent = document.createElement('div');
-      modalContent.style.cssText = `
-        background: white;
-        border-radius: 12px;
-        max-width: 900px;
-        max-height: 90vh;
-        width: 100%;
-        overflow-y: auto;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-      `;
-
-      modalContent.innerHTML = `
-        <div style="background: ${colors.concept}; padding: 20px; color: white; position: sticky; top: 0; z-index: 10;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h2 style="margin: 0; font-size: 24px; font-weight: bold;">${table.name} - Detailed Specifications</h2>
-            <button id="closeConceptModal" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 24px; cursor: pointer; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">×</button>
-          </div>
-          <p style="margin: 8px 0 0 0; opacity: 0.9;">${table.description}</p>
-        </div>
-        
-        <div style="padding: 24px;">
-          <h3 style="margin: 0 0 16px 0; color: #374151; font-size: 18px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">Field Specifications</h3>
-          
-          <div style="overflow-x: auto;">
-            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-              <thead>
-                <tr style="background: #f8f9fa;">
-                  <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6; font-weight: 600; color: #495057;">Field Name</th>
-                  <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6; font-weight: 600; color: #495057;">Type</th>
-                  <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6; font-weight: 600; color: #495057;">Description</th>
-                  <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6; font-weight: 600; color: #495057;">Values/Restrictions</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${table.fields.map((field, index) => `
-                  <tr style="border-bottom: 1px solid #e9ecef; ${index % 2 === 0 ? 'background: #f8f9fa;' : ''}">
-                    <td style="padding: 12px; font-family: 'Monaco', monospace; font-weight: 500; color: #212529;">${field.name}</td>
-                    <td style="padding: 12px; font-family: 'Monaco', monospace; color: #6c757d; background: #e9ecef; border-radius: 4px; font-size: 12px; margin: 2px;">${field.type}</td>
-                    <td style="padding: 12px; color: #495057; line-height: 1.4;">${field.description || 'No description'}</td>
-                    <td style="padding: 12px; color: #6c757d; font-size: 12px;">
-                      ${field.values ? 
-                        `<div style="background: #e3f2fd; padding: 6px; border-radius: 4px; margin-bottom: 4px;"><strong>Values:</strong> ${field.values.join(', ')}</div>` : 
-                        ''
-                      }
-                      ${field.restrictions ? 
-                        `<div style="background: #fff3e0; padding: 6px; border-radius: 4px;"><strong>Restrictions:</strong> ${field.restrictions}</div>` : 
-                        ''
-                      }
-                    </td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-
-          ${table.notes && table.notes.length > 0 ? `
-            <div style="margin-top: 24px;">
-              <h3 style="margin: 0 0 12px 0; color: #374151; font-size: 16px;">Implementation Notes</h3>
-              <ul style="margin: 0; padding-left: 20px; color: #495057;">
-                ${table.notes.map(note => `<li style="margin-bottom: 8px; line-height: 1.4;">${note}</li>`).join('')}
-              </ul>
-            </div>
-          ` : ''}
-
-          ${table.example ? `
-            <div style="margin-top: 24px;">
-              <h3 style="margin: 0 0 12px 0; color: #374151; font-size: 16px;">Example Data</h3>
-              <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; overflow-x: auto; font-family: 'Monaco', monospace; font-size: 12px; line-height: 1.6; border: 1px solid #dee2e6;">
-                <pre style="margin: 0; white-space: pre-wrap;">${table.example}</pre>
-              </div>
-            </div>
-          ` : ''}
-        </div>
-      `;
-
-      modalOverlay.appendChild(modalContent);
-      document.body.appendChild(modalOverlay);
-
-      // Close modal handlers
-      const closeBtn = modalContent.querySelector('#closeConceptModal');
-      const closeModal = () => {
-        document.body.removeChild(modalOverlay);
-      };
-
-      closeBtn.addEventListener('click', closeModal);
-      modalOverlay.addEventListener('click', (e) => {
-        if (e.target === modalOverlay) closeModal();
+    // Quick search suggestions
+    document.querySelectorAll('.quick-search').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const query = btn.getAttribute('data-query');
+        if (globalSearch) {
+          globalSearch.value = query;
+          performSearch();
+        }
       });
+    });
 
-      // Escape key handler
-      const escHandler = (e) => {
-        if (e.key === 'Escape') {
-          closeModal();
-          document.removeEventListener('keydown', escHandler);
+    const collapseToggles = document.querySelectorAll('.collapse-toggle');
+    collapseToggles.forEach(toggle => {
+      toggle.addEventListener('click', () => {
+        const content = toggle.closest('[data-table-section]')?.querySelector('.collapsible-content');
+        const icon = toggle.querySelector('svg');
+        content.classList.toggle('collapsed');
+        icon.classList.toggle('rotate-180');
+      });
+    });
+
+    const expandAllBtn = document.getElementById('expand-all-beta');
+    if(expandAllBtn) {
+      let allExpanded = false;
+      expandAllBtn.addEventListener('click', () => {
+        allExpanded = !allExpanded;
+        const betaTableSections = document.querySelectorAll('#beta-tables [data-table-section]');
+        betaTableSections.forEach(section => {
+          const content = section.querySelector('.collapsible-content');
+          const icon = section.querySelector('.collapse-toggle svg');
+          if (allExpanded) {
+            content.classList.remove('collapsed');
+            icon.classList.remove('rotate-180');
+          } else {
+            content.classList.add('collapsed');
+            icon.classList.add('rotate-180');
+          }
+        });
+        expandAllBtn.innerHTML = allExpanded ? 'Collapse All Details' : 'Expand All Details';
+      });
+    }
+
+    // Modal functionality removed - all details are now displayed directly on the page
+
+    // Anchor links now use default browser behavior (no smooth scrolling)
+
+    // Tables are now rendered statically - no JavaScript needed
+
+    // Copy to CSV functionality
+    const copyToCSV = (markdownTable) => {
+      const lines = markdownTable.trim().split('\n');
+      if (lines.length < 3) return '';
+
+      // Get headers
+      const headers = lines[0].split('|').map(h => h.trim()).filter(h => h);
+      let csv = headers.join(',') + '\n';
+
+      // Get data rows
+      for (let i = 2; i < lines.length; i++) {
+        const cells = lines[i].split('|').map(c => c.trim()).filter(c => c !== '');
+        if (cells.length === headers.length) {
+          // Escape cells that contain commas
+          const escapedCells = cells.map(cell => {
+            if (cell.includes(',') || cell.includes('"') || cell.includes('\n')) {
+              return `"${cell.replace(/"/g, '""')}"`;
+            }
+            return cell;
+          });
+          csv += escapedCells.join(',') + '\n';
+        }
+      }
+
+      return csv;
+    };
+
+    // Handle copy button clicks - simplified version
+    document.querySelectorAll('.copy-csv-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tableId = btn.getAttribute('data-table-id');
+        
+        // Find the table in our data
+        const table = [...(window.betaTables || []), ...(window.conceptTables || [])].find(t => t.id === tableId);
+        
+        if (table && table.example) {
+          const csv = copyToCSV(table.example);
+          
+          // Copy to clipboard
+          navigator.clipboard.writeText(csv).then(() => {
+            // Visual feedback
+            btn.classList.add('copied');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = `
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+              Copied!
+            `;
+            
+            setTimeout(() => {
+              btn.classList.remove('copied');
+              btn.innerHTML = originalHtml;
+            }, 2000);
+          }).catch(err => {
+            // eslint-disable-next-line no-console
+            console.error('Failed to copy:', err);
+          });
+        }
+      });
+    });
+
+    // Enhanced hover preview system for table cards
+    document.querySelectorAll('[data-table-id]').forEach(card => {
+      let hoverTimeout;
+      let previewElement;
+      
+      const showPreview = (table, type) => {
+        if (previewElement) return; // Don't show multiple previews
+        
+        previewElement = document.createElement('div');
+        previewElement.className = 'fixed z-40 bg-white rounded-lg shadow-xl border p-4 max-w-sm pointer-events-none';
+        previewElement.innerHTML = `
+          <div class="flex items-center mb-2">
+            <h4 class="font-bold text-gray-900 mr-2">${table.name}</h4>
+            <span class="text-xs bg-${type === 'beta' ? 'orange' : type === 'concept' ? 'purple' : 'blue'}-100 text-${type === 'beta' ? 'orange' : type === 'concept' ? 'purple' : 'blue'}-800 px-2 py-1 rounded-full">
+              ${table.fields ? table.fields.length + ' fields' : 'In development'}
+            </span>
+          </div>
+          <p class="text-sm text-gray-600 mb-3">${table.description.substring(0, 120)}${table.description.length > 120 ? '...' : ''}</p>
+          ${table.fields && table.fields.length > 0 ? `
+            <div class="text-xs text-gray-500">
+              <strong>Key fields:</strong> ${table.fields.slice(0, 3).map(f => f.name).join(', ')}${table.fields.length > 3 ? '...' : ''}
+            </div>
+          ` : ''}
+        `;
+        
+        document.body.appendChild(previewElement);
+        
+        // Position the preview
+        const updatePosition = (e) => {
+          const previewRect = previewElement.getBoundingClientRect();
+          
+          let left = e.clientX + 15;
+          let top = e.clientY - 10;
+          
+          // Keep preview on screen
+          if (left + previewRect.width > window.innerWidth) {
+            left = e.clientX - previewRect.width - 15;
+          }
+          if (top + previewRect.height > window.innerHeight) {
+            top = e.clientY - previewRect.height + 10;
+          }
+          
+          previewElement.style.left = left + 'px';
+          previewElement.style.top = top + 'px';
+        };
+        
+        card.addEventListener('mousemove', updatePosition);
+        updatePosition({ clientX: card.getBoundingClientRect().right, clientY: card.getBoundingClientRect().top });
+      };
+      
+      const hidePreview = () => {
+        if (previewElement) {
+          previewElement.remove();
+          previewElement = null;
         }
       };
-      document.addEventListener('keydown', escHandler);
-    }
+      
+      card.addEventListener('mouseenter', () => {
+        hoverTimeout = setTimeout(() => {
+          const tableId = card.getAttribute('data-table-id');
+          const betaTable = window.betaTables?.find(t => t.id === tableId);
+          const conceptTable = window.conceptTables?.find(t => t.id === tableId);
+          
+          if (betaTable) {
+            showPreview(betaTable, 'beta');
+          } else if (conceptTable) {
+            showPreview(conceptTable, 'concept');
+          }
+        }, 500); // Show after 500ms hover
+      });
+      
+      card.addEventListener('mouseleave', () => {
+        clearTimeout(hoverTimeout);
+        hidePreview();
+      });
+    });
+
+    // Educational Tooltips System
+    const createTooltip = (text, position = 'top') => {
+      const tooltip = document.createElement('div');
+      tooltip.className = `absolute z-50 max-w-xs px-3 py-2 text-sm text-white bg-gray-900 rounded-lg shadow-lg pointer-events-none opacity-0 transition-opacity duration-200`;
+      tooltip.textContent = text;
+      
+      // Position the tooltip
+      const positionClasses = {
+        top: '-top-2 left-1/2 transform -translate-x-1/2 -translate-y-full',
+        bottom: '-bottom-2 left-1/2 transform -translate-x-1/2 translate-y-full',
+        left: 'top-1/2 -left-2 transform -translate-x-full -translate-y-1/2',
+        right: 'top-1/2 -right-2 transform translate-x-full -translate-y-1/2'
+      };
+      
+      tooltip.className += ` ${positionClasses[position]}`;
+      return tooltip;
+    };
+
+    // Initialize tooltips
+    document.querySelectorAll('.tooltip-trigger').forEach(element => {
+      const tooltipText = element.getAttribute('data-tooltip');
+      const position = element.getAttribute('data-tooltip-position') || 'top';
+      
+      if (!tooltipText) return;
+      
+      let tooltip;
+      let timeout;
+      
+      element.addEventListener('mouseenter', () => {
+        timeout = setTimeout(() => {
+          tooltip = createTooltip(tooltipText, position);
+          element.style.position = 'relative';
+          element.appendChild(tooltip);
+          
+          requestAnimationFrame(() => {
+            tooltip.style.opacity = '1';
+          });
+        }, 300);
+      });
+      
+      element.addEventListener('mouseleave', () => {
+        clearTimeout(timeout);
+        if (tooltip) {
+          tooltip.style.opacity = '0';
+          setTimeout(() => {
+            if (tooltip && tooltip.parentNode) {
+              tooltip.parentNode.removeChild(tooltip);
+            }
+            tooltip = null;
+          }, 200);
+        }
+      });
+    });
+
+    // Guided Tour System
+    const tourSteps = [
+      {
+        target: '#erd-container',
+        title: 'Entity Relationship Diagram',
+        content: 'This ERD shows how CLIF tables connect to each other. Click the fullscreen button to explore the relationships in detail.',
+        position: 'bottom'
+      },
+      {
+        target: '[data-tour-step="overview-principles"]',
+        title: 'CLIF Core Principles',
+        content: 'These principles guide the CLIF format design. Hover over highlighted terms to learn more about each concept.',
+        position: 'top'
+      },
+      {
+        target: '#beta-tables',
+        title: 'Beta Tables - Production Ready',
+        content: 'Beta tables are ready for implementation. They have complete field definitions and are being used across consortium institutions.',
+        position: 'top'
+      },
+      {
+        target: '#concept-tables',
+        title: 'Concept Tables - In Development',
+        content: 'Concept tables are actively being designed. Field structures may change as we refine the specifications.',
+        position: 'top'
+      },
+      {
+        target: '#future-tables',
+        title: 'Future Tables - Ideas Stage',
+        content: 'These are early-stage ideas without defined structures. They represent potential future additions to CLIF.',
+        position: 'top'
+      },
+      {
+        target: '#search-toggle',
+        title: 'Smart Search',
+        content: 'Use the search feature to quickly find tables, fields, or concepts. It includes advanced filtering by table type and field types.',
+        position: 'bottom'
+      }
+    ];
+
+    let currentStep = 0;
+    let tourOverlay;
+    let tourTooltip;
+
+    const createTourOverlay = () => {
+      const overlay = document.createElement('div');
+      overlay.className = 'fixed inset-0 bg-black/50 z-40 pointer-events-none';
+      overlay.innerHTML = `
+        <div class="absolute inset-0 pointer-events-none" style="
+          background: radial-gradient(circle 150px at var(--spotlight-x, 50%) var(--spotlight-y, 50%), 
+          transparent 0%, 
+          transparent 150px, 
+          rgba(0,0,0,0.7) 200px);
+        "></div>
+      `;
+      return overlay;
+    };
+
+    const createTourTooltip = (step) => {
+      const tooltip = document.createElement('div');
+      tooltip.className = 'fixed z-50 bg-white rounded-lg shadow-2xl max-w-sm p-6 pointer-events-auto';
+      tooltip.innerHTML = `
+        <div class="mb-4">
+          <h3 class="text-lg font-bold text-gray-900 mb-2">${step.title}</h3>
+          <p class="text-gray-600">${step.content}</p>
+        </div>
+        <div class="flex items-center justify-between">
+          <div class="text-sm text-gray-500">
+            Step ${currentStep + 1} of ${tourSteps.length}
+          </div>
+          <div class="flex space-x-2">
+            ${currentStep > 0 ? '<button id="tour-prev" class="px-3 py-1 text-gray-600 hover:text-gray-800 text-sm">Previous</button>' : ''}
+            <button id="tour-skip" class="px-3 py-1 text-gray-500 hover:text-gray-700 text-sm">Skip Tour</button>
+            ${currentStep < tourSteps.length - 1 ? 
+              '<button id="tour-next" class="px-4 py-2 bg-clif-burgundy text-white rounded hover:bg-clif-burgundy-dark text-sm">Next</button>' :
+              '<button id="tour-finish" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm">Finish</button>'
+            }
+          </div>
+        </div>
+      `;
+      return tooltip;
+    };
+
+    const positionTourTooltip = (tooltip, target, position) => {
+      const targetRect = target.getBoundingClientRect();
+      const tooltipRect = tooltip.getBoundingClientRect();
+      
+      let left, top;
+      
+      switch (position) {
+        case 'top':
+          left = targetRect.left + (targetRect.width / 2) - (tooltipRect.width / 2);
+          top = targetRect.top - tooltipRect.height - 20;
+          break;
+        case 'bottom':
+          left = targetRect.left + (targetRect.width / 2) - (tooltipRect.width / 2);
+          top = targetRect.bottom + 20;
+          break;
+        case 'left':
+          left = targetRect.left - tooltipRect.width - 20;
+          top = targetRect.top + (targetRect.height / 2) - (tooltipRect.height / 2);
+          break;
+        case 'right':
+          left = targetRect.right + 20;
+          top = targetRect.top + (targetRect.height / 2) - (tooltipRect.height / 2);
+          break;
+        default:
+          left = targetRect.left + (targetRect.width / 2) - (tooltipRect.width / 2);
+          top = targetRect.bottom + 20;
+      }
+      
+      // Keep tooltip on screen
+      left = Math.max(20, Math.min(left, window.innerWidth - tooltipRect.width - 20));
+      top = Math.max(20, Math.min(top, window.innerHeight - tooltipRect.height - 20));
+      
+      tooltip.style.left = left + 'px';
+      tooltip.style.top = top + 'px';
+    };
+
+    const showTourStep = (stepIndex) => {
+      const step = tourSteps[stepIndex];
+      const target = document.querySelector(step.target);
+      
+      if (!target) {
+        // eslint-disable-next-line no-console
+        console.warn('Tour target not found:', step.target);
+        return;
+      }
+      
+      // Remove existing tooltip
+      if (tourTooltip) {
+        tourTooltip.remove();
+      }
+      
+      // Create new tooltip
+      tourTooltip = createTourTooltip(step);
+      document.body.appendChild(tourTooltip);
+      
+      // Position tooltip
+      positionTourTooltip(tourTooltip, target, step.position);
+      
+      // Update spotlight position
+      const targetRect = target.getBoundingClientRect();
+      const spotlightX = ((targetRect.left + targetRect.width / 2) / window.innerWidth) * 100;
+      const spotlightY = ((targetRect.top + targetRect.height / 2) / window.innerHeight) * 100;
+      
+      if (tourOverlay) {
+        tourOverlay.style.setProperty('--spotlight-x', spotlightX + '%');
+        tourOverlay.style.setProperty('--spotlight-y', spotlightY + '%');
+      }
+      
+      // Scroll target into view
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      
+      // Add event listeners
+      const nextBtn = tourTooltip.querySelector('#tour-next');
+      const prevBtn = tourTooltip.querySelector('#tour-prev');
+      const skipBtn = tourTooltip.querySelector('#tour-skip');
+      const finishBtn = tourTooltip.querySelector('#tour-finish');
+      
+      if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+          currentStep++;
+          showTourStep(currentStep);
+        });
+      }
+      
+      if (prevBtn) {
+        prevBtn.addEventListener('click', () => {
+          currentStep--;
+          showTourStep(currentStep);
+        });
+      }
+      
+      if (skipBtn) {
+        skipBtn.addEventListener('click', endTour);
+      }
+      
+      if (finishBtn) {
+        finishBtn.addEventListener('click', endTour);
+      }
+    };
+
+    const startTour = () => {
+      currentStep = 0;
+      tourOverlay = createTourOverlay();
+      document.body.appendChild(tourOverlay);
+      showTourStep(currentStep);
+    };
+
+    const endTour = () => {
+      if (tourOverlay) {
+        tourOverlay.remove();
+        tourOverlay = null;
+      }
+      if (tourTooltip) {
+        tourTooltip.remove();
+        tourTooltip = null;
+      }
+      currentStep = 0;
+    };
+
+    // Tour button handler
+    document.getElementById('guided-tour-btn')?.addEventListener('click', startTour);
+
+    // Close tour on escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && tourOverlay) {
+        endTour();
+      }
+    });
+  });
   </script>
 
   <style>
     /* Custom styles for enhanced UI */
-    .collapsible-content {
-      transition: all 0.3s ease-in-out;
-    }
-
-    .collapsible-content.hidden {
-      opacity: 0;
-      max-height: 0;
-      overflow: hidden;
-    }
+    /* Collapsible content transitions are defined in the main style block above */
 
     .rotate-180 {
       transform: rotate(180deg);
+    }
+
+    /* Filter button styles */
+    .filter-btn {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      border-radius: 0.5rem;
+      border: 1px solid #d1d5db;
+      background-color: white;
+      color: #6b7280;
+      transition: all 0.2s ease-in-out;
+      cursor: pointer;
+    }
+
+    .filter-btn:hover {
+      background-color: #f3f4f6;
+      border-color: #9ca3af;
+    }
+
+    .filter-btn.active {
+      background-color: #8A1538;
+      color: white;
+      border-color: #8A1538;
+    }
+
+    /* Enhanced search result styling */
+    .search-result-item {
+      transition: all 0.2s ease-in-out;
+    }
+
+    .search-result-item:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Tooltip styling */
+    .tooltip-trigger {
+      cursor: help;
+      text-decoration: underline;
+      text-decoration-style: dotted;
+      text-decoration-color: #6b7280;
+    }
+
+    .tooltip-trigger:hover {
+      text-decoration-color: #8A1538;
+    }
+
+    /* Tour overlay styling */
+    .tour-spotlight {
+      transition: all 0.3s ease-in-out;
+    }
+
+    /* Educational highlight effect */
+    .educational-highlight {
+      background: linear-gradient(120deg, transparent 0%, rgba(138, 21, 56, 0.1) 50%, transparent 100%);
+      background-size: 200% 100%;
+      animation: highlight-sweep 2s ease-in-out;
+    }
+
+    @keyframes highlight-sweep {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
     }
 
     /* Improve table scroll on mobile */
@@ -2308,28 +3304,9 @@ const futureTables = [
     }
 
     /* Layout stability and performance fixes */
-    nav.sticky {
-      contain: layout style paint;
-      transform: translateZ(0);
-    }
+    /* Navigation optimization removed for simpler performance */
     
-    /* Prevent layout shift on navigation hover */
-    nav a, nav button {
-      will-change: color;
-      transform: translateZ(0);
-    }
-    
-    /* Force layer creation for smooth transitions */
-    .transition-colors {
-      will-change: color;
-      backface-visibility: hidden;
-    }
-    
-    /* Prevent icon flutter */
-    svg {
-      will-change: auto;
-      backface-visibility: hidden;
-    }
+    /* Performance optimizations removed for simplicity */
     
     /* Print styles */
     @media print {

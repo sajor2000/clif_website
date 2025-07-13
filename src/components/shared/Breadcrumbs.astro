@@ -21,7 +21,7 @@ const defaultItems: BreadcrumbItem[] = [{ label: 'Home', href: '/' }];
 if (items.length === 0 && pathSegments.length > 0) {
   let currentHref = '';
 
-  pathSegments.forEach((segment, index) => {
+  pathSegments.forEach((segment) => {
     currentHref += `/${segment}`;
 
     // Convert URL segment to readable label

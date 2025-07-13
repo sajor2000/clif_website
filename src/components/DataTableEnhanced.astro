@@ -250,6 +250,7 @@ const tableId = `table-${id}`;
               window.toastManager.success('CSV exported successfully');
             }
           } catch (error) {
+            // eslint-disable-next-line no-console
             console.error('Export failed:', error);
             if (window.toastManager) {
               window.toastManager.error('Failed to export CSV');
@@ -282,6 +283,7 @@ const tableId = `table-${id}`;
               window.toastManager.success('JSON exported successfully');
             }
           } catch (error) {
+            // eslint-disable-next-line no-console
             console.error('Export failed:', error);
             if (window.toastManager) {
               window.toastManager.error('Failed to export JSON');
@@ -343,7 +345,7 @@ const tableId = `table-${id}`;
     const rows = table.querySelectorAll('tbody tr');
     const data = Array.from(rows).map((row) => {
       const cols = row.querySelectorAll('td');
-      const rowData: any = {};
+      const rowData: Record<string, string | null> = {};
 
       cols.forEach((col, index) => {
         let value = col.textContent?.trim() || '';

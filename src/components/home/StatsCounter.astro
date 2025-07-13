@@ -22,46 +22,68 @@ const { value, label, prefix = '', suffix = '', icon } = Astro.props;
 
 <script>
   // Animate counters when they come into view
-  const observerOptions = {
-    threshold: 0.5,
-    rootMargin: '0px',
-  };
 
   const animateCounter = (element: Element) => {
     const target = parseInt(element.getAttribute('data-target') || '0');
     const valueElement = element.querySelector('.counter-value');
     if (!valueElement) return;
 
-    let current = 0;
-    const increment = target / 50; // 50 steps
     const duration = 2000; // 2 seconds
-    const stepTime = duration / 50;
+    const startTime = performance.now();
+    let animationId: number;
 
-    const updateCounter = () => {
-      current += increment;
-      if (current < target) {
-        valueElement.textContent = Math.floor(current).toLocaleString();
-        setTimeout(updateCounter, stepTime);
+    const updateCounter = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      // Use easing function for smoother animation
+      const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+      const current = Math.floor(target * easeOutQuart);
+      
+      valueElement.textContent = current.toLocaleString();
+      
+      if (progress < 1) {
+        animationId = requestAnimationFrame(updateCounter);
       } else {
         valueElement.textContent = target.toLocaleString();
+        // Reset will-change after animation
+        element.style.willChange = 'auto';
       }
     };
 
-    updateCounter();
+    // Set will-change for animation
+    element.style.willChange = 'contents';
+    animationId = requestAnimationFrame(updateCounter);
+    
+    // Store animation ID for cleanup
+    (element as HTMLElement & { _animationId?: number })._animationId = animationId;
   };
 
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting) {
-        animateCounter(entry.target);
-        observer.unobserve(entry.target);
+  // Listen for centralized counter visibility events
+  const handleCounterVisible = (event: CustomEvent) => {
+    const element = event.detail.element;
+    if (element && element.hasAttribute('data-counter')) {
+      animateCounter(element);
+    }
+  };
+
+  // Cleanup function for animations
+  const cleanup = () => {
+    const counters = document.querySelectorAll('[data-counter]');
+    counters.forEach((counter) => {
+      const counterEl = counter as HTMLElement & { _animationId?: number };
+      if (counterEl._animationId) {
+        cancelAnimationFrame(counterEl._animationId);
       }
     });
-  }, observerOptions);
+  };
 
-  // Observe all counter elements
-  document.addEventListener('DOMContentLoaded', () => {
-    const counters = document.querySelectorAll('[data-counter]');
-    counters.forEach((counter) => observer.observe(counter));
+  // Listen for centralized events
+  window.addEventListener('counterVisible', handleCounterVisible);
+  
+  // Cleanup on page unload
+  window.addEventListener('beforeunload', () => {
+    cleanup();
+    window.removeEventListener('counterVisible', handleCounterVisible);
   });
 </script>

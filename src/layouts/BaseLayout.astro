@@ -129,34 +129,69 @@ const shouldShowBreadcrumbs = showBreadcrumbs && !isHomepage;
     {isDev && <DevWebVitalsDisplay />}
     
     <script>
-      // Scroll-triggered animations with performance optimizations
+      // Centralized Intersection Observer for better performance
       document.addEventListener('DOMContentLoaded', () => {
-        const observerOptions = {
-          threshold: 0.1,
-          rootMargin: '0px 0px -50px 0px'
-        };
-
-        const observer = new IntersectionObserver((entries) => {
+        const performanceObserver = new IntersectionObserver((entries) => {
           entries.forEach(entry => {
             if (entry.isIntersecting) {
-              // Use requestAnimationFrame for smoother animations
               requestAnimationFrame(() => {
-                entry.target.classList.add('in-view');
-                // Stop observing after animation triggers
-                observer.unobserve(entry.target);
+                const target = entry.target;
+                
+                // Handle scroll sections
+                if (target.classList.contains('scroll-section')) {
+                  target.classList.add('in-view');
+                }
+                
+                // Handle progress bars
+                if (target.classList.contains('progress-animate')) {
+                  target.classList.add('in-view');
+                }
+                
+                // Handle counters
+                if (target.hasAttribute('data-counter')) {
+                  const event = new CustomEvent('counterVisible', { detail: { element: target } });
+                  window.dispatchEvent(event);
+                }
+                
+                // Handle lazy images
+                if (target.tagName === 'IMG' && target.hasAttribute('loading')) {
+                  target.classList.add('loaded');
+                }
+                
+                // Stop observing after animation triggers (except for reusable elements)
+                if (!target.classList.contains('reusable-observer')) {
+                  performanceObserver.unobserve(target);
+                }
               });
             }
           });
-        }, observerOptions);
-
-        // Observe all scroll-section elements
-        document.querySelectorAll('.scroll-section').forEach(section => {
-          observer.observe(section);
+        }, {
+          threshold: [0, 0.1, 0.5],
+          rootMargin: '0px 0px -50px 0px'
         });
 
-        // Progress bar animations for cohort dashboard
-        document.querySelectorAll('.progress-animate').forEach(bar => {
-          observer.observe(bar);
+        // Auto-discover and observe elements
+        const observeElements = () => {
+          const selectors = [
+            '.scroll-section',
+            '.progress-animate', 
+            '[data-counter]',
+            'img[loading="lazy"]'
+          ];
+          
+          selectors.forEach(selector => {
+            document.querySelectorAll(selector).forEach(element => {
+              performanceObserver.observe(element);
+            });
+          });
+        };
+
+        // Initial observation
+        observeElements();
+        
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+          performanceObserver.disconnect();
         });
       });
 

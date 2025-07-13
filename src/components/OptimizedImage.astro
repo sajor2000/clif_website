@@ -44,12 +44,7 @@ const generateImageSources = (imagePath: string) => {
 
 const { webpSrc, fallbackSrc: generatedFallback } = generateImageSources(src);
 
-// Add blur placeholder for better UX
-const placeholderStyle = `
-  background-image: linear-gradient(to right, #f3f4f6 0%, #e5e7eb 50%, #f3f4f6 100%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-`;
+// Note: Placeholder styles are defined in CSS below
 ---
 
 <picture>

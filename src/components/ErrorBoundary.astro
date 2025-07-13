@@ -62,6 +62,7 @@ const { fallback = 'Something went wrong. Please try again later.' } = Astro.pro
     }
 
     handleError(error) {
+      // eslint-disable-next-line no-console
       console.error('Error caught by boundary:', error);
 
       // Replace content with fallback
@@ -97,6 +98,7 @@ const { fallback = 'Something went wrong. Please try again later.' } = Astro.pro
           });
         }
       } catch (sentryError) {
+        // eslint-disable-next-line no-console
         console.error('Failed to report error to Sentry:', sentryError);
       }
     }
