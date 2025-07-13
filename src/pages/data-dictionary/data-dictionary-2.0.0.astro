@@ -1419,6 +1419,7 @@ const futureTables = [
         <div class="flex items-center space-x-6 flex-shrink-0">
           <h2 class="text-lg font-semibold text-gray-800 whitespace-nowrap">CLIF 2.0.0</h2>
           <div class="hidden md:flex items-center space-x-6 flex-shrink-0">
+            <a href="#erd" class="text-sm text-gray-600 hover:text-clif-burgundy transition-colors duration-150 whitespace-nowrap">ERD</a>
             <a href="#beta-tables" class="text-sm text-gray-600 hover:text-clif-burgundy transition-colors duration-150 whitespace-nowrap">Beta Tables (9)</a>
             <a href="#concept-tables" class="text-sm text-gray-600 hover:text-clif-burgundy transition-colors duration-150 whitespace-nowrap">Concept Tables (16)</a>
             <a href="#future-tables" class="text-sm text-gray-600 hover:text-clif-burgundy transition-colors duration-150 whitespace-nowrap">Future Tables (1)</a>
@@ -1470,8 +1471,8 @@ const futureTables = [
 
   <div class="container mx-auto px-6 py-12">
     <!-- Header Section with Enhanced Design -->
-    <div class="mb-12">
-      <div class="flex items-center mb-6">
+    <div class="mb-8">
+      <div class="flex items-center mb-4">
         <h1 class="text-4xl font-bold text-clif-burgundy">
           CLIF-2.0.0 Data Dictionary
         </h1>
@@ -1479,23 +1480,41 @@ const futureTables = [
       </div>
     </div>
 
-    <!-- Interactive ERD Section -->
-    <div class="mb-16">
+    <!-- Interactive ERD Section (Moved to top) -->
+    <div id="erd" class="mb-12 scroll-mt-20">
+      <!-- ERD Header with Description -->
+      <div class="text-center mb-8">
+        <h2 class="text-2xl font-bold text-gray-800 mb-3">Entity Relationship Diagram</h2>
+        <p class="text-gray-600 max-w-3xl mx-auto">
+          Explore the relationships between CLIF tables interactively. Switch between Card View for detailed browsing 
+          or Diagram View for a visual force-directed graph representation.
+        </p>
+        <p class="text-sm text-gray-500 mt-2">
+          <span class="font-medium">Tip:</span> In Diagram View, drag nodes to reposition, zoom with controls, and click tables for details.
+        </p>
+      </div>
+
       <!-- View Toggle -->
       <div class="flex justify-center mb-6">
-        <div class="inline-flex rounded-lg bg-gray-100 p-1">
+        <div class="inline-flex flex-col sm:flex-row rounded-lg bg-gray-100 p-1 shadow-sm">
           <button
             id="cardViewBtn"
-            class="px-6 py-2 rounded-md text-sm font-medium transition-all duration-200 bg-clif-burgundy text-white"
+            class="px-6 py-2 rounded-md text-sm font-medium transition-all duration-200 bg-clif-burgundy text-white shadow-sm w-full sm:w-auto"
             onclick="showCardView()"
           >
+            <svg class="w-4 h-4 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
+            </svg>
             Card View
           </button>
           <button
             id="diagramViewBtn"
-            class="px-6 py-2 rounded-md text-sm font-medium transition-all duration-200 text-gray-700 hover:text-gray-900"
+            class="px-6 py-2 rounded-md text-sm font-medium transition-all duration-200 text-gray-700 hover:text-gray-900 hover:bg-gray-50 w-full sm:w-auto mt-1 sm:mt-0 sm:ml-1"
             onclick="showDiagramView()"
           >
+            <svg class="w-4 h-4 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"></path>
+            </svg>
             Diagram View
           </button>
         </div>
@@ -1508,18 +1527,33 @@ const futureTables = [
           height="min(800px, 80vh)"
           enableKeyboardNavigation={true}
           enableSearch={true}
-          className="shadow-xl"
+          className="shadow-xl rounded-xl"
         />
       </div>
 
       <!-- Diagram View (hidden by default) -->
       <div id="diagramViewContainer" class="erd-view-container" style="display: none;">
-        <D3ForceERD 
-          tables={[...betaTables, ...conceptTables, ...futureTables]}
-          width={1200}
-          height={800}
-          className="shadow-xl"
-        />
+        <div class="w-full" style="max-width: 1400px; margin: 0 auto;">
+          <D3ForceERD 
+            tables={[...betaTables, ...conceptTables, ...futureTables]}
+            width={1200}
+            height={800}
+            className="shadow-xl rounded-xl"
+          />
+        </div>
+      </div>
+
+      <!-- View Tables Button -->
+      <div class="text-center mt-8">
+        <a 
+          href="#overview" 
+          class="inline-flex items-center px-6 py-3 bg-white border-2 border-gray-300 rounded-lg text-gray-700 font-medium hover:border-clif-burgundy hover:text-clif-burgundy transition-all duration-200 shadow-sm hover:shadow-md"
+        >
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+          </svg>
+          View Table Details
+        </a>
       </div>
     </div>
 
@@ -1527,24 +1561,32 @@ const futureTables = [
       function showCardView() {
         document.getElementById('cardViewContainer').style.display = 'block';
         document.getElementById('diagramViewContainer').style.display = 'none';
-        document.getElementById('cardViewBtn').classList.add('bg-clif-burgundy', 'text-white');
-        document.getElementById('cardViewBtn').classList.remove('text-gray-700');
-        document.getElementById('diagramViewBtn').classList.remove('bg-clif-burgundy', 'text-white');
-        document.getElementById('diagramViewBtn').classList.add('text-gray-700');
+        
+        const cardBtn = document.getElementById('cardViewBtn');
+        const diagramBtn = document.getElementById('diagramViewBtn');
+        
+        cardBtn.classList.add('bg-clif-burgundy', 'text-white', 'shadow-sm');
+        cardBtn.classList.remove('text-gray-700', 'hover:text-gray-900', 'hover:bg-gray-50');
+        diagramBtn.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-sm');
+        diagramBtn.classList.add('text-gray-700', 'hover:text-gray-900', 'hover:bg-gray-50');
       }
 
       function showDiagramView() {
         document.getElementById('cardViewContainer').style.display = 'none';
         document.getElementById('diagramViewContainer').style.display = 'block';
-        document.getElementById('diagramViewBtn').classList.add('bg-clif-burgundy', 'text-white');
-        document.getElementById('diagramViewBtn').classList.remove('text-gray-700');
-        document.getElementById('cardViewBtn').classList.remove('bg-clif-burgundy', 'text-white');
-        document.getElementById('cardViewBtn').classList.add('text-gray-700');
+        
+        const cardBtn = document.getElementById('cardViewBtn');
+        const diagramBtn = document.getElementById('diagramViewBtn');
+        
+        diagramBtn.classList.add('bg-clif-burgundy', 'text-white', 'shadow-sm');
+        diagramBtn.classList.remove('text-gray-700', 'hover:text-gray-900', 'hover:bg-gray-50');
+        cardBtn.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-sm');
+        cardBtn.classList.add('text-gray-700', 'hover:text-gray-900', 'hover:bg-gray-50');
       }
     </script>
 
-    <!-- Stats Section -->
-    <div class="mb-12">
+    <!-- Overview Section -->
+    <div id="overview" class="mb-12 scroll-mt-20">
       <!-- Quick Stats with Enhanced Design -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
         <div class="group relative overflow-hidden bg-white rounded-2xl border border-yellow-200 shadow-sm hover:shadow-xl transition-all duration-300">
