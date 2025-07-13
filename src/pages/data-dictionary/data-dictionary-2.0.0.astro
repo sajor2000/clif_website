@@ -3,6 +3,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import Badge from '../../components/Badge.astro';
 import OptimizedImage from '../../components/OptimizedImage.astro';
 import InteractiveERDOptimized from '../../components/InteractiveERDOptimized.astro';
+import D3ForceERD from '../../components/D3ForceERD.astro';
 
 // Define all Beta tables data
 const betaTables = [
@@ -1513,18 +1514,12 @@ const futureTables = [
 
       <!-- Diagram View (hidden by default) -->
       <div id="diagramViewContainer" class="erd-view-container" style="display: none;">
-        <!-- For now, show the static ERD image as a reliable fallback -->
-        <div class="bg-white rounded-lg shadow-xl p-8">
-          <h2 class="text-2xl font-bold text-center mb-6 text-clif-burgundy">CLIF 2.0.0 Entity Relationship Diagram</h2>
-          <img 
-            src="/images/data-dictionary/ERD-2.0.0.png" 
-            alt="CLIF 2.0.0 Entity Relationship Diagram"
-            class="w-full h-auto max-w-7xl mx-auto"
-          />
-          <p class="text-center text-gray-600 mt-4 text-sm">
-            Interactive diagram view coming soon. For now, please refer to this static diagram.
-          </p>
-        </div>
+        <D3ForceERD 
+          tables={[...betaTables, ...conceptTables, ...futureTables]}
+          width={1200}
+          height={800}
+          className="shadow-xl"
+        />
       </div>
     </div>
 

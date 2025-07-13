@@ -1,0 +1,403 @@
+---
+// D3.js Force-Directed ERD Component for CLIF 2.0.0
+export interface Props {
+  tables?: any[];
+  width?: number;
+  height?: number;
+  className?: string;
+}
+
+const { 
+  tables = [], 
+  width = 1200,
+  height = 800,
+  className = ''
+} = Astro.props;
+
+// Generate unique ID for this instance
+const erdId = `d3-erd-${Math.random().toString(36).substr(2, 9)}`;
+
+// Transform tables to nodes format for D3
+const nodes = tables.map((table, index) => ({
+  id: table.id,
+  name: table.name || table.id,
+  group: table.id.includes('patient') || table.id.includes('hospitalization') ? 'core' :
+         ['patient', 'hospitalization', 'adt', 'vitals', 'labs', 'medication_admin_continuous', 'patient_assessments', 'position', 'respiratory_support'].includes(table.id) ? 'beta' :
+         table.id === 'clinical_decision_support' ? 'future' : 'concept',
+  fields: table.fields || [],
+  description: table.description || '',
+  index
+}));
+
+// Create links (all tables connect to patient or hospitalization)
+const links = tables
+  .filter(table => table.id !== 'patient' && table.id !== 'hospitalization')
+  .map(table => ({
+    source: table.id,
+    target: table.id.includes('patient') ? 'patient' : 'hospitalization',
+    value: 1
+  }));
+
+// Add link between patient and hospitalization
+links.push({
+  source: 'patient',
+  target: 'hospitalization',
+  value: 2
+});
+---
+
+<div id={erdId} class={`d3-erd-container ${className}`}>
+  <div class="erd-controls">
+    <button id={`${erdId}-zoom-in`} class="zoom-btn" title="Zoom In">+</button>
+    <button id={`${erdId}-zoom-out`} class="zoom-btn" title="Zoom Out">−</button>
+    <button id={`${erdId}-zoom-fit`} class="zoom-btn fit" title="Fit to View">Fit</button>
+    <button id={`${erdId}-center`} class="zoom-btn" title="Center View">⊙</button>
+  </div>
+  <svg id={`${erdId}-svg`} width={width} height={height}></svg>
+</div>
+
+<style>
+  .d3-erd-container {
+    position: relative;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  }
+
+  .erd-controls {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    gap: 8px;
+    z-index: 10;
+  }
+
+  .zoom-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: bold;
+    transition: all 0.2s;
+  }
+
+  .zoom-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  }
+
+  .zoom-btn.fit {
+    width: auto;
+    padding: 0 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Node styles will be applied via D3 */
+</style>
+
+<script define:vars={{ erdId, nodes, links }}>
+  // Load D3.js from CDN
+  const script = document.createElement('script');
+  script.src = 'https://d3js.org/d3.v7.min.js';
+  script.onload = () => {
+    initializeD3ERD();
+  };
+  document.head.appendChild(script);
+
+  function initializeD3ERD() {
+    // Wait for DOM to be ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => createForceERD(erdId, nodes, links));
+    } else {
+      createForceERD(erdId, nodes, links);
+    }
+  }
+
+  function createForceERD(erdId, nodes, links) {
+    const container = document.getElementById(erdId);
+    if (!container) return;
+
+    const svg = d3.select(`#${erdId}-svg`);
+    const width = +svg.attr('width');
+    const height = +svg.attr('height');
+
+    // Clear any existing content
+    svg.selectAll("*").remove();
+
+    // Define color scheme matching CLIF branding
+    const color = d3.scaleOrdinal()
+      .domain(['core', 'beta', 'concept', 'future'])
+      .range(['#841839', '#FF8C00', '#E5E7EB', '#6B7280']);
+
+    // Create zoom behavior
+    const zoom = d3.zoom()
+      .scaleExtent([0.3, 3])
+      .on('zoom', (event) => {
+        g.attr('transform', event.transform);
+      });
+
+    svg.call(zoom);
+
+    // Create main group for zoom/pan
+    const g = svg.append('g');
+
+    // Create arrow markers for links
+    svg.append('defs').selectAll('marker')
+      .data(['end'])
+      .enter().append('marker')
+        .attr('id', String)
+        .attr('viewBox', '0 -5 10 10')
+        .attr('refX', 25)
+        .attr('refY', 0)
+        .attr('markerWidth', 6)
+        .attr('markerHeight', 6)
+        .attr('orient', 'auto')
+      .append('path')
+        .attr('d', 'M0,-5L10,0L0,5')
+        .attr('fill', '#666');
+
+    // Create force simulation
+    const simulation = d3.forceSimulation(nodes)
+      .force('link', d3.forceLink(links).id(d => d.id).distance(150))
+      .force('charge', d3.forceManyBody().strength(-800))
+      .force('center', d3.forceCenter(width / 2, height / 2))
+      .force('collision', d3.forceCollide().radius(60));
+
+    // Create links
+    const link = g.append('g')
+      .attr('class', 'links')
+      .selectAll('line')
+      .data(links)
+      .enter().append('line')
+        .attr('stroke', '#999')
+        .attr('stroke-opacity', 0.6)
+        .attr('stroke-width', d => Math.sqrt(d.value) * 2)
+        .attr('marker-end', 'url(#end)');
+
+    // Create node groups
+    const node = g.append('g')
+      .attr('class', 'nodes')
+      .selectAll('g')
+      .data(nodes)
+      .enter().append('g')
+        .call(d3.drag()
+          .on('start', dragstarted)
+          .on('drag', dragged)
+          .on('end', dragended));
+
+    // Add rectangles for nodes
+    node.append('rect')
+      .attr('width', 120)
+      .attr('height', 60)
+      .attr('x', -60)
+      .attr('y', -30)
+      .attr('rx', 8)
+      .attr('fill', d => color(d.group))
+      .attr('stroke', '#333')
+      .attr('stroke-width', 2)
+      .style('cursor', 'pointer')
+      .on('mouseover', function(event, d) {
+        d3.select(this)
+          .transition()
+          .duration(200)
+          .attr('stroke-width', 3)
+          .attr('filter', 'drop-shadow(0 4px 8px rgba(0,0,0,0.2))');
+      })
+      .on('mouseout', function(event, d) {
+        d3.select(this)
+          .transition()
+          .duration(200)
+          .attr('stroke-width', 2)
+          .attr('filter', null);
+      })
+      .on('click', function(event, d) {
+        showNodeDetails(d);
+      });
+
+    // Add labels
+    node.append('text')
+      .attr('text-anchor', 'middle')
+      .attr('dy', -5)
+      .style('font-size', '12px')
+      .style('font-weight', 'bold')
+      .style('fill', d => d.group === 'concept' ? '#333' : 'white')
+      .style('pointer-events', 'none')
+      .text(d => d.name.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '));
+
+    // Add field count
+    node.append('text')
+      .attr('text-anchor', 'middle')
+      .attr('dy', 10)
+      .style('font-size', '10px')
+      .style('fill', d => d.group === 'concept' ? '#666' : 'rgba(255,255,255,0.8)')
+      .style('pointer-events', 'none')
+      .text(d => `${d.fields.length} fields`);
+
+    // Add tooltips
+    node.append('title')
+      .text(d => `${d.name}: ${d.description.substring(0, 100)}...`);
+
+    // Update positions on tick
+    simulation.on('tick', () => {
+      link
+        .attr('x1', d => d.source.x)
+        .attr('y1', d => d.source.y)
+        .attr('x2', d => d.target.x)
+        .attr('y2', d => d.target.y);
+
+      node.attr('transform', d => `translate(${d.x},${d.y})`);
+    });
+
+    // Drag functions
+    function dragstarted(event, d) {
+      if (!event.active) simulation.alphaTarget(0.3).restart();
+      d.fx = d.x;
+      d.fy = d.y;
+    }
+
+    function dragged(event, d) {
+      d.fx = event.x;
+      d.fy = event.y;
+    }
+
+    function dragended(event, d) {
+      if (!event.active) simulation.alphaTarget(0);
+      d.fx = null;
+      d.fy = null;
+    }
+
+    // Zoom controls
+    document.getElementById(`${erdId}-zoom-in`).addEventListener('click', () => {
+      svg.transition().duration(300).call(zoom.scaleBy, 1.3);
+    });
+
+    document.getElementById(`${erdId}-zoom-out`).addEventListener('click', () => {
+      svg.transition().duration(300).call(zoom.scaleBy, 0.7);
+    });
+
+    document.getElementById(`${erdId}-zoom-fit`).addEventListener('click', () => {
+      const bounds = g.node().getBBox();
+      const fullWidth = width;
+      const fullHeight = height;
+      const widthScale = fullWidth / bounds.width;
+      const heightScale = fullHeight / bounds.height;
+      const scale = 0.9 * Math.min(widthScale, heightScale);
+      const translate = [fullWidth / 2 - scale * (bounds.x + bounds.width / 2),
+                        fullHeight / 2 - scale * (bounds.y + bounds.height / 2)];
+
+      svg.transition().duration(750).call(
+        zoom.transform,
+        d3.zoomIdentity.translate(translate[0], translate[1]).scale(scale)
+      );
+    });
+
+    document.getElementById(`${erdId}-center`).addEventListener('click', () => {
+      svg.transition().duration(300).call(
+        zoom.transform,
+        d3.zoomIdentity.translate(0, 0).scale(1)
+      );
+    });
+
+    // Show node details function
+    function showNodeDetails(node) {
+      if (node.fields.length === 0) return;
+
+      // Create modal overlay
+      const modal = document.createElement('div');
+      modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      `;
+
+      const modalContent = document.createElement('div');
+      modalContent.style.cssText = `
+        background: white;
+        border-radius: 12px;
+        max-width: 800px;
+        max-height: 90vh;
+        width: 100%;
+        overflow-y: auto;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      `;
+
+      const displayName = node.name
+        .split('_')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+
+      modalContent.innerHTML = `
+        <div style="background: ${color(node.group)}; padding: 20px; color: ${node.group === 'concept' ? '#333' : 'white'};">
+          <h2 style="margin: 0; font-size: 24px; font-weight: bold;">${displayName}</h2>
+          <p style="margin: 8px 0 0 0; opacity: 0.9;">${node.description}</p>
+        </div>
+        <div style="padding: 20px;">
+          <h3 style="font-size: 18px; font-weight: bold; margin-bottom: 16px;">Fields (${node.fields.length})</h3>
+          <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <thead>
+                <tr style="border-bottom: 2px solid #e5e7eb;">
+                  <th style="text-align: left; padding: 12px; font-weight: 600;">Field Name</th>
+                  <th style="text-align: left; padding: 12px; font-weight: 600;">Type</th>
+                  <th style="text-align: left; padding: 12px; font-weight: 600;">Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${node.fields.map(field => `
+                  <tr style="border-bottom: 1px solid #f3f4f6;">
+                    <td style="padding: 12px; font-family: monospace; font-size: 14px;">${field.name}</td>
+                    <td style="padding: 12px; color: #6b7280;">${field.type}</td>
+                    <td style="padding: 12px; font-size: 14px;">${field.description || ''}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+
+      modal.appendChild(modalContent);
+      document.body.appendChild(modal);
+
+      // Close on click outside
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.remove();
+        }
+      });
+
+      // Close on escape
+      const closeOnEsc = (e) => {
+        if (e.key === 'Escape') {
+          modal.remove();
+          document.removeEventListener('keydown', closeOnEsc);
+        }
+      };
+      document.addEventListener('keydown', closeOnEsc);
+    }
+  }
+</script>
