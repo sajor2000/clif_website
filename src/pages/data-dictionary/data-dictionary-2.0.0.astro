@@ -1480,14 +1480,73 @@ const futureTables = [
 
     <!-- Interactive ERD Section -->
     <div class="mb-16">
-      <InteractiveERDOptimized 
-        tables={[...betaTables, ...conceptTables, ...futureTables]}
-        height="min(800px, 80vh)"
-        enableKeyboardNavigation={true}
-        enableSearch={true}
-        className="shadow-xl"
-      />
+      <!-- View Toggle -->
+      <div class="flex justify-center mb-6">
+        <div class="inline-flex rounded-lg bg-gray-100 p-1">
+          <button
+            id="cardViewBtn"
+            class="px-6 py-2 rounded-md text-sm font-medium transition-all duration-200 bg-clif-burgundy text-white"
+            onclick="showCardView()"
+          >
+            Card View
+          </button>
+          <button
+            id="diagramViewBtn"
+            class="px-6 py-2 rounded-md text-sm font-medium transition-all duration-200 text-gray-700 hover:text-gray-900"
+            onclick="showDiagramView()"
+          >
+            Diagram View
+          </button>
+        </div>
+      </div>
+
+      <!-- Card View (default visible) -->
+      <div id="cardViewContainer" class="erd-view-container">
+        <InteractiveERDOptimized 
+          tables={[...betaTables, ...conceptTables, ...futureTables]}
+          height="min(800px, 80vh)"
+          enableKeyboardNavigation={true}
+          enableSearch={true}
+          className="shadow-xl"
+        />
+      </div>
+
+      <!-- Diagram View (hidden by default) -->
+      <div id="diagramViewContainer" class="erd-view-container" style="display: none;">
+        <!-- For now, show the static ERD image as a reliable fallback -->
+        <div class="bg-white rounded-lg shadow-xl p-8">
+          <h2 class="text-2xl font-bold text-center mb-6 text-clif-burgundy">CLIF 2.0.0 Entity Relationship Diagram</h2>
+          <img 
+            src="/images/data-dictionary/ERD-2.0.0.png" 
+            alt="CLIF 2.0.0 Entity Relationship Diagram"
+            class="w-full h-auto max-w-7xl mx-auto"
+          />
+          <p class="text-center text-gray-600 mt-4 text-sm">
+            Interactive diagram view coming soon. For now, please refer to this static diagram.
+          </p>
+        </div>
+      </div>
     </div>
+
+    <script>
+      function showCardView() {
+        document.getElementById('cardViewContainer').style.display = 'block';
+        document.getElementById('diagramViewContainer').style.display = 'none';
+        document.getElementById('cardViewBtn').classList.add('bg-clif-burgundy', 'text-white');
+        document.getElementById('cardViewBtn').classList.remove('text-gray-700');
+        document.getElementById('diagramViewBtn').classList.remove('bg-clif-burgundy', 'text-white');
+        document.getElementById('diagramViewBtn').classList.add('text-gray-700');
+      }
+
+      function showDiagramView() {
+        document.getElementById('cardViewContainer').style.display = 'none';
+        document.getElementById('diagramViewContainer').style.display = 'block';
+        document.getElementById('diagramViewBtn').classList.add('bg-clif-burgundy', 'text-white');
+        document.getElementById('diagramViewBtn').classList.remove('text-gray-700');
+        document.getElementById('cardViewBtn').classList.remove('bg-clif-burgundy', 'text-white');
+        document.getElementById('cardViewBtn').classList.add('text-gray-700');
+      }
+    </script>
 
     <!-- Stats Section -->
     <div class="mb-12">
