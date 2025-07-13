@@ -1557,8 +1557,8 @@ const futureTables = [
       </div>
     </div>
 
-    <script>
-      function showCardView() {
+    <script is:inline>
+      window.showCardView = function() {
         document.getElementById('cardViewContainer').style.display = 'block';
         document.getElementById('diagramViewContainer').style.display = 'none';
         
@@ -1571,7 +1571,7 @@ const futureTables = [
         diagramBtn.classList.add('text-gray-700', 'hover:text-gray-900', 'hover:bg-gray-50');
       }
 
-      function showDiagramView() {
+      window.showDiagramView = function() {
         document.getElementById('cardViewContainer').style.display = 'none';
         document.getElementById('diagramViewContainer').style.display = 'block';
         
@@ -1582,6 +1582,11 @@ const futureTables = [
         diagramBtn.classList.remove('text-gray-700', 'hover:text-gray-900', 'hover:bg-gray-50');
         cardBtn.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-sm');
         cardBtn.classList.add('text-gray-700', 'hover:text-gray-900', 'hover:bg-gray-50');
+        
+        // Trigger a resize event to ensure D3.js renders properly
+        setTimeout(() => {
+          window.dispatchEvent(new Event('resize'));
+        }, 100);
       }
     </script>
 

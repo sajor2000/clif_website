@@ -155,21 +155,59 @@ links.push({
 </style>
 
 <script define:vars={{ erdId, nodes, links }}>
-  // Load D3.js from CDN
-  const script = document.createElement('script');
-  script.src = 'https://d3js.org/d3.v7.min.js';
-  script.onload = () => {
-    initializeD3ERD();
-  };
-  document.head.appendChild(script);
+  // Store initialization state
+  let d3Initialized = false;
+  let d3Loaded = false;
+
+  // Function to load D3.js if not already loaded
+  function loadD3() {
+    if (!d3Loaded && typeof d3 === 'undefined') {
+      const script = document.createElement('script');
+      script.src = 'https://d3js.org/d3.v7.min.js';
+      script.onload = () => {
+        d3Loaded = true;
+        initializeD3ERD();
+      };
+      document.head.appendChild(script);
+    } else if (d3Loaded || typeof d3 !== 'undefined') {
+      d3Loaded = true;
+      initializeD3ERD();
+    }
+  }
 
   function initializeD3ERD() {
-    // Wait for DOM to be ready
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => createForceERD(erdId, nodes, links));
+    // Only initialize if container is visible and not already initialized
+    const container = document.getElementById(erdId);
+    if (!container || d3Initialized) return;
+    
+    const isVisible = container.offsetParent !== null;
+    if (!isVisible) {
+      // If not visible, wait for it to become visible
+      const observer = new MutationObserver((mutations) => {
+        const nowVisible = container.offsetParent !== null;
+        if (nowVisible && !d3Initialized) {
+          observer.disconnect();
+          createForceERD(erdId, nodes, links);
+          d3Initialized = true;
+        }
+      });
+      
+      // Observe parent for style changes
+      const parent = container.parentElement;
+      if (parent) {
+        observer.observe(parent, { attributes: true, attributeFilter: ['style'] });
+      }
     } else {
       createForceERD(erdId, nodes, links);
+      d3Initialized = true;
     }
+  }
+
+  // Load D3 when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadD3);
+  } else {
+    loadD3();
   }
 
   function createForceERD(erdId, nodes, links) {
