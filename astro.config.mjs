@@ -17,7 +17,12 @@ export default defineConfig({
     sitemap(),
     compress({
       CSS: true,
-      HTML: true,
+      HTML: {
+        // Exclude ERD-related HTML from aggressive compression
+        exclude: [
+          (file) => file.includes('data-dictionary-2.0.0'),
+        ],
+      },
       Image: {
         // Exclude problematic file types from compression
         exclude: [
@@ -26,7 +31,13 @@ export default defineConfig({
           (file) => file.includes('_astro'),
         ],
       },
-      JavaScript: true,
+      JavaScript: {
+        // Be more conservative with JavaScript compression for ERD pages
+        exclude: [
+          (file) => file.includes('data-dictionary-2.0.0'),
+          (file) => file.includes('InteractiveERD'),
+        ],
+      },
       SVG: false, // Disable SVG compression to avoid errors
       Logger: 1, // Show compression statistics
     })

@@ -140,6 +140,9 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
     data-enable-analytics="false"
     data-enable-keyboard={enableKeyboardNavigation.toString()}
     data-enable-search={enableSearch.toString()}
+    data-erd-entities={JSON.stringify(entities)}
+    data-erd-relationships={JSON.stringify(relationships)}
+    data-container-id={containerId}
   >
     <!-- Loading state -->
     <div class="erd-loading-state" style="
@@ -345,61 +348,32 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
   }
 </style>
 
-<!-- Pass data to client-side script -->
-<script define:vars={{ erdEntities: entities, erdRelationships: relationships, erdContainerId: containerId }}>
-  // Store ERD data in a global object to avoid JSON parsing issues
-  window.erdData = window.erdData || {};
-  window.erdData[erdContainerId] = {
-    entities: erdEntities || [],
-    relationships: erdRelationships || []
-  };
-  // ERD data stored for container
-</script>
-
-<script is:inline>
-  // Simple ERD implementation without external imports
-  // Initialize ERDs with better production support
-  function initializeERDs() {
-    if (typeof window === 'undefined') return;
-    
-    // Add a small delay to ensure all scripts have loaded in production
-    setTimeout(() => {
-      const erdContainers = document.querySelectorAll('[data-erd-auto-init]');
-      
-      // Debug: Add temporary info for production troubleshooting
-      if (erdContainers.length === 0) {
-        // Create a debug info div if no containers found
-        const debugDiv = document.createElement('div');
-        debugDiv.innerHTML = 'ERD Debug: No containers found with data-erd-auto-init attribute';
-        debugDiv.style.cssText = 'background: red; color: white; padding: 10px; margin: 10px; border-radius: 5px; font-family: monospace;';
-        document.body.appendChild(debugDiv);
-        return;
-      }
+<script>
+  // Consolidated ERD initialization - component scoped for better production reliability
+  document.addEventListener('DOMContentLoaded', function() {
+    // Find ERD containers
+    const erdContainers = document.querySelectorAll('[data-erd-auto-init]');
     
     erdContainers.forEach((container) => {
-      const containerId = container.id;
-      
       try {
-        // Get data from global window object
-        if (!window.erdData || !window.erdData[containerId]) {
-          // Debug: Show what data is available
-          const debugInfo = {
-            windowErdDataExists: !!window.erdData,
-            availableKeys: window.erdData ? Object.keys(window.erdData) : [],
-            lookingFor: containerId
-          };
-          
-          // Create debug info for production
-          const debugDiv = document.createElement('div');
-          debugDiv.innerHTML = `ERD Debug Info: ${JSON.stringify(debugInfo, null, 2)}`;
-          debugDiv.style.cssText = 'background: orange; color: black; padding: 10px; margin: 10px; border-radius: 5px; font-family: monospace; font-size: 12px; white-space: pre;';
-          container.appendChild(debugDiv);
-          
-          showError(container, 'ERD Data Loading Error', 'Unable to find ERD data');
+        // Get data from DOM attributes (more reliable than global objects)
+        const entitiesData = container.dataset.erdEntities;
+        const relationshipsData = container.dataset.erdRelationships;
+        const containerId = container.dataset.containerId;
+        
+        if (!entitiesData || !relationshipsData) {
+          showError(container, 'ERD Data Loading Error', 'Unable to find ERD data in DOM attributes');
           return;
         }
-
-        const { entities, relationships } = window.erdData[containerId];
+        
+        let entities, relationships;
+        try {
+          entities = JSON.parse(entitiesData);
+          relationships = JSON.parse(relationshipsData);
+        } catch (error) {
+          showError(container, 'ERD Data Parsing Error', 'Invalid JSON data in DOM attributes');
+          return;
+        }
         
         if (!entities || !relationships) {
           showError(container, 'ERD Data Error', 'Invalid ERD data structure');
@@ -418,18 +392,7 @@ const containerId = `erd-container-${Math.random().toString(36).substr(2, 9)}`;
         showError(container, 'ERD Loading Error', 'Unable to load the interactive ERD. Please refresh the page or try again later.');
       }
     });
-    }, 200); // Small delay for production environments
-  }
-  
-  // Multiple initialization strategies for better production compatibility
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeERDs);
-  } else {
-    initializeERDs();
-  }
-  
-  // Fallback for slow-loading environments
-  window.addEventListener('load', initializeERDs);
+  });
 
   function showError(container, title, message) {
     // Remove loading state
