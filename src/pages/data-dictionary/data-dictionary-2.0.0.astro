@@ -1736,46 +1736,6 @@ const futureTables = [
       </div>
     </div>
 
-    <!-- Static ERD Diagram at Top -->
-    <section class="mb-16">
-      <div class="glass rounded-2xl overflow-hidden border border-gray-200 shadow-xl">
-        <div class="glass-dark px-8 py-6">
-          <h2 class="text-2xl font-bold text-white flex items-center justify-center">
-            <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"></path>
-            </svg>
-            CLIF 2.0.0 Entity Relationship Diagram
-          </h2>
-          <p class="text-white/80 mt-2 text-center">
-            Visual overview of table relationships and data flow
-          </p>
-        </div>
-        <div class="p-8 bg-gray-50">
-          <div class="rounded-xl overflow-hidden shadow-lg">
-            <img
-              src="/images/data-dictionary/ERD-2.0.0-071125_NEW.png"
-              alt="CLIF 2.0.0 Entity Relationship Diagram showing connections between all 26 tables including Beta tables (ADT, Hospitalization, Patient, Vitals, Labs, Medication Administration, Respiratory Support, Position, and Scores), Concept tables, and Future tables"
-              class="w-full h-auto"
-              loading="eager"
-            />
-          </div>
-          <div class="mt-6 flex flex-wrap gap-4 justify-center">
-            <div class="flex items-center">
-              <div class="w-4 h-4 bg-clif-burgundy rounded-full mr-2"></div>
-              <span class="text-sm font-medium text-gray-700">Beta Tables (9) - Production Ready</span>
-            </div>
-            <div class="flex items-center">
-              <div class="w-4 h-4 bg-purple-500 rounded-full mr-2"></div>
-              <span class="text-sm font-medium text-gray-700">Concept Tables (16) - In Development</span>
-            </div>
-            <div class="flex items-center">
-              <div class="w-4 h-4 bg-blue-500 rounded-full mr-2"></div>
-              <span class="text-sm font-medium text-gray-700">Future Tables (1) - Proposed</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
 
 
       <!-- Overview Section -->
@@ -1954,11 +1914,10 @@ const futureTables = [
         >
           <div class="border-l-4 border-clif-burgundy pl-6">
             <div class="flex items-center justify-between mb-6">
-              <h3 class="text-2xl font-semibold text-gray-800 flex items-center">
-                <span class="text-clif-burgundy mr-3">{index + 1}.</span>
-                {table.name}
-                <Badge type="beta" class="ml-3" size="small" />
-              </h3>
+                <h3 class="text-2xl font-semibold text-gray-800 flex items-center">
+                  <span class="text-clif-burgundy mr-3">{index + 1}.</span>
+                  {table.name}
+                </h3>
               <button
                 class="collapse-toggle text-gray-400 hover:text-gray-600"
                 aria-label="Toggle table visibility"
@@ -2502,6 +2461,58 @@ const futureTables = [
   </div>
 
 <style>
+  /* Prevent layout shifts and flickering */
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  /* Reserve space for images to prevent layout shift */
+  img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+  }
+  
+  
+  /* Skeleton loading animation */
+  @keyframes skeleton-loading {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+  
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      #f0f0f0 25%,
+      #e0e0e0 50%,
+      #f0f0f0 75%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+  }
+  
+  /* Prevent FOUC (Flash of Unstyled Content) */
+  .data-table {
+    min-height: 300px;
+    contain: layout;
+  }
+  
+  /* Stabilize table layouts */
+  table {
+    table-layout: fixed;
+    width: 100%;
+  }
+  
+  /* Prevent content jumps during loading */
+  .section-content {
+    min-height: 200px;
+    will-change: auto;
+  }
+  
   /* Custom styles for enhanced UI */
   #page-nav a.active {
     color: #8A1538; /* clif-burgundy */
@@ -2973,12 +2984,6 @@ const futureTables = [
 
     // Guided Tour System
     const tourSteps = [
-      {
-        target: '#erd-container',
-        title: 'Entity Relationship Diagram',
-        content: 'This ERD shows how CLIF tables connect to each other. Click the fullscreen button to explore the relationships in detail.',
-        position: 'bottom'
-      },
       {
         target: '[data-tour-step="overview-principles"]',
         title: 'CLIF Core Principles',

@@ -13,19 +13,141 @@ import GrowthTimeline from '../components/home/GrowthTimeline.astro';
 >
   <div class="container mx-auto px-4 py-8">
     <!-- Hero Section with Enhanced Messaging -->
-    <div class="text-center mb-12">
-
-      <h1 class="text-5xl font-bold mb-4 text-clif-burgundy">
-        Common Longitudinal ICU data Format
+    <div class="text-center mb-8">
+      <h1 class="text-5xl md:text-6xl font-bold mb-6 text-clif-burgundy">
+        CLIF: A New Era in Federated Critical Care Research
       </h1>
-      <p class="text-2xl gradient-text font-medium mb-2">
-        Transforming Critical Care Through Federated Data Science
-      </p>
-      <p class="text-lg text-gray-600 max-w-3xl mx-auto">
-        Pioneering the future of ICU research with standardized, harmonized data across leading
-        academic medical centers
+      <p class="text-xl md:text-2xl text-gray-700 max-w-4xl mx-auto font-medium">
+        CLIF streamlines longitudinal ICU data into a harmonized, federated framework — enabling instant, privacy‑preserving multicenter research
       </p>
     </div>
+
+    <!-- Prominent Action Button Bar -->
+    <section class="mb-12">
+      <div class="bg-gradient-to-r from-clif-burgundy/5 to-clif-burgundy/10 rounded-2xl p-6 shadow-lg border border-clif-burgundy/20">
+        <div class="flex flex-wrap justify-center gap-3">
+        <CTAButton
+          href="https://link.springer.com/article/10.1007/s00134-025-07848-7"
+          external={true}
+          ariaLabel="Read our latest publication in Intensive Care Medicine"
+          class="flex items-center gap-2"
+        >
+          <span class="text-lg">📄</span>
+          Publications
+        </CTAButton>
+        
+        <CTAButton
+          href="/data-dictionary"
+          ariaLabel="View CLIF 2.0.0 Data Dictionary"
+          class="flex items-center gap-2"
+        >
+          <span class="text-lg">🧾</span>
+          Data Dictionary
+        </CTAButton>
+        
+        <CTAButton
+          href="https://clif-consortium.shinyapps.io/clif-cohort-dashboard/"
+          external={true}
+          ariaLabel="Explore interactive Cohort Dashboard"
+          class="flex items-center gap-2"
+        >
+          <span class="text-lg">🧬</span>
+          Cohort Dashboard
+        </CTAButton>
+        
+        <CTAButton
+          href="/tools"
+          ariaLabel="See what you can build with CLIF"
+          class="flex items-center gap-2"
+        >
+          <span class="text-lg">🛠️</span>
+          Build with CLIF
+        </CTAButton>
+        </div>
+      </div>
+    </section>
+
+    <!-- Four Highlight Cards -->
+    <section class="mb-16">
+      <h2 class="text-3xl font-bold text-center mb-8 text-gray-900">The Four Dimensions of CLIF</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- High Impact Scientific Papers -->
+        <div class="bg-white rounded-2xl p-8 shadow-lg border border-gray-200 hover:shadow-xl transition-shadow">
+          <div class="flex items-start gap-4">
+            <span class="text-4xl">📄</span>
+            <div class="flex-1">
+              <h3 class="text-xl font-bold mb-2 text-gray-900">High Impact Scientific Papers</h3>
+              <p class="text-gray-600 mb-4">Breakthrough research powered by federated critical care data.</p>
+              <a href="https://link.springer.com/article/10.1007/s00134-025-07848-7" 
+                 class="text-clif-burgundy hover:text-clif-burgundy-dark font-semibold inline-flex items-center gap-1"
+                 target="_blank"
+                 rel="noopener noreferrer">
+                Read Our Latest Publication
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Open Source Data Dictionary and ETL Tools -->
+        <div class="bg-white rounded-2xl p-8 shadow-lg border border-gray-200 hover:shadow-xl transition-shadow">
+          <div class="flex items-start gap-4">
+            <span class="text-4xl">🧾</span>
+            <div class="flex-1">
+              <h3 class="text-xl font-bold mb-2 text-gray-900">Open Source Data Dictionary and ETL Tools</h3>
+              <p class="text-gray-600 mb-4">CLIF 2.0.0: standardized format built from 10+ billion data points.</p>
+              <a href="/data-dictionary" 
+                 class="text-clif-burgundy hover:text-clif-burgundy-dark font-semibold inline-flex items-center gap-1">
+                View CLIF-2.0.0 Data Dictionary
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Large Distributed Cohort in the Consortium -->
+        <div class="bg-white rounded-2xl p-8 shadow-lg border border-gray-200 hover:shadow-xl transition-shadow">
+          <div class="flex items-start gap-4">
+            <span class="text-4xl">🧬</span>
+            <div class="flex-1">
+              <h3 class="text-xl font-bold mb-2 text-gray-900">Large Distributed Cohort in the Consortium</h3>
+              <p class="text-gray-600 mb-4">680,158 ICU patients across 9 healthcare systems.</p>
+              <a href="https://clif-consortium.shinyapps.io/clif-cohort-dashboard/" 
+                 class="text-clif-burgundy hover:text-clif-burgundy-dark font-semibold inline-flex items-center gap-1"
+                 target="_blank"
+                 rel="noopener noreferrer">
+                Explore Cohort Dashboard
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Open Source Products Built on Top of CLIF -->
+        <div class="bg-white rounded-2xl p-8 shadow-lg border border-gray-200 hover:shadow-xl transition-shadow">
+          <div class="flex items-start gap-4">
+            <span class="text-4xl">🛠️</span>
+            <div class="flex-1">
+              <h3 class="text-xl font-bold mb-2 text-gray-900">Open Source Products Built on Top of CLIF</h3>
+              <p class="text-gray-600 mb-4">Tools and applications for building with CLIF data.</p>
+              <a href="/tools" 
+                 class="text-clif-burgundy hover:text-clif-burgundy-dark font-semibold inline-flex items-center gap-1">
+                See What You Can Build
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
 
     <!-- Impact Statistics -->
     <section class="mb-16">
@@ -105,26 +227,6 @@ import GrowthTimeline from '../components/home/GrowthTimeline.astro';
         </div>
       </div>
 
-      <!-- CTA Buttons -->
-      <nav aria-label="Primary actions" class="flex flex-col sm:flex-row flex-wrap justify-center items-center gap-4 -mt-4 mb-12">
-        <CTAButton
-          href="https://link.springer.com/article/10.1007/s00134-025-07848-7"
-          external={true}
-          ariaLabel="Read the full study in Intensive Care Medicine (opens in new tab)"
-        >
-          Read Our Latest Publication
-        </CTAButton>
-        <CTAButton href="/data-dictionary" ariaLabel="View CLIF version 2.0.0 Data Dictionary">
-          View CLIF-2.0.0 Data Dictionary
-        </CTAButton>
-        <CTAButton
-          href="https://clif-consortium.shinyapps.io/clif-cohort-dashboard/"
-          external={true}
-          ariaLabel="Explore interactive Cohort Dashboard (opens in new tab)"
-        >
-          Explore Cohort Dashboard
-        </CTAButton>
-      </nav>
 
       <!-- Key Benefits -->
       <div class="mb-12">
