@@ -57,7 +57,7 @@ const linkProps = href
     )
   }
 
-  <h3 class="text-xl font-semibold mb-2 text-gray-900">
+  <h3 class={`text-xl font-semibold mb-2 ${variant === 'bordered' ? 'text-white' : 'text-gray-900'}`}>
     {title}
     {
       external && (
@@ -79,7 +79,7 @@ const linkProps = href
     }
   </h3>
 
-  <p class="text-gray-600">
+  <p class={`${variant === 'bordered' ? 'text-white/90' : 'text-gray-600'}`}>
     {description}
   </p>
 
