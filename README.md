@@ -1,18 +1,25 @@
 # CLIF Consortium Website
 
-The official website for the Common Longitudinal ICU data Format (CLIF) Consortium, built with Astro.
+A modern, responsive website for the Common Longitudinal ICU data Format (CLIF) Consortium, built with Astro and deployed on Vercel.
 
-## 🚀 Overview
+## 🚀 Project Overview
 
-CLIF is a standardized framework for organizing electronic health record (EHR) data on critically ill patients across multiple institutions. This website serves as the primary resource for researchers, clinicians, and institutions participating in the CLIF consortium.
+The CLIF Consortium website showcases a healthcare consortium focused on standardizing critical care data for research. The site features:
 
-## 🛠️ Tech Stack
+- **18 participating institutions** with 46 hospitals
+- **680,158+ unique ICU patients** across the network
+- **Interactive data dictionary** with CLIF 2.0.0 specifications
+- **Enhanced FAQ system** with accordion functionality
+- **Responsive team directory** with 46+ members
+- **Real-time cohort dashboard** integration
 
-- **Framework**: [Astro](https://astro.build) v4.16.18
-- **Styling**: [Tailwind CSS](https://tailwindcss.com) v3.4.17
-- **Language**: TypeScript
-- **Testing**: Vitest
-- **Deployment**: Vercel
+## 🛠 Technology Stack
+
+- **Framework**: [Astro 5.11.0](https://astro.build/) with TypeScript
+- **Styling**: [Tailwind CSS 3.4.17](https://tailwindcss.com/)
+- **Image Processing**: Sharp for optimization
+- **Deployment**: [Vercel](https://vercel.com/)
+- **Quality**: ESLint, Prettier, TypeScript strict mode
 
 ## 📦 Installation
 
@@ -45,44 +52,143 @@ All commands are run from the root of the project:
 ## 📁 Project Structure
 
 ```
-/
-├── public/
-│   ├── fonts/          # Web fonts
-│   └── images/         # Static images
-├── src/
-│   ├── components/     # Reusable Astro components
-│   ├── layouts/        # Page layouts
-│   ├── pages/          # Route pages
-│   ├── styles/         # Global styles
-│   └── tests/          # Test files
-├── astro.config.mjs    # Astro configuration
-├── tailwind.config.cjs # Tailwind CSS configuration
-└── package.json
+src/
+├── components/          # Reusable Astro components
+│   ├── layout/         # Header, Footer, Navigation
+│   ├── home/           # Homepage-specific components
+│   ├── team/           # Team member components
+│   ├── cohort/         # Dashboard components
+│   └── shared/         # Buttons, cards, utilities
+├── content/            # Content Collections
+│   ├── institutions/   # Institution data (JSON)
+│   ├── team/          # Team profiles (empty - using hardcoded)
+│   ├── publications/  # Research data (empty)
+│   └── tools/         # Tool descriptions (empty)
+├── layouts/           # Page layouts
+├── pages/             # File-based routing
+├── styles/            # Global CSS
+└── env.d.ts          # TypeScript definitions
+
+public/
+├── images/            # Static assets
+│   ├── headshots/     # Team member photos (JPG/WebP)
+│   ├── institutions/  # University logos
+│   ├── data-dictionary/ # ERD diagrams
+│   └── misc/          # Site images
+├── favicon.svg
+├── manifest.json
+└── robots.txt
 ```
 
-## 🌐 Deployment
+## 🚢 Deployment
 
-This site is configured for deployment on [Vercel](https://vercel.com):
+The site is configured for **Vercel deployment**:
 
-1. Push changes to the main branch
-2. Vercel will automatically build and deploy
-3. Preview deployments are created for pull requests
+- **Framework**: Astro (auto-detected)
+- **Build Command**: `npm run build`
+- **Output Directory**: `dist`
+- **Region**: `iad1` (US East)
 
 ### Environment Variables
+No environment variables required for basic functionality.
 
-No environment variables are required for basic deployment.
+## 🎨 Key Features
+
+### Interactive FAQ System
+- Accordion-style collapsible questions
+- Sticky sidebar navigation
+- Copy-to-clipboard email functionality
+- Mobile-responsive design
+
+### Enhanced Data Dictionary
+- Multiple CLIF versions (1.0.0, 2.0.0, 2.1.0)
+- Interactive table of contents
+- Beta badges and maturity indicators
+- mCIDE GitHub integration
+
+### Team Management
+- 46+ team member profiles
+- Headshot optimization (JPG→WebP)
+- Contact information with social links
+- Institution affiliations
+
+### Performance Optimizations
+- Image lazy loading and optimization
+- Component-level code splitting
+- Tailwind CSS purging
+- Sharp image processing
+
+## 📋 Content Management
+
+### Adding Team Members
+1. Add headshot to `public/images/headshots/`
+2. Create WebP version for optimization
+3. Update team data in respective page files
+
+### Adding Institutions
+1. Add logo to `public/images/institutions/`
+2. Update institution data in `src/content/institutions/`
+
+### Updating Content
+- **Homepage**: `src/pages/index.astro`
+- **Team Page**: `src/pages/team.astro`
+- **Data Dictionary**: `src/pages/data-dictionary/`
+- **FAQ**: `src/pages/faq.astro`
+
+## 🔧 Configuration Files
+
+- `astro.config.mjs` - Astro configuration
+- `tailwind.config.cjs` - Tailwind CSS setup
+- `tsconfig.json` - TypeScript configuration
+- `eslint.config.js` - ESLint rules
+- `vercel.json` - Deployment configuration
+
+## 🎯 Code Quality
+
+### Standards
+- TypeScript strict mode enabled
+- ESLint with Astro-specific rules
+- Prettier for consistent formatting
+- Component-level CSS containment
+
+### Best Practices
+- Semantic HTML structure
+- Accessibility (ARIA labels, focus states)
+- Performance optimizations
+- Mobile-first responsive design
+
+## 🐛 Troubleshooting
+
+### Common Issues
+1. **Build Errors**: Run `npm run typecheck` to identify TypeScript issues
+2. **Style Issues**: Check Tailwind class conflicts
+3. **Image Issues**: Verify image paths are absolute (`/images/...`)
+
+### Development Tips
+- Use `npm run dev` for hot reloading
+- Images in `public/` are served from root (`/images/...`)
+- Components use TypeScript interfaces for props
+
+## 📈 Analytics & Monitoring
+
+- Web Vitals integration ready
+- Sentry error tracking configured
+- SEO optimization with meta tags
+- Sitemap generation enabled
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+For new developers taking over this project:
 
-## 📄 License
+1. **Familiarize** with Astro framework concepts
+2. **Review** the component architecture in `src/components/`
+3. **Understand** the content structure and routing
+4. **Test** changes locally before deployment
+5. **Maintain** code quality standards
 
-This project is licensed under the ISC License.
+## 📝 License
+
+ISC License - See LICENSE file for details
 
 ## 🔗 Links
 
@@ -90,8 +196,8 @@ This project is licensed under the ISC License.
 - [CLIF GitHub Repository](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF)
 - [Research Paper](https://link.springer.com/article/10.1007/s00134-025-07848-7)
 
-## 👥 Maintainers
+---
 
-- CLIF Consortium Technical Team
-
-For questions or support, please open an issue on GitHub.
+**Project Status**: Production Ready ✅  
+**Last Updated**: July 2025  
+**Maintainer**: CLIF Consortium Team

@@ -27,17 +27,15 @@ src/
 │   ├── shared/            # Shared components (buttons, cards, etc.)
 │   └── *.astro           # Individual component files
 ├── content/               # Content Collections
-│   ├── team/             # Team member profiles
-│   ├── publications/     # Research publications
-│   ├── tools/            # Tool descriptions
-│   └── institutions/     # Institution data
+│   ├── team/             # Team member profiles (currently empty)
+│   ├── publications/     # Research publications (currently empty)
+│   ├── tools/            # Tool descriptions (currently empty)
+│   └── institutions/     # Institution data (JSON files)
 ├── layouts/              # Page layouts
 ├── pages/                # Route pages (file-based routing)
 │   └── data-dictionary/  # Data dictionary sub-pages
 ├── styles/               # Global styles
-├── lib/                  # Utility functions and helpers
-├── types/                # TypeScript type definitions
-└── utils/                # Legacy utilities
+└── env.d.ts              # TypeScript environment types
 ```
 
 ## Public Directory (`public/`)
@@ -53,8 +51,7 @@ public/
 │   ├── projects/         # Project images
 │   ├── data-dictionary/  # Data dictionary specific images
 │   └── misc/             # Miscellaneous images
-├── fonts/                # Web fonts
-├── api/                  # API endpoints
+├── _headers              # Vercel headers configuration
 ├── favicon.svg           # Site favicon
 ├── manifest.json         # PWA manifest
 └── robots.txt           # Search engine directives
