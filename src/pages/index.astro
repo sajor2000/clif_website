@@ -1,7 +1,5 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import OptimizedImage from '../components/OptimizedImage.astro';
-import CTAButton from '../components/shared/CTAButton.astro';
 import StatsCounter from '../components/home/StatsCounter.astro';
 import FeatureCard from '../components/shared/FeatureCard.astro';
 import GrowthTimeline from '../components/home/GrowthTimeline.astro';
@@ -186,11 +184,21 @@ import GrowthTimeline from '../components/home/GrowthTimeline.astro';
         </div>
       </div>
 
+      <!-- What Makes CLIF Different -->
+      <div class="bg-gradient-to-r from-clif-burgundy/5 to-clif-burgundy/10 rounded-2xl p-8 mb-12 border border-clif-burgundy/20">
+        <h3 class="text-2xl font-semibold mb-4 text-center text-gray-800">Purpose-Built for Critical Care</h3>
+        <p class="text-lg text-gray-700 leading-relaxed max-w-4xl mx-auto mb-4">
+          Unlike general-purpose data models like OMOP or closed corporate enclaves like Cosmos, the Common Longitudinal ICU data Format (CLIF) is purpose-built by ICU researchers, for ICU research. CLIF is structured around clinically relevant concepts, mapping essential ICU data elements (mCIDE) into a transparent, accessible, and intuitive relational schema.
+        </p>
+        <p class="text-lg text-gray-700 leading-relaxed max-w-4xl mx-auto">
+          We've mapped all key life support parameters — from minute-to-minute ventilator changes to vasoactive drug dose titrations — capturing the high-fidelity, continuous data streams that define critical care. While general-purpose data models struggle with this granularity, CLIF was designed by ICU data scientists specifically for the dynamic, time-sensitive nature of intensive care. This structure reflects the real-world workflows of critical care, making data not only research-ready but also immediately understandable to practicing ICU clinicians — minimizing the translation gap between data science and bedside medicine.
+        </p>
+      </div>
 
       <!-- Key Benefits -->
       <div class="mb-12">
         <h3 class="text-2xl font-semibold mb-6 text-center">
-          Why Leading Institutions Choose CLIF
+          Key Features
         </h3>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <FeatureCard
@@ -243,33 +251,6 @@ import GrowthTimeline from '../components/home/GrowthTimeline.astro';
 
     </section>
 
-    <!-- Featured Publication -->
-    <section class="mb-16">
-      <div class="glass rounded-2xl p-8 shadow-lg">
-        <h3 class="text-2xl font-semibold mb-4 text-center">Featured Publication</h3>
-        <div class="flex flex-col md:flex-row items-center gap-6">
-          <div class="flex-1">
-            <p class="text-lg mb-4">
-              Our comprehensive framework paper in <em>Intensive Care Medicine</em> details how CLIF
-              contributes to advancing critical care research through standardized data formats and federated
-              analytics.
-            </p>
-            <div class="flex items-center gap-4">
-              <CTAButton
-                href="https://link.springer.com/article/10.1007/s00134-025-07848-7"
-                external={true}
-                ariaLabel="Read the full CLIF framework paper in Intensive Care Medicine (opens in new tab)"
-                size="small"
-              >
-                Read the Paper
-              </CTAButton>
-              <span class="text-sm text-gray-600">Published in Intensive Care Medicine, 2025</span>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </section>
 
 
     <!-- Participating Sites with Enhanced Design -->
