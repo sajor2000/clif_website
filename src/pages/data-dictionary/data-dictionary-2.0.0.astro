@@ -319,6 +319,7 @@ const betaTables = [
     ],
     notes: [
       'The lab_value field often has non-numeric entries that are useful to make project-specific decisions. A site may choose to keep the lab_value field as a character and create a new field lab_value_numeric that only parses the character field to extract the numeric part of the string.',
+      'For the complete list of standardized lab categories used in the lab_category field, see the <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/clif_lab_categories.csv" target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:text-clif-burgundy-dark underline">mCIDE lab categories CSV file</a>.',
     ],
     example: `| hospitalization_id | lab_order_dttm | lab_collect_dttm | lab_result_dttm | lab_order_name | lab_name | lab_category | lab_value | lab_value_numeric | reference_unit | lab_loinc_code | lab_specimen_name | lab_specimen_category |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -389,6 +390,7 @@ const betaTables = [
     notes: [
       'Continuous infusion rates are captured as numeric values with units',
       'Standardized rates help with cross-institutional comparisons',
+      'For the complete list of standardized medication categories used in the med_category field, see the <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/tree/main/mCIDE" target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:text-clif-burgundy-dark underline">mCIDE repository on GitHub</a>.',
     ],
     example: `| hospitalization_id | med_admin_dttm | med_name | med_category | med_value | med_unit | med_rate | med_rate_unit |
 |---|---|---|---|---|---|---|---|
@@ -1832,6 +1834,7 @@ const futureTables = [
           <p class="text-lg text-gray-600 max-w-4xl mx-auto mb-6">
             Production-ready tables tested in federated CLIF projects. These tables have defined 
             <a href="/mCIDE" class="text-clif-burgundy hover:underline font-medium">mCIDE standards</a> 
+            (see also <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/tree/main/mCIDE" target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:underline font-medium">mCIDE on GitHub</a>)
             and stable field structures with minimal breaking changes expected.
           </p>
           <div class="flex flex-col sm:flex-row gap-4 justify-center">
