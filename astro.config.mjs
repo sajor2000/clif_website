@@ -8,11 +8,7 @@ export default defineConfig({
   site: 'https://clif-consortium.org',
   integrations: [
     // Error monitoring
-    sentry({
-      dsn: process.env.SENTRY_DSN || '', // Set this via environment variable in production
-      enabled: import.meta.env?.PROD || false, // Only enable in production
-      tracesSampleRate: 0.2, // Sample rate for performance monitoring
-    }),
+    sentry({}),
     tailwind(),
     sitemap(),
     compress({

@@ -1653,8 +1653,114 @@ const futureTables = [
     </div>
   </div>
 
-  <!-- Main Content -->
-  <main class="max-w-7xl mx-auto px-6 py-8">
+  <!-- Main Content with Left Sidebar -->
+  <div class="max-w-[1600px] mx-auto px-6 py-8">
+    <div class="flex gap-8">
+      <!-- Left Sidebar Table of Contents -->
+      <aside id="toc-sidebar" class="hidden xl:block w-80 shrink-0 transition-all duration-300 ease-in-out relative">
+        <!-- Toggle Button (outside the collapsing container) -->
+        <button 
+          id="sidebar-toggle"
+          class="fixed top-32 bg-white rounded-full shadow-lg border border-gray-200 p-2 hover:bg-gray-50 transition-all duration-300 z-20"
+          aria-label="Toggle sidebar"
+        >
+          <svg class="w-4 h-4 text-gray-600 sidebar-toggle-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
+          </svg>
+        </button>
+        
+        <div class="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto">
+          <nav class="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+            <h3 class="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
+              <svg class="w-5 h-5 text-clif-burgundy" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+              </svg>
+              Table Navigation
+            </h3>
+            
+            <!-- Beta Tables Section -->
+            <div class="mb-6">
+              <button class="toc-section-toggle flex items-center justify-between w-full text-left mb-3 group" data-section="beta">
+                <h4 class="text-sm font-semibold text-gray-700 uppercase tracking-wider flex items-center gap-2">
+                  <span class="w-2 h-2 bg-clif-burgundy rounded-full"></span>
+                  Beta Tables (9)
+                </h4>
+                <svg class="w-4 h-4 text-gray-400 transition-transform toc-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              <ul class="toc-section-content space-y-1 ml-4" data-section-content="beta">
+                {betaTables.map(table => (
+                  <li>
+                    <a 
+                      href={`#${table.id}`} 
+                      class="toc-link block px-3 py-2 text-sm text-gray-600 hover:text-clif-burgundy hover:bg-gray-50 rounded-lg transition-all duration-200"
+                      data-table-nav={table.id}
+                    >
+                      {table.name}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            
+            <!-- Concept Tables Section -->
+            <div class="mb-6">
+              <button class="toc-section-toggle flex items-center justify-between w-full text-left mb-3 group" data-section="concept">
+                <h4 class="text-sm font-semibold text-gray-700 uppercase tracking-wider flex items-center gap-2">
+                  <span class="w-2 h-2 bg-purple-600 rounded-full"></span>
+                  Concept Tables (16)
+                </h4>
+                <svg class="w-4 h-4 text-gray-400 transition-transform toc-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              <ul class="toc-section-content space-y-1 ml-4" data-section-content="concept">
+                {conceptTables.map(table => (
+                  <li>
+                    <a 
+                      href={`#${table.id}`} 
+                      class="toc-link block px-3 py-2 text-sm text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all duration-200"
+                      data-table-nav={table.id}
+                    >
+                      {table.name}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            
+            <!-- Future Tables Section -->
+            <div>
+              <button class="toc-section-toggle flex items-center justify-between w-full text-left mb-3 group" data-section="future">
+                <h4 class="text-sm font-semibold text-gray-700 uppercase tracking-wider flex items-center gap-2">
+                  <span class="w-2 h-2 bg-blue-600 rounded-full"></span>
+                  Future Tables (1)
+                </h4>
+                <svg class="w-4 h-4 text-gray-400 transition-transform toc-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              <ul class="toc-section-content space-y-1 ml-4" data-section-content="future">
+                {futureTables.map(table => (
+                  <li>
+                    <a 
+                      href={`#${table.id}`} 
+                      class="toc-link block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                      data-table-nav={table.id}
+                    >
+                      {table.name}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </nav>
+        </div>
+      </aside>
+      
+      <!-- Main Content Area -->
+      <main class="flex-1 min-w-0">
     <!-- Hero Section -->
     <div class="text-center mb-16">
       <div class="relative mb-16">
@@ -2431,37 +2537,10 @@ const futureTables = [
         </button>
       </div>
     </section>
-  </main>
-
-  <!-- Content Layout Wrapper -->
-  <div class="relative flex max-w-7xl mx-auto">
-    <!-- Right Sidebar -->
-    <aside class="hidden lg:block w-64 shrink-0 pt-16 border-l border-gray-200">
-        <div class="p-6">
-          <h3 class="text-lg font-semibold text-gray-800 mb-4">On this page</h3>
-          <nav id="page-nav">
-            <ul class="space-y-2">
-              <li><a href="#erd" class="block py-1 text-gray-600 hover:text-clif-burgundy border-l-2 border-transparent pl-2">ERD</a></li>
-              <li><a href="#overview" class="block py-1 text-gray-600 hover:text-clif-burgundy border-l-2 border-transparent pl-2">Overview</a></li>
-              <li>
-                <a href="#beta-tables" class="block py-1 text-gray-600 hover:text-clif-burgundy border-l-2 border-transparent pl-2">Beta Tables</a>
-                <ul class="pl-4 mt-2 space-y-1 border-l border-gray-200">
-                  {betaTables.map(table => (
-                    <li><a href={`#${table.id}`} class="block py-1 text-sm text-gray-500 hover:text-gray-800">{table.name}</a></li>
-                  ))}
-                </ul>
-              </li>
-              <li>
-                <a href="#concept-tables" class="block py-1 text-gray-600 hover:text-clif-burgundy border-l-2 border-transparent pl-2">Concept Tables</a>
-              </li>
-              <li>
-                <a href="#future-tables" class="block py-1 text-gray-600 hover:text-clif-burgundy border-l-2 border-transparent pl-2">Future Proposed Tables</a>
-              </li>
-            </ul>
-          </nav>
-        </div>
-      </aside>
+      </main>
+    </div>
   </div>
+
 
 <style>
   /* Prevent layout shifts and flickering */
@@ -2547,6 +2626,41 @@ const futureTables = [
   /* Copy button feedback */
   .copy-csv-btn.copied {
     color: #059669;
+  }
+  
+  /* Sidebar collapsed state */
+  #toc-sidebar.collapsed {
+    width: 0;
+    overflow: hidden;
+  }
+  
+  #toc-sidebar.collapsed nav {
+    opacity: 0;
+  }
+  
+  #toc-sidebar nav {
+    transition: opacity 0.2s ease-in-out;
+  }
+  
+  /* Toggle button positioning */
+  #sidebar-toggle {
+    position: fixed;
+    left: calc(320px - 12px); /* 320px (sidebar width) - 12px (half button into sidebar) */
+    transition: left 0.3s ease-in-out;
+  }
+  
+  /* Toggle button when sidebar is collapsed */
+  #toc-sidebar.collapsed ~ * #sidebar-toggle,
+  #toc-sidebar.collapsed #sidebar-toggle {
+    left: 24px; /* Move to left edge when collapsed */
+  }
+  
+  #toc-sidebar.collapsed .sidebar-toggle-icon {
+    transform: rotate(180deg);
+  }
+  
+  .sidebar-toggle-icon {
+    transition: transform 0.3s ease-in-out;
   }
 </style>
 
@@ -2776,10 +2890,10 @@ const futureTables = [
           const icon = section.querySelector('.collapse-toggle svg');
           if (allExpanded) {
             content.classList.remove('collapsed');
-            icon.classList.remove('rotate-180');
+            icon.classList.add('rotate-180');
           } else {
             content.classList.add('collapsed');
-            icon.classList.add('rotate-180');
+            icon.classList.remove('rotate-180');
           }
         });
         expandAllBtn.innerHTML = allExpanded ? 'Collapse All Details' : 'Expand All Details';
@@ -3188,6 +3302,106 @@ const futureTables = [
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && tourOverlay) {
         endTour();
+      }
+    });
+    
+    // Table of Contents Navigation
+    // Toggle sections in TOC
+    const tocSectionToggles = document.querySelectorAll('.toc-section-toggle');
+    tocSectionToggles.forEach(toggle => {
+      toggle.addEventListener('click', () => {
+        const section = toggle.getAttribute('data-section');
+        const content = document.querySelector(`[data-section-content="${section}"]`);
+        const chevron = toggle.querySelector('.toc-chevron');
+        
+        content?.classList.toggle('hidden');
+        chevron?.classList.toggle('rotate-180');
+      });
+    });
+    
+    // Smooth scrolling for TOC links
+    const tocLinks = document.querySelectorAll('.toc-link');
+    tocLinks.forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const targetId = link.getAttribute('href')?.substring(1);
+        const targetElement = document.getElementById(targetId || '');
+        
+        if (targetElement) {
+          const yOffset = -100; // Account for sticky header
+          const y = targetElement.getBoundingClientRect().top + window.pageYOffset + yOffset;
+          
+          window.scrollTo({ top: y, behavior: 'smooth' });
+        }
+      });
+    });
+    
+    // Highlight active section in TOC
+    const observeTocSections = () => {
+      const observerOptions = {
+        root: null,
+        rootMargin: '-20% 0px -60% 0px',
+        threshold: 0
+      };
+      
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          const id = entry.target.getAttribute('id');
+          const navLink = document.querySelector(`[data-table-nav="${id}"]`);
+          
+          if (entry.isIntersecting) {
+            // Remove all active states
+            document.querySelectorAll('.toc-link').forEach(link => {
+              link.classList.remove('bg-clif-burgundy', 'text-white', 'bg-purple-100', 'text-purple-700', 'bg-blue-100', 'text-blue-700');
+            });
+            
+            // Add active state based on table type
+            if (navLink) {
+              const isBeta = window.betaTables?.some(t => t.id === id);
+              const isConcept = window.conceptTables?.some(t => t.id === id);
+              
+              if (isBeta) {
+                navLink.classList.add('bg-clif-burgundy', 'text-white');
+              } else if (isConcept) {
+                navLink.classList.add('bg-purple-100', 'text-purple-700');
+              } else {
+                navLink.classList.add('bg-blue-100', 'text-blue-700');
+              }
+            }
+          }
+        });
+      }, observerOptions);
+      
+      // Observe all table sections
+      const tableSections = document.querySelectorAll('[data-table-section], [data-table-id]');
+      tableSections.forEach(section => {
+        if (section.id) {
+          observer.observe(section);
+        }
+      });
+    };
+    
+    observeTocSections();
+    
+    // Sidebar collapse/expand functionality
+    const sidebarToggle = document.getElementById('sidebar-toggle');
+    const tocSidebar = document.getElementById('toc-sidebar');
+    
+    // Check localStorage for saved state
+    const savedSidebarState = localStorage.getItem('tocSidebarCollapsed');
+    if (savedSidebarState === 'true') {
+      tocSidebar?.classList.add('collapsed');
+    }
+    
+    sidebarToggle?.addEventListener('click', () => {
+      const isCollapsed = tocSidebar?.classList.contains('collapsed');
+      
+      if (isCollapsed) {
+        tocSidebar?.classList.remove('collapsed');
+        localStorage.setItem('tocSidebarCollapsed', 'false');
+      } else {
+        tocSidebar?.classList.add('collapsed');
+        localStorage.setItem('tocSidebarCollapsed', 'true');
       }
     });
   });
