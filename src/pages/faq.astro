@@ -1,0 +1,100 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="CLIF Consortium - FAQ"
+  description="Frequently asked questions about the Common Longitudinal ICU data Format (CLIF), including comparisons with other data models and how to get involved."
+>
+  <div class="container mx-auto px-4 py-8">
+    <!-- Page Title -->
+    <div class="text-center mb-12">
+      <h1 class="text-5xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h1>
+      <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+        Learn more about CLIF, how it compares to other data models, and how your institution can participate in advancing critical care research.
+      </p>
+    </div>
+
+    <!-- FAQ Content -->
+    <div class="max-w-4xl mx-auto space-y-8">
+      
+      <!-- Why CLIF over OMOP -->
+      <div class="bg-white rounded-xl shadow-lg p-8 border border-gray-200">
+        <h2 class="text-2xl font-semibold mb-4 text-gray-800">Why choose CLIF over OMOP?</h2>
+        <p class="text-lg text-gray-700 leading-relaxed">
+          CLIF is specifically designed for ICU research, capturing the granular, time-sensitive data unique to critical care settings. 
+          While OMOP serves well for general clinical research, CLIF's schema reflects the actual workflows and data patterns of 
+          intensive care units, including detailed ventilator parameters, vasoactive drug titrations, and other ICU-specific interventions 
+          that are essential for critical care research.
+        </p>
+      </div>
+
+      <!-- CLIF vs Epic Cosmos -->
+      <div class="bg-white rounded-xl shadow-lg p-8 border border-gray-200">
+        <h2 class="text-2xl font-semibold mb-4 text-gray-800">How does CLIF compare to Epic Cosmos?</h2>
+        <p class="text-lg text-gray-700 leading-relaxed">
+          CLIF is an open-source, federated solution that keeps data at each institution. This provides complete transparency 
+          in data definitions and allows institutions to maintain full control over their data while participating in 
+          multi-center research. The open-source nature ensures that all researchers can understand, validate, and contribute 
+          to the data model's evolution.
+        </p>
+      </div>
+
+      <!-- Data Granularity -->
+      <div class="bg-white rounded-xl shadow-lg p-8 border border-gray-200">
+        <h2 class="text-2xl font-semibold mb-4 text-gray-800">What level of data granularity does CLIF support?</h2>
+        <p class="text-lg text-gray-700 leading-relaxed">
+          CLIF captures detailed ICU data including ventilator settings throughout the stay (FiO2, PEEP changes), 
+          vasoactive drug titrations, and other critical parameters. While the schema supports high-frequency data, 
+          current federated analyses focus on clinically meaningful time intervals that balance detail with 
+          practical research needs.
+        </p>
+      </div>
+
+      <!-- Join CLIF -->
+      <div class="bg-white rounded-xl shadow-lg p-8 border border-gray-200">
+        <h2 class="text-2xl font-semibold mb-4 text-gray-800">How can my institution join CLIF?</h2>
+        <p class="text-lg text-gray-700 leading-relaxed mb-4">
+          We welcome new collaborators! The CLIF consortium is actively growing, with 18 institutions already participating 
+          and 10 sites contributing data. To join:
+        </p>
+        <ol class="list-decimal list-inside space-y-2 text-lg text-gray-700">
+          <li>Contact us at <a href="mailto:clif_consortium@uchicago.edu" class="text-clif-burgundy hover:text-clif-burgundy-dark underline">clif_consortium@uchicago.edu</a></li>
+          <li>We'll schedule a call to discuss your institution's needs and capabilities</li>
+          <li>Our team will guide you through the implementation process</li>
+          <li>Join our collaborative research network</li>
+        </ol>
+      </div>
+
+      <!-- Research Projects -->
+      <div class="bg-white rounded-xl shadow-lg p-8 border border-gray-200">
+        <h2 class="text-2xl font-semibold mb-4 text-gray-800">I have a research project idea using CLIF. Who should I contact?</h2>
+        <p class="text-lg text-gray-700 leading-relaxed">
+          We're excited to support innovative critical care research projects! Please email us at 
+          <a href="mailto:clif_consortium@uchicago.edu" class="text-clif-burgundy hover:text-clif-burgundy-dark underline">clif_consortium@uchicago.edu</a> 
+          with a brief description of your project. Our scientific committee reviews proposals and can help connect you 
+          with participating sites and resources.
+        </p>
+      </div>
+
+      <!-- Contact Section -->
+      <div class="bg-gradient-to-r from-clif-burgundy/5 to-clif-burgundy/10 rounded-xl p-8 border border-clif-burgundy/20 text-center">
+        <h2 class="text-2xl font-semibold mb-4 text-gray-800">Have More Questions?</h2>
+        <p class="text-lg text-gray-700 mb-6">
+          We're here to help! Whether you're interested in implementing CLIF, proposing research, or learning more about our consortium, 
+          don't hesitate to reach out.
+        </p>
+        <a 
+          href="mailto:clif_consortium@uchicago.edu" 
+          class="inline-flex items-center gap-2 bg-clif-burgundy text-white px-6 py-3 rounded-lg font-semibold hover:bg-clif-burgundy-dark transition-colors"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+          </svg>
+          Email Us
+        </a>
+      </div>
+
+    </div>
+  </div>
+</BaseLayout>
