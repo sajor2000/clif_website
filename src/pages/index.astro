@@ -14,62 +14,21 @@ import GrowthTimeline from '../components/home/GrowthTimeline.astro';
   <div class="container mx-auto px-4 py-8">
     <!-- Hero Section with Enhanced Messaging -->
     <div class="text-center mb-8">
-      <h1 class="text-5xl md:text-6xl font-bold mb-6 text-clif-burgundy">
-        CLIF: A New Era in Federated Critical Care Research
+      <h1 class="text-5xl md:text-6xl font-bold mb-4 text-clif-burgundy">
+        Common Longitudinal ICU data Format (CLIF)
       </h1>
+      <h2 class="text-3xl md:text-4xl font-semibold mb-6 text-gray-800">
+        A New Era in Federated Critical Care Research
+      </h2>
       <p class="text-xl md:text-2xl text-gray-700 max-w-4xl mx-auto font-medium">
         CLIF streamlines longitudinal ICU data into a harmonized, federated framework — enabling instant, privacy‑preserving multicenter research
       </p>
     </div>
 
-    <!-- Prominent Action Button Bar -->
-    <section class="mb-12">
-      <div class="bg-gradient-to-r from-clif-burgundy/5 to-clif-burgundy/10 rounded-2xl p-6 shadow-lg border border-clif-burgundy/20">
-        <div class="flex flex-wrap justify-center gap-3">
-        <CTAButton
-          href="https://link.springer.com/article/10.1007/s00134-025-07848-7"
-          external={true}
-          ariaLabel="Read our latest publication in Intensive Care Medicine"
-          class="flex items-center gap-2"
-        >
-          <span class="text-lg">📄</span>
-          Publications
-        </CTAButton>
-        
-        <CTAButton
-          href="/data-dictionary"
-          ariaLabel="View CLIF 2.0.0 Data Dictionary"
-          class="flex items-center gap-2"
-        >
-          <span class="text-lg">🧾</span>
-          Data Dictionary
-        </CTAButton>
-        
-        <CTAButton
-          href="https://clif-consortium.shinyapps.io/clif-cohort-dashboard/"
-          external={true}
-          ariaLabel="Explore interactive Cohort Dashboard"
-          class="flex items-center gap-2"
-        >
-          <span class="text-lg">🧬</span>
-          Cohort Dashboard
-        </CTAButton>
-        
-        <CTAButton
-          href="/tools"
-          ariaLabel="See what you can build with CLIF"
-          class="flex items-center gap-2"
-        >
-          <span class="text-lg">🛠️</span>
-          Build with CLIF
-        </CTAButton>
-        </div>
-      </div>
-    </section>
 
     <!-- Four Highlight Cards -->
     <section class="mb-16">
-      <h2 class="text-3xl font-bold text-center mb-8 text-gray-900">The Four Dimensions of CLIF</h2>
+      <h2 class="text-3xl font-bold text-center mb-8 text-gray-900">Explore the Four Dimensions of CLIF</h2>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- High Impact Scientific Papers -->
         <div class="bg-white rounded-2xl p-8 shadow-lg border border-gray-200 hover:shadow-xl transition-shadow">
@@ -77,7 +36,7 @@ import GrowthTimeline from '../components/home/GrowthTimeline.astro';
             <span class="text-4xl">📄</span>
             <div class="flex-1">
               <h3 class="text-xl font-bold mb-2 text-gray-900">High Impact Scientific Papers</h3>
-              <p class="text-gray-600 mb-4">Breakthrough research powered by federated critical care data.</p>
+              <p class="text-gray-600 mb-4">Our consortium has published groundbreaking research in top-tier journals, demonstrating how CLIF enables rapid, multi-center studies that were previously impossible. From COVID-19 outcomes to sepsis prediction, CLIF powers discoveries that save lives.</p>
               <a href="https://link.springer.com/article/10.1007/s00134-025-07848-7" 
                  class="text-clif-burgundy hover:text-clif-burgundy-dark font-semibold inline-flex items-center gap-1"
                  target="_blank"
@@ -97,7 +56,7 @@ import GrowthTimeline from '../components/home/GrowthTimeline.astro';
             <span class="text-4xl">🧾</span>
             <div class="flex-1">
               <h3 class="text-xl font-bold mb-2 text-gray-900">Open Source Data Dictionary and ETL Tools</h3>
-              <p class="text-gray-600 mb-4">CLIF 2.0.0: standardized format built from 10+ billion data points.</p>
+              <p class="text-gray-600 mb-4">CLIF 2.0.0 represents years of refinement, incorporating feedback from 10+ billion data points. Our open-source data dictionary and ETL tools make it easy for any institution to transform their ICU data into the CLIF format, joining our federated research network.</p>
               <a href="/data-dictionary" 
                  class="text-clif-burgundy hover:text-clif-burgundy-dark font-semibold inline-flex items-center gap-1">
                 View CLIF-2.0.0 Data Dictionary
@@ -115,7 +74,7 @@ import GrowthTimeline from '../components/home/GrowthTimeline.astro';
             <span class="text-4xl">🧬</span>
             <div class="flex-1">
               <h3 class="text-xl font-bold mb-2 text-gray-900">Large Distributed Cohort in the Consortium</h3>
-              <p class="text-gray-600 mb-4">680,158 ICU patients across 10 sites with CLIF data.</p>
+              <p class="text-gray-600 mb-4">With 680,158 unique ICU patients and 862,400 encounters across 10 active sites, CLIF provides the statistical power needed for robust research. Our interactive dashboard lets you explore cohort characteristics and demographics in real-time, ensuring your studies have the data they need.</p>
               <a href="https://clif-consortium.shinyapps.io/clif-cohort-dashboard/" 
                  class="text-clif-burgundy hover:text-clif-burgundy-dark font-semibold inline-flex items-center gap-1"
                  target="_blank"
@@ -135,7 +94,7 @@ import GrowthTimeline from '../components/home/GrowthTimeline.astro';
             <span class="text-4xl">🛠️</span>
             <div class="flex-1">
               <h3 class="text-xl font-bold mb-2 text-gray-900">Open Source Products Built on Top of CLIF</h3>
-              <p class="text-gray-600 mb-4">Tools and applications for building with CLIF data.</p>
+              <p class="text-gray-600 mb-4">From machine learning pipelines to quality improvement dashboards, the CLIF ecosystem includes open-source tools that accelerate research. Build on our foundation with confidence, knowing you're using battle-tested infrastructure designed for critical care analytics.</p>
               <a href="/tools" 
                  class="text-clif-burgundy hover:text-clif-burgundy-dark font-semibold inline-flex items-center gap-1">
                 See What You Can Build
