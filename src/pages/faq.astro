@@ -21,11 +21,14 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       <!-- Why CLIF over OMOP -->
       <div class="bg-white rounded-xl shadow-lg p-8 border border-gray-200">
         <h2 class="text-2xl font-semibold mb-4 text-gray-800">Why choose CLIF over OMOP?</h2>
+        <p class="text-lg text-gray-700 leading-relaxed mb-4">
+          Most hospitals store patient information in electronic data warehouses (EDWs), which are designed to support a wide range of clinical and research needs. However, these systems often have different formats and coding practices, so researchers must spend a lot of time cleaning and organizing the data before it can be used.
+        </p>
+        <p class="text-lg text-gray-700 leading-relaxed mb-4">
+          Common data models like OMOP help standardize health data for general clinical research. While OMOP can include some ICU information, like ventilator settings, medication infusions, and life support treatments, this data is often incomplete or lacks the detailed timing needed to understand what happens in the ICU. This inconsistency makes it difficult to use OMOP for high-quality, multi-center ICU research.
+        </p>
         <p class="text-lg text-gray-700 leading-relaxed">
-          CLIF is specifically designed for ICU research, capturing the granular, time-sensitive data unique to critical care settings. 
-          While OMOP serves well for general clinical research, CLIF's schema reflects the actual workflows and data patterns of 
-          intensive care units, including detailed ventilator parameters, vasoactive drug titrations, and other ICU-specific interventions 
-          that are essential for critical care research.
+          CLIF was built specifically for ICU research. It focuses on the detailed, time-sensitive data that is unique to intensive care, such as real-time ventilator adjustments, drug titrations, and advanced life support. CLIF closely follows how ICU care is actually delivered, making it easier for researchers to study critical care patients across different hospitals in a consistent, accurate way.
         </p>
       </div>
 
