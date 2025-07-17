@@ -61,13 +61,14 @@ const { webpSrc, fallbackSrc: generatedFallback } = generateImageSources(src);
   <img
     src={src}
     alt={alt}
-    class={`${className} ${loading === 'eager' ? 'no-placeholder' : ''}`}
+    class={`${className} ${loading === 'eager' ? 'no-placeholder' : 'loading-shimmer'}`}
     loading={loading}
     width={width}
     height={height}
     sizes={sizes}
     decoding="async"
-    onerror={`this.classList.add('error'); if(this.src !== '${fallbackSrc}') { this.src = '${fallbackSrc}'; }`}
+    onload="this.classList.remove('loading-shimmer'); this.classList.add('loaded');"
+    onerror={`this.classList.remove('loading-shimmer'); this.classList.add('error'); if(this.src !== '${fallbackSrc}') { this.src = '${fallbackSrc}'; }`}
   />
 </picture>
 
@@ -87,11 +88,35 @@ const { webpSrc, fallbackSrc: generatedFallback } = generateImageSources(src);
 
   img {
     background-color: #f3f4f6;
+    transition: opacity 0.3s ease-in-out;
+  }
+
+  img.loading-shimmer {
+    background: linear-gradient(
+      90deg,
+      #f3f4f6 0%,
+      #e5e7eb 50%,
+      #f3f4f6 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    opacity: 0.8;
+  }
+
+  img.loaded {
+    opacity: 1;
+    animation: none;
+    background-color: transparent;
   }
 
   img.no-placeholder {
     background-color: transparent;
     animation: none;
+  }
+
+  img.error {
+    animation: none;
+    opacity: 1;
   }
 </style>
 
@@ -117,12 +142,25 @@ const { webpSrc, fallbackSrc: generatedFallback } = generateImageSources(src);
     images.forEach((img) => imageObserver.observe(img));
   }
 
-  // Add error handling for all images
+  // Add error handling and retry mechanism for all images
   document.addEventListener('DOMContentLoaded', () => {
     const allImages = document.querySelectorAll('img');
     allImages.forEach((img) => {
+      let retryCount = 0;
+      const maxRetries = 2;
+      const originalSrc = img.src;
+      
       img.addEventListener('error', function () {
-        this.classList.add('error');
+        if (retryCount < maxRetries && this.src === originalSrc) {
+          retryCount++;
+          // Retry after a short delay
+          setTimeout(() => {
+            console.log(`Retrying image load: ${originalSrc} (attempt ${retryCount})`);
+            this.src = originalSrc + '?retry=' + retryCount;
+          }, 1000 * retryCount);
+        } else {
+          this.classList.add('error');
+        }
       });
     });
   });

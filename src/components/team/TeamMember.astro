@@ -14,6 +14,7 @@ interface Props {
   otherLink?: string;
   primaryLink?: string;
   size?: 'small' | 'medium' | 'large';
+  loading?: 'lazy' | 'eager';
 }
 
 const {
@@ -29,6 +30,7 @@ const {
   otherLink,
   primaryLink,
   size = 'medium',
+  loading = 'lazy',
 } = Astro.props;
 
 const sizeClasses = {
@@ -80,7 +82,9 @@ const hasSocialLinks = socialLinks.length > 0;
               src={imagePath}
               alt={name}
               class={`w-full h-full object-cover`}
-              loading="lazy"
+              loading={loading}
+              width={size === 'small' ? 128 : size === 'medium' ? 160 : 192}
+              height={size === 'small' ? 128 : size === 'medium' ? 160 : 192}
             />
           ) : (
             <div class="flex items-center justify-center bg-gradient-to-br from-clif-burgundy to-clif-burgundy/80 text-white font-bold text-xl w-full h-full">
@@ -98,7 +102,9 @@ const hasSocialLinks = socialLinks.length > 0;
             src={imagePath}
             alt={name}
             class={`w-full h-full object-cover`}
-            loading="lazy"
+            loading={loading}
+            width={size === 'small' ? 128 : size === 'medium' ? 160 : 192}
+            height={size === 'small' ? 128 : size === 'medium' ? 160 : 192}
           />
         ) : (
           <div class="flex items-center justify-center bg-gradient-to-br from-clif-burgundy to-clif-burgundy/80 text-white font-bold text-xl w-full h-full">

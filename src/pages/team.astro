@@ -3,6 +3,18 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import TeamMember from '../components/team/TeamMember.astro';
 import ErrorBoundary from '../components/ErrorBoundary.astro';
 import CTAButton from '../components/shared/CTAButton.astro';
+
+// Preload critical team images
+const criticalImages = [
+  '/images/headshots/nicholas_ingraham.webp',
+  '/images/headshots/catherine_gao.webp',
+  '/images/headshots/chad_hochberg.webp',
+  '/images/headshots/kaveri_chhikara.webp',
+  '/images/headshots/vaishvik_chaudhary.webp',
+  '/images/headshots/pat_lyons.webp',
+  '/images/headshots/jc_rojas.webp',
+  '/images/headshots/william_parker.webp'
+];
 ---
 
 <BaseLayout
@@ -48,6 +60,7 @@ import CTAButton from '../components/shared/CTAButton.astro';
             primaryLink="https://www.linkedin.com/in/nicholas-ingraham/"
             size="large"
             scholarLink="https://scholar.google.com/citations?user=ZKMVVHkAAAAJ&hl=en"
+            loading="eager"
           />
 
           <TeamMember
@@ -59,6 +72,7 @@ import CTAButton from '../components/shared/CTAButton.astro';
             primaryLink="https://www.linkedin.com/in/cathyagao/"
             size="large"
             scholarLink="https://scholar.google.com/citations?user=IwClOEIAAAAJ&hl=en"
+            loading="eager"
           />
 
           <TeamMember
@@ -70,6 +84,7 @@ import CTAButton from '../components/shared/CTAButton.astro';
             primaryLink="https://scholar.google.com/citations?hl=en&user=Yc6Zh2kAAAAJ"
             size="large"
             linkedinLink="https://www.linkedin.com/in/chad-hochberg-md"
+            loading="eager"
           />
 
           <TeamMember
@@ -80,6 +95,7 @@ import CTAButton from '../components/shared/CTAButton.astro';
             linkedinLink="https://www.linkedin.com/in/kaverichhikara/"
             primaryLink="https://www.linkedin.com/in/kaverichhikara/"
             size="large"
+            loading="eager"
           />
 
           <TeamMember
@@ -90,6 +106,7 @@ import CTAButton from '../components/shared/CTAButton.astro';
             linkedinLink="https://www.linkedin.com/in/vgc25/"
             primaryLink="https://www.linkedin.com/in/vgc25/"
             size="large"
+            loading="eager"
           />
 
           <TeamMember
@@ -99,6 +116,7 @@ import CTAButton from '../components/shared/CTAButton.astro';
             image="pat_lyons.webp"
             linkedinLink="https://www.linkedin.com/in/patrick-lyons-79183147/"
             size="large"
+            loading="eager"
           />
 
           <TeamMember
@@ -109,6 +127,7 @@ import CTAButton from '../components/shared/CTAButton.astro';
             linkedinLink="https://www.linkedin.com/in/juan-c-rojas-md-ms-3a7345190/"
             size="large"
             scholarLink="https://scholar.google.com/citations?user=XXHTvWEAAAAJ&hl=en"
+            loading="eager"
           />
 
           <TeamMember
@@ -117,6 +136,7 @@ import CTAButton from '../components/shared/CTAButton.astro';
             role="Founding Executive Director"
             image="william_parker.webp"
             linkedinLink="https://www.linkedin.com/in/william-parker-md-phd-3057a9236/"
+            loading="eager"
             scholarLink="https://scholar.google.com/citations?user=jaBF4DEAAAAJ"
             size="large"
           />
@@ -721,4 +741,9 @@ import CTAButton from '../components/shared/CTAButton.astro';
       </ErrorBoundary>
     </section>
   </div>
+  
+  <!-- Preload critical images -->
+  {criticalImages.map(src => (
+    <link rel="preload" as="image" type="image/webp" href={src} />
+  ))}
 </BaseLayout>
