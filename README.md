@@ -1,53 +1,86 @@
 # CLIF Consortium Website
 
-A modern, responsive website for the Common Longitudinal ICU data Format (CLIF) Consortium, built with Astro and deployed on Vercel.
+<div align="center">
+  <img src="public/images/clif_logo.png" alt="CLIF Logo" width="200">
+  
+  **Common Longitudinal ICU data Format**
+  
+  [![Built with Astro](https://img.shields.io/badge/Built%20with-Astro-FF5D01?style=flat&logo=astro)](https://astro.build)
+  [![License](https://img.shields.io/badge/License-ISC-blue.svg)](LICENSE)
+  [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org)
+</div>
 
-## 🚀 Project Overview
+## Overview
 
-The CLIF Consortium website showcases a healthcare consortium focused on standardizing critical care data for research. The site features:
+The CLIF Consortium website is a modern, performant web application showcasing the Common Longitudinal ICU data Format standard for critical care data research. Built with Astro for optimal performance and developer experience.
 
-- **18 participating institutions** with 46 hospitals
+### Key Features
+
+- 📊 **Interactive Data Dictionary** - Comprehensive documentation of CLIF data standards (v1.0.0, v2.0.0, v2.1.0)
+- 🎨 **Enhanced Visual Design** - Color-coded field types for improved readability
+- 🔍 **Advanced Search** - Searchable sidebar navigation and data tables
+- 📱 **Fully Responsive** - Optimized for all device sizes
+- ⚡ **Lightning Fast** - Static site generation with Astro
+- 🏥 **17 Member Institutions** - Collaborative healthcare data standardization
+
+### Quick Statistics
+
+- **17 participating institutions** with 46 hospitals
 - **680,158+ unique ICU patients** across the network
-- **Interactive data dictionary** with CLIF 2.0.0 specifications
-- **Enhanced FAQ system** with accordion functionality
-- **Responsive team directory** with 46+ members
-- **Real-time cohort dashboard** integration
+- **46+ consortium members** contributing to the standard
+- **3 CLIF versions** documented with comprehensive field definitions
 
-## 🛠 Technology Stack
-
-- **Framework**: [Astro 5.11.0](https://astro.build/) with TypeScript
-- **Styling**: [Tailwind CSS 3.4.17](https://tailwindcss.com/)
-- **Image Processing**: Sharp for optimization
-- **Deployment**: [Vercel](https://vercel.com/)
-- **Quality**: ESLint, Prettier, TypeScript strict mode
-
-## 📦 Installation
+## Quick Start
 
 ```bash
 # Clone the repository
-git clone https://github.com/Common-Longitudinal-ICU-data-Format/CLIF.git
-cd clif-consortium-website
+git clone https://github.com/sajor2000/clif_website.git
+cd clif_website
 
 # Install dependencies
 npm install
 
 # Start development server
 npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
 ```
 
-## 🧞 Commands
+## Documentation
 
-All commands are run from the root of the project:
+### Core Documentation
 
-| Command             | Action                                      |
-| :------------------ | :------------------------------------------ |
-| `npm run dev`       | Starts local dev server at `localhost:4321` |
-| `npm run build`     | Build production site to `./dist/`          |
-| `npm run preview`   | Preview build locally before deploying      |
-| `npm run lint`      | Run ESLint on the codebase                  |
-| `npm run format`    | Format code with Prettier                   |
-| `npm run typecheck` | Run TypeScript type checking                |
-| `npm test`          | Run tests with Vitest                       |
+- [`CLAUDE.md`](CLAUDE.md) - AI assistant guidance and project conventions
+- [`docs/folder-structure.md`](docs/folder-structure.md) - Detailed project structure
+
+### Development Guides
+
+- [Development Setup](#development-setup)
+- [Architecture Overview](#architecture)
+- [Contributing Guidelines](#contributing)
+
+## Development Setup
+
+### Prerequisites
+
+- Node.js >= 18.0.0
+- npm >= 9.0.0
+
+### Available Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server on http://localhost:4321 |
+| `npm run build` | Build for production to ./dist |
+| `npm run preview` | Preview production build locally |
+| `npm run lint` | Run ESLint |
+| `npm run lint:fix` | Fix ESLint issues |
+| `npm run format` | Format with Prettier |
+| `npm run typecheck` | TypeScript type checking |
 
 ## 📁 Project Structure
 
