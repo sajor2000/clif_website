@@ -1,178 +1,179 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Badge from '../../components/Badge.astro';
-import DataTable from '../../components/DataTable.astro';
+import MarkdownIt from 'markdown-it';
+import fs from 'node:fs';
+import path from 'node:path';
 
-// Define v2.1.0 specific updates (keeping for future use)
-/* const v21Updates = {
-  adt: {
-    newFields: [
-      {
-        name: 'location_type',
-        type: 'VARCHAR',
-        description: 'Maps ICU type to a standardized list of ICU categories',
-        values: [
-          'Medical ICU',
-          'Surgical ICU',
-          'Cardiac ICU',
-          'Neuro ICU',
-          'Burn ICU',
-          'Trauma ICU',
-          'Mixed ICU',
-          'Other',
-        ],
-      },
-    ],
-  },
-  hospitalization: {
-    updates: ['Finalized admission_type_category mCIDE', 'Added LTACH to admission_type mCIDE'],
-  },
-  patient: {
-    updates: ['Finalized language_category mCIDE'],
-  },
-}; */
+// Read the markdown file at build time
+const markdownPath = path.join(process.cwd(), 'src/content/clif-data-dictionary-2.1.0.md');
+const markdownContent = fs.readFileSync(markdownPath, 'utf-8');
 
-// Beta tables (including new ones promoted from Concept)
-const betaTables = [
-  {
-    id: 'crrt-therapy',
-    name: 'CRRT Therapy',
-    description:
-      'The crrt_therapy table captures Continuous Renal Replacement Therapy (CRRT) data, including different CRRT modalities, operational parameters, and fluid exchange details.',
-    fields: [
-      {
-        name: 'hospitalization_id',
-        type: 'VARCHAR',
-        description: 'Unique identifier for hospitalization episode',
-      },
-      {
-        name: 'recorded_dttm',
-        type: 'DATETIME',
-        description: 'Timestamp when CRRT parameters were recorded (UTC)',
-      },
-      { name: 'crrt_mode_name', type: 'VARCHAR', description: 'Name of CRRT mode from source' },
-      {
-        name: 'crrt_mode_category',
-        type: 'VARCHAR',
-        description: 'Standardized CRRT modes',
-        values: ['scuf', 'cvvh', 'cvvhd', 'cvvhdf'],
-      },
-      {
-        name: 'dialysis_machine_name',
-        type: 'VARCHAR',
-        description: 'Unique identifier for the dialysis machine',
-      },
-      {
-        name: 'blood_flow_rate',
-        type: 'DOUBLE',
-        description: 'Rate of blood flow through the CRRT circuit (mL/hr)',
-      },
-      {
-        name: 'pre_filter_replacement_fluid_rate',
-        type: 'DOUBLE',
-        description: 'Rate of pre-filter replacement fluid infusion (mL/hr)',
-      },
-      {
-        name: 'post_filter_replacement_fluid_rate',
-        type: 'DOUBLE',
-        description: 'Rate of post-filter replacement fluid infusion (mL/hr)',
-      },
-      {
-        name: 'dialysate_flow_rate',
-        type: 'DOUBLE',
-        description: 'Flow rate of dialysate solution (mL/hr)',
-      },
-      {
-        name: 'ultrafiltration_out',
-        type: 'DOUBLE',
-        description: 'Net ultrafiltration output (mL)',
-      },
-    ],
-  },
-  {
-    id: 'ecmo-mcs',
-    name: 'ECMO_MCS',
-    description:
-      'The ECMO/MCS table is a wider longitudinal table that captures the start and stop times of ECMO/MCS support, the type of device used, and the work rate of the device.',
-    fields: [
-      {
-        name: 'hospitalization_id',
-        type: 'VARCHAR',
-        description: 'Unique identifier for the hospitalization event',
-      },
-      {
-        name: 'recorded_dttm',
-        type: 'DATETIME',
-        description: 'Date and time when device settings were recorded (UTC)',
-      },
-      {
-        name: 'device_name',
-        type: 'VARCHAR',
-        description: 'Name of the ECMO/MCS device including brand',
-      },
-      {
-        name: 'device_category',
-        type: 'VARCHAR',
-        description: 'Standardized device categories',
-        values: ['Impella', 'Centrimag', 'TandemHeart', 'HeartMate', 'ECMO', 'Other'],
-      },
-      {
-        name: 'mcs_group',
-        type: 'VARCHAR',
-        description: 'MCS type groupings',
-        values: ['durable_LVAD', 'temporary_LVAD', 'RVAD', 'IABP', 'ECMO'],
-      },
-      {
-        name: 'device_metric_name',
-        type: 'VARCHAR',
-        description: 'Measure of work rate (e.g., RPMs)',
-      },
-      { name: 'device_rate', type: 'DOUBLE', description: 'Numeric value of work rate' },
-      { name: 'flow', type: 'DOUBLE', description: 'Blood flow in L/min' },
-      { name: 'sweep', type: 'DOUBLE', description: 'Gas flow rate in L/min' },
-      { name: 'fdO2', type: 'DOUBLE', description: 'Fraction of delivered oxygen' },
-    ],
-  },
-  {
-    id: 'microbiology-noncultures',
-    name: 'Microbiology Non-cultures',
-    description:
-      'Captures microbiology test results that are not based on culture methods, including PCR, antigen tests, and other rapid diagnostic methods.',
-    fields: [
-      {
-        name: 'hospitalization_id',
-        type: 'VARCHAR',
-        description: 'Unique identifier for hospitalization',
-      },
-      { name: 'test_order_dttm', type: 'DATETIME', description: 'When test was ordered (UTC)' },
-      {
-        name: 'test_collect_dttm',
-        type: 'DATETIME',
-        description: 'When specimen was collected (UTC)',
-      },
-      {
-        name: 'test_result_dttm',
-        type: 'DATETIME',
-        description: 'When results were available (UTC)',
-      },
-      { name: 'test_name', type: 'VARCHAR', description: 'Original test name from source' },
-      { name: 'test_category', type: 'VARCHAR', description: 'Standardized test categories' },
-      { name: 'specimen_source_name', type: 'VARCHAR', description: 'Original specimen source' },
-      {
-        name: 'specimen_source_category',
-        type: 'VARCHAR',
-        description: 'Standardized specimen sources',
-      },
-      { name: 'organism_name', type: 'VARCHAR', description: 'Detected organism/pathogen' },
-      {
-        name: 'organism_category',
-        type: 'VARCHAR',
-        description: 'Standardized organism categories',
-      },
-      { name: 'result_value', type: 'VARCHAR', description: 'Test result (positive/negative/etc)' },
-    ],
-  },
-];
+// Initialize markdown-it with custom options
+const md = new MarkdownIt({
+  html: true,
+  breaks: true,
+  linkify: true,
+  typographer: true
+});
+
+// Custom renderer for headings to remove [Anchor] links and add styling
+md.renderer.rules.heading_open = function(tokens, idx, options, env, renderer) {
+  const token = tokens[idx];
+  const level = token.tag.substring(1); // Extract number from h1, h2, etc.
+  
+  // Get the text content from the next token
+  let headingText = '';
+  if (tokens[idx + 1] && tokens[idx + 1].type === 'inline') {
+    headingText = tokens[idx + 1].content;
+  }
+  
+  // Remove [Anchor] links from heading text
+  const cleanText = headingText.replace(/\s*\[Anchor\]\s*\(.*?\)\s*$/, '');
+  
+  // Create a clean ID from the text
+  const id = cleanText.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  
+  // Add classes based on heading level
+  const levelClasses = {
+    '1': 'text-3xl font-bold mb-6 mt-8 text-clif-burgundy scroll-mt-20',
+    '2': 'text-2xl font-semibold mb-4 mt-6 text-gray-900 scroll-mt-20 border-b border-gray-200 pb-2',
+    '3': 'text-xl font-semibold mb-3 mt-4 text-gray-800 scroll-mt-20',
+    '4': 'text-lg font-medium mb-2 mt-3 text-gray-700 scroll-mt-20',
+  };
+  
+  return `<h${level} id="${id}" class="${levelClasses[level] || ''}">`;
+};
+
+// Custom renderer for inline content to clean up [Anchor] links
+md.renderer.rules.link_open = function(tokens, idx, options, env, renderer) {
+  const token = tokens[idx];
+  const href = token.attrGet('href');
+  
+  // Skip rendering [Anchor] links
+  if (tokens[idx + 1] && tokens[idx + 1].content === 'Anchor') {
+    return '';
+  }
+  
+  return `<a href="${href}">`;
+};
+
+md.renderer.rules.link_close = function(tokens, idx, options, env, renderer) {
+  // Skip closing tag for [Anchor] links
+  if (idx > 0 && tokens[idx - 1] && tokens[idx - 1].content === 'Anchor') {
+    return '';
+  }
+  
+  return '</a>';
+};
+
+// Custom renderer for inline tokens to remove [Anchor] text
+md.renderer.rules.text = function(tokens, idx, options, env, renderer) {
+  const token = tokens[idx];
+  // Skip "Anchor" text nodes
+  if (token.content === 'Anchor') {
+    return '';
+  }
+  return md.utils.escapeHtml(token.content);
+};
+
+// Custom renderer for tables
+md.renderer.rules.table_open = function() {
+  return '<div class="table-wrapper overflow-x-auto rounded-lg shadow-sm border border-gray-200 my-6"><table class="min-w-full divide-y divide-gray-200">';
+};
+
+md.renderer.rules.table_close = function() {
+  return '</table></div>';
+};
+
+md.renderer.rules.thead_open = function() {
+  return '<thead class="bg-gray-50 sticky top-0 z-10">';
+};
+
+md.renderer.rules.tbody_open = function() {
+  return '<tbody class="bg-white divide-y divide-gray-200">';
+};
+
+md.renderer.rules.th_open = function(tokens, idx) {
+  const token = tokens[idx];
+  const align = token.attrGet('style');
+  let alignClass = '';
+  
+  if (align && align.includes('text-align:center')) alignClass = 'text-center';
+  else if (align && align.includes('text-align:right')) alignClass = 'text-right';
+  
+  return `<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50 ${alignClass}">`;
+};
+
+md.renderer.rules.td_open = function(tokens, idx) {
+  const token = tokens[idx];
+  const align = token.attrGet('style');
+  let alignClass = '';
+  
+  if (align && align.includes('text-align:center')) alignClass = 'text-center';
+  else if (align && align.includes('text-align:right')) alignClass = 'text-right';
+  
+  return `<td class="px-6 py-4 text-sm text-gray-900 ${alignClass}">`;
+};
+
+// Convert markdown to HTML
+let processedHtml = md.render(markdownContent);
+
+// Fix image paths
+processedHtml = processedHtml.replace(
+  /https:\/\/clif-consortium\.github\.io\/website\/images\//g,
+  '/images/'
+);
+
+// Replace badge images with styled versions
+processedHtml = processedHtml.replace(
+  /!\[\]\(https:\/\/img\.shields\.io\/badge\/Maturity-Beta-yellow\.png\)/g,
+  '<span class="badge-beta">Beta</span>'
+);
+
+processedHtml = processedHtml.replace(
+  /!\[\]\(https:\/\/img\.shields\.io\/badge\/Maturity-Concept-orange\.png\)/g,
+  '<span class="badge-concept">Concept</span>'
+);
+
+processedHtml = processedHtml.replace(
+  /!\[\]\(https:\/\/img\.shields\.io\/badge\/Work%20in%20Progress-blue\.png\)/g,
+  '<span class="badge-wip">🚀 Work in Progress</span>'
+);
+
+// Also replace img tags for badges (in case they were already converted)
+processedHtml = processedHtml.replace(
+  /<img[^>]*src="https:\/\/img\.shields\.io\/badge\/Maturity-Beta-yellow\.png"[^>]*>/g,
+  '<span class="badge-beta">Beta</span>'
+);
+
+processedHtml = processedHtml.replace(
+  /<img[^>]*src="https:\/\/img\.shields\.io\/badge\/Maturity-Concept-orange\.png"[^>]*>/g,
+  '<span class="badge-concept">Concept</span>'
+);
+
+processedHtml = processedHtml.replace(
+  /<img[^>]*src="https:\/\/img\.shields\.io\/badge\/Work%20in%20Progress-blue\.png"[^>]*>/g,
+  '<span class="badge-wip">🚀 Work in Progress</span>'
+);
+
+// Extract data tables for sidebar (organized by maturity in 2.1.0)
+const dataTableNames = {
+  beta: [
+    'ADT', 'Code Status', 'CRRT Therapy', 'ECMO_MCS', 'Hospitalization', 
+    'Hospital Diagnosis', 'Labs', 'Medication Admin Continuous', 
+    'Microbiology Culture', 'Microbiology Non-culture', 'Patient', 
+    'Patient Assessments', 'Position', 'Respiratory Support', 'Vitals'
+  ],
+  concept: [
+    'Intake_Output', 'Invasive Hemodynamics', 'Key ICU orders', 
+    'Medication Admin Intermittent', 'Medication Orders', 'Procedures', 
+    'Provider', 'Sensitivity', 'Therapy Details', 'Transfusion'
+  ]
+};
+
+const betaTables = dataTableNames.beta;
+const conceptTables = dataTableNames.concept;
 ---
 
 <BaseLayout
@@ -180,235 +181,471 @@ const betaTables = [
   description="Upcoming version of the Common Longitudinal ICU data Format"
 >
   <div class="container mx-auto px-6 py-12">
-    <div class="bg-clif-burgundy-light/10 border-2 border-clif-burgundy/20 p-4 rounded-lg mb-8">
-      <p class="text-lg font-semibold text-blue-800">
-        📅 This version is scheduled for release in September 2025. For current implementation, use <a
-          href="/data-dictionary"
-          class="text-clif-burgundy hover:underline">CLIF v2.0.0</a
-        >.
-      </p>
-    </div>
-
-    <h1 class="text-4xl font-bold text-clif-burgundy mb-2">
-      CLIF-2.1.0 Data Dictionary
-      <span class="ml-3 bg-clif-burgundy text-white text-sm px-3 py-1 rounded-full align-middle"
-        >Work in Progress</span
-      >
-    </h1>
-
-    <div class="prose prose-lg max-w-none">
-      <p class="text-xl mb-8">
-        The CLIF Data Dictionary serves as a comprehensive guide to the Common Longitudinal ICU data
-        Format, detailing the structure and purpose of each table within the framework. Version
-        2.1.0 introduces several important updates including promotion of tables to Beta status and
-        finalized mCIDE categories.
-      </p>
-
-      <div class="my-8">
-        <img
-          src="/images/data-dictionary/ERD-2.1.0.png"
-          alt="Entity Relationship Diagram v2.1.0"
-          class="w-full max-w-4xl mx-auto border shadow-lg"
-        />
-      </div>
-
-      <!-- Key Changes Section -->
-      <section class="mb-12 bg-green-50 p-6 rounded-lg">
-        <h2 class="text-2xl font-bold text-clif-burgundy mb-4">Key Changes in v2.1.0</h2>
-
-        <h3 class="text-xl font-semibold mt-4 mb-2">Tables Promoted to Beta Status</h3>
-        <ul class="list-disc list-inside space-y-2 ml-4">
-          <li><strong>CRRT Therapy</strong> - Continuous Renal Replacement Therapy data capture</li>
-          <li>
-            <strong>ECMO_MCS</strong> - Extracorporeal Membrane Oxygenation and Mechanical Circulatory
-            Support
-          </li>
-          <li>
-            <strong>Microbiology Non-cultures</strong> - PCR, antigen tests, and rapid diagnostics
-          </li>
-        </ul>
-
-        <h3 class="text-xl font-semibold mt-4 mb-2">Updated mCIDE Categories</h3>
-        <ul class="list-disc list-inside space-y-2 ml-4">
-          <li>
-            <strong>ADT Table</strong>: Added <code class="bg-gray-200 px-2 py-1 rounded"
-              >location_type</code
-            > field with standardized ICU categories
-          </li>
-          <li>
-            <strong>Patient Table</strong>: Finalized <code class="bg-gray-200 px-2 py-1 rounded"
-              >language_category</code
-            > mCIDE
-          </li>
-          <li>
-            <strong>Hospitalization Table</strong>: Finalized <code
-              class="bg-gray-200 px-2 py-1 rounded">admission_type_category</code
-            > mCIDE, added LTACH
-          </li>
-        </ul>
-      </section>
-
-      <h2 class="text-2xl font-bold text-clif-burgundy mt-12 mb-4">Beta Tables</h2>
-      <p class="mb-6">
-        The table purpose, structure, and field names for beta tables is complete and used in at
-        least one federated CLIF project. The <a
-          href="/mCIDE"
-          class="text-clif-burgundy hover:underline">minimum Common ICU Data Elements (mCIDE)</a
-        >
-        for category variables is defined.
-      </p>
-
-      <!-- ADT Table with Updates -->
-      <section class="bg-white p-6 rounded-lg shadow-md mb-8">
-        <h3 class="text-xl font-bold mb-2 flex items-center">
-          ADT
-          <Badge type="beta" class="ml-3" />
-          <span class="ml-2 bg-green-100 text-green-800 text-sm px-2 py-1 rounded"
-            >Updated in v2.1.0</span
-          >
-        </h3>
-        <p class="mb-4 text-gray-700">
-          The admission, discharge, and transfer (ADT) table is a start-stop longitudinal dataset
-          that contains information about each patient's movement within the hospital. Now includes <code
-            class="bg-gray-200 px-1 py-0.5 rounded">location_type</code
-          >
-          field for ICU categorization.
-        </p>
-
-        <div class="bg-green-50 p-4 rounded mb-4">
-          <p class="text-sm font-semibold text-green-800">New in v2.1.0:</p>
-          <ul class="text-sm text-green-700 mt-2">
-            <li>
-              • Added <code class="bg-green-200 px-1 py-0.5 rounded">location_type</code> field to categorize
-              ICU types
-            </li>
-            <li>
-              • Added <code class="bg-green-200 px-1 py-0.5 rounded">LTACH</code> to hospital_type values
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <!-- New Beta Tables -->
-      <div class="space-y-8">
-        {
-          betaTables.map((table) => (
-            <DataTable
-              id={table.id}
-              name={table.name}
-              description={table.description}
-              fields={table.fields}
-              maturity="beta"
-            />
-          ))
-        }
-      </div>
-
-      <!-- CRRT Modalities Table -->
-      <section class="mt-8 mb-12">
-        <h3 class="text-lg font-semibold mb-4">CRRT Modalities and Parameter Usage</h3>
-        <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-              <tr>
-                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Mode</th
-                >
-                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"
-                  >Blood Flow</th
-                >
-                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"
-                  >Pre-filter Fluid</th
-                >
-                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"
-                  >Post-filter Fluid</th
-                >
-                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"
-                  >Dialysate</th
-                >
-                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"
-                  >Ultrafiltration</th
-                >
-              </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-              <tr>
-                <td class="px-4 py-2 font-semibold">SCUF</td>
-                <td class="px-4 py-2 text-green-600">Required</td>
-                <td class="px-4 py-2 text-gray-400">Not Used</td>
-                <td class="px-4 py-2 text-gray-400">Not Used</td>
-                <td class="px-4 py-2 text-gray-400">Not Used</td>
-                <td class="px-4 py-2 text-green-600">Required</td>
-              </tr>
-              <tr>
-                <td class="px-4 py-2 font-semibold">CVVH</td>
-                <td class="px-4 py-2 text-green-600">Required</td>
-                <td class="px-4 py-2 text-green-600">Required</td>
-                <td class="px-4 py-2 text-green-600">Required</td>
-                <td class="px-4 py-2 text-gray-400">Not Used</td>
-                <td class="px-4 py-2 text-green-600">Required</td>
-              </tr>
-              <tr>
-                <td class="px-4 py-2 font-semibold">CVVHD</td>
-                <td class="px-4 py-2 text-green-600">Required</td>
-                <td class="px-4 py-2 text-gray-400">Not Used</td>
-                <td class="px-4 py-2 text-gray-400">Not Used</td>
-                <td class="px-4 py-2 text-green-600">Required</td>
-                <td class="px-4 py-2 text-green-600">Required</td>
-              </tr>
-              <tr>
-                <td class="px-4 py-2 font-semibold">CVVHDF</td>
-                <td class="px-4 py-2 text-green-600">Required</td>
-                <td class="px-4 py-2 text-green-600">Required</td>
-                <td class="px-4 py-2 text-green-600">Required</td>
-                <td class="px-4 py-2 text-green-600">Required</td>
-                <td class="px-4 py-2 text-green-600">Required</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="mt-4 text-sm text-gray-600">
-          <p><strong>SCUF:</strong> Slow Continuous Ultrafiltration</p>
-          <p><strong>CVVH:</strong> Continuous Veno-Venous Hemofiltration</p>
-          <p><strong>CVVHD:</strong> Continuous Veno-Venous Hemodialysis</p>
-          <p><strong>CVVHDF:</strong> Continuous Veno-Venous Hemodiafiltration</p>
-        </div>
-      </section>
-
-      <h2 class="text-2xl font-bold text-clif-burgundy mt-12 mb-4">
-        Existing Beta Tables (from v2.0.0)
-      </h2>
-      <p class="mb-6">The following tables remain in Beta status with the updates noted above:</p>
-      <ul class="list-disc list-inside space-y-2 text-gray-700 ml-4">
-        <li>ADT (with new location_type field)</li>
-        <li>Hospitalization (with finalized admission_type_category)</li>
-        <li>Labs</li>
-        <li>Medication Admin Continuous</li>
-        <li>Patient (with finalized language_category)</li>
-        <li>Patient Assessments</li>
-        <li>Position</li>
-        <li>Respiratory Support</li>
-        <li>Vitals</li>
-      </ul>
-
-      <h2 class="text-2xl font-bold text-clif-burgundy mt-12 mb-4">Concept Tables</h2>
-      <p class="mb-6">These tables remain in concept phase with draft structures:</p>
-      <div class="bg-gray-100 p-6 rounded-lg">
-        <p class="text-gray-700">
-          Concept tables include: Diagnosis, Encounters, Imaging, Intake Output, Lines, Medication
-          Admin, Medication Admin MAR, Microbiology Cultures, Monitoring, Procedures, Procedures
-          ECMO, Procedures ICD, Renal Replacement Therapy (other modalities), and Surgical Case
-          Summary.
+    <div class="max-w-7xl mx-auto">
+      <!-- Future Release Notice -->
+      <div class="bg-clif-burgundy-light/10 border-2 border-clif-burgundy/20 p-4 rounded-lg mb-8 shadow-sm">
+        <p class="text-lg font-semibold text-blue-800 m-0">
+          📅 This version is scheduled for release in September 2025. For current implementation, use <a
+            href="/data-dictionary"
+            class="text-clif-burgundy hover:underline">CLIF v2.0.0</a
+          >.
         </p>
       </div>
 
-      <div class="mt-12 flex justify-between items-center">
-        <a href="/data-dictionary" class="text-clif-burgundy hover:underline">
-          ← View Current Version (v2.0.0)
-        </a>
-        <a href="/data-dictionary/change-log" class="text-clif-burgundy hover:underline">
-          View Change Log →
-        </a>
+      <!-- Header -->
+      <header class="mb-8 bg-gradient-to-r from-blue-50 to-clif-burgundy/10 rounded-xl p-6 shadow-sm">
+        <h1 class="text-4xl font-bold mb-4 text-clif-burgundy">CLIF Data Dictionary 2.1.0</h1>
+        <div class="flex items-center gap-4 mb-4">
+          <Badge type="future" size="large" />
+          <span class="text-gray-600 font-medium">Future Release</span>
+        </div>
+        <p class="text-gray-700 leading-relaxed">
+          The next evolution of CLIF featuring promoted tables, new mCIDE categories, 
+          and enhanced support for advanced ICU therapies and monitoring.
+        </p>
+      </header>
+
+      <!-- Table of Contents -->
+      <nav class="toc-container bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-8 lg:hidden">
+        <h2 class="text-lg font-semibold mb-3 text-gray-900">Quick Navigation</h2>
+        <div class="space-y-1" id="mobile-toc">
+          <!-- Will be populated by JavaScript -->
+        </div>
+      </nav>
+
+      <!-- Main Content with Sidebar -->
+      <div class="lg:grid lg:grid-cols-4 lg:gap-8">
+        <!-- Desktop Table of Contents with Data Tables -->
+        <aside class="hidden lg:block lg:col-span-1">
+          <nav class="sticky top-20 bg-white rounded-lg border p-4 max-h-[calc(100vh-6rem)] overflow-y-auto">
+            <h2 class="text-lg font-semibold mb-4 text-gray-900">Data Tables</h2>
+            
+            <!-- Search for tables only -->
+            <div class="mb-4">
+              <input 
+                type="text" 
+                id="table-search"
+                placeholder="Search tables..."
+                class="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <!-- Beta Tables -->
+            <div class="mb-4">
+              <button 
+                id="beta-toggle"
+                class="w-full flex items-center justify-between p-2 text-left rounded hover:bg-gray-50"
+                aria-expanded="true"
+              >
+                <div class="flex items-center gap-2">
+                  <svg class="w-4 h-4 transform transition-transform" id="beta-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                  </svg>
+                  <span class="font-medium">Beta Tables</span>
+                  <span class="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-full">{betaTables.length}</span>
+                </div>
+              </button>
+              <div id="beta-tables" class="mt-2 pl-6 space-y-1">
+                {betaTables.map(tableName => (
+                  <a 
+                    href={`#${tableName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                    class="table-link block py-1 px-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded"
+                    data-table-name={tableName.toLowerCase()}
+                  >
+                    {tableName}
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            <!-- Concept Tables -->
+            <div class="mb-4">
+              <button 
+                id="concept-toggle"
+                class="w-full flex items-center justify-between p-2 text-left rounded hover:bg-gray-50"
+                aria-expanded="true"
+              >
+                <div class="flex items-center gap-2">
+                  <svg class="w-4 h-4 transform transition-transform" id="concept-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                  </svg>
+                  <span class="font-medium">Concept Tables</span>
+                  <span class="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full">{conceptTables.length}</span>
+                </div>
+              </button>
+              <div id="concept-tables" class="mt-2 pl-6 space-y-1">
+                {conceptTables.map(tableName => (
+                  <a 
+                    href={`#${tableName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                    class="table-link block py-1 px-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded"
+                    data-table-name={tableName.toLowerCase()}
+                  >
+                    {tableName}
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            <!-- Future Proposed Tables Section -->
+            <div class="mb-4 mt-6 pt-4 border-t border-gray-200">
+              <div class="flex items-center gap-2 p-2">
+                <span class="font-medium text-gray-700">Future Proposed Tables</span>
+                <span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">Coming Soon</span>
+              </div>
+            </div>
+          </nav>
+        </aside>
+
+        <!-- Article Content -->
+        <article class="lg:col-span-3">
+          <div 
+            class="markdown-content prose prose-lg max-w-none"
+            set:html={processedHtml}
+          />
+
+          <div class="mt-12 flex justify-between items-center">
+            <a href="/data-dictionary" class="text-clif-burgundy hover:underline no-underline">
+              ← View Current Version (v2.0.0)
+            </a>
+            <a href="/data-dictionary/change-log" class="text-clif-burgundy hover:underline no-underline">
+              View Change Log →
+            </a>
+          </div>
+        </article>
       </div>
     </div>
   </div>
+
+  <style>
+    /* Enhanced markdown content styling */
+    .markdown-content {
+      @apply text-gray-800;
+    }
+
+    /* Table wrapper styling */
+    .table-wrapper {
+      @apply -mx-4 px-4 md:mx-0 md:px-0;
+    }
+
+    /* Enhanced table styling */
+    .markdown-content table {
+      @apply w-full;
+    }
+
+    .markdown-content tbody tr {
+      @apply transition-colors duration-150;
+    }
+
+    .markdown-content tbody tr:nth-child(even) {
+      @apply bg-gray-50/50;
+    }
+
+    .markdown-content tbody tr:hover {
+      @apply bg-blue-50/30;
+    }
+
+    /* Code styling improvements */
+    .markdown-content code {
+      @apply bg-gray-100 px-2 py-1 rounded text-sm font-mono text-gray-800 border border-gray-200;
+    }
+
+    .markdown-content pre {
+      @apply bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto mb-4 shadow-md border border-gray-800;
+    }
+
+    .markdown-content pre code {
+      @apply bg-transparent p-0 border-0;
+    }
+
+    /* Table code styling */
+    .markdown-content td code {
+      @apply text-xs px-1.5 py-0.5;
+    }
+
+    /* Link styling */
+    .markdown-content a {
+      @apply text-clif-burgundy hover:text-clif-burgundy-dark underline decoration-1 underline-offset-2 transition-colors duration-200;
+    }
+
+    /* List styling */
+    .markdown-content ul {
+      @apply list-disc list-outside mb-4 ml-6 space-y-1;
+    }
+
+    .markdown-content ol {
+      @apply list-decimal list-outside mb-4 ml-6 space-y-1;
+    }
+
+    .markdown-content li {
+      @apply mb-2 leading-relaxed;
+    }
+
+    /* Nested lists */
+    .markdown-content li ul,
+    .markdown-content li ol {
+      @apply mt-2 mb-2;
+    }
+
+    /* Paragraph spacing */
+    .markdown-content p {
+      @apply mb-4 leading-relaxed;
+    }
+
+    /* Images */
+    .markdown-content img {
+      @apply max-w-full h-auto mx-auto my-6 rounded-lg shadow-lg border border-gray-200;
+    }
+
+    /* Blockquotes - special styling for notes */
+    .markdown-content blockquote {
+      @apply border-l-4 border-blue-400 pl-4 my-4 text-gray-700 bg-blue-50 py-3 pr-4 rounded-r;
+    }
+
+    /* Strong text */
+    .markdown-content strong {
+      @apply font-semibold text-gray-900;
+    }
+
+    /* Badge replacements */
+    .badge-beta,
+    .badge-concept,
+    .badge-wip {
+      @apply inline-flex items-center gap-1 px-3 py-1 text-sm font-bold rounded-full shadow-sm;
+    }
+
+    .badge-beta {
+      @apply bg-gradient-to-r from-orange-400 to-orange-500 text-orange-900 border border-orange-600;
+    }
+
+    .badge-concept {
+      @apply bg-purple-100 text-purple-800 border border-purple-300;
+    }
+
+    .badge-wip {
+      @apply bg-blue-100 text-blue-800 border border-blue-300;
+    }
+
+    /* Table links */
+    .table-link {
+      @apply block py-1 px-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded;
+    }
+
+    .table-link.active {
+      @apply text-blue-600 bg-blue-50 font-medium;
+    }
+
+    /* Table of Contents styling */
+    .toc-link {
+      @apply block py-1 px-3 text-sm text-gray-600 hover:text-clif-burgundy hover:bg-gray-50 rounded transition-colors duration-150;
+    }
+
+    .toc-link.active {
+      @apply text-clif-burgundy bg-clif-burgundy/5 font-medium;
+    }
+
+    .toc-link-h2 {
+      @apply pl-3;
+    }
+
+    .toc-link-h3 {
+      @apply pl-6 text-xs;
+    }
+
+    .toc-link-h4 {
+      @apply pl-9 text-xs;
+    }
+
+    /* Special styling for update sections */
+    .markdown-content > blockquote {
+      @apply bg-green-50 border-green-400 my-6;
+    }
+
+    .markdown-content > blockquote p {
+      @apply mb-2 last:mb-0;
+    }
+
+    /* Ensure lists in blockquotes display properly */
+    .markdown-content blockquote ul {
+      @apply ml-4;
+    }
+
+    .markdown-content blockquote li {
+      @apply text-sm;
+    }
+
+    /* Responsive improvements */
+    @media (max-width: 768px) {
+      .markdown-content table {
+        @apply text-xs;
+      }
+      
+      .markdown-content th,
+      .markdown-content td {
+        @apply px-3 py-2;
+      }
+
+      .markdown-content h1 {
+        @apply text-2xl;
+      }
+
+      .markdown-content h2 {
+        @apply text-xl;
+      }
+
+      .markdown-content h3 {
+        @apply text-lg;
+      }
+    }
+
+    /* Print styles */
+    @media print {
+      .toc-container,
+      .toc-sidebar {
+        @apply hidden;
+      }
+
+      .markdown-content table {
+        @apply break-inside-avoid text-xs;
+      }
+      
+      .markdown-content h1,
+      .markdown-content h2,
+      .markdown-content h3 {
+        @apply break-after-avoid;
+      }
+
+      .table-wrapper {
+        @apply shadow-none border-0;
+      }
+
+      .bg-clif-burgundy-light\/10 {
+        @apply bg-transparent border-gray-400;
+      }
+    }
+
+    /* Smooth scroll behavior */
+    html {
+      scroll-behavior: smooth;
+    }
+  </style>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Simple sidebar functionality
+      const betaToggle = document.getElementById('beta-toggle');
+      const conceptToggle = document.getElementById('concept-toggle');
+      const betaTables = document.getElementById('beta-tables');
+      const conceptTables = document.getElementById('concept-tables');
+      const betaChevron = document.getElementById('beta-chevron');
+      const conceptChevron = document.getElementById('concept-chevron');
+      const searchInput = document.getElementById('table-search');
+      const tableLinks = document.querySelectorAll('.table-link');
+
+      // Toggle sections
+      function toggleSection(section, chevron, button) {
+        const isExpanded = button.getAttribute('aria-expanded') === 'true';
+        button.setAttribute('aria-expanded', !isExpanded);
+        
+        if (isExpanded) {
+          section.style.display = 'none';
+          chevron.style.transform = 'rotate(-90deg)';
+        } else {
+          section.style.display = 'block';
+          chevron.style.transform = 'rotate(0deg)';
+        }
+      }
+
+      betaToggle?.addEventListener('click', () => {
+        toggleSection(betaTables, betaChevron, betaToggle);
+      });
+
+      conceptToggle?.addEventListener('click', () => {
+        toggleSection(conceptTables, conceptChevron, conceptToggle);
+      });
+
+      // Simple search
+      searchInput?.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        
+        tableLinks.forEach(link => {
+          const tableName = link.getAttribute('data-table-name');
+          if (tableName && tableName.includes(searchTerm)) {
+            link.style.display = 'block';
+          } else {
+            link.style.display = 'none';
+          }
+        });
+      });
+
+      // Smooth scrolling and active link highlighting
+      const observerOptions = {
+        rootMargin: '-20% 0px -70% 0px',
+        threshold: 0
+      };
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const id = entry.target.id;
+            tableLinks.forEach((link) => {
+              if (link.getAttribute('href') === `#${id}`) {
+                link.classList.add('active');
+              } else {
+                link.classList.remove('active');
+              }
+            });
+          }
+        });
+      }, observerOptions);
+
+      // Observe all headings for active highlighting
+      const headings = document.querySelectorAll('.markdown-content h1, .markdown-content h2, .markdown-content h3');
+      headings.forEach((heading) => {
+        if (heading.id) {
+          observer.observe(heading);
+        }
+      });
+
+      // Smooth scrolling
+      tableLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          const targetId = link.getAttribute('href').substring(1);
+          const targetElement = document.getElementById(targetId);
+          
+          if (targetElement) {
+            targetElement.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start'
+            });
+          }
+        });
+      });
+
+      // Add copy button to code blocks
+      const codeBlocks = document.querySelectorAll('pre code');
+      codeBlocks.forEach((codeBlock) => {
+        const wrapper = codeBlock.parentElement;
+        wrapper.style.position = 'relative';
+        
+        const copyButton = document.createElement('button');
+        copyButton.className = 'absolute top-2 right-2 px-2 py-1 text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 rounded transition-colors duration-150';
+        copyButton.textContent = 'Copy';
+        
+        copyButton.addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(codeBlock.textContent);
+            copyButton.textContent = 'Copied!';
+            setTimeout(() => {
+              copyButton.textContent = 'Copy';
+            }, 2000);
+          } catch (err) {
+            console.error('Failed to copy:', err);
+          }
+        });
+        
+        wrapper.appendChild(copyButton);
+      });
+    });
+  </script>
 </BaseLayout>

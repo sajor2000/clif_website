@@ -1,3521 +1,629 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Badge from '../../components/Badge.astro';
-import StatsCounter from '../../components/home/StatsCounter.astro';
 import CTAButton from '../../components/shared/CTAButton.astro';
+import MarkdownIt from 'markdown-it';
+import fs from 'node:fs';
+import path from 'node:path';
 
-// Function to parse markdown table for static rendering
-function parseMarkdownTableStatic(markdownTable) {
-  if (!markdownTable) return null;
-  const lines = markdownTable.trim().split('\n');
-  if (lines.length < 3) return null;
+// Read the markdown file at build time
+const markdownPath = path.join(process.cwd(), 'src/content/clif-data-dictionary-2.0.0.md');
+const markdownContent = fs.readFileSync(markdownPath, 'utf-8');
+
+// Initialize markdown-it with custom options
+const md = new MarkdownIt({
+  html: true,
+  breaks: true,
+  linkify: true,
+  typographer: true
+});
+
+// Custom renderer for headings to remove [Anchor] links and add styling
+md.renderer.rules.heading_open = function(tokens, idx, options, env, renderer) {
+  const token = tokens[idx];
+  const level = token.tag.substring(1); // Extract number from h1, h2, etc.
   
-  // Parse headers
-  const headers = lines[0].split('|').map(h => h.trim()).filter(h => h);
-  
-  // Parse data rows
-  const rows = [];
-  for (let i = 2; i < lines.length; i++) {
-    const cells = lines[i].split('|').map(c => c.trim()).filter(c => c !== '');
-    if (cells.length === headers.length) {
-      rows.push(cells);
-    }
+  // Get the text content from the next token
+  let headingText = '';
+  if (tokens[idx + 1] && tokens[idx + 1].type === 'inline') {
+    headingText = tokens[idx + 1].content;
   }
   
-  return { headers, rows };
-}
+  // Remove [Anchor] links from heading text
+  const cleanText = headingText.replace(/\s*\[Anchor\]\s*\(.*?\)\s*$/, '');
+  
+  // Create a clean ID from the text
+  const id = cleanText.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  
+  // Add classes based on heading level
+  const levelClasses = {
+    '1': 'text-3xl font-bold mb-6 mt-8 text-clif-burgundy scroll-mt-20',
+    '2': 'text-2xl font-semibold mb-4 mt-6 text-gray-900 scroll-mt-20 border-b border-gray-200 pb-2',
+    '3': 'text-xl font-semibold mb-3 mt-4 text-gray-800 scroll-mt-20',
+    '4': 'text-lg font-medium mb-2 mt-3 text-gray-700 scroll-mt-20',
+  };
+  
+  return `<h${level} id="${id}" class="${levelClasses[level] || ''}">`;
+};
 
-// Define all Beta tables data
-const betaTables = [
-  {
-    id: 'adt',
-    name: 'ADT',
-    description:
-      "The admission, discharge, and transfer (ADT) table is a start-stop longitudinal dataset that contains information about each patient's movement within the hospital. It also has a hospital_id field to distinguish between different hospitals within a health system.",
-    fields: [
-      {
-        name: 'hospitalization_id',
-        type: 'VARCHAR',
-        description: 'ID variable for each patient encounter',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'hospital_id',
-        type: 'VARCHAR',
-        description: 'Assign a unique ID to each hospital within a healthsystem',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'hospital_type',
-        type: 'VARCHAR',
-        description: 'Maps hospital_id to a standardized list of hospital types',
-        values: ['academic', 'community'],
-      },
-      {
-        name: 'in_dttm',
-        type: 'DATETIME',
-        description:
-          'Start date and time at a particular location. All datetime variables must be timezone-aware and set to UTC.',
-        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
-      },
-      {
-        name: 'out_dttm',
-        type: 'DATETIME',
-        description:
-          'End date and time at a particular location. All datetime variables must be timezone-aware and set to UTC.',
-        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
-      },
-      {
-        name: 'location_name',
-        type: 'VARCHAR',
-        description:
-          'Location of the patient inside the hospital. This field is used to store the patient location from the source data. It is not used for analysis.',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'location_category',
-        type: 'VARCHAR',
-        description: 'Maps location_name to a standardized list of ADT location categories',
-        values: [
-          'ed',
-          'ward',
-          'stepdown',
-          'icu',
-          'procedural',
-          'l&d',
-          'hospice',
-          'psych',
-          'rehab',
-          'radiology',
-          'dialysis',
-          'other',
-        ],
-      },
-    ],
-    notes: [
-      'ADT represents the patient\'s physical location, NOT the patient "status".',
-      'Procedural areas and operating rooms should be mapped to "Procedural". Pre/Intra/Post-procedural/OR EHR data (such as anesthesia flowsheet records from Labs, Vitals, Scores, Respiratory Support) are not currently represented in CLIF.',
-    ],
-    example: `| hospitalization_id | hospital_id | hospital_type | in_dttm | out_dttm | location_name | location_category |
-|---|---|---|---|---|---|---|
-| 20010012 | ABC | academic | 2024-12-01 10:00:00+00:00 | 2024-12-01 14:00:00+00:00 | B06F | icu |
-| 20010012 | ABC | academic | 2024-12-01 14:30:00+00:00 | 2024-12-02 08:00:00+00:00 | B78D | ward |
-| 20010015 | ABC | academic | 2024-11-30 16:45:00+00:00 | 2024-12-01 12:00:00+00:00 | B06T | icu |
-| 20010015 | ABC | academic | 2024-12-01 12:30:00+00:00 | 2024-12-02 07:00:00+00:00 | N23E | procedural |
-| 20010020 | EFG | community | 2024-11-28 09:00:00+00:00 | 2024-11-29 17:00:00+00:00 | B78D | ward |`,
-  },
-  {
-    id: 'hospitalization',
-    name: 'Hospitalization',
-    description:
-      'The hospitalization table contains information about each hospitalization event. Each row in this table represents a unique hospitalization event for a patient. This table is inspired by the visit_occurrence OMOP table but is specific to inpatient hospitalizations (including those that begin in the emergency room).',
-    fields: [
-      {
-        name: 'patient_id',
-        type: 'VARCHAR',
-        description: 'Unique identifier for each patient, linking to the patient table',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'hospitalization_id',
-        type: 'VARCHAR',
-        description: 'Unique identifier for each hospitalization encounter. Each hospitalization_id represents a unique stay in the hospital',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'hospitalization_joined_id',
-        type: 'VARCHAR',
-        description: 'Unique identifier for each continuous inpatient stay in a health system which may span different hospitals (Optional)',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'admission_dttm',
-        type: 'DATETIME',
-        description: 'Date and time the patient is admitted to the hospital. All datetime variables must be timezone-aware and set to UTC.',
-        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
-      },
-      {
-        name: 'discharge_dttm',
-        type: 'DATETIME',
-        description: 'Date and time the patient is discharged from the hospital. All datetime variables must be timezone-aware and set to UTC.',
-        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
-      },
-      {
-        name: 'age_at_admission',
-        type: 'INT',
-        description: 'Age of the patient at the time of admission, in years',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'admission_type_name',
-        type: 'VARCHAR',
-        description: 'Type of inpatient admission. Original string from the source data',
-        restrictions: 'e.g. "Direct admission", "Transfer", "Pre-op surgical"',
-      },
-      {
-        name: 'admission_type_category',
-        type: 'VARCHAR',
-        description: 'Admission disposition mapped to mCIDE categories',
-        restrictions: 'Under-development',
-      },
-      {
-        name: 'discharge_name',
-        type: 'VARCHAR',
-        description: 'Original discharge disposition name string recorded in the raw data',
-        restrictions: 'No restriction, e.g. "home"',
-      },
-      {
-        name: 'discharge_category',
-        type: 'VARCHAR',
-        description: 'Maps discharge_name to a standardized list of discharge categories',
-        values: ['Home', 'Skilled Nursing Facility (SNF)', 'Expired', 'Acute Inpatient Rehab Facility', 'Hospice', 'Long Term Care Hospital (LTACH)', 'Acute Care Hospital', 'Group Home', 'Chemical Dependency', 'Against Medical Advice (AMA)', 'Assisted Living', 'Still Admitted', 'Missing', 'Other', 'Psychiatric Hospital', 'Shelter', 'Jail'],
-      },
-      {
-        name: 'zipcode_nine_digit',
-        type: 'VARCHAR',
-        description: 'Patient\'s 9 digit zip code, used to link with other indices such as ADI and SVI',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'zipcode_five_digit',
-        type: 'VARCHAR',
-        description: 'Patient\'s 5 digit zip code, used to link with other indices such as ADI and SVI',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'census_block_code',
-        type: 'VARCHAR',
-        description: '15 digit FIPS code',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'census_block_group_code',
-        type: 'VARCHAR',
-        description: '12 digit FIPS code',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'census_tract',
-        type: 'VARCHAR',
-        description: '11 digit FIPS code',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'state_code',
-        type: 'VARCHAR',
-        description: '2 digit FIPS code',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'county_code',
-        type: 'VARCHAR',
-        description: '5 digit FIPS code',
-        restrictions: 'No restriction',
-      },
-    ],
-    notes: [
-      'If a patient is discharged to Home/Hospice, then discharge_category == Hospice.',
-      'The geographical indicators (zipcode_nine_digit, zipcode_five_digit, census_block_code, census_block_group_code, census_tract, state_code, county_code) should be added if they are available in your source dataset. zipcode_nine_digit is preferred over zipcode_five_digit, and census_block_code is ideal for census based indicators. The choice of geographical indicators may differ depending on the project.',
-      'If a patient is transferred between different hospitals within a health system, a new hospitalization_id should be created',
-      'If a patient is initially seen in an ER in hospital A and then admitted to inpatient status in hospital B, one hospitalization_id should be created for data from both stays',
-      'A hospitalization_joined_id can also be created from a CLIF table from contiguous hospitalization_ids',
-    ],
-    example: `| patient_id | hospitalization_id | hospitalization_joined_id | admission_dttm | discharge_dttm | age_at_admission | admission_type_name | admission_type_category | discharge_name | discharge_category | zipcode_five_digit | zipcode_nine_digit | census_block_group_code | latitude | longitude |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 101001 | 12345678 | 22334455 | 2024-11-01 08:15:00+00:00 | 2024-11-04 14:30:00+00:00 | 65 | Direct admission | Inpatient | Discharged to Home or Self Care (Routine Discharge) | Home | 60637 | 606370000 | 170313202001 | 41.81030 | -87.59697 |
-| 101002 | 87654321 | 22334455 | 2024-11-04 15:00:00+00:00 | 2024-11-07 11:00:00+00:00 | 72 | Transfer from another hospital | Acute Care Transfer | Transferred to Acute Inpatient Rehab Facility | Acute Inpatient Rehab Facility | 46311 | 463110000 | 170313301002 | 41.55030 | -87.30101 |
-| 101003 | 11223344 | 11223344 | 2024-10-20 07:45:00+00:00 | 2024-10-22 10:20:00+00:00 | 59 | Pre-op surgical | Pre-op | Expired | Expired | 60446 | 604460000 | 170313401003 | 41.70010 | -87.60315 |`,
-  },
-  {
-    id: 'labs',
-    name: 'Labs',
-    description:
-      'The labs table is a long form (one lab result per row) longitudinal table.',
-    fields: [
-      {
-        name: 'hospitalization_id',
-        type: 'VARCHAR',
-        description: 'ID variable for each patient encounter.',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'lab_order_dttm',
-        type: 'DATETIME',
-        description: 'Date and time when the lab is ordered. All datetime variables must be timezone-aware and set to UTC.',
-        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
-      },
-      {
-        name: 'lab_collect_dttm',
-        type: 'DATETIME',
-        description: 'Date and time when the specimen is collected. All datetime variables must be timezone-aware and set to UTC.',
-        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
-      },
-      {
-        name: 'lab_result_dttm',
-        type: 'DATETIME',
-        description: 'Date and time when the lab results are available. All datetime variables must be timezone-aware and set to UTC.',
-        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
-      },
-      {
-        name: 'lab_order_name',
-        type: 'VARCHAR',
-        description: 'Procedure name for the lab, e.g. "Complete blood count w/ diff"',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'lab_order_category',
-        type: 'VARCHAR',
-        description: 'Maps lab_order_name to standardized list of common lab order names, e.g. "CBC"',
-        restrictions: 'List of lab order categories in CLIF',
-      },
-      {
-        name: 'lab_name',
-        type: 'VARCHAR',
-        description: 'Original lab component as recorded in the raw data, e.g. "AST (SGOT)".',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'lab_category',
-        type: 'VARCHAR',
-        description: 'Maps lab_name to a minimum set of standardized labs identified by the CLIF consortium as minimum necessary labs for the study of critical illness.',
-        restrictions: 'List of lab categories in CLIF',
-      },
-      {
-        name: 'lab_value',
-        type: 'VARCHAR',
-        description: 'Recorded value corresponding to a lab. Lab values are often strings that can contain non-numeric results (e.g. "> upper limit of detection").',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'lab_value_numeric',
-        type: 'DOUBLE',
-        description: 'Parse out numeric part of the lab_value variable (optional).',
-        restrictions: 'Numeric',
-      },
-      {
-        name: 'reference_unit',
-        type: 'VARCHAR',
-        description: 'Unit of measurement for that lab.',
-        restrictions: 'Permissible reference values for each lab_category listed here',
-      },
-      {
-        name: 'lab_specimen_name',
-        type: 'VARCHAR',
-        description: 'Original fluid or tissue name the lab was collected from as given in the source data',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'lab_specimen_category',
-        type: 'VARCHAR',
-        description: 'fluid or tissue the lab was collected from, analogous to the LOINC "system" component.',
-        values: ['blood/plasma/serum', 'urine', 'csf', 'other'],
-      },
-      {
-        name: 'lab_loinc_code',
-        type: 'VARCHAR',
-        description: 'LOINC code for the lab',
-        restrictions: 'No restriction',
-      },
-    ],
-    notes: [
-      'The lab_value field often has non-numeric entries that are useful to make project-specific decisions. A site may choose to keep the lab_value field as a character and create a new field lab_value_numeric that only parses the character field to extract the numeric part of the string.',
-      'For the complete list of standardized lab categories used in the lab_category field, see the <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/clif_lab_categories.csv" target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:text-clif-burgundy-dark underline">mCIDE lab categories CSV file</a>.',
-    ],
-    example: `| hospitalization_id | lab_order_dttm | lab_collect_dttm | lab_result_dttm | lab_order_name | lab_name | lab_category | lab_value | lab_value_numeric | reference_unit | lab_loinc_code | lab_specimen_name | lab_specimen_category |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 12345 | 2024-12-01 08:15:00+00:00 | 2024-12-01 08:30:00+00:00 | 2024-12-01 09:00:00+00:00 | Complete Blood Count | Hemoglobin | hemoglobin | 12.3 | 12.3 | g/dL | 718-7 | Complete Blood Count | blood |
-| 12345 | 2024-12-01 08:15:00+00:00 | 2024-12-01 08:30:00+00:00 | 2024-12-01 09:05:00+00:00 | Complete Blood Count | White Blood Cell Count | wbc | 5.6 | 5.6 | 10^3/uL | 6690-2 | Complete Blood Count | blood |
-| 12345 | 2024-12-01 08:15:00+00:00 | 2024-12-01 08:30:00+00:00 | 2024-12-01 09:10:00+00:00 | Metabolic Panel | Sodium | sodium | 138 | 138 | mmol/L | 2951-2 | Metabolic Panel | serum |
-| 12345 | 2024-12-01 08:15:00+00:00 | 2024-12-01 08:30:00+00:00 | 2024-12-01 09:20:00+00:00 | Metabolic Panel | Potassium | potassium | 4.1 | 4.1 | mmol/L | 2823-3 | Metabolic Panel | serum |
-| 67890 | 2024-12-01 09:30:00+00:00 | 2024-12-01 09:45:00+00:00 | 2024-12-01 10:15:00+00:00 | Arterial Blood Gas | pH | ph | 7.35 | 7.35 |  | 2744-1 | Arterial Blood Gas | blood |
-| 67890 | 2024-12-01 09:30:00+00:00 | 2024-12-01 09:45:00+00:00 | 2024-12-01 10:20:00+00:00 | Arterial Blood Gas | pCO2 | pco2 | 40 | 40 | mmHg | 2019-8 | Arterial Blood Gas | blood |
-| 67890 | 2024-12-01 09:30:00+00:00 | 2024-12-01 09:45:00+00:00 | 2024-12-01 10:25:00+00:00 | Arterial Blood Gas | pO2 | po2 | 90 | 90 | mmHg | 2703-7 | Arterial Blood Gas | blood |
-| 67890 | 2024-12-01 09:30:00+00:00 | 2024-12-01 09:45:00+00:00 | 2024-12-01 10:30:00+00:00 | Arterial Blood Gas | Bicarbonate | bicarbonate | 24 | 24 | mmol/L | 2028-3 | Arterial Blood Gas | blood |`,
-  },
-  {
-    id: 'medication_admin_continuous',
-    name: 'Medication Admin Continuous',
-    description:
-      'The medication_admin_continuous table contains information about continuous IV drips. This includes common medications like Norepinephrine, Epinephrine, Vasopressin, and Phenylephrine among others.',
-    fields: [
-      {
-        name: 'hospitalization_id',
-        type: 'VARCHAR',
-        description: 'ID variable for each patient encounter',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'med_admin_dttm',
-        type: 'DATETIME',
-        description: 'Date and time when the medication is administered. All datetime variables must be timezone-aware and set to UTC.',
-        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
-      },
-      {
-        name: 'med_name',
-        type: 'VARCHAR',
-        description: 'Name of the medication',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'med_category',
-        type: 'VARCHAR',
-        description: 'Maps med_name to mCIDE standardized categories',
-        values: ['adrenergic_agents', 'antibiotics', 'antiarrhythmics', 'anticoagulants', 'antiepileptics', 'electrolytes', 'insulin', 'paralytics', 'proton_pump_inhibitors', 'sedatives', 'steroids', 'other'],
-      },
-      {
-        name: 'med_value',
-        type: 'DOUBLE',
-        description: 'Rate of the medication administration (numeric)',
-        restrictions: 'Numeric',
-      },
-      {
-        name: 'med_unit',
-        type: 'VARCHAR',
-        description: 'Unit of measurement for the medication',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'med_rate',
-        type: 'DOUBLE',
-        description: 'Standardized infusion rate (when possible to standardize across institutions)',
-        restrictions: 'Numeric',
-      },
-      {
-        name: 'med_rate_unit',
-        type: 'VARCHAR',
-        description: 'Standardized unit for the infusion rate',
-        restrictions: 'No restriction',
-      },
-    ],
-    notes: [
-      'Continuous infusion rates are captured as numeric values with units',
-      'Standardized rates help with cross-institutional comparisons',
-      'For the complete list of standardized medication categories used in the med_category field, see the <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/tree/main/mCIDE" target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:text-clif-burgundy-dark underline">mCIDE repository on GitHub</a>.',
-    ],
-    example: `| hospitalization_id | med_admin_dttm | med_name | med_category | med_value | med_unit | med_rate | med_rate_unit |
-|---|---|---|---|---|---|---|---|
-| 12345 | 2024-12-01 10:00:00+00:00 | Norepinephrine | adrenergic_agents | 0.05 | mcg/kg/min | 0.05 | mcg/kg/min |
-| 12345 | 2024-12-01 11:00:00+00:00 | Norepinephrine | adrenergic_agents | 0.08 | mcg/kg/min | 0.08 | mcg/kg/min |
-| 67890 | 2024-12-01 14:30:00+00:00 | Propofol | sedatives | 20 | mcg/kg/min | 20 | mcg/kg/min |
-| 67890 | 2024-12-01 15:00:00+00:00 | Fentanyl | sedatives | 1.5 | mcg/kg/hr | 1.5 | mcg/kg/hr |
-| 11111 | 2024-12-01 08:00:00+00:00 | Insulin | insulin | 5 | units/hr | 5 | units/hr |`,
-  },
-  {
-    id: 'patient',
-    name: 'Patient',
-    description:
-      'The patient table contains static demographic information about patients.',
-    fields: [
-      {
-        name: 'patient_id',
-        type: 'VARCHAR',
-        description: 'Unique identifier for each patient',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'sex',
-        type: 'VARCHAR',
-        description: 'Biological sex of the patient',
-        values: ['Male', 'Female', 'Unknown'],
-      },
-      {
-        name: 'race_name',
-        type: 'VARCHAR',
-        description: 'Original race string from source data',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'race_category',
-        type: 'VARCHAR',
-        description: 'Maps race_name to standardized race categories',
-        values: ['American Indian or Alaska Native', 'Asian', 'Black or African American', 'Hispanic or Latino', 'Native Hawaiian or Other Pacific Islander', 'White', 'Other', 'Unknown'],
-      },
-      {
-        name: 'ethnicity_name',
-        type: 'VARCHAR',
-        description: 'Original ethnicity string from source data',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'ethnicity_category',
-        type: 'VARCHAR',
-        description: 'Maps ethnicity_name to standardized categories',
-        values: ['Hispanic or Latino', 'Not Hispanic or Latino', 'Unknown'],
-      },
-    ],
-    notes: [
-      'Static demographic data for each patient',
-      'Race and ethnicity mapping follows standard healthcare categories',
-    ],
-    example: `| patient_id | sex | race_name | race_category | ethnicity_name | ethnicity_category |
-|---|---|---|---|---|---|
-| 001 | Female | Caucasian | White | Non-Hispanic | Not Hispanic or Latino |
-| 002 | Male | African American | Black or African American | Hispanic | Hispanic or Latino |
-| 003 | Female | Asian | Asian | Non-Hispanic | Not Hispanic or Latino |
-| 004 | Male | Native American | American Indian or Alaska Native | Unknown | Unknown |`,
-  },
-  {
-    id: 'patient_assessments',
-    name: 'Patient Assessments',
-    description:
-      'The patient_assessments table captures various clinical assessment scores such as Glasgow Coma Scale, RASS, CAM-ICU, and pain scores.',
-    fields: [
-      {
-        name: 'hospitalization_id',
-        type: 'VARCHAR',
-        description: 'ID variable for each patient encounter',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'assessment_dttm',
-        type: 'DATETIME',
-        description: 'Date and time when the assessment is performed. All datetime variables must be timezone-aware and set to UTC.',
-        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
-      },
-      {
-        name: 'assessment_name',
-        type: 'VARCHAR',
-        description: 'Name of the assessment',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'assessment_category',
-        type: 'VARCHAR',
-        description: 'Maps assessment_name to standardized categories',
-        values: ['gcs_total', 'gcs_eye', 'gcs_verbal', 'gcs_motor', 'rass', 'cam_icu', 'pain'],
-      },
-      {
-        name: 'assessment_value',
-        type: 'VARCHAR',
-        description: 'Value of the assessment',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'assessment_numeric',
-        type: 'DOUBLE',
-        description: 'Numeric value of the assessment (when applicable)',
-        restrictions: 'Numeric',
-      },
-    ],
-    notes: [
-      'Assessment scores are critical for clinical decision making',
-      'Numeric values provided when applicable for analysis',
-    ],
-    example: `| hospitalization_id | assessment_dttm | assessment_name | assessment_category | assessment_value | assessment_numeric |
-|---|---|---|---|---|---|
-| 12345 | 2024-12-01 08:00:00+00:00 | Glasgow Coma Scale | gcs_total | 15 | 15 |
-| 12345 | 2024-12-01 08:00:00+00:00 | Eye Opening | gcs_eye | 4 | 4 |
-| 12345 | 2024-12-01 12:00:00+00:00 | RASS Score | rass | -2 | -2 |
-| 67890 | 2024-12-01 09:30:00+00:00 | CAM-ICU | cam_icu | Negative | 0 |
-| 67890 | 2024-12-01 16:00:00+00:00 | Pain Scale | pain | 3/10 | 3 |`,
-  },
-  {
-    id: 'position',
-    name: 'Position',
-    description:
-      'The position table tracks patient positioning data, particularly important for prone positioning in ARDS management.',
-    fields: [
-      {
-        name: 'hospitalization_id',
-        type: 'VARCHAR',
-        description: 'ID variable for each patient encounter',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'position_dttm',
-        type: 'DATETIME',
-        description: 'Date and time when the position is recorded. All datetime variables must be timezone-aware and set to UTC.',
-        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
-      },
-      {
-        name: 'position_name',
-        type: 'VARCHAR',
-        description: 'Original position name from source data',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'position_category',
-        type: 'VARCHAR',
-        description: 'Maps position_name to standardized categories',
-        values: ['supine', 'prone', 'lateral_right', 'lateral_left', 'sitting', 'standing', 'other'],
-      },
-    ],
-    notes: [
-      'Patient positioning is crucial for respiratory management',
-      'Prone positioning particularly important for ARDS patients',
-    ],
-    example: `| hospitalization_id | position_dttm | position_name | position_category |
-|---|---|---|---|
-| 12345 | 2024-12-01 08:00:00+00:00 | Supine | supine |
-| 12345 | 2024-12-01 12:00:00+00:00 | Prone Position | prone |
-| 67890 | 2024-12-01 10:30:00+00:00 | Right Side | lateral_right |
-| 67890 | 2024-12-01 18:00:00+00:00 | Semi-Fowlers | sitting |`,
-  },
-  {
-    id: 'respiratory_support',
-    name: 'Respiratory Support',
-    description:
-      'The respiratory_support table captures longitudinal data about various forms of respiratory support including mechanical ventilation, NIV, and oxygen therapy.',
-    fields: [
-      {
-        name: 'hospitalization_id',
-        type: 'VARCHAR',
-        description: 'ID variable for each patient encounter',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'recorded_dttm',
-        type: 'DATETIME',
-        description: 'Date and time when the respiratory support is recorded. All datetime variables must be timezone-aware and set to UTC.',
-        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
-      },
-      {
-        name: 'device_name',
-        type: 'VARCHAR',
-        description: 'Original device name from source data',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'device_category',
-        type: 'VARCHAR',
-        description: 'Maps device_name to standardized categories',
-        values: ['invasive_vent', 'niv_bpap', 'niv_cpap', 'hfnc', 'nasal_cannula', 'face_mask', 'non_rebreather', 'room_air', 'other'],
-      },
-      {
-        name: 'mode_name',
-        type: 'VARCHAR',
-        description: 'Ventilator mode name from source data',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'mode_category',
-        type: 'VARCHAR',
-        description: 'Maps mode_name to standardized categories',
-        values: ['volume_control', 'pressure_control', 'pressure_support', 'simv', 'spontaneous', 'other'],
-      },
-      {
-        name: 'fiO2_set',
-        type: 'DOUBLE',
-        description: 'Set fraction of inspired oxygen (0-1)',
-        restrictions: 'Numeric between 0 and 1',
-      },
-      {
-        name: 'peep_set',
-        type: 'DOUBLE',
-        description: 'Set positive end-expiratory pressure in cmH2O',
-        restrictions: 'Numeric',
-      },
-      {
-        name: 'tidal_volume_set',
-        type: 'DOUBLE',
-        description: 'Set tidal volume in mL',
-        restrictions: 'Numeric',
-      },
-      {
-        name: 'respiratory_rate_set',
-        type: 'DOUBLE',
-        description: 'Set respiratory rate in breaths per minute',
-        restrictions: 'Numeric',
-      },
-      {
-        name: 'pressure_support',
-        type: 'DOUBLE',
-        description: 'Pressure support level in cmH2O',
-        restrictions: 'Numeric',
-      },
-      {
-        name: 'flow_rate',
-        type: 'DOUBLE',
-        description: 'Flow rate in L/min (for oxygen devices)',
-        restrictions: 'Numeric',
-      },
-    ],
-    notes: [
-      'Comprehensive respiratory support tracking across all modalities',
-      'Critical for understanding ventilator management strategies',
-    ],
-    example: `| hospitalization_id | recorded_dttm | device_name | device_category | mode_name | mode_category | fiO2_set | peep_set | tidal_volume_set | respiratory_rate_set | pressure_support | flow_rate |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| 12345 | 2024-12-01 08:00:00+00:00 | Ventilator | invasive_vent | Volume Control | volume_control | 0.6 | 8 | 450 | 16 | NULL | NULL |
-| 12345 | 2024-12-01 12:00:00+00:00 | Ventilator | invasive_vent | Pressure Support | pressure_support | 0.5 | 5 | NULL | NULL | 10 | NULL |
-| 67890 | 2024-12-01 10:00:00+00:00 | BiPAP | niv_bpap | BiPAP | pressure_control | 0.4 | 5 | NULL | 14 | NULL | NULL |
-| 11111 | 2024-12-01 14:00:00+00:00 | High Flow Nasal Cannula | hfnc | NULL | NULL | 0.35 | NULL | NULL | NULL | NULL | 40 |
-| 22222 | 2024-12-01 16:00:00+00:00 | Nasal Cannula | nasal_cannula | NULL | NULL | NULL | NULL | NULL | NULL | NULL | 3 |`,
-  },
-  {
-    id: 'vitals',
-    name: 'Vitals',
-    description:
-      'The vitals table contains longitudinal vital sign measurements.',
-    fields: [
-      {
-        name: 'hospitalization_id',
-        type: 'VARCHAR',
-        description: 'ID variable for each patient encounter',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'recorded_dttm',
-        type: 'DATETIME',
-        description: 'Date and time when the vital sign is recorded. All datetime variables must be timezone-aware and set to UTC.',
-        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
-      },
-      {
-        name: 'vital_name',
-        type: 'VARCHAR',
-        description: 'Original vital sign name from source data',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'vital_category',
-        type: 'VARCHAR',
-        description: 'Maps vital_name to standardized categories',
-        values: ['heart_rate', 'sbp', 'dbp', 'map', 'respiratory_rate', 'spo2', 'temperature', 'weight', 'height'],
-      },
-      {
-        name: 'vital_value',
-        type: 'DOUBLE',
-        description: 'Numeric value of the vital sign',
-        restrictions: 'Numeric',
-      },
-      {
-        name: 'vital_unit',
-        type: 'VARCHAR',
-        description: 'Unit of measurement',
-        restrictions: 'No restriction',
-      },
-    ],
-    notes: [
-      'Longitudinal vital sign tracking for patient monitoring',
-      'Essential for identifying clinical trends and deterioration',
-    ],
-    example: `| hospitalization_id | recorded_dttm | vital_name | vital_category | vital_value | vital_unit |
-|---|---|---|---|---|---|
-| 12345 | 2024-12-01 08:00:00+00:00 | Heart Rate | heart_rate | 88 | bpm |
-| 12345 | 2024-12-01 08:00:00+00:00 | Systolic BP | sbp | 120 | mmHg |
-| 12345 | 2024-12-01 08:00:00+00:00 | Diastolic BP | dbp | 75 | mmHg |
-| 12345 | 2024-12-01 08:00:00+00:00 | Mean Arterial Pressure | map | 90 | mmHg |
-| 12345 | 2024-12-01 08:00:00+00:00 | Respiratory Rate | respiratory_rate | 16 | breaths/min |
-| 12345 | 2024-12-01 08:00:00+00:00 | Oxygen Saturation | spo2 | 98 | % |
-| 12345 | 2024-12-01 08:00:00+00:00 | Temperature | temperature | 37.1 | °C |
-| 67890 | 2024-12-01 09:00:00+00:00 | Weight | weight | 70 | kg |
-| 67890 | 2024-12-01 09:00:00+00:00 | Height | height | 175 | cm |`,
-  },
-];
+// Custom renderer for inline content to clean up [Anchor] links
+md.renderer.rules.link_open = function(tokens, idx, options, env, renderer) {
+  const token = tokens[idx];
+  const href = token.attrGet('href');
+  
+  // Skip rendering [Anchor] links
+  if (tokens[idx + 1] && tokens[idx + 1].content === 'Anchor') {
+    return '';
+  }
+  
+  return `<a href="${href}">`;
+};
 
+md.renderer.rules.link_close = function(tokens, idx, options, env, renderer) {
+  // Skip closing tag for [Anchor] links
+  if (idx > 0 && tokens[idx - 1] && tokens[idx - 1].content === 'Anchor') {
+    return '';
+  }
+  
+  return '</a>';
+};
 
-// Define Concept tables
-const conceptTables = [
-  {
-    id: 'code_status',
-    name: 'Code Status',
-    description: 'This table provides a longitudinal record of changes in a patient\'s code status during their hospitalization. It tracks the timeline and categorization of code status updates, facilitating the analysis of care preferences and decisions.',
-    fields: [
-      {
-        name: 'hospitalization_id',
-        type: 'VARCHAR',
-        description: 'Unique identifier for each hospitalization encounter',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'recorded_dttm',
-        type: 'DATETIME',
-        description: 'Date and time when code status was documented',
-        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
-      },
-      {
-        name: 'code_status',
-        type: 'VARCHAR',
-        description: 'Patient\'s resuscitation preference',
-        values: ['full_code', 'dnr', 'dnh', 'dni', 'comfort_care', 'other'],
-      },
-    ],
-    notes: [
-      'Code status changes are tracked longitudinally',
-      'Facilitates analysis of care preferences and advance directives',
-    ],
-    example: `| hospitalization_id | recorded_dttm | code_status |
-|---|---|---|
-| 20010012 | 2024-12-01 10:00:00+00:00 | full_code |
-| 20010012 | 2024-12-02 08:30:00+00:00 | dnr |`,
-  },
-  {
-    id: 'crrt_therapy',
-    name: 'CRRT Therapy',
-    description: 'The crrt_therapy table captures Continuous Renal Replacement Therapy (CRRT) data, including different CRRT modalities, operational parameters, and fluid exchange details. The intermittent HD, peritoneal dialysis, PERT, and SLED tables are under development.',
-    fields: [
-      {
-        name: 'hospitalization_id',
-        type: 'VARCHAR',
-        description: 'Unique identifier for each hospitalization encounter',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'therapy_start_dttm',
-        type: 'DATETIME',
-        description: 'Start date and time of CRRT therapy',
-        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
-      },
-      {
-        name: 'therapy_end_dttm',
-        type: 'DATETIME',
-        description: 'End date and time of CRRT therapy',
-        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
-      },
-      {
-        name: 'crrt_modality',
-        type: 'VARCHAR',
-        description: 'Type of CRRT modality used',
-        values: ['cvvh', 'cvvhd', 'cvvhdf', 'scuf', 'other'],
-      },
-      {
-        name: 'blood_flow_rate',
-        type: 'DOUBLE',
-        description: 'Blood flow rate in mL/min',
-        restrictions: 'Numeric',
-      },
-      {
-        name: 'dialysate_flow_rate',
-        type: 'DOUBLE',
-        description: 'Dialysate flow rate in mL/hr',
-        restrictions: 'Numeric',
-      },
-    ],
-    notes: [
-      'Captures continuous renal replacement therapy parameters',
-      'Intermittent HD, peritoneal dialysis, PERT, and SLED tables under development',
-    ],
-    example: `| hospitalization_id | therapy_start_dttm | therapy_end_dttm | crrt_modality | blood_flow_rate | dialysate_flow_rate |
-|---|---|---|---|---|---|
-| 20010012 | 2024-12-01 12:00:00+00:00 | 2024-12-02 12:00:00+00:00 | cvvhd | 200 | 2000 |`,
-  },
-  {
-    id: 'ecmo_mcs',
-    name: 'ECMO_MCS',
-    description: 'The ECMO/MCS table is a wider longitudinal table that captures the start and stop times of ECMO/MCS support, the type of device used, and the work rate of the device.',
-    fields: [
-      {
-        name: 'hospitalization_id',
-        type: 'VARCHAR',
-        description: 'Unique identifier for each hospitalization encounter',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'device_start_dttm',
-        type: 'DATETIME',
-        description: 'Start date and time of ECMO/MCS support',
-        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
-      },
-      {
-        name: 'device_end_dttm',
-        type: 'DATETIME',
-        description: 'End date and time of ECMO/MCS support',
-        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
-      },
-      {
-        name: 'device_type',
-        type: 'VARCHAR',
-        description: 'Type of mechanical circulatory support device',
-        values: ['va_ecmo', 'vv_ecmo', 'iabp', 'impella', 'lvad', 'other'],
-      },
-      {
-        name: 'device_flow_rate',
-        type: 'DOUBLE',
-        description: 'Device flow rate or work rate',
-        restrictions: 'Numeric',
-      },
-    ],
-    notes: [
-      'Captures extracorporeal membrane oxygenation and mechanical circulatory support',
-      'Tracks device parameters and support duration',
-    ],
-    example: `| hospitalization_id | device_start_dttm | device_end_dttm | device_type | device_flow_rate |
-|---|---|---|---|---|
-| 20010012 | 2024-12-01 14:00:00+00:00 | 2024-12-05 10:00:00+00:00 | vv_ecmo | 4.5 |`,
-  },
-  {
-    id: 'admission_diagnosis',
-    name: 'Admission Diagnosis',
-    description: 'Record of all diagnoses associated with the hospitalization. Expect breaking changes to this table as we seek to align it with existing diagnosis ontologies',
-    fields: [
-      {
-        name: 'patient_id',
-        type: 'VARCHAR',
-        description: 'Unique identifier for each patient',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'diagnostic_code',
-        type: 'DOUBLE',
-        description: 'Numeric diagnosis code',
-        restrictions: 'Valid code in the diagnostic_code_format',
-      },
-      {
-        name: 'diagnosis_code_format',
-        type: 'VARCHAR',
-        description: 'Description of the diagnostic code format',
-        values: ['icd9', 'icd10'],
-      },
-      {
-        name: 'start_dttm',
-        type: 'DATETIME',
-        description: 'Date time the diagnosis was recorded',
-        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
-      },
-      {
-        name: 'end_dttm',
-        type: 'DATETIME',
-        description: 'Date time the diagnosis was noted as resolved (if resolved)',
-        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
-      },
-    ],
-    notes: [
-      'Record of all diagnoses associated with the hospitalization',
-      'Breaking changes expected as we align with existing diagnosis ontologies',
-    ],
-    example: `| patient_id | diagnostic_code | diagnosis_code_format | start_dttm | end_dttm |
-|---|---|---|---|---|
-| 1001014 | 250.00 | icd9 | 2023-05-01 08:00:00+00:00 | 2023-05-10 08:00:00+00:00 |
-| 1001014 | J45.909 | icd10 | 2023-05-01 08:00:00+00:00 | 2023-05-15 08:00:00+00:00 |
-| 1002025 | 401.9 | icd9 | 2023-06-10 09:00:00+00:00 | 2023-06-12 09:00:00+00:00 |`,
-  },
-  {
-    id: 'intake_output',
-    name: 'Intake_Output',
-    description: 'The intake_output table captures detailed data on patient fluid intake and output.',
-    fields: [
-      {
-        name: 'hospitalization_id',
-        type: 'VARCHAR',
-        description: 'Unique identifier for each hospitalization encounter',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'recorded_dttm',
-        type: 'DATETIME',
-        description: 'Date and time when intake/output was recorded',
-        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
-      },
-      {
-        name: 'io_category',
-        type: 'VARCHAR',
-        description: 'Category of intake or output',
-        values: ['intake', 'output'],
-      },
-      {
-        name: 'io_type',
-        type: 'VARCHAR',
-        description: 'Specific type of intake or output',
-        values: ['oral', 'iv', 'ng', 'urine', 'drain', 'other'],
-      },
-      {
-        name: 'io_volume',
-        type: 'DOUBLE',
-        description: 'Volume in mL',
-        restrictions: 'Numeric',
-      },
-      {
-        name: 'io_description',
-        type: 'VARCHAR',
-        description: 'Description of the intake or output',
-        restrictions: 'No restriction',
-      },
-    ],
-    notes: [
-      'Captures detailed fluid balance data',
-      'Supports both intake and output tracking',
-    ],
-    example: `| hospitalization_id | recorded_dttm | io_category | io_type | io_volume | io_description |
-|---|---|---|---|---|---|
-| 20010012 | 2024-12-01 08:00:00+00:00 | intake | iv | 1000 | Normal saline |
-| 20010012 | 2024-12-01 12:00:00+00:00 | output | urine | 800 | Urine output |`,
-  },
-  {
-    id: 'invasive_hemodynamics',
-    name: 'Invasive Hemodynamics',
-    description: 'This table captures hemodynamic monitoring data from invasive devices such as arterial lines, central venous catheters, and pulmonary artery catheters.',
-    fields: [
-      {
-        name: 'hospitalization_id',
-        type: 'VARCHAR',
-        description: 'Unique identifier for each hospitalization encounter',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'recorded_dttm',
-        type: 'DATETIME',
-        description: 'Date and time when measurement was recorded',
-        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
-      },
-      {
-        name: 'measurement_name',
-        type: 'VARCHAR',
-        description: 'Name of the hemodynamic measurement',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'measurement_category',
-        type: 'VARCHAR',
-        description: 'Category of hemodynamic measurement',
-        values: ['arterial_pressure', 'central_venous_pressure', 'pulmonary_artery_pressure', 'cardiac_output', 'other'],
-      },
-      {
-        name: 'measurement_value',
-        type: 'DOUBLE',
-        description: 'Numeric value of the measurement',
-        restrictions: 'Numeric',
-      },
-      {
-        name: 'measurement_unit',
-        type: 'VARCHAR',
-        description: 'Unit of measurement',
-        restrictions: 'No restriction',
-      },
-    ],
-    notes: [
-      'Captures invasive hemodynamic monitoring data',
-      'Includes arterial lines, central lines, and PA catheters',
-    ],
-    example: `| hospitalization_id | recorded_dttm | measurement_name | measurement_category | measurement_value | measurement_unit |
-|---|---|---|---|---|---|
-| 20010012 | 2024-12-01 10:15:00+00:00 | CVP | central_venous_pressure | 8 | mmHg |`,
-  },
-  {
-    id: 'key_icu_orders',
-    name: 'Key ICU orders',
-    description: 'This table captures key orders placed in the ICU that impact patient care and outcomes.',
-    fields: [
-      {
-        name: 'hospitalization_id',
-        type: 'VARCHAR',
-        description: 'Unique identifier for each hospitalization encounter',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'order_dttm',
-        type: 'DATETIME',
-        description: 'Date and time when order was placed',
-        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
-      },
-      {
-        name: 'order_category',
-        type: 'VARCHAR',
-        description: 'Category of the order',
-        values: ['nutrition', 'activity', 'isolation', 'monitoring', 'therapy', 'other'],
-      },
-      {
-        name: 'order_description',
-        type: 'VARCHAR',
-        description: 'Description of the order',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'order_status',
-        type: 'VARCHAR',
-        description: 'Status of the order',
-        values: ['active', 'completed', 'discontinued', 'cancelled'],
-      },
-    ],
-    notes: [
-      'Captures key ICU orders impacting patient care',
-      'Focuses on orders relevant to critical care outcomes',
-    ],
-    example: `| hospitalization_id | order_dttm | order_category | order_description | order_status |
-|---|---|---|---|---|
-| 20010012 | 2024-12-01 09:00:00+00:00 | nutrition | NPO for procedure | active |`,
-  },
-  {
-    id: 'medication_admin_intermittent',
-    name: 'Medication Admin Intermittent',
-    description: 'This table contains information about medications given as single doses or intermittent administrations (not continuous infusions).',
-    fields: [
-      {
-        name: 'hospitalization_id',
-        type: 'VARCHAR',
-        description: 'Unique identifier for each hospitalization encounter',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'admin_dttm',
-        type: 'DATETIME',
-        description: 'Date and time when medication was administered',
-        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
-      },
-      {
-        name: 'medication_name',
-        type: 'VARCHAR',
-        description: 'Name of the medication',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'medication_category',
-        type: 'VARCHAR',
-        description: 'Category of medication',
-        values: ['antibiotic', 'analgesic', 'sedative', 'vasopressor', 'diuretic', 'other'],
-      },
-      {
-        name: 'dose_value',
-        type: 'DOUBLE',
-        description: 'Dose amount',
-        restrictions: 'Numeric',
-      },
-      {
-        name: 'dose_unit',
-        type: 'VARCHAR',
-        description: 'Unit of the dose',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'route',
-        type: 'VARCHAR',
-        description: 'Route of administration',
-        values: ['iv', 'po', 'im', 'sc', 'ng', 'pr', 'other'],
-      },
-    ],
-    notes: [
-      'Covers single doses and intermittent administrations',
-      'Excludes continuous infusions (see medication_admin_continuous)',
-    ],
-    example: `| hospitalization_id | admin_dttm | medication_name | medication_category | dose_value | dose_unit | route |
-|---|---|---|---|---|---|---|
-| 20010012 | 2024-12-01 08:00:00+00:00 | Acetaminophen | analgesic | 1000 | mg | po |`,
-  },
-  {
-    id: 'medication_orders',
-    name: 'Medication Orders',
-    description: 'This table captures all medication orders placed for patients, including start and stop times.',
-    fields: [
-      {
-        name: 'hospitalization_id',
-        type: 'VARCHAR',
-        description: 'Unique identifier for each hospitalization encounter',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'order_dttm',
-        type: 'DATETIME',
-        description: 'Date and time when order was placed',
-        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
-      },
-      {
-        name: 'start_dttm',
-        type: 'DATETIME',
-        description: 'Start date and time of medication order',
-        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
-      },
-      {
-        name: 'stop_dttm',
-        type: 'DATETIME',
-        description: 'Stop date and time of medication order',
-        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
-      },
-      {
-        name: 'medication_name',
-        type: 'VARCHAR',
-        description: 'Name of the medication',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'order_status',
-        type: 'VARCHAR',
-        description: 'Status of the order',
-        values: ['active', 'completed', 'discontinued', 'cancelled', 'suspended'],
-      },
-    ],
-    notes: [
-      'Captures all medication orders with timing',
-      'Includes both continuous and intermittent orders',
-    ],
-    example: `| hospitalization_id | order_dttm | start_dttm | stop_dttm | medication_name | order_status |
-|---|---|---|---|---|---|
-| 20010012 | 2024-12-01 08:00:00+00:00 | 2024-12-01 09:00:00+00:00 | 2024-12-03 09:00:00+00:00 | Vancomycin | active |`,
-  },
-  {
-    id: 'microbiology_culture',
-    name: 'Microbiology Culture',
-    description: 'This table contains results from microbiological cultures including blood, urine, sputum, and other specimens.',
-    fields: [
-      {
-        name: 'hospitalization_id',
-        type: 'VARCHAR',
-        description: 'Unique identifier for each hospitalization encounter',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'culture_dttm',
-        type: 'DATETIME',
-        description: 'Date and time when culture was collected',
-        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
-      },
-      {
-        name: 'specimen_type',
-        type: 'VARCHAR',
-        description: 'Type of specimen cultured',
-        values: ['blood', 'urine', 'sputum', 'wound', 'csf', 'other'],
-      },
-      {
-        name: 'organism_name',
-        type: 'VARCHAR',
-        description: 'Name of identified organism',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'culture_result',
-        type: 'VARCHAR',
-        description: 'Result of culture',
-        values: ['positive', 'negative', 'contaminated', 'pending'],
-      },
-      {
-        name: 'result_dttm',
-        type: 'DATETIME',
-        description: 'Date and time when result was available',
-        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
-      },
-    ],
-    notes: [
-      'Captures microbiological culture results',
-      'Links to sensitivity table for antimicrobial testing',
-    ],
-    example: `| hospitalization_id | culture_dttm | specimen_type | organism_name | culture_result | result_dttm |
-|---|---|---|---|---|---|
-| 20010012 | 2024-12-01 10:00:00+00:00 | blood | Staphylococcus aureus | positive | 2024-12-02 08:00:00+00:00 |`,
-  },
-  {
-    id: 'microbiology_non_culture',
-    name: 'Microbiology Non-culture',
-    description: 'This table captures non-culture based microbiology results including PCR, antigens, and other rapid diagnostics.',
-    fields: [
-      {
-        name: 'hospitalization_id',
-        type: 'VARCHAR',
-        description: 'Unique identifier for each hospitalization encounter',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'test_dttm',
-        type: 'DATETIME',
-        description: 'Date and time when test was performed',
-        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
-      },
-      {
-        name: 'test_name',
-        type: 'VARCHAR',
-        description: 'Name of the test',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'test_category',
-        type: 'VARCHAR',
-        description: 'Category of test',
-        values: ['pcr', 'antigen', 'molecular', 'rapid', 'other'],
-      },
-      {
-        name: 'test_result',
-        type: 'VARCHAR',
-        description: 'Result of the test',
-        values: ['positive', 'negative', 'indeterminate', 'pending'],
-      },
-      {
-        name: 'result_dttm',
-        type: 'DATETIME',
-        description: 'Date and time when result was available',
-        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
-      },
-    ],
-    notes: [
-      'Captures non-culture microbiology diagnostics',
-      'Includes PCR, antigens, and rapid tests',
-    ],
-    example: `| hospitalization_id | test_dttm | test_name | test_category | test_result | result_dttm |
-|---|---|---|---|---|---|
-| 20010012 | 2024-12-01 10:00:00+00:00 | COVID-19 PCR | pcr | negative | 2024-12-01 14:00:00+00:00 |`,
-  },
-  {
-    id: 'procedures',
-    name: 'Procedures',
-    description: 'This table documents all procedures performed during the hospitalization.',
-    fields: [
-      {
-        name: 'hospitalization_id',
-        type: 'VARCHAR',
-        description: 'Unique identifier for each hospitalization encounter',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'procedure_dttm',
-        type: 'DATETIME',
-        description: 'Date and time when procedure was performed',
-        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
-      },
-      {
-        name: 'procedure_code',
-        type: 'VARCHAR',
-        description: 'Procedure code (CPT, ICD-10-PCS, etc.)',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'procedure_description',
-        type: 'VARCHAR',
-        description: 'Description of the procedure',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'procedure_category',
-        type: 'VARCHAR',
-        description: 'Category of procedure',
-        values: ['surgical', 'diagnostic', 'therapeutic', 'monitoring', 'other'],
-      },
-      {
-        name: 'provider_specialty',
-        type: 'VARCHAR',
-        description: 'Specialty of performing provider',
-        restrictions: 'No restriction',
-      },
-    ],
-    notes: [
-      'Documents all procedures during hospitalization',
-      'Supports multiple procedure coding systems',
-    ],
-    example: `| hospitalization_id | procedure_dttm | procedure_code | procedure_description | procedure_category | provider_specialty |
-|---|---|---|---|---|---|
-| 20010012 | 2024-12-01 14:00:00+00:00 | 31500 | Intubation | therapeutic | Anesthesiology |`,
-  },
-  {
-    id: 'provider',
-    name: 'Provider',
-    description: 'This table links healthcare providers to patient encounters and captures provider specialty and role information.',
-    fields: [
-      {
-        name: 'hospitalization_id',
-        type: 'VARCHAR',
-        description: 'Unique identifier for each hospitalization encounter',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'provider_id',
-        type: 'VARCHAR',
-        description: 'Unique identifier for healthcare provider',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'provider_role',
-        type: 'VARCHAR',
-        description: 'Role of the provider',
-        values: ['attending', 'resident', 'fellow', 'nurse', 'pharmacist', 'therapist', 'other'],
-      },
-      {
-        name: 'provider_specialty',
-        type: 'VARCHAR',
-        description: 'Specialty of the provider',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'encounter_start_dttm',
-        type: 'DATETIME',
-        description: 'Start of provider involvement',
-        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
-      },
-      {
-        name: 'encounter_end_dttm',
-        type: 'DATETIME',
-        description: 'End of provider involvement',
-        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
-      },
-    ],
-    notes: [
-      'Links providers to patient encounters',
-      'Captures provider roles and specialties',
-    ],
-    example: `| hospitalization_id | provider_id | provider_role | provider_specialty | encounter_start_dttm | encounter_end_dttm |
-|---|---|---|---|---|---|
-| 20010012 | PROV001 | attending | Critical Care Medicine | 2024-12-01 07:00:00+00:00 | 2024-12-05 19:00:00+00:00 |`,
-  },
-  {
-    id: 'sensitivity',
-    name: 'Sensitivity',
-    description: 'This table contains antimicrobial sensitivity testing results linked to positive cultures.',
-    fields: [
-      {
-        name: 'hospitalization_id',
-        type: 'VARCHAR',
-        description: 'Unique identifier for each hospitalization encounter',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'culture_dttm',
-        type: 'DATETIME',
-        description: 'Date and time when original culture was collected',
-        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
-      },
-      {
-        name: 'organism_name',
-        type: 'VARCHAR',
-        description: 'Name of the organism tested',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'antibiotic_name',
-        type: 'VARCHAR',
-        description: 'Name of antibiotic tested',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'sensitivity_result',
-        type: 'VARCHAR',
-        description: 'Result of sensitivity testing',
-        values: ['sensitive', 'resistant', 'intermediate', 'not_tested'],
-      },
-      {
-        name: 'mic_value',
-        type: 'DOUBLE',
-        description: 'Minimum inhibitory concentration',
-        restrictions: 'Numeric',
-      },
-    ],
-    notes: [
-      'Linked to positive cultures from microbiology_culture table',
-      'Provides antimicrobial susceptibility data',
-    ],
-    example: `| hospitalization_id | culture_dttm | organism_name | antibiotic_name | sensitivity_result | mic_value |
-|---|---|---|---|---|---|
-| 20010012 | 2024-12-01 10:00:00+00:00 | Staphylococcus aureus | Vancomycin | sensitive | 1.0 |`,
-  },
-  {
-    id: 'therapy_details',
-    name: 'Therapy Details',
-    description: 'This table provides granular details about specific therapies and interventions.',
-    fields: [
-      {
-        name: 'hospitalization_id',
-        type: 'VARCHAR',
-        description: 'Unique identifier for each hospitalization encounter',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'therapy_start_dttm',
-        type: 'DATETIME',
-        description: 'Start date and time of therapy',
-        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
-      },
-      {
-        name: 'therapy_end_dttm',
-        type: 'DATETIME',
-        description: 'End date and time of therapy',
-        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
-      },
-      {
-        name: 'therapy_name',
-        type: 'VARCHAR',
-        description: 'Name of the therapy',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'therapy_category',
-        type: 'VARCHAR',
-        description: 'Category of therapy',
-        values: ['respiratory', 'renal', 'cardiac', 'neurological', 'other'],
-      },
-      {
-        name: 'therapy_parameters',
-        type: 'VARCHAR',
-        description: 'JSON or text description of therapy parameters',
-        restrictions: 'No restriction',
-      },
-    ],
-    notes: [
-      'Captures detailed therapy and intervention data',
-      'Flexible structure for various therapy types',
-    ],
-    example: `| hospitalization_id | therapy_start_dttm | therapy_end_dttm | therapy_name | therapy_category | therapy_parameters |
-|---|---|---|---|---|---|
-| 20010012 | 2024-12-01 12:00:00+00:00 | 2024-12-02 12:00:00+00:00 | Prone positioning | respiratory | {"duration_hours": 16, "frequency": "daily"} |`,
-  },
-  {
-    id: 'transfusion',
-    name: 'Transfusion',
-    description: 'This table provides detailed information about transfusion events linked to specific hospitalizations.',
-    fields: [
-      {
-        name: 'hospitalization_id',
-        type: 'VARCHAR',
-        description: 'Unique identifier for each hospitalization encounter',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'transfusion_dttm',
-        type: 'DATETIME',
-        description: 'Date and time when transfusion was administered',
-        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
-      },
-      {
-        name: 'blood_product_type',
-        type: 'VARCHAR',
-        description: 'Type of blood product transfused',
-        values: ['packed_rbc', 'fresh_frozen_plasma', 'platelets', 'cryoprecipitate', 'whole_blood', 'other'],
-      },
-      {
-        name: 'units_transfused',
-        type: 'DOUBLE',
-        description: 'Number of units transfused',
-        restrictions: 'Numeric',
-      },
-      {
-        name: 'volume_ml',
-        type: 'DOUBLE',
-        description: 'Volume transfused in mL',
-        restrictions: 'Numeric',
-      },
-      {
-        name: 'indication',
-        type: 'VARCHAR',
-        description: 'Indication for transfusion',
-        restrictions: 'No restriction',
-      },
-    ],
-    notes: [
-      'Captures all blood product transfusions',
-      'Links transfusions to specific hospitalizations',
-    ],
-    example: `| hospitalization_id | transfusion_dttm | blood_product_type | units_transfused | volume_ml | indication |
-|---|---|---|---|---|---|
-| 20010012 | 2024-12-01 16:00:00+00:00 | packed_rbc | 2 | 700 | Anemia with hemoglobin < 7 g/dL |`,
-  },
-];
+// Custom renderer for inline tokens to remove [Anchor] text
+md.renderer.rules.text = function(tokens, idx, options, env, renderer) {
+  const token = tokens[idx];
+  // Skip "Anchor" text nodes
+  if (token.content === 'Anchor') {
+    return '';
+  }
+  return md.utils.escapeHtml(token.content);
+};
 
-// Define Future tables
-const futureTables = [
-  {
-    id: 'clinical_decision_support',
-    name: 'Clinical Decision Support',
-    description: 'This table will capture the actions of clinical decision support tools embedded in the EHR. The table will have the following fields: cds_name, cds_category, cds_value, cds_trigger_ddtm.',
-    fields: [
-      {
-        name: 'hospitalization_id',
-        type: 'VARCHAR',
-        description: 'Unique identifier for each hospitalization encounter',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'cds_name',
-        type: 'VARCHAR',
-        description: 'Name of the clinical decision support tool',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'cds_category',
-        type: 'VARCHAR',
-        description: 'Category of the clinical decision support',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'cds_value',
-        type: 'VARCHAR',
-        description: 'Value or result from the decision support tool',
-        restrictions: 'No restriction',
-      },
-      {
-        name: 'cds_trigger_dttm',
-        type: 'DATETIME',
-        description: 'Date and time when the decision support was triggered',
-        restrictions: 'Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)',
-      },
-    ],
-    notes: [
-      'Future implementation planned for clinical decision support integration',
-      'Will capture automated alerts, recommendations, and interventions',
-    ],
-    example: `| hospitalization_id | cds_name | cds_category | cds_value | cds_trigger_dttm |
-|---|---|---|---|---|
-| 20010012 | Sepsis Alert | infection | High Risk | 2024-12-01 15:30:00+00:00 |`,
-  },
-];
----
+// Custom renderer for tables
+md.renderer.rules.table_open = function() {
+  return '<div class="table-wrapper overflow-x-auto rounded-lg shadow-sm border border-gray-200 my-6"><table class="min-w-full divide-y divide-gray-200">';
+};
 
-<BaseLayout title="Data Dictionary" description="CLIF Data Dictionary">
-  <!-- Navigation Bar -->
-  <nav class="sticky top-0 z-30 bg-white border-b border-gray-200 shadow-sm">
-    <div class="max-w-7xl mx-auto px-6">
-      <div class="flex items-center justify-between h-16">
-        <div class="flex items-center space-x-8">
-          <span class="text-lg font-semibold text-clif-burgundy">Data Dictionary</span>
-          <div class="hidden md:flex space-x-6">
-            <a href="#erd" class="text-gray-600 hover:text-clif-burgundy">ERD</a>
-            <a href="#overview" class="text-gray-600 hover:text-clif-burgundy">Overview</a>
-            <a href="#beta-tables" class="text-gray-600 hover:text-clif-burgundy">Beta Tables</a>
-            <a href="#concept-tables" class="text-gray-600 hover:text-clif-burgundy">Concept Tables</a>
-            <a href="#future-tables" class="text-gray-600 hover:text-clif-burgundy">Future Tables</a>
-          </div>
-        </div>
-        <div class="flex items-center space-x-4">
-          <button
-            id="search-toggle"
-            class="flex items-center px-4 py-2 bg-clif-burgundy text-white rounded-lg hover:bg-clif-burgundy-dark"
-            aria-label="Open search"
-          >
-            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-            </svg>
-            Search
-          </button>
-        </div>
-      </div>
-    </div>
-  </nav>
+md.renderer.rules.table_close = function() {
+  return '</table></div>';
+};
 
-  <!-- Enhanced Search Overlay -->
-  <div id="search-overlay" class="hidden fixed inset-0 z-50 bg-black/60">
-    <div class="container mx-auto px-6 py-8 h-full flex items-start justify-center pt-20">
-      <div class="bg-white rounded-2xl max-w-4xl w-full border border-gray-300">
-        <!-- Header -->
-        <div class="flex items-center justify-between p-6 border-b border-white/10">
-          <div class="flex items-center">
-            <div class="p-2 bg-clif-burgundy/10 rounded-lg mr-3">
-              <svg class="w-6 h-6 text-clif-burgundy" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-              </svg>
-            </div>
-            <h3 class="text-2xl font-bold text-gray-800">Search Data Dictionary</h3>
-          </div>
-          <button id="search-close" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-            </svg>
-          </button>
-        </div>
+md.renderer.rules.thead_open = function() {
+  return '<thead class="bg-gray-50 sticky top-0 z-10">';
+};
 
-        <!-- Search Input -->
-        <div class="p-6">
-          <div class="relative">
-            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-              </svg>
-            </div>
-            <input
-              type="text"
-              id="global-search"
-              placeholder="Search tables, fields, descriptions, or examples..."
-              aria-label="Search CLIF data dictionary tables, fields, or descriptions"
-              class="w-full pl-12 pr-4 py-4 text-lg border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent"
-              autofocus
-            />
-          </div>
-          
-          <!-- Search Filters -->
-          <div class="flex flex-wrap gap-3 mt-4">
-            <button class="search-filter px-4 py-2 text-sm rounded-full border border-gray-300 hover:border-clif-burgundy hover:text-clif-burgundy" data-filter="all">
-              All Categories
-            </button>
-            <button class="search-filter px-4 py-2 text-sm rounded-full border border-orange-300 text-orange-600 hover:bg-orange-50" data-filter="beta">
-              Beta Tables
-            </button>
-            <button class="search-filter px-4 py-2 text-sm rounded-full border border-purple-300 text-purple-600 hover:bg-purple-50" data-filter="concept">
-              Concept Tables
-            </button>
-            <button class="search-filter px-4 py-2 text-sm rounded-full border border-blue-300 text-blue-600 hover:bg-blue-50" data-filter="future">
-              Future Tables
-            </button>
-          </div>
+md.renderer.rules.tbody_open = function() {
+  return '<tbody class="bg-white divide-y divide-gray-200">';
+};
 
-          <!-- Quick Search Suggestions -->
-          <div class="mt-4">
-            <p class="text-sm text-gray-600 mb-2">Popular searches:</p>
-            <div class="flex flex-wrap gap-2">
-              <button class="quick-search px-3 py-1 text-xs bg-gray-100 text-gray-600 rounded-full hover:bg-clif-burgundy hover:text-white" data-query="hospitalization_id">
-                hospitalization_id
-              </button>
-              <button class="quick-search px-3 py-1 text-xs bg-gray-100 text-gray-600 rounded-full hover:bg-clif-burgundy hover:text-white" data-query="vitals">
-                vitals
-              </button>
-              <button class="quick-search px-3 py-1 text-xs bg-gray-100 text-gray-600 rounded-full hover:bg-clif-burgundy hover:text-white" data-query="medication">
-                medication
-              </button>
-              <button class="quick-search px-3 py-1 text-xs bg-gray-100 text-gray-600 rounded-full hover:bg-clif-burgundy hover:text-white" data-query="datetime">
-                datetime
-              </button>
-            </div>
-          </div>
-        </div>
+md.renderer.rules.th_open = function(tokens, idx) {
+  const token = tokens[idx];
+  const align = token.attrGet('style');
+  let alignClass = '';
+  
+  if (align && align.includes('text-align:center')) alignClass = 'text-center';
+  else if (align && align.includes('text-align:right')) alignClass = 'text-right';
+  
+  return `<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50 ${alignClass}">`;
+};
 
-        <!-- Search Results -->
-        <div id="search-results" class="max-h-96 overflow-y-auto border-t border-white/10">
-          <div id="search-empty" class="p-8 text-center text-gray-500">
-            <div class="mb-4">
-              <svg class="w-16 h-16 mx-auto text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-              </svg>
-            </div>
-            <p class="text-lg font-medium mb-2">Start typing to search</p>
-            <p class="text-sm">Search across table names, field descriptions, examples, and more</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+md.renderer.rules.td_open = function(tokens, idx) {
+  const token = tokens[idx];
+  const align = token.attrGet('style');
+  let alignClass = '';
+  
+  if (align && align.includes('text-align:center')) alignClass = 'text-center';
+  else if (align && align.includes('text-align:right')) alignClass = 'text-right';
+  
+  return `<td class="px-6 py-4 text-sm text-gray-900 ${alignClass}">`;
+};
 
-  <!-- Main Content with Left Sidebar -->
-  <div class="max-w-[1600px] mx-auto px-6 py-8">
-    <div class="flex gap-8">
-      <!-- Left Sidebar Table of Contents -->
-      <aside id="toc-sidebar" class="hidden xl:block w-80 shrink-0 transition-all duration-300 ease-in-out relative">
-        <!-- Toggle Button (outside the collapsing container) -->
-        <button 
-          id="sidebar-toggle"
-          class="fixed top-32 bg-white rounded-full shadow-lg border border-gray-200 p-2 hover:bg-gray-50 transition-all duration-300 z-20"
-          aria-label="Toggle sidebar"
-        >
-          <svg class="w-4 h-4 text-gray-600 sidebar-toggle-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
-          </svg>
-        </button>
+// Convert markdown to HTML
+let processedHtml = md.render(markdownContent);
+
+// Fix image paths
+processedHtml = processedHtml.replace(
+  /https:\/\/clif-consortium\.github\.io\/website\/images\//g,
+  '/images/'
+);
+
+// Replace badge images with styled versions
+processedHtml = processedHtml.replace(
+  /!\[\]\(https:\/\/img\.shields\.io\/badge\/Maturity-Beta-yellow\.png\)/g,
+  '<span class="badge-beta">Beta</span>'
+);
+
+processedHtml = processedHtml.replace(
+  /!\[\]\(https:\/\/img\.shields\.io\/badge\/Maturity-Concept-orange\.png\)/g,
+  '<span class="badge-concept">Concept</span>'
+);
+
+// Also replace img tags for badges (in case they were already converted)
+processedHtml = processedHtml.replace(
+  /<img[^>]*src="https:\/\/img\.shields\.io\/badge\/Maturity-Beta-yellow\.png"[^>]*>/g,
+  '<span class="badge-beta">Beta</span>'
+);
+
+processedHtml = processedHtml.replace(
+  /<img[^>]*src="https:\/\/img\.shields\.io\/badge\/Maturity-Concept-orange\.png"[^>]*>/g,
+  '<span class="badge-concept">Concept</span>'
+);
+
+// Apply comprehensive color scheme to data dictionary tables
+function applyColorScheme(html) {
+  // Helper function to wrap text in color span
+  function colorWrap(text, colorClass) {
+    return `<span class="${colorClass}">${text}</span>`;
+  }
+  
+  // Process definition tables (tables with Column | Type | Description headers)
+  html = html.replace(/<table[^>]*>[\s\S]*?<\/table>/g, (tableMatch) => {
+    // Check if this is a definition table
+    if (tableMatch.includes('<th') && tableMatch.includes('Column') && tableMatch.includes('Type')) {
+      // Process each row
+      return tableMatch.replace(/<tr>[\s\S]*?<\/tr>/g, (rowMatch) => {
+        // Skip header row
+        if (rowMatch.includes('<th')) return rowMatch;
         
-        <div class="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto">
-          <nav class="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-            <h3 class="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-              <svg class="w-5 h-5 text-clif-burgundy" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
-              </svg>
-              Table Navigation
-            </h3>
+        // Process table cells
+        return rowMatch.replace(/<td[^>]*>(.*?)<\/td>/g, (cellMatch, content, offset, string) => {
+          // Determine which column we're in
+          const cellsBefore = string.substring(0, offset).split('<td').length - 1;
+          const columnIndex = cellsBefore % 5; // Assuming 5 columns: Column, Type, Description, Permissible Values, Notes
+          
+          // Column 0: Field names
+          if (columnIndex === 0) {
+            // Remove any existing escapes
+            let fieldName = content.replace(/\\_/g, '_').trim();
             
-            <!-- Beta Tables Section -->
-            <div class="mb-6">
-              <button class="toc-section-toggle flex items-center justify-between w-full text-left mb-3 group" data-section="beta">
-                <h4 class="text-sm font-semibold text-gray-700 uppercase tracking-wider flex items-center gap-2">
-                  <span class="w-2 h-2 bg-clif-burgundy rounded-full"></span>
-                  Beta Tables (9)
-                </h4>
-                <svg class="w-4 h-4 text-gray-400 transition-transform toc-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                </svg>
-              </button>
-              <ul class="toc-section-content space-y-1 ml-4" data-section-content="beta">
-                {betaTables.map(table => (
-                  <li>
-                    <a 
-                      href={`#${table.id}`} 
-                      class="toc-link block px-3 py-2 text-sm text-gray-600 hover:text-clif-burgundy hover:bg-gray-50 rounded-lg transition-all duration-200"
-                      data-table-nav={table.id}
-                    >
-                      {table.name}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            
-            <!-- Concept Tables Section -->
-            <div class="mb-6">
-              <button class="toc-section-toggle flex items-center justify-between w-full text-left mb-3 group" data-section="concept">
-                <h4 class="text-sm font-semibold text-gray-700 uppercase tracking-wider flex items-center gap-2">
-                  <span class="w-2 h-2 bg-purple-600 rounded-full"></span>
-                  Concept Tables (16)
-                </h4>
-                <svg class="w-4 h-4 text-gray-400 transition-transform toc-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                </svg>
-              </button>
-              <ul class="toc-section-content space-y-1 ml-4" data-section-content="concept">
-                {conceptTables.map(table => (
-                  <li>
-                    <a 
-                      href={`#${table.id}`} 
-                      class="toc-link block px-3 py-2 text-sm text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all duration-200"
-                      data-table-nav={table.id}
-                    >
-                      {table.name}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            
-            <!-- Future Tables Section -->
-            <div>
-              <button class="toc-section-toggle flex items-center justify-between w-full text-left mb-3 group" data-section="future">
-                <h4 class="text-sm font-semibold text-gray-700 uppercase tracking-wider flex items-center gap-2">
-                  <span class="w-2 h-2 bg-blue-600 rounded-full"></span>
-                  Future Tables (1)
-                </h4>
-                <svg class="w-4 h-4 text-gray-400 transition-transform toc-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                </svg>
-              </button>
-              <ul class="toc-section-content space-y-1 ml-4" data-section-content="future">
-                {futureTables.map(table => (
-                  <li>
-                    <a 
-                      href={`#${table.id}`} 
-                      class="toc-link block px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
-                      data-table-nav={table.id}
-                    >
-                      {table.name}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </nav>
-        </div>
-      </aside>
-      
-      <!-- Main Content Area -->
-      <main class="flex-1 min-w-0">
-    <!-- Hero Section -->
-    <div class="text-center mb-16">
-      <div class="relative mb-16">
-        <div class="hidden"></div>
-        <div class="relative bg-white rounded-3xl px-8 py-16 shadow-lg border border-gray-200">
-          <div class="flex items-center justify-center mb-8">
-            <h1 class="text-5xl md:text-6xl font-bold text-clif-burgundy">
-              CLIF Data Dictionary 2.0.0
-            </h1>
-          </div>
-          
-          <p class="text-2xl md:text-3xl text-gray-700 font-medium mb-6">
-            Your Complete Guide to Standardized Critical Care Data
-          </p>
-          
-          <p class="text-lg md:text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
-            Explore 26 meticulously designed tables that standardize ICU data across institutions. 
-            From Beta-ready production tables to concept designs, discover how CLIF transforms 
-            critical care research through harmonized data structures.
-          </p>
-        </div>
-      </div>
-
-      <!-- Impact Statistics -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
-        <div class="bg-white rounded-xl p-6 border border-gray-200">
-          <StatsCounter
-            value="26"
-            suffix=""
-            label="Total Tables"
-            icon='<svg class="w-12 h-12 mx-auto" fill="currentColor" viewBox="0 0 20 20"><path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/></svg>'
-          />
-        </div>
-        <div class="bg-white rounded-xl p-6 border-2 border-clif-burgundy/20">
-          <StatsCounter
-            value="9"
-            suffix=""
-            label="Beta Tables"
-            icon='<svg class="w-12 h-12 mx-auto text-clif-burgundy" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/></svg>'
-          />
-        </div>
-        <div class="bg-white rounded-xl p-6 border-2 border-purple-200">
-          <StatsCounter
-            value="16"
-            suffix=""
-            label="Concept Tables"
-            icon='<svg class="w-12 h-12 mx-auto text-purple-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>'
-          />
-        </div>
-        <div class="bg-white rounded-xl p-6 border-2 border-blue-200">
-          <StatsCounter
-            value="1"
-            suffix=""
-            label="Future Table"
-            icon='<svg class="w-12 h-12 mx-auto text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"/></svg>'
-          />
-        </div>
-      </div>
-
-      <div class="flex flex-col sm:flex-row gap-4 justify-center">
-        <CTAButton
-          href="#beta-tables"
-          size="large"
-        >
-          <svg class="w-5 h-5 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-          </svg>
-          Explore Beta Tables
-        </CTAButton>
-        <CTAButton
-          href="https://chatgpt.com/g/g-h1nk6d3eR-clif-assistant"
-          variant="outline"
-          size="large"
-          external={true}
-        >
-          <svg class="w-5 h-5 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-          </svg>
-          Get AI Help
-        </CTAButton>
-      </div>
-    </div>
-
-
-
-      <!-- Overview Section -->
-      <div id="overview" class="mb-16 scroll-mt-20">
-        <div class="text-center mb-12">
-          <h2 class="text-4xl font-bold text-clif-burgundy mb-4">Table Categories Overview</h2>
-          <p class="text-lg text-gray-600 max-w-3xl mx-auto">
-            CLIF organizes data into three categories based on development maturity and implementation readiness.
-            Each category serves different research needs and implementation timelines.
-          </p>
-        </div>
-
-        <!-- Enhanced Quick Stats -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-          <div class="group bg-white rounded-2xl overflow-hidden border border-gray-200">
-            <div class="relative p-8 text-center">
-              <div class="flex items-center justify-center mb-4">
-                <div class="p-3 bg-clif-burgundy/10 rounded-xl">
-                  <svg class="w-8 h-8 text-clif-burgundy" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                  </svg>
-                </div>
-              </div>
-              <div>
-                <p class="text-4xl font-bold text-clif-burgundy mb-2">9</p>
-                <p class="text-lg font-semibold text-gray-800 mb-1">Beta Tables</p>
-                <p class="text-sm text-gray-600">Production-ready & thoroughly validated</p>
-              </div>
-              <div class="mt-4">
-                <CTAButton href="#beta-tables" size="small" variant="outline">
-                  Explore Beta
-                </CTAButton>
-              </div>
-            </div>
-            <div class="hidden"></div>
-          </div>
-          
-          <div class="group bg-white rounded-2xl overflow-hidden border border-gray-200">
-            <div class="relative p-8 text-center">
-              <div class="flex items-center justify-center mb-4">
-                <div class="p-3 bg-purple-500/10 rounded-xl">
-                  <svg class="w-8 h-8 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-                  </svg>
-                </div>
-                <Badge type="concept" size="small" />
-              </div>
-              <div>
-                <p class="text-4xl font-bold text-purple-600 mb-2">15</p>
-                <p class="text-lg font-semibold text-gray-800 mb-1">Concept Tables</p>
-                <p class="text-sm text-gray-600">In active development</p>
-              </div>
-              <div class="mt-4">
-                <CTAButton href="#concept-tables" size="small" variant="outline">
-                  View Concepts
-                </CTAButton>
-              </div>
-            </div>
-            <div class="hidden"></div>
-          </div>
-          
-          <div class="group bg-white rounded-2xl overflow-hidden border border-gray-200">
-            <div class="relative p-8 text-center">
-              <div class="flex items-center justify-center mb-4">
-                <div class="p-3 bg-blue-500/10 rounded-xl">
-                  <svg class="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                  </svg>
-                </div>
-                <Badge type="concept" size="small" />
-              </div>
-              <div>
-                <p class="text-4xl font-bold text-blue-600 mb-2">1</p>
-                <p class="text-lg font-semibold text-gray-800 mb-1">Future Tables</p>
-                <p class="text-sm text-gray-600">Proposed concepts</p>
-              </div>
-              <div class="mt-4">
-                <CTAButton href="#future-tables" size="small" variant="outline">
-                  See Future
-                </CTAButton>
-              </div>
-            </div>
-            <div class="hidden"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Beta Tables Section -->
-      <section id="beta-tables" class="mb-16 scroll-mt-20">
-        <div class="text-center mb-12">
-          <h2 class="text-4xl font-bold text-clif-burgundy mb-4 flex items-center justify-center">
-            Beta Tables
-          </h2>
-          <p class="text-lg text-gray-600 max-w-4xl mx-auto mb-6">
-            Production-ready tables tested in federated CLIF projects. These tables have defined 
-            <a href="/mCIDE" class="text-clif-burgundy hover:underline font-medium">mCIDE standards</a> 
-            (see also <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/tree/main/mCIDE" target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:underline font-medium">mCIDE on GitHub</a>)
-            and stable field structures with minimal breaking changes expected.
-          </p>
-          <div class="flex flex-col sm:flex-row gap-4 justify-center">
-            <button
-              id="expand-all-beta"
-              class="bg-white px-6 py-3 rounded-xl text-clif-burgundy font-medium flex items-center gap-2 justify-center border border-clif-burgundy hover:bg-clif-burgundy hover:text-white"
-            >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-              </svg>
-              Expand All Details
-            </button>
-            <CTAButton href="/mCIDE" size="medium" variant="outline">
-              View mCIDE Standards
-            </CTAButton>
-          </div>
-        </div>
-
-        <!-- Enhanced Card Grid -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {betaTables.map((table, index) => (
-            <div 
-              data-table-id={table.id}
-              class="group bg-white rounded-2xl overflow-hidden border border-gray-200 cursor-pointer"
-            >
-              <div class="relative p-6">
-                <!-- Header -->
-                <div class="flex items-start justify-between mb-4">
-                  <div class="flex items-center">
-                    <div class="p-2 bg-clif-burgundy/10 rounded-lg mr-3">
-                      <svg class="w-6 h-6 text-clif-burgundy" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"></path>
-                      </svg>
-                    </div>
-                  </div>
-                  <span class="text-3xl font-bold text-gray-200 select-none">{String(index + 1).padStart(2, '0')}</span>
-                </div>
-
-                <!-- Content -->
-                <h3 class="text-xl font-bold text-gray-800 mb-3 group-hover:text-clif-burgundy">
-                  {table.name}
-                </h3>
-                <p class="text-gray-600 text-sm mb-4 line-clamp-2">
-                  {table.description}
-                </p>
-
-                <!-- Stats -->
-                <div class="flex items-center justify-between text-xs text-gray-500 mb-4">
-                  <span class="bg-clif-burgundy/10 text-clif-burgundy px-2 py-1 rounded-full font-medium">
-                    {table.fields.length} fields
-                  </span>
-                  <span class="flex items-center">
-                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                    Production Ready
-                  </span>
-                </div>
-
-                <!-- Action -->
-                <a 
-                  href={`#${table.id}`} 
-                  class="inline-flex items-center text-clif-burgundy hover:underline font-medium text-sm"
-                >
-                  View Full Specification 
-                  <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                  </svg>
-                </a>
-              </div>
-              <div class="hidden"></div>
-            </div>
-          ))}
-        </div>
-        {betaTables.map((table, index) => (
-        <div
-          id={table.id}
-          class="mb-12 scroll-mt-28 group"
-          data-table-section
-        >
-          <div class="border-l-4 border-clif-burgundy pl-6">
-            <div class="flex items-center justify-between mb-6">
-                <h3 class="text-2xl font-semibold text-gray-800 flex items-center">
-                  <span class="text-clif-burgundy mr-3">{index + 1}.</span>
-                  {table.name}
-                </h3>
-              <button
-                class="collapse-toggle text-gray-400 hover:text-gray-600"
-                aria-label="Toggle table visibility"
-                data-table-id={table.id}
-              >
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                </svg>
-              </button>
-            </div>
-            <p class="mb-6 text-gray-700 leading-relaxed">{table.description}</p>
-          </div>
-
-          <div class="collapsible-content">
-            <div class="overflow-x-auto rounded-xl border-2 border-gray-200 shadow-lg">
-              <table class="min-w-full divide-y-2 divide-gray-200">
-                <thead class="bg-gray-50">
-                  <tr>
-                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Field Name</th>
-                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-32">Data Type</th>
-                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Description</th>
-                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-72">Permissible Values</th>
-                  </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                  {table.fields.map((field, index) => (
-                    <tr class={`hover:bg-orange-50 ${index % 2 === 0 ? 'bg-gray-50/50' : 'bg-white'}`}>
-                      <td class="px-6 py-4 text-sm font-mono font-semibold text-orange-700">
-                        {field.name}
-                      </td>
-                      <td class="px-6 py-4 text-sm">
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-300">
-                          {field.type}
-                        </span>
-                      </td>
-                      <td class="px-6 py-4 text-sm text-gray-800 leading-relaxed">{field.description}</td>
-                      <td class="px-6 py-4 text-sm">
-                        {field.values ? (
-                          <div class="flex flex-wrap gap-1.5">
-                            {field.values.map((value) => (
-                              <code class="inline-block text-xs bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md font-mono border border-blue-200">{value}</code>
-                            ))}
-                          </div>
-                        ) : field.restrictions ? (
-                          <span class="text-sm text-gray-600 italic">{field.restrictions}</span>
-                        ) : (
-                          <span class="text-gray-400 italic">No restrictions</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Example section with interactive table */}
-            {table.example && (
-              <div class="mt-8">
-                <div class="flex items-center justify-between mb-4">
-                  <h4 class="text-lg font-semibold text-gray-800 flex items-center">
-                    <svg class="w-5 h-5 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
-                    </svg>
-                    Sample {table.name} Data
-                  </h4>
-                  <button 
-                    class="copy-csv-btn text-sm text-gray-600 hover:text-gray-900 flex items-center gap-2 px-3 py-1 rounded-lg hover:bg-gray-100"
-                    data-table-id={table.id}
-                  >
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                    </svg>
-                    Copy as CSV
-                  </button>
-                </div>
-                <div class="sample-data-wrapper">
-                  <div class="bg-white border-2 border-gray-200 rounded-xl shadow-md overflow-hidden">
-                    <div class="overflow-x-auto bg-white">
-                      {(() => {
-                        const tableData = parseMarkdownTableStatic(table.example);
-                        if (!tableData) return <p class="text-gray-500 p-4">No sample data available</p>;
-                        
-                        return (
-                          <table class="w-full text-sm">
-                            <thead>
-                              <tr class="bg-gray-50 border-b">
-                                {tableData.headers.map(header => (
-                                  <th class="px-4 py-2 text-left font-medium text-gray-700">{header}</th>
-                                ))}
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {tableData.rows.map((row, rowIndex) => (
-                                <tr class={`border-b ${rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-orange-50`}>
-                                  {row.map(cell => (
-                                    <td class="px-4 py-2 text-gray-800">{cell}</td>
-                                  ))}
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        );
-                      })()}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      ))}
-    </section>
-
-    <!-- Concept Tables Section -->
-    <section id="concept-tables" class="mb-16 scroll-mt-20">
-      <div class="text-center mb-12">
-        <h2 class="text-4xl font-bold text-clif-burgundy mb-4 flex items-center justify-center">
-          Concept Tables
-          <Badge type="concept" class="ml-4" size="large" />
-        </h2>
-        <p class="text-lg text-gray-600 max-w-4xl mx-auto mb-6">
-          Future CLIF tables in active development. These tables are seeking conceptual feedback 
-          and may undergo significant changes. Table structures and field definitions are in draft form.
-        </p>
-        <div class="flex flex-col sm:flex-row gap-4 justify-center">
-          <button
-            id="expand-all-concept"
-            class="bg-white px-6 py-3 rounded-xl text-clif-burgundy font-medium flex items-center gap-2 justify-center border border-clif-burgundy hover:bg-clif-burgundy hover:text-white"
-          >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-            </svg>
-            View All Concepts
-          </button>
-          <CTAButton href="mailto:clif_consortium@uchicago.edu" size="medium" variant="outline">
-            Provide Feedback
-          </CTAButton>
-        </div>
-      </div>
-      
-      <!-- Enhanced Concept Tables Grid -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-        {
-          conceptTables.map((table, index) => (
-            <div
-              id={table.id}
-              data-table-id={table.id}
-              class="group bg-white rounded-2xl overflow-hidden border border-purple-200 cursor-pointer"
-            >
-              <div class="hidden"></div>
-              <div class="relative p-6">
-                <!-- Header -->
-                <div class="flex items-start justify-between mb-4">
-                  <div class="flex items-center">
-                    <div class="p-2 bg-purple-100 rounded-lg mr-3">
-                      <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
-                      </svg>
-                    </div>
-                    <Badge type="concept" size="small" />
-                  </div>
-                  <span class="text-3xl font-bold text-purple-200 select-none">{String(index + 1).padStart(2, '0')}</span>
-                </div>
-
-                <!-- Content -->
-                <h3 class="text-xl font-bold text-gray-800 mb-3 group-hover:text-purple-700 transition-colors">
-                  {table.name}
-                </h3>
-                <p class="text-gray-600 text-sm mb-4 line-clamp-2">
-                  {table.description}
-                </p>
-
-                <!-- Stats -->
-                <div class="flex items-center justify-between text-xs text-gray-500 mb-4">
-                  <span class="bg-purple-50 text-purple-700 px-2 py-1 rounded-full font-medium">
-                    {table.fields ? table.fields.length : 'TBD'} fields
-                  </span>
-                  <span class="flex items-center">
-                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/>
-                    </svg>
-                    In Development
-                  </span>
-                </div>
-
-                <!-- Action -->
-                <div class="flex items-center justify-between">
-                  <a 
-                    href={`#${table.id}-detail`}
-                    class="inline-flex items-center text-purple-600 hover:text-purple-700 font-medium text-sm"
-                  >
-                    View Details
-                    <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                    </svg>
-                  </a>
-                  <div class="flex items-center text-xs text-gray-400">
-                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10m0 0V6a2 2 0 00-2-2H9a2 2 0 00-2 2v2m0 0v10a2 2 0 002 2h6a2 2 0 002-2V8"/>
-                    </svg>
-                    Draft
-                  </div>
-                </div>
-              </div>
-              <div class="hidden"></div>
-            </div>
-          ))
-        }
-      </div>
-      
-      <!-- Detailed Concept Tables Sections -->
-      <div class="mt-16 space-y-8">
-        <h3 class="text-2xl font-bold text-gray-800 mb-6">Concept Table Details</h3>
-        {conceptTables.map((table, index) => (
-          <div
-            id={`${table.id}-detail`}
-            class="mb-12 scroll-mt-28 group"
-            data-table-section
-          >
-            <div class="border-l-4 border-purple-600 pl-6">
-              <div class="flex items-center justify-between mb-6">
-                <h3 class="text-2xl font-semibold text-gray-800 flex items-center">
-                  <span class="text-purple-600 mr-3">{index + 1}.</span>
-                  {table.name}
-                  <Badge type="concept" class="ml-3" size="small" />
-                </h3>
-                <button
-                  class="collapse-toggle text-gray-400 hover:text-gray-600"
-                  aria-label="Toggle table visibility"
-                  data-table-id={`${table.id}-detail`}
-                >
-                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                  </svg>
-                </button>
-              </div>
-              <div class="collapsible-content">
-                <p class="mb-6 text-gray-700 leading-relaxed">{table.description}</p>
-                
-                {table.fields && table.fields.length > 0 ? (
-                  <div class="overflow-x-auto mb-8">
-                    <div class="rounded-xl border-2 border-purple-200 shadow-lg overflow-hidden">
-                      <table class="min-w-full divide-y-2 divide-purple-200">
-                        <thead class="bg-purple-50">
-                          <tr>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Field Name</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-32">Data Type</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Description</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-72">Values/Restrictions</th>
-                          </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-purple-100">
-                          {table.fields.map((field, index) => (
-                            <tr class={`hover:bg-purple-50 ${index % 2 === 0 ? 'bg-purple-50/30' : 'bg-white'}`}>
-                              <td class="px-6 py-4 font-mono text-sm font-semibold text-purple-700">{field.name}</td>
-                              <td class="px-6 py-4 text-sm">
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800 border border-gray-300">
-                                  {field.type}
-                                </span>
-                              </td>
-                              <td class="px-6 py-4 text-sm text-gray-800 leading-relaxed">{field.description}</td>
-                              <td class="px-6 py-4 text-sm">
-                                {field.values ? (
-                                  <div class="flex flex-wrap gap-1.5">
-                                    {field.values.map((value) => (
-                                      <code class="inline-block text-xs bg-purple-50 text-purple-700 px-2.5 py-1 rounded-md font-mono border border-purple-200">
-                                        {value}
-                                      </code>
-                                    ))}
-                                  </div>
-                                ) : field.restrictions ? (
-                                  <span class="text-sm text-gray-600 italic">{field.restrictions}</span>
-                                ) : (
-                                  <span class="text-gray-400 italic">—</span>
-                                )}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                ) : (
-                  <div class="bg-purple-50 rounded-lg p-6 mb-8 text-center">
-                    <svg class="w-12 h-12 text-purple-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
-                    </svg>
-                    <p class="text-purple-700 font-medium">Field structure under development</p>
-                    <p class="text-sm text-purple-600 mt-2">Detailed field specifications will be added as the table design is finalized</p>
-                  </div>
-                )}
-
-
-                {/* Notes section for concept tables */}
-                {table.notes && table.notes.length > 0 && (
-                  <div class="mt-6 mb-8">
-                    <div class="bg-purple-50 border border-purple-200 rounded-xl p-6">
-                      <div class="flex items-start">
-                        <div class="flex-shrink-0 p-2 bg-purple-100 rounded-lg mr-4">
-                          <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                          </svg>
-                        </div>
-                        <div class="flex-1">
-                          <h4 class="font-semibold text-purple-900 mb-2">Implementation Notes</h4>
-                          <ul class="space-y-2 text-sm text-purple-800">
-                            {table.notes.map((note) => (
-                              <li class="flex items-start">
-                                <span class="text-purple-600 mr-2">•</span>
-                                <span>{note}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Example section for concept tables */}
-                {table.example && (
-                  <div class="mt-8">
-                    <div class="flex items-center justify-between mb-4">
-                      <h4 class="text-lg font-semibold text-gray-800 flex items-center">
-                        <svg class="w-5 h-5 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
-                        </svg>
-                        Sample Data Structure
-                      </h4>
-                      <button 
-                        class="copy-csv-btn text-sm text-gray-600 hover:text-gray-900 flex items-center gap-2 px-3 py-1 rounded-lg hover:bg-gray-100"
-                        data-table-id={table.id}
-                      >
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                        </svg>
-                        Copy as CSV
-                      </button>
-                    </div>
-                    <div class="sample-data-wrapper">
-                      <div class="bg-white border-2 border-purple-200 rounded-xl shadow-md overflow-hidden">
-                        <div class="bg-purple-700 px-4 py-3">
-                          <span class="text-xs font-mono text-purple-200">
-                            <span class="text-purple-300">SELECT</span> <span class="text-purple-100">*</span> <span class="text-purple-300">FROM</span> <span class="text-white">{table.name.toLowerCase().replace(/ /g, '_')}</span> <span class="text-purple-300">LIMIT</span> <span class="text-purple-100">5;</span>
-                          </span>
-                        </div>
-                        <div class="overflow-x-auto bg-white">
-                          {(() => {
-                            const tableData = parseMarkdownTableStatic(table.example);
-                            if (!tableData) return <p class="text-gray-500 p-4">No sample data available</p>;
-                            
-                            return (
-                              <table class="w-full text-sm">
-                                <thead>
-                                  <tr class="bg-purple-50 border-b border-purple-200">
-                                    {tableData.headers.map(header => (
-                                      <th class="px-4 py-2 text-left font-medium text-gray-700">{header}</th>
-                                    ))}
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {tableData.rows.map((row, rowIndex) => (
-                                    <tr class={`border-b border-purple-100 ${rowIndex % 2 === 0 ? 'bg-white' : 'bg-purple-50/30'} hover:bg-purple-50`}>
-                                      {row.map(cell => (
-                                        <td class="px-4 py-2 text-gray-800">{cell}</td>
-                                      ))}
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            );
-                          })()}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
-
-    <!-- Future Proposed Tables Section -->
-    <section id="future-tables" class="mb-16 scroll-mt-20">
-      <div class="text-center mb-12">
-        <h2 class="text-4xl font-bold text-clif-burgundy mb-4 flex items-center justify-center">
-          Future Proposed Tables
-          <Badge type="future" class="ml-4" size="large" />
-        </h2>
-        <p class="text-lg text-gray-600 max-w-4xl mx-auto mb-6">
-          Early-stage concepts without defined structure. These represent ideas the consortium 
-          is considering for future development. No implementation timeline has been established.
-        </p>
-        <div class="flex flex-col sm:flex-row gap-4 justify-center">
-          <CTAButton href="mailto:clif_consortium@uchicago.edu" size="medium" variant="outline">
-            Suggest New Tables
-          </CTAButton>
-          <CTAButton href="/research" size="medium" variant="outline">
-            View Research Projects
-          </CTAButton>
-        </div>
-      </div>
-      
-      <!-- Enhanced Future Tables Grid -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-        {
-          futureTables.map((table) => (
-            <div
-              id={table.id}
-              data-table-id={table.id}
-              class="group bg-white rounded-2xl overflow-hidden border border-blue-200"
-            >
-              <div class="hidden"></div>
-              <div class="relative p-6">
-                <!-- Header -->
-                <div class="flex items-start justify-between mb-4">
-                  <div class="flex items-center">
-                    <div class="p-2 bg-blue-100 rounded-lg mr-3">
-                      <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                      </svg>
-                    </div>
-                    <Badge type="future" size="small" />
-                  </div>
-                  <span class="text-3xl font-bold text-blue-200 select-none">01</span>
-                </div>
-
-                <!-- Content -->
-                <h3 class="text-xl font-bold text-gray-800 mb-3 group-hover:text-blue-700">
-                  {table.name}
-                </h3>
-                <p class="text-gray-600 text-sm mb-4 line-clamp-3">
-                  {table.description}
-                </p>
-
-                <!-- Stats -->
-                <div class="flex items-center justify-between text-xs text-gray-500 mb-4">
-                  <span class="bg-blue-50 text-blue-700 px-2 py-1 rounded-full font-medium">
-                    Early Concept
-                  </span>
-                  <span class="flex items-center">
-                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
-                    </svg>
-                    Future
-                  </span>
-                </div>
-
-                <!-- Action -->
-                <div class="flex items-center justify-between">
-                  <span class="text-blue-600 font-medium text-sm">
-                    Awaiting Development
-                  </span>
-                  <div class="flex items-center text-xs text-gray-400">
-                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
-                    </svg>
-                    Idea Stage
-                  </div>
-                </div>
-              </div>
-              <div class="hidden"></div>
-            </div>
-          ))
-        }
-      </div>
-    </section>
-
-    <!-- Additional Information -->
-    <section class="mt-12 p-6 bg-clif-burgundy text-white rounded-xl shadow-xl">
-      <div class="flex items-center justify-between flex-wrap gap-6">
-        <div class="flex-1">
-          <h2 class="text-2xl font-bold mb-6">Need Help Understanding CLIF?</h2>
-          <p class="mb-6 text-white/90">
-            Our custom AI assistant can help you understand CLIF table structures, field definitions,
-            and implementation best practices.
-          </p>
-        </div>
-        <div class="flex items-center">
-          <svg class="w-20 h-20 text-white/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-          </svg>
-        </div>
-      </div>
-      <div class="flex flex-col sm:flex-row gap-4">
-        <a
-          href="https://chatgpt.com/g/g-h1nk6d3eR-clif-assistant"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="inline-flex items-center px-6 py-3 bg-white text-clif-burgundy font-semibold rounded-lg hover:bg-gray-100 transition-colors"
-        >
-          <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
-            <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
-          </svg>
-          Chat with CLIF Assistant
-        </a>
-        <button
-          id="guided-tour-btn"
-          class="inline-flex items-center px-6 py-3 bg-white/10 text-white font-semibold rounded-lg hover:bg-white/20 transition-colors border border-white/20"
-        >
-          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-          </svg>
-          Take Guided Tour
-        </button>
-      </div>
-    </section>
-      </main>
-    </div>
-  </div>
-
-
-<style>
-  /* Prevent layout shifts and flickering */
-  html {
-    scroll-behavior: smooth;
-  }
-  
-  /* Reserve space for images to prevent layout shift */
-  img {
-    display: block;
-    max-width: 100%;
-    height: auto;
-  }
-  
-  
-  /* Skeleton loading animation */
-  @keyframes skeleton-loading {
-    0% {
-      background-position: -200% 0;
-    }
-    100% {
-      background-position: 200% 0;
-    }
-  }
-  
-  .skeleton {
-    background: linear-gradient(
-      90deg,
-      #f0f0f0 25%,
-      #e0e0e0 50%,
-      #f0f0f0 75%
-    );
-    background-size: 200% 100%;
-    animation: skeleton-loading 1.5s infinite;
-  }
-  
-  /* Prevent FOUC (Flash of Unstyled Content) */
-  .data-table {
-    min-height: 300px;
-    contain: layout;
-  }
-  
-  /* Stabilize table layouts */
-  table {
-    table-layout: fixed;
-    width: 100%;
-  }
-  
-  /* Prevent content jumps during loading */
-  .section-content {
-    min-height: 200px;
-    will-change: auto;
-  }
-  
-  /* Custom styles for enhanced UI */
-  #page-nav a.active {
-    color: #8A1538; /* clif-burgundy */
-    font-weight: 600;
-    border-left-color: #8A1538;
-  }
-  .collapsible-content {
-    max-height: none;
-    overflow: visible;
-    transition: max-height 0.5s ease-in-out;
-  }
-  .collapsible-content.collapsed {
-    max-height: 0;
-    overflow: hidden;
-  }
-  .prose-sm pre {
-    font-size: 0.8em;
-    padding: 0.8rem;
-  }
-  #erd-container:fullscreen {
-    background-color: #f9fafb;
-  }
-  
-  /* Simple table styles */
-  .overflow-x-auto {
-    overflow-x: auto;
-  }
-  
-  /* Copy button feedback */
-  .copy-csv-btn.copied {
-    color: #059669;
-  }
-  
-  /* Sidebar collapsed state */
-  #toc-sidebar.collapsed {
-    width: 0;
-    overflow: hidden;
-  }
-  
-  #toc-sidebar.collapsed nav {
-    opacity: 0;
-  }
-  
-  #toc-sidebar nav {
-    transition: opacity 0.2s ease-in-out;
-  }
-  
-  /* Toggle button positioning */
-  #sidebar-toggle {
-    position: fixed;
-    left: calc(320px - 12px); /* 320px (sidebar width) - 12px (half button into sidebar) */
-    transition: left 0.3s ease-in-out;
-  }
-  
-  /* Toggle button when sidebar is collapsed */
-  #toc-sidebar.collapsed ~ * #sidebar-toggle,
-  #toc-sidebar.collapsed #sidebar-toggle {
-    left: 24px; /* Move to left edge when collapsed */
-  }
-  
-  #toc-sidebar.collapsed .sidebar-toggle-icon {
-    transform: rotate(180deg);
-  }
-  
-  .sidebar-toggle-icon {
-    transition: transform 0.3s ease-in-out;
-  }
-</style>
-
-<script define:vars={{ betaTables, conceptTables }}>
-  // Make tables data available globally
-  window.betaTables = betaTables;
-  window.conceptTables = conceptTables;
-</script>
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    // Active nav link highlighting
-    const sections = document.querySelectorAll('section[id]');
-    const navLinks = document.querySelectorAll('#page-nav a');
-
-    const observer = new IntersectionObserver((entries) => {
-      let visibleSectionId = '';
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          if (!visibleSectionId) { // Only set for the first intersecting section
-            visibleSectionId = entry.target.id;
+            // Apply colors based on field name patterns
+            if (fieldName.endsWith('_id') || fieldName === 'patient_id' || fieldName === 'hospitalization_id') {
+              return cellMatch.replace(content, colorWrap(fieldName, 'text-clif-burgundy font-semibold'));
+            } else if (fieldName.endsWith('_dttm') || fieldName.endsWith('_date') || fieldName.endsWith('_time')) {
+              return cellMatch.replace(content, colorWrap(fieldName, 'text-blue-600 font-medium'));
+            } else if (fieldName.endsWith('_category')) {
+              return cellMatch.replace(content, colorWrap(fieldName, 'text-emerald-600 font-medium'));
+            } else if (fieldName.endsWith('_name')) {
+              return cellMatch.replace(content, colorWrap(fieldName, 'text-gray-600'));
+            } else if (fieldName.includes('_value') || fieldName.includes('_numeric') || 
+                      fieldName.includes('_count') || fieldName.includes('_dose') ||
+                      fieldName.includes('_rate') || fieldName.includes('_volume') ||
+                      fieldName.includes('_pressure') || fieldName.includes('_flow') ||
+                      fieldName === 'age' || fieldName.includes('_age') ||
+                      fieldName.includes('reference_unit') || fieldName.includes('_unit')) {
+              return cellMatch.replace(content, colorWrap(fieldName, 'text-cyan-600 font-medium'));
+            } else if (fieldName.endsWith('_type') || fieldName.endsWith('_code') || 
+                      fieldName.endsWith('_status') || fieldName.endsWith('_mode')) {
+              return cellMatch.replace(content, colorWrap(fieldName, 'text-purple-600 font-medium'));
+            }
           }
-        }
-      });
-
-      navLinks.forEach(link => {
-        const href = link.getAttribute('href');
-        if (!href) return;
-        const id = href.substring(1);
-
-        if (id === visibleSectionId) {
-          link.classList.add('active');
-          // If it's a main link, also activate it
-          const parentLink = link.closest('ul.pl-4')?.previousElementSibling;
-          parentLink?.classList.add('active');
-
-        } else {
-          link.classList.remove('active');
-        }
-      });
-
-    }, { rootMargin: '-20% 0px -70% 0px', threshold: 0.1 });
-
-    sections.forEach(section => {
-      observer.observe(section);
-    });
-
-    // Other scripts from original file...
-    const searchToggle = document.getElementById('search-toggle');
-    const searchOverlay = document.getElementById('search-overlay');
-    const searchClose = document.getElementById('search-close');
-    const globalSearch = document.getElementById('global-search');
-    const searchResults = document.getElementById('search-results');
-
-    searchToggle?.addEventListener('click', () => {
-      searchOverlay?.classList.remove('hidden');
-      globalSearch?.focus();
-    });
-
-    searchClose?.addEventListener('click', () => {
-      searchOverlay?.classList.add('hidden');
-      globalSearch.value = '';
-      searchResults.innerHTML = '';
-    });
-
-    searchOverlay?.addEventListener('click', (e) => {
-      if (e.target === searchOverlay) {
-        searchOverlay.classList.add('hidden');
-      }
-    });
-
-    let currentFilter = 'all';
-    let currentTableFilter = 'all';
-
-    // Enhanced search with advanced filtering
-    const performSearch = () => {
-      const query = globalSearch?.value.toLowerCase() || '';
-      if (query.length < 2) {
-        searchResults.innerHTML = '';
-        return;
-      }
-
-      const results = [];
-      const allTables = [...(window.betaTables || []), ...(window.conceptTables || [])];
-
-      allTables.forEach(table => {
-        const tableType = window.betaTables?.includes(table) ? 'beta' : 'concept';
-        
-        // Apply table type filter
-        if (currentTableFilter !== 'all' && currentTableFilter !== tableType) {
-          return;
-        }
-
-        // Search in table names and descriptions
-        if (table.name.toLowerCase().includes(query) || table.description.toLowerCase().includes(query)) {
-          results.push({ 
-            type: 'table', 
-            tableType,
-            score: table.name.toLowerCase().includes(query) ? 2 : 1,
-            ...table 
-          });
-        }
-
-        // Search in fields
-        if (table.fields) {
-          table.fields.forEach(field => {
-            const matchesFieldFilter = currentFilter === 'all' || 
-              (currentFilter === 'datetime' && field.type?.includes('DATETIME')) ||
-              (currentFilter === 'varchar' && field.type?.includes('VARCHAR')) ||
-              (currentFilter === 'beta' && tableType === 'beta') ||
-              (currentFilter === 'concept' && tableType === 'concept');
-
-            if (!matchesFieldFilter) return;
-
-            const fieldMatches = field.name.toLowerCase().includes(query) || 
-                               field.description.toLowerCase().includes(query) ||
-                               field.type?.toLowerCase().includes(query);
-
-            if (fieldMatches) {
-              results.push({ 
-                type: 'field', 
-                tableType,
-                tableName: table.name, 
-                tableId: table.id,
-                score: field.name.toLowerCase().includes(query) ? 3 : 1,
-                ...field 
+          
+          // Column 1: Data types
+          if (columnIndex === 1) {
+            if (content.includes('DOUBLE') || content.includes('INT') || content.includes('NUMERIC')) {
+              return cellMatch.replace(content, colorWrap(content, 'text-cyan-600'));
+            } else if (content.includes('DATETIME')) {
+              return cellMatch.replace(content, colorWrap(content, 'text-blue-600'));
+            }
+          }
+          
+          // Column 3: Permissible values
+          if (columnIndex === 3 && content.trim() !== 'No restriction' && content.trim() !== '') {
+            // Special handling for datetime formats
+            if (content.includes('YYYY-MM-DD') || content.includes('HH:MM:SS') || content.includes('UTC')) {
+              let newContent = content.replace(/(YYYY-MM-DD HH:MM:SS\+00:00)/g, (match) => {
+                return `<code class="text-blue-600 font-mono text-sm bg-blue-50 px-1 rounded">${match}</code>`;
               });
+              return cellMatch.replace(content, newContent);
             }
-          });
-        }
-      });
-
-      // Sort results by relevance score
-      results.sort((a, b) => b.score - a.score);
-
-      if (results.length > 0) {
-        searchResults.innerHTML = results.slice(0, 15).map(result => {
-          const typeColor = result.tableType === 'beta' ? 'orange' : 'purple';
-          const typeIcon = result.tableType === 'beta' ? '⚡' : '💡';
-          
-          return `
-            <a href="#${result.type === 'table' ? result.id : result.tableId}" 
-               class="block p-4 hover:bg-gray-50 rounded-lg border-l-4 border-transparent hover:border-${typeColor}-400 transition-all" 
-               onclick="document.getElementById('search-overlay').classList.add('hidden')">
-              <div class="flex items-start justify-between">
-                <div class="flex-1">
-                  <h4 class="font-semibold text-gray-900 flex items-center">
-                    <span class="mr-2">${typeIcon}</span>
-                    ${result.name}
-                    ${result.type === 'field' ? `<span class="ml-2 text-xs text-gray-500">(field)</span>` : ''}
-                  </h4>
-                  <p class="text-sm text-gray-600 mt-1">
-                    ${result.type === 'field' 
-                      ? `${result.type ? result.type + ' field in ' : 'Field in '}${result.tableName}` 
-                      : result.description.substring(0, 120) + (result.description.length > 120 ? '...' : '')
-                    }
-                  </p>
-                  ${result.type === 'field' && result.type ? `
-                    <span class="inline-block mt-2 px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded font-mono">
-                      ${result.type}
-                    </span>
-                  ` : ''}
-                </div>
-                <span class="ml-3 px-2 py-1 bg-${typeColor}-100 text-${typeColor}-800 text-xs rounded-full font-medium">
-                  ${result.tableType.toUpperCase()}
-                </span>
-              </div>
-            </a>
-          `;
-        }).join('');
-      } else {
-        searchResults.innerHTML = `
-          <div class="text-center py-8">
-            <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-            </svg>
-            <p class="text-gray-500 text-lg font-medium">No results found</p>
-            <p class="text-gray-400 text-sm mt-2">Try adjusting your search terms or filters</p>
-          </div>
-        `;
-      }
-    };
-
-    globalSearch?.addEventListener('input', performSearch);
-
-    // Enhanced filter system
-    document.querySelectorAll('.search-filter').forEach(btn => {
-      btn.addEventListener('click', () => {
-        // Update active state
-        document.querySelectorAll('.search-filter').forEach(b => b.classList.remove('bg-blue-600', 'text-white'));
-        btn.classList.add('bg-blue-600', 'text-white');
-        
-        // Update filter
-        currentTableFilter = btn.getAttribute('data-filter');
-        performSearch();
-      });
-    });
-
-    // Quick search suggestions
-    document.querySelectorAll('.quick-search').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const query = btn.getAttribute('data-query');
-        if (globalSearch) {
-          globalSearch.value = query;
-          performSearch();
-        }
-      });
-    });
-
-    const collapseToggles = document.querySelectorAll('.collapse-toggle');
-    collapseToggles.forEach(toggle => {
-      toggle.addEventListener('click', () => {
-        const content = toggle.closest('[data-table-section]')?.querySelector('.collapsible-content');
-        const icon = toggle.querySelector('svg');
-        content.classList.toggle('collapsed');
-        icon.classList.toggle('rotate-180');
-      });
-    });
-
-    const expandAllBtn = document.getElementById('expand-all-beta');
-    if(expandAllBtn) {
-      let allExpanded = false;
-      expandAllBtn.addEventListener('click', () => {
-        allExpanded = !allExpanded;
-        const betaTableSections = document.querySelectorAll('#beta-tables [data-table-section]');
-        betaTableSections.forEach(section => {
-          const content = section.querySelector('.collapsible-content');
-          const icon = section.querySelector('.collapse-toggle svg');
-          if (allExpanded) {
-            content.classList.remove('collapsed');
-            icon.classList.add('rotate-180');
-          } else {
-            content.classList.add('collapsed');
-            icon.classList.remove('rotate-180');
-          }
-        });
-        expandAllBtn.innerHTML = allExpanded ? 'Collapse All Details' : 'Expand All Details';
-      });
-    }
-
-    // Modal functionality removed - all details are now displayed directly on the page
-
-    // Anchor links now use default browser behavior (no smooth scrolling)
-
-    // Tables are now rendered statically - no JavaScript needed
-
-    // Copy to CSV functionality
-    const copyToCSV = (markdownTable) => {
-      const lines = markdownTable.trim().split('\n');
-      if (lines.length < 3) return '';
-
-      // Get headers
-      const headers = lines[0].split('|').map(h => h.trim()).filter(h => h);
-      let csv = headers.join(',') + '\n';
-
-      // Get data rows
-      for (let i = 2; i < lines.length; i++) {
-        const cells = lines[i].split('|').map(c => c.trim()).filter(c => c !== '');
-        if (cells.length === headers.length) {
-          // Escape cells that contain commas
-          const escapedCells = cells.map(cell => {
-            if (cell.includes(',') || cell.includes('"') || cell.includes('\n')) {
-              return `"${cell.replace(/"/g, '""')}"`;
-            }
-            return cell;
-          });
-          csv += escapedCells.join(',') + '\n';
-        }
-      }
-
-      return csv;
-    };
-
-    // Handle copy button clicks - simplified version
-    document.querySelectorAll('.copy-csv-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const tableId = btn.getAttribute('data-table-id');
-        
-        // Find the table in our data
-        const table = [...(window.betaTables || []), ...(window.conceptTables || [])].find(t => t.id === tableId);
-        
-        if (table && table.example) {
-          const csv = copyToCSV(table.example);
-          
-          // Copy to clipboard
-          navigator.clipboard.writeText(csv).then(() => {
-            // Visual feedback
-            btn.classList.add('copied');
-            const originalHtml = btn.innerHTML;
-            btn.innerHTML = `
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-              </svg>
-              Copied!
-            `;
             
-            setTimeout(() => {
-              btn.classList.remove('copied');
-              btn.innerHTML = originalHtml;
-            }, 2000);
-          }).catch(err => {
-            // eslint-disable-next-line no-console
-            console.error('Failed to copy:', err);
-          });
-        }
-      });
-    });
-
-    // Enhanced hover preview system for table cards
-    document.querySelectorAll('[data-table-id]').forEach(card => {
-      let hoverTimeout;
-      let previewElement;
-      
-      const showPreview = (table, type) => {
-        if (previewElement) return; // Don't show multiple previews
-        
-        previewElement = document.createElement('div');
-        previewElement.className = 'fixed z-40 bg-white rounded-lg shadow-xl border p-4 max-w-sm pointer-events-none';
-        previewElement.innerHTML = `
-          <div class="flex items-center mb-2">
-            <h4 class="font-bold text-gray-900 mr-2">${table.name}</h4>
-            <span class="text-xs bg-${type === 'beta' ? 'orange' : type === 'concept' ? 'purple' : 'blue'}-100 text-${type === 'beta' ? 'orange' : type === 'concept' ? 'purple' : 'blue'}-800 px-2 py-1 rounded-full">
-              ${table.fields ? table.fields.length + ' fields' : 'In development'}
-            </span>
-          </div>
-          <p class="text-sm text-gray-600 mb-3">${table.description.substring(0, 120)}${table.description.length > 120 ? '...' : ''}</p>
-          ${table.fields && table.fields.length > 0 ? `
-            <div class="text-xs text-gray-500">
-              <strong>Key fields:</strong> ${table.fields.slice(0, 3).map(f => f.name).join(', ')}${table.fields.length > 3 ? '...' : ''}
-            </div>
-          ` : ''}
-        `;
-        
-        document.body.appendChild(previewElement);
-        
-        // Position the preview
-        const updatePosition = (e) => {
-          const previewRect = previewElement.getBoundingClientRect();
-          
-          let left = e.clientX + 15;
-          let top = e.clientY - 10;
-          
-          // Keep preview on screen
-          if (left + previewRect.width > window.innerWidth) {
-            left = e.clientX - previewRect.width - 15;
-          }
-          if (top + previewRect.height > window.innerHeight) {
-            top = e.clientY - previewRect.height + 10;
-          }
-          
-          previewElement.style.left = left + 'px';
-          previewElement.style.top = top + 'px';
-        };
-        
-        card.addEventListener('mousemove', updatePosition);
-        updatePosition({ clientX: card.getBoundingClientRect().right, clientY: card.getBoundingClientRect().top });
-      };
-      
-      const hidePreview = () => {
-        if (previewElement) {
-          previewElement.remove();
-          previewElement = null;
-        }
-      };
-      
-      card.addEventListener('mouseenter', () => {
-        hoverTimeout = setTimeout(() => {
-          const tableId = card.getAttribute('data-table-id');
-          const betaTable = window.betaTables?.find(t => t.id === tableId);
-          const conceptTable = window.conceptTables?.find(t => t.id === tableId);
-          
-          if (betaTable) {
-            showPreview(betaTable, 'beta');
-          } else if (conceptTable) {
-            showPreview(conceptTable, 'concept');
-          }
-        }, 500); // Show after 500ms hover
-      });
-      
-      card.addEventListener('mouseleave', () => {
-        clearTimeout(hoverTimeout);
-        hidePreview();
-      });
-    });
-
-    // Educational Tooltips System
-    const createTooltip = (text, position = 'top') => {
-      const tooltip = document.createElement('div');
-      tooltip.className = `absolute z-50 max-w-xs px-3 py-2 text-sm text-white bg-gray-900 rounded-lg shadow-lg pointer-events-none opacity-0 transition-opacity duration-200`;
-      tooltip.textContent = text;
-      
-      // Position the tooltip
-      const positionClasses = {
-        top: '-top-2 left-1/2 transform -translate-x-1/2 -translate-y-full',
-        bottom: '-bottom-2 left-1/2 transform -translate-x-1/2 translate-y-full',
-        left: 'top-1/2 -left-2 transform -translate-x-full -translate-y-1/2',
-        right: 'top-1/2 -right-2 transform translate-x-full -translate-y-1/2'
-      };
-      
-      tooltip.className += ` ${positionClasses[position]}`;
-      return tooltip;
-    };
-
-    // Initialize tooltips
-    document.querySelectorAll('.tooltip-trigger').forEach(element => {
-      const tooltipText = element.getAttribute('data-tooltip');
-      const position = element.getAttribute('data-tooltip-position') || 'top';
-      
-      if (!tooltipText) return;
-      
-      let tooltip;
-      let timeout;
-      
-      element.addEventListener('mouseenter', () => {
-        timeout = setTimeout(() => {
-          tooltip = createTooltip(tooltipText, position);
-          element.style.position = 'relative';
-          element.appendChild(tooltip);
-          
-          requestAnimationFrame(() => {
-            tooltip.style.opacity = '1';
-          });
-        }, 300);
-      });
-      
-      element.addEventListener('mouseleave', () => {
-        clearTimeout(timeout);
-        if (tooltip) {
-          tooltip.style.opacity = '0';
-          setTimeout(() => {
-            if (tooltip && tooltip.parentNode) {
-              tooltip.parentNode.removeChild(tooltip);
-            }
-            tooltip = null;
-          }, 200);
-        }
-      });
-    });
-
-    // Guided Tour System
-    const tourSteps = [
-      {
-        target: '[data-tour-step="overview-principles"]',
-        title: 'CLIF Core Principles',
-        content: 'These principles guide the CLIF format design. Hover over highlighted terms to learn more about each concept.',
-        position: 'top'
-      },
-      {
-        target: '#beta-tables',
-        title: 'Beta Tables - Production Ready',
-        content: 'Beta tables are ready for implementation. They have complete field definitions and are being used across consortium institutions.',
-        position: 'top'
-      },
-      {
-        target: '#concept-tables',
-        title: 'Concept Tables - In Development',
-        content: 'Concept tables are actively being designed. Field structures may change as we refine the specifications.',
-        position: 'top'
-      },
-      {
-        target: '#future-tables',
-        title: 'Future Tables - Ideas Stage',
-        content: 'These are early-stage ideas without defined structures. They represent potential future additions to CLIF.',
-        position: 'top'
-      },
-      {
-        target: '#search-toggle',
-        title: 'Smart Search',
-        content: 'Use the search feature to quickly find tables, fields, or concepts. It includes advanced filtering by table type and field types.',
-        position: 'bottom'
-      }
-    ];
-
-    let currentStep = 0;
-    let tourOverlay;
-    let tourTooltip;
-
-    const createTourOverlay = () => {
-      const overlay = document.createElement('div');
-      overlay.className = 'fixed inset-0 bg-black/50 z-40 pointer-events-none';
-      overlay.innerHTML = `
-        <div class="absolute inset-0 pointer-events-none" style="
-          background: radial-gradient(circle 150px at var(--spotlight-x, 50%) var(--spotlight-y, 50%), 
-          transparent 0%, 
-          transparent 150px, 
-          rgba(0,0,0,0.7) 200px);
-        "></div>
-      `;
-      return overlay;
-    };
-
-    const createTourTooltip = (step) => {
-      const tooltip = document.createElement('div');
-      tooltip.className = 'fixed z-50 bg-white rounded-lg shadow-2xl max-w-sm p-6 pointer-events-auto';
-      tooltip.innerHTML = `
-        <div class="mb-4">
-          <h3 class="text-lg font-bold text-gray-900 mb-2">${step.title}</h3>
-          <p class="text-gray-600">${step.content}</p>
-        </div>
-        <div class="flex items-center justify-between">
-          <div class="text-sm text-gray-500">
-            Step ${currentStep + 1} of ${tourSteps.length}
-          </div>
-          <div class="flex space-x-2">
-            ${currentStep > 0 ? '<button id="tour-prev" class="px-3 py-1 text-gray-600 hover:text-gray-800 text-sm">Previous</button>' : ''}
-            <button id="tour-skip" class="px-3 py-1 text-gray-500 hover:text-gray-700 text-sm">Skip Tour</button>
-            ${currentStep < tourSteps.length - 1 ? 
-              '<button id="tour-next" class="px-4 py-2 bg-clif-burgundy text-white rounded hover:bg-clif-burgundy-dark text-sm">Next</button>' :
-              '<button id="tour-finish" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm">Finish</button>'
-            }
-          </div>
-        </div>
-      `;
-      return tooltip;
-    };
-
-    const positionTourTooltip = (tooltip, target, position) => {
-      const targetRect = target.getBoundingClientRect();
-      const tooltipRect = tooltip.getBoundingClientRect();
-      
-      let left, top;
-      
-      switch (position) {
-        case 'top':
-          left = targetRect.left + (targetRect.width / 2) - (tooltipRect.width / 2);
-          top = targetRect.top - tooltipRect.height - 20;
-          break;
-        case 'bottom':
-          left = targetRect.left + (targetRect.width / 2) - (tooltipRect.width / 2);
-          top = targetRect.bottom + 20;
-          break;
-        case 'left':
-          left = targetRect.left - tooltipRect.width - 20;
-          top = targetRect.top + (targetRect.height / 2) - (tooltipRect.height / 2);
-          break;
-        case 'right':
-          left = targetRect.right + 20;
-          top = targetRect.top + (targetRect.height / 2) - (tooltipRect.height / 2);
-          break;
-        default:
-          left = targetRect.left + (targetRect.width / 2) - (tooltipRect.width / 2);
-          top = targetRect.bottom + 20;
-      }
-      
-      // Keep tooltip on screen
-      left = Math.max(20, Math.min(left, window.innerWidth - tooltipRect.width - 20));
-      top = Math.max(20, Math.min(top, window.innerHeight - tooltipRect.height - 20));
-      
-      tooltip.style.left = left + 'px';
-      tooltip.style.top = top + 'px';
-    };
-
-    const showTourStep = (stepIndex) => {
-      const step = tourSteps[stepIndex];
-      const target = document.querySelector(step.target);
-      
-      if (!target) {
-        // eslint-disable-next-line no-console
-        console.warn('Tour target not found:', step.target);
-        return;
-      }
-      
-      // Remove existing tooltip
-      if (tourTooltip) {
-        tourTooltip.remove();
-      }
-      
-      // Create new tooltip
-      tourTooltip = createTourTooltip(step);
-      document.body.appendChild(tourTooltip);
-      
-      // Position tooltip
-      positionTourTooltip(tourTooltip, target, step.position);
-      
-      // Update spotlight position
-      const targetRect = target.getBoundingClientRect();
-      const spotlightX = ((targetRect.left + targetRect.width / 2) / window.innerWidth) * 100;
-      const spotlightY = ((targetRect.top + targetRect.height / 2) / window.innerHeight) * 100;
-      
-      if (tourOverlay) {
-        tourOverlay.style.setProperty('--spotlight-x', spotlightX + '%');
-        tourOverlay.style.setProperty('--spotlight-y', spotlightY + '%');
-      }
-      
-      // Scroll target into view
-      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      
-      // Add event listeners
-      const nextBtn = tourTooltip.querySelector('#tour-next');
-      const prevBtn = tourTooltip.querySelector('#tour-prev');
-      const skipBtn = tourTooltip.querySelector('#tour-skip');
-      const finishBtn = tourTooltip.querySelector('#tour-finish');
-      
-      if (nextBtn) {
-        nextBtn.addEventListener('click', () => {
-          currentStep++;
-          showTourStep(currentStep);
-        });
-      }
-      
-      if (prevBtn) {
-        prevBtn.addEventListener('click', () => {
-          currentStep--;
-          showTourStep(currentStep);
-        });
-      }
-      
-      if (skipBtn) {
-        skipBtn.addEventListener('click', endTour);
-      }
-      
-      if (finishBtn) {
-        finishBtn.addEventListener('click', endTour);
-      }
-    };
-
-    const startTour = () => {
-      currentStep = 0;
-      tourOverlay = createTourOverlay();
-      document.body.appendChild(tourOverlay);
-      showTourStep(currentStep);
-    };
-
-    const endTour = () => {
-      if (tourOverlay) {
-        tourOverlay.remove();
-        tourOverlay = null;
-      }
-      if (tourTooltip) {
-        tourTooltip.remove();
-        tourTooltip = null;
-      }
-      currentStep = 0;
-    };
-
-    // Tour button handler
-    document.getElementById('guided-tour-btn')?.addEventListener('click', startTour);
-
-    // Close tour on escape key
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && tourOverlay) {
-        endTour();
-      }
-    });
-    
-    // Table of Contents Navigation
-    // Toggle sections in TOC
-    const tocSectionToggles = document.querySelectorAll('.toc-section-toggle');
-    tocSectionToggles.forEach(toggle => {
-      toggle.addEventListener('click', () => {
-        const section = toggle.getAttribute('data-section');
-        const content = document.querySelector(`[data-section-content="${section}"]`);
-        const chevron = toggle.querySelector('.toc-chevron');
-        
-        content?.classList.toggle('hidden');
-        chevron?.classList.toggle('rotate-180');
-      });
-    });
-    
-    // Smooth scrolling for TOC links
-    const tocLinks = document.querySelectorAll('.toc-link');
-    tocLinks.forEach(link => {
-      link.addEventListener('click', (e) => {
-        e.preventDefault();
-        const targetId = link.getAttribute('href')?.substring(1);
-        const targetElement = document.getElementById(targetId || '');
-        
-        if (targetElement) {
-          const yOffset = -100; // Account for sticky header
-          const y = targetElement.getBoundingClientRect().top + window.pageYOffset + yOffset;
-          
-          window.scrollTo({ top: y, behavior: 'smooth' });
-        }
-      });
-    });
-    
-    // Highlight active section in TOC
-    const observeTocSections = () => {
-      const observerOptions = {
-        root: null,
-        rootMargin: '-20% 0px -60% 0px',
-        threshold: 0
-      };
-      
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          const id = entry.target.getAttribute('id');
-          const navLink = document.querySelector(`[data-table-nav="${id}"]`);
-          
-          if (entry.isIntersecting) {
-            // Remove all active states
-            document.querySelectorAll('.toc-link').forEach(link => {
-              link.classList.remove('bg-clif-burgundy', 'text-white', 'bg-purple-100', 'text-purple-700', 'bg-blue-100', 'text-blue-700');
+            // Color categorical values in both backticks and code tags
+            let newContent = content;
+            
+            // Handle backtick format
+            newContent = newContent.replace(/`([^`]+)`/g, (match, value) => {
+              return `<code class="text-purple-600 font-mono text-sm bg-purple-50 px-1 rounded">${value}</code>`;
             });
             
-            // Add active state based on table type
-            if (navLink) {
-              const isBeta = window.betaTables?.some(t => t.id === id);
-              const isConcept = window.conceptTables?.some(t => t.id === id);
-              
-              if (isBeta) {
-                navLink.classList.add('bg-clif-burgundy', 'text-white');
-              } else if (isConcept) {
-                navLink.classList.add('bg-purple-100', 'text-purple-700');
+            // Handle already converted code tags
+            newContent = newContent.replace(/<code>([^<]+)<\/code>/g, (match, value) => {
+              return `<code class="text-purple-600 font-mono text-sm bg-purple-50 px-1 rounded">${value}</code>`;
+            });
+            
+            return cellMatch.replace(content, newContent);
+          }
+          
+          return cellMatch;
+        });
+      });
+    }
+    return tableMatch;
+  });
+  
+  // Process cross-references in descriptions (italicize field names that appear in descriptions)
+  html = html.replace(/<td[^>]*>(.*?)<\/td>/g, (match, content) => {
+    // Look for field names in description text
+    const fieldPattern = /\b(\w+_(id|dttm|date|time|category|name|value|numeric|count|dose))\b/g;
+    if (fieldPattern.test(content) && !content.includes('<span')) {
+      return match.replace(content, content.replace(fieldPattern, (fieldMatch) => {
+        // Determine color based on suffix
+        let colorClass = 'italic ';
+        if (fieldMatch.endsWith('_id')) colorClass += 'text-clif-burgundy';
+        else if (fieldMatch.endsWith('_dttm') || fieldMatch.endsWith('_date') || fieldMatch.endsWith('_time')) colorClass += 'text-blue-600';
+        else if (fieldMatch.endsWith('_category')) colorClass += 'text-emerald-600';
+        else if (fieldMatch.endsWith('_name')) colorClass += 'text-gray-600';
+        else colorClass += 'text-cyan-600';
+        
+        return colorWrap(fieldMatch, colorClass);
+      }));
+    }
+    return match;
+  });
+  
+  return html;
+}
+
+// Apply the color scheme
+processedHtml = applyColorScheme(processedHtml);
+
+// Extract ONLY actual data tables for sidebar (the 25 tables)
+const dataTableNames = [
+  // Beta tables (9)
+  'ADT', 'Hospitalization', 'Labs', 'Medication Admin Continuous', 'Patient', 
+  'Patient Assessments', 'Position', 'Respiratory Support', 'Vitals',
+  // Concept tables (16)  
+  'Code Status', 'CRRT Therapy', 'ECMO_MCS', 'Hospital Diagnosis', 'Intake_Output',
+  'Invasive Hemodynamics', 'Key ICU orders', 'Medication Admin Intermittent', 
+  'Medication Orders', 'Microbiology Culture', 'Microbiology Non-culture', 
+  'Procedures', 'Provider', 'Sensitivity', 'Therapy Details', 'Transfusion'
+];
+
+// Determine which tables are Beta vs Concept based on content
+const betaTables = dataTableNames.slice(0, 9);
+const conceptTables = dataTableNames.slice(9);
+---
+
+<BaseLayout title="CLIF Data Dictionary 2.0.0" description="CLIF Consortium Data Dictionary version 2.0.0">
+  <main class="container mx-auto px-4 md:px-8 py-8">
+    <div class="max-w-7xl mx-auto">
+      
+      <!-- Clean, simple header -->
+      <header class="mb-8 p-6 bg-gray-50 rounded-lg border">
+        <h1 class="text-3xl font-bold mb-3 text-gray-900">CLIF Data Dictionary 2.0.0</h1>
+        <div class="flex items-center gap-3 mb-3">
+          <Badge type="beta" size="large" />
+          <span class="text-gray-600 font-medium">Current Version</span>
+        </div>
+        <p class="text-gray-700">
+          The comprehensive guide to the Common Longitudinal ICU data Format, detailing structure, 
+          variables, and permissible values for standardized critical care data.
+        </p>
+      </header>
+
+      <!-- Main content layout -->
+      <div class="lg:grid lg:grid-cols-4 lg:gap-8">
+        
+        <!-- Clean sidebar with ONLY actual data tables -->
+        <aside class="hidden lg:block lg:col-span-1">
+          <nav class="sticky top-20 bg-white rounded-lg border p-4 max-h-[calc(100vh-6rem)] overflow-y-auto">
+            <h2 class="text-lg font-semibold mb-4 text-gray-900">Data Tables</h2>
+            
+            <!-- Search for tables only -->
+            <div class="mb-4">
+              <input 
+                type="text" 
+                id="table-search"
+                placeholder="Search tables..."
+                class="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <!-- Beta Tables -->
+            <div class="mb-4">
+              <button 
+                id="beta-toggle"
+                class="w-full flex items-center justify-between p-2 text-left rounded hover:bg-gray-50"
+                aria-expanded="true"
+              >
+                <div class="flex items-center gap-2">
+                  <svg class="w-4 h-4 transform transition-transform" id="beta-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                  </svg>
+                  <span class="font-medium">Beta Tables</span>
+                  <span class="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-full">{betaTables.length}</span>
+                </div>
+              </button>
+              <div id="beta-tables" class="mt-2 pl-6 space-y-1">
+                {betaTables.map(tableName => (
+                  <a 
+                    href={`#${tableName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                    class="table-link block py-1 px-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded"
+                    data-table-name={tableName.toLowerCase()}
+                  >
+                    {tableName}
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            <!-- Concept Tables -->
+            <div class="mb-4">
+              <button 
+                id="concept-toggle"
+                class="w-full flex items-center justify-between p-2 text-left rounded hover:bg-gray-50"
+                aria-expanded="true"
+              >
+                <div class="flex items-center gap-2">
+                  <svg class="w-4 h-4 transform transition-transform" id="concept-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                  </svg>
+                  <span class="font-medium">Concept Tables</span>
+                  <span class="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full">{conceptTables.length}</span>
+                </div>
+              </button>
+              <div id="concept-tables" class="mt-2 pl-6 space-y-1">
+                {conceptTables.map(tableName => (
+                  <a 
+                    href={`#${tableName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                    class="table-link block py-1 px-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded"
+                    data-table-name={tableName.toLowerCase()}
+                  >
+                    {tableName}
+                  </a>
+                ))}
+              </div>
+            </div>
+          </nav>
+        </aside>
+
+        <!-- Main content area -->
+        <article class="lg:col-span-3">
+          <div class="markdown-content prose max-w-none">
+            <div set:html={processedHtml} />
+          </div>
+        </article>
+      </div>
+
+      <!-- Navigation -->
+      <div class="mt-12 flex justify-center">
+        <CTAButton href="/data-dictionary" ariaLabel="Back to Data Dictionary versions">
+          Back to Documentation
+        </CTAButton>
+      </div>
+    </div>
+  </main>
+
+  <style>
+    /* Enhanced markdown content styling */
+    .markdown-content {
+      @apply text-gray-800;
+    }
+
+    /* Table wrapper styling */
+    .table-wrapper {
+      @apply -mx-4 px-4 md:mx-0 md:px-0;
+    }
+
+    /* Enhanced table styling */
+    .markdown-content table {
+      @apply w-full;
+    }
+
+    .markdown-content tbody tr {
+      @apply transition-colors duration-150;
+    }
+
+    .markdown-content tbody tr:nth-child(even) {
+      @apply bg-gray-50/50;
+    }
+
+    .markdown-content tbody tr:hover {
+      @apply bg-blue-50/30;
+    }
+
+    /* Code styling improvements */
+    .markdown-content code {
+      @apply bg-gray-100 px-2 py-1 rounded text-sm font-mono text-gray-800 border border-gray-200;
+    }
+
+    .markdown-content pre {
+      @apply bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto mb-4 shadow-md border border-gray-800;
+    }
+
+    .markdown-content pre code {
+      @apply bg-transparent p-0 border-0;
+    }
+
+    /* Table code styling */
+    .markdown-content td code {
+      @apply text-xs px-1.5 py-0.5;
+    }
+
+    /* Link styling */
+    .markdown-content a {
+      @apply text-clif-burgundy hover:text-clif-burgundy-dark underline decoration-1 underline-offset-2 transition-colors duration-200;
+    }
+
+    /* List styling */
+    .markdown-content ul {
+      @apply list-disc list-outside mb-4 ml-6 space-y-1;
+    }
+
+    .markdown-content ol {
+      @apply list-decimal list-outside mb-4 ml-6 space-y-1;
+    }
+
+    .markdown-content li {
+      @apply mb-2 leading-relaxed;
+    }
+
+    /* Nested lists */
+    .markdown-content li ul,
+    .markdown-content li ol {
+      @apply mt-2 mb-2;
+    }
+
+    /* Paragraph spacing */
+    .markdown-content p {
+      @apply mb-4 leading-relaxed;
+    }
+
+    /* Images */
+    .markdown-content img {
+      @apply max-w-full h-auto mx-auto my-6 rounded-lg shadow-lg border border-gray-200;
+    }
+
+    /* Blockquotes */
+    .markdown-content blockquote {
+      @apply border-l-4 border-blue-500/50 pl-4 italic my-4 text-gray-700 bg-blue-50/20 py-2 pr-4 rounded-r;
+    }
+
+    /* Strong text */
+    .markdown-content strong {
+      @apply font-semibold text-gray-900;
+    }
+
+    /* Badge styling */
+    .badge-beta {
+      @apply inline-flex items-center gap-1 px-3 py-1 text-sm font-bold rounded-full shadow-sm;
+      @apply bg-gradient-to-r from-orange-400 to-orange-500 text-white border border-orange-600;
+    }
+
+    .badge-concept {
+      @apply inline-flex items-center gap-1 px-3 py-1 text-sm font-bold rounded-full shadow-sm;
+      @apply bg-gradient-to-r from-purple-400 to-purple-500 text-white border border-purple-600;
+    }
+
+    /* Table links */
+    .table-link {
+      @apply block py-1 px-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded;
+    }
+
+    .table-link.active {
+      @apply text-blue-600 bg-blue-50 font-medium;
+    }
+
+    /* Responsive improvements */
+    @media (max-width: 768px) {
+      .markdown-content table {
+        @apply text-xs;
+      }
+      
+      .markdown-content th,
+      .markdown-content td {
+        @apply px-3 py-2;
+      }
+
+      .markdown-content h1 {
+        @apply text-2xl;
+      }
+
+      .markdown-content h2 {
+        @apply text-xl;
+      }
+
+      .markdown-content h3 {
+        @apply text-lg;
+      }
+    }
+
+    /* Smooth scroll behavior */
+    html {
+      scroll-behavior: smooth;
+    }
+  </style>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Simple sidebar functionality
+      const betaToggle = document.getElementById('beta-toggle');
+      const conceptToggle = document.getElementById('concept-toggle');
+      const betaTables = document.getElementById('beta-tables');
+      const conceptTables = document.getElementById('concept-tables');
+      const betaChevron = document.getElementById('beta-chevron');
+      const conceptChevron = document.getElementById('concept-chevron');
+      const searchInput = document.getElementById('table-search');
+      const tableLinks = document.querySelectorAll('.table-link');
+
+      // Toggle sections
+      function toggleSection(section, chevron, button) {
+        const isExpanded = button.getAttribute('aria-expanded') === 'true';
+        button.setAttribute('aria-expanded', !isExpanded);
+        
+        if (isExpanded) {
+          section.style.display = 'none';
+          chevron.style.transform = 'rotate(-90deg)';
+        } else {
+          section.style.display = 'block';
+          chevron.style.transform = 'rotate(0deg)';
+        }
+      }
+
+      betaToggle?.addEventListener('click', () => {
+        toggleSection(betaTables, betaChevron, betaToggle);
+      });
+
+      conceptToggle?.addEventListener('click', () => {
+        toggleSection(conceptTables, conceptChevron, conceptToggle);
+      });
+
+      // Simple search
+      searchInput?.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        
+        tableLinks.forEach(link => {
+          const tableName = link.getAttribute('data-table-name');
+          if (tableName && tableName.includes(searchTerm)) {
+            link.style.display = 'block';
+          } else {
+            link.style.display = 'none';
+          }
+        });
+      });
+
+      // Smooth scrolling and active link highlighting
+      const observerOptions = {
+        rootMargin: '-20% 0px -70% 0px',
+        threshold: 0
+      };
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const id = entry.target.id;
+            tableLinks.forEach((link) => {
+              if (link.getAttribute('href') === `#${id}`) {
+                link.classList.add('active');
               } else {
-                navLink.classList.add('bg-blue-100', 'text-blue-700');
+                link.classList.remove('active');
               }
-            }
+            });
           }
         });
       }, observerOptions);
-      
-      // Observe all table sections
-      const tableSections = document.querySelectorAll('[data-table-section], [data-table-id]');
-      tableSections.forEach(section => {
-        if (section.id) {
-          observer.observe(section);
+
+      // Observe all headings for active highlighting
+      const headings = document.querySelectorAll('.markdown-content h1, .markdown-content h2, .markdown-content h3');
+      headings.forEach((heading) => {
+        if (heading.id) {
+          observer.observe(heading);
         }
       });
-    };
-    
-    observeTocSections();
-    
-    // Sidebar collapse/expand functionality
-    const sidebarToggle = document.getElementById('sidebar-toggle');
-    const tocSidebar = document.getElementById('toc-sidebar');
-    
-    // Check localStorage for saved state
-    const savedSidebarState = localStorage.getItem('tocSidebarCollapsed');
-    if (savedSidebarState === 'true') {
-      tocSidebar?.classList.add('collapsed');
-    }
-    
-    sidebarToggle?.addEventListener('click', () => {
-      const isCollapsed = tocSidebar?.classList.contains('collapsed');
-      
-      if (isCollapsed) {
-        tocSidebar?.classList.remove('collapsed');
-        localStorage.setItem('tocSidebarCollapsed', 'false');
-      } else {
-        tocSidebar?.classList.add('collapsed');
-        localStorage.setItem('tocSidebarCollapsed', 'true');
-      }
+
+      // Smooth scrolling
+      tableLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          const targetId = link.getAttribute('href').substring(1);
+          const targetElement = document.getElementById(targetId);
+          
+          if (targetElement) {
+            targetElement.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start'
+            });
+          }
+        });
+      });
     });
-  });
   </script>
-
-  <style>
-    /* Custom styles for enhanced UI */
-    /* Collapsible content transitions are defined in the main style block above */
-
-    .rotate-180 {
-      transform: rotate(180deg);
-    }
-
-    /* Filter button styles */
-    .filter-btn {
-      display: inline-flex;
-      align-items: center;
-      padding: 0.5rem 1rem;
-      font-size: 0.875rem;
-      font-weight: 500;
-      border-radius: 0.5rem;
-      border: 1px solid #d1d5db;
-      background-color: white;
-      color: #6b7280;
-      transition: all 0.2s ease-in-out;
-      cursor: pointer;
-    }
-
-    .filter-btn:hover {
-      background-color: #f3f4f6;
-      border-color: #9ca3af;
-    }
-
-    .filter-btn.active {
-      background-color: #8A1538;
-      color: white;
-      border-color: #8A1538;
-    }
-
-    /* Enhanced search result styling */
-    .search-result-item {
-      transition: all 0.2s ease-in-out;
-    }
-
-    .search-result-item:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    }
-
-    /* Tooltip styling */
-    .tooltip-trigger {
-      cursor: help;
-      text-decoration: underline;
-      text-decoration-style: dotted;
-      text-decoration-color: #6b7280;
-    }
-
-    .tooltip-trigger:hover {
-      text-decoration-color: #8A1538;
-    }
-
-    /* Tour overlay styling */
-    .tour-spotlight {
-      transition: all 0.3s ease-in-out;
-    }
-
-    /* Educational highlight effect */
-    .educational-highlight {
-      background: linear-gradient(120deg, transparent 0%, rgba(138, 21, 56, 0.1) 50%, transparent 100%);
-      background-size: 200% 100%;
-      animation: highlight-sweep 2s ease-in-out;
-    }
-
-    @keyframes highlight-sweep {
-      0% { background-position: -200% 0; }
-      100% { background-position: 200% 0; }
-    }
-
-    /* Improve table scroll on mobile */
-    @media (max-width: 768px) {
-      .overflow-x-auto {
-        -webkit-overflow-scrolling: touch;
-      }
-      
-      .overflow-x-auto::-webkit-scrollbar {
-        height: 8px;
-      }
-      
-      .overflow-x-auto::-webkit-scrollbar-track {
-        background: #f3f4f6;
-      }
-      
-      .overflow-x-auto::-webkit-scrollbar-thumb {
-        background: #9ca3af;
-        border-radius: 4px;
-      }
-    }
-
-    /* Layout stability and performance fixes */
-    /* Navigation optimization removed for simpler performance */
-    
-    /* Performance optimizations removed for simplicity */
-    
-    /* Print styles */
-    @media print {
-      nav, #search-toggle, .collapse-toggle, #expand-all-beta {
-        display: none !important;
-      }
-      
-      .collapsible-content {
-        display: block !important;
-        opacity: 1 !important;
-        max-height: none !important;
-      }
-    }
-  </style>
 </BaseLayout>

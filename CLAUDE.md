@@ -103,6 +103,9 @@ src/
 - CohortCharts: Interactive visualizations using Chart.js
 - OptimizedImage: Lazy loading with fallback support
 - Team member contact info: Email, GitHub, website links with icons
+- Data Dictionary Color Scheme: Field types are color-coded for better readability
+- Fixed Underscore Display: Variable names now display correctly without backslashes
+- Sidebar Navigation: Added to all data dictionary versions with search functionality
 
 ## Important Notes
 
@@ -139,3 +142,21 @@ src/
 1. Place new images in appropriate `public/images/` subdirectory
 2. Reference with absolute paths: `/images/filename.png`
 3. Use `download_png_images.py` to batch download from markdown files
+
+## Known Issues
+
+### Institution Content Collection Errors
+- Astro may show schema validation errors for institution JSON files
+- These errors are non-critical and don't affect website functionality
+- All institution data is valid and displays correctly
+
+### Git Repository Issues
+- If you encounter "short read while indexing" errors with git:
+  ```bash
+  rm -f .git/index
+  git reset
+  ```
+
+### Development Server Warnings
+- "No files found matching" warnings for team/publications/tools are expected
+- These content collections are defined but not yet populated with content
