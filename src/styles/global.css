@@ -311,6 +311,50 @@
     contain: layout style;
   }
 
+  /* Table styles for markdown content */
+  .prose table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    margin: 1rem 0 !important;
+    border: 1px solid #e5e7eb !important;
+    background: white !important;
+    display: table !important;
+  }
+
+  .prose th, .prose td {
+    border: 1px solid #e5e7eb !important;
+    padding: 0.75rem !important;
+    text-align: left !important;
+    vertical-align: top !important;
+    display: table-cell !important;
+  }
+
+  .prose th {
+    background-color: #f9fafb !important;
+    font-weight: 600 !important;
+    color: #374151 !important;
+  }
+
+  .prose tr {
+    display: table-row !important;
+  }
+
+  .prose tr:nth-child(even) {
+    background-color: #f9fafb !important;
+  }
+
+  .prose tr:nth-child(odd) {
+    background-color: white !important;
+  }
+
+  .prose thead {
+    background-color: #f9fafb !important;
+    display: table-header-group !important;
+  }
+
+  .prose tbody {
+    display: table-row-group !important;
+  }
 
   /* Reduce motion for accessibility */
   @media (prefers-reduced-motion: reduce) {

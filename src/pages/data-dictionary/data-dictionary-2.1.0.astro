@@ -6,7 +6,7 @@ import path from 'node:path';
 import MarkdownIt from 'markdown-it';
 
 // Read the DDL file at build time
-const ddlPath = path.join(process.cwd(), 'src/content/clif-ddl.sql');
+const ddlPath = path.join(process.cwd(), 'src/content/v-2-1-0-ddl.sql');
 const ddlContent = fs.readFileSync(ddlPath, 'utf-8');
 
 // Read the Markdown file for documentation (if it exists)
@@ -18,19 +18,31 @@ try {
   markdownContent = '';
 }
 
-const md = new MarkdownIt({ html: true, breaks: true, linkify: true, typographer: true });
+const md = new MarkdownIt({ 
+  html: true, 
+  breaks: true, 
+  linkify: true, 
+  typographer: true
+});
+
+// Explicitly enable table rendering
+md.enable('table');
+
+
 
 // Parse all CREATE TABLE statements and columns with JSON-in-COMMENT
 function parseAllTables(ddl) {
-  const tableRegex = /CREATE TABLE ([a-zA-Z0-9_]+) \(([^;]*)\);/gis;
+  const tableRegex = /CREATE TABLE ([a-zA-Z0-9_]+)\s*\(([^;]*?)\);/gis;
   let match;
   const tables = [];
   while ((match = tableRegex.exec(ddl)) !== null) {
     const tableName = match[1];
     const columns = [];
-    const columnRegex = /([a-zA-Z0-9_]+)\s+([A-Z]+)(?:\s+COMMENT\s+'([^']*)')?/g;
+    // Remove foreign key constraints before parsing columns
+    const tableContent = match[2].replace(/FOREIGN KEY\s*\([^)]+\)\s*REFERENCES\s*[^,)]+/gi, '');
+    const columnRegex = /([a-zA-Z0-9_]+)\s+([A-Z]+(?:\([^)]*\))?)(?:\s+COMMENT\s+'([^']*)')?/g;
     let colMatch;
-    while ((colMatch = columnRegex.exec(match[2])) !== null) {
+    while ((colMatch = columnRegex.exec(tableContent)) !== null) {
       let meta = { description: '', permissible: ''};
       if (colMatch[3]) {
         try { meta = JSON.parse(colMatch[3]); } catch (e) { meta.description = colMatch[3]; }
@@ -41,7 +53,10 @@ function parseAllTables(ddl) {
         ...meta
       });
     }
-    tables.push({ name: tableName, columns });
+    // Only add table if it has columns
+    if (columns.length > 0) {
+      tables.push({ name: tableName, columns });
+    }
   }
   return tables;
 }
@@ -50,10 +65,10 @@ const allTables = parseAllTables(ddlContent);
 
 // For sidebar: split into Beta and Concept tables by name (as before)
 const betaTableNames = [
-  'ADT', 'Code_Status', 'CRRT_Therapy', 'ECMO_MCS', 'Hospitalization',
-  'Hospital_Diagnosis', 'Labs', 'Medication_Admin_Continuous',
-  'Microbiology_Culture', 'Microbiology_Non_culture', 'Patient',
-  'Patient_Assessments', 'Position', 'Respiratory_Support', 'Vitals'
+  'adt', 'code_status', 'crrt_therapy', 'ecmo_mcs', 'hospitalization',
+  'hospital_diagnosis', 'labs', 'medication_admin_continuous',
+  'microbiology_culture', 'microbiology_nonculture', 'patient',
+  'patient_assessments', 'position', 'respiratory_support', 'vitals'
 ];
 const conceptTableNames = [
   'Intake_Output', 'Invasive_Hemodynamics', 'Key_ICU_Orders',
@@ -62,6 +77,8 @@ const conceptTableNames = [
 ];
 const betaTables = allTables.filter(t => betaTableNames.includes(t.name));
 const conceptTables = allTables.filter(t => conceptTableNames.includes(t.name));
+
+
 
 // Helper: Extract intro and table-level intros from Markdown
 function extractMarkdownSections(mdContent) {
@@ -118,6 +135,7 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
   title="CLIF-2.1.0 Data Dictionary (Future Release)"
   description="Upcoming version of the Common Longitudinal ICU data Format"
 >
+
   <div class="container mx-auto px-6 py-12">
     <div class="max-w-7xl mx-auto">
       <!-- Render Markdown intro if present -->
