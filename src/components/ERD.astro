@@ -1,0 +1,37 @@
+---
+import erdMermaid from '../content/erd.mmd?raw';
+---
+
+<div id="erd-diagram-container" style="overflow-x: auto; overflow-y: auto; width: 100%; max-width: 100vw; height: 600px; border: 1px solid #ccc; background: #fff;">
+  <div id="erd-diagram" class="mermaid" style="min-width: 1200px; min-height: 600px;">
+    {erdMermaid}
+  </div>
+</div>
+
+<script is:inline>
+  function initMermaid() {
+    window.mermaid.initialize({
+      startOnLoad: true,
+      theme: "default",
+      themeVariables: {
+        fontSize: "20px",
+        erTableTextSize: "20px",
+        erTitleTextSize: "24px",
+        erTableHeaderBackground: "#f3f4f6",
+        erTableHeaderTextColor: "#222",
+        erTableStroke: "#888",
+        erTableBackground: "#fff"
+      }
+    });
+    window.mermaid.init(undefined, '#erd-diagram');
+  }
+
+  if (!window.mermaid) {
+    const script = document.createElement('script');
+    script.src = "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js";
+    script.onload = initMermaid;
+    document.head.appendChild(script);
+  } else {
+    initMermaid();
+  }
+</script>

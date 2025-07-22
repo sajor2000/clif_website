@@ -1,0 +1,26 @@
+---
+import dataDict from '../content/data-dictionary.json';
+---
+
+<table>
+  <thead>
+    <tr>
+      <th>Table</th>
+      <th>Column</th>
+      <th>Type</th>
+      <th>Primary Key</th>
+    </tr>
+  </thead>
+  <tbody>
+    {dataDict.map(table =>
+      table.columns.map(column => (
+        <tr>
+          <td>{table.name}</td>
+          <td>{column.name}</td>
+          <td>{column.type}</td>
+          <td>{column.primary ? 'Yes' : ''}</td>
+        </tr>
+      ))
+    )}
+  </tbody>
+</table> 
