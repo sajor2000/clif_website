@@ -18,6 +18,7 @@ try {
   markdownContent = '';
 }
 
+
 const md = new MarkdownIt({ 
   html: true, 
   breaks: true, 
@@ -71,9 +72,9 @@ const betaTableNames = [
   'patient_assessments', 'position', 'respiratory_support', 'vitals'
 ];
 const conceptTableNames = [
-  'Intake_Output', 'Invasive_Hemodynamics', 'Key_ICU_Orders',
-  'Medication_Admin_Intermittent', 'Medication_Orders', 'Procedures',
-  'Provider', 'Sensitivity', 'Therapy_Details', 'Transfusion'
+  'intake_output', 'invasive_hemodynamics', 'key_icu_orders',
+  'medication_admin_intermittent', 'medication_orders', 'procedures',
+  'provider', 'sensitivity', 'therapy_details', 'transfusion'
 ];
 const betaTables = allTables.filter(t => betaTableNames.includes(t.name));
 const conceptTables = allTables.filter(t => conceptTableNames.includes(t.name));
@@ -131,6 +132,24 @@ const betaSectionHeader = markdownTableSections['Beta_Tables'] || '';
 const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
 ---
 
+<head>
+  <meta charset="utf-8" />
+  <style>
+    .table-wrapper td span a,
+    .table-wrapper td a,
+    .table-wrapper a {
+      color: #8B1C3B !important;
+      text-decoration: underline !important;
+      font-weight: 500 !important;
+    }
+    .table-wrapper td span a:hover,
+    .table-wrapper td a:hover,
+    .table-wrapper a:hover {
+      color: #B22234 !important;
+    }
+  </style>
+</head>
+
 <BaseLayout
   title="CLIF-2.1.0 Data Dictionary (Future Release)"
   description="Upcoming version of the Common Longitudinal ICU data Format"
@@ -178,7 +197,7 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
                 {betaTables.map(table => (
                   <a href={`#${table.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
                      class="table-link block py-1 px-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded">
-                    {table.name.replace(/_/g, ' ')}
+                    {table.name}
                   </a>
                 ))}
               </div>
@@ -193,22 +212,48 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
                 {conceptTables.map(table => (
                   <a href={`#${table.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
                      class="table-link block py-1 px-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded">
-                    {table.name.replace(/_/g, ' ')}
+                    {table.name}
                   </a>
                 ))}
               </div>
+            </div>
+            <!-- Future Proposed Tables -->
+            <div class="mb-4">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="font-medium">Future Proposed Tables</span>
+              </div>
+              {/* No links under this section */}
             </div>
           </nav>
         </aside>
         <!-- Main Content -->
         <article class="lg:col-span-3">
-          {/* Render Beta tables header and instructions */}
+
+          {/* Render markdown sections that do not have a DDL table */}
+          {Object.entries(markdownTableSections)
+            .filter(([sectionName]) =>
+              !betaTableNames.includes(sectionName) &&
+              !conceptTableNames.includes(sectionName) &&
+              sectionName !== 'Beta_Tables' &&
+              sectionName !== 'Concept_Tables' &&
+              sectionName !== 'Future_Proposed_Tables'
+            )
+            .map(([sectionName, sectionContent]) => (
+              <section id={sectionName.toLowerCase().replace(/[^a-z0-9]+/g, '-')} class="mb-12">
+                <h2 class="text-2xl font-semibold mb-4 mt-6 text-gray-900 scroll-mt-20 border-b border-gray-200 pb-2">
+                  {sectionName.replace(/_/g, ' ')}
+                </h2>
+                <div class="prose mb-4" set:html={md.render(sectionContent)} />
+              </section>
+            ))}
+          {/* Render Beta Tables header and instructions */}
           {betaSectionHeader && (
             <div>
-              <h2 class="section-header">Beta tables</h2>
+              <h2 class="section-header">Beta Tables</h2>
               <div class="prose mb-8" set:html={md.render(betaSectionHeader)} />
             </div>
           )}
+          
           {betaTables.map(table => {
             const section = markdownTableSections[table.name] || '';
             const { intro, extras } = splitTableSection(section);
@@ -237,8 +282,12 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
                         <tr>
                           <td class="px-6 py-4 text-sm text-gray-900">{col.name}</td>
                           <td class="px-6 py-4 text-sm text-gray-900">{col.type}</td>
-                          <td class="px-6 py-4 text-sm text-gray-900">{col.description}</td>
-                          <td class="px-6 py-4 text-sm text-gray-900">{Array.isArray(col.permissible) ? col.permissible.join(', ') : col.permissible}</td>
+                          <td class="px-6 py-4 text-sm text-gray-900">
+                            {col.description ? <span set:html={md.renderInline(col.description)} /> : ''}
+                          </td>
+                          <td class="px-6 py-4 text-sm text-gray-900">
+                            {col.permissible ? <span set:html={md.renderInline(Array.isArray(col.permissible) ? col.permissible.join(', ') : col.permissible)} /> : ''}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -254,7 +303,7 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
           {/* Render Concept tables header and instructions */}
           {conceptSectionHeader && (
             <div>
-              <h2 class="section-header">Concept tables</h2>
+              <h2 class="section-header">Concept Tables</h2>
               <div class="prose mb-8" set:html={md.render(conceptSectionHeader)} />
             </div>
           )}
@@ -286,8 +335,12 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
                         <tr>
                           <td class="px-6 py-4 text-sm text-gray-900">{col.name}</td>
                           <td class="px-6 py-4 text-sm text-gray-900">{col.type}</td>
-                          <td class="px-6 py-4 text-sm text-gray-900">{col.description}</td>
-                          <td class="px-6 py-4 text-sm text-gray-900">{Array.isArray(col.permissible) ? col.permissible.join(', ') : col.permissible}</td>
+                          <td class="px-6 py-4 text-sm text-gray-900">
+                            {col.description ? <span set:html={md.renderInline(col.description)} /> : ''}
+                          </td>
+                          <td class="px-6 py-4 text-sm text-gray-900">
+                            {col.permissible ? <span set:html={md.renderInline(Array.isArray(col.permissible) ? col.permissible.join(', ') : col.permissible)} /> : ''}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -299,6 +352,14 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
               </section>
             );
           })}
+
+          {/* Render Future Proposed Tables section if present */}
+          {markdownTableSections['Future_Proposed_Tables'] && (
+            <div>
+              <h2 class="section-header">Future Proposed Tables</h2>
+              <div class="prose mb-8" set:html={md.render(markdownTableSections['Future_Proposed_Tables'])} />
+            </div>
+          )}
         </article>
       </div>
     </div>
@@ -396,6 +457,49 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
     }
     .prose {
       overflow-x: auto;
+    }
+    .prose ol, .prose ul {
+      list-style: revert !important;
+      margin-left: 2em !important;
+      padding-left: 1.5em !important;
+      display: block !important;
+    }
+    .prose li {
+      display: list-item !important;
+      margin-bottom: 0.5em;
+    }
+  </style>
+  <style is:global>
+    .table-wrapper a {
+      color: #8B1C3B !important;
+      text-decoration: underline !important;
+      font-weight: 700 !important;
+    }
+    .table-wrapper a:hover {
+      color: #B22234 !important;
+    }
+    .prose a, a {
+      color: #8B1C3B !important;
+      text-decoration: underline !important;
+      font-weight: 700 !important;
+    }
+    .prose a:hover, a:hover {
+      color: #B22234 !important;
+    }
+    .prose ul, ul {
+      list-style-type: disc !important;
+      list-style: disc inside !important;
+    }
+
+    .prose ol, ol {
+      list-style-type: decimal !important;
+      list-style: decimal inside !important;
+    }
+    .table-link {
+      text-decoration: none !important;
+    }
+    .table-link:hover {
+      text-decoration: underline !important;
     }
   </style>
 </BaseLayout>

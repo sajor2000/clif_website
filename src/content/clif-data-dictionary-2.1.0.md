@@ -2,22 +2,24 @@
 
 The CLIF Data Dictionary serves as a comprehensive guide to the Common Longitudinal ICU data Format, detailing the structure and purpose of each table within the framework. Designed to standardize and harmonize electronic health record data across multiple institutions, the dictionary outlines the entity-relationship model, variable definitions, and permissible values.
 
-![ERD](/images/data-dictionary/ERD-2.1.0.png)
+![ERD](/images/data-dictionary/ERD-2.1.0-0711.png)
 
 ## Beta Tables
 
-The table purpose, structure, and field names for beta tables is complete and used in at least one federated CLIF project. The [minimum Common ICU Data Elements (mCIDE)](https://clif-consortium.github.io/website/mCIDE.html) for category variables is defined. Actively testing the table's practical use in projects. Breaking changes unlikely, but backward compatible updates in future minor versions possible
+The table purpose, structure, and field names for beta tables is complete and used in at least one federated CLIF project. The minimum Common ICU Data Elements (mCIDE) for category variables is defined. Actively testing the table's practical use in projects. Breaking changes unlikely, but backward compatible updates in future minor versions possible
 
 
 ## adt
-
-The admission, discharge, and transfer (ADT) table is a start-stop longitudinal dataset that contains information about each patient's movement within the hospital. It also has a `hospital_id` field to distinguish between different hospitals within a health system. 
+The admission, discharge, and transfer (adt) table is a start-stop longitudinal dataset that contains information about each patient's movement within the hospital. It also has a *`hospital_id`* field to distinguish between different hospitals within a health system. 
 
 **Notes**:
--   ADT represents the patient's physical location, NOT the patient "status".
--   Procedural areas and operating rooms should be mapped to `Procedural`. Pre/Intra/Post-procedural/OR EHR data (such as anesthesia flowsheet records from Labs, Vitals, Scores, Respiratory Support) **are not currently** represented in CLIF.
 
+* ADT represents the patient's physical location, NOT the patient "status".
+* Procedural areas and operating rooms should be mapped to `Procedural`. Pre/Intra/Post-procedural/OR EHR data (such as anesthesia flowsheet records from Labs, Vitals, Scores, Respiratory Support) **are not currently** represented in CLIF.
+
+\
 **Example**:
+
 | hospitalization_id | hospital_id | hospital_type | in_dttm | out_dttm | location_name | location_category | location_type |
 |-------------------|-------------|---------------|---------|----------|---------------|-------------------|----------------|
 | 20010012 | ABC | academic | 2024-12-01 10:00:00+00:00 | 2024-12-01 14:00:00+00:00 | B06F | icu | general_icu |
@@ -33,7 +35,9 @@ This table provides a longitudinal record of changes in a patient's code status 
 
 
 **Notes**:
--   The `code_status_category` set of permissible values is under development
+
+- The `code_status_category` set of permissible values is under development
+
 \
 **Example**:
 
@@ -46,16 +50,16 @@ This table provides a longitudinal record of changes in a patient's code status 
 
 ## crrt_therapy
 
-The crrt_therapy table captures Continuous Renal Replacement Therapy (CRRT) data, including different CRRT modalities, operational parameters, and fluid exchange details. 
-The intermittent HD, peritoneal dialysis, PERT, and SLED tables are under development.
+The crrt_therapy table captures Continuous Renal Replacement Therapy (CRRT) data, including different CRRT modalities, operational parameters, and fluid exchange details. The intermittent HD, peritoneal dialysis, PERT, and SLED tables are under development.
 
 **Notes**: 
-1. **SCUF:** Slow Continuous Ultrafiltration
-2. **CVVH:** Continuous Veno-Venous Hemofiltration
-3. **CVVHD:** Continuous Veno-Venous Hemodialysis
-4. **CVVHDF:** Continuous Venous-Venous Hemodiafiltration
-
+- **SCUF:** Slow Continuous Ultrafiltration
+- **CVVH:** Continuous Veno-Venous Hemofiltration
+- **CVVHD:** Continuous Veno-Venous Hemodialysis
+- **CVVHDF:** Continuous Venous-Venous Hemodiafiltration
+\
 **CRRT Modalities and Parameter Usage**:
+
 | **CRRT Modality** | **Blood Flow Rate** | **Pre-Filter Replacement Rate** | **Post-Filter Replacement Rate** | **Dialysate Flow Rate** | **Ultrafiltration Out** |
 |-------------------|---------------------|---------------------------------|---------------------------------|-------------------------|-------------------------|
 | **SCUF**          | Required            | Not Used                        | Not Used                        | Not Used                |   Required              |
@@ -90,15 +94,13 @@ The hospitalization table contains information about each hospitalization event.
 
 
 **Notes**:
-1.  If a patient is discharged to Home/Hospice, then `discharge_category == Hospice`.
 
-2.  The geographical indicators(`zipcode_nine_digit`, `zipcode_five_digit`, `census_block_code`, `census_block_group_code`, `census_tract`, `state_code`, `county_code`) should be added if they are available in your source dataset. `zipcode_nine_digit` is preferred over `zipcode_five_digit`, and `census_block_code` is ideal for census based indicators.The choice of geographical indicators may differ depending on the project.
+- If a patient is discharged to Home/Hospice, then `discharge_category == Hospice`.
+- The geographical indicators (`zipcode_nine_digit`, `zipcode_five_digit`, `census_block_code`, `census_block_group_code`, `census_tract`, `state_code`, `county_code`) should be added if they are available in your source dataset. `zipcode_nine_digit` is preferred over `zipcode_five_digit`, and `census_block_code` is ideal for census based indicators. The choice of geographical indicators may differ depending on the project.
+- If a patient is transferred between different hospitals within a health system, a new `hospitalization_id` should be created.
+- If a patient is initially seen in an ER in hospital A and then admitted to inpatient status in hospital B, one `hospitalization_id` should be created for data from both stays.
+- A `hospitalization_joined_id` can also be created from a CLIF table from contiguous `hospitalization_ids`.
 
-3.  If a patient is transferred between different hospitals within a health system, a new `hospitalization_id` should be created
-
-4.  If a patient is initially seen in an ER in hospital A and then admitted to inpatient status in hospital B, one `hospitalization_id` should be created for data from both stays
-
-5.  A `hospitalization_joined_id` can also be created from a CLIF table from contiguous `hospitalization_ids`
 \
 **Example**:
 
@@ -113,37 +115,38 @@ The hospitalization table contains information about each hospitalization event.
 
 Record of all diagnoses associated with the hospitalization. Expect breaking changes to this table as we seek to align it with existing diagnosis ontologies
 
-
 **Example**:
 | hospitalization_id | diagnostic_code | diagnosis_code_format | start_dttm                | end_dttm                  |
 |-------------------|-----------------|----------------------|---------------------------|---------------------------|
-| 1001014           | 250.00         | icd9                 | 2023-05-01 08:00:00+00:00 | 2023-05-10 08:00:00+00:00 |
-| 1001014           | J45.909        | icd10                | 2023-05-01 08:00:00+00:00 | 2023-05-15 08:00:00+00:00 |
-| 1002025           | 401.9          | icd9                 | 2023-06-10 09:00:00+00:00 | 2023-06-12 09:00:00+00:00 |
-| 1002025           | E11.9          | icd10                | 2023-06-10 09:00:00+00:00 | 2023-06-20 09:00:00+00:00 |
-| 1003036           | 414.01         | icd9                 | 2023-07-15 07:30:00+00:00 | 2023-07-30 07:30:00+00:00 |
-| 1003036           | I25.10         | icd10                | 2023-07-15 07:30:00+00:00 | 2023-07-25 07:30:00+00:00 |
-| 1004047           | 530.81         | icd9                 | 2023-08-20 10:00:00+00:00 | 2023-08-22 10:00:00+00:00 |
-| 1004047           | K21.9          | icd10                | 2023-08-20 10:00:00+00:00 | 2023-08-24 10:00:00+00:00 |
+| 1001014           | 250.00          | icd9                 | 2023-05-01 08:00:00+00:00 | 2023-05-10 08:00:00+00:00 |
+| 1001014           | J45.909         | icd10                | 2023-05-01 08:00:00+00:00 | 2023-05-15 08:00:00+00:00 |
+| 1002025           | 401.9           | icd9                 | 2023-06-10 09:00:00+00:00 | 2023-06-12 09:00:00+00:00 |
+| 1002025           | E11.9           | icd10                | 2023-06-10 09:00:00+00:00 | 2023-06-20 09:00:00+00:00 |
+| 1003036           | 414.01          | icd9                 | 2023-07-15 07:30:00+00:00 | 2023-07-30 07:30:00+00:00 |
+| 1003036           | I25.10          | icd10                | 2023-07-15 07:30:00+00:00 | 2023-07-25 07:30:00+00:00 |
+| 1004047           | 530.81          | icd9                 | 2023-08-20 10:00:00+00:00 | 2023-08-22 10:00:00+00:00 |
+| 1004047           | K21.9           | icd10                | 2023-08-20 10:00:00+00:00 | 2023-08-24 10:00:00+00:00 |
 
 
 ## labs
 
 The labs table is a long form (one lab result per row) longitudinal table. 
 
-**Note**: The `lab_value` field often has non-numeric entries that are useful to make project-specific decisions. A site may choose to keep the `lab_value` field as a character and create a new field `lab_value_numeric` that only parses the character field to extract the numeric part of the string.
+**Notes**:
+
+The `lab_value` field often has non-numeric entries that are useful to make project-specific decisions. A site may choose to keep the `lab_value` field as a character and create a new field `lab_value_numeric` that only parses the character field to extract the numeric part of the string.
 \
 **Example**:
-| hospitalization_id | lab_order_dttm | lab_collect_dttm | lab_result_dttm | lab_order_name | lab_name | lab_category | lab_value | lab_value_numeric | reference_unit | lab_loinc_code | lab_specimen_name | lab_specimen_category |
-|-------------------|----------------|------------------|-----------------|----------------|----------|--------------|-----------|-------------------|----------------|----------------|-------------------|----------------------|
-| 12345 | 2024-12-01 08:15:00+00:00 | 2024-12-01 08:30:00+00:00 | 2024-12-01 09:00:00+00:00 | Complete Blood Count | Hemoglobin | hemoglobin | 12.3 | 12.3 | g/dL | 718-7 | Complete Blood Count  | blood |
-| 12345 | 2024-12-01 08:15:00+00:00 | 2024-12-01 08:30:00+00:00 | 2024-12-01 09:05:00+00:00 | Complete Blood Count | White Blood Cell Count | wbc | 5.6 | 5.6 | 10\^3/uL | 6690-2 | Complete Blood Count  | blood |
-| 12345 | 2024-12-01 08:15:00+00:00 | 2024-12-01 08:30:00+00:00 | 2024-12-01 09:10:00+00:00 | Metabolic Panel | Sodium | sodium | 138 | 138 | mmol/L | 2951-2 | Metabolic Panel |  serum |
-| 12345 | 2024-12-01 08:15:00+00:00 | 2024-12-01 08:30:00+00:00 | 2024-12-01 09:20:00+00:00 | Metabolic Panel | Potassium | potassium | 4.1 | 4.1 | mmol/L | 2823-3 | Metabolic Panel   |  serum |
-| 67890 | 2024-12-01 09:30:00+00:00 | 2024-12-01 09:45:00+00:00 | 2024-12-01 10:15:00+00:00 | Arterial Blood Gas | pH | ph | 7.35 | 7.35 |  | 2744-1 | Arterial Blood Gas |  blood |
-| 67890 | 2024-12-01 09:30:00+00:00 | 2024-12-01 09:45:00+00:00 | 2024-12-01 10:20:00+00:00 | Arterial Blood Gas | pCO2 | pco2 | 40 | 40 | mmHg | 2019-8 | Arterial Blood Gas | blood  |
-| 67890 | 2024-12-01 09:30:00+00:00 | 2024-12-01 09:45:00+00:00 | 2024-12-01 10:25:00+00:00 | Arterial Blood Gas | pO2 | po2 | 90 | 90 | mmHg | 2703-7 |  Arterial Blood Gas  |  blood |
-| 67890 | 2024-12-01 09:30:00+00:00 | 2024-12-01 09:45:00+00:00 | 2024-12-01 10:30:00+00:00 | Arterial Blood Gas | Bicarbonate | bicarbonate | 24 | 24 | mmol/L | 2028-3 | Arterial Blood Gas | blood |
+
+| hospitalization_id | lab_order_dttm         | lab_collect_dttm        | lab_result_dttm         | lab_order_name                | lab_order_category | lab_name         | lab_category | lab_value | lab_value_numeric | reference_unit | lab_specimen_name | lab_specimen_category | lab_loinc_code |
+|-------------------|------------------------|-------------------------|-------------------------|-------------------------------|--------------------|------------------|-------------|----------|------------------|----------------|-------------------|----------------------|---------------|
+| 1001014           | 2023-05-01 07:00:00+00:00 | 2023-05-01 07:15:00+00:00 | 2023-05-01 08:00:00+00:00 | Complete blood count w/ diff  | CBC                | WBC              | white_blood_cell_count | 8.2      | 8.2              | 10^3/uL        | blood             | blood/plasma/serum   | 6690-2        |
+| 1001014           | 2023-05-01 07:00:00+00:00 | 2023-05-01 07:15:00+00:00 | 2023-05-01 08:00:00+00:00 | Complete blood count w/ diff  | CBC                | HGB              | hemoglobin            | 13.5     | 13.5             | g/dL           | blood             | blood/plasma/serum   | 718-7         |
+| 1002025           | 2023-06-10 08:30:00+00:00 | 2023-06-10 08:45:00+00:00 | 2023-06-10 09:00:00+00:00 | Basic metabolic panel         | BMP                | Sodium           | sodium               | 140      | 140              | mmol/L         | blood             | blood/plasma/serum   | 2951-2        |
+| 1002025           | 2023-06-10 08:30:00+00:00 | 2023-06-10 08:45:00+00:00 | 2023-06-10 09:00:00+00:00 | Basic metabolic panel         | BMP                | Potassium        | potassium            | 4.2      | 4.2              | mmol/L         | blood             | blood/plasma/serum   | 2823-3        |
+| 1003036           | 2023-07-15 06:45:00+00:00 | 2023-07-15 07:00:00+00:00 | 2023-07-15 07:30:00+00:00 | Liver function panel          | LFT                | AST (SGOT)       | ast                  | 35       | 35               | U/L            | blood             | blood/plasma/serum   | 1920-8        |
+| 1003036           | 2023-07-15 06:45:00+00:00 | 2023-07-15 07:00:00+00:00 | 2023-07-15 07:30:00+00:00 | Liver function panel          | LFT                | ALT (SGPT)       | alt                  | 28       | 28               | U/L            | blood             | blood/plasma/serum   | 1742-6        |
+
 
 ## medication_admin_continuous
 
@@ -152,13 +155,13 @@ The medication admin continuous table is a long-form (one medication administrat
 **Example**:
 
 | hospitalization_id | admin_dttm                | med_name                                                           | med_category  | med_group     | med_route_name | med_route_category | med_dose | med_dose_unit | mar_action_name |
-|-------------------|---------------------------|-----------------------------------------------------------------------|---------------|---------------|----------------|-------------------|-----------|---------------|----------------|
-| 792391            | 2123-11-13 12:28:00+00:00 | PROPOFOL 10 MG/ML INTRAVENOUS EMULSION                              | propofol      | sedation      | Intravenous    | NA                | 75.0000   | mcg/kg/min    | New Bag        |
-| 792391            | 2123-11-13 13:49:00+00:00 | REMIFENTANIL CONTINUOUS IV (ANESTHESIA)                             | remifentanil  | sedation      | NA             | NA                | 0.0500    | mcg/kg/min    | New Bag        |
-| 792391            | 2123-11-13 14:03:00+00:00 | PROPOFOL 10 MG/ML INTRAVENOUS EMULSION                              | propofol      | sedation      | Intravenous    | NA                | 0.0000    | mcg/kg/min    | Stopped        |
-| 370921            | 2123-02-12 03:07:00+00:00 | PHENYLEPHRINE 5 MG/50 ML (100 MCG/ML) IN 0.9 % SODIUM CHLORIDE      | phenylephrine | vasoactives   | Intravenous    | NA                | 20.0000   | mcg/min       | New Bag        |
-| 370921            | 2123-02-12 03:14:00+00:00 | PHENYLEPHRINE 5 MG/50 ML (100 MCG/ML) IN 0.9 % SODIUM CHLORIDE      | phenylephrine | vasoactives   | Intravenous    | NA                | 50.0000   | mcg/min       | Rate Change    |
-| 702344            | 2123-04-27 04:30:00+00:00 | HEPARIN (PORCINE) 25,000 UNIT/250 ML IN 0.45 % SODIUM CHLORIDE      | heparin       | anticoagulation| Intravenous    | NA                | 18.0000   | Units/kg/hr   | New Bag        |
+|-------------------|---------------------------|--------------------------------------------------------------------|---------------|---------------|----------------|-------------------|----------|---------------|----------------|
+| 792391            | 2123-11-13 12:28:00+00:00 | PROPOFOL 10 MG/ML INTRAVENOUS EMULSION                            | propofol      | sedation      | Intravenous    | NA                | 75.0000  | mcg/kg/min    | New Bag        |
+| 792391            | 2123-11-13 13:49:00+00:00 | REMIFENTANIL CONTINUOUS IV (ANESTHESIA)                           | remifentanil  | sedation      | NA             | NA                | 0.0500   | mcg/kg/min    | New Bag        |
+| 792391            | 2123-11-13 14:03:00+00:00 | PROPOFOL 10 MG/ML INTRAVENOUS EMULSION                            | propofol      | sedation      | Intravenous    | NA                | 0.0000   | mcg/kg/min    | Stopped        |
+| 370921            | 2123-02-12 03:07:00+00:00 | PHENYLEPHRINE 5 MG/50 ML (100 MCG/ML) IN 0.9 % SODIUM CHLORIDE    | phenylephrine | vasoactives   | Intravenous    | NA                | 20.0000  | mcg/min       | New Bag        |
+| 370921            | 2123-02-12 03:14:00+00:00 | PHENYLEPHRINE 5 MG/50 ML (100 MCG/ML) IN 0.9 % SODIUM CHLORIDE    | phenylephrine | vasoactives   | Intravenous    | NA                | 50.0000  | mcg/min       | Rate Change    |
+| 702344            | 2123-04-27 04:30:00+00:00 | HEPARIN (PORCINE) 25,000 UNIT/250 ML IN 0.45 % SODIUM CHLORIDE    | heparin       | anticoagulation| Intravenous    | NA                | 18.0000  | Units/kg/hr   | New Bag        |
 
 
 ## microbiology_culture
@@ -243,64 +246,61 @@ The position table is a long form (one position per row) longitudinal table that
 
 The respiratory support table is a wider longitudinal table that captures simultaneously recorded ventilator settings and observed ventilator parameters. The table is designed to capture the most common respiratory support devices and modes used in the ICU. It will be sparse for patients who are not on mechanical ventilation.
 
-#### `device_category` == "IMV"
+**Notes**:
 
-+----------------------+---------------------------------+-------------------------+--------------------+-------------------------------------+---------+------------------+
-| ventilator setting   | `Assist Control-Volume Control` | `Pressure Support/CPAP` | `Pressure Control` | `Pressure-Regulated Volume Control` | `SIMV`  | `Volume Support` |
-+----------------------+---------------------------------+-------------------------+--------------------+-------------------------------------+---------+------------------+
-| fio2_set             | E                               | E                       | E                  | E                                   | E       | E                |
-+----------------------+---------------------------------+-------------------------+--------------------+-------------------------------------+---------+------------------+
-| tidal_volume_set     | E                               |                         |                    | E                                   | P       | E                |
-+----------------------+---------------------------------+-------------------------+--------------------+-------------------------------------+---------+------------------+
-| resp_rate_set        | E                               |                         | E                  | E                                   | E       |                  |
-+----------------------+---------------------------------+-------------------------+--------------------+-------------------------------------+---------+------------------+
-| pressure_control_set |                                 |                         | E                  |                                     | P       |                  |
-+----------------------+---------------------------------+-------------------------+--------------------+-------------------------------------+---------+------------------+
-| pressure_support_set |                                 | E                       |                    |                                     | E       |                  |
-+----------------------+---------------------------------+-------------------------+--------------------+-------------------------------------+---------+------------------+
-| flow_rate_set        | P                               |                         |                    |                                     | P       |                  |
-+----------------------+---------------------------------+-------------------------+--------------------+-------------------------------------+---------+------------------+
-| inspiratory_time_set | P                               |                         | E                  |                                     | P       |                  |
-+----------------------+---------------------------------+-------------------------+--------------------+-------------------------------------+---------+------------------+
-| peep_set             | E                               | E                       | E                  | E                                   | E       | E                |
-+----------------------+---------------------------------+-------------------------+--------------------+-------------------------------------+---------+------------------+
+**Expected setting values for each device_category and mode_category**
+
+- `device_category` == "IMV"
+
+| ventilator_setting        | Assist Control-Volume Control | Pressure Support/CPAP | Pressure Control | Pressure-Regulated Volume Control | SIMV | Volume Support |
+|--------------------------|:----------------------------:|:---------------------:|:---------------:|:-------------------------------:|:----:|:-------------:|
+| fio2_set                 | E                            | E                     | E               | E                               | E    | E             |
+| tidal_volume_set         | E                            |                       |                 | E                               | P    | E             |
+| resp_rate_set            | E                            |                       | E               | E                               | E    |               |
+| pressure_control_set     |                              |                       | E               |                                 | P    |               |
+| pressure_support_set     |                              | E                     |                 |                                 | E    |               |
+| flow_rate_set            | P                            |                       |                 |                                 | P    |               |
+| inspiratory_time_set     | P                            |                       | E               |                                 | P    |               |
+| peep_set                 | E                            | E                     | E               | E                               | E    | E             |
 
 E = Expected ventilator setting for the mode, P = possible ventilator setting for the mode.
 
-#### `device_category` == "NIPPV"
+- `device_category` == "NIPPV"
 
-`mode_category` is `Pressure Support/CPAP` and the `fio2_set`, `peep_set` , and either `pressure_support_set` OR `peak_inspiratory_pressure_set` (IPAP) is required.
+`mode_category` is `Pressure Support/CPAP` and the `fio2_set`, `peep_set`, and either `pressure_support_set` OR `peak_inspiratory_pressure_set` (IPAP) is required.
 
-#### `device_category` == "CPAP"
+- `device_category` == "CPAP"
 
 `mode_category` is `Pressure Support/CPAP` and the `fio2_set` and `peep_set` are required.
 
-#### `device_category` == "High Flow NC"
+- `device_category` == "High Flow NC"
 
 `mode_category` is NA and the `fio2_set` and `lpm_set` are required.
 
-#### `device_category` == "Face Mask"
+- `device_category` == "Face Mask"
 
-`mode_category` is NA `lpm_set` is required. `fio2_set` is possible.
+`mode_category` is NA
+`lpm_set` is required.
+`fio2_set` is possible.
 
-#### `device_category` == "Trach Collar" or "Nasal Cannula"
+- `device_category` == "Trach Collar" or "Nasal Cannula"
 
-`mode_category` is NA and `lpm_set` is required.
+`mode_category` is NA
+`lpm_set` is required
+
 
 **Example**:
 
-| hospitalization_id | recorded_dttm                | device_name | device_id | device_category | mode_name         | mode_category                | vent_brand_name | tracheostomy | fio2_set | lpm_set | tidal_volume_set | resp_rate_set | pressure_control_set | pressure_support_set | flow_rate_set | tidal_volume_obs | resp_rate_obs | plateau_pressure_obs | peak_inspiratory_pressure_obs | peep_obs | minute_vent_obs | mean_airway_pressure_obs |
-|-------------------|----------------------------|--------------|-----------|-----------------|-------------------|----------------------------|----------------|--------------|-----------|----------|-----------------|---------------|-------------------|-------------------|---------------|-----------------|---------------|-------------------|----------------------------|-----------|-----------------|------------------------|
-| 12345             | 2024-12-01 08:00:00+00:00 | Ventilator   | DEV001    | IMV             | CMV Volume Ctrl   | Assist Control-Volume Control| Vent A         | 1            | 0.50      | 40       | 500             | 18            | 15                | 5                 | 50            | 450             | 18            | 20                | 25                         | 5         | 9.0             | 12.0                   |
-| 12345             | 2024-12-01 09:00:00+00:00 | Ventilator   | DEV001    | IMV             | SIMV              | SIMV                        | Vent A         | 1            | 0.45      | 35       | 480             | 20            | 18                | 8                 | 55            | 470             | 20            | 21                | 28                         | 6         | 10.5            | 14.0                   |
-| 67890             | 2024-12-01 10:30:00+00:00 | HFNC         | DEV002    | High Flow NC    | N/A               | Other                       | N/A            | 0            | 0.30      | 60       | NA              | NA            | NA                | NA                | 60            | NA              | NA            | NA                | NA                         | NA        | NA              | NA                     |
-| 67890             | 2024-12-01 11:00:00+00:00 | CPAP         | DEV003    | CPAP            | CPAP              | Pressure Support/CPAP       | CPAP X         | 0            | 0.40      | 50       | NA              | NA            | NA                | 10                | NA            | NA              | NA            | NA                | NA                         | 8         | NA              | NA                     |
-
+| hospitalization_id | recorded_dttm           | device_name | device_id | device_category | mode_name         | mode_category                | vent_brand_name | tracheostomy | fio2_set | lpm_set | tidal_volume_set | resp_rate_set | pressure_control_set | pressure_support_set | flow_rate_set | tidal_volume_obs | resp_rate_obs | plateau_pressure_obs | peak_inspiratory_pressure_obs | peep_obs | minute_vent_obs | mean_airway_pressure_obs |
+|-------------------|-------------------------|-------------|-----------|-----------------|-------------------|------------------------------|-----------------|--------------|----------|---------|------------------|---------------|----------------------|----------------------|---------------|------------------|---------------|----------------------|-----------------------------|----------|-----------------|-------------------------|
+| 12345             | 2024-12-01 08:00:00+00:00 | Ventilator   | DEV001    | IMV             | CMV Volume Ctrl   | Assist Control-Volume Control| Vent A          | 1            | 0.50     | 40      | 500              | 18            | 15                   | 5                    | 50            | 450              | 18            | 20                   | 25                          | 5        | 9.0             | 12.0                    |
+| 12345             | 2024-12-01 09:00:00+00:00 | Ventilator   | DEV001    | IMV             | SIMV              | SIMV                         | Vent A          | 1            | 0.45     | 35      | 480              | 20            | 18                   | 8                    | 55            | 470              | 20            | 21                   | 28                          | 6        | 10.5            | 14.0                    |
+| 67890             | 2024-12-01 10:30:00+00:00 | HFNC         | DEV002    | High Flow NC    | N/A               | Other                        | N/A             | 0            | 0.30     | 60      | NA               | NA            | NA                   | NA                   | 60            | NA               | NA            | NA                   | NA                          | NA       | NA              | NA                      |
+| 67890             | 2024-12-01 11:00:00+00:00 | CPAP         | DEV003    | CPAP            | CPAP              | Pressure Support/CPAP        | CPAP X          | 0            | 0.40     | 50      | NA               | NA            | NA                   | 10                   | NA            | NA               | NA            | NA                   | NA                          | 8        | NA              | NA                      |
 
 ## vitals
 
 The vitals table is a long-form (one vital sign per row) longitudinal table.
-
 
 
 **Example**:
@@ -322,7 +322,7 @@ The vitals table is a long-form (one vital sign per row) longitudinal table.
 
 A planned future CLIF table that has yet to be used in a federated project. The table structure and CDE elements are in draft form. Permissible values of category variables may still need to be defined. Seeking conceptual feedback. Significant changes to all aspects of the table are possible.
 
-## Intake Output
+## intake_output
 
 
 The intake_output table is long form table that captures the times intake and output events were recorded, the type of fluid administered or recorded as "out", and the amount of fluid.
@@ -341,7 +341,7 @@ The intake_output table is long form table that captures the times intake and ou
 | 1003              | 2024-01-10 12:00:00+00:00   | Drainage        | 200     | 0           |
 
 
-## Invasive Hemodynamics
+## invasive_hemodynamics
 
 
 
@@ -350,15 +350,16 @@ The `invasive_hemodynamics` table records invasive hemodynamic measurements duri
 
 **Notes**:
 
--   All `measure_value` entries should be recorded in mmHg.
--   The `measure_category` field ensures standardization of invasive hemodynamic data.
-    -   `CVP` - Central Venous Pressure
-    -   `RA` - Right Atrial Pressure
-    -   `RV` - Right Ventricular Pressure
-    -   `PA_systolic` - Pulmonary Artery Systolic Pressure
-    -   `PA_diastolic` - Pulmonary Artery Diastolic Pressure
-    -   `PA_mean` - Pulmonary Artery Mean Pressure
-    -   `PCWP` - Pulmonary Capillary Wedge Pressure
+- All `measure_value` entries should be recorded in mmHg.
+- The `measure_category` field ensures standardization of invasive hemodynamic data:
+        1. `CVP` - Central Venous Pressure
+        2. `RA` - Right Atrial Pressure
+        3. `RV` - Right Ventricular Pressure
+        4. `PA_systolic` - Pulmonary Artery Systolic Pressure
+        5. `PA_diastolic` - Pulmonary Artery Diastolic Pressure
+        6. `PA_mean` - Pulmonary Artery Mean Pressure
+        7. `PCWP` - Pulmonary Capillary Wedge Pressure
+
 \
 **Example**:
 
@@ -369,7 +370,7 @@ The `invasive_hemodynamics` table records invasive hemodynamic measurements duri
 | 12345             | 2024-12-01 09:30:00+00:00 | Wedge             | PCWP            | 18.75        |
 
 
-## Key ICU orders
+## key_icu_orders
 
 
 
@@ -386,13 +387,12 @@ The `key_icu_orders` table captures key orders related to physical therapy (PT) 
 | 98765             | 2024-12-15 11:15:00+00:00 | OT Cognitive Assessment   | OT_evaluation  | sent            |
 
 
-## Medication Admin Intermittent
-
-
+## medication_admin_intermittent
 
 This table has exactly the same schema as [`medication_admin_continuous`](#medication-admin-continuous) described below. The consortium decided to separate the medications that are administered intermittently from the continuously administered medications. The mCIDE for `medication_category` for intermittent meds can be found [here](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/clif_medication_admin_intermittent_med_categories.csv).
 
-## Medication Orders
+
+## medication_orders
 
 
 This table records the ordering (not administration) of medications. The table is in long form (one medication order per row) longitudinal table. Linkage to the `medication_admin_continuous` and `medication_admin_intermittent` tables is through the `med_order_id` field.
@@ -413,7 +413,7 @@ This table records the ordering (not administration) of medications. The table i
 | 12352             | 456796       | 2023-10-03 20:00:00+00:00   | 2023-10-04 08:00:00+00:00   | 2023-10-03 19:45:00+00:00   | Dexamethasone 10 mg IV                                             | dexamethasone  | steroids      | active              | ongoing                 | Intravenous   | 10.0     | mg           | Once Daily    | 0   |
 
 
-## Procedures
+## procedures
 
 
 
@@ -431,7 +431,7 @@ A longitudinal record of each bedside ICU procedure performed on the patient (e.
 | 1003 | Arterial Line Placement | Vascular Access | Hemodynamic Monitoring | 2024-01-10 07:00:00 |
 
 
-## Provider
+## provider
 
 
 
@@ -452,7 +452,7 @@ Continuous start stop record of every provider who cared for the patient.
 | 1004047 | 2023-08-20 10:00:00+00:00 | 2023-08-20 22:00:00+00:00 | Physical Therapist | Therapy |
 
 
-## Sensitivity
+## sensitivity
 
 
 
@@ -470,7 +470,7 @@ This table is used to store the susceptibility results of the organisms identifi
 | 1004       | Gentamicin    | Resistant    | 16.0 |
 
 
-## Therapy Details
+## therapy_details
 
 
 The `therapy_details` table is a wide longitudinal table that captures the details of therapy sessions. The table is designed to capture and categorize the most common therapy elements used in the ICU.
@@ -488,7 +488,7 @@ The `therapy_details` table is a wide longitudinal table that captures the detai
 | 1003              | 2024-01-10 07:00:00+00:00  | Ventilation Support   | Respiratory Support    | 2.5              |
 
 
-## Transfusion
+## transfusion
 
 This table provides detailed information about transfusion events linked to specific hospitalizations.
 
@@ -502,8 +502,8 @@ This table provides detailed information about transfusion events linked to spec
 | 456789            | 2024-12-05 12:15:00+00:00       | 2024-12-05 13:45:00+00:00       | Plasma          |                   | 200              | mL           | F0781        |
 
 
-# **Future proposed tables**
+## Future Proposed Tables
 
 These are tables without any defined structure that the consortium has not yet committed to implementing.
-
--   **Clinical Decision Support**: This table will capture the actions of clinical decision support tools embedded in the EHR. The table will have the following fields: `cds_name`, `cds_category`, `cds_value`, `cds_trigger_ddtm`.
+\
+**Clinical Decision Support**: This table will capture the actions of clinical decision support tools embedded in the EHR. The table will have the following fields: `cds_name`, `cds_category`, `cds_value`, `cds_trigger_ddtm`.
