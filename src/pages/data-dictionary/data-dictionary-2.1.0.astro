@@ -132,29 +132,10 @@ const betaSectionHeader = markdownTableSections['Beta_Tables'] || '';
 const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
 ---
 
-<head>
-  <meta charset="utf-8" />
-  <style>
-    .table-wrapper td span a,
-    .table-wrapper td a,
-    .table-wrapper a {
-      color: #8B1C3B !important;
-      text-decoration: underline !important;
-      font-weight: 500 !important;
-    }
-    .table-wrapper td span a:hover,
-    .table-wrapper td a:hover,
-    .table-wrapper a:hover {
-      color: #B22234 !important;
-    }
-  </style>
-</head>
-
 <BaseLayout
   title="CLIF-2.1.0 Data Dictionary (Future Release)"
   description="Upcoming version of the Common Longitudinal ICU data Format"
 >
-
   <div class="container mx-auto px-6 py-12">
     <div class="max-w-7xl mx-auto">
       <!-- Render Markdown intro if present -->
@@ -187,6 +168,16 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
         <aside class="hidden lg:block lg:col-span-1">
           <nav class="sticky top-20 bg-white rounded-lg border p-4 max-h-[calc(100vh-6rem)] overflow-y-auto">
             <h2 class="text-lg font-semibold mb-4 text-gray-900">Data Tables</h2>
+            <div class="mb-4">
+              <input
+                type="search"
+                placeholder="Search tables..."
+                class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-clif-burgundy"
+                onInput={e => {
+                  // Implement filtering logic if needed
+                }}
+              />
+            </div>
             <!-- Beta Tables -->
             <div class="mb-4">
               <div class="flex items-center gap-2 mb-2">
@@ -478,20 +469,12 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
     .table-wrapper a:hover {
       color: #B22234 !important;
     }
-    .prose a, a {
-      color: #8B1C3B !important;
-      text-decoration: underline !important;
-      font-weight: 700 !important;
-    }
-    .prose a:hover, a:hover {
-      color: #B22234 !important;
-    }
-    .prose ul, ul {
+    .prose ul {
       list-style-type: disc !important;
       list-style: disc inside !important;
     }
 
-    .prose ol, ol {
+    .prose ol{
       list-style-type: decimal !important;
       list-style: decimal inside !important;
     }
