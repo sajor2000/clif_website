@@ -77,16 +77,6 @@ const principles: Principle[] = [
 ---
 
 <div class="relative">
-  <h3 class="text-2xl font-bold mb-8 text-center text-gray-800">Building a Foundation for Critical Care Research</h3>
-  
-  <!-- Introduction -->  
-  <div class="glass rounded-2xl p-6 mb-12 max-w-4xl mx-auto">
-    <p class="text-lg text-gray-700 leading-relaxed">
-      We assembled a geographically diverse group of U.S.-based clinician-scientists and data scientists 
-      with deep experience in EHR-based clinical outcomes research and AI applications.
-    </p>
-  </div>
-
   <!-- Timeline Container -->
   <div class="relative">
     <!-- Timeline Line -->
@@ -146,34 +136,9 @@ const principles: Principle[] = [
     </div>
   </div>
 
-  <!-- Guiding Principles -->
-  <div class="mt-16">
-    <h3 class="text-2xl font-bold mb-8 text-center text-gray-800">Our Guiding Principles</h3>
-    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 max-w-6xl mx-auto">
-      {
-        principles.map((principle) => (
-          <div class="glass rounded-lg p-4 text-center hover:shadow-lg transition-shadow">
-            <div class="text-clif-burgundy mb-2 flex justify-center" set:html={principle.icon} />
-            <h4 class="font-semibold text-gray-800 mb-1">{principle.title}</h4>
-            <p class="text-sm text-gray-600">{principle.description}</p>
-          </div>
-        ))
-      }
-    </div>
-  </div>
+
   
   <!-- Future Vision -->
-  <div class="mt-12 text-center">
-    <div class="bg-clif-burgundy-dark text-white p-6 rounded-2xl shadow-xl max-w-4xl mx-auto">
-      <h4 class="text-xl font-semibold mb-3">Our Overarching Goal</h4>
-      <p class="text-lg leading-relaxed">
-        To provide a standardized framework for representing critical illness data across all hospital 
-        care settings — from ICUs to emergency departments and hospital wards — enabling researchers to 
-        accomplish essential critical care informatics tasks wherever and whenever critical illness begins.
-      </p>
-    </div>
-  </div>
-</div>
 
 <style>
   .timeline-item {
