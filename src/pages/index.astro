@@ -2,7 +2,6 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import StatsCounter from '../components/home/StatsCounter.astro';
 import FeatureCard from '../components/shared/FeatureCard.astro';
-import GrowthTimeline from '../components/home/GrowthTimeline.astro';
 ---
 
 <BaseLayout
@@ -54,7 +53,7 @@ import GrowthTimeline from '../components/home/GrowthTimeline.astro';
             <span class="text-4xl">🧾</span>
             <div class="flex-1">
               <h3 class="text-xl font-bold mb-2 text-gray-900">Open Source Data Dictionary and ETL Tools</h3>
-              <p class="text-gray-600 mb-4">CLIF 2.0.0 represents years of refinement, incorporating feedback from 10+ billion data points. Our open-source data dictionary and ETL tools make it easy for any institution to transform their ICU data into the CLIF format, joining our federated research network.</p>
+              <p class="text-gray-600 mb-4">CLIF 2.0.0 is the results of years of refinement, shaped by large-scale ICU data spanning multiple institutions and patient populations. Our open-source data dictionary and ETL tools make it easy for any institution to transform their ICU data into the CLIF format, joining our federated research network.</p>
               <a href="/data-dictionary" 
                  class="text-clif-burgundy hover:text-clif-burgundy-dark font-semibold inline-flex items-center gap-1">
                 View CLIF-2.0.0 Data Dictionary
@@ -72,7 +71,7 @@ import GrowthTimeline from '../components/home/GrowthTimeline.astro';
             <span class="text-4xl">🧬</span>
             <div class="flex-1">
               <h3 class="text-xl font-bold mb-2 text-gray-900">Large Distributed Cohort in the Consortium</h3>
-              <p class="text-gray-600 mb-4">With 680,158 unique ICU patients and 862,400 encounters across 10 active sites, CLIF provides the statistical power needed for robust research. Our interactive dashboard lets you explore cohort characteristics and demographics in real-time, ensuring your studies have the data they need.</p>
+              <p class="text-gray-600 mb-4">With 680,158 unique ICU patients and 862,400 encounters across 10 active sites, CLIF provides the statistical power needed for robust research. Our interactive dashboard makes cohort characteristics and demographics readily accessible, supporting the data needs of your studies.</p>
               <a href="https://clif-consortium.shinyapps.io/clif-cohort-dashboard/" 
                  class="text-clif-burgundy hover:text-clif-burgundy-dark font-semibold inline-flex items-center gap-1"
                  target="_blank"
@@ -108,6 +107,15 @@ import GrowthTimeline from '../components/home/GrowthTimeline.astro';
 
     <!-- Impact Statistics -->
     <section class="mb-16">
+
+      <h3 class="text-2xl font-bold mb-8 text-center text-gray-800">Building a Collaborative Foundation for Critical Care Research</h3>
+
+      <!-- Introduction -->  
+      <div class="glass rounded-2xl p-6 mb-12 max-w-4xl mx-auto">
+        <p class="text-lg text-gray-700 leading-relaxed">
+          We’ve built a geographically diverse network of clinician‑scientists, data scientists, and leading academic medical centers across North America. Together, we leverage deep expertise in EHR‑based clinical outcomes research and AI applications to advance critical care through collaborative, data‑driven research.
+        </p>
+      </div>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
         <StatsCounter
           value="17"
@@ -139,151 +147,35 @@ import GrowthTimeline from '../components/home/GrowthTimeline.astro';
       </div>
     </section>
 
-    <!-- Growth Timeline -->
-    <section class="mb-16">
-      <GrowthTimeline />
+      <!-- CLIF Consortium Geographic Map -->
+      <div class="mt-12">
+      <div class="max-w-6xl mx-auto">
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+          <img src="/images/misc/clif_map.png" alt="Map of CLIF Consortium Sites" class="mx-auto my-8 rounded-lg shadow-xl" width="2160" height="1550" loading="lazy" decoding="async" style="aspect-ratio: 2160/1550;" />
+        </div>
+        <!-- Legend Info Box -->
+        <div class="mt-6 bg-gray-50 rounded-lg p-4">
+          <div class="flex items-center justify-between flex-wrap gap-4">
+            <div class="flex items-center space-x-6">
+              <div class="flex items-center space-x-2">
+                <div class="w-4 h-4 bg-red-600 rounded-full"></div>
+                <span class="text-sm font-medium text-gray-700">Sites with CLIF data already (10)</span>
+              </div>
+              <div class="flex items-center space-x-2">
+                <div class="w-4 h-4 bg-gray-400 rounded-full"></div>
+                <span class="text-sm font-medium text-gray-700">Sites planning to contribute (8)</span>
+              </div>
+            </div>
+            <div class="text-sm text-gray-600">
+              <span class="font-semibold">17 institutions</span> • <span class="font-semibold">46 hospitals</span> • <span class="font-semibold">10 sites with data</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
 
-    <!-- Main Content with Enhanced Messaging -->
-    <section class="mb-16">
-      <div class="bg-clif-burgundy-dark text-white p-8 rounded-2xl shadow-xl mb-12">
-        <h2 class="text-3xl font-bold mb-4">Advancing Federated Critical Care Research</h2>
-        <p class="text-lg leading-relaxed">
-          CLIF represents a significant advancement in how we approach multi-center critical care research.
-          By standardizing data at the source while preserving patient privacy through federated
-          analytics, we're enabling important discoveries that improve patient care.
-        </p>
-      </div>
 
-      <!-- Challenge and Solution Cards -->
-      <div class="mb-12">
-        <!-- The Challenge We Solve -->
-        <div class="mb-10">
-          <h3 class="text-2xl font-semibold mb-6 text-center text-gray-800">The Challenge We Solve</h3>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <!-- Fragmented Systems Card -->
-            <div class="bg-white rounded-xl p-6 shadow-lg border-2 border-red-100 hover:border-red-200 transition-all">
-              <div class="flex flex-col items-center text-center">
-                <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
-                  <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
-                  </svg>
-                </div>
-                <h4 class="text-lg font-bold text-gray-900 mb-2">Fragmented Systems</h4>
-                <p class="text-gray-600">Incompatible data formats and systems across institutions prevent effective collaboration</p>
-              </div>
-            </div>
-
-            <!-- Time Barriers Card -->
-            <div class="bg-white rounded-xl p-6 shadow-lg border-2 border-orange-100 hover:border-orange-200 transition-all">
-              <div class="flex flex-col items-center text-center">
-                <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-4">
-                  <svg class="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                  </svg>
-                </div>
-                <h4 class="text-lg font-bold text-gray-900 mb-2">Time Barriers</h4>
-                <p class="text-gray-600">Months needed for data use agreements, then harmonizing data at central sites delays critical research</p>
-              </div>
-            </div>
-
-            <!-- Privacy Concerns Card -->
-            <div class="bg-white rounded-xl p-6 shadow-lg border-2 border-yellow-100 hover:border-yellow-200 transition-all">
-              <div class="flex flex-col items-center text-center">
-                <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mb-4">
-                  <svg class="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                  </svg>
-                </div>
-                <h4 class="text-lg font-bold text-gray-900 mb-2">Privacy Concerns</h4>
-                <p class="text-gray-600">Centralized data repositories raise security and compliance challenges</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- The CLIF Solution -->
-        <div>
-          <h3 class="text-2xl font-semibold mb-6 text-center text-gray-800">The CLIF Solution</h3>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <!-- Rapid Analysis Card -->
-            <div class="bg-white rounded-xl p-6 shadow-lg border-2 border-green-100 hover:border-green-200 transition-all">
-              <div class="flex flex-col items-center text-center">
-                <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                  <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                  </svg>
-                </div>
-                <h4 class="text-lg font-bold text-gray-900 mb-2">Rapid Analysis</h4>
-                <p class="text-gray-600 mb-3">Test hypotheses across millions of encounters in days, not years</p>
-                <div class="bg-green-50 rounded-lg px-3 py-1 text-sm font-semibold text-green-700">
-                  10B+ data points analyzed
-                </div>
-              </div>
-            </div>
-
-            <!-- Privacy-First Card -->
-            <div class="bg-white rounded-xl p-6 shadow-lg border-2 border-blue-100 hover:border-blue-200 transition-all">
-              <div class="flex flex-col items-center text-center">
-                <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                  <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-                  </svg>
-                </div>
-                <h4 class="text-lg font-bold text-gray-900 mb-2">Privacy-First</h4>
-                <p class="text-gray-600 mb-3">Federated architecture ensures patient data security</p>
-                <div class="bg-blue-50 rounded-lg px-3 py-1 text-sm font-semibold text-blue-700">
-                  Data never leaves your site
-                </div>
-              </div>
-            </div>
-
-            <!-- Standardized Format Card -->
-            <div class="bg-white rounded-xl p-6 shadow-lg border-2 border-purple-100 hover:border-purple-200 transition-all">
-              <div class="flex flex-col items-center text-center">
-                <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mb-4">
-                  <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/>
-                  </svg>
-                </div>
-                <h4 class="text-lg font-bold text-gray-900 mb-2">Standardized Format</h4>
-                <p class="text-gray-600 mb-3">CLIF 2.0.0 - Our most comprehensive data model</p>
-                <div class="bg-purple-50 rounded-lg px-3 py-1 text-sm font-semibold text-purple-700">
-                  26 harmonized tables
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Key Benefits -->
-      <div class="mb-12">
-        <h3 class="text-2xl font-semibold mb-6 text-center">
-          Key Features
-        </h3>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <FeatureCard
-            title="Accelerate Discovery"
-            description="Go from hypothesis to multi-center analysis in days, not years. Our standardized format eliminates months of data wrangling."
-            variant="gradient"
-            icon='<svg class="w-8 h-8 text-clif-burgundy" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"/></svg>'
-          />
-          <FeatureCard
-            title="Preserve Privacy"
-            description="Federated architecture means patient data never leaves your institution. Achieve collaboration without compromising security."
-            variant="gradient"
-            icon='<svg class="w-8 h-8 text-clif-burgundy" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"/></svg>'
-          />
-          <FeatureCard
-            title="Ensure Reproducibility"
-            description="Standardized variables and harmonized vocabularies through mCIDE guarantee your research can be validated and extended."
-            variant="gradient"
-            icon='<svg class="w-8 h-8 text-clif-burgundy" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/></svg>'
-          />
-        </div>
-      </div>
-
+    <section>
       <!-- Open Source License Section -->
       <div class="mb-12">
         <div class="bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl p-8 text-center">
@@ -313,42 +205,5 @@ import GrowthTimeline from '../components/home/GrowthTimeline.astro';
 
     </section>
 
-
-
-    <!-- Participating Sites with Enhanced Design -->
-    <section>
-      <h3 class="text-2xl font-semibold mb-6 text-center">Our Growing Collaborative Network</h3>
-      <p class="text-center text-gray-600 mb-8 max-w-3xl mx-auto">
-        Leading academic medical centers across North America have joined CLIF to advance critical
-        care through collaborative, data-driven research
-      </p>
-
-
-      <!-- CLIF Consortium Geographic Map -->
-      <div class="mt-12">
-      <div class="max-w-6xl mx-auto">
-        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
-          <img src="/images/misc/clif_map.png" alt="Map of CLIF Consortium Sites" class="mx-auto my-8 rounded-lg shadow-xl" width="2160" height="1550" loading="lazy" decoding="async" style="aspect-ratio: 2160/1550;" />
-        </div>
-        <!-- Legend Info Box -->
-        <div class="mt-6 bg-gray-50 rounded-lg p-4">
-          <div class="flex items-center justify-between flex-wrap gap-4">
-            <div class="flex items-center space-x-6">
-              <div class="flex items-center space-x-2">
-                <div class="w-4 h-4 bg-red-600 rounded-full"></div>
-                <span class="text-sm font-medium text-gray-700">Sites with CLIF data already (10)</span>
-              </div>
-              <div class="flex items-center space-x-2">
-                <div class="w-4 h-4 bg-gray-400 rounded-full"></div>
-                <span class="text-sm font-medium text-gray-700">Sites planning to contribute (8)</span>
-              </div>
-            </div>
-            <div class="text-sm text-gray-600">
-              <span class="font-semibold">17 institutions</span> • <span class="font-semibold">46 hospitals</span> • <span class="font-semibold">10 sites with data</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
   </div>
 </BaseLayout>

@@ -1,32 +1,57 @@
 ---
 // src/components/layout/Navigation.astro
+const pathname = Astro.url.pathname;
+
 const navItems = [
-  { label: 'Home', href: '/', active: Astro.url.pathname === '/' },
-  { label: 'Mission', href: '/mission', active: Astro.url.pathname === '/mission' },
-  { label: 'Team', href: '/team', active: Astro.url.pathname === '/team' },
-  { label: 'Cohort', href: '/cohort', active: Astro.url.pathname === '/cohort' },
-  { label: 'Projects', href: '/projects', active: Astro.url.pathname === '/projects' },
-  { label: 'Tools', href: '/tools', active: Astro.url.pathname === '/tools' },
+  { label: 'Home', href: '/', active: pathname === '/' },
+  {
+    label: 'About',
+    href: '/about',
+    active: ['/about', '/mission', '/team'].includes(pathname),
+    submenu: [
+      { label: 'Mission', href: '/mission', active: pathname === '/mission' },
+      { label: 'Team', href: '/team', active: pathname === '/team' },
+    ],
+  },
+  { label: 'Cohort', href: '/cohort', active: pathname === '/cohort' },
+  { label: 'Projects', href: '/projects', active: pathname === '/projects' },
+  { label: 'Tools', href: '/tools', active: pathname === '/tools' },
   {
     label: 'Data Dictionary',
     href: '/data-dictionary',
-    active: Astro.url.pathname === '/data-dictionary',
+    active: pathname.startsWith('/data-dictionary'),
   },
-  { label: 'FAQ', href: '/faq', active: Astro.url.pathname === '/faq' },
+  { label: 'FAQ', href: '/faq', active: pathname === '/faq' },
 ];
 ---
 
 <nav class="hidden md:flex items-center gap-8" aria-label="Main navigation">
   {
     navItems.map((item) => (
-      <a
-        href={item.href}
-        class={`text-sm font-medium transition-colors duration-200 hover:text-clif-burgundy
-              ${item.active ? 'text-clif-burgundy' : 'text-gray-700'}`}
-        aria-current={item.active ? 'page' : undefined}
-      >
-        {item.label}
-      </a>
+      <div class="relative group">
+        <a
+          href={item.href}
+          class={`text-sm font-medium transition-colors duration-200 hover:text-clif-burgundy ${item.active && !item.submenu ? 'text-clif-burgundy' : 'text-gray-700'}`}
+          aria-current={item.active && !item.submenu ? 'page' : undefined}
+        >
+          {item.label}
+        </a>
+
+        {item.submenu && (
+          <div class="absolute left-0 top-full mt-0 w-48 bg-white rounded-lg shadow-lg hidden group-hover:block z-20">
+            {
+              item.submenu.map((sub) => (
+                <a
+                  href={sub.href}
+                  class={`block px-4 py-2 text-sm hover:bg-gray-50 ${sub.active ? 'text-clif-burgundy font-semibold' : 'text-gray-700'}`}
+                >
+                  {sub.label}
+                </a>
+              ))
+            }
+          </div>
+        )}
+      </div>
     ))
   }
 </nav>
@@ -92,14 +117,31 @@ const navItems = [
     <nav class="flex flex-col gap-6" aria-label="Mobile navigation">
       {
         navItems.map((item) => (
-          <a
-            href={item.href}
-            class={`text-lg font-medium transition-colors duration-200 hover:text-clif-burgundy
-                  ${item.active ? 'text-clif-burgundy' : 'text-gray-700'}`}
-            aria-current={item.active ? 'page' : undefined}
-          >
-            {item.label}
-          </a>
+          !item.submenu ? (
+            <a
+              href={item.href}
+              class={`text-lg font-medium transition-colors duration-200 hover:text-clif-burgundy ${item.active ? 'text-clif-burgundy' : 'text-gray-700'}`}
+            >
+              {item.label}
+            </a>
+          ) : (
+            <details class="border-t first:border-none">
+              <summary class="py-3 flex items-center justify-between cursor-pointer">
+                <span class={`text-lg font-medium ${item.active ? 'text-clif-burgundy' : 'text-gray-700'}`}>{item.label}</span>
+                <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.06 0L5.25 8.27a.75.75 0 01-.02-1.06z" clip-rule="evenodd"/></svg>
+              </summary>
+              {
+                item.submenu.map((sub) => (
+                  <a
+                    href={sub.href}
+                    class={`block pl-6 py-2 text-base ${sub.active ? 'text-clif-burgundy font-semibold' : 'text-gray-700'}`}
+                  >
+                    {sub.label}
+                  </a>
+                ))
+              }
+            </details>
+          )
         ))
       }
     </nav>

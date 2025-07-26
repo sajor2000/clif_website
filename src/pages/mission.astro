@@ -55,7 +55,22 @@ import CTAButton from '../components/shared/CTAButton.astro';
           describe critical illness.
         </p>
       </div>
+      <!-- Call to Action -->
+      <div class="bg-gray-100 rounded-2xl p-8 text-center">
+        <p class="text-lg text-gray-600 mb-6">
+          Be part of the global effort to transform critical care through data science
+        </p>
+        <nav aria-label="Call to action links" class="flex flex-wrap justify-center gap-4">
+          <CTAButton href="/team" ariaLabel="Meet the CLIF Consortium team members">
+            Meet Our Team
+          </CTAButton>
+          <CTAButton href="/tools" variant="secondary" ariaLabel="Explore CLIF tools and resources">
+            Explore Our Tools
+          </CTAButton>
+        </nav>
+      </div>
     </section>
+    
 
     <!-- Vision Section -->
     <section id="vision" class="mb-16">
@@ -135,20 +150,5 @@ import CTAButton from '../components/shared/CTAButton.astro';
       </div>
     </section>
 
-    <!-- Call to Action -->
-    <div class="bg-gray-100 rounded-2xl p-8 text-center">
-      <h3 class="text-2xl font-bold mb-4">Join Our Mission</h3>
-      <p class="text-lg text-gray-600 mb-6">
-        Be part of the global effort to transform critical care through data science
-      </p>
-      <nav aria-label="Call to action links" class="flex flex-wrap justify-center gap-4">
-        <CTAButton href="/team" ariaLabel="Meet the CLIF Consortium team members">
-          Meet Our Team
-        </CTAButton>
-        <CTAButton href="/tools" variant="secondary" ariaLabel="Explore CLIF tools and resources">
-          Explore Our Tools
-        </CTAButton>
-      </nav>
-    </div>
   </div>
 </BaseLayout>
