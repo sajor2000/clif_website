@@ -87,7 +87,7 @@ CREATE TABLE hospitalization (
 -- -----------------------------------------------------
 CREATE TABLE hospital_diagnosis (
   hospitalization_id VARCHAR COMMENT '{"description": "Foreign key to the hospitalization table", "permissible": "Must match a hospitalization_id in the hospitalization table"}',
-  diagnostic_code VARCHAR COMMENT '{"description": "ICD diagnosis code", "permissible": "Valid ICD-9-CM or ICD-10-CM code"}',
+  diagnosis_code VARCHAR COMMENT '{"description": "ICD diagnosis code", "permissible": "Valid ICD-9-CM or ICD-10-CM code"}',
   diagnosis_code_format VARCHAR COMMENT '{"description": "Format of the code (e.g., ICD-10-CM, ICD-9-CM)", "permissible": "ICD-10-CM, ICD-9-CM"}',
   diagnosis_name VARCHAR COMMENT '{"description": "Optional human-readable description of the diagnosis", "permissible": "No restriction"}',
   diagnosis_type VARCHAR COMMENT '{"description": "Type of diagnosis (e.g., Principal, Secondary)", "permissible": "Principal, Secondary, Other"}',

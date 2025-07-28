@@ -311,7 +311,7 @@ The ECMO/MCS table is a wider longitudinal table that captures the start and sto
 Record of all diagnoses associated with the hospitalization. Expect breaking changes to this table as we seek to align it with existing diagnosis ontologies
 
 **Example**:
-| hospitalization_id | diagnostic_code | diagnosis_code_format | diagnosis_name                  | diagnosis_type | present_on_admission |
+| hospitalization_id | diagnosis_code | diagnosis_code_format | diagnosis_name                  | diagnosis_type | present_on_admission |
 |-------------------|-----------------|----------------------|----------------------------------|---------------|---------------------|
 | 20010012          | I10             | ICD-10-CM            | Essential (primary) hypertension | Principal     | Yes                 |
 | 20010012          | E11.9           | ICD-10-CM            | Type 2 diabetes mellitus         | Secondary     | No                  |
