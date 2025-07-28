@@ -315,7 +315,9 @@ CREATE TABLE medication_orders (
 -- Table: patient_procedures
 -- -----------------------------------------------------
 CREATE TABLE patient_procedures (
-  patient_id VARCHAR COMMENT '{"description": "Foreign key referencing the patient table. Uniquely identifies a patient.", "permissible": "No restriction"}',
+  patient_id VARCHAR COMMENT '{"description": "Uniquely identifies a patient.", "permissible": "No restriction"}',
+  hospitalization_id VARCHAR COMMENT '{"description": "Uniquely identifies a hospitalization event for the patient.", "permissible": "No restriction"}',
+  provider_id VARCHAR COMMENT '{"description": "Uniquely identifies the provider associated with the procedure.", "permissible": "No restriction"}',
   procedure_code VARCHAR COMMENT '{"description": "Encoded procedure identifier (e.g., CPT, ICD-10-PCS, SNOMED code).", "permissible": "No restriction"}',
   procedure_code_format VARCHAR COMMENT '{"description": "Code format used (e.g., CPT, ICD-10-PCS, SNOMED).", "permissible": "CPT, ICD-10-PCS, SNOMED, etc."}',
   recorded_dttm DATETIME COMMENT '{"description": "Date and time the procedure was performed or recorded. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}'
