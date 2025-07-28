@@ -34,7 +34,7 @@ CREATE TABLE crrt_therapy (
   recorded_dttm DATETIME COMMENT '{"description": "Timestamp when CRRT parameters were recorded", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   crrt_mode_name VARCHAR COMMENT '{"description": "Name of CRRT mode (e.g., CVVHDF)", "permissible": "No restriction"}',
   crrt_mode_category VARCHAR COMMENT '{"description": "Standardized CRRT mode categories", "permissible": "scuf, cvvh, cvvhd, cvvhdf"}',
-  dialysis_machine_name VARCHAR COMMENT '{"description": "Unique identifier for the dialysis machine", "permissible": "No restriction"}',
+  dialysis_machine_name VARCHAR COMMENT '{"description": "Brand name for the dialysis machine", "permissible": "No restriction"}',
   blood_flow_rate FLOAT COMMENT '{"description": "Rate of blood flow through the CRRT circuit (mL/hr)", "permissible": "Numeric values in mL/hr"}',
   pre_filter_replacement_fluid_rate FLOAT COMMENT '{"description": "Rate of pre-filter replacement fluid infusion (mL/hr)", "permissible": "Numeric values in mL/hr"}',
   post_filter_replacement_fluid_rate FLOAT COMMENT '{"description": "Rate of post-filter replacement fluid infusion (mL/hr)", "permissible": "Numeric values in mL/hr"}',
