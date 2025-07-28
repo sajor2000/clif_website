@@ -22,11 +22,11 @@ The admission, discharge, and transfer (adt) table is a start-stop longitudinal 
 
 | hospitalization_id | hospital_id | hospital_type | in_dttm | out_dttm | location_name | location_category | location_type |
 |-------------------|-------------|---------------|---------|----------|---------------|-------------------|----------------|
-| 20010012 | ABC | academic | 2024-12-01 10:00:00+00:00 | 2024-12-01 14:00:00+00:00 | B06F | icu | general_icu |
-| 20010012 | ABC | academic | 2024-12-01 14:30:00+00:00 | 2024-12-02 08:00:00+00:00 | B78D | ward | |
-| 20010015 | ABC | academic | 2024-11-30 16:45:00+00:00 | 2024-12-01 12:00:00+00:00 | B06T | icu | general_icu |
-| 20010015 | ABC | academic | 2024-12-01 12:30:00+00:00 | 2024-12-02 07:00:00+00:00 | N23E | procedural | |
-| 20010020 | EFG | community | 2024-11-28 09:00:00+00:00 | 2024-11-29 17:00:00+00:00 | B78D | ward | |
+| 20010012 | ABC | academic | 2024-12-01 10:00:00+00:00 UTC | 2024-12-01 14:00:00+00:00 UTC | B06F | icu | general_icu |
+| 20010012 | ABC | academic | 2024-12-01 14:30:00+00:00 UTC | 2024-12-02 08:00:00+00:00 UTC | B78D | ward | |
+| 20010015 | ABC | academic | 2024-11-30 16:45:00+00:00 UTC | 2024-12-01 12:00:00+00:00 UTC | B06T | icu | general_icu |
+| 20010015 | ABC | academic | 2024-12-01 12:30:00+00:00 UTC | 2024-12-02 07:00:00+00:00 UTC | N23E | procedural | |
+| 20010020 | EFG | community | 2024-11-28 09:00:00+00:00 UTC | 2024-11-29 17:00:00+00:00 UTC | B78D | ward | |
 
 
 ## code_status
@@ -43,9 +43,9 @@ This table provides a longitudinal record of changes in a patient's code status 
 
 | patient_id | start_dttm                  | code_status_name   | code_status_category |
 |------------|----------------------------|-------------------|---------------------|
-| 123451     | 2024-12-01 08:30:00+00:00 | Do Not Resuscitate| DNR                 |
-| 123452     | 2024-12-02 14:00:00+00:00 | Do Not Intubate   | DNR/DNI             |
-| 123451     | 2024-12-03 10:15:00+00:00 | Full Code         | Full                |
+| 123451     | 2024-12-01 08:30:00+00:00 UTC | Do Not Resuscitate| DNR                 |
+| 123452     | 2024-12-02 14:00:00+00:00 UTC | Do Not Intubate   | DNR/DNI             |
+| 123451     | 2024-12-03 10:15:00+00:00 UTC | Full Code         | Full                |
 
 
 ## crrt_therapy
@@ -70,9 +70,9 @@ The crrt_therapy table captures Continuous Renal Replacement Therapy (CRRT) data
 **Example**:
 | hospitalization_id | device_id | recorded_dttm | crrt_mode_name | crrt_mode_category | blood_flow_rate | pre_filter_replacement_fluid_rate | post_filter_replacement_fluid_rate | dialysate_flow_rate | ultrafiltration_out |
 |-------------------|-----------|---------------|----------------|-------------------|-----------------|-----------------------------------|------------------------------------|---------------------|---------------------|
-| 201 | J3 | 2024-02-15 07:00:00+00:00 | CVVHDF | CVVHDF | 200.0 | 1000.0 | 500.0 | 800.0 | 1500.0 |
-| 202 | J7 | 2024-02-16 09:15:00+00:00 | CVVH | CVVH | 180.0 | 1200.0 | 300.0 | NA | 1300.0 |
-| 203 | J11 | 2024-02-17 11:45:00+00:00 | SCUF | SCUF | 150.0 | NA | NA | NA | 800.0 |
+| 201 | J3 | 2024-02-15 07:00:00+00:00 UTC | CVVHDF | CVVHDF | 200.0 | 1000.0 | 500.0 | 800.0 | 1500.0 |
+| 202 | J7 | 2024-02-16 09:15:00+00:00 UTC | CVVH | CVVH | 180.0 | 1200.0 | 300.0 | NA | 1300.0 |
+| 203 | J11 | 2024-02-17 11:45:00+00:00 UTC | SCUF | SCUF | 150.0 | NA | NA | NA | 800.0 |
 
 
 ## ecmo_mcs
@@ -82,10 +82,10 @@ The ECMO/MCS table is a wider longitudinal table that captures the start and sto
 **Example**:
 | hospitalization_id | recorded_dttm | device_name | device_category | mcs_group | device_metric_name | device_rate | flow | sweep | fdO2 |
 |-------------------|---------------|-------------|-----------------|-----------|-------------------|-------------|------|-------|------|
-| 1001 | 2024-01-01 08:00:00+00:00 | Centrimag | CentriMag_LV | temporary_LVAD | RPMs | 3000 | 4.5 | NULL | NULL |
-| 1002 | 2024-01-05 12:00:00+00:00 | ECMO VV | VV_ECMO | ECMO | RPMs | NULL | 5.2 | 2.0 | 1.0 |
-| 1003 | 2024-01-10 09:00:00+00:00 | TandemHeart | TandemHeart_LV | temporary_LVAD | RPMs | 2800 | 3.8 | NULL | NULL |
-| 1004 | 2024-01-15 14:00:00+00:00 | ECMO VA | VA_ECMO | ECMO | RPMs | 3500 | 4.0 | 4.0 | 1.0 |
+| 1001 | 2024-01-01 08:00:00+00:00 UTC | Centrimag | CentriMag_LV | temporary_LVAD | RPMs | 3000 | 4.5 | NULL | NULL |
+| 1002 | 2024-01-05 12:00:00+00:00 UTC | ECMO VV | VV_ECMO | ECMO | RPMs | NULL | 5.2 | 2.0 | 1.0 |
+| 1003 | 2024-01-10 09:00:00+00:00 UTC | TandemHeart | TandemHeart_LV | temporary_LVAD | RPMs | 2800 | 3.8 | NULL | NULL |
+| 1004 | 2024-01-15 14:00:00+00:00 UTC | ECMO VA | VA_ECMO | ECMO | RPMs | 3500 | 4.0 | 4.0 | 1.0 |
 
 
 ## hospitalization
@@ -106,9 +106,9 @@ The hospitalization table contains information about each hospitalization event.
 
 | patient_id | hospitalization_id | hospitalization_joined_id | admission_dttm | discharge_dttm | age_at_admission | admission_type_name | admission_type_category | discharge_name | discharge_category | zipcode_five_digit | zipcode_nine_digit | census_block_group_code | latitude | longitude |
 |-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|
-| 101001 | 12345678 | 22334455 | 2024-11-01 08:15:00+00:00 | 2024-11-04 14:30:00+00:00 | 65 | Direct admission | Inpatient | Discharged to Home or Self Care (Routine Discharge) | Home | 60637 | 606370000 | 170313202001 | 41.81030 | -87.59697 |
-| 101002 | 87654321 | 22334455 | 2024-11-04 15:00:00+00:00 | 2024-11-07 11:00:00+00:00 | 72 | Transfer from another hospital | Acute Care Transfer | Transferred to Acute Inpatient Rehab Facility | Acute Inpatient Rehab Facility | 46311 | 463110000 | 170313301002 | 41.55030 | -87.30101 |
-| 101003 | 11223344 | 11223344 | 2024-10-20 07:45:00+00:00 | 2024-10-22 10:20:00+00:00 | 59 | Pre-op surgical | Pre-op | Expired | Expired | 60446 | 604460000 | 170313401003 | 41.70010 | -87.60315 |
+| 101001 | 12345678 | 22334455 | 2024-11-01 08:15:00+00:00 UTC | 2024-11-04 14:30:00+00:00 UTC | 65 | Direct admission | Inpatient | Discharged to Home or Self Care (Routine Discharge) | Home | 60637 | 606370000 | 170313202001 | 41.81030 | -87.59697 |
+| 101002 | 87654321 | 22334455 | 2024-11-04 15:00:00+00:00 UTC | 2024-11-07 11:00:00+00:00 UTC | 72 | Transfer from another hospital | Acute Care Transfer | Transferred to Acute Inpatient Rehab Facility | Acute Inpatient Rehab Facility | 46311 | 463110000 | 170313301002 | 41.55030 | -87.30101 |
+| 101003 | 11223344 | 11223344 | 2024-10-20 07:45:00+00:00 UTC | 2024-10-22 10:20:00+00:00 UTC | 59 | Pre-op surgical | Pre-op | Expired | Expired | 60446 | 604460000 | 170313401003 | 41.70010 | -87.60315 |
 
 
 ## hospital_diagnosis
@@ -118,14 +118,14 @@ Record of all diagnoses associated with the hospitalization. Expect breaking cha
 **Example**:
 | hospitalization_id | diagnostic_code | diagnosis_code_format | start_dttm                | end_dttm                  |
 |-------------------|-----------------|----------------------|---------------------------|---------------------------|
-| 1001014           | 250.00          | icd9                 | 2023-05-01 08:00:00+00:00 | 2023-05-10 08:00:00+00:00 |
-| 1001014           | J45.909         | icd10                | 2023-05-01 08:00:00+00:00 | 2023-05-15 08:00:00+00:00 |
-| 1002025           | 401.9           | icd9                 | 2023-06-10 09:00:00+00:00 | 2023-06-12 09:00:00+00:00 |
-| 1002025           | E11.9           | icd10                | 2023-06-10 09:00:00+00:00 | 2023-06-20 09:00:00+00:00 |
-| 1003036           | 414.01          | icd9                 | 2023-07-15 07:30:00+00:00 | 2023-07-30 07:30:00+00:00 |
-| 1003036           | I25.10          | icd10                | 2023-07-15 07:30:00+00:00 | 2023-07-25 07:30:00+00:00 |
-| 1004047           | 530.81          | icd9                 | 2023-08-20 10:00:00+00:00 | 2023-08-22 10:00:00+00:00 |
-| 1004047           | K21.9           | icd10                | 2023-08-20 10:00:00+00:00 | 2023-08-24 10:00:00+00:00 |
+| 1001014           | 250.00          | icd9                 | 2023-05-01 08:00:00+00:00 UTC | 2023-05-10 08:00:00+00:00 UTC |
+| 1001014           | J45.909         | icd10                | 2023-05-01 08:00:00+00:00 UTC | 2023-05-15 08:00:00+00:00 UTC |
+| 1002025           | 401.9           | icd9                 | 2023-06-10 09:00:00+00:00 UTC | 2023-06-12 09:00:00+00:00 UTC |
+| 1002025           | E11.9           | icd10                | 2023-06-10 09:00:00+00:00 UTC | 2023-06-20 09:00:00+00:00 UTC |
+| 1003036           | 414.01          | icd9                 | 2023-07-15 07:30:00+00:00 UTC | 2023-07-30 07:30:00+00:00 UTC |
+| 1003036           | I25.10          | icd10                | 2023-07-15 07:30:00+00:00 UTC | 2023-07-25 07:30:00+00:00 UTC |
+| 1004047           | 530.81          | icd9                 | 2023-08-20 10:00:00+00:00 UTC | 2023-08-22 10:00:00+00:00 UTC |
+| 1004047           | K21.9           | icd10                | 2023-08-20 10:00:00+00:00 UTC | 2023-08-24 10:00:00+00:00 UTC |
 
 
 ## labs
@@ -140,12 +140,12 @@ The `lab_value` field often has non-numeric entries that are useful to make proj
 
 | hospitalization_id | lab_order_dttm         | lab_collect_dttm        | lab_result_dttm         | lab_order_name                | lab_order_category | lab_name         | lab_category | lab_value | lab_value_numeric | reference_unit | lab_specimen_name | lab_specimen_category | lab_loinc_code |
 |-------------------|------------------------|-------------------------|-------------------------|-------------------------------|--------------------|------------------|-------------|----------|------------------|----------------|-------------------|----------------------|---------------|
-| 1001014           | 2023-05-01 07:00:00+00:00 | 2023-05-01 07:15:00+00:00 | 2023-05-01 08:00:00+00:00 | Complete blood count w/ diff  | CBC                | WBC              | white_blood_cell_count | 8.2      | 8.2              | 10^3/uL        | blood             | blood/plasma/serum   | 6690-2        |
-| 1001014           | 2023-05-01 07:00:00+00:00 | 2023-05-01 07:15:00+00:00 | 2023-05-01 08:00:00+00:00 | Complete blood count w/ diff  | CBC                | HGB              | hemoglobin            | 13.5     | 13.5             | g/dL           | blood             | blood/plasma/serum   | 718-7         |
-| 1002025           | 2023-06-10 08:30:00+00:00 | 2023-06-10 08:45:00+00:00 | 2023-06-10 09:00:00+00:00 | Basic metabolic panel         | BMP                | Sodium           | sodium               | 140      | 140              | mmol/L         | blood             | blood/plasma/serum   | 2951-2        |
-| 1002025           | 2023-06-10 08:30:00+00:00 | 2023-06-10 08:45:00+00:00 | 2023-06-10 09:00:00+00:00 | Basic metabolic panel         | BMP                | Potassium        | potassium            | 4.2      | 4.2              | mmol/L         | blood             | blood/plasma/serum   | 2823-3        |
-| 1003036           | 2023-07-15 06:45:00+00:00 | 2023-07-15 07:00:00+00:00 | 2023-07-15 07:30:00+00:00 | Liver function panel          | LFT                | AST (SGOT)       | ast                  | 35       | 35               | U/L            | blood             | blood/plasma/serum   | 1920-8        |
-| 1003036           | 2023-07-15 06:45:00+00:00 | 2023-07-15 07:00:00+00:00 | 2023-07-15 07:30:00+00:00 | Liver function panel          | LFT                | ALT (SGPT)       | alt                  | 28       | 28               | U/L            | blood             | blood/plasma/serum   | 1742-6        |
+| 1001014           | 2023-05-01 07:00:00+00:00 UTC | 2023-05-01 07:15:00+00:00 UTC | 2023-05-01 08:00:00+00:00 UTC | Complete blood count w/ diff  | CBC                | WBC              | white_blood_cell_count | 8.2      | 8.2              | 10^3/uL        | blood             | blood/plasma/serum   | 6690-2        |
+| 1001014           | 2023-05-01 07:00:00+00:00 UTC | 2023-05-01 07:15:00+00:00 UTC | 2023-05-01 08:00:00+00:00 UTC | Complete blood count w/ diff  | CBC                | HGB              | hemoglobin            | 13.5     | 13.5             | g/dL           | blood             | blood/plasma/serum   | 718-7         |
+| 1002025           | 2023-06-10 08:30:00+00:00 UTC | 2023-06-10 08:45:00+00:00 UTC | 2023-06-10 09:00:00+00:00 UTC | Basic metabolic panel         | BMP                | Sodium           | sodium               | 140      | 140              | mmol/L         | blood             | blood/plasma/serum   | 2951-2        |
+| 1002025           | 2023-06-10 08:30:00+00:00 UTC | 2023-06-10 08:45:00+00:00 UTC | 2023-06-10 09:00:00+00:00 UTC | Basic metabolic panel         | BMP                | Potassium        | potassium            | 4.2      | 4.2              | mmol/L         | blood             | blood/plasma/serum   | 2823-3        |
+| 1003036           | 2023-07-15 06:45:00+00:00 UTC | 2023-07-15 07:00:00+00:00 UTC | 2023-07-15 07:30:00+00:00 UTC | Liver function panel          | LFT                | AST (SGOT)       | ast                  | 35       | 35               | U/L            | blood             | blood/plasma/serum   | 1920-8        |
+| 1003036           | 2023-07-15 06:45:00+00:00 UTC | 2023-07-15 07:00:00+00:00 UTC | 2023-07-15 07:30:00+00:00 UTC | Liver function panel          | LFT                | ALT (SGPT)       | alt                  | 28       | 28               | U/L            | blood             | blood/plasma/serum   | 1742-6        |
 
 
 ## medication_admin_continuous
@@ -156,12 +156,12 @@ The medication admin continuous table is a long-form (one medication administrat
 
 | hospitalization_id | admin_dttm                | med_name                                                           | med_category  | med_group     | med_route_name | med_route_category | med_dose | med_dose_unit | mar_action_name |
 |-------------------|---------------------------|--------------------------------------------------------------------|---------------|---------------|----------------|-------------------|----------|---------------|----------------|
-| 792391            | 2123-11-13 12:28:00+00:00 | PROPOFOL 10 MG/ML INTRAVENOUS EMULSION                            | propofol      | sedation      | Intravenous    | NA                | 75.0000  | mcg/kg/min    | New Bag        |
-| 792391            | 2123-11-13 13:49:00+00:00 | REMIFENTANIL CONTINUOUS IV (ANESTHESIA)                           | remifentanil  | sedation      | NA             | NA                | 0.0500   | mcg/kg/min    | New Bag        |
-| 792391            | 2123-11-13 14:03:00+00:00 | PROPOFOL 10 MG/ML INTRAVENOUS EMULSION                            | propofol      | sedation      | Intravenous    | NA                | 0.0000   | mcg/kg/min    | Stopped        |
-| 370921            | 2123-02-12 03:07:00+00:00 | PHENYLEPHRINE 5 MG/50 ML (100 MCG/ML) IN 0.9 % SODIUM CHLORIDE    | phenylephrine | vasoactives   | Intravenous    | NA                | 20.0000  | mcg/min       | New Bag        |
-| 370921            | 2123-02-12 03:14:00+00:00 | PHENYLEPHRINE 5 MG/50 ML (100 MCG/ML) IN 0.9 % SODIUM CHLORIDE    | phenylephrine | vasoactives   | Intravenous    | NA                | 50.0000  | mcg/min       | Rate Change    |
-| 702344            | 2123-04-27 04:30:00+00:00 | HEPARIN (PORCINE) 25,000 UNIT/250 ML IN 0.45 % SODIUM CHLORIDE    | heparin       | anticoagulation| Intravenous    | NA                | 18.0000  | Units/kg/hr   | New Bag        |
+| 792391            | 2123-11-13 12:28:00+00:00 UTC | PROPOFOL 10 MG/ML INTRAVENOUS EMULSION                            | propofol      | sedation      | Intravenous    | NA                | 75.0000  | mcg/kg/min    | New Bag        |
+| 792391            | 2123-11-13 13:49:00+00:00 UTC | REMIFENTANIL CONTINUOUS IV (ANESTHESIA)                           | remifentanil  | sedation      | NA             | NA                | 0.0500   | mcg/kg/min    | New Bag        |
+| 792391            | 2123-11-13 14:03:00+00:00 UTC | PROPOFOL 10 MG/ML INTRAVENOUS EMULSION                            | propofol      | sedation      | Intravenous    | NA                | 0.0000   | mcg/kg/min    | Stopped        |
+| 370921            | 2123-02-12 03:07:00+00:00 UTC | PHENYLEPHRINE 5 MG/50 ML (100 MCG/ML) IN 0.9 % SODIUM CHLORIDE    | phenylephrine | vasoactives   | Intravenous    | NA                | 20.0000  | mcg/min       | New Bag        |
+| 370921            | 2123-02-12 03:14:00+00:00 UTC | PHENYLEPHRINE 5 MG/50 ML (100 MCG/ML) IN 0.9 % SODIUM CHLORIDE    | phenylephrine | vasoactives   | Intravenous    | NA                | 50.0000  | mcg/min       | Rate Change    |
+| 702344            | 2123-04-27 04:30:00+00:00 UTC | HEPARIN (PORCINE) 25,000 UNIT/250 ML IN 0.45 % SODIUM CHLORIDE    | heparin       | anticoagulation| Intravenous    | NA                | 18.0000  | Units/kg/hr   | New Bag        |
 
 
 ## microbiology_culture
@@ -171,14 +171,14 @@ The microbiology culture table is a wide longitudinal table that captures the or
 **Example**:
 | hospitalization_id | order_dttm                  | collect_dttm                | result_dttm                 | fluid_name                           | fluid_category           | method_name | method_category | organism_category       | organism_group           |
 |-------------------|----------------------------|----------------------------|----------------------------|--------------------------------------|------------------------|----------------|-------------------|------------------------|------------------------------|
-| 12345             | 2023-10-01 14:00:00+00:00 | 2023-10-01 15:00:00+00:00 | 2023-10-03 10:00:00+00:00 | culture, blood (bacterial & fungal)  | blood/buffy coat       | culture        | culture           | no growth              | no growth                     |
-| 12345             | 2023-10-01 16:00:00+00:00 | 2023-10-01 17:00:00+00:00 | 2023-10-03 12:00:00+00:00 | culture, urine                       | genito-urinary tract   | culture        | culture           | escherichia_coli       | escherichia (also e. coli)    |
-| 12346             | 2023-11-01 10:30:00+00:00 | 2023-11-01 11:15:00+00:00 | 2023-11-02 09:00:00+00:00 | culture & stain, respiratory         | lower respiratory tract | gram stain     | gram stain        | gram positive cocci    | gram positive cocci (nos)     |
-| 12346             | 2023-11-02 12:00:00+00:00 | 2023-11-02 12:45:00+00:00 | 2023-11-03 08:30:00+00:00 | culture, cerebrospinal fluid         | csf                    | culture        | culture           | no growth              | no growth                     |
-| 12347             | 2023-09-15 14:20:00+00:00 | 2023-09-15 15:00:00+00:00 | 2023-09-17 11:30:00+00:00 | culture & stain, afb                 | other unspecified      | afb smear      | smear             | no growth              | no growth                     |
-| 12348             | 2023-08-10 09:00:00+00:00 | 2023-08-10 09:45:00+00:00 | 2023-08-12 08:00:00+00:00 | culture, blood (bacterial & fungal)  | blood/buffy coat       | culture        | culture           | staphylococcus_aureus  | staphylococcus (all)          |
-| 12349             | 2023-07-25 11:00:00+00:00 | 2023-07-25 11:30:00+00:00 | 2023-07-27 10:15:00+00:00 | culture, urine                       | genito-urinary tract   | culture        | culture           | enterococcus_faecium   | enterococcus (all species)    |
-| 12350             | 2023-06-15 13:30:00+00:00 | 2023-06-15 14:00:00+00:00 | 2023-06-17 09:45:00+00:00 | culture & stain, respiratory         | lower respiratory tract | gram stain     | gram stain        | gram negative rod      | gram negative rod (nos)       |
+| 12345             | 2023-10-01 14:00:00+00:00 UTC | 2023-10-01 15:00:00+00:00 UTC | 2023-10-03 10:00:00+00:00 UTC | culture, blood (bacterial & fungal)  | blood/buffy coat       | culture        | culture           | no growth              | no growth                     |
+| 12345             | 2023-10-01 16:00:00+00:00 UTC | 2023-10-01 17:00:00+00:00 UTC | 2023-10-03 12:00:00+00:00 UTC | culture, urine                       | genito-urinary tract   | culture        | culture           | escherichia_coli       | escherichia (also e. coli)    |
+| 12346             | 2023-11-01 10:30:00+00:00 UTC | 2023-11-01 11:15:00+00:00 UTC | 2023-11-02 09:00:00+00:00 UTC | culture & stain, respiratory         | lower respiratory tract | gram stain     | gram stain        | gram positive cocci    | gram positive cocci (nos)     |
+| 12346             | 2023-11-02 12:00:00+00:00 UTC | 2023-11-02 12:45:00+00:00 UTC | 2023-11-03 08:30:00+00:00 UTC | culture, cerebrospinal fluid         | csf                    | culture        | culture           | no growth              | no growth                     |
+| 12347             | 2023-09-15 14:20:00+00:00 UTC | 2023-09-15 15:00:00+00:00 UTC | 2023-09-17 11:30:00+00:00 UTC | culture & stain, afb                 | other unspecified      | afb smear      | smear             | no growth              | no growth                     |
+| 12348             | 2023-08-10 09:00:00+00:00 UTC | 2023-08-10 09:45:00+00:00 UTC | 2023-08-12 08:00:00+00:00 UTC | culture, blood (bacterial & fungal)  | blood/buffy coat       | culture        | culture           | staphylococcus_aureus  | staphylococcus (all)          |
+| 12349             | 2023-07-25 11:00:00+00:00 UTC | 2023-07-25 11:30:00+00:00 UTC | 2023-07-27 10:15:00+00:00 UTC | culture, urine                       | genito-urinary tract   | culture        | culture           | enterococcus_faecium   | enterococcus (all species)    |
+| 12350             | 2023-06-15 13:30:00+00:00 UTC | 2023-06-15 14:00:00+00:00 UTC | 2023-06-17 09:45:00+00:00 UTC | culture & stain, respiratory         | lower respiratory tract | gram stain     | gram stain        | gram negative rod      | gram negative rod (nos)       |
 
 
 ## microbiology_nonculture
@@ -188,11 +188,11 @@ The microbiology non-culture table is a wide longitudinal table that captures th
 **Example**:
 | hospitalization_id | result_dttm                | collect_dttm               | order_dttm                | fluid_name          | component_category      | result_unit_category | result_category |
 |-------------------|---------------------------|---------------------------|---------------------------|--------------------|-----------------------|-------------------|----------------|
-| 101               | 2024-01-01 10:00:00+00:00 | 2024-01-01 08:00:00+00:00 | 2024-01-01 07:30:00+00:00 | Blood               | PCR                    | Units/mL           | Positive        |
-| 102               | 2024-01-02 11:30:00+00:00 | 2024-01-02 09:30:00+00:00 | 2024-01-02 08:15:00+00:00 | Cerebrospinal Fluid | Antigen Detection      | mg/L              | Negative        |
-| 103               | 2024-01-03 15:00:00+00:00 | 2024-01-03 13:00:00+00:00 | 2024-01-03 12:45:00+00:00 | Sputum              | Gene Amplification     | copies/mL          | Detected        |
-| 104               | 2024-01-04 09:45:00+00:00 | 2024-01-04 07:15:00+00:00 | 2024-01-04 06:30:00+00:00 | Urine               | Molecular Pathogen ID  | ng/mL             | Not Detected    |
-| 105               | 2024-01-05 18:00:00+00:00 | 2024-01-05 16:00:00+00:00 | 2024-01-05 15:00:00+00:00 | Pleural Fluid       | Protein Quantification | g/dL              | Elevated        |
+| 101               | 2024-01-01 10:00:00+00:00 UTC | 2024-01-01 08:00:00+00:00 UTC | 2024-01-01 07:30:00+00:00 UTC | Blood               | PCR                    | Units/mL           | Positive        |
+| 102               | 2024-01-02 11:30:00+00:00 UTC | 2024-01-02 09:30:00+00:00 UTC | 2024-01-02 08:15:00+00:00 UTC | Cerebrospinal Fluid | Antigen Detection      | mg/L              | Negative        |
+| 103               | 2024-01-03 15:00:00+00:00 UTC | 2024-01-03 13:00:00+00:00 UTC | 2024-01-03 12:45:00+00:00 UTC | Sputum              | Gene Amplification     | copies/mL          | Detected        |
+| 104               | 2024-01-04 09:45:00+00:00 UTC | 2024-01-04 07:15:00+00:00 UTC | 2024-01-04 06:30:00+00:00 UTC | Urine               | Molecular Pathogen ID  | ng/mL             | Not Detected    |
+| 105               | 2024-01-05 18:00:00+00:00 UTC | 2024-01-05 16:00:00+00:00 UTC | 2024-01-05 15:00:00+00:00 UTC | Pleural Fluid       | Protein Quantification | g/dL              | Elevated        |
 
 
 ## patient
@@ -217,12 +217,12 @@ The patient_assessments table captures various assessments performed on patients
 **Example**:
 | hospitalization_id | recorded_dttm                | assessment_name                                | assessment_category    | assessment_group | numerical_value | categorical_value | text_value |
 |-------------------|----------------------------|----------------------------------------------|---------------------|----------------|----------------|-----------------|------------|
-| 12345             | 2024-12-01 08:15:00+00:00 | NUR RA GLASGOW ADULT EYE OPENING             | gcs_eye            | Neurological   | 4              | NA              | NA         |
-| 12345             | 2024-12-01 08:15:00+00:00 | NUR RA GLASGOW ADULT VERBAL RESPONSE         | gcs_verbal         | Neurological   | 5              | NA              | NA         |
-| 12345             | 2024-12-01 08:15:00+00:00 | NUR RA GLASGOW ADULT BEST MOTOR RESPONSE     | gcs_motor          | Neurological   | 6              | NA              | NA         |
-| 12345             | 2024-12-01 08:15:00+00:00 | NUR RA GLASGOW ADULT SCORING                 | gcs_total          | Neurological   | 15             | NA              | NA         |
-| 67890             | 2024-12-01 10:30:00+00:00 | BRADEN ASSESSMENT                            | braden_total       | Nursing Risk   | 18             | NA              | NA         |
-| 67890             | 2024-12-01 10:30:00+00:00 | SAT SCREEN                                   | sat_delivery_pass_fail | Sedation     | NA             | Pass            | NA         |
+| 12345             | 2024-12-01 08:15:00+00:00 UTC | NUR RA GLASGOW ADULT EYE OPENING             | gcs_eye            | Neurological   | 4              | NA              | NA         |
+| 12345             | 2024-12-01 08:15:00+00:00 UTC | NUR RA GLASGOW ADULT VERBAL RESPONSE         | gcs_verbal         | Neurological   | 5              | NA              | NA         |
+| 12345             | 2024-12-01 08:15:00+00:00 UTC | NUR RA GLASGOW ADULT BEST MOTOR RESPONSE     | gcs_motor          | Neurological   | 6              | NA              | NA         |
+| 12345             | 2024-12-01 08:15:00+00:00 UTC | NUR RA GLASGOW ADULT SCORING                 | gcs_total          | Neurological   | 15             | NA              | NA         |
+| 67890             | 2024-12-01 10:30:00+00:00 UTC | BRADEN ASSESSMENT                            | braden_total       | Nursing Risk   | 18             | NA              | NA         |
+| 67890             | 2024-12-01 10:30:00+00:00 UTC | SAT SCREEN                                   | sat_delivery_pass_fail | Sedation     | NA             | Pass            | NA         |
 
 
 ## position
@@ -232,14 +232,14 @@ The position table is a long form (one position per row) longitudinal table that
 **Example**:
 | hospitalization_id | recorded_dttm                | position_name                                                | position_category |
 |-------------------|----------------------------|-------------------------------------------------------------|------------------|
-| 84                | 2123-06-20 00:00:00+00:00 | Supine–turn R                                               | not_prone        |
-| 84                | 2123-06-20 06:00:00+00:00 | Supine–turn L                                               | not_prone        |
-| 84                | 2123-06-20 12:00:00+00:00 | Supine–back                                                 | not_prone        |
-| 84                | 2123-06-20 16:00:00+00:00 | Supine–turn R                                               | not_prone        |
-| 84                | 2123-06-20 20:00:00+00:00 | Supine–back;Supine–turn intolerant                          | not_prone        |
-| 84                | 2123-06-20 22:00:00+00:00 | Supine–turn intolerant,microturn L                          | not_prone        |
-| 84                | 2123-06-20 00:00:00+00:00 | Supine–turn intolerant,microturn L;Supine–back              | not_prone        |
-| 84                | 2123-06-20 01:10:00+00:00 | 30 Degrees                                                  | not_prone        |
+| 84                | 2123-06-20 00:00:00+00:00 UTC | Supine–turn R                                               | not_prone        |
+| 84                | 2123-06-20 06:00:00+00:00 UTC | Supine–turn L                                               | not_prone        |
+| 84                | 2123-06-20 12:00:00+00:00 UTC | Supine–back                                                 | not_prone        |
+| 84                | 2123-06-20 16:00:00+00:00 UTC | Supine–turn R                                               | not_prone        |
+| 84                | 2123-06-20 20:00:00+00:00 UTC | Supine–back;Supine–turn intolerant                          | not_prone        |
+| 84                | 2123-06-20 22:00:00+00:00 UTC | Supine–turn intolerant,microturn L                          | not_prone        |
+| 84                | 2123-06-20 00:00:00+00:00 UTC | Supine–turn intolerant,microturn L;Supine–back              | not_prone        |
+| 84                | 2123-06-20 01:10:00+00:00 UTC | 30 Degrees                                                  | not_prone        |
 
 
 ## respiratory_support
@@ -293,10 +293,10 @@ E = Expected ventilator setting for the mode, P = possible ventilator setting fo
 
 | hospitalization_id | recorded_dttm           | device_name | device_id | device_category | mode_name         | mode_category                | vent_brand_name | tracheostomy | fio2_set | lpm_set | tidal_volume_set | resp_rate_set | pressure_control_set | pressure_support_set | flow_rate_set | tidal_volume_obs | resp_rate_obs | plateau_pressure_obs | peak_inspiratory_pressure_obs | peep_obs | minute_vent_obs | mean_airway_pressure_obs |
 |-------------------|-------------------------|-------------|-----------|-----------------|-------------------|------------------------------|-----------------|--------------|----------|---------|------------------|---------------|----------------------|----------------------|---------------|------------------|---------------|----------------------|-----------------------------|----------|-----------------|-------------------------|
-| 12345             | 2024-12-01 08:00:00+00:00 | Ventilator   | DEV001    | IMV             | CMV Volume Ctrl   | Assist Control-Volume Control| Vent A          | 1            | 0.50     | 40      | 500              | 18            | 15                   | 5                    | 50            | 450              | 18            | 20                   | 25                          | 5        | 9.0             | 12.0                    |
-| 12345             | 2024-12-01 09:00:00+00:00 | Ventilator   | DEV001    | IMV             | SIMV              | SIMV                         | Vent A          | 1            | 0.45     | 35      | 480              | 20            | 18                   | 8                    | 55            | 470              | 20            | 21                   | 28                          | 6        | 10.5            | 14.0                    |
-| 67890             | 2024-12-01 10:30:00+00:00 | HFNC         | DEV002    | High Flow NC    | N/A               | Other                        | N/A             | 0            | 0.30     | 60      | NA               | NA            | NA                   | NA                   | 60            | NA               | NA            | NA                   | NA                          | NA       | NA              | NA                      |
-| 67890             | 2024-12-01 11:00:00+00:00 | CPAP         | DEV003    | CPAP            | CPAP              | Pressure Support/CPAP        | CPAP X          | 0            | 0.40     | 50      | NA               | NA            | NA                   | 10                   | NA            | NA               | NA            | NA                   | NA                          | 8        | NA              | NA                      |
+| 12345             | 2024-12-01 08:00:00+00:00 UTC | Ventilator   | DEV001    | IMV             | CMV Volume Ctrl   | Assist Control-Volume Control| Vent A          | 1            | 0.50     | 40      | 500              | 18            | 15                   | 5                    | 50            | 450              | 18            | 20                   | 25                          | 5        | 9.0             | 12.0                    |
+| 12345             | 2024-12-01 09:00:00+00:00 UTC | Ventilator   | DEV001    | IMV             | SIMV              | SIMV                         | Vent A          | 1            | 0.45     | 35      | 480              | 20            | 18                   | 8                    | 55            | 470              | 20            | 21                   | 28                          | 6        | 10.5            | 14.0                    |
+| 67890             | 2024-12-01 10:30:00+00:00 UTC | HFNC         | DEV002    | High Flow NC    | N/A               | Other                        | N/A             | 0            | 0.30     | 60      | NA               | NA            | NA                   | NA                   | 60            | NA               | NA            | NA                   | NA                          | NA       | NA              | NA                      |
+| 67890             | 2024-12-01 11:00:00+00:00 UTC | CPAP         | DEV003    | CPAP            | CPAP              | Pressure Support/CPAP        | CPAP X          | 0            | 0.40     | 50      | NA               | NA            | NA                   | 10                   | NA            | NA               | NA            | NA                   | NA                          | 8        | NA              | NA                      |
 
 ## vitals
 
@@ -307,15 +307,15 @@ The vitals table is a long-form (one vital sign per row) longitudinal table.
 
 | hospitalization_id | recorded_dttm                | vital_name                   | vital_category   | vital_value | meas_site_name |
 |-------------------|----------------------------|------------------------------|-----------------|-------------|----------------|
-| 20010012          | 2024-12-01 08:00:00+00:00 | HEIGHT                       | height_cm       | 170.0      | unspecified    |
-| 20010012          | 2024-12-01 08:15:00+00:00 | WEIGHT                       | weight_kg       | 70.0       | unspecified    |
-| 20010012          | 2024-12-01 08:30:00+00:00 | PULSE                        | heart_rate      | 72.0       | unspecified    |
-| 20010012          | 2024-12-01 08:45:00+00:00 | BLOOD PRESSURE (SYSTOLIC)    | sbp             | 120.0      | unspecified    |
-| 20010012          | 2024-12-01 08:45:00+00:00 | BLOOD PRESSURE (DIASTOLIC)   | dbp             | 80.0       | unspecified    |
-| 20010012          | 2024-12-01 08:50:00+00:00 | RESPIRATORY RATE             | respiratory_rate| 16.0       | unspecified    |
-| 20010012          | 2024-12-01 09:00:00+00:00 | TEMPERATURE                  | temp_c          | 36.8       | unspecified    |
-| 20010012          | 2024-12-01 09:15:00+00:00 | SPO2                         | spo2            | 98.0       | unspecified    |
-| 20010013          | 2024-12-01 09:30:00+00:00 | MEAN ARTERIAL PRESSURE (MAP) | map             | 85.0       | arterial       |
+| 20010012          | 2024-12-01 08:00:00+00:00 UTC | HEIGHT                       | height_cm       | 170.0      | unspecified    |
+| 20010012          | 2024-12-01 08:15:00+00:00 UTC | WEIGHT                       | weight_kg       | 70.0       | unspecified    |
+| 20010012          | 2024-12-01 08:30:00+00:00 UTC | PULSE                        | heart_rate      | 72.0       | unspecified    |
+| 20010012          | 2024-12-01 08:45:00+00:00 UTC | BLOOD PRESSURE (SYSTOLIC)    | sbp             | 120.0      | unspecified    |
+| 20010012          | 2024-12-01 08:45:00+00:00 UTC | BLOOD PRESSURE (DIASTOLIC)   | dbp             | 80.0       | unspecified    |
+| 20010012          | 2024-12-01 08:50:00+00:00 UTC | RESPIRATORY RATE             | respiratory_rate| 16.0       | unspecified    |
+| 20010012          | 2024-12-01 09:00:00+00:00 UTC | TEMPERATURE                  | temp_c          | 36.8       | unspecified    |
+| 20010012          | 2024-12-01 09:15:00+00:00 UTC | SPO2                         | spo2            | 98.0       | unspecified    |
+| 20010013          | 2024-12-01 09:30:00+00:00 UTC | MEAN ARTERIAL PRESSURE (MAP) | map             | 85.0       | arterial       |
 
 
 ## Concept Tables
@@ -333,12 +333,12 @@ The intake_output table is long form table that captures the times intake and ou
 
 | hospitalization_id | intake_dttm                  | fluid_name        | amount | in_out_flag |
 |-------------------|------------------------------|------------------|---------|-------------|
-| 1001              | 2024-01-01 08:00:00+00:00   | Normal Saline    | 500     | 1           |
-| 1001              | 2024-01-01 10:30:00+00:00   | Urine           | 300     | 0           |
-| 1002              | 2024-01-05 09:15:00+00:00   | Dextrose        | 250     | 1           |
-| 1002              | 2024-01-05 14:00:00+00:00   | Urine           | 400     | 0           |
-| 1003              | 2024-01-10 07:45:00+00:00   | Lactated Ringer's| 600     | 1           |
-| 1003              | 2024-01-10 12:00:00+00:00   | Drainage        | 200     | 0           |
+| 1001              | 2024-01-01 08:00:00+00:00 UTC   | Normal Saline    | 500     | 1           |
+| 1001              | 2024-01-01 10:30:00+00:00 UTC   | Urine           | 300     | 0           |
+| 1002              | 2024-01-05 09:15:00+00:00 UTC   | Dextrose        | 250     | 1           |
+| 1002              | 2024-01-05 14:00:00+00:00 UTC   | Urine           | 400     | 0           |
+| 1003              | 2024-01-10 07:45:00+00:00 UTC   | Lactated Ringer's| 600     | 1           |
+| 1003              | 2024-01-10 12:00:00+00:00 UTC   | Drainage        | 200     | 0           |
 
 
 ## invasive_hemodynamics
@@ -365,9 +365,9 @@ The `invasive_hemodynamics` table records invasive hemodynamic measurements duri
 
 | hospitalization_id | recorded_dttm                | measure_name         | measure_category | measure_value |
 |-------------------|----------------------------|-------------------|-----------------|--------------|
-| 12345             | 2024-12-01 08:30:00+00:00 | CVP               | CVP             | 12.50        |
-| 12345             | 2024-12-01 09:00:00+00:00 | Pulmonary Artery-Sys | PA_systolic     | 25.00        |
-| 12345             | 2024-12-01 09:30:00+00:00 | Wedge             | PCWP            | 18.75        |
+| 12345             | 2024-12-01 08:30:00+00:00 UTC | CVP               | CVP             | 12.50        |
+| 12345             | 2024-12-01 09:00:00+00:00 UTC | Pulmonary Artery-Sys | PA_systolic     | 25.00        |
+| 12345             | 2024-12-01 09:30:00+00:00 UTC | Wedge             | PCWP            | 18.75        |
 
 
 ## key_icu_orders
@@ -381,10 +381,10 @@ The `key_icu_orders` table captures key orders related to physical therapy (PT) 
 
 | hospitalization_id | order_dttm                | order_name                | order_category | order_status_name |
 |-------------------|---------------------------|--------------------------|---------------|-----------------|
-| 12345             | 2024-12-15 10:00:00+00:00 | PT Initial Evaluation     | PT_evaluation  | completed       |
-| 67890             | 2024-12-16 14:30:00+00:00 | OT Follow-up Treatment    | OT_treat       | sent            |
-| 54321             | 2024-12-16 08:00:00+00:00 | PT Mobility Session       | PT_treat       | completed       |
-| 98765             | 2024-12-15 11:15:00+00:00 | OT Cognitive Assessment   | OT_evaluation  | sent            |
+| 12345             | 2024-12-15 10:00:00+00:00 UTC | PT Initial Evaluation     | PT_evaluation  | completed       |
+| 67890             | 2024-12-16 14:30:00+00:00 UTC | OT Follow-up Treatment    | OT_treat       | sent            |
+| 54321             | 2024-12-16 08:00:00+00:00 UTC | PT Mobility Session       | PT_treat       | completed       |
+| 98765             | 2024-12-15 11:15:00+00:00 UTC | OT Cognitive Assessment   | OT_evaluation  | sent            |
 
 
 ## medication_admin_intermittent
@@ -403,14 +403,14 @@ This table records the ordering (not administration) of medications. The table i
 
 | hospitalization_id | med_order_id | order_start_dttm              | order_end_dttm                | ordered_dttm                  | med_name                                                           | med_category    | med_group      | med_order_status_name | med_order_status_category | med_route_name | med_dose | med_dose_unit | med_frequency  | prn |
 |-------------------|--------------|------------------------------|------------------------------|------------------------------|------------------------------------------------------------------|----------------|---------------|---------------------|------------------------|---------------|-----------|---------------|---------------|-----|
-| 12345             | 456789       | 2023-10-01 14:00:00+00:00   | 2023-10-02 14:00:00+00:00   | 2023-10-01 13:30:00+00:00   | Norepinephrine 8 mg/250 mL                                         | norepinephrine | vasoactives   | active              | ongoing                 | Intravenous   | 8.0      | mg/mL        | Continuous    | 0   |
-| 12346             | 456790       | 2023-10-01 16:00:00+00:00   | 2023-10-02 10:00:00+00:00   | 2023-10-01 15:30:00+00:00   | Vancomycin 1 g IV                                                  | vancomycin     | antibiotics   | active              | ongoing                 | Intravenous   | 1.0      | g            | Every 12 hours| 0   |
-| 12347             | 456791       | 2023-10-02 08:00:00+00:00   | 2023-10-03 08:00:00+00:00   | 2023-10-02 07:30:00+00:00   | Furosemide 40 mg IV                                                | furosemide     | diuretics     | discontinued         | discontinued            | Intravenous   | 40.0     | mg           | Once Daily    | 0   |
-| 12348             | 456792       | 2023-10-02 12:00:00+00:00   | 2023-10-02 18:00:00+00:00   | 2023-10-02 11:45:00+00:00   | Insulin Regular 100 units/mL SC                                     | insulin        | endocrine     | held                | held                    | Subcutaneous  | 100.0    | units/mL     | As Needed     | 1   |
-| 12349             | 456793       | 2023-10-03 08:00:00+00:00   | 2023-10-03 20:00:00+00:00   | 2023-10-03 07:30:00+00:00   | Acetaminophen 1 g PO                                               | acetaminophen  | analgesics    | active              | ongoing                 | Oral          | 1.0      | g            | Every 6 hours | 0   |
-| 12350             | 456794       | 2023-10-03 10:00:00+00:00   | 2023-10-03 18:00:00+00:00   | 2023-10-03 09:45:00+00:00   | Heparin 5,000 units SC                                             | heparin        | anticoagulant | active              | ongoing                 | Subcutaneous  | 5000.0   | units        | Every 8 hours | 0   |
-| 12351             | 456795       | 2023-10-03 14:00:00+00:00   | 2023-10-03 22:00:00+00:00   | 2023-10-03 13:30:00+00:00   | Morphine Sulfate 2 mg IV                                           | morphine       | analgesics    | active              | ongoing                 | Intravenous   | 2.0      | mg           | As Needed     | 1   |
-| 12352             | 456796       | 2023-10-03 20:00:00+00:00   | 2023-10-04 08:00:00+00:00   | 2023-10-03 19:45:00+00:00   | Dexamethasone 10 mg IV                                             | dexamethasone  | steroids      | active              | ongoing                 | Intravenous   | 10.0     | mg           | Once Daily    | 0   |
+| 12345             | 456789       | 2023-10-01 14:00:00+00:00 UTC   | 2023-10-02 14:00:00+00:00 UTC   | 2023-10-01 13:30:00+00:00 UTC   | Norepinephrine 8 mg/250 mL                                         | norepinephrine | vasoactives   | active              | ongoing                 | Intravenous   | 8.0      | mg/mL        | Continuous    | 0   |
+| 12346             | 456790       | 2023-10-01 16:00:00+00:00 UTC   | 2023-10-02 10:00:00+00:00 UTC   | 2023-10-01 15:30:00+00:00 UTC   | Vancomycin 1 g IV                                                  | vancomycin     | antibiotics   | active              | ongoing                 | Intravenous   | 1.0      | g            | Every 12 hours| 0   |
+| 12347             | 456791       | 2023-10-02 08:00:00+00:00 UTC   | 2023-10-03 08:00:00+00:00 UTC   | 2023-10-02 07:30:00+00:00 UTC   | Furosemide 40 mg IV                                                | furosemide     | diuretics     | discontinued         | discontinued            | Intravenous   | 40.0     | mg           | Once Daily    | 0   |
+| 12348             | 456792       | 2023-10-02 12:00:00+00:00 UTC   | 2023-10-02 18:00:00+00:00 UTC   | 2023-10-02 11:45:00+00:00 UTC   | Insulin Regular 100 units/mL SC                                     | insulin        | endocrine     | held                | held                    | Subcutaneous  | 100.0    | units/mL     | As Needed     | 1   |
+| 12349             | 456793       | 2023-10-03 08:00:00+00:00 UTC   | 2023-10-03 20:00:00+00:00 UTC   | 2023-10-03 07:30:00+00:00 UTC   | Acetaminophen 1 g PO                                               | acetaminophen  | analgesics    | active              | ongoing                 | Oral          | 1.0      | g            | Every 6 hours | 0   |
+| 12350             | 456794       | 2023-10-03 10:00:00+00:00 UTC   | 2023-10-03 18:00:00+00:00 UTC   | 2023-10-03 09:45:00+00:00 UTC   | Heparin 5,000 units SC                                             | heparin        | anticoagulant | active              | ongoing                 | Subcutaneous  | 5000.0   | units        | Every 8 hours | 0   |
+| 12351             | 456795       | 2023-10-03 14:00:00+00:00 UTC   | 2023-10-03 22:00:00+00:00 UTC   | 2023-10-03 13:30:00+00:00 UTC   | Morphine Sulfate 2 mg IV                                           | morphine       | analgesics    | active              | ongoing                 | Intravenous   | 2.0      | mg           | As Needed     | 1   |
+| 12352             | 456796       | 2023-10-03 20:00:00+00:00 UTC   | 2023-10-04 08:00:00+00:00 UTC   | 2023-10-03 19:45:00+00:00 UTC   | Dexamethasone 10 mg IV                                             | dexamethasone  | steroids      | active              | ongoing                 | Intravenous   | 10.0     | mg           | Once Daily    | 0   |
 
 
 ## patient_procedures
@@ -423,11 +423,11 @@ A longitudinal record of each bedside ICU procedure performed on the patient (e.
 **Example**:
 | patient_id | procedure_code | procedure_code_format | recorded_dttm           |
 |------------|----------------|----------------------|-------------------------|
-| 101001     | 36556          | CPT                  | 2024-01-01 08:00:00+00:00 |
-| 101001     | 32551          | CPT                  | 2024-01-01 10:00:00+00:00 |
-| 101002     | 0BH17EZ        | ICD-10-PCS           | 2024-01-05 09:30:00+00:00 |
-| 101002     | 4700000        | SNOMED               | 2024-01-05 11:00:00+00:00 |
-| 101003     | 36620          | CPT                  | 2024-01-10 07:00:00+00:00 |
+| 101001     | 36556          | CPT                  | 2024-01-01 08:00:00+00:00 UTC |
+| 101001     | 32551          | CPT                  | 2024-01-01 10:00:00+00:00 UTC |
+| 101002     | 0BH17EZ        | ICD-10-PCS           | 2024-01-05 09:30:00+00:00 UTC |
+| 101002     | 4700000        | SNOMED               | 2024-01-05 11:00:00+00:00 UTC |
+| 101003     | 36620          | CPT                  | 2024-01-10 07:00:00+00:00 UTC |
 
 
 
@@ -442,14 +442,14 @@ Continuous start stop record of every provider who cared for the patient.
 **Example**:
 | hospitalization_id | start_dttm | stop_dttm | provider_role_name | provider_role_category |
 |-------------------|------------|-----------|-------------------|----------------------|
-| 1001014 | 2023-05-01 08:00:00+00:00 | 2023-05-01 20:00:00+00:00 | Attending Physician | Attending |
-| 1001014 | 2023-05-01 08:00:00+00:00 | 2023-05-02 08:00:00+00:00 | Resident Physician | Resident |
-| 1001014 | 2023-05-01 08:00:00+00:00 | 2023-05-03 08:00:00+00:00 | Nurse Practitioner | Nurse Practitioner |
-| 1002025 | 2023-06-10 09:00:00+00:00 | 2023-06-10 21:00:00+00:00 | Critical Care Specialist | Critical Care |
-| 1002025 | 2023-06-10 09:00:00+00:00 | 2023-06-11 09:00:00+00:00 | Respiratory Therapist | Respiratory Therapy |
-| 1003036 | 2023-07-15 07:30:00+00:00 | 2023-07-15 19:30:00+00:00 | Attending Physician | Attending |
-| 1003036 | 2023-07-15 07:30:00+00:00 | 2023-07-16 07:30:00+00:00 | Charge Nurse | Nurse |
-| 1004047 | 2023-08-20 10:00:00+00:00 | 2023-08-20 22:00:00+00:00 | Physical Therapist | Therapy |
+| 1001014 | 2023-05-01 08:00:00+00:00 UTC | 2023-05-01 20:00:00+00:00 UTC | Attending Physician | Attending |
+| 1001014 | 2023-05-01 08:00:00+00:00 UTC | 2023-05-02 08:00:00+00:00 UTC | Resident Physician | Resident |
+| 1001014 | 2023-05-01 08:00:00+00:00 UTC | 2023-05-03 08:00:00+00:00 UTC | Nurse Practitioner | Nurse Practitioner |
+| 1002025 | 2023-06-10 09:00:00+00:00 UTC | 2023-06-10 21:00:00+00:00 UTC | Critical Care Specialist | Critical Care |
+| 1002025 | 2023-06-10 09:00:00+00:00 UTC | 2023-06-11 09:00:00+00:00 UTC | Respiratory Therapist | Respiratory Therapy |
+| 1003036 | 2023-07-15 07:30:00+00:00 UTC | 2023-07-15 19:30:00+00:00 UTC | Attending Physician | Attending |
+| 1003036 | 2023-07-15 07:30:00+00:00 UTC | 2023-07-16 07:30:00+00:00 UTC | Charge Nurse | Nurse |
+| 1004047 | 2023-08-20 10:00:00+00:00 UTC | 2023-08-20 22:00:00+00:00 UTC | Physical Therapist | Therapy |
 
 
 ## sensitivity
@@ -481,11 +481,11 @@ The `therapy_details` table is a wide longitudinal table that captures the detai
 
 | hospitalization_id | session_start_dttm           | therapy_element_name     | therapy_element_category | therapy_element_value |
 |-------------------|-----------------------------|-----------------------|------------------------|-------------------|
-| 1001              | 2024-01-01 08:00:00+00:00  | Physical Therapy      | Rehabilitation         | 45.0             |
-| 1001              | 2024-01-01 10:00:00+00:00  | Respiratory Therapy   | Respiratory Support    | 3.0              |
-| 1002              | 2024-01-05 09:30:00+00:00  | Occupational Therapy  | Rehabilitation         | 60.0             |
-| 1002              | 2024-01-05 11:00:00+00:00  | Speech Therapy        | Rehabilitation         | 30.0             |
-| 1003              | 2024-01-10 07:00:00+00:00  | Ventilation Support   | Respiratory Support    | 2.5              |
+| 1001              | 2024-01-01 08:00:00+00:00 UTC  | Physical Therapy      | Rehabilitation         | 45.0             |
+| 1001              | 2024-01-01 10:00:00+00:00 UTC  | Respiratory Therapy   | Respiratory Support    | 3.0              |
+| 1002              | 2024-01-05 09:30:00+00:00 UTC  | Occupational Therapy  | Rehabilitation         | 60.0             |
+| 1002              | 2024-01-05 11:00:00+00:00 UTC  | Speech Therapy        | Rehabilitation         | 30.0             |
+| 1003              | 2024-01-10 07:00:00+00:00 UTC  | Ventilation Support   | Respiratory Support    | 2.5              |
 
 
 ## transfusion
@@ -497,9 +497,9 @@ This table provides detailed information about transfusion events linked to spec
 
 | hospitalization_id | transfusion_start_dttm           | transfusion_end_dttm             | component_name  | attribute_name    | volume_transfused | volume_units | product_code |
 |-------------------|----------------------------------|----------------------------------|----------------|-------------------|------------------|--------------|--------------|
-| 123456            | 2024-12-03 08:30:00+00:00       | 2024-12-03 10:00:00+00:00       | Red Blood Cells | Leukocyte Reduced | 300              | mL           | E0382        |
-| 789012            | 2024-12-04 14:00:00+00:00       | 2024-12-04 16:30:00+00:00       | Platelets       | Irradiated        | 250              | mL           | P0205        |
-| 456789            | 2024-12-05 12:15:00+00:00       | 2024-12-05 13:45:00+00:00       | Plasma          |                   | 200              | mL           | F0781        |
+| 123456            | 2024-12-03 08:30:00+00:00 UTC       | 2024-12-03 10:00:00+00:00 UTC       | Red Blood Cells | Leukocyte Reduced | 300              | mL           | E0382        |
+| 789012            | 2024-12-04 14:00:00+00:00 UTC       | 2024-12-04 16:30:00+00:00 UTC       | Platelets       | Irradiated        | 250              | mL           | P0205        |
+| 456789            | 2024-12-05 12:15:00+00:00 UTC       | 2024-12-05 13:45:00+00:00 UTC       | Plasma          |                   | 200              | mL           | F0781        |
 
 
 ## Future Proposed Tables
@@ -507,3 +507,4 @@ This table provides detailed information about transfusion events linked to spec
 These are tables without any defined structure that the consortium has not yet committed to implementing.
 \
 **Clinical Decision Support**: This table will capture the actions of clinical decision support tools embedded in the EHR. The table will have the following fields: `cds_name`, `cds_category`, `cds_value`, `cds_trigger_ddtm`.
+
