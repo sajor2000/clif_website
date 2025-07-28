@@ -85,11 +85,12 @@ CREATE TABLE hospitalization (
 -- Table: hospital_diagnosis
 -- -----------------------------------------------------
 CREATE TABLE hospital_diagnosis (
-  patient_id VARCHAR COMMENT '{"description": "Unique identifier for each patient", "permissible": "No restriction"}',
-  diagnostic_code DOUBLE COMMENT '{"description": "Numeric diagnosis code", "permissible": "Valid code in the diagnostic_code_format"}',
-  diagnosis_code_format VARCHAR COMMENT '{"description": "Description of the diagnostic code format", "permissible": "icd9, icd10"}',
-  start_dttm DATETIME COMMENT '{"description": "Date time the diagnosis was recorded", "permissible": "Datetime format should be YYY-MM-DD HH:MM:SS+00:00"}',
-  end_dttm DATETIME COMMENT '{"description": "Date time the diagnosis was noted as resolved (if resolved)", "permissible": "Datetime format should be YYY-MM-DD HH:MM:SS+00:00"}'
+  hospitalization_id VARCHAR COMMENT '{"description": "Foreign key to the hospitalization table", "permissible": "Must match a hospitalization_id in the hospitalization table"}',
+  diagnostic_code VARCHAR COMMENT '{"description": "ICD diagnosis code", "permissible": "Valid ICD-9-CM or ICD-10-CM code"}',
+  diagnosis_code_format VARCHAR COMMENT '{"description": "Format of the code (e.g., ICD-10-CM, ICD-9-CM)", "permissible": "ICD-10-CM, ICD-9-CM"}',
+  diagnosis_name VARCHAR COMMENT '{"description": "Optional human-readable description of the diagnosis", "permissible": "No restriction"}',
+  diagnosis_type VARCHAR COMMENT '{"description": "Type of diagnosis (e.g., Principal, Secondary)", "permissible": "Principal, Secondary, Other"}',
+  present_on_admission VARCHAR COMMENT '{"description": "Indicator if the diagnosis was present on admission (Yes/No)", "permissible": "Yes, No"}'
 );
 
 -- -----------------------------------------------------

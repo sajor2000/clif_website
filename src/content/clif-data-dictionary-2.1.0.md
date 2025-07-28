@@ -116,16 +116,15 @@ The hospitalization table contains information about each hospitalization event.
 Record of all diagnoses associated with the hospitalization. Expect breaking changes to this table as we seek to align it with existing diagnosis ontologies
 
 **Example**:
-| hospitalization_id | diagnostic_code | diagnosis_code_format | start_dttm                | end_dttm                  |
-|-------------------|-----------------|----------------------|---------------------------|---------------------------|
-| 1001014           | 250.00          | icd9                 | 2023-05-01 08:00:00+00:00 UTC | 2023-05-10 08:00:00+00:00 UTC |
-| 1001014           | J45.909         | icd10                | 2023-05-01 08:00:00+00:00 UTC | 2023-05-15 08:00:00+00:00 UTC |
-| 1002025           | 401.9           | icd9                 | 2023-06-10 09:00:00+00:00 UTC | 2023-06-12 09:00:00+00:00 UTC |
-| 1002025           | E11.9           | icd10                | 2023-06-10 09:00:00+00:00 UTC | 2023-06-20 09:00:00+00:00 UTC |
-| 1003036           | 414.01          | icd9                 | 2023-07-15 07:30:00+00:00 UTC | 2023-07-30 07:30:00+00:00 UTC |
-| 1003036           | I25.10          | icd10                | 2023-07-15 07:30:00+00:00 UTC | 2023-07-25 07:30:00+00:00 UTC |
-| 1004047           | 530.81          | icd9                 | 2023-08-20 10:00:00+00:00 UTC | 2023-08-22 10:00:00+00:00 UTC |
-| 1004047           | K21.9           | icd10                | 2023-08-20 10:00:00+00:00 UTC | 2023-08-24 10:00:00+00:00 UTC |
+| hospitalization_id | diagnostic_code | diagnosis_code_format | diagnosis_name                  | diagnosis_type | present_on_admission |
+|-------------------|-----------------|----------------------|----------------------------------|---------------|---------------------|
+| 20010012          | I10             | ICD-10-CM            | Essential (primary) hypertension | Principal     | Yes                 |
+| 20010012          | E11.9           | ICD-10-CM            | Type 2 diabetes mellitus         | Secondary     | No                  |
+| 20010015          | 250.00          | ICD-9-CM             | Diabetes mellitus without mention of complication | Principal     | Yes                 |
+| 20010015          | 401.9           | ICD-9-CM             | Unspecified essential hypertension | Secondary     | No                  |
+| 20010020          | J45.909         | ICD-10-CM            | Unspecified asthma, uncomplicated | Principal     | Yes                 |
+| 20010020          | 530.81          | ICD-9-CM             | Esophageal reflux                | Secondary     | Yes                 |
+
 
 
 ## labs
