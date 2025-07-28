@@ -311,14 +311,13 @@ CREATE TABLE medication_orders (
 );
 
 -- -----------------------------------------------------
--- Table: procedures
+-- Table: patient_procedures
 -- -----------------------------------------------------
-CREATE TABLE procedures (
-  hospitalization_id VARCHAR COMMENT '{"description": "Unique identifier for each hospitalization, linking the procedure to a specific encounter", "permissible": "No restriction"}',
-  procedure_name VARCHAR COMMENT '{"description": "Name of the procedure performed on the patient", "permissible": "Examples include Central Line Placement"}',
-  procedure_category VARCHAR COMMENT '{"description": "Maps procedure_name to a list of standardized procedures", "permissible": "CDE under development"}',
-  diagnosis VARCHAR COMMENT '{"description": "The diagnosis or reason for performing the procedure", "permissible": "No restriction"}',
-  start_dttm DATETIME COMMENT '{"description": "Date and time when the procedure was initiated. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}'
+CREATE TABLE patient_procedures (
+  patient_id VARCHAR COMMENT '{"description": "Foreign key referencing the patient table. Uniquely identifies a patient.", "permissible": "No restriction"}',
+  procedure_code VARCHAR COMMENT '{"description": "Encoded procedure identifier (e.g., CPT, ICD-10-PCS, SNOMED code).", "permissible": "No restriction"}',
+  procedure_code_format VARCHAR COMMENT '{"description": "Code format used (e.g., \'CPT\', \'ICD-10-PCS\', \'SNOMED\').", "permissible": "CPT, ICD-10-PCS, SNOMED, etc."}',
+  recorded_dttm DATETIME COMMENT '{"description": "Date and time the procedure was performed or recorded. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}'
 );
 
 -- -----------------------------------------------------

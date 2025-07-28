@@ -413,22 +413,22 @@ This table records the ordering (not administration) of medications. The table i
 | 12352             | 456796       | 2023-10-03 20:00:00+00:00   | 2023-10-04 08:00:00+00:00   | 2023-10-03 19:45:00+00:00   | Dexamethasone 10 mg IV                                             | dexamethasone  | steroids      | active              | ongoing                 | Intravenous   | 10.0     | mg           | Once Daily    | 0   |
 
 
-## procedures
+## patient_procedures
 
 
 
 A longitudinal record of each bedside ICU procedure performed on the patient (e.g. central line placement, chest tube placement). Note that this table is not intended to capture the full set of procedures performed on inpatients.
 
 
-
 **Example**:
-| hospitalization_id | procedure_name | procedure_category | diagnosis | start_dttm |
-|-------------------|----------------|-------------------|-----------|------------|
-| 1001 | Central Line Placement | Vascular Access | Sepsis with hypotension | 2024-01-01 08:00:00 |
-| 1001 | Chest Tube Placement | Respiratory Support | Pneumothorax | 2024-01-01 10:00:00 |
-| 1002 | Endotracheal Intubation | Airway Management | Acute Respiratory Failure | 2024-01-05 09:30:00 |
-| 1002 | Paracentesis | Diagnostic Procedure | Suspected peritonitis | 2024-01-05 11:00:00 |
-| 1003 | Arterial Line Placement | Vascular Access | Hemodynamic Monitoring | 2024-01-10 07:00:00 |
+| patient_id | procedure_code | procedure_code_format | recorded_dttm           |
+|------------|----------------|----------------------|-------------------------|
+| 101001     | 36556          | CPT                  | 2024-01-01 08:00:00+00:00 |
+| 101001     | 32551          | CPT                  | 2024-01-01 10:00:00+00:00 |
+| 101002     | 0BH17EZ        | ICD-10-PCS           | 2024-01-05 09:30:00+00:00 |
+| 101002     | 4700000        | SNOMED               | 2024-01-05 11:00:00+00:00 |
+| 101003     | 36620          | CPT                  | 2024-01-10 07:00:00+00:00 |
+
 
 
 ## provider
