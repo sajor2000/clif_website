@@ -286,11 +286,11 @@ The crrt_therapy table captures Continuous Renal Replacement Therapy (CRRT) data
 | **CVVHDF**        | Required            | Required                        | Required                        | Required                |   Required              |
 
 **Example**:
-| hospitalization_id | device_id | recorded_dttm | crrt_mode_name | crrt_mode_category | blood_flow_rate | pre_filter_replacement_fluid_rate | post_filter_replacement_fluid_rate | dialysate_flow_rate | ultrafiltration_out |
-|-------------------|-----------|---------------|----------------|-------------------|-----------------|-----------------------------------|------------------------------------|---------------------|---------------------|
-| 201 | J3 | 2024-02-15 07:00:00+00:00 UTC | CVVHDF | CVVHDF | 200.0 | 1000.0 | 500.0 | 800.0 | 1500.0 |
-| 202 | J7 | 2024-02-16 09:15:00+00:00 UTC | CVVH | CVVH | 180.0 | 1200.0 | 300.0 | NA | 1300.0 |
-| 203 | J11 | 2024-02-17 11:45:00+00:00 UTC | SCUF | SCUF | 150.0 | NA | NA | NA | 800.0 |
+| hospitalization_id | device_id | recorded_dttm | crrt_mode_name | crrt_mode_category | dialysis_machine_name     | blood_flow_rate | pre_filter_replacement_fluid_rate | post_filter_replacement_fluid_rate | dialysate_flow_rate | ultrafiltration_out |
+|-------------------|-----------|---------------|----------------|-------------------|--------------------------|-----------------|-----------------------------------|------------------------------------|---------------------|---------------------|
+| 201 | J0 | 2024-02-15 07:00:00+00:00 UTC | CVVHDF | CVVHDF | NxStage by Baxter | 200.0 | 1000.0 | 500.0 | 800.0 | 1500.0 |
+| 202 | J0 | 2024-02-16 09:15:00+00:00 UTC | CVVH | CVVH | NxStage by Baxter | 180.0 | 1200.0 | 300.0 | NA | 1300.0 |
+| 203 | J0 | 2024-02-17 11:45:00+00:00 UTC | SCUF | SCUF | NxStage by Baxter | 150.0 | NA | NA | NA | 800.0 |
 
 
 ## ecmo_mcs
