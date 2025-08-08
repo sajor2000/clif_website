@@ -258,7 +258,8 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
                 {intro && (
                   <div class="prose mb-4" set:html={md.render(intro)} />
                 )}
-                <div class="table-wrapper overflow-x-auto rounded-lg shadow-sm border border-gray-200 my-6">
+                <div class="table-wrapper relative overflow-visible rounded-lg shadow-sm border border-gray-200 my-6">
+                  <img src="/images/icons/unstable.png" alt="Unstable" class="absolute -top-10 -right-10 w-32 rotate-[25deg] pointer-events-none select-none z-50" />
                   <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50 sticky top-0 z-10">
                       <tr>
@@ -307,11 +308,12 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
                 <h2 class="text-2xl font-semibold mb-4 mt-6 text-gray-900 scroll-mt-20 border-b border-gray-200 pb-2 flex items-center gap-2">
                   {table.name.replace(/_/g, ' ')}
                   <span class="badge-concept ml-2">Concept</span>
-                </h2>
+                                  </h2>
                 {intro && (
                   <div class="prose mb-4" set:html={md.render(intro)} />
                 )}
-                <div class="table-wrapper overflow-x-auto rounded-lg shadow-sm border border-gray-200 my-6">
+                <div class="table-wrapper relative overflow-visible rounded-lg shadow-sm border border-gray-200 my-6">
+                  <img src="/images/icons/unstable.png" alt="Unstable" class="absolute -top-10 -right-10 w-32 rotate-[25deg] pointer-events-none select-none z-50" />
                   <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50 sticky top-0 z-10">
                       <tr>
