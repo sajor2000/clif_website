@@ -67,13 +67,12 @@ const allTables = parseAllTables(ddlContent);
 // For sidebar: split into Beta and Concept tables by name (as before)
 const betaTableNames = [
   'adt', 'code_status', 'crrt_therapy', 'ecmo_mcs', 'hospitalization',
-  'hospital_diagnosis', 'labs', 'medication_admin_continuous',
+  'hospital_diagnosis', 'invasive_hemodynamics', 'labs', 'medication_admin_continuous', 'medication_admin_intermittent',
   'microbiology_culture', 'microbiology_nonculture', 'patient',
-  'patient_assessments', 'position', 'respiratory_support', 'vitals'
+  'patient_assessments', 'patient_procedures', 'position', 'respiratory_support', 'vitals'
 ];
 const conceptTableNames = [
-  'intake_output', 'invasive_hemodynamics', 'key_icu_orders',
-  'medication_admin_intermittent', 'medication_orders', 'patient_procedures',
+  'intake_output', 'key_icu_orders', 'medication_orders', 
   'provider', 'sensitivity', 'therapy_details', 'transfusion'
 ];
 const betaTables = allTables.filter(t => betaTableNames.includes(t.name));

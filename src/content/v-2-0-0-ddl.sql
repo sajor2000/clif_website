@@ -77,7 +77,7 @@ CREATE TABLE hospitalization (
   census_tract VARCHAR COMMENT '{"description": "11 digit FIPS code", "permissible": "No restriction"}',
   state_code VARCHAR COMMENT '{"description": "2 digit FIPS code", "permissible": "No restriction"}',
   county_code VARCHAR COMMENT '{"description": "5 digit FIPS code", "permissible": "No restriction"}',
-  fips_version VARCHAR COMMENT '{"description": "Year of the Census geography definitions used for the FIPS codes (e.g., 2010, 2020), indicating the tract and boundary set in effect at that time.", "permissible": "2000,2010, 2020"}',
+  fips_version VARCHAR COMMENT '{"description": "Year of the Census geography definitions used for the FIPS codes (e.g., 2010, 2020), indicating the tract and boundary set in effect at that time", "permissible": "2000,2010, 2020"}',
   FOREIGN KEY (patient_id) REFERENCES patient(patient_id)
 );
 
