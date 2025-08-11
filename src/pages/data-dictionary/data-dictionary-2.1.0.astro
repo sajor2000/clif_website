@@ -76,7 +76,9 @@ const conceptTableNames = [
   'provider', 'sensitivity', 'therapy_details', 'transfusion'
 ];
 const betaTables = allTables.filter(t => betaTableNames.includes(t.name));
-const conceptTables = allTables.filter(t => conceptTableNames.includes(t.name));
+const conceptTables = allTables
+  .filter(t => conceptTableNames.includes(t.name))
+  .sort((a, b) => a.name.localeCompare(b.name));
 
 
 
