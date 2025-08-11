@@ -125,6 +125,32 @@ Record of all diagnoses associated with the hospitalization. Expect breaking cha
 | 20010020          | 530.81          | ICD-9-CM             | Esophageal reflux                | Secondary     | Yes                 |
 
 
+## invasive_hemodynamics
+
+The `invasive_hemodynamics` table records invasive hemodynamic measurements during a patient’s hospitalization. These measurements represent pressures recorded via invasive monitoring and are expressed in millimeters of mercury (mmHg).
+
+
+**Notes**:
+
+- All `measure_value` entries should be recorded in mmHg.
+- The `measure_category` field ensures standardization of invasive hemodynamic data:
+        1. `CVP` - Central Venous Pressure
+        2. `RA` - Right Atrial Pressure
+        3. `RV` - Right Ventricular Pressure
+        4. `PA_systolic` - Pulmonary Artery Systolic Pressure
+        5. `PA_diastolic` - Pulmonary Artery Diastolic Pressure
+        6. `PA_mean` - Pulmonary Artery Mean Pressure
+        7. `PCWP` - Pulmonary Capillary Wedge Pressure
+
+\
+**Example**:
+
+| hospitalization_id | recorded_dttm                | measure_name         | measure_category | measure_value |
+|-------------------|----------------------------|-------------------|-----------------|--------------|
+| 12345             | 2024-12-01 08:30:00+00:00 UTC | CVP               | CVP             | 12.50        |
+| 12345             | 2024-12-01 09:00:00+00:00 UTC | Pulmonary Artery-Sys | PA_systolic     | 25.00        |
+| 12345             | 2024-12-01 09:30:00+00:00 UTC | Wedge             | PCWP            | 18.75        |
+
 
 ## labs
 
@@ -145,6 +171,10 @@ The `lab_value` field often has non-numeric entries that are useful to make proj
 | 1003036           | 2023-07-15 06:45:00+00:00 UTC | 2023-07-15 07:00:00+00:00 UTC | 2023-07-15 07:30:00+00:00 UTC | Liver function panel          | LFT                | AST (SGOT)       | ast                  | 35       | 35               | U/L            | blood             | blood/plasma/serum   | 1920-8        |
 | 1003036           | 2023-07-15 06:45:00+00:00 UTC | 2023-07-15 07:00:00+00:00 UTC | 2023-07-15 07:30:00+00:00 UTC | Liver function panel          | LFT                | ALT (SGPT)       | alt                  | 28       | 28               | U/L            | blood             | blood/plasma/serum   | 1742-6        |
 
+
+## medication_admin_intermittent
+
+This table has exactly the same schema as [`medication_admin_continuous`](#medication-admin-continuous) described below. The consortium decided to separate the medications that are administered intermittently from the continuously administered medications. The mCIDE for `medication_category` for intermittent meds can be found [here](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/clif_medication_admin_intermittent_med_categories.csv).
 
 ## medication_admin_continuous
 
@@ -221,6 +251,21 @@ The patient_assessments table captures various assessments performed on patients
 | 12345             | 2024-12-01 08:15:00+00:00 UTC | NUR RA GLASGOW ADULT SCORING                 | gcs_total          | Neurological   | 15             | NA              | NA         |
 | 67890             | 2024-12-01 10:30:00+00:00 UTC | BRADEN ASSESSMENT                            | braden_total       | Nursing Risk   | 18             | NA              | NA         |
 | 67890             | 2024-12-01 10:30:00+00:00 UTC | SAT SCREEN                                   | sat_delivery_pass_fail | Sedation     | NA             | Pass            | NA         |
+
+## patient_procedures
+
+A longitudinal record of each bedside ICU procedure performed on the patient (e.g. central line placement, chest tube placement). Note that this table is not intended to capture the full set of procedures performed on inpatients.
+
+
+**Example**:
+| patient_id | procedure_code | procedure_code_format | recorded_dttm           |
+|------------|----------------|----------------------|-------------------------|
+| 101001     | 36556          | CPT                  | 2024-01-01 08:00:00+00:00 UTC |
+| 101001     | 32551          | CPT                  | 2024-01-01 10:00:00+00:00 UTC |
+| 101002     | 0BH17EZ        | ICD-10-PCS           | 2024-01-05 09:30:00+00:00 UTC |
+| 101002     | 4700000        | SNOMED               | 2024-01-05 11:00:00+00:00 UTC |
+| 101003     | 36620          | CPT                  | 2024-01-10 07:00:00+00:00 UTC |
+
 
 
 ## position
@@ -339,34 +384,6 @@ The intake_output table is long form table that captures the times intake and ou
 | 1003              | 2024-01-10 12:00:00+00:00 UTC   | Drainage        | 200     | 0           |
 
 
-## invasive_hemodynamics
-
-
-
-The `invasive_hemodynamics` table records invasive hemodynamic measurements during a patient’s hospitalization. These measurements represent pressures recorded via invasive monitoring and are expressed in millimeters of mercury (mmHg).
-
-
-**Notes**:
-
-- All `measure_value` entries should be recorded in mmHg.
-- The `measure_category` field ensures standardization of invasive hemodynamic data:
-        1. `CVP` - Central Venous Pressure
-        2. `RA` - Right Atrial Pressure
-        3. `RV` - Right Ventricular Pressure
-        4. `PA_systolic` - Pulmonary Artery Systolic Pressure
-        5. `PA_diastolic` - Pulmonary Artery Diastolic Pressure
-        6. `PA_mean` - Pulmonary Artery Mean Pressure
-        7. `PCWP` - Pulmonary Capillary Wedge Pressure
-
-\
-**Example**:
-
-| hospitalization_id | recorded_dttm                | measure_name         | measure_category | measure_value |
-|-------------------|----------------------------|-------------------|-----------------|--------------|
-| 12345             | 2024-12-01 08:30:00+00:00 UTC | CVP               | CVP             | 12.50        |
-| 12345             | 2024-12-01 09:00:00+00:00 UTC | Pulmonary Artery-Sys | PA_systolic     | 25.00        |
-| 12345             | 2024-12-01 09:30:00+00:00 UTC | Wedge             | PCWP            | 18.75        |
-
 
 ## key_icu_orders
 
@@ -383,11 +400,6 @@ The `key_icu_orders` table captures key orders related to physical therapy (PT) 
 | 67890             | 2024-12-16 14:30:00+00:00 UTC | OT Follow-up Treatment    | OT_treat       | sent            |
 | 54321             | 2024-12-16 08:00:00+00:00 UTC | PT Mobility Session       | PT_treat       | completed       |
 | 98765             | 2024-12-15 11:15:00+00:00 UTC | OT Cognitive Assessment   | OT_evaluation  | sent            |
-
-
-## medication_admin_intermittent
-
-This table has exactly the same schema as [`medication_admin_continuous`](#medication-admin-continuous) described below. The consortium decided to separate the medications that are administered intermittently from the continuously administered medications. The mCIDE for `medication_category` for intermittent meds can be found [here](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/clif_medication_admin_intermittent_med_categories.csv).
 
 
 ## medication_orders
@@ -409,23 +421,6 @@ This table records the ordering (not administration) of medications. The table i
 | 12350             | 456794       | 2023-10-03 10:00:00+00:00 UTC   | 2023-10-03 18:00:00+00:00 UTC   | 2023-10-03 09:45:00+00:00 UTC   | Heparin 5,000 units SC                                             | heparin        | anticoagulant | active              | ongoing                 | Subcutaneous  | 5000.0   | units        | Every 8 hours | 0   |
 | 12351             | 456795       | 2023-10-03 14:00:00+00:00 UTC   | 2023-10-03 22:00:00+00:00 UTC   | 2023-10-03 13:30:00+00:00 UTC   | Morphine Sulfate 2 mg IV                                           | morphine       | analgesics    | active              | ongoing                 | Intravenous   | 2.0      | mg           | As Needed     | 1   |
 | 12352             | 456796       | 2023-10-03 20:00:00+00:00 UTC   | 2023-10-04 08:00:00+00:00 UTC   | 2023-10-03 19:45:00+00:00 UTC   | Dexamethasone 10 mg IV                                             | dexamethasone  | steroids      | active              | ongoing                 | Intravenous   | 10.0     | mg           | Once Daily    | 0   |
-
-
-## patient_procedures
-
-
-
-A longitudinal record of each bedside ICU procedure performed on the patient (e.g. central line placement, chest tube placement). Note that this table is not intended to capture the full set of procedures performed on inpatients.
-
-
-**Example**:
-| patient_id | procedure_code | procedure_code_format | recorded_dttm           |
-|------------|----------------|----------------------|-------------------------|
-| 101001     | 36556          | CPT                  | 2024-01-01 08:00:00+00:00 UTC |
-| 101001     | 32551          | CPT                  | 2024-01-01 10:00:00+00:00 UTC |
-| 101002     | 0BH17EZ        | ICD-10-PCS           | 2024-01-05 09:30:00+00:00 UTC |
-| 101002     | 4700000        | SNOMED               | 2024-01-05 11:00:00+00:00 UTC |
-| 101003     | 36620          | CPT                  | 2024-01-10 07:00:00+00:00 UTC |
 
 
 
