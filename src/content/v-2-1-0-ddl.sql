@@ -5,11 +5,11 @@
 CREATE TABLE adt (
   hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
   hospital_id VARCHAR COMMENT '{"description": "Assign a unique ID to each hospital within a healthsystem", "permissible": "No restriction"}',
-  hospital_type VARCHAR COMMENT '{"description": "Maps *`hospital_id`* to a standardized list of hospital types", "permissible": "academic, community, LTACH"}',
+  hospital_type VARCHAR COMMENT '{"description": "Maps *`hospital_id`* to a standardized list of hospital types", "permissible": "[academic, community, LTACH](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/adt/clif_adt_hospital_type.csv)"}',
   in_dttm DATETIME COMMENT '{"description": "Start date and time at a particular location. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   out_dttm DATETIME COMMENT '{"description": "End date and time at a particular location. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   location_name VARCHAR COMMENT '{"description": "Location of the patient inside the hospital. This field is used to store the patient location from the source data. It is not used for analysis.", "permissible": "No restriction"}',
-  location_category VARCHAR COMMENT '{"description": "Maps location_name to a standardized list of ADT location categories", "permissible": "ed, ward, stepdown, icu, procedural, l&d, hospice, psych, rehab, radiology, dialysis, other"}',
+  location_category VARCHAR COMMENT '{"description": "Maps location_name to a standardized list of ADT location categories", "permissible": "ed, ward, stepdown, icu, procedural, l&d, hospice, psych, rehab, radiology, dialysis, other](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/adt/clif_adt_location_categories.csv)"}',
   location_type VARCHAR COMMENT '{"description": "Maps ICU type to a standardized list of ICU categories", "permissible": "[List of ICU categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/clif_adt_location_type.csv)"}',
   FOREIGN KEY (hospitalization_id) REFERENCES hospitalization(hospitalization_id)
 );
@@ -21,7 +21,7 @@ CREATE TABLE code_status(
   patient_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
   start_dttm DATETIME COMMENT '{"description": "The date and time when the specific code status was initiated", "permissible": "Example: 2024-12-03 08:30:00+00:00"}',
   code_status_name VARCHAR COMMENT '{"description": "The name/description of the code status", "permissible": "Free text to describe the code status"}',
-  code_status_category VARCHAR COMMENT '{"description": "Categorical variable specifying the code status during the hospitalization", "permissible": "DNR, DNAR, UDNR, DNR/DNI, DNAR/DNI, AND, Full, Presume Full, Other"}',
+  code_status_category VARCHAR COMMENT '{"description": "Categorical variable specifying the code status during the hospitalization", "permissible": "[DNR, DNAR, UDNR, DNR/DNI, DNAR/DNI, AND, Full, Presume Full, Other](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/tree/main/mCIDE/code_status)"}',
   FOREIGN KEY (patient_id) REFERENCES patient(patient_id)
 );
 
@@ -33,7 +33,7 @@ CREATE TABLE crrt_therapy (
   device_id VARCHAR COMMENT '{"description": "Unique identifier for dialysis machine", "permissible": "No restriction"}',
   recorded_dttm DATETIME COMMENT '{"description": "Timestamp when CRRT parameters were recorded", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   crrt_mode_name VARCHAR COMMENT '{"description": "Name of CRRT mode (e.g., CVVHDF)", "permissible": "No restriction"}',
-  crrt_mode_category VARCHAR COMMENT '{"description": "Standardized CRRT mode categories", "permissible": "scuf, cvvh, cvvhd, cvvhdf"}',
+  crrt_mode_category VARCHAR COMMENT '{"description": "Standardized CRRT mode categories", "permissible": "[scuf, cvvh, cvvhd, cvvhdf](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/crrt_therapy/clif_crrt_therapy_mode_categories.csv)"}',
   dialysis_machine_name VARCHAR COMMENT '{"description": "Brand name for the dialysis machine", "permissible": "No restriction"}',
   blood_flow_rate FLOAT COMMENT '{"description": "Rate of blood flow through the CRRT circuit (mL/hr)", "permissible": "Numeric values in mL/hr"}',
   pre_filter_replacement_fluid_rate FLOAT COMMENT '{"description": "Rate of pre-filter replacement fluid infusion (mL/hr)", "permissible": "Numeric values in mL/hr"}',
@@ -186,11 +186,11 @@ CREATE TABLE patient_assessments (
 CREATE TABLE patient (
   patient_id VARCHAR COMMENT '{"description": "Unique identifier for each patient. This is presumed to be a distinct individual.", "permissible": "No restriction"}',
   race_name VARCHAR COMMENT '{"description": "Patient race string from source data", "permissible": "No restriction"}',
-  race_category VARCHAR COMMENT '{"description": "A standardized CDE description of patient’s race per the US Census", "permissible": ["Black or African American", "White", "American Indian or Alaska Native", "Asian", "Native Hawaiian or Other Pacific Islander", "Unknown", "Other"]}',
+  race_category VARCHAR COMMENT '{"description": "A standardized CDE description of patient’s race per the US Census", "permissible": ["Black or African American", "White", "American Indian or Alaska Native", "Asian", "Native Hawaiian or Other Pacific Islander", "Unknown", "Other"](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/patient/clif_patient_race_categories.csv)}',
   ethnicity_name VARCHAR COMMENT '{"description": "Patient ethnicity string from source data", "permissible": "No restriction"}',
-  ethnicity_category VARCHAR COMMENT '{"description": "Description of patient’s ethnicity per the US census definition", "permissible": ["Hispanic", "Non-Hispanic", "Unknown"]}',
+  ethnicity_category VARCHAR COMMENT '{"description": "Description of patient’s ethnicity per the US census definition", "permissible": ["Hispanic", "Non-Hispanic", "Unknown"](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/patient/clif_patient_ethinicity_categories.csv)}',
   sex_name VARCHAR COMMENT '{"description": "Patient’s biological sex as given in the source data", "permissible": "No restriction"}',
-  sex_category VARCHAR COMMENT '{"description": "Patient’s biological sex", "permissible": ["Male", "Female", "Unknown"]}',
+  sex_category VARCHAR COMMENT '{"description": "Patient’s biological sex", "permissible": ["Male", "Female", "Unknown"](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/patient/clif_patient_sex_categories.csv)}',
   birth_date DATE COMMENT '{"description": "Patient’s date of birth", "permissible": "Date format should be YYYY-MM-DD"}',
   death_dttm DATETIME COMMENT '{"description": "Patient’s death date, including time", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   language_name VARCHAR COMMENT '{"description": "Patient’s preferred language", "permissible": "Original string from the source data"}',
@@ -204,7 +204,7 @@ CREATE TABLE position (
   hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter. This table only includes those encounters that have proning documented ever.", "permissible": "No restriction"}',
   recorded_dttm DATETIME COMMENT '{"description": "Date and time when the vital is recorded. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00"}',
   position_name VARCHAR COMMENT '{"description": "Description of the position from the source data. This field is not used for analysis.", "permissible": "No restriction"}',
-  position_category VARCHAR COMMENT '{"description": "Maps position_name to either prone or not prone.", "permissible": ["prone", "not_prone"]}'
+  position_category VARCHAR COMMENT '{"description": "Maps position_name to either prone or not prone.", "permissible": ["prone", "not_prone"](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/tree/main/mCIDE/postion)}'
 );
 
 
@@ -216,10 +216,10 @@ CREATE TABLE respiratory_support (
   recorded_dttm DATETIME COMMENT '{"description": "Date and time when the device settings and/or measurement was recorded. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00"}',
   device_name VARCHAR COMMENT '{"description": "Raw string of the device. Not used for analysis.", "permissible": "No restriction"}',
   device_id VARCHAR COMMENT '{"description": "ID variable for device used", "permissible": "No restriction"}',
-  device_category VARCHAR COMMENT '{"description": "Maps device_name to a standardized list of respiratory support device categories", "permissible": ["IMV", "NIPPV", "CPAP", "High Flow NC", "Face Mask", "Trach Collar", "Nasal Cannula", "Room Air", "Other"]}',
+  device_category VARCHAR COMMENT '{"description": "Maps device_name to a standardized list of respiratory support device categories", "permissible": ["IMV", "NIPPV", "CPAP", "High Flow NC", "Face Mask", "Trach Collar", "Nasal Cannula", "Room Air", "Other"](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/respiratory_support/clif_respiratory_support_device_categories.csv)}',
   vent_brand_name VARCHAR COMMENT '{"description": "Ventilator model name when device_category is IMV or NIPPV", "permissible": "Optional"}',
   mode_name VARCHAR COMMENT '{"description": "Raw string of ventilation mode (e.g., CMV volume control)", "permissible": "No restriction"}',
-  mode_category VARCHAR COMMENT '{"description": "Standardized list of modes of mechanical ventilation", "permissible": ["Assist Control-Volume Control", "Pressure Control", "Pressure-Regulated Volume Control", "SIMV", "Pressure Support/CPAP", "Volume Support", "Blow by", "Other"]}',
+  mode_category VARCHAR COMMENT '{"description": "Standardized list of modes of mechanical ventilation", "permissible": ["Assist Control-Volume Control", "Pressure Control", "Pressure-Regulated Volume Control", "SIMV", "Pressure Support/CPAP", "Volume Support", "Blow by", "Other"](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/respiratory_support/clif_respiratory_support_mode_categories.csv)}',
   tracheostomy INT COMMENT '{"description": "Indicates if tracheostomy is present", "permissible": "0 = No, 1 = Yes"}',
   fio2_set FLOAT COMMENT '{"description": "Fraction of inspired oxygen set (e.g., 0.21)", "permissible": "No restriction, see [Expected _set values for each device_category and mode_category](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/outlier-handling/outlier_thresholds_respiratory_support.csv)"}',
   lpm_set FLOAT COMMENT '{"description": "Liters per minute set", "permissible": "No restriction, see [Expected _set values for each device_category and mode_category](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/outlier-handling/outlier_thresholds_respiratory_support.csv)"}',
@@ -248,7 +248,7 @@ CREATE TABLE vitals (
   hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter.", "permissible": "No restriction"}',
   recorded_dttm DATETIME COMMENT '{"description": "Date and time when the vital is recorded. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   vital_name VARCHAR COMMENT '{"description": "Description of the flowsheet measure from the source data. Not used for analysis.", "permissible": "No restriction"}',
-  vital_category VARCHAR COMMENT '{"description": "Maps vital_name to a list of standard vital sign categories.", "permissible": ["temp_c", "heart_rate", "sbp", "dbp", "spo2", "respiratory_rate", "map", "height_cm", "weight_kg"]}',
+  vital_category VARCHAR COMMENT '{"description": "Maps vital_name to a list of standard vital sign categories.", "permissible": ["temp_c", "heart_rate", "sbp", "dbp", "spo2", "respiratory_rate", "map", "height_cm", "weight_kg"](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/vitals/clif_vitals_categories.csv)}',
   vital_value FLOAT COMMENT '{"description": "Recorded value of the vital. Measurement unit should match the vital category.", "permissible": "temp_c = Celsius, height_cm = Centimeters, weight_kg = Kg, map = mmHg, spo2 = %. No unit for heart_rate, sbp, dbp, respiratory_rate"}',
   meas_site_name VARCHAR COMMENT '{"description": "Site where the vital is recorded. Optional field with no associated category.", "permissible": "No restriction"}'
 );
@@ -271,7 +271,7 @@ CREATE TABLE invasive_hemodynamics (
   hospitalization_id VARCHAR COMMENT '{"description": "Unique identifier linking to the specific hospitalization.", "permissible": "No restriction"}',
   recorded_dttm DATETIME COMMENT '{"description": "The date and time when the measurement was recorded. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   measure_name VARCHAR COMMENT '{"description": "Description of the site or context of the invasive hemodynamic measurement.", "permissible": "Free text (e.g., Right Atrium)"}',
-  measure_category VARCHAR COMMENT '{"description": "Categorical variable specifying the type of invasive hemodynamic measurement.", "permissible": "CVP, RA, RV, PA_systolic, PA_diastolic, PA_mean, PCWP"}',
+  measure_category VARCHAR COMMENT '{"description": "Categorical variable specifying the type of invasive hemodynamic measurement.", "permissible": "[CVP, RA, RV, PA_systolic, PA_diastolic, PA_mean, PCWP](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/invasive_hemodynamics/clif_invasive_hemodynamics_measure_categories.csv)"}',
   measure_value DOUBLE COMMENT '{"description": "The numerical value of the invasive hemodynamic measurement in mmHg.", "permissible": "Positive decimal values (e.g., 5.00, 25.65)"}'
 );
 
@@ -282,7 +282,7 @@ CREATE TABLE key_icu_orders (
   hospitalization_id VARCHAR COMMENT '{"description": "Unique identifier linking the order to a specific hospitalization.", "permissible": "No restriction"}',
   order_dttm DATETIME COMMENT '{"description": "Date and time when the order was placed. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   order_name VARCHAR COMMENT '{"description": "Name of the specific order (e.g., PT Evaluation, OT Treatment).", "permissible": "No restriction"}',
-  order_category VARCHAR COMMENT '{"description": "Category of the order.", "permissible": "Under-development. Some examples include: PT_evaluation, PT_treat, OT_evaluation, OT_treat"}',
+  order_category VARCHAR COMMENT '{"description": "Category of the order.", "permissible": "Under-development. Some examples include: [PT_evaluation, PT_treat, OT_evaluation, OT_treat](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/key_icu_orders/clif_key_icu_orders_categories.csv)"}',
   order_status_name VARCHAR COMMENT '{"description": "Status of the order.", "permissible": "sent, completed"}'
 );
 
