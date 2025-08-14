@@ -342,10 +342,12 @@ CREATE TABLE provider (
 -- Table: microbiology_susceptibility
 -- -----------------------------------------------------
 CREATE TABLE microbiology_susceptibility (
-  culture_id VARCHAR COMMENT '{"description": "Unique identifier linking to the culture from which the sensitivity test was performed", "permissible": "No restriction"}',
-  antibiotic VARCHAR COMMENT '{"description": "Name of the antibiotic tested for sensitivity", "permissible": "Examples include Penicillin, Vancomycin"}',
-  sensitivity VARCHAR COMMENT '{"description": "The result of the sensitivity test, indicating the organism’s resistance or susceptibility", "permissible": "Resistant, Intermediate, Susceptible"}',
-  mic DOUBLE COMMENT '{"description": "Minimum Inhibitory Concentration (MIC) value, which measures the lowest concentration of an antibiotic needed to inhibit growth", "permissible": "Numeric"}'
+  organism_id VARCHAR COMMENT '{"description": "Unique identifier for the organism tested for antimicrobial susceptibility", "permissible": "No restriction"}',
+  antibiotic_name VARCHAR COMMENT '{"description": "Name of the antibiotic tested for susceptibility", "permissible": "No restriction"}',
+  antibiotic_category VARCHAR COMMENT '{"description": "Category or class of the antibiotic tested", "permissible": "No restriction"}',
+  sensitivity_name VARCHAR COMMENT '{"description": "Original result of the sensitivity test as reported by the laboratory", "permissible": "No restriction"}',
+  susceptibility_name VARCHAR COMMENT '{"description": "Standardized interpretation of the susceptibility result", "permissible": "No restriction"}',
+  susceptibility_category VARCHAR COMMENT '{"description": "Standardized category of susceptibility.", "permissible": "[susceptible, non-susceptible, intermediate, na](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/tree/main/mCIDE/microbiology_susceptibility/clif_microbiology_susceptibility_category.csv)"}'
 );
 
 -- -----------------------------------------------------

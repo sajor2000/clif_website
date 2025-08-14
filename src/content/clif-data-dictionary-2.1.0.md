@@ -449,18 +449,13 @@ Continuous start stop record of every provider who cared for the patient.
 
 
 
-This table is used to store the susceptibility results of the organisms identified in the `Microbiology Culture` table and may be renamed to `Microbiology_Susceptibility`
+This table is used to store the susceptibility results of the organisms identified in the `Microbiology Culture`. 
 
 
-**Example**:
+**Example**: 
+WIP
 
-| culture_id | antibiotic    | sensitivity  | mic  |
-|------------|---------------|--------------|------|
-| 1001       | Penicillin    | Susceptible  | 0.25 |
-| 1001       | Vancomycin    | Resistant    | 8.0  |
-| 1002       | Amoxicillin   | Intermediate | 4.0  |
-| 1003       | Ciprofloxacin | Susceptible  | 0.5  |
-| 1004       | Gentamicin    | Resistant    | 16.0 |
+
 
 
 ## therapy_details
