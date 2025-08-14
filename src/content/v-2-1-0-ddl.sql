@@ -339,9 +339,9 @@ CREATE TABLE provider (
 );
 
 -- -----------------------------------------------------
--- Table: sensitivity
+-- Table: microbiology_susceptibility
 -- -----------------------------------------------------
-CREATE TABLE sensitivity (
+CREATE TABLE microbiology_susceptibility (
   culture_id VARCHAR COMMENT '{"description": "Unique identifier linking to the culture from which the sensitivity test was performed", "permissible": "No restriction"}',
   antibiotic VARCHAR COMMENT '{"description": "Name of the antibiotic tested for sensitivity", "permissible": "Examples include Penicillin, Vancomycin"}',
   sensitivity VARCHAR COMMENT '{"description": "The result of the sensitivity test, indicating the organism’s resistance or susceptibility", "permissible": "Resistant, Intermediate, Susceptible"}',

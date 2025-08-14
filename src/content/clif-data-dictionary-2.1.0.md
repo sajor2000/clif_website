@@ -445,7 +445,7 @@ Continuous start stop record of every provider who cared for the patient.
 | 1004047 | 2023-08-20 10:00:00+00:00 UTC | 2023-08-20 22:00:00+00:00 UTC | Physical Therapist | Therapy |
 
 
-## sensitivity
+## microbiology_susceptibility
 
 
 
