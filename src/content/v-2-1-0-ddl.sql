@@ -327,6 +327,16 @@ CREATE TABLE patient_procedures (
 );
 
 -- -----------------------------------------------------
+-- Table: place_based_index
+-- -----------------------------------------------------
+CREATE TABLE place_based_index (
+  hospitalization_id VARCHAR COMMENT '{"description": "Foreign key linking to the hospitalization table.", "permissible": "No restriction"}',
+  index_name VARCHAR COMMENT '{"description": "The name of the index (e.g., Area Deprivation Index, Social Vulnerability Index).", "permissible": "No restriction"}',
+  index_value DOUBLE COMMENT '{"description": "The numerical value of the index for the given hospitalization.", "permissible": "Numeric"}',
+  index_version VARCHAR COMMENT '{"description": "Version of the index used (e.g., ADI 2019, SVI 2020).", "permissible": "No restriction"}'
+);
+
+-- -----------------------------------------------------
 -- Table: provider
 -- -----------------------------------------------------
 CREATE TABLE provider (

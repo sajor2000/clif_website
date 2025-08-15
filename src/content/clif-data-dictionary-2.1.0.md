@@ -423,10 +423,23 @@ This table records the ordering (not administration) of medications. The table i
 | 12352             | 456796       | 2023-10-03 20:00:00+00:00 UTC   | 2023-10-04 08:00:00+00:00 UTC   | 2023-10-03 19:45:00+00:00 UTC   | Dexamethasone 10 mg IV                                             | dexamethasone  | steroids      | active              | ongoing                 | Intravenous   | 10.0     | mg           | Once Daily    | 0   |
 
 
+## place_based_index
+
+The place_based_index table is designed to store geospatial or community-level indices linked to a patient's hospitalization.
+
+**Notes**:  
+Source indices from validated and publicly available datasets.
+
+**Example**:
+
+| hospitalization_id | index_name                | index_value | index_version   |
+|-------------------|---------------------------|-------------|-----------------|
+| 1001              | Area Deprivation Index    | 85.2        | ADI 2019        |
+| 1001              | Social Vulnerability Index| 0.72        | SVI 2020        |
+| 1002              | Area Deprivation Index    | 67.5        | ADI 2019        |
+
 
 ## provider
-
-
 
 Continuous start stop record of every provider who cared for the patient.
 
