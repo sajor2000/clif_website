@@ -50,6 +50,23 @@ try {
         </label>
       </div>
     </div>
+
+    <div class="control-section">
+      <h4 class="collapsible-header" id="tables-header">
+        Individual Tables <span class="collapse-icon">▼</span>
+      </h4>
+      <div class="collapsible-content" id="tables-content">
+        <div class="table-selection-controls">
+          <div class="selection-actions">
+            <button id="select-all-tables" class="action-btn">All</button>
+            <button id="select-none-tables" class="action-btn">None</button>
+          </div>
+          <div id="table-checkboxes" class="table-checkboxes">
+            <!-- Table checkboxes will be populated by JavaScript -->
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
   
   <div id="erd-diagram" class="erd-diagram"></div>
@@ -84,7 +101,8 @@ try {
     border-radius: 8px;
     padding: 12px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    max-width: 250px;
+    width: 280px;
+    max-width: 280px;
   }
 
   .control-section {
@@ -171,6 +189,110 @@ try {
 
   .filter-checkbox input:not(:checked) + .checkmark {
     opacity: 0.3;
+  }
+
+  .collapsible-header {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    user-select: none;
+  }
+
+  .collapse-icon {
+    font-size: 10px;
+    transition: transform 0.2s;
+  }
+
+  .collapsible-header.collapsed .collapse-icon {
+    transform: rotate(-90deg);
+  }
+
+  .collapsible-content {
+    max-height: 300px;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+  }
+
+  .collapsible-content.collapsed {
+    max-height: 0;
+  }
+
+  .table-selection-controls {
+    margin-top: 8px;
+  }
+
+  .selection-actions {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 8px;
+  }
+
+  .action-btn {
+    padding: 3px 8px;
+    background: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 11px;
+    transition: all 0.2s;
+  }
+
+  .action-btn:hover {
+    background: #e9ecef;
+    border-color: #adb5bd;
+  }
+
+  .table-checkboxes {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    padding: 8px;
+    background: #fafafa;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .table-checkbox {
+    display: flex;
+    align-items: center;
+    margin-bottom: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    padding: 2px 0;
+    width: 100%;
+    flex-shrink: 0;
+  }
+
+  .table-checkbox:last-child {
+    margin-bottom: 0;
+  }
+
+  .table-checkbox input {
+    margin-right: 6px;
+    cursor: pointer;
+  }
+
+  .table-name {
+    color: #333;
+  }
+
+  .table-category-badge {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-left: 4px;
+    flex-shrink: 0;
+  }
+
+  .table-category-badge.beta {
+    background-color: #8B2635;
+  }
+
+  .table-category-badge.concept {
+    background-color: #708090;
   }
 
   .erd-diagram {
@@ -269,10 +391,17 @@ try {
   }
 
   .erd-diagram :global(.relationship-line) {
-    stroke: #666;
-    stroke-width: 1.5;
+    stroke: #4a90e2;
+    stroke-width: 2;
     fill: none;
     marker-end: url(#arrowhead);
+    opacity: 0.7;
+  }
+  
+  .erd-diagram :global(.relationship-line:hover) {
+    stroke: #2c5aa0;
+    stroke-width: 3;
+    opacity: 1;
   }
 
   .erd-diagram :global(.table-node:hover .table-rect) {
@@ -294,6 +423,7 @@ try {
 
   let svg, g, simulation;
   let visibleCategories = new Set(['beta', 'concept']); // Default: show both beta and concept tables
+  let visibleTables = new Set(); // Individual table selection
 
   function initERD() {
     const container = document.getElementById('erd-diagram');
@@ -319,7 +449,7 @@ try {
       .attr('markerHeight', 6)
       .append('path')
       .attr('d', 'M 0,-5 L 10 ,0 L 0,5')
-      .attr('fill', '#666')
+      .attr('fill', '#4a90e2')
       .style('stroke', 'none');
 
     // Main group for zoom/pan
@@ -340,6 +470,12 @@ try {
       .alphaDecay(0.1) // Fast settling
       .velocityDecay(0.8); // High friction to prevent movement cascades
 
+    // Initialize table selection (all tables visible by default)
+    erdData.tables.forEach(table => visibleTables.add(table.name));
+    
+    // Populate table checkboxes
+    populateTableCheckboxes();
+    
     // Initial render
     updateVisualization();
     
@@ -348,9 +484,11 @@ try {
   }
 
   function updateVisualization() {
-    // Filter tables based on visible categories
-    const visibleTables = erdData.tables.filter(table => visibleCategories.has(table.category));
-    const tableNames = new Set(visibleTables.map(t => t.name));
+    // Filter tables based on visible categories AND individual table selection
+    const filteredTables = erdData.tables.filter(table => 
+      visibleCategories.has(table.category) && visibleTables.has(table.name)
+    );
+    const tableNames = new Set(filteredTables.map(t => t.name));
     const visibleRelationships = erdData.relationships.filter(rel => 
       tableNames.has(rel.from) && tableNames.has(rel.to)
     );
@@ -360,13 +498,13 @@ try {
     g.selectAll('.table-node').remove();
 
     // Draw relationships first (so they appear behind tables)
-    drawRelationships(g, visibleRelationships, visibleTables);
+    drawRelationships(g, visibleRelationships, filteredTables);
     
     // Draw tables
-    drawTables(g, visibleTables);
+    drawTables(g, filteredTables);
 
     // Update simulation with only collision detection
-    simulation.nodes(visibleTables);
+    simulation.nodes(filteredTables);
     
     // Start with minimal energy - only for initial collision resolution
     simulation.alpha(0.05).restart();
@@ -375,7 +513,7 @@ try {
   function drawTables(g, tables) {
     const tableWidth = 220; // Increased width for longer table names
     const fieldHeight = 16;
-    const headerHeight = 28;
+    const headerHeight = 40; // Increased height for better text spacing
     
     const tableNodes = g.selectAll('.table-node')
       .data(tables, d => d.name)
@@ -493,23 +631,23 @@ try {
     simulation.on('tick', () => {
       tableNodes.attr('transform', d => `translate(${d.x || 0}, ${d.y || 0})`);
       
-      // Update relationship lines
+      // Update relationship lines based on actual relationship data
       g.selectAll('.relationship-line')
         .attr('x1', d => {
-          const sourceTable = tables.find(t => t.name === d.source.name || t.name === d.source);
+          const sourceTable = tables.find(t => t.name === d.from);
           return (sourceTable?.x || 0) + tableWidth;
         })
         .attr('y1', d => {
-          const sourceTable = tables.find(t => t.name === d.source.name || t.name === d.source);
-          return (sourceTable?.y || 0) + headerHeight;
+          const sourceTable = tables.find(t => t.name === d.from);
+          return (sourceTable?.y || 0) + headerHeight / 2;
         })
         .attr('x2', d => {
-          const targetTable = tables.find(t => t.name === d.target.name || t.name === d.target);
+          const targetTable = tables.find(t => t.name === d.to);
           return targetTable?.x || 0;
         })
         .attr('y2', d => {
-          const targetTable = tables.find(t => t.name === d.target.name || t.name === d.target);
-          return (targetTable?.y || 0) + headerHeight;
+          const targetTable = tables.find(t => t.name === d.to);
+          return (targetTable?.y || 0) + headerHeight / 2;
         });
     });
   }
@@ -521,7 +659,23 @@ try {
       .data(relationships)
       .enter()
       .append('line')
-      .attr('class', 'relationship-line');
+      .attr('class', 'relationship-line')
+      .attr('x1', d => {
+        const sourceTable = tableMap.get(d.from);
+        return (sourceTable?.x || 0) + 220; // tableWidth
+      })
+      .attr('y1', d => {
+        const sourceTable = tableMap.get(d.from);
+        return (sourceTable?.y || 0) + 20; // headerHeight / 2 (40/2)
+      })
+      .attr('x2', d => {
+        const targetTable = tableMap.get(d.to);
+        return targetTable?.x || 0;
+      })
+      .attr('y2', d => {
+        const targetTable = tableMap.get(d.to);
+        return (targetTable?.y || 0) + 20; // headerHeight / 2 (40/2)
+      });
   }
 
   function dragStarted(event, d) {
@@ -607,17 +761,38 @@ try {
     
     html += '</tbody></table>';
     
-    if (table.foreignKeys.length > 0) {
+    // Show relationships (both outgoing and incoming)
+    const outgoingRels = erdData.relationships.filter(rel => rel.from === table.name);
+    const incomingRels = erdData.relationships.filter(rel => rel.to === table.name);
+    
+    if (outgoingRels.length > 0) {
       html += `
         <div style="margin-top: 15px; margin-bottom: 10px;">
-          <strong>Foreign Keys:</strong>
+          <strong>References to other tables:</strong>
         </div>
         <ul style="margin: 0; padding-left: 20px; font-size: 12px;">
       `;
       
-      table.foreignKeys.forEach(fk => {
+      outgoingRels.forEach(rel => {
         html += `
-          <li>${fk.field} → ${fk.references.table}.${fk.references.column}</li>
+          <li><span style="color: #8B2635; font-weight: bold;">${rel.fromField}</span> → <span style="color: #708090;">${rel.to}.${rel.toField}</span></li>
+        `;
+      });
+      
+      html += '</ul>';
+    }
+    
+    if (incomingRels.length > 0) {
+      html += `
+        <div style="margin-top: 15px; margin-bottom: 10px;">
+          <strong>Referenced by other tables:</strong>
+        </div>
+        <ul style="margin: 0; padding-left: 20px; font-size: 12px;">
+      `;
+      
+      incomingRels.forEach(rel => {
+        html += `
+          <li><span style="color: #708090;">${rel.from}.${rel.fromField}</span> → <span style="color: #8B2635; font-weight: bold;">${rel.toField}</span></li>
         `;
       });
       
@@ -626,6 +801,41 @@ try {
     
     contentElement.innerHTML = html;
     detailsPanel.classList.remove('hidden');
+  }
+
+  function populateTableCheckboxes() {
+    const container = document.getElementById('table-checkboxes');
+    const sortedTables = [...erdData.tables].sort((a, b) => {
+      // Sort by category first (beta before concept), then by name
+      if (a.category !== b.category) {
+        return a.category === 'beta' ? -1 : 1;
+      }
+      return a.displayName.localeCompare(b.displayName);
+    });
+
+    container.innerHTML = sortedTables.map(table => `
+      <label class="table-checkbox">
+        <input type="checkbox" 
+               class="table-select" 
+               data-table="${table.name}" 
+               checked>
+        <span class="table-name">${table.displayName}</span>
+        <span class="table-category-badge ${table.category}"></span>
+      </label>
+    `).join('');
+
+    // Add event listeners to table checkboxes
+    container.querySelectorAll('.table-select').forEach(checkbox => {
+      checkbox.addEventListener('change', (e) => {
+        const tableName = e.target.dataset.table;
+        if (e.target.checked) {
+          visibleTables.add(tableName);
+        } else {
+          visibleTables.delete(tableName);
+        }
+        updateVisualization();
+      });
+    });
   }
 
   function setupControls(svg, g, zoom) {
@@ -676,6 +886,28 @@ try {
     
     document.getElementById('close-details').addEventListener('click', () => {
       document.getElementById('table-details').classList.add('hidden');
+    });
+
+    // Collapsible table selection header
+    document.getElementById('tables-header').addEventListener('click', () => {
+      const header = document.getElementById('tables-header');
+      const content = document.getElementById('tables-content');
+      
+      header.classList.toggle('collapsed');
+      content.classList.toggle('collapsed');
+    });
+
+    // Select all/none table buttons
+    document.getElementById('select-all-tables').addEventListener('click', () => {
+      erdData.tables.forEach(table => visibleTables.add(table.name));
+      document.querySelectorAll('.table-select').forEach(cb => cb.checked = true);
+      updateVisualization();
+    });
+
+    document.getElementById('select-none-tables').addEventListener('click', () => {
+      visibleTables.clear();
+      document.querySelectorAll('.table-select').forEach(cb => cb.checked = false);
+      updateVisualization();
     });
   }
 </script>

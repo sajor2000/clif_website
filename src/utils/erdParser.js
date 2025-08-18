@@ -166,12 +166,19 @@ export class ERDParser {
       }
     }
 
+    // Validate relationships - filter out those pointing to non-existent tables
+    const tableNames = new Set(tables.map(t => t.name));
+    const validRelationships = relationships.filter(rel => 
+      tableNames.has(rel.from) && tableNames.has(rel.to)
+    );
+
     return {
       tables,
-      relationships,
+      relationships: validRelationships,
       metadata: {
         totalTables: tables.length,
-        categories: this.getCategoryCounts(tables)
+        categories: this.getCategoryCounts(tables),
+        totalRelationships: validRelationships.length
       }
     };
   }
@@ -243,24 +250,53 @@ export class ERDParser {
     const columns = tableSchema.columns || {};
     for (const [fieldName, fieldSchema] of Object.entries(columns)) {
       // Look for fields that end with _id and might be foreign keys
-      if (fieldName.endsWith('_id') && fieldName !== 'hospitalization_id' && fieldName !== 'patient_id') {
-        // Try to infer the referenced table from the field name
-        const potentialTable = fieldName.replace('_id', '');
-        
-        // Skip if we already have this relationship from explicit foreign keys
-        const existingRel = relationships.find(rel => 
-          rel.from === tableName && rel.fromField === fieldName
-        );
-        
-        if (!existingRel) {
-          // Add as potential relationship (we'll validate this exists later)
-          relationships.push({
-            from: tableName,
-            to: potentialTable,
-            fromField: fieldName,
-            toField: fieldName,
-            type: 'inferred_foreign_key'
-          });
+      if (fieldName.endsWith('_id')) {
+        // Special handling for organism_id - it links between microbiology tables
+        if (fieldName === 'organism_id') {
+          // Skip if we already have this relationship from explicit foreign keys
+          const existingRel = relationships.find(rel => 
+            rel.from === tableName && rel.fromField === fieldName
+          );
+          
+          if (!existingRel) {
+            // Create bidirectional relationships for organism_id
+            if (tableName === 'microbiology_culture') {
+              relationships.push({
+                from: tableName,
+                to: 'microbiology_susceptibility',
+                fromField: fieldName,
+                toField: fieldName,
+                type: 'organism_link'
+              });
+            } else if (tableName === 'microbiology_susceptibility') {
+              relationships.push({
+                from: tableName,
+                to: 'microbiology_culture',
+                fromField: fieldName,
+                toField: fieldName,
+                type: 'organism_link'
+              });
+            }
+          }
+        } else {
+          // Try to infer the referenced table from the field name
+          const potentialTable = fieldName.replace('_id', '');
+          
+          // Skip if we already have this relationship from explicit foreign keys
+          const existingRel = relationships.find(rel => 
+            rel.from === tableName && rel.fromField === fieldName
+          );
+          
+          if (!existingRel) {
+            // Add as potential relationship (we'll validate this exists later)
+            relationships.push({
+              from: tableName,
+              to: potentialTable,
+              fromField: fieldName,
+              toField: 'id', // Most tables use 'id' as primary key
+              type: 'inferred_foreign_key'
+            });
+          }
         }
       }
     }
@@ -318,7 +354,7 @@ export class ERDParser {
     // 5-column grid layout
     const tablesPerRow = 5;
     const tableWidth = 270;  // Width including spacing (increased for wider tables)
-    const tableHeight = 180; // Height including spacing
+    const tableHeight = 200; // Height including spacing (increased for taller headers)
     const startX = 50;       // Left margin
     const startY = 50;       // Top margin
 

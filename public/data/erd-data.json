@@ -226,7 +226,7 @@
       "comments": "{\"description\": \"Unique identifier for hospitalization episode\", \"permissible\": \"No restriction\"}",
       "position": {
         "x": 1130,
-        "y": 410
+        "y": 450
       }
     },
     {
@@ -321,7 +321,7 @@
       "comments": "{\"description\": \"Unique identifier for the hospitalization event\", \"permissible\": \"No restriction\"}",
       "position": {
         "x": 50,
-        "y": 590
+        "y": 650
       }
     },
     {
@@ -543,7 +543,7 @@
       "comments": "{\"description\": \"Foreign key to the hospitalization table\", \"permissible\": \"Must match a hospitalization_id in the hospitalization table\"}",
       "position": {
         "x": 860,
-        "y": 590
+        "y": 650
       }
     },
     {
@@ -781,7 +781,7 @@
       "comments": "{\"description\": \"ID variable for each patient encounter\", \"permissible\": \"No restriction\"}",
       "position": {
         "x": 590,
-        "y": 230
+        "y": 250
       }
     },
     {
@@ -797,6 +797,14 @@
           "isPrimaryKey": false,
           "isForeignKey": false,
           "comment": "ID variable for each patient encounter."
+        },
+        {
+          "name": "organism_id",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Unique identifier for the organism detected in the culture. This allows linking to susceptibility results."
         },
         {
           "name": "order_dttm",
@@ -876,7 +884,7 @@
       "comments": "{\"description\": \"ID variable for each patient encounter.\", \"permissible\": \"\"}",
       "position": {
         "x": 50,
-        "y": 410
+        "y": 450
       }
     },
     {
@@ -955,7 +963,7 @@
       "comments": "{\"description\": \"Unique identifier for the hospitalization event.\", \"permissible\": \"No restriction\"}",
       "position": {
         "x": 320,
-        "y": 410
+        "y": 450
       }
     },
     {
@@ -1034,7 +1042,7 @@
       "comments": "{\"description\": \"Primary Identifier. Unique identifier linking assessments to a specific patient hospitalization.\", \"permissible\": \"No restriction\"}",
       "position": {
         "x": 590,
-        "y": 410
+        "y": 450
       }
     },
     {
@@ -1184,7 +1192,7 @@
       "comments": "{\"description\": \"ID variable for each patient encounter. This table only includes those encounters that have proning documented ever.\", \"permissible\": \"No restriction\"}",
       "position": {
         "x": 590,
-        "y": 590
+        "y": 650
       }
     },
     {
@@ -1407,7 +1415,7 @@
       "comments": "{\"description\": \"ID variable for each patient encounter\", \"permissible\": \"No restriction\"}",
       "position": {
         "x": 320,
-        "y": 230
+        "y": 250
       }
     },
     {
@@ -1470,7 +1478,7 @@
       "comments": "{\"description\": \"ID variable for each patient encounter.\", \"permissible\": \"No restriction\"}",
       "position": {
         "x": 50,
-        "y": 230
+        "y": 250
       }
     },
     {
@@ -1525,7 +1533,7 @@
       "comments": "{\"description\": \"Unique identifier for the hospitalization event.\", \"permissible\": \"No restriction\"}",
       "position": {
         "x": 320,
-        "y": 770
+        "y": 850
       }
     },
     {
@@ -1580,7 +1588,7 @@
       "comments": "{\"description\": \"Unique identifier linking to the specific hospitalization.\", \"permissible\": \"No restriction\"}",
       "position": {
         "x": 320,
-        "y": 590
+        "y": 650
       }
     },
     {
@@ -1635,7 +1643,7 @@
       "comments": "{\"description\": \"Unique identifier linking the order to a specific hospitalization.\", \"permissible\": \"No restriction\"}",
       "position": {
         "x": 590,
-        "y": 770
+        "y": 850
       }
     },
     {
@@ -1645,20 +1653,108 @@
       "color": "#8B2635",
       "fields": [
         {
-          "name": "N",
-          "type": "INT",
+          "name": "hospitalization_id",
+          "type": "VARCHAR",
           "nullable": true,
           "isPrimaryKey": false,
           "isForeignKey": false,
-          "comment": "This is a placeholder column. See documentation above for schema details."
+          "comment": "ID variable for each patient encounter"
+        },
+        {
+          "name": "med_order_id",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": ""
+        },
+        {
+          "name": "admin_dttm",
+          "type": "DATETIME",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Date and time when the medicine was administered. All datetime variables must be timezone-aware and set to UTC."
+        },
+        {
+          "name": "med_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Original med name string recorded in the raw data which often contains concentration e.g. NOREPInephrine 8 mg/250 mL"
+        },
+        {
+          "name": "med_category",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Maps med_name to a limited set of active ingredients for important ICU medications, e.g. norepinephrine"
+        },
+        {
+          "name": "med_group",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Limited number of ICU medication groups identified by the CLIF consortium, e.g. vasoactives"
+        },
+        {
+          "name": "med_route_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Medicine delivery route"
+        },
+        {
+          "name": "med_route_category",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Maps med_route_name to a standardized list of medication delivery routes"
+        },
+        {
+          "name": "med_dose",
+          "type": "FLOAT",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Quantity taken in dose"
+        },
+        {
+          "name": "med_dose_unit",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Unit of dose. It must be a rate, e.g. mcg/min. Boluses should be mapped to med_admin_intermittent"
+        },
+        {
+          "name": "mar_action_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "MAR (medication administration record) action, e.g. stopped"
+        },
+        {
+          "name": "mar_action_category",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Maps mar_action_name to a standardized list of MAR actions"
         }
       ],
       "primaryKeys": [],
       "foreignKeys": [],
-      "comments": "{\"description\": \"This is a placeholder column. See documentation above for schema details.\", \"permissible\": \"\"}",
+      "comments": "{\"description\": \"ID variable for each patient encounter\", \"permissible\": \"No restriction\"}",
       "position": {
         "x": 860,
-        "y": 230
+        "y": 250
       }
     },
     {
@@ -1793,7 +1889,7 @@
       "comments": "{\"description\": \"Unique identifier for each hospitalization, linking medication orders to a specific encounter\", \"permissible\": \"No restriction\"}",
       "position": {
         "x": 1130,
-        "y": 230
+        "y": 250
       }
     },
     {
@@ -1856,7 +1952,7 @@
       "comments": "{\"description\": \"Uniquely identifies a patient.\", \"permissible\": \"No restriction\"}",
       "position": {
         "x": 860,
-        "y": 410
+        "y": 450
       }
     },
     {
@@ -1903,7 +1999,7 @@
       "comments": "{\"description\": \"Foreign key linking to the hospitalization table.\", \"permissible\": \"No restriction\"}",
       "position": {
         "x": 860,
-        "y": 770
+        "y": 850
       }
     },
     {
@@ -1966,7 +2062,7 @@
       "comments": "{\"description\": \"Unique identifier for each hospitalization, linking the provider to a specific encounter\", \"permissible\": \"No restriction\"}",
       "position": {
         "x": 1130,
-        "y": 770
+        "y": 850
       }
     },
     {
@@ -2029,7 +2125,7 @@
       "comments": "{\"description\": \"Unique identifier for the organism tested for antimicrobial susceptibility\", \"permissible\": \"No restriction\"}",
       "position": {
         "x": 50,
-        "y": 950
+        "y": 1050
       }
     },
     {
@@ -2084,7 +2180,7 @@
       "comments": "{\"description\": \"Unique identifier for the hospitalization event.\", \"permissible\": \"No restriction\"}",
       "position": {
         "x": 50,
-        "y": 770
+        "y": 850
       }
     },
     {
@@ -2163,7 +2259,7 @@
       "comments": "{\"description\": \"Unique identifier linking the transfusion event to a specific hospitalization in the CLIF database.\", \"permissible\": \"No restriction\"}",
       "position": {
         "x": 1130,
-        "y": 590
+        "y": 650
       }
     }
   ],
@@ -2176,13 +2272,6 @@
       "type": "foreign_key"
     },
     {
-      "from": "adt",
-      "to": "hospital",
-      "fromField": "hospital_id",
-      "toField": "hospital_id",
-      "type": "inferred_foreign_key"
-    },
-    {
       "from": "code_status",
       "to": "patient",
       "fromField": "patient_id",
@@ -2191,9 +2280,16 @@
     },
     {
       "from": "crrt_therapy",
-      "to": "device",
-      "fromField": "device_id",
-      "toField": "device_id",
+      "to": "hospitalization",
+      "fromField": "hospitalization_id",
+      "toField": "id",
+      "type": "inferred_foreign_key"
+    },
+    {
+      "from": "ecmo_mcs",
+      "to": "hospitalization",
+      "fromField": "hospitalization_id",
+      "toField": "id",
       "type": "inferred_foreign_key"
     },
     {
@@ -2205,51 +2301,184 @@
     },
     {
       "from": "hospitalization",
-      "to": "hospitalization_joined",
-      "fromField": "hospitalization_joined_id",
-      "toField": "hospitalization_joined_id",
+      "to": "hospitalization",
+      "fromField": "hospitalization_id",
+      "toField": "id",
+      "type": "inferred_foreign_key"
+    },
+    {
+      "from": "hospital_diagnosis",
+      "to": "hospitalization",
+      "fromField": "hospitalization_id",
+      "toField": "id",
+      "type": "inferred_foreign_key"
+    },
+    {
+      "from": "labs",
+      "to": "hospitalization",
+      "fromField": "hospitalization_id",
+      "toField": "id",
       "type": "inferred_foreign_key"
     },
     {
       "from": "medication_admin_continuous",
-      "to": "med_order",
-      "fromField": "med_order_id",
-      "toField": "med_order_id",
+      "to": "hospitalization",
+      "fromField": "hospitalization_id",
+      "toField": "id",
+      "type": "inferred_foreign_key"
+    },
+    {
+      "from": "microbiology_culture",
+      "to": "hospitalization",
+      "fromField": "hospitalization_id",
+      "toField": "id",
+      "type": "inferred_foreign_key"
+    },
+    {
+      "from": "microbiology_culture",
+      "to": "microbiology_susceptibility",
+      "fromField": "organism_id",
+      "toField": "organism_id",
+      "type": "organism_link"
+    },
+    {
+      "from": "microbiology_nonculture",
+      "to": "hospitalization",
+      "fromField": "hospitalization_id",
+      "toField": "id",
+      "type": "inferred_foreign_key"
+    },
+    {
+      "from": "patient_assessments",
+      "to": "hospitalization",
+      "fromField": "hospitalization_id",
+      "toField": "id",
+      "type": "inferred_foreign_key"
+    },
+    {
+      "from": "patient",
+      "to": "patient",
+      "fromField": "patient_id",
+      "toField": "id",
+      "type": "inferred_foreign_key"
+    },
+    {
+      "from": "position",
+      "to": "hospitalization",
+      "fromField": "hospitalization_id",
+      "toField": "id",
       "type": "inferred_foreign_key"
     },
     {
       "from": "respiratory_support",
-      "to": "device",
-      "fromField": "device_id",
-      "toField": "device_id",
+      "to": "hospitalization",
+      "fromField": "hospitalization_id",
+      "toField": "id",
+      "type": "inferred_foreign_key"
+    },
+    {
+      "from": "vitals",
+      "to": "hospitalization",
+      "fromField": "hospitalization_id",
+      "toField": "id",
+      "type": "inferred_foreign_key"
+    },
+    {
+      "from": "intake_output",
+      "to": "hospitalization",
+      "fromField": "hospitalization_id",
+      "toField": "id",
+      "type": "inferred_foreign_key"
+    },
+    {
+      "from": "invasive_hemodynamics",
+      "to": "hospitalization",
+      "fromField": "hospitalization_id",
+      "toField": "id",
+      "type": "inferred_foreign_key"
+    },
+    {
+      "from": "key_icu_orders",
+      "to": "hospitalization",
+      "fromField": "hospitalization_id",
+      "toField": "id",
+      "type": "inferred_foreign_key"
+    },
+    {
+      "from": "medication_admin_intermittent",
+      "to": "hospitalization",
+      "fromField": "hospitalization_id",
+      "toField": "id",
       "type": "inferred_foreign_key"
     },
     {
       "from": "medication_orders",
-      "to": "med_order",
-      "fromField": "med_order_id",
-      "toField": "med_order_id",
+      "to": "hospitalization",
+      "fromField": "hospitalization_id",
+      "toField": "id",
+      "type": "inferred_foreign_key"
+    },
+    {
+      "from": "patient_procedures",
+      "to": "patient",
+      "fromField": "patient_id",
+      "toField": "id",
+      "type": "inferred_foreign_key"
+    },
+    {
+      "from": "patient_procedures",
+      "to": "hospitalization",
+      "fromField": "hospitalization_id",
+      "toField": "id",
       "type": "inferred_foreign_key"
     },
     {
       "from": "patient_procedures",
       "to": "provider",
       "fromField": "provider_id",
-      "toField": "provider_id",
+      "toField": "id",
+      "type": "inferred_foreign_key"
+    },
+    {
+      "from": "place_based_index",
+      "to": "hospitalization",
+      "fromField": "hospitalization_id",
+      "toField": "id",
+      "type": "inferred_foreign_key"
+    },
+    {
+      "from": "provider",
+      "to": "hospitalization",
+      "fromField": "hospitalization_id",
+      "toField": "id",
       "type": "inferred_foreign_key"
     },
     {
       "from": "provider",
       "to": "provider",
       "fromField": "provider_id",
-      "toField": "provider_id",
+      "toField": "id",
       "type": "inferred_foreign_key"
     },
     {
       "from": "microbiology_susceptibility",
-      "to": "organism",
+      "to": "microbiology_culture",
       "fromField": "organism_id",
       "toField": "organism_id",
+      "type": "organism_link"
+    },
+    {
+      "from": "therapy_details",
+      "to": "hospitalization",
+      "fromField": "hospitalization_id",
+      "toField": "id",
+      "type": "inferred_foreign_key"
+    },
+    {
+      "from": "transfusion",
+      "to": "hospitalization",
+      "fromField": "hospitalization_id",
+      "toField": "id",
       "type": "inferred_foreign_key"
     }
   ],
@@ -2260,6 +2489,7 @@
       "medical": 0,
       "concept": 5,
       "beta": 21
-    }
+    },
+    "totalRelationships": 31
   }
 }

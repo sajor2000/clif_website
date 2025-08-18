@@ -140,6 +140,7 @@ CREATE TABLE medication_admin_continuous (
 
 CREATE TABLE microbiology_culture (
   hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter.", "permissible": ""}',
+  organism_id VARCHAR COMMENT '{"description": "Unique identifier for the organism detected in the culture. This allows linking to susceptibility results.", "permissible": "No restriction"}',
   order_dttm DATETIME COMMENT '{"description": "Date and time when the test is ordered.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00"}',
   collect_dttm DATETIME COMMENT '{"description": "Date and time when the specimen is collected.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00"}',
   result_dttm DATETIME COMMENT '{"description": "Date and time when the results are available.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00"}',
@@ -290,7 +291,18 @@ CREATE TABLE key_icu_orders (
 -- Table: medication_admin_intermittent
 -- -----------------------------------------------------
 CREATE TABLE medication_admin_intermittent (
-    N INT COMMENT '{"description": "This is a placeholder column. See documentation above for schema details.", "permissible": ""}'
+  hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
+  med_order_id VARCHAR COMMENT '{"description": "Medication order ID. Foreign key to link this table to other medication tables", "permissible": "No restriction"}',
+  admin_dttm DATETIME COMMENT '{"description": "Date and time when the medicine was administered. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
+  med_name VARCHAR COMMENT '{"description": "Original med name string recorded in the raw data which often contains concentration e.g. NOREPInephrine 8 mg/250 mL", "permissible": "No restriction"}',
+  med_category VARCHAR COMMENT '{"description": "Maps med_name to a limited set of active ingredients for important ICU medications, e.g. norepinephrine", "permissible": "[List of continuous medication categories in CLIF](https://github.com/clif-consortium/CLIF/blob/main/mCIDE/medication_admin_continuous/clif_medication_admin_continuous_med_categories.csv) "}',
+  med_group VARCHAR COMMENT '{"description": "Limited number of ICU medication groups identified by the CLIF consortium, e.g. vasoactives", "permissible": "[List of continuous medication groups in CLIF](https://github.com/clif-consortium/CLIF/blob/main/mCIDE/medication_admin_continuous/clif_medication_admin_continuous_med_categories.csv)   "}',
+  med_route_name VARCHAR COMMENT '{"description": "Medicine delivery route", "permissible": "e.g. IV, enteral"}',
+  med_route_category VARCHAR COMMENT '{"description": "Maps med_route_name to a standardized list of medication delivery routes", "permissible": "Under-development"}',
+  med_dose FLOAT COMMENT '{"description": "Quantity taken in dose", "permissible": "Numeric"}',
+  med_dose_unit VARCHAR COMMENT '{"description": "Unit of dose. It must be a rate, e.g. mcg/min. Boluses should be mapped to med_admin_intermittent", "permissible": "No restriction"}',
+  mar_action_name VARCHAR COMMENT '{"description": "MAR (medication administration record) action, e.g. stopped", "permissible": "No restriction"}',
+  mar_action_category VARCHAR COMMENT '{"description": "Maps mar_action_name to a standardized list of MAR actions", "permissible": "Under-development"}'
 );
 
 -- -----------------------------------------------------
