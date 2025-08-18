@@ -90,6 +90,177 @@ import CTAButton from '../components/shared/CTAButton.astro';
               </div>
             </div>
           </div>
+
+          <!-- Federated Analysis and Project Workflow -->
+          <div class="faq-item bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover-lift mb-4 border border-gray-100 overflow-hidden">
+            <button class="faq-trigger w-full text-left p-6 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:ring-inset" aria-expanded="false">
+              <div class="flex items-start gap-4">
+                <div class="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-xl flex items-center justify-center">
+                  <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                </div>
+                <div class="flex-1">
+                  <h3 class="text-xl font-semibold text-gray-900 mb-1">What is “federated” analysis and what is the project workflow?</h3>
+                  <p class="text-gray-600 text-sm">How CLIF projects are conducted across sites</p>
+                </div>
+                <svg class="faq-chevron w-5 h-5 text-gray-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </div>
+            </button>
+            <div class="faq-content hidden px-6 pb-6">
+              <div class="ml-16">
+                <p class="text-lg text-gray-700 leading-relaxed">
+                  A lead principal investigator (PI) originates a project idea, specifies the required cohort and CLIF tables for the project, and then develops analytic code written using their local CLIF database. The CLIF consortium then runs the script and returns <strong>aggregate results</strong> to the PI. The PI compiles the aggregate results for publication.
+                </p>
+                <p class="text-lg text-gray-700 leading-relaxed mt-4">
+                  At no point is patient-level (i.e.&nbsp;“row-level”) data exchanged between sites, unless there is a specific Data Use Agreement (DAU) that permits this for specific combinations of consortium sites and directionality. You can submit your project idea <a href="https://redcap.uchicago.edu/surveys/?s=7FMNPWTXKP3P3ANW" class="text-clif-burgundy underline hover:text-clif-burgundy-dark" target="_blank" rel="noopener">here</a>!
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Multi-modal Data -->
+          <div class="faq-item bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover-lift mb-4 border border-gray-100 overflow-hidden">
+            <button class="faq-trigger w-full text-left p-6 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:ring-inset" aria-expanded="false">
+              <div class="flex items-start gap-4">
+                <div class="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-pink-100 to-pink-200 rounded-xl flex items-center justify-center">
+                  <svg class="w-6 h-6 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A2 2 0 0020 6.382V5a2 2 0 00-2-2H6a2 2 0 00-2 2v1.382a2 2 0 00.447 1.342L9 10m6 0v4m0 0l-6 3m6-3l6 3m-6-3l-6 3"/>
+                  </svg>
+                </div>
+                <div class="flex-1">
+                  <h3 class="text-xl font-semibold text-gray-900 mb-1">What about multi-modal data like notes and images?</h3>
+                  <p class="text-gray-600 text-sm">Extending CLIF to unstructured data</p>
+                </div>
+                <svg class="faq-chevron w-5 h-5 text-gray-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </div>
+            </button>
+            <div class="faq-content hidden px-6 pb-6">
+              <div class="ml-16">
+                <p class="text-lg text-gray-700 leading-relaxed">
+                  The current CLIF framework is for standardized longitudinal ICU data elements (e.g.&nbsp;labs, vitals, ventilator settings, medication doses, and flowsheet documentation). We believe the clinical context defined by these standardized <a href="https://clif-consortium.github.io/website/mCIDE.html" class="text-clif-burgundy underline hover:text-clif-burgundy-dark" target="_blank" rel="noopener">minimum Common ICU Data Elements (CDE)</a> are essential for the proper interpretation of multi-modal data such as clinical notes and imaging results.
+                </p>
+                <p class="text-lg text-gray-700 leading-relaxed mt-4">
+                  Once CLIF is mature for these standardized data elements, we plan to represent these multi-modal data.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Existing CDMs -->
+          <div class="faq-item bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover-lift mb-4 border border-gray-100 overflow-hidden">
+            <button class="faq-trigger w-full text-left p-6 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:ring-inset" aria-expanded="false">
+              <div class="flex items-start gap-4">
+                <div class="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-orange-100 to-orange-200 rounded-xl flex items-center justify-center">
+                  <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z"/>
+                  </svg>
+                </div>
+                <div class="flex-1">
+                  <h3 class="text-xl font-semibold text-gray-900 mb-1">Why didn’t you just use an existing Common Data Model (CDM) like the Observational Medical Outcomes Partnership (OMOP)?</h3>
+                  <p class="text-gray-600 text-sm">Why CLIF was developed as a new model</p>
+                </div>
+                <svg class="faq-chevron w-5 h-5 text-gray-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </div>
+            </button>
+            <div class="faq-content hidden px-6 pb-6">
+              <div class="ml-16">
+                <p class="text-lg text-gray-700 leading-relaxed">
+                  Established open-source CDMs such as the OMOP take on data harmonization and standardization challenge for the entire EHR. The work of the <a href="https://www.ohdsi.org/data-standardization/" class="text-clif-burgundy underline hover:text-clif-burgundy-dark" target="_blank" rel="noopener">Observational Health Data Sciences and Informatics (OHDSI)</a> community has been a guiding force for the CLIF consortium throughout CLIF’s development. However, the extract-transform-load (ETL) to a CDM is a major data engineering challenge, and data elements essential for the study of critical illness typically are not prioritized. Local CDM instances often completely omit granular critical illness data elements, such as ventilator settings for patients suffering from respiratory failure.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Outpatient Data -->
+          <div class="faq-item bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover-lift mb-4 border border-gray-100 overflow-hidden">
+            <button class="faq-trigger w-full text-left p-6 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:ring-inset" aria-expanded="false">
+              <div class="flex items-start gap-4">
+                <div class="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-teal-100 to-teal-200 rounded-xl flex items-center justify-center">
+                  <svg class="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                  </svg>
+                </div>
+                <div class="flex-1">
+                  <h3 class="text-xl font-semibold text-gray-900 mb-1">What about outpatient data?</h3>
+                  <p class="text-gray-600 text-sm">Scope of CLIF for non-hospitalized patients</p>
+                </div>
+                <svg class="faq-chevron w-5 h-5 text-gray-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </div>
+            </button>
+            <div class="faq-content hidden px-6 pb-6">
+              <div class="ml-16">
+                <p class="text-lg text-gray-700 leading-relaxed">
+                  CLIF is designed for critically ill hospitalized adults and does not represent outpatient encounters. The <code>patient</code>, <code>hospitalization</code>, and <code>admission_diagnosis</code> table summarize information about the patient on admission to the hospital. CLIF could be used as one part of a larger EHR study that requires outpatient data from before the admission.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Data Standards / HL7 FHIR -->
+          <div class="faq-item bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover-lift mb-4 border border-gray-100 overflow-hidden">
+            <button class="faq-trigger w-full text-left p-6 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:ring-inset" aria-expanded="false">
+              <div class="flex items-start gap-4">
+                <div class="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-purple-100 to-purple-200 rounded-xl flex items-center justify-center">
+                  <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8a9 9 0 100-18 9 9 0 000 18z"/>
+                  </svg>
+                </div>
+                <div class="flex-1">
+                  <h3 class="text-xl font-semibold text-gray-900 mb-1">What about connections to existing data standards like Health Level Seven (HL7) Fast Healthcare Interoperability Resources (FHIR)?</h3>
+                  <p class="text-gray-600 text-sm">Interoperability and future directions</p>
+                </div>
+                <svg class="faq-chevron w-5 h-5 text-gray-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </div>
+            </button>
+            <div class="faq-content hidden px-6 pb-6">
+              <div class="ml-16">
+                <p class="text-lg text-gray-700 leading-relaxed">
+                  CLIF is currently not linked to established interoperability standards like <a href="https://www.hl7.org/fhir/overview.html" class="text-clif-burgundy underline hover:text-clif-burgundy-dark" target="_blank" rel="noopener">Health Level Seven (HL7) Fast Healthcare Interoperability Resources (FHIR)</a>. Future data engineering directions include the development of HL7 FHIR queries to generate real-time CLIF tables.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- IRB and Ethical Oversight -->
+          <div class="faq-item bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover-lift mb-4 border border-gray-100 overflow-hidden">
+            <button class="faq-trigger w-full text-left p-6 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:ring-inset" aria-expanded="false">
+              <div class="flex items-start gap-4">
+                <div class="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center">
+                  <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                </div>
+                <div class="flex-1">
+                  <h3 class="text-xl font-semibold text-gray-900 mb-1">What about Institutional Review Board (IRB) approval and ethical oversight?</h3>
+                  <p class="text-gray-600 text-sm">Research ethics and regulatory compliance</p>
+                </div>
+                <svg class="faq-chevron w-5 h-5 text-gray-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </div>
+            </button>
+            <div class="faq-content hidden px-6 pb-6">
+              <div class="ml-16">
+                <p class="text-lg text-gray-700 leading-relaxed">
+                  The CLIF consortium is committed to the responsible conduct of research. Each consortium site has independent IRB approval or an exemption for each CLIF project they run on their local CLIF database.
+                </p>
+                <p class="text-lg text-gray-700 leading-relaxed mt-4">
+                  The consortium is aware of the <a href="https://grants.nih.gov/grants/guide/notice-files/NOT-OD-16-094.html" class="text-clif-burgundy underline hover:text-clif-burgundy-dark" target="_blank" rel="noopener">NIH Single Institutional Review Board (IRB) policy</a> and planning to adhere to this policy for future NIH-funded projects using the consortium.
+                </p>
+              </div>
+            </div>
+          </div>
         </section>
 
         <!-- Getting Started Section -->
@@ -99,7 +270,7 @@ import CTAButton from '../components/shared/CTAButton.astro';
             Getting Started
           </h2>
           
-          <!-- Join CLIF -->
+          <!-- Joining Process -->
           <div class="faq-item bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover-lift mb-4 border border-gray-100 overflow-hidden">
             <button class="faq-trigger w-full text-left p-6 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:ring-inset" aria-expanded="false">
               <div class="flex items-start gap-4">
@@ -109,8 +280,8 @@ import CTAButton from '../components/shared/CTAButton.astro';
                   </svg>
                 </div>
                 <div class="flex-1">
-                  <h3 class="text-xl font-semibold text-gray-900 mb-1">How can my institution join CLIF?</h3>
-                  <p class="text-gray-600 text-sm">Steps to become part of our consortium</p>
+                  <h3 class="text-xl font-semibold text-gray-900 mb-1">What’s the process for joining the consortium? Do I need to CLIF my healthsystem’s data to start collaborating?</h3>
+                  <p class="text-gray-600 text-sm">How to get involved with CLIF</p>
                 </div>
                 <svg class="faq-chevron w-5 h-5 text-gray-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
@@ -120,8 +291,13 @@ import CTAButton from '../components/shared/CTAButton.astro';
             <div class="faq-content hidden px-6 pb-6">
               <div class="ml-16 space-y-4">
                 <p class="text-lg text-gray-700 leading-relaxed">
-                  We welcome new collaborators! The CLIF consortium is actively growing, with 17 institutions already participating 
-                  and 10 sites contributing data. To join:
+                  The CLIF consortium is committed to an inclusive, open-source development ecosystem. We recognize that not all investigators have the resources or institutional support necessary to extract-transform-load (ETL) their local healthsystem’s data into CLIF. <strong>Therefore, we will run any high-quality observational study coded to run on CLIF.</strong>
+                </p>
+                <p class="text-lg text-gray-700 leading-relaxed">
+                  We have developed a pipeline to convert the de-identified exemplar <a href="https://physionet.org/content/mimic-iv-demo/2.2/" class="text-clif-burgundy underline hover:text-clif-burgundy-dark" target="_blank" rel="noopener">MIMIC-IV</a> dataset into a high-quality CLIF database. For setup instructions and guidance on creating it at your site, please refer to this <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF-MIMIC" class="text-clif-burgundy underline hover:text-clif-burgundy-dark" target="_blank" rel="noopener">GitHub repository</a>.
+                </p>
+                <p class="text-lg text-gray-700 leading-relaxed">
+                  We welcome new collaborators! The CLIF consortium is actively growing, with 17 institutions already participating and 10 sites contributing data. To join:
                 </p>
                 <ol class="list-decimal list-inside space-y-3 text-lg text-gray-700">
                   <li class="flex items-start">
