@@ -217,13 +217,15 @@ The microbiology culture table is a wide longitudinal table that captures the or
 The microbiology non-culture table is a wide longitudinal table that captures the order and result times of non-culture microbiology tests, the type of fluid collected, the component of the test, and the result of the test.
 
 **Example**:
-| hospitalization_id | result_dttm                | collect_dttm               | order_dttm                | fluid_name          | component_category      | result_unit_category | result_category |
-|-------------------|---------------------------|---------------------------|---------------------------|--------------------|-----------------------|-------------------|----------------|
-| 101               | 2024-01-01 10:00:00+00:00 UTC | 2024-01-01 08:00:00+00:00 UTC | 2024-01-01 07:30:00+00:00 UTC | Blood               | PCR                    | Units/mL           | Positive        |
-| 102               | 2024-01-02 11:30:00+00:00 UTC | 2024-01-02 09:30:00+00:00 UTC | 2024-01-02 08:15:00+00:00 UTC | Cerebrospinal Fluid | Antigen Detection      | mg/L              | Negative        |
-| 103               | 2024-01-03 15:00:00+00:00 UTC | 2024-01-03 13:00:00+00:00 UTC | 2024-01-03 12:45:00+00:00 UTC | Sputum              | Gene Amplification     | copies/mL          | Detected        |
-| 104               | 2024-01-04 09:45:00+00:00 UTC | 2024-01-04 07:15:00+00:00 UTC | 2024-01-04 06:30:00+00:00 UTC | Urine               | Molecular Pathogen ID  | ng/mL             | Not Detected    |
-| 105               | 2024-01-05 18:00:00+00:00 UTC | 2024-01-05 16:00:00+00:00 UTC | 2024-01-05 15:00:00+00:00 UTC | Pleural Fluid       | Protein Quantification | g/dL              | Elevated        |
+| organism_id | antibiotic_name                    | antibiotic_category         | sensitivity_name      | susceptibility_name             | susceptibility_category |
+|-------------|------------------------------------|----------------------------|----------------------|-------------------------------|------------------------|
+| 1           | avycex (ceftazidime/avibactam)     | ceftazidime_avibactam      | 8 MIC                | susceptible                   | susceptible            |
+| 1           | amoxicillin clavulanic acid        | amoxicillin_clavulanate    | < 0.1 ug/mL          | susceptible                   | non-susceptible        |
+| 1           | meropenem                         | meropenem                  | intermediate         | intermediate                  | intermediate           |
+| 1           | ampicillin 500mg                   | ampicillin                 | > 0.5 ug/mL          | resistant                     | NA                     |
+| 2           | unasyn                            | ampicillin_sulbactam       | susceptible dose dependent | susceptible             | susceptible            |
+| 2           | Ertapenem                         | ertapenem                  | not reported         | NA                            | NA                     |
+| 2           | Vancomycin (non-Cdiff)            | vancomycin                 | > 0.25 ug/mL         | non susceptible, caution       | non-susceptible        |
 
 
 ## patient

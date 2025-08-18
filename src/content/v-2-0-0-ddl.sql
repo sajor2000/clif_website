@@ -138,6 +138,7 @@ CREATE TABLE medication_admin_continuous (
 
 CREATE TABLE microbiology_culture (
   hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter.", "permissible": ""}',
+  organism_id VARCHAR COMMENT '{"description": "Distinct numerical identifier that each site creates which links a unique, non-missing organism_category that has a distinct patient_id, encounter_id, lab_order_dttm, lab_collect_dttm, lab_result_dttm, and fluid_category with its method_category == culture from the microbiology_culture table to an antibiotic_category and susceptibility_category from the microbiology_susceptibility table", "permissible": "No restriction"}',
   order_dttm DATETIME COMMENT '{"description": "Date and time when the test is ordered.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00"}',
   collect_dttm DATETIME COMMENT '{"description": "Date and time when the specimen is collected.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00"}',
   result_dttm DATETIME COMMENT '{"description": "Date and time when the results are available.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00"}',

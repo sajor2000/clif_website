@@ -140,6 +140,7 @@ CREATE TABLE medication_admin_continuous (
 
 CREATE TABLE microbiology_culture (
   hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter.", "permissible": ""}',
+  organism_id VARCHAR COMMENT '{"description": "Distinct numerical identifier that each site creates which links a unique, non-missing organism_category that has a distinct patient_id, encounter_id, lab_order_dttm, lab_collect_dttm, lab_result_dttm, and fluid_category with its method_category == culture from the microbiology_culture table to an antibiotic_category and susceptibility_category from the microbiology_susceptibility table", "permissible": "No restriction"}',
   order_dttm DATETIME COMMENT '{"description": "Date and time when the test is ordered.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00"}',
   collect_dttm DATETIME COMMENT '{"description": "Date and time when the specimen is collected.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00"}',
   result_dttm DATETIME COMMENT '{"description": "Date and time when the results are available.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00"}',
@@ -352,11 +353,11 @@ CREATE TABLE provider (
 -- Table: microbiology_susceptibility
 -- -----------------------------------------------------
 CREATE TABLE microbiology_susceptibility (
-  organism_id VARCHAR COMMENT '{"description": "Unique identifier for the organism tested for antimicrobial susceptibility", "permissible": "No restriction"}',
-  antibiotic_name VARCHAR COMMENT '{"description": "Name of the antibiotic tested for susceptibility", "permissible": "No restriction"}',
-  antibiotic_category VARCHAR COMMENT '{"description": "Category or class of the antibiotic tested", "permissible": "No restriction"}',
-  sensitivity_name VARCHAR COMMENT '{"description": "Original result of the sensitivity test as reported by the laboratory", "permissible": "No restriction"}',
-  susceptibility_name VARCHAR COMMENT '{"description": "Standardized interpretation of the susceptibility result", "permissible": "No restriction"}',
+  organism_id VARCHAR COMMENT '{"description": "Distinct numerical identifier that each site creates which links a unique, non-missing organism_category that has a distinct patient_id, encounter_id, lab_order_dttm, lab_collect_dttm, lab_result_dttm, and fluid_category with its method_category == culture from the microbiology_culture table to an antibiotic_category and susceptibility_category from the microbiology_susceptibility table", "permissible": "No restriction"}',
+  antibiotic_name VARCHAR COMMENT '{"description": "Name of the antibiotic", "permissible": "No restriction"}',
+  antibiotic_category VARCHAR COMMENT '{"description": "Category or class of the antibiotic tested", "permissible": "[List of antibiotic categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/microbiology_susceptibility/clif_microbiology_susceptibility_antibiotic_categories.csv)"}',
+  sensitivity_name VARCHAR COMMENT '{"description": "Name of the test result used to determine susceptibility (e.g., value of mcg/mL or MIC)", "permissible": "No restriction"}',
+  susceptibility_name VARCHAR COMMENT '{"description": "Name of the sensitivity interpretation", "permissible": "No restriction"}',
   susceptibility_category VARCHAR COMMENT '{"description": "Standardized category of susceptibility.", "permissible": "[susceptible, non-susceptible, intermediate, na](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/tree/main/mCIDE/microbiology_susceptibility/clif_microbiology_susceptibility_category.csv)"}'
 );
 
