@@ -41,6 +41,10 @@ The hospitalization table contains information about each hospitalization event.
 - If a patient is initially seen in an ER in hospital A and then admitted to inpatient status in hospital B, one `hospitalization_id` should be created for data from both stays.
 - A `hospitalization_joined_id` can also be created from a CLIF table from contiguous `hospitalization_ids`.
 
+- **Geo-based Indices (ADI, SVI)**
+  - *ADI*: Calculate the Area Deprivation Index at the census **block-group** level. Provide `census_block_group_code` when possible, or `zipcode_nine_digit` (9-digit ZIP) that can be cross-walked to a block group. Avoid using 5-digit ZIP, or census-tract values for ADI—they are not validated and will add error.
+  - *SVI*: The Social Vulnerability Index is published at `census_tract` (full 11-digit FIPS).  
+
 \
 **Example**:
 

@@ -74,9 +74,9 @@ CREATE TABLE hospitalization (
   zipcode_five_digit VARCHAR COMMENT '{"description": "Patient 5 digit zip code, used to link with other indices such as ADI and SVI", "permissible": "No restriction"}',
   census_block_code VARCHAR COMMENT '{"description": "15 digit FIPS code", "permissible": "No restriction"}',
   census_block_group_code VARCHAR COMMENT '{"description": "12 digit FIPS code", "permissible": "No restriction"}',
-  census_tract VARCHAR COMMENT '{"description": "11 digit FIPS code", "permissible": "No restriction"}',
+  census_tract VARCHAR COMMENT '{"description": "Full 11 digit FIPS code. Eg. 13089022404 `census_tract` is the state (13) + the county (089) + the census tract (022404).", "permissible": "No restriction"}',
   state_code VARCHAR COMMENT '{"description": "2 digit FIPS code", "permissible": "No restriction"}',
-  county_code VARCHAR COMMENT '{"description": "5 digit FIPS code", "permissible": "No restriction"}',
+  county_code VARCHAR COMMENT '{"description": "Full 5 digit FIPS code. Eg. 13089 `county_code` is the state (13) + the county (089).", "permissible": "No restriction"}',
   fips_version VARCHAR COMMENT '{"description": "Year of the Census geography definitions used for the FIPS codes (e.g., 2010, 2020), indicating the tract and boundary set in effect at that time", "permissible": "2000,2010, 2020"}',
   FOREIGN KEY (patient_id) REFERENCES patient(patient_id)
 );
