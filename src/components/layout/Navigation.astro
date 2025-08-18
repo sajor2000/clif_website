@@ -19,7 +19,11 @@ const navItems = [
   {
     label: 'Data Dictionary',
     href: '/data-dictionary',
-    active: pathname.startsWith('/data-dictionary'),
+    active: pathname.startsWith('/data-dictionary') || pathname === '/interactive-erd',
+    submenu: [
+      { label: 'Documentation', href: '/data-dictionary', active: pathname === '/data-dictionary' },
+      { label: 'Interactive ERD', href: '/interactive-erd', active: pathname === '/interactive-erd' },
+    ],
   },
   { label: 'FAQ', href: '/faq', active: pathname === '/faq' },
 ];

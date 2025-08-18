@@ -1,0 +1,2265 @@
+{
+  "tables": [
+    {
+      "name": "adt",
+      "displayName": "Adt",
+      "category": "beta",
+      "color": "#8B2635",
+      "fields": [
+        {
+          "name": "hospitalization_id",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "ID variable for each patient encounter"
+        },
+        {
+          "name": "hospital_id",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Assign a unique ID to each hospital within a healthsystem"
+        },
+        {
+          "name": "hospital_type",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Maps *`hospital_id`* to a standardized list of hospital types"
+        },
+        {
+          "name": "in_dttm",
+          "type": "DATETIME",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Start date and time at a particular location. All datetime variables must be timezone-aware and set to UTC."
+        },
+        {
+          "name": "out_dttm",
+          "type": "DATETIME",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "End date and time at a particular location. All datetime variables must be timezone-aware and set to UTC."
+        },
+        {
+          "name": "location_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Location of the patient inside the hospital. This field is used to store the patient location from the source data. It is not used for analysis."
+        },
+        {
+          "name": "location_category",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Maps location_name to a standardized list of ADT location categories"
+        },
+        {
+          "name": "location_type",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Maps ICU type to a standardized list of ICU categories"
+        }
+      ],
+      "primaryKeys": [],
+      "foreignKeys": [],
+      "comments": "{\"description\": \"ID variable for each patient encounter\", \"permissible\": \"No restriction\"}",
+      "position": {
+        "x": 590,
+        "y": 50
+      }
+    },
+    {
+      "name": "code_status",
+      "displayName": "Code Status",
+      "category": "beta",
+      "color": "#8B2635",
+      "fields": [
+        {
+          "name": "patient_id",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "ID variable for each patient encounter"
+        },
+        {
+          "name": "start_dttm",
+          "type": "DATETIME",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "The date and time when the specific code status was initiated"
+        },
+        {
+          "name": "code_status_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "The name/description of the code status"
+        },
+        {
+          "name": "code_status_category",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Categorical variable specifying the code status during the hospitalization"
+        }
+      ],
+      "primaryKeys": [],
+      "foreignKeys": [],
+      "comments": "{\"description\": \"ID variable for each patient encounter\", \"permissible\": \"No restriction\"}",
+      "position": {
+        "x": 860,
+        "y": 50
+      }
+    },
+    {
+      "name": "crrt_therapy",
+      "displayName": "Crrt Therapy",
+      "category": "beta",
+      "color": "#8B2635",
+      "fields": [
+        {
+          "name": "hospitalization_id",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Unique identifier for hospitalization episode"
+        },
+        {
+          "name": "device_id",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Unique identifier for dialysis machine"
+        },
+        {
+          "name": "recorded_dttm",
+          "type": "DATETIME",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Timestamp when CRRT parameters were recorded"
+        },
+        {
+          "name": "crrt_mode_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Name of CRRT mode (e.g., CVVHDF)"
+        },
+        {
+          "name": "crrt_mode_category",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Standardized CRRT mode categories"
+        },
+        {
+          "name": "dialysis_machine_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Brand name for the dialysis machine"
+        },
+        {
+          "name": "blood_flow_rate",
+          "type": "FLOAT",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Rate of blood flow through the CRRT circuit (mL/hr)"
+        },
+        {
+          "name": "pre_filter_replacement_fluid_rate",
+          "type": "FLOAT",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Rate of pre-filter replacement fluid infusion (mL/hr)"
+        },
+        {
+          "name": "post_filter_replacement_fluid_rate",
+          "type": "FLOAT",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Rate of post-filter replacement fluid infusion (mL/hr)"
+        },
+        {
+          "name": "dialysate_flow_rate",
+          "type": "FLOAT",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Flow rate of dialysate solution (mL/hr)"
+        },
+        {
+          "name": "ultrafilteration_out",
+          "type": "FLOAT",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Net ultrafiltration output (mL)"
+        }
+      ],
+      "primaryKeys": [],
+      "foreignKeys": [],
+      "comments": "{\"description\": \"Unique identifier for hospitalization episode\", \"permissible\": \"No restriction\"}",
+      "position": {
+        "x": 1130,
+        "y": 410
+      }
+    },
+    {
+      "name": "ecmo_mcs",
+      "displayName": "Ecmo Mcs",
+      "category": "beta",
+      "color": "#8B2635",
+      "fields": [
+        {
+          "name": "hospitalization_id",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Unique identifier for the hospitalization event"
+        },
+        {
+          "name": "recorded_dttm",
+          "type": "DATETIME",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Date and time when the device settings and/or measurement was recorded"
+        },
+        {
+          "name": "device_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Name of the ECMO/MCS device used including brand information, e.g. Centrimag"
+        },
+        {
+          "name": "device_category",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Maps device_name to a standardized mCIDE"
+        },
+        {
+          "name": "mcs_group",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Maps device_category to a standardized mCIDE of MCS types"
+        },
+        {
+          "name": "device_metric_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "String that captures the measure of work rate of the device, e.g., RPMs"
+        },
+        {
+          "name": "device_rate",
+          "type": "FLOAT",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Numeric value of work rate, e.g., 3000 RPMs"
+        },
+        {
+          "name": "sweep",
+          "type": "FLOAT",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Gas flow rate in L/min"
+        },
+        {
+          "name": "flow",
+          "type": "FLOAT",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Blood flow in L/min"
+        },
+        {
+          "name": "fdO2",
+          "type": "FLOAT",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Fraction of delivered oxygen"
+        }
+      ],
+      "primaryKeys": [],
+      "foreignKeys": [],
+      "comments": "{\"description\": \"Unique identifier for the hospitalization event\", \"permissible\": \"No restriction\"}",
+      "position": {
+        "x": 50,
+        "y": 590
+      }
+    },
+    {
+      "name": "hospitalization",
+      "displayName": "Hospitalization",
+      "category": "beta",
+      "color": "#8B2635",
+      "fields": [
+        {
+          "name": "patient_id",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Unique identifier for each patient, linking to the patient table"
+        },
+        {
+          "name": "hospitalization_id",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Unique identifier for each hospitalization encounter. Each hospitalization_id represents a unique stay in the hospital"
+        },
+        {
+          "name": "hospitalization_joined_id",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Unique identifier for each continuous inpatient stay in a health system which may span different hospitals (Optional)"
+        },
+        {
+          "name": "admission_dttm",
+          "type": "DATETIME",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Date and time the patient is admitted to the hospital. All datetime variables must be timezone-aware and set to UTC"
+        },
+        {
+          "name": "discharge_dttm",
+          "type": "DATETIME",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Date and time the patient is discharged from the hospital. All datetime variables must be timezone-aware and set to UTC"
+        },
+        {
+          "name": "age_at_admission",
+          "type": "INT",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Age of the patient at the time of admission, in years"
+        },
+        {
+          "name": "admission_type_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Type of inpatient admission. Original string from the source data"
+        },
+        {
+          "name": "admission_type_category",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Admission disposition mapped to mCIDE categories"
+        },
+        {
+          "name": "discharge_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Original discharge disposition name string recorded in the raw data"
+        },
+        {
+          "name": "discharge_category",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Maps discharge_name to a standardized list of discharge categories"
+        },
+        {
+          "name": "zipcode_nine_digit",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Patient 9 digit zip code, used to link with other indices such as ADI and SVI"
+        },
+        {
+          "name": "zipcode_five_digit",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Patient 5 digit zip code, used to link with other indices such as ADI and SVI"
+        },
+        {
+          "name": "census_block_code",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "15 digit FIPS code"
+        },
+        {
+          "name": "census_block_group_code",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "12 digit FIPS code"
+        },
+        {
+          "name": "census_tract",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Full 11 digit FIPS code. Eg. 13089022404 `census_tract` is the state (13) + the county (089) + the census tract (022404)."
+        },
+        {
+          "name": "state_code",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "2 digit FIPS code"
+        },
+        {
+          "name": "county_code",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Full 5 digit FIPS code. Eg. 13089 `county_code` is the state (13) + the county (089)."
+        },
+        {
+          "name": "fips_version",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Year of the Census geography definitions used for the FIPS codes (e.g., 2010, 2020), indicating the tract and boundary set in effect at that time"
+        }
+      ],
+      "primaryKeys": [],
+      "foreignKeys": [],
+      "comments": "{\"description\": \"Unique identifier for each patient, linking to the patient table\", \"permissible\": \"No restriction\"}",
+      "position": {
+        "x": 320,
+        "y": 50
+      }
+    },
+    {
+      "name": "hospital_diagnosis",
+      "displayName": "Hospital Diagnosis",
+      "category": "beta",
+      "color": "#8B2635",
+      "fields": [
+        {
+          "name": "hospitalization_id",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": ""
+        },
+        {
+          "name": "diagnosis_code",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "ICD diagnosis code"
+        },
+        {
+          "name": "diagnosis_code_format",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Format of the code (e.g., ICD-10-CM, ICD-9-CM)"
+        },
+        {
+          "name": "diagnosis_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Optional human-readable description of the diagnosis"
+        },
+        {
+          "name": "diagnosis_type",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Type of diagnosis (e.g., Principal, Secondary)"
+        },
+        {
+          "name": "present_on_admission",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Indicator if the diagnosis was present on admission (Yes/No)"
+        }
+      ],
+      "primaryKeys": [],
+      "foreignKeys": [],
+      "comments": "{\"description\": \"Foreign key to the hospitalization table\", \"permissible\": \"Must match a hospitalization_id in the hospitalization table\"}",
+      "position": {
+        "x": 860,
+        "y": 590
+      }
+    },
+    {
+      "name": "labs",
+      "displayName": "Labs",
+      "category": "beta",
+      "color": "#8B2635",
+      "fields": [
+        {
+          "name": "hospitalization_id",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "ID variable for each patient encounter."
+        },
+        {
+          "name": "lab_order_dttm",
+          "type": "DATETIME",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Date and time when the lab is ordered. All datetime variables must be timezone-aware and set to UTC."
+        },
+        {
+          "name": "lab_collect_dttm",
+          "type": "DATETIME",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Date and time when the specimen is collected. All datetime variables must be timezone-aware and set to UTC."
+        },
+        {
+          "name": "lab_result_dttm",
+          "type": "DATETIME",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Date and time when the lab results are available. All datetime variables must be timezone-aware and set to UTC."
+        },
+        {
+          "name": "lab_order_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Procedure name for the lab, e.g. \"Complete blood count w/ diff\""
+        },
+        {
+          "name": "lab_order_category",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Maps lab_order_name to standardized list of common lab order names, e.g. \"CBC\""
+        },
+        {
+          "name": "lab_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Original lab component as recorded in the raw data, e.g. \"AST (SGOT)\"."
+        },
+        {
+          "name": "lab_category",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Maps lab_name to a minimum set of standardized labs identified by the CLIF consortium as minimum necessary labs for the study of critical illness."
+        },
+        {
+          "name": "lab_value",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Recorded value corresponding to a lab. Lab values are often strings that can contain non-numeric results (e.g. \"> upper limit of detection\")."
+        },
+        {
+          "name": "lab_value_numeric",
+          "type": "DOUBLE",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Parse out numeric part of the lab_value variable (optional)."
+        },
+        {
+          "name": "reference_unit",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Unit of measurement for that lab."
+        },
+        {
+          "name": "lab_specimen_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Original fluid or tissue name the lab was collected from as given in the source data"
+        },
+        {
+          "name": "lab_specimen_category",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Fluid or tissue the lab was collected from, analogous to the LOINC \"system\" component."
+        },
+        {
+          "name": "lab_loinc_code",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "[LOINC](https://loinc.org/get-started/loinc-term-basics/) code for the lab"
+        }
+      ],
+      "primaryKeys": [],
+      "foreignKeys": [],
+      "comments": "{\"description\": \"ID variable for each patient encounter.\", \"permissible\": \"No restriction\"}",
+      "position": {
+        "x": 1130,
+        "y": 50
+      }
+    },
+    {
+      "name": "medication_admin_continuous",
+      "displayName": "Medication Admin Continuous",
+      "category": "beta",
+      "color": "#8B2635",
+      "fields": [
+        {
+          "name": "hospitalization_id",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "ID variable for each patient encounter"
+        },
+        {
+          "name": "med_order_id",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": ""
+        },
+        {
+          "name": "admin_dttm",
+          "type": "DATETIME",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Date and time when the medicine was administered. All datetime variables must be timezone-aware and set to UTC."
+        },
+        {
+          "name": "med_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Original med name string recorded in the raw data which often contains concentration e.g. NOREPInephrine 8 mg/250 mL"
+        },
+        {
+          "name": "med_category",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Maps med_name to a limited set of active ingredients for important ICU medications, e.g. norepinephrine"
+        },
+        {
+          "name": "med_group",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Limited number of ICU medication groups identified by the CLIF consortium, e.g. vasoactives"
+        },
+        {
+          "name": "med_route_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Medicine delivery route"
+        },
+        {
+          "name": "med_route_category",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Maps med_route_name to a standardized list of medication delivery routes"
+        },
+        {
+          "name": "med_dose",
+          "type": "FLOAT",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Quantity taken in dose"
+        },
+        {
+          "name": "med_dose_unit",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Unit of dose. It must be a rate, e.g. mcg/min. Boluses should be mapped to med_admin_intermittent"
+        },
+        {
+          "name": "mar_action_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "MAR (medication administration record) action, e.g. stopped"
+        },
+        {
+          "name": "mar_action_category",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Maps mar_action_name to a standardized list of MAR actions"
+        }
+      ],
+      "primaryKeys": [],
+      "foreignKeys": [],
+      "comments": "{\"description\": \"ID variable for each patient encounter\", \"permissible\": \"No restriction\"}",
+      "position": {
+        "x": 590,
+        "y": 230
+      }
+    },
+    {
+      "name": "microbiology_culture",
+      "displayName": "Microbiology Culture",
+      "category": "beta",
+      "color": "#8B2635",
+      "fields": [
+        {
+          "name": "hospitalization_id",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "ID variable for each patient encounter."
+        },
+        {
+          "name": "order_dttm",
+          "type": "DATETIME",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Date and time when the test is ordered."
+        },
+        {
+          "name": "collect_dttm",
+          "type": "DATETIME",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Date and time when the specimen is collected."
+        },
+        {
+          "name": "result_dttm",
+          "type": "DATETIME",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Date and time when the results are available."
+        },
+        {
+          "name": "fluid_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Cleaned fluid name string from the raw data. This field is not used for analysis."
+        },
+        {
+          "name": "fluid_category",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Fluid categories defined according to the NIH common data elements."
+        },
+        {
+          "name": "method_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Original method names from the source data."
+        },
+        {
+          "name": "method_category",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Maps method_name to a standardized list of method categories."
+        },
+        {
+          "name": "organism_category",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Cleaned organism name string from the raw data. This field is not used for analysis."
+        },
+        {
+          "name": "organism_group",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Maps organism_name to the standardized list of organisms in the NIH CDE."
+        }
+      ],
+      "primaryKeys": [],
+      "foreignKeys": [],
+      "comments": "{\"description\": \"ID variable for each patient encounter.\", \"permissible\": \"\"}",
+      "position": {
+        "x": 50,
+        "y": 410
+      }
+    },
+    {
+      "name": "microbiology_nonculture",
+      "displayName": "Microbiology Nonculture",
+      "category": "beta",
+      "color": "#8B2635",
+      "fields": [
+        {
+          "name": "hospitalization_id",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Unique identifier for the hospitalization event."
+        },
+        {
+          "name": "result_dttm",
+          "type": "DATETIME",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Date and time when the non-culture result was obtained. All datetime variables must be timezone-aware and set to UTC."
+        },
+        {
+          "name": "collect_dttm",
+          "type": "DATETIME",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Date and time when the sample was collected. All datetime variables must be timezone-aware and set to UTC."
+        },
+        {
+          "name": "order_dttm",
+          "type": "DATETIME",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Date and time when the test was ordered. All datetime variables must be timezone-aware and set to UTC."
+        },
+        {
+          "name": "fluid_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Name of the fluid sample."
+        },
+        {
+          "name": "component_category",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Category of the component tested."
+        },
+        {
+          "name": "result_unit_category",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Unit category of the test result."
+        },
+        {
+          "name": "result_category",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Category of the test result."
+        }
+      ],
+      "primaryKeys": [],
+      "foreignKeys": [],
+      "comments": "{\"description\": \"Unique identifier for the hospitalization event.\", \"permissible\": \"No restriction\"}",
+      "position": {
+        "x": 320,
+        "y": 410
+      }
+    },
+    {
+      "name": "patient_assessments",
+      "displayName": "Patient Assessments",
+      "category": "beta",
+      "color": "#8B2635",
+      "fields": [
+        {
+          "name": "hospitalization_id",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Primary Identifier. Unique identifier linking assessments to a specific patient hospitalization."
+        },
+        {
+          "name": "recorded_dttm",
+          "type": "DATETIME",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "The exact date and time when the assessment was recorded, ensuring temporal accuracy. All datetime variables must be timezone-aware and set to UTC."
+        },
+        {
+          "name": "assessment_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Assessment Tool Name. The primary name of the assessment tool used (e.g., GCS, NRS, SAT Screen)."
+        },
+        {
+          "name": "assessment_category",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Maps assessment_name to a standardized list of patient assessments"
+        },
+        {
+          "name": "assessment_group",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Broader Assessment Group. This groups the assessments into categories such as Sedation, Neurologic, Pain, etc."
+        },
+        {
+          "name": "numerical_value",
+          "type": "DOUBLE",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Numerical Assessment Result. The numerical result or score from the assessment component."
+        },
+        {
+          "name": "categorical_value",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Categorical Assessment Result. The categorical outcome from the assessment component."
+        },
+        {
+          "name": "text_value",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Textual Assessment Result. The textual explanation or notes from the assessment component."
+        }
+      ],
+      "primaryKeys": [],
+      "foreignKeys": [],
+      "comments": "{\"description\": \"Primary Identifier. Unique identifier linking assessments to a specific patient hospitalization.\", \"permissible\": \"No restriction\"}",
+      "position": {
+        "x": 590,
+        "y": 410
+      }
+    },
+    {
+      "name": "patient",
+      "displayName": "Patient",
+      "category": "beta",
+      "color": "#8B2635",
+      "fields": [
+        {
+          "name": "patient_id",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Unique identifier for each patient. This is presumed to be a distinct individual."
+        },
+        {
+          "name": "race_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Patient race string from source data"
+        },
+        {
+          "name": "race_category",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "A standardized CDE description of patient race per the US Census"
+        },
+        {
+          "name": "ethnicity_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Patient ethnicity string from source data"
+        },
+        {
+          "name": "ethnicity_category",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Description of patient ethnicity per the US census definition"
+        },
+        {
+          "name": "sex_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Patient’s biological sex as given in the source data"
+        },
+        {
+          "name": "sex_category",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Patient biological sex"
+        },
+        {
+          "name": "birth_date",
+          "type": "DATE",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Patient’s date of birth"
+        },
+        {
+          "name": "death_dttm",
+          "type": "DATETIME",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Patient’s death date, including time"
+        },
+        {
+          "name": "language_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Patient’s preferred language"
+        },
+        {
+          "name": "language_category",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Maps language_name to a standardized list of spoken languages"
+        }
+      ],
+      "primaryKeys": [],
+      "foreignKeys": [],
+      "comments": "{\"description\": \"Primary Identifier. Unique identifier linking assessments to a specific patient hospitalization.\", \"permissible\": \"No restriction\"}",
+      "position": {
+        "x": 50,
+        "y": 50
+      }
+    },
+    {
+      "name": "position",
+      "displayName": "Position",
+      "category": "beta",
+      "color": "#8B2635",
+      "fields": [
+        {
+          "name": "hospitalization_id",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "ID variable for each patient encounter. This table only includes those encounters that have proning documented ever."
+        },
+        {
+          "name": "recorded_dttm",
+          "type": "DATETIME",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Date and time when the vital is recorded. All datetime variables must be timezone-aware and set to UTC."
+        },
+        {
+          "name": "position_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Description of the position from the source data. This field is not used for analysis."
+        },
+        {
+          "name": "position_category",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Maps position_name to either prone or not prone."
+        }
+      ],
+      "primaryKeys": [],
+      "foreignKeys": [],
+      "comments": "{\"description\": \"ID variable for each patient encounter. This table only includes those encounters that have proning documented ever.\", \"permissible\": \"No restriction\"}",
+      "position": {
+        "x": 590,
+        "y": 590
+      }
+    },
+    {
+      "name": "respiratory_support",
+      "displayName": "Respiratory Support",
+      "category": "beta",
+      "color": "#8B2635",
+      "fields": [
+        {
+          "name": "hospitalization_id",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "ID variable for each patient encounter"
+        },
+        {
+          "name": "recorded_dttm",
+          "type": "DATETIME",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Date and time when the device settings and/or measurement was recorded. All datetime variables must be timezone-aware and set to UTC."
+        },
+        {
+          "name": "device_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Raw string of the device. Not used for analysis."
+        },
+        {
+          "name": "device_id",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "ID variable for device used"
+        },
+        {
+          "name": "device_category",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Maps device_name to a standardized list of respiratory support device categories"
+        },
+        {
+          "name": "vent_brand_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Ventilator model name when device_category is IMV or NIPPV"
+        },
+        {
+          "name": "mode_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Raw string of ventilation mode (e.g., CMV volume control)"
+        },
+        {
+          "name": "mode_category",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Standardized list of modes of mechanical ventilation"
+        },
+        {
+          "name": "tracheostomy",
+          "type": "INT",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Indicates if tracheostomy is present"
+        },
+        {
+          "name": "fio2_set",
+          "type": "FLOAT",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Fraction of inspired oxygen set (e.g., 0.21)"
+        },
+        {
+          "name": "lpm_set",
+          "type": "FLOAT",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Liters per minute set"
+        },
+        {
+          "name": "tidal_volume_set",
+          "type": "FLOAT",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Tidal volume set (in mL)"
+        },
+        {
+          "name": "resp_rate_set",
+          "type": "FLOAT",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Respiratory rate set (in bpm)"
+        },
+        {
+          "name": "pressure_control_set",
+          "type": "FLOAT",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Pressure control set (in cmH2O)"
+        },
+        {
+          "name": "pressure_support_set",
+          "type": "FLOAT",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Pressure support set (in cmH2O)"
+        },
+        {
+          "name": "flow_rate_set",
+          "type": "FLOAT",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Flow rate set"
+        },
+        {
+          "name": "peak_inspiratory_pressure_set",
+          "type": "FLOAT",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Peak inspiratory pressure set (in cmH2O)"
+        },
+        {
+          "name": "inspiratory_time_set",
+          "type": "FLOAT",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Inspiratory time set (in seconds)"
+        },
+        {
+          "name": "peep_set",
+          "type": "FLOAT",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Positive-end-expiratory pressure set (in cmH2O)"
+        },
+        {
+          "name": "tidal_volume_obs",
+          "type": "FLOAT",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Observed tidal volume (in mL)"
+        },
+        {
+          "name": "resp_rate_obs",
+          "type": "FLOAT",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Observed respiratory rate (in bpm)"
+        },
+        {
+          "name": "plateau_pressure_obs",
+          "type": "FLOAT",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Observed plateau pressure (in cmH2O)"
+        },
+        {
+          "name": "peak_inspiratory_pressure_obs",
+          "type": "FLOAT",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Observed peak inspiratory pressure (in cmH2O)"
+        },
+        {
+          "name": "peep_obs",
+          "type": "FLOAT",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Observed PEEP (in cmH2O)"
+        },
+        {
+          "name": "minute_vent_obs",
+          "type": "FLOAT",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Observed minute ventilation (in liters)"
+        },
+        {
+          "name": "mean_airway_pressure_obs",
+          "type": "FLOAT",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Observed mean airway pressure"
+        }
+      ],
+      "primaryKeys": [],
+      "foreignKeys": [],
+      "comments": "{\"description\": \"ID variable for each patient encounter\", \"permissible\": \"No restriction\"}",
+      "position": {
+        "x": 320,
+        "y": 230
+      }
+    },
+    {
+      "name": "vitals",
+      "displayName": "Vitals",
+      "category": "beta",
+      "color": "#8B2635",
+      "fields": [
+        {
+          "name": "hospitalization_id",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "ID variable for each patient encounter."
+        },
+        {
+          "name": "recorded_dttm",
+          "type": "DATETIME",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Date and time when the vital is recorded. All datetime variables must be timezone-aware and set to UTC."
+        },
+        {
+          "name": "vital_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Description of the flowsheet measure from the source data. Not used for analysis."
+        },
+        {
+          "name": "vital_category",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Maps vital_name to a list of standard vital sign categories."
+        },
+        {
+          "name": "vital_value",
+          "type": "FLOAT",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Recorded value of the vital. Measurement unit should match the vital category."
+        },
+        {
+          "name": "meas_site_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Site where the vital is recorded. Optional field with no associated category."
+        }
+      ],
+      "primaryKeys": [],
+      "foreignKeys": [],
+      "comments": "{\"description\": \"ID variable for each patient encounter.\", \"permissible\": \"No restriction\"}",
+      "position": {
+        "x": 50,
+        "y": 230
+      }
+    },
+    {
+      "name": "intake_output",
+      "displayName": "Intake Output",
+      "category": "concept",
+      "color": "#708090",
+      "fields": [
+        {
+          "name": "hospitalization_id",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Unique identifier for the hospitalization event."
+        },
+        {
+          "name": "intake_dttm",
+          "type": "DATETIME",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Date and time of intake. All datetime variables must be timezone-aware and set to UTC."
+        },
+        {
+          "name": "fluid_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Name of the fluid administered."
+        },
+        {
+          "name": "amount",
+          "type": "DOUBLE",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Amount of fluid administered (in mL)"
+        },
+        {
+          "name": "in_out_flag",
+          "type": "INT",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Indicator for intake or output (1 for intake, 0 for output)"
+        }
+      ],
+      "primaryKeys": [],
+      "foreignKeys": [],
+      "comments": "{\"description\": \"Unique identifier for the hospitalization event.\", \"permissible\": \"No restriction\"}",
+      "position": {
+        "x": 320,
+        "y": 770
+      }
+    },
+    {
+      "name": "invasive_hemodynamics",
+      "displayName": "Invasive Hemodynamics",
+      "category": "beta",
+      "color": "#8B2635",
+      "fields": [
+        {
+          "name": "hospitalization_id",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Unique identifier linking to the specific hospitalization."
+        },
+        {
+          "name": "recorded_dttm",
+          "type": "DATETIME",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "The date and time when the measurement was recorded. All datetime variables must be timezone-aware and set to UTC."
+        },
+        {
+          "name": "measure_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Description of the site or context of the invasive hemodynamic measurement."
+        },
+        {
+          "name": "measure_category",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Categorical variable specifying the type of invasive hemodynamic measurement."
+        },
+        {
+          "name": "measure_value",
+          "type": "DOUBLE",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "The numerical value of the invasive hemodynamic measurement in mmHg."
+        }
+      ],
+      "primaryKeys": [],
+      "foreignKeys": [],
+      "comments": "{\"description\": \"Unique identifier linking to the specific hospitalization.\", \"permissible\": \"No restriction\"}",
+      "position": {
+        "x": 320,
+        "y": 590
+      }
+    },
+    {
+      "name": "key_icu_orders",
+      "displayName": "Key Icu Orders",
+      "category": "concept",
+      "color": "#708090",
+      "fields": [
+        {
+          "name": "hospitalization_id",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Unique identifier linking the order to a specific hospitalization."
+        },
+        {
+          "name": "order_dttm",
+          "type": "DATETIME",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Date and time when the order was placed. All datetime variables must be timezone-aware and set to UTC."
+        },
+        {
+          "name": "order_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Name of the specific order (e.g., PT Evaluation, OT Treatment)."
+        },
+        {
+          "name": "order_category",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Category of the order."
+        },
+        {
+          "name": "order_status_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Status of the order."
+        }
+      ],
+      "primaryKeys": [],
+      "foreignKeys": [],
+      "comments": "{\"description\": \"Unique identifier linking the order to a specific hospitalization.\", \"permissible\": \"No restriction\"}",
+      "position": {
+        "x": 590,
+        "y": 770
+      }
+    },
+    {
+      "name": "medication_admin_intermittent",
+      "displayName": "Medication Admin Intermittent",
+      "category": "beta",
+      "color": "#8B2635",
+      "fields": [
+        {
+          "name": "N",
+          "type": "INT",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "This is a placeholder column. See documentation above for schema details."
+        }
+      ],
+      "primaryKeys": [],
+      "foreignKeys": [],
+      "comments": "{\"description\": \"This is a placeholder column. See documentation above for schema details.\", \"permissible\": \"\"}",
+      "position": {
+        "x": 860,
+        "y": 230
+      }
+    },
+    {
+      "name": "medication_orders",
+      "displayName": "Medication Orders",
+      "category": "beta",
+      "color": "#8B2635",
+      "fields": [
+        {
+          "name": "hospitalization_id",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Unique identifier for each hospitalization, linking medication orders to a specific encounter"
+        },
+        {
+          "name": "med_order_id",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Unique identifier for each medication order"
+        },
+        {
+          "name": "order_start_dttm",
+          "type": "DATETIME",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Date and time when the medication order was initiated. All datetime variables must be timezone-aware and set to UTC."
+        },
+        {
+          "name": "order_end_dttm",
+          "type": "DATETIME",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Date and time when the medication order ended or was discontinued. All datetime variables must be timezone-aware and set to UTC."
+        },
+        {
+          "name": "ordered_dttm",
+          "type": "DATETIME",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Date and time when the medication was actually ordered. All datetime variables must be timezone-aware and set to UTC."
+        },
+        {
+          "name": "med_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Name of the medication ordered"
+        },
+        {
+          "name": "med_category",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Maps med_name to a list of permissible medication names"
+        },
+        {
+          "name": "med_group",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Limited number of medication groups identified by the CLIF consortium"
+        },
+        {
+          "name": "med_order_status_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Status of the medication order, e.g. held, given"
+        },
+        {
+          "name": "med_order_status_category",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Maps med_order_status_name to a standardized list of medication order statuses"
+        },
+        {
+          "name": "med_route_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Route of administration for the medication"
+        },
+        {
+          "name": "med_dose",
+          "type": "DOUBLE",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Dosage of the medication ordered"
+        },
+        {
+          "name": "med_dose_unit",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Unit of measurement for the medication dosage"
+        },
+        {
+          "name": "med_frequency",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Frequency with which the medication is administered, as per the order"
+        },
+        {
+          "name": "prn",
+          "type": "BOOLEAN",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Indicates whether the medication is to be given as needed (PRN)"
+        }
+      ],
+      "primaryKeys": [],
+      "foreignKeys": [],
+      "comments": "{\"description\": \"Unique identifier for each hospitalization, linking medication orders to a specific encounter\", \"permissible\": \"No restriction\"}",
+      "position": {
+        "x": 1130,
+        "y": 230
+      }
+    },
+    {
+      "name": "patient_procedures",
+      "displayName": "Patient Procedures",
+      "category": "beta",
+      "color": "#8B2635",
+      "fields": [
+        {
+          "name": "patient_id",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Uniquely identifies a patient."
+        },
+        {
+          "name": "hospitalization_id",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Uniquely identifies a hospitalization event for the patient."
+        },
+        {
+          "name": "provider_id",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Uniquely identifies the provider associated with the procedure."
+        },
+        {
+          "name": "procedure_code",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Encoded procedure identifier (e.g., CPT, ICD-10-PCS, SNOMED code)."
+        },
+        {
+          "name": "procedure_code_format",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Code format used (e.g., CPT, ICD-10-PCS, SNOMED)."
+        },
+        {
+          "name": "recorded_dttm",
+          "type": "DATETIME",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Date and time the procedure was performed or recorded. All datetime variables must be timezone-aware and set to UTC."
+        }
+      ],
+      "primaryKeys": [],
+      "foreignKeys": [],
+      "comments": "{\"description\": \"Uniquely identifies a patient.\", \"permissible\": \"No restriction\"}",
+      "position": {
+        "x": 860,
+        "y": 410
+      }
+    },
+    {
+      "name": "place_based_index",
+      "displayName": "Place Based Index",
+      "category": "concept",
+      "color": "#708090",
+      "fields": [
+        {
+          "name": "hospitalization_id",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": ""
+        },
+        {
+          "name": "index_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "The name of the index (e.g., Area Deprivation Index, Social Vulnerability Index)."
+        },
+        {
+          "name": "index_value",
+          "type": "DOUBLE",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "The numerical value of the index for the given hospitalization."
+        },
+        {
+          "name": "index_version",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Version of the index used (e.g., ADI 2019, SVI 2020)."
+        }
+      ],
+      "primaryKeys": [],
+      "foreignKeys": [],
+      "comments": "{\"description\": \"Foreign key linking to the hospitalization table.\", \"permissible\": \"No restriction\"}",
+      "position": {
+        "x": 860,
+        "y": 770
+      }
+    },
+    {
+      "name": "provider",
+      "displayName": "Provider",
+      "category": "concept",
+      "color": "#708090",
+      "fields": [
+        {
+          "name": "hospitalization_id",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Unique identifier for each hospitalization, linking the provider to a specific encounter"
+        },
+        {
+          "name": "provider_id",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Unique identifier for each provider. This represents individual healthcare providers"
+        },
+        {
+          "name": "start_dttm",
+          "type": "DATETIME",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Date and time when the provider’s care or involvement in the patient’s case began. All datetime variables must be timezone-aware and set to UTC."
+        },
+        {
+          "name": "stop_dttm",
+          "type": "DATETIME",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Date and time when the provider’s care or involvement in the patient’s case ended. All datetime variables must be timezone-aware and set to UTC."
+        },
+        {
+          "name": "provider_role_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "The original string describing the role or specialty of the provider during the hospitalization"
+        },
+        {
+          "name": "provider_role_category",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Maps provider_role_name to list of standardized provider roles"
+        }
+      ],
+      "primaryKeys": [],
+      "foreignKeys": [],
+      "comments": "{\"description\": \"Unique identifier for each hospitalization, linking the provider to a specific encounter\", \"permissible\": \"No restriction\"}",
+      "position": {
+        "x": 1130,
+        "y": 770
+      }
+    },
+    {
+      "name": "microbiology_susceptibility",
+      "displayName": "Microbiology Susceptibility",
+      "category": "concept",
+      "color": "#708090",
+      "fields": [
+        {
+          "name": "organism_id",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Unique identifier for the organism tested for antimicrobial susceptibility"
+        },
+        {
+          "name": "antibiotic_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Name of the antibiotic tested for susceptibility"
+        },
+        {
+          "name": "antibiotic_category",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Category or class of the antibiotic tested"
+        },
+        {
+          "name": "sensitivity_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Original result of the sensitivity test as reported by the laboratory"
+        },
+        {
+          "name": "susceptibility_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Standardized interpretation of the susceptibility result"
+        },
+        {
+          "name": "susceptibility_category",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Standardized category of susceptibility."
+        }
+      ],
+      "primaryKeys": [],
+      "foreignKeys": [],
+      "comments": "{\"description\": \"Unique identifier for the organism tested for antimicrobial susceptibility\", \"permissible\": \"No restriction\"}",
+      "position": {
+        "x": 50,
+        "y": 950
+      }
+    },
+    {
+      "name": "therapy_details",
+      "displayName": "Therapy Details",
+      "category": "beta",
+      "color": "#8B2635",
+      "fields": [
+        {
+          "name": "hospitalization_id",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Unique identifier for the hospitalization event."
+        },
+        {
+          "name": "session_start_dttm",
+          "type": "DATETIME",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Date and time when the therapy session started. All datetime variables must be timezone-aware and set to UTC."
+        },
+        {
+          "name": "therapy_element_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Name of the therapy element."
+        },
+        {
+          "name": "therapy_element_category",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Category of the therapy element."
+        },
+        {
+          "name": "therapy_element_value",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Value associated with the therapy element."
+        }
+      ],
+      "primaryKeys": [],
+      "foreignKeys": [],
+      "comments": "{\"description\": \"Unique identifier for the hospitalization event.\", \"permissible\": \"No restriction\"}",
+      "position": {
+        "x": 50,
+        "y": 770
+      }
+    },
+    {
+      "name": "transfusion",
+      "displayName": "Transfusion",
+      "category": "beta",
+      "color": "#8B2635",
+      "fields": [
+        {
+          "name": "hospitalization_id",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Unique identifier linking the transfusion event to a specific hospitalization in the CLIF database."
+        },
+        {
+          "name": "transfusion_start_dttm",
+          "type": "DATETIME",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "The date and time the transfusion of the blood component began. All datetime variables must be timezone-aware and set to UTC."
+        },
+        {
+          "name": "transfusion_end_dttm",
+          "type": "DATETIME",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "The date and time the transfusion of the blood component ended. All datetime variables must be timezone-aware and set to UTC."
+        },
+        {
+          "name": "component_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "The name of the blood component transfused."
+        },
+        {
+          "name": "attribute_name",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "Attributes describing modifications to the component."
+        },
+        {
+          "name": "volume_transfused",
+          "type": "DOUBLE",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "The volume of the blood component transfused."
+        },
+        {
+          "name": "volume_units",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "The unit of measurement for the transfused volume."
+        },
+        {
+          "name": "product_code",
+          "type": "VARCHAR",
+          "nullable": true,
+          "isPrimaryKey": false,
+          "isForeignKey": false,
+          "comment": "ISBT 128 Product Description Code representing the specific blood product."
+        }
+      ],
+      "primaryKeys": [],
+      "foreignKeys": [],
+      "comments": "{\"description\": \"Unique identifier linking the transfusion event to a specific hospitalization in the CLIF database.\", \"permissible\": \"No restriction\"}",
+      "position": {
+        "x": 1130,
+        "y": 590
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "from": "adt",
+      "to": "hospitalization",
+      "fromField": "hospitalization_id",
+      "toField": "hospitalization_id",
+      "type": "foreign_key"
+    },
+    {
+      "from": "adt",
+      "to": "hospital",
+      "fromField": "hospital_id",
+      "toField": "hospital_id",
+      "type": "inferred_foreign_key"
+    },
+    {
+      "from": "code_status",
+      "to": "patient",
+      "fromField": "patient_id",
+      "toField": "patient_id",
+      "type": "foreign_key"
+    },
+    {
+      "from": "crrt_therapy",
+      "to": "device",
+      "fromField": "device_id",
+      "toField": "device_id",
+      "type": "inferred_foreign_key"
+    },
+    {
+      "from": "hospitalization",
+      "to": "patient",
+      "fromField": "patient_id",
+      "toField": "patient_id",
+      "type": "foreign_key"
+    },
+    {
+      "from": "hospitalization",
+      "to": "hospitalization_joined",
+      "fromField": "hospitalization_joined_id",
+      "toField": "hospitalization_joined_id",
+      "type": "inferred_foreign_key"
+    },
+    {
+      "from": "medication_admin_continuous",
+      "to": "med_order",
+      "fromField": "med_order_id",
+      "toField": "med_order_id",
+      "type": "inferred_foreign_key"
+    },
+    {
+      "from": "respiratory_support",
+      "to": "device",
+      "fromField": "device_id",
+      "toField": "device_id",
+      "type": "inferred_foreign_key"
+    },
+    {
+      "from": "medication_orders",
+      "to": "med_order",
+      "fromField": "med_order_id",
+      "toField": "med_order_id",
+      "type": "inferred_foreign_key"
+    },
+    {
+      "from": "patient_procedures",
+      "to": "provider",
+      "fromField": "provider_id",
+      "toField": "provider_id",
+      "type": "inferred_foreign_key"
+    },
+    {
+      "from": "provider",
+      "to": "provider",
+      "fromField": "provider_id",
+      "toField": "provider_id",
+      "type": "inferred_foreign_key"
+    },
+    {
+      "from": "microbiology_susceptibility",
+      "to": "organism",
+      "fromField": "organism_id",
+      "toField": "organism_id",
+      "type": "inferred_foreign_key"
+    }
+  ],
+  "metadata": {
+    "totalTables": 26,
+    "categories": {
+      "core": 0,
+      "medical": 0,
+      "concept": 5,
+      "beta": 21
+    }
+  }
+}

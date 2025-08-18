@@ -1,0 +1,681 @@
+---
+import { generateERDData } from '../utils/erdParser.js';
+
+interface Props {
+  sqlFilePath?: string;
+  width?: number;
+  height?: number;
+}
+
+const { 
+  sqlFilePath = '/Users/dema/WD/clif_website/src/content/v-2-1-0-ddl.sql',
+  width = 1400,
+  height = 900 
+} = Astro.props;
+
+// Generate ERD data at build time
+let erdData;
+try {
+  erdData = await generateERDData(sqlFilePath);
+} catch (error) {
+  console.error('Error generating ERD data:', error);
+  erdData = { tables: [], relationships: [], metadata: {} };
+}
+---
+
+<div class="erd-container">
+  <div class="erd-controls">
+    <div class="control-section">
+      <h4>View Controls</h4>
+      <div class="control-buttons">
+        <button id="zoom-in" class="control-btn" title="Zoom In">🔍+</button>
+        <button id="zoom-out" class="control-btn" title="Zoom Out">🔍−</button>
+        <button id="reset-view" class="control-btn" title="Reset View">⌂</button>
+        <button id="fit-content" class="control-btn" title="Fit to Content">⊞</button>
+      </div>
+    </div>
+    
+    <div class="control-section">
+      <h4>Table Categories</h4>
+      <div class="filter-controls">
+        <label class="filter-checkbox">
+          <input type="checkbox" id="show-beta" checked>
+          <span class="checkmark beta"></span>
+          Beta Tables
+        </label>
+        <label class="filter-checkbox">
+          <input type="checkbox" id="show-concept" checked>
+          <span class="checkmark concept"></span>
+          Concept Tables
+        </label>
+      </div>
+    </div>
+  </div>
+  
+  <div id="erd-diagram" class="erd-diagram"></div>
+  
+  <div id="table-details" class="table-details hidden">
+    <div class="details-header">
+      <h3 id="details-title"></h3>
+      <button id="close-details">×</button>
+    </div>
+    <div id="details-content"></div>
+  </div>
+</div>
+
+<style>
+  .erd-container {
+    position: relative;
+    width: 100%;
+    height: 900px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #f8f9fa;
+    overflow: hidden;
+  }
+
+  .erd-controls {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 10;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    max-width: 250px;
+  }
+
+  .control-section {
+    margin-bottom: 16px;
+  }
+
+  .control-section:last-child {
+    margin-bottom: 0;
+  }
+
+  .control-section h4 {
+    margin: 0 0 8px 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: #333;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .control-buttons {
+    display: flex;
+    gap: 4px;
+  }
+
+  .control-btn {
+    padding: 6px 10px;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s;
+  }
+
+  .control-btn:hover {
+    background: #f0f0f0;
+    border-color: #999;
+  }
+
+  .filter-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .filter-checkbox {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 13px;
+    color: #333;
+  }
+
+  .filter-checkbox input {
+    display: none;
+  }
+
+  .checkmark {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    margin-right: 8px;
+    border: 2px solid transparent;
+    position: relative;
+  }
+
+  .checkmark.beta {
+    background-color: #8B2635;
+  }
+
+  .checkmark.concept {
+    background-color: #708090;
+  }
+
+  .filter-checkbox input:checked + .checkmark::after {
+    content: '✓';
+    position: absolute;
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    left: 2px;
+    top: -1px;
+  }
+
+  .filter-checkbox input:not(:checked) + .checkmark {
+    opacity: 0.3;
+  }
+
+  .erd-diagram {
+    width: 100%;
+    height: 100%;
+    cursor: grab;
+  }
+
+  .erd-diagram:active {
+    cursor: grabbing;
+  }
+
+  .table-details {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 320px;
+    max-height: 600px;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 20;
+    overflow-y: auto;
+  }
+
+  .table-details.hidden {
+    display: none;
+  }
+
+  .details-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+    background: #f8f9fa;
+    border-radius: 8px 8px 0 0;
+  }
+
+  .details-header h3 {
+    margin: 0;
+    font-size: 16px;
+    color: #333;
+  }
+
+  #close-details {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    border-radius: 50%;
+    transition: all 0.2s;
+  }
+
+  #close-details:hover {
+    color: #000;
+    background: #f0f0f0;
+  }
+
+  #details-content {
+    padding: 15px;
+  }
+
+  /* D3 ERD Styles */
+  .erd-diagram :global(.table-node) {
+    cursor: move;
+  }
+
+  .erd-diagram :global(.table-rect) {
+    stroke-width: 2;
+  }
+
+  .erd-diagram :global(.table-header) {
+    font-weight: bold;
+    font-size: 14px;
+    text-anchor: middle;
+    fill: white;
+  }
+
+  .erd-diagram :global(.field-text) {
+    font-size: 11px;
+    fill: #333;
+    text-anchor: start;
+  }
+
+  .erd-diagram :global(.field-row:hover) {
+    fill: #e6f3ff;
+  }
+
+  .erd-diagram :global(.relationship-line) {
+    stroke: #666;
+    stroke-width: 1.5;
+    fill: none;
+    marker-end: url(#arrowhead);
+  }
+
+  .erd-diagram :global(.table-node:hover .table-rect) {
+    stroke-width: 3;
+    filter: brightness(1.05);
+  }
+
+  .erd-diagram :global(.table-node.dragging) {
+    opacity: 0.8;
+  }
+</style>
+
+<script define:vars={{ erdData, width, height }}>
+  // Import D3 from CDN
+  const script = document.createElement('script');
+  script.src = 'https://d3js.org/d3.v7.min.js';
+  script.onload = () => initERD();
+  document.head.appendChild(script);
+
+  let svg, g, simulation;
+  let visibleCategories = new Set(['beta', 'concept']); // Default: show both beta and concept tables
+
+  function initERD() {
+    const container = document.getElementById('erd-diagram');
+    
+    // Clear any existing content
+    container.innerHTML = '';
+    
+    // Set up SVG with better dimensions
+    svg = d3.select(container)
+      .append('svg')
+      .attr('width', '100%')
+      .attr('height', '100%')
+      .attr('viewBox', `0 0 ${width} ${height}`);
+
+    // Define arrow marker for relationships
+    svg.append('defs').append('marker')
+      .attr('id', 'arrowhead')
+      .attr('viewBox', '-0 -5 10 10')
+      .attr('refX', 13)
+      .attr('refY', 0)
+      .attr('orient', 'auto')
+      .attr('markerWidth', 6)
+      .attr('markerHeight', 6)
+      .append('path')
+      .attr('d', 'M 0,-5 L 10 ,0 L 0,5')
+      .attr('fill', '#666')
+      .style('stroke', 'none');
+
+    // Main group for zoom/pan
+    g = svg.append('g');
+
+    // Set up zoom behavior
+    const zoom = d3.zoom()
+      .scaleExtent([0.1, 3])
+      .on('zoom', (event) => {
+        g.attr('transform', event.transform);
+      });
+    
+    svg.call(zoom);
+
+    // Create force simulation with minimal forces - only for collision detection
+    simulation = d3.forceSimulation()
+      .force('collision', d3.forceCollide().radius(120))
+      .alphaDecay(0.1) // Fast settling
+      .velocityDecay(0.8); // High friction to prevent movement cascades
+
+    // Initial render
+    updateVisualization();
+    
+    // Set up controls
+    setupControls(svg, g, zoom);
+  }
+
+  function updateVisualization() {
+    // Filter tables based on visible categories
+    const visibleTables = erdData.tables.filter(table => visibleCategories.has(table.category));
+    const tableNames = new Set(visibleTables.map(t => t.name));
+    const visibleRelationships = erdData.relationships.filter(rel => 
+      tableNames.has(rel.from) && tableNames.has(rel.to)
+    );
+
+    // Clear existing elements
+    g.selectAll('.relationship-line').remove();
+    g.selectAll('.table-node').remove();
+
+    // Draw relationships first (so they appear behind tables)
+    drawRelationships(g, visibleRelationships, visibleTables);
+    
+    // Draw tables
+    drawTables(g, visibleTables);
+
+    // Update simulation with only collision detection
+    simulation.nodes(visibleTables);
+    
+    // Start with minimal energy - only for initial collision resolution
+    simulation.alpha(0.05).restart();
+  }
+
+  function drawTables(g, tables) {
+    const tableWidth = 220; // Increased width for longer table names
+    const fieldHeight = 16;
+    const headerHeight = 28;
+    
+    const tableNodes = g.selectAll('.table-node')
+      .data(tables, d => d.name)
+      .enter()
+      .append('g')
+      .attr('class', 'table-node')
+      .call(d3.drag()
+        .on('start', dragStarted)
+        .on('drag', dragged)
+        .on('end', dragEnded))
+      .on('click', showTableDetails);
+    
+    tables.forEach((table, index) => {
+      const tableHeight = headerHeight + (table.fields.length * fieldHeight);
+      const node = tableNodes.filter(d => d.name === table.name);
+      
+      // Table background
+      node.append('rect')
+        .attr('class', 'table-rect')
+        .attr('width', tableWidth)
+        .attr('height', tableHeight)
+        .attr('fill', table.color)
+        .attr('stroke', d3.rgb(table.color).darker(0.5))
+        .attr('rx', 6);
+      
+      // Table header
+      node.append('rect')
+        .attr('width', tableWidth)
+        .attr('height', headerHeight)
+        .attr('fill', table.color)
+        .attr('stroke', 'none')
+        .attr('rx', 6);
+
+      // Header bottom rectangle to square off bottom corners
+      node.append('rect')
+        .attr('y', headerHeight - 6)
+        .attr('width', tableWidth)
+        .attr('height', 6)
+        .attr('fill', table.color)
+        .attr('stroke', 'none');
+      
+      // Table title with text wrapping for long names
+      const titleText = node.append('text')
+        .attr('class', 'table-header')
+        .attr('x', tableWidth / 2)
+        .attr('y', headerHeight / 2)
+        .attr('dy', '0.35em');
+      
+      // Wrap long table names to two lines if needed
+      const maxTitleLength = 20;
+      if (table.displayName.length > maxTitleLength) {
+        const words = table.displayName.split(' ');
+        const mid = Math.ceil(words.length / 2);
+        const line1 = words.slice(0, mid).join(' ');
+        const line2 = words.slice(mid).join(' ');
+        
+        titleText.append('tspan')
+          .attr('x', tableWidth / 2)
+          .attr('dy', '-0.3em')
+          .text(line1);
+        titleText.append('tspan')
+          .attr('x', tableWidth / 2)
+          .attr('dy', '1.2em')
+          .text(line2);
+      } else {
+        titleText.text(table.displayName);
+      }
+      
+      // Fields background
+      node.append('rect')
+        .attr('y', headerHeight)
+        .attr('width', tableWidth)
+        .attr('height', table.fields.length * fieldHeight)
+        .attr('fill', '#ffffff')
+        .attr('stroke', d3.rgb(table.color).darker(0.5))
+        .attr('stroke-width', 1);
+      
+      // Fields (simplified - no data types initially)
+      table.fields.forEach((field, fieldIndex) => {
+        const y = headerHeight + (fieldIndex * fieldHeight);
+        
+        // Field row background for hover effect
+        node.append('rect')
+          .attr('class', 'field-row')
+          .attr('y', y)
+          .attr('width', tableWidth)
+          .attr('height', fieldHeight)
+          .attr('fill', 'transparent');
+        
+        // Field name (simplified display)
+        const fieldText = field.name + (field.isPrimaryKey ? ' 🗝' : field.isForeignKey ? ' 🔗' : '');
+        
+        node.append('text')
+          .attr('class', 'field-text')
+          .attr('x', 8)
+          .attr('y', y + fieldHeight / 2)
+          .attr('dy', '0.35em')
+          .style('font-weight', field.isPrimaryKey ? 'bold' : 'normal')
+          .style('font-style', field.isForeignKey ? 'italic' : 'normal')
+          .text(fieldText);
+      });
+
+      // Set initial position from parser (grid layout)
+      if (!table.x && !table.y && table.position) {
+        table.x = table.position.x;
+        table.y = table.position.y;
+      } else if (!table.x && !table.y) {
+        // Fallback positioning
+        table.x = 50 + (index % 5) * 250;
+        table.y = 50 + Math.floor(index / 5) * 180;
+      }
+    });
+
+    // Update positions from simulation
+    simulation.on('tick', () => {
+      tableNodes.attr('transform', d => `translate(${d.x || 0}, ${d.y || 0})`);
+      
+      // Update relationship lines
+      g.selectAll('.relationship-line')
+        .attr('x1', d => {
+          const sourceTable = tables.find(t => t.name === d.source.name || t.name === d.source);
+          return (sourceTable?.x || 0) + tableWidth;
+        })
+        .attr('y1', d => {
+          const sourceTable = tables.find(t => t.name === d.source.name || t.name === d.source);
+          return (sourceTable?.y || 0) + headerHeight;
+        })
+        .attr('x2', d => {
+          const targetTable = tables.find(t => t.name === d.target.name || t.name === d.target);
+          return targetTable?.x || 0;
+        })
+        .attr('y2', d => {
+          const targetTable = tables.find(t => t.name === d.target.name || t.name === d.target);
+          return (targetTable?.y || 0) + headerHeight;
+        });
+    });
+  }
+
+  function drawRelationships(g, relationships, tables) {
+    const tableMap = new Map(tables.map(t => [t.name, t]));
+    
+    g.selectAll('.relationship-line')
+      .data(relationships)
+      .enter()
+      .append('line')
+      .attr('class', 'relationship-line');
+  }
+
+  function dragStarted(event, d) {
+    if (!event.active) simulation.alphaTarget(0.3).restart();
+    d.fx = d.x;
+    d.fy = d.y;
+    d3.select(this).classed('dragging', true);
+  }
+
+  function dragged(event, d) {
+    d.fx = event.x;
+    d.fy = event.y;
+  }
+
+  function dragEnded(event, d) {
+    if (!event.active) simulation.alphaTarget(0);
+    d.fx = null;
+    d.fy = null;
+    d3.select(this).classed('dragging', false);
+  }
+
+  function showTableDetails(event, table) {
+    const detailsPanel = document.getElementById('table-details');
+    const titleElement = document.getElementById('details-title');
+    const contentElement = document.getElementById('details-content');
+    
+    titleElement.textContent = table.displayName;
+    
+    let html = `
+      <div style="margin-bottom: 15px;">
+        <strong>Category:</strong> <span style="color: ${table.color}">${table.category}</span>
+      </div>
+    `;
+    
+    if (table.comments) {
+      html += `
+        <div style="margin-bottom: 15px;">
+          <strong>Description:</strong> ${table.comments}
+        </div>
+      `;
+    }
+    
+    html += `
+      <div style="margin-bottom: 10px;">
+        <strong>Fields (${table.fields.length}):</strong>
+      </div>
+      <table style="width: 100%; font-size: 12px; border-collapse: collapse;">
+        <thead>
+          <tr style="background: #f8f9fa;">
+            <th style="padding: 6px; text-align: left; border-bottom: 1px solid #ddd;">Name</th>
+            <th style="padding: 6px; text-align: left; border-bottom: 1px solid #ddd;">Type</th>
+            <th style="padding: 6px; text-align: left; border-bottom: 1px solid #ddd;">Key</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+    
+    table.fields.forEach(field => {
+      const keyIndicator = field.isPrimaryKey ? 'PK' : 
+                          field.isForeignKey ? 'FK' : '';
+      
+      const rowStyle = field.isPrimaryKey ? 'background: #e8f5e8;' : 
+                      field.isForeignKey ? 'background: #fff8e1;' : '';
+      
+      html += `
+        <tr style="${rowStyle}">
+          <td style="padding: 4px 6px; border-bottom: 1px solid #eee; font-weight: ${field.isPrimaryKey ? 'bold' : 'normal'};">${field.name}</td>
+          <td style="padding: 4px 6px; border-bottom: 1px solid #eee;">${field.type}</td>
+          <td style="padding: 4px 6px; border-bottom: 1px solid #eee;">${keyIndicator}</td>
+        </tr>
+      `;
+
+      if (field.comment && field.comment.trim()) {
+        html += `
+          <tr style="${rowStyle}">
+            <td colspan="3" style="padding: 2px 6px 6px 20px; font-size: 11px; color: #666; border-bottom: 1px solid #eee;">
+              ${field.comment}
+            </td>
+          </tr>
+        `;
+      }
+    });
+    
+    html += '</tbody></table>';
+    
+    if (table.foreignKeys.length > 0) {
+      html += `
+        <div style="margin-top: 15px; margin-bottom: 10px;">
+          <strong>Foreign Keys:</strong>
+        </div>
+        <ul style="margin: 0; padding-left: 20px; font-size: 12px;">
+      `;
+      
+      table.foreignKeys.forEach(fk => {
+        html += `
+          <li>${fk.field} → ${fk.references.table}.${fk.references.column}</li>
+        `;
+      });
+      
+      html += '</ul>';
+    }
+    
+    contentElement.innerHTML = html;
+    detailsPanel.classList.remove('hidden');
+  }
+
+  function setupControls(svg, g, zoom) {
+    // Control button handlers
+    document.getElementById('zoom-in').addEventListener('click', () => {
+      svg.transition().call(zoom.scaleBy, 1.2);
+    });
+    
+    document.getElementById('zoom-out').addEventListener('click', () => {
+      svg.transition().call(zoom.scaleBy, 1 / 1.2);
+    });
+    
+    document.getElementById('reset-view').addEventListener('click', () => {
+      svg.transition().call(zoom.transform, d3.zoomIdentity);
+    });
+    
+    document.getElementById('fit-content').addEventListener('click', () => {
+      const bounds = g.node().getBBox();
+      const fullWidth = svg.node().clientWidth || width;
+      const fullHeight = svg.node().clientHeight || height;
+      const scale = Math.min(fullWidth / bounds.width, fullHeight / bounds.height) * 0.8;
+      const translate = [
+        (fullWidth - scale * bounds.width) / 2 - scale * bounds.x,
+        (fullHeight - scale * bounds.height) / 2 - scale * bounds.y
+      ];
+      
+      svg.transition().call(zoom.transform, d3.zoomIdentity.translate(translate[0], translate[1]).scale(scale));
+    });
+    
+    // Filter controls
+    document.getElementById('show-beta').addEventListener('change', (e) => {
+      if (e.target.checked) {
+        visibleCategories.add('beta');
+      } else {
+        visibleCategories.delete('beta');
+      }
+      updateVisualization();
+    });
+    
+    document.getElementById('show-concept').addEventListener('change', (e) => {
+      if (e.target.checked) {
+        visibleCategories.add('concept');
+      } else {
+        visibleCategories.delete('concept');
+      }
+      updateVisualization();
+    });
+    
+    document.getElementById('close-details').addEventListener('click', () => {
+      document.getElementById('table-details').classList.add('hidden');
+    });
+  }
+</script>

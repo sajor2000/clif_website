@@ -1,0 +1,88 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import InteractiveERD from '../components/InteractiveERD.astro';
+
+const title = 'Interactive CLIF Data Dictionary ERD';
+const description = 'Interactive Entity Relationship Diagram showing the structure and relationships of all CLIF data tables, automatically generated from the SQL schema.';
+---
+
+<BaseLayout title={title} description={description}>
+  <div class="container mx-auto px-4 py-8">
+    <header class="text-center mb-8">
+      <h1 class="text-4xl font-bold text-clif-burgundy mb-4">
+        Interactive CLIF Data Dictionary ERD
+      </h1>
+      <p class="text-lg text-clif-gray-600 max-w-3xl mx-auto mb-6">
+        Explore the Common Longitudinal ICU data Format schema through this interactive Entity Relationship Diagram. 
+        Click on tables to view detailed information, zoom and pan to navigate, and see how all CLIF tables connect together.
+      </p>
+      <div class="bg-clif-gray-50 p-4 rounded-lg mb-6 max-w-4xl mx-auto">
+        <p class="text-sm text-clif-gray-700">
+          <strong>🔄 Auto-Generated:</strong> This ERD is automatically generated from the 
+          <code class="bg-white px-2 py-1 rounded text-xs">v-2-1-0-ddl.sql</code> file and updates whenever the schema changes.
+        </p>
+      </div>
+    </header>
+
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+      <div class="mb-4">
+        <h2 class="text-xl font-semibold text-clif-burgundy mb-2">How to Use</h2>
+        <div class="grid md:grid-cols-3 gap-4 text-sm text-clif-gray-700">
+          <div class="flex items-start gap-2">
+            <span class="text-clif-burgundy">🔍</span>
+            <div>
+              <strong>Zoom & Pan:</strong> Use mouse wheel to zoom, drag to pan, or use the control buttons
+            </div>
+          </div>
+          <div class="flex items-start gap-2">
+            <span class="text-clif-burgundy">👆</span>
+            <div>
+              <strong>Table Details:</strong> Click any table to see detailed field information and relationships
+            </div>
+          </div>
+          <div class="flex items-start gap-2">
+            <span class="text-clif-burgundy">🎨</span>
+            <div>
+              <strong>Color Legend:</strong> Burgundy = Beta tables, Gray = Concept tables
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+      <InteractiveERD />
+    </div>
+
+    <div class="mt-8 bg-clif-gray-50 rounded-lg p-6">
+      <h2 class="text-xl font-semibold text-clif-burgundy mb-4">About the CLIF Schema</h2>
+      <div class="grid md:grid-cols-2 gap-6 text-sm text-clif-gray-700">
+        <div>
+          <h3 class="font-semibold text-clif-burgundy mb-2">Table Categories</h3>
+          <ul class="space-y-1">
+            <li><strong class="text-red-700">Beta Tables (Burgundy):</strong> Complete tables used in federated CLIF projects - patient data, clinical measurements, labs, medications, procedures</li>
+            <li><strong class="text-gray-700">Concept Tables (Gray):</strong> Future planned tables and experimental data structures</li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="font-semibold text-clif-burgundy mb-2">Key Features</h3>
+          <ul class="space-y-1">
+            <li>🗝 <strong>Primary Keys:</strong> Unique identifiers for each table</li>
+            <li>🔗 <strong>Foreign Keys:</strong> Relationships between tables</li>
+            <li>📊 <strong>Rich Data Types:</strong> Optimized for healthcare analytics</li>
+            <li>💾 <strong>Scalable Design:</strong> Supports multi-site research projects</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-8 text-center">
+      <p class="text-sm text-clif-gray-600">
+        For the complete data dictionary documentation, visit the 
+        <a href="/data-dictionary" class="text-clif-burgundy hover:underline font-medium">
+          CLIF Data Dictionary page
+        </a>
+      </p>
+    </div>
+  </div>
+</BaseLayout>
