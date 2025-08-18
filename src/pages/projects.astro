@@ -3,341 +3,404 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
 <BaseLayout title="CLIF Consortium - RESEARCH">
-  <div class="container mx-auto px-4 py-8">
-    <section id="publications" class="mb-12">
-      <h2 class="text-3xl font-bold mb-6">Publications</h2>
-      <div class="mb-6">
-        <p class="font-medium mb-2">
-          A common longitudinal intensive care unit data format (CLIF) for critical illness
-          research, 2025
+  <div class="min-h-screen bg-gradient-to-br from-gray-50 to-white">
+    <div class="container mx-auto px-4 py-12">
+      <!-- Page Header -->
+      <header class="text-center mb-16">
+        <h1 class="text-5xl font-bold text-gray-900 mb-4">Research & Projects</h1>
+        <p class="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+          Discover our research, conference presentations, and ongoing collaborative projects
+          advancing critical care through CLIF
         </p>
-        <a
-          href="https://link.springer.com/article/10.1007/s00134-025-07848-7"
-          class="text-clif-burgundy hover:underline"
-        >
-          Intensive Care Medicine
-        </a>
-      </div>
-    </section>
+      </header>
 
-    <section id="conferences" class="mb-12">
-      <h2 class="text-3xl font-bold mb-6">Conferences</h2>
-
-      <!-- ATS 2025 -->
-      <div class="mb-10">
-        <div class="flex flex-col md:flex-row items-center md:items-start gap-6 mb-4">
-          <div class="w-full md:w-1/3">
-            <img
-              src="/images/projects/ATS_2025_B.jpg"
-              alt="ATS 2025"
-              class="w-full h-48 object-cover rounded-lg shadow-lg"
-            />
+      <section id="publications" class="mb-20">
+        <div class="flex items-center mb-10">
+          <div class="w-12 h-12 bg-clif-burgundy rounded-lg flex items-center justify-center mr-4">
+            <!-- New icon: Book for Publications -->
+            <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 19.5A2.5 2.5 0 016.5 17H20M4 19.5V6.5A2.5 2.5 0 016.5 4H20v13M4 19.5A2.5 2.5 0 006.5 22H20"></path>
+            </svg>
           </div>
-          <div>
-            <h3 class="text-2xl font-semibold">American Thoracic Society (ATS)</h3>
-            <p class="text-xl mb-4">2025</p>
-            <p class="mb-4">Committee members present various CLIF studies:</p>
+          <h2 class="text-4xl font-bold text-gray-900">Publications</h2>
+        </div>
+        
+        <div class="bg-white rounded-2xl shadow-lg p-8 border border-gray-200">
+          <h3 class="text-2xl font-semibold text-gray-900 mb-4 leading-tight">
+            A common longitudinal intensive care unit data format (CLIF) for critical illness research
+          </h3>
+          <div class="flex items-center space-x-4 text-gray-600">
+            <span class="bg-clif-burgundy-light text-clif-white px-3 py-1 rounded-full text-sm font-medium">2025</span>
+            <a
+              href="https://link.springer.com/article/10.1007/s00134-025-07848-7"
+              class="text-clif-burgundy hover:text-clif-burgundy-dark transition-colors duration-200 font-medium"
+            >
+              Intensive Care Medicine →
+            </a>
           </div>
         </div>
+      </section>
 
-        <ul class="space-y-4 list-disc pl-5">
-          <li>
-            <p class="font-medium">
-              Electronic health record signatures of spontaneous awakening trials: A multi-center
-              analysis of sedation cessation patterns in mechanically ventilated patients, 2025
-            </p>
-            <a
-              href="https://www.atsjournals.org/doi/abs/10.1164/ajrccm.2025.211.Abstracts.A7188"
-              class="text-clif-burgundy hover:underline"
-            >
-              American Thoracic Society
-            </a>
-          </li>
-          <li>
-            <p class="font-medium">
-              Multi-center evaluation of prone positioning practices for moderate and severe
-              hypoxemic respiratory failure, 2025
-            </p>
-            <a
-              href="https://www.atsjournals.org/doi/abs/10.1164/ajrccm.2025.211.Abstracts.A7155"
-              class="text-clif-burgundy hover:underline"
-            >
-              American Thoracic Society
-            </a>
-          </li>
-          <li>
-            <p class="font-medium">
-              The association of sex and height with low-tidal volume ventilation in a multi-center
-              cohort of critically ill adults, 2025
-            </p>
-            <a
-              href="https://www.atsjournals.org/doi/abs/10.1164/ajrccm.2025.211.Abstracts.A7695"
-              class="text-clif-burgundy hover:underline"
-            >
-              American Thoracic Society
-            </a>
-          </li>
-          <li>
-            <p class="font-medium">
-              The common longitudinal intensive care unit (CLIF) respiratory support waterfall: A
-              novel method for analyzing ventilator mode patterns in critical care, 2025
-            </p>
-            <a
-              href="https://www.atsjournals.org/doi/abs/10.1164/ajrccm-conference.2025.211.1_MeetingAbstracts.A7159"
-              class="text-clif-burgundy hover:underline"
-            >
-              American Thoracic Society
-            </a>
-          </li>
-        </ul>
-      </div>
-
-      <!-- ATS 2024 -->
-      <div class="mb-10">
-        <div class="flex flex-col md:flex-row items-center md:items-start gap-6 mb-4">
-          <img
-            src="/images/projects/ats_2024.png"
-            alt="ATS 2024 Conference"
-            class="w-full md:w-1/3 rounded-lg"
-          />
-          <div>
-            <h3 class="text-2xl font-semibold">American Thoracic Society (ATS)</h3>
-            <p class="text-xl mb-4">2024</p>
-            <p class="mb-4">Various CLIF studies presented by members:</p>
+      <section id="conferences" class="mb-20">
+        <div class="flex items-center mb-12">
+          <div class="w-12 h-12 bg-clif-burgundy rounded-lg flex items-center justify-center mr-4">
+            <!-- New icon: Microphone for Conferences -->
+            <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <rect x="9" y="2" width="6" height="12" rx="3" stroke-linecap="round" stroke-linejoin="round"></rect>
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 10v2a7 7 0 01-14 0v-2M12 19v3m-4 0h8"></path>
+            </svg>
           </div>
+          <h2 class="text-4xl font-bold text-gray-900">Conference Presentations</h2>
         </div>
 
-        <ul class="space-y-4 list-disc pl-5">
-          <li>
-            <p class="font-medium">
-              Advancing multi-center clinical research in critically ill patients through the
-              development of a common longitudinal ICU format (CLIF), 2024
-            </p>
-            <a
-              href="https://www.atsjournals.org/doi/pdf/10.1164/ajrccm-conference.2024.209.1_MeetingAbstracts.A5078"
-              class="text-clif-burgundy hover:underline"
-            >
-              American Thoracic Society
-            </a>
-          </li>
-          <li>
-            <p class="font-medium">
-              Identifying windows of opportunity for early mobilization of mechanically ventilated
-              patients: Multi-center comparative analysis of clinical trial and consensus guideline
-              eligibility criteria, 2025
-            </p>
-            <a
-              href="https://www.atsjournals.org/doi/abs/10.1164/ajrccm.2025.211.Abstracts.A2870"
-              class="text-clif-burgundy hover:underline"
-            >
-              American Thoracic Society
-            </a>
-          </li>
-          <li>
-            <p class="font-medium">
-              Variation in setting low tidal volume ventilation on day 1 of mechanical ventilation
-              by hospital, 2024
-            </p>
-            <a
-              href="https://www.atsjournals.org/doi/pdf/10.1164/ajrccm-conference.2024.209.1_MeetingAbstracts.A4771"
-              class="text-clif-burgundy hover:underline"
-            >
-              American Thoracic Society
-            </a>
-          </li>
-        </ul>
-      </div>
-
-      <!-- AMIA 2024 -->
-      <div class="mb-10">
-        <div class="flex flex-col md:flex-row items-center md:items-start gap-6 mb-4">
-          <div
-            class="w-full md:w-1/3 bg-gradient-to-br from-clif-burgundy to-clif-burgundy-dark rounded-lg p-12 flex items-center justify-center"
-          >
-            <div class="text-white text-center">
-              <svg class="w-16 h-16 mx-auto mb-2" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fill-rule="evenodd"
-                  d="M18 3a1 1 0 00-1.447-.894L8.763 6H5a3 3 0 000 6h.28l1.771 5.316A1 1 0 008 18h1a1 1 0 001-1v-4.382l6.553 3.276A1 1 0 0018 15V3z"
-                  clip-rule="evenodd"></path>
-              </svg>
-              <p class="text-xl font-bold">AMIA 2024</p>
+        <!-- ATS 2025 -->
+        <div class="bg-white rounded-2xl shadow-lg p-8 mb-12 border border-gray-200">
+          <div class="grid md:grid-cols-3 gap-8 items-start">
+            <div class="md:col-span-1">
+              <img
+                src="/images/projects/ATS_2025_B.jpg"
+                alt="ATS 2025 Conference"
+                class="w-full h-64 object-cover rounded-xl shadow-md"
+              />
+            </div>
+            <div class="md:col-span-2">
+              <div class="mb-6">
+                <h3 class="text-3xl font-bold text-gray-900 mb-2">American Thoracic Society (ATS)</h3>
+                <div class="flex items-center space-x-4 mb-4">
+                  <span class="bg-green-100 text-green-800 px-4 py-2 rounded-full text-lg font-semibold">2025</span>
+                  <span class="text-gray-500 text-lg">Multiple CLIF studies presented</span>
+                </div>
+              </div>  
             </div>
           </div>
-          <div>
-            <h3 class="text-2xl font-semibold">American Medical Informatics Association (AMIA)</h3>
-            <p class="text-xl mb-4">2024 Informatics Summit</p>
-            <p class="mb-4">
-              Kaveri Chhikara, presents the CLIF at the AMIA Summit, touching on the standardized
-              data format created to address challenges in using ICU electronic health record data
-              for research.
-            </p>
+          
+          <div class="mt-8">
+            <h4 class="text-xl font-semibold text-gray-800 mb-6">Research Presentations:</h4>
+            <div class="grid md:grid-cols-2 gap-6">
+              <div class="bg-gray-50 rounded-lg p-6 hover:shadow-md transition-shadow duration-200">
+                <h5 class="font-semibold text-gray-900 text-lg mb-3 leading-tight">
+                  Electronic health record signatures of spontaneous awakening trials
+                </h5>
+                <p class="text-gray-600 text-sm mb-4">Multi-center analysis of sedation cessation patterns in mechanically ventilated patients</p>
+                <a
+                  href="https://www.atsjournals.org/doi/abs/10.1164/ajrccm.2025.211.Abstracts.A7188"
+                  class="text-clif-burgundy hover:text-clif-burgundy-dark transition-colors font-medium"
+                >
+                  View Abstract →
+                </a>
+              </div>
+              
+              <div class="bg-gray-50 rounded-lg p-6 hover:shadow-md transition-shadow duration-200">
+                <h5 class="font-semibold text-gray-900 text-lg mb-3 leading-tight">
+                  Multi-center evaluation of prone positioning practices
+                </h5>
+                <p class="text-gray-600 text-sm mb-4">For moderate and severe hypoxemic respiratory failure</p>
+                <a
+                  href="https://www.atsjournals.org/doi/abs/10.1164/ajrccm.2025.211.Abstracts.A7155"
+                  class="text-clif-burgundy hover:text-clif-burgundy-dark transition-colors font-medium"
+                >
+                  View Abstract →
+                </a>
+              </div>
+              
+              <div class="bg-gray-50 rounded-lg p-6 hover:shadow-md transition-shadow duration-200">
+                <h5 class="font-semibold text-gray-900 text-lg mb-3 leading-tight">
+                  Association of sex and height with low-tidal volume ventilation
+                </h5>
+                <p class="text-gray-600 text-sm mb-4">Multi-center cohort of critically ill adults</p>
+                <a
+                  href="https://www.atsjournals.org/doi/abs/10.1164/ajrccm.2025.211.Abstracts.A7695"
+                  class="text-clif-burgundy hover:text-clif-burgundy-dark transition-colors font-medium"
+                >
+                  View Abstract →
+                </a>
+              </div>
+              
+              <div class="bg-gray-50 rounded-lg p-6 hover:shadow-md transition-shadow duration-200">
+                <h5 class="font-semibold text-gray-900 text-lg mb-3 leading-tight">
+                  CLIF respiratory support waterfall methodology
+                </h5>
+                <p class="text-gray-600 text-sm mb-4">Novel method for analyzing ventilator mode patterns in critical care</p>
+                <a
+                  href="https://www.atsjournals.org/doi/abs/10.1164/ajrccm-conference.2025.211.1_MeetingAbstracts.A7159"
+                  class="text-clif-burgundy hover:text-clif-burgundy-dark transition-colors font-medium"
+                >
+                  View Abstract →
+                </a>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </section>
 
-    <section id="ongoing-projects" class="mb-12">
-      <h2 class="text-3xl font-bold mb-6">Ongoing Projects</h2>
-      <p class="mb-4">The CLIF consortium is a network of NIH funded investigators.</p>
-      <p class="mb-6">
-        Principal Investigators (PIs) in the consortium are supported by a wide range of NIH grants
-        that use big data and advanced ML techniques to answer open scientific questions related to
-        critical illness. Each of these projects would be better with CLIF rather than done in
-        silos.
-      </p>
-
-      <div class="space-y-10">
-        <!-- Project 1 -->
-        <div id="improving-the-efficiency-and-equity" class="bg-gray-50 p-6 rounded-lg">
-          <h3 class="text-2xl font-semibold mb-3">
-            Improving the efficiency and equity of critical care allocation during a crisis with
-            place-based disadvantage indices
-          </h3>
-          <ul class="space-y-2">
-            <li>
-              <strong>CLIF Project Description:</strong> Creating a life support allocation triage score
-              for crisis standards of care
-            </li>
-            <li>
-              <strong>Grant:</strong>
-              <a
-                href="https://reporter.nih.gov/search/skf_8uTY8USB45uQrSL2Ug/project-details/10817718"
-                class="text-clif-burgundy hover:underline">R01 LM014263</a
-              >
-            </li>
-            <li><strong>PI:</strong> William Parker, University of Chicago</li>
-          </ul>
+        <!-- ATS 2024 -->
+        <div class="bg-white rounded-2xl shadow-lg p-8 mb-12 border border-gray-200">
+          <div class="grid md:grid-cols-3 gap-8 items-start">
+            <div class="md:col-span-1">
+              <img
+                src="/images/projects/ats_2024.png"
+                alt="ATS 2024 Conference"
+                class="w-full h-64 object-cover rounded-xl shadow-md"
+              />
+            </div>
+            <div class="md:col-span-2">
+              <div class="mb-6">
+                <h3 class="text-3xl font-bold text-gray-900 mb-2">American Thoracic Society (ATS)</h3>
+                <div class="flex items-center space-x-4 mb-4">
+                  <span class="bg-blue-100 text-blue-800 px-4 py-2 rounded-full text-lg font-semibold">2024</span>
+                  <span class="text-gray-500 text-lg">Various CLIF studies presented</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mt-8">
+            <h4 class="text-xl font-semibold text-gray-800 mb-6">Research Presentations:</h4>
+            <div class="grid md:grid-cols-2 gap-6">
+              <div class="bg-gray-50 rounded-lg p-6 hover:shadow-md transition-shadow duration-200">
+                <h5 class="font-semibold text-gray-900 text-lg mb-3 leading-tight">
+                  Advancing multi-center clinical research in critically ill patients
+                </h5>
+                <p class="text-gray-600 text-sm mb-4">Through the development of a common longitudinal ICU format (CLIF)</p>
+                <a
+                  href="https://www.atsjournals.org/doi/pdf/10.1164/ajrccm-conference.2024.209.1_MeetingAbstracts.A5078"
+                  class="text-clif-burgundy hover:text-clif-burgundy-dark transition-colors font-medium"
+                >
+                  View Abstract →
+                </a>
+              </div>
+              
+              <div class="bg-gray-50 rounded-lg p-6 hover:shadow-md transition-shadow duration-200">
+                <h5 class="font-semibold text-gray-900 text-lg mb-3 leading-tight">
+                  Early mobilization opportunity windows
+                </h5>
+                <p class="text-gray-600 text-sm mb-4">Multi-center comparative analysis of clinical trial and consensus guideline eligibility criteria</p>
+                <a
+                  href="https://www.atsjournals.org/doi/abs/10.1164/ajrccm.2025.211.Abstracts.A2870"
+                  class="text-clif-burgundy hover:text-clif-burgundy-dark transition-colors font-medium"
+                >
+                  View Abstract →
+                </a>
+              </div>
+              
+              <div class="bg-gray-50 rounded-lg p-6 hover:shadow-md transition-shadow duration-200 md:col-span-2">
+                <h5 class="font-semibold text-gray-900 text-lg mb-3 leading-tight">
+                  Variation in setting low tidal volume ventilation on day 1
+                </h5>
+                <p class="text-gray-600 text-sm mb-4">Analysis of mechanical ventilation practices by hospital</p>
+                <a
+                  href="https://www.atsjournals.org/doi/pdf/10.1164/ajrccm-conference.2024.209.1_MeetingAbstracts.A4771"
+                  class="text-clif-burgundy hover:text-clif-burgundy-dark transition-colors font-medium"
+                >
+                  View Abstract →
+                </a>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <!-- Project 2 -->
-        <div id="identifying-areas-to-improve" class="bg-gray-50 p-6 rounded-lg">
-          <h3 class="text-2xl font-semibold mb-3">
-            Identifying Areas to Improve ICU Outcomes through Provider Variation
-          </h3>
-          <ul class="space-y-2">
-            <li>
-              <strong>CLIF Project Description:</strong> Studying hospital variation in low-tidal volume
-              ventilation across hospital systems
-            </li>
-            <li>
-              <strong>Grant:</strong>
-              <a
-                href="https://reporter.nih.gov/search/HFtCRP89oECUkVZSA_8mEw/project-details/10754951"
-                class="text-clif-burgundy hover:underline">K23 HL166783</a
-              >
-            </li>
-            <li><strong>PI:</strong> Nicholas Ingraham, University of Minnesota</li>
-          </ul>
+        <!-- AMIA 2024 -->
+        <div class="bg-white rounded-2xl shadow-lg p-8 mb-12 border border-gray-200">
+          <div class="grid md:grid-cols-3 gap-8 items-start">
+            <div class="md:col-span-1">
+              <div class="w-full h-64 rounded-xl overflow-hidden flex items-center justify-center bg-gray-100">
+                <img 
+                  src="/images/projects/AMIA_2024.jpg" 
+                  alt="AMIA 2024 CLIF Presentation" 
+                  class="object-cover w-full h-full"
+                  loading="lazy"
+                />
+              </div>
+            </div>
+            <div class="md:col-span-2">
+              <div class="mb-6">
+                <h3 class="text-3xl font-bold text-gray-900 mb-2">American Medical Informatics Association (AMIA)</h3>
+                <div class="flex items-center space-x-4 mb-4">
+                  <span class="bg-purple-100 text-purple-800 px-4 py-2 rounded-full text-lg font-semibold">2024</span>
+                  <span class="text-gray-500 text-lg">Informatics Summit</span>
+                </div>
+                <p class="text-gray-600 leading-relaxed">
+                  Kaveri Chhikara presents the CLIF at the AMIA Summit, touching on the standardized
+                  data format created to address challenges in using ICU electronic health record data
+                  for research.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="ongoing-projects" class="mb-12">
+        <div class="flex items-center mb-12">
+          <div class="w-12 h-12 bg-clif-burgundy rounded-lg flex items-center justify-center mr-4">
+            <!-- New icon: Lightbulb for Ongoing Projects -->
+            <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 2a7 7 0 00-7 7c0 2.386 1.053 4.09 2.11 5.32C8.6 16.1 9 17 9 18a3 3 0 006 0c0-1 .4-1.9 1.89-3.68C17.947 13.09 19 11.386 19 9a7 7 0 00-7-7z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9.5 21h5M10 22h4"></path>
+            </svg>
+          </div>
+          <h2 class="text-4xl font-bold text-gray-900">Ongoing Projects</h2>
+        </div>
+        
+        <div class="bg-white rounded-2xl shadow-lg p-8 mb-8 border border-gray-200">
+          <p class="text-lg text-gray-600 mb-4">The CLIF consortium is a network of NIH funded investigators.</p>
+          <p class="text-lg text-gray-600 leading-relaxed">
+            Principal Investigators (PIs) in the consortium are supported by a wide range of NIH grants
+            that use big data and advanced ML techniques to answer open scientific questions related to
+            critical illness. Each of these projects would be better with CLIF rather than done in
+            silos.
+          </p>
         </div>
 
-        <!-- Project 3 -->
-        <div id="identification-of-precision-sepsis" class="bg-gray-50 p-6 rounded-lg">
-          <h3 class="text-2xl font-semibold mb-3">
-            Identification of Precision Sepsis Subphenotypes Using Vital Sign Trajectories
-          </h3>
-          <ul class="space-y-2">
-            <li>
-              <strong>CLIF Project Description:</strong> Validating the association of temperature trajectories
-              and ICU mortality across hospital systems
-            </li>
-            <li>
-              <strong>Grant:</strong>
-              <a
-                href="https://reporter.nih.gov/search/7XgA7wwyL0ictZyceawqRA/project-details/10683303"
-                class="text-clif-burgundy hover:underline">K23 GM144867</a
-              >
-            </li>
-            <li><strong>PI:</strong> Sivasubramanium Bhavani, Emory University</li>
-          </ul>
-        </div>
+        <div class="grid lg:grid-cols-2 gap-8">
+          <!-- Project 1 -->
+          <div id="improving-the-efficiency-and-equity" class="bg-white rounded-xl shadow-lg p-8 border border-gray-200 hover:shadow-xl transition-shadow duration-300">
+            <h3 class="text-xl font-bold text-gray-900 mb-4 leading-tight">
+              Improving the efficiency and equity of critical care allocation during a crisis with
+              place-based disadvantage indices
+            </h3>
+            <div class="space-y-3 text-sm">
+              <div class="flex items-start">
+                <span class="font-semibold text-gray-700 mr-2 min-w-fit">CLIF Project:</span>
+                <span class="text-gray-600">Creating a life support allocation triage score for crisis standards of care</span>
+              </div>
+              <div class="flex items-start">
+                <span class="font-semibold text-gray-700 mr-2 min-w-fit">Grant:</span>
+                <a href="https://reporter.nih.gov/search/skf_8uTY8USB45uQrSL2Ug/project-details/10817718" class="text-clif-burgundy hover:text-clif-burgundy-dark transition-colors">R01 LM014263</a>
+              </div>
+              <div class="flex items-start">
+                <span class="font-semibold text-gray-700 mr-2 min-w-fit">PI:</span>
+                <span class="text-gray-600">William Parker, University of Chicago</span>
+              </div>
+            </div>
+          </div>
 
-        <!-- Project 4 -->
-        <div id="sustainable-implementation" class="bg-gray-50 p-6 rounded-lg">
-          <h3 class="text-2xl font-semibold mb-3">
-            Sustainable Implementation of Prone Positioning for the Acute Respiratory Distress
-            Syndrome
-          </h3>
-          <ul class="space-y-2">
-            <li>
-              <strong>CLIF Project Description:</strong> Studying the association between proning practice
-              patterns and ARDS survival
-            </li>
-            <li>
-              <strong>Grant:</strong>
-              <a
-                href="https://reporter.nih.gov/search/2-fXoeMMW0yafEM_qnyY4A/project-details/10722194"
-                class="text-clif-burgundy hover:underline">K23 HL169743</a
-              >
-            </li>
-            <li><strong>PI:</strong> Chad Hochberg, John Hopkins University</li>
-          </ul>
-        </div>
+          <!-- Project 2 -->
+          <div id="identifying-areas-to-improve" class="bg-white rounded-xl shadow-lg p-8 border border-gray-200 hover:shadow-xl transition-shadow duration-300">
+            <h3 class="text-xl font-bold text-gray-900 mb-4 leading-tight">
+              Identifying Areas to Improve ICU Outcomes through Provider Variation
+            </h3>
+            <div class="space-y-3 text-sm">
+              <div class="flex items-start">
+                <span class="font-semibold text-gray-700 mr-2 min-w-fit">CLIF Project:</span>
+                <span class="text-gray-600">Studying hospital variation in low-tidal volume ventilation across hospital systems</span>
+              </div>
+              <div class="flex items-start">
+                <span class="font-semibold text-gray-700 mr-2 min-w-fit">Grant:</span>
+                <a href="https://reporter.nih.gov/search/HFtCRP89oECUkVZSA_8mEw/project-details/10754951" class="text-clif-burgundy hover:text-clif-burgundy-dark transition-colors">K23 HL166783</a>
+              </div>
+              <div class="flex items-start">
+                <span class="font-semibold text-gray-700 mr-2 min-w-fit">PI:</span>
+                <span class="text-gray-600">Nicholas Ingraham, University of Minnesota</span>
+              </div>
+            </div>
+          </div>
 
-        <!-- Project 5 -->
-        <div id="early-mobilization" class="bg-gray-50 p-6 rounded-lg">
-          <h3 class="text-2xl font-semibold mb-3">
-            Early Mobilization: Operationalizing Big Data & Implementation Science to Lead Expansion
-            to ICUs (E-MOBILE-ICU)
-          </h3>
-          <ul class="space-y-2">
-            <li>
-              <strong>CLIF Project Description:</strong> Identifying critically ill patients who are
-              eligible for mobilization using the electronic healthcare record
-            </li>
-            <li>
-              <strong>Grant:</strong>
-              <a
-                href="https://reporter.nih.gov/search/m0yB8RKJLUuEoOlobWszpw/project-details/10055025"
-                class="text-clif-burgundy hover:underline">K23 HL148387</a
-              >
-            </li>
-            <li><strong>PI:</strong> Bhakti Patel, University of Chicago</li>
-          </ul>
-        </div>
+          <!-- Project 3 -->
+          <div id="identification-of-precision-sepsis" class="bg-white rounded-xl shadow-lg p-8 border border-gray-200 hover:shadow-xl transition-shadow duration-300">
+            <h3 class="text-xl font-bold text-gray-900 mb-4 leading-tight">
+              Identification of Precision Sepsis Subphenotypes Using Vital Sign Trajectories
+            </h3>
+            <div class="space-y-3 text-sm">
+              <div class="flex items-start">
+                <span class="font-semibold text-gray-700 mr-2 min-w-fit">CLIF Project:</span>
+                <span class="text-gray-600">Validating the association of temperature trajectories and ICU mortality across hospital systems</span>
+              </div>
+              <div class="flex items-start">
+                <span class="font-semibold text-gray-700 mr-2 min-w-fit">Grant:</span>
+                <a href="https://reporter.nih.gov/search/7XgA7wwyL0ictZyceawqRA/project-details/10683303" class="text-clif-burgundy hover:text-clif-burgundy-dark transition-colors">K23 GM144867</a>
+              </div>
+              <div class="flex items-start">
+                <span class="font-semibold text-gray-700 mr-2 min-w-fit">PI:</span>
+                <span class="text-gray-600">Sivasubramanium Bhavani, Emory University</span>
+              </div>
+            </div>
+          </div>
 
-        <!-- Project 6 -->
-        <div id="machine-learning" class="bg-gray-50 p-6 rounded-lg">
-          <h3 class="text-2xl font-semibold mb-3">
-            Machine learning to predict cure in severe pneumonia episodes
-          </h3>
-          <ul class="space-y-2">
-            <li>
-              <strong>CLIF Project Description:</strong> Prediction of severe pneumonia using machine
-              learning
-            </li>
-            <li>
-              <strong>Grant:</strong>
-              <a
-                href="https://reporter.nih.gov/search/BSW6ioAssE6rMGSDYX6Jcw/project-details/10890415"
-                class="text-clif-burgundy hover:underline">K23HL169815</a
-              >
-            </li>
-            <li><strong>PI:</strong> Catherine Gao, Northwestern University</li>
-          </ul>
-        </div>
+          <!-- Project 4 -->
+          <div id="sustainable-implementation" class="bg-white rounded-xl shadow-lg p-8 border border-gray-200 hover:shadow-xl transition-shadow duration-300">
+            <h3 class="text-xl font-bold text-gray-900 mb-4 leading-tight">
+              Sustainable Implementation of Prone Positioning for the Acute Respiratory Distress Syndrome
+            </h3>
+            <div class="space-y-3 text-sm">
+              <div class="flex items-start">
+                <span class="font-semibold text-gray-700 mr-2 min-w-fit">CLIF Project:</span>
+                <span class="text-gray-600">Studying the association between proning practice patterns and ARDS survival</span>
+              </div>
+              <div class="flex items-start">
+                <span class="font-semibold text-gray-700 mr-2 min-w-fit">Grant:</span>
+                <a href="https://reporter.nih.gov/search/2-fXoeMMW0yafEM_qnyY4A/project-details/10722194" class="text-clif-burgundy hover:text-clif-burgundy-dark transition-colors">K23 HL169743</a>
+              </div>
+              <div class="flex items-start">
+                <span class="font-semibold text-gray-700 mr-2 min-w-fit">PI:</span>
+                <span class="text-gray-600">Chad Hochberg, John Hopkins University</span>
+              </div>
+            </div>
+          </div>
 
-        <!-- Project 7 -->
-        <div id="spot-it" class="bg-gray-50 p-6 rounded-lg">
-          <h3 class="text-2xl font-semibold mb-3">
-            SPOT-IT: Sepsis Prediction in Oncology Through Implementation Science and Technology
-          </h3>
-          <ul class="space-y-2">
-            <li>
-              <strong>CLIF Project Description:</strong> Develop an oncology-specific sepsis prediction
-              model using EHR data and human-centered design
-            </li>
-            <li>
-              <strong>Grant:</strong>
-              <a
-                href="https://reporter.nih.gov/search/NtN6kDznS0abLd7eY-HHuw/project-details/10884029"
-                class="text-clif-burgundy hover:underline">K08CA270383</a
-              >
-            </li>
-            <li><strong>PI:</strong> Patrick Lyons, Oregon Health and Science University</li>
-          </ul>
+          <!-- Project 5 -->
+          <div id="early-mobilization" class="bg-white rounded-xl shadow-lg p-8 border border-gray-200 hover:shadow-xl transition-shadow duration-300">
+            <h3 class="text-xl font-bold text-gray-900 mb-4 leading-tight">
+              Early Mobilization: Operationalizing Big Data & Implementation Science to Lead Expansion to ICUs (E-MOBILE-ICU)
+            </h3>
+            <div class="space-y-3 text-sm">
+              <div class="flex items-start">
+                <span class="font-semibold text-gray-700 mr-2 min-w-fit">CLIF Project:</span>
+                <span class="text-gray-600">Identifying critically ill patients who are eligible for mobilization using the electronic healthcare record</span>
+              </div>
+              <div class="flex items-start">
+                <span class="font-semibold text-gray-700 mr-2 min-w-fit">Grant:</span>
+                <a href="https://reporter.nih.gov/search/m0yB8RKJLUuEoOlobWszpw/project-details/10055025" class="text-clif-burgundy hover:text-clif-burgundy-dark transition-colors">K23 HL148387</a>
+              </div>
+              <div class="flex items-start">
+                <span class="font-semibold text-gray-700 mr-2 min-w-fit">PI:</span>
+                <span class="text-gray-600">Bhakti Patel, University of Chicago</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Project 6 -->
+          <div id="machine-learning" class="bg-white rounded-xl shadow-lg p-8 border border-gray-200 hover:shadow-xl transition-shadow duration-300">
+            <h3 class="text-xl font-bold text-gray-900 mb-4 leading-tight">
+              Machine learning to predict cure in severe pneumonia episodes
+            </h3>
+            <div class="space-y-3 text-sm">
+              <div class="flex items-start">
+                <span class="font-semibold text-gray-700 mr-2 min-w-fit">CLIF Project:</span>
+                <span class="text-gray-600">Prediction of severe pneumonia using machine learning</span>
+              </div>
+              <div class="flex items-start">
+                <span class="font-semibold text-gray-700 mr-2 min-w-fit">Grant:</span>
+                <a href="https://reporter.nih.gov/search/BSW6ioAssE6rMGSDYX6Jcw/project-details/10890415" class="text-clif-burgundy hover:text-clif-burgundy-dark transition-colors">K23HL169815</a>
+              </div>
+              <div class="flex items-start">
+                <span class="font-semibold text-gray-700 mr-2 min-w-fit">PI:</span>
+                <span class="text-gray-600">Catherine Gao, Northwestern University</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Project 7 -->
+          <div id="spot-it" class="bg-white rounded-xl shadow-lg p-8 border border-gray-200 hover:shadow-xl transition-shadow duration-300">
+            <h3 class="text-xl font-bold text-gray-900 mb-4 leading-tight">
+              SPOT-IT: Sepsis Prediction in Oncology Through Implementation Science and Technology
+            </h3>
+            <div class="space-y-3 text-sm">
+              <div class="flex items-start">
+                <span class="font-semibold text-gray-700 mr-2 min-w-fit">CLIF Project:</span>
+                <span class="text-gray-600">Develop an oncology-specific sepsis prediction model using EHR data and human-centered design</span>
+              </div>
+              <div class="flex items-start">
+                <span class="font-semibold text-gray-700 mr-2 min-w-fit">Grant:</span>
+                <a href="https://reporter.nih.gov/search/NtN6kDznS0abLd7eY-HHuw/project-details/10884029" class="text-clif-burgundy hover:text-clif-burgundy-dark transition-colors">K08CA270383</a>
+              </div>
+              <div class="flex items-start">
+                <span class="font-semibold text-gray-700 mr-2 min-w-fit">PI:</span>
+                <span class="text-gray-600">Patrick Lyons, Oregon Health and Science University</span>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </div>
   </div>
 </BaseLayout>
