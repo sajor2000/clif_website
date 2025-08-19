@@ -460,7 +460,7 @@ Continuous start stop record of every provider who cared for the patient.
 
 
 
-This table is used to store the susceptibility results of the organisms identified in the `Microbiology Culture` table and may be renamed to `Microbiology_Susceptibility`
+This table is used to store the susceptibility results of the organisms identified in the `Microbiology Culture` table and may be renamed to `Microbiology_Susceptibility` in 2.1.0.
 
 
 **Example**:
