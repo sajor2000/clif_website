@@ -2,7 +2,7 @@
 
 The CLIF Data Dictionary serves as a comprehensive guide to the Common Longitudinal ICU data Format, detailing the structure and purpose of each table within the framework. Designed to standardize and harmonize electronic health record data across multiple institutions, the dictionary outlines the entity-relationship model, variable definitions, and permissible values.
 
-![ERD](/images/data-dictionary/ERD-2.1.0-07282025.png)
+![ERD](/images/data-dictionary/ERD-2.1.0-08202025.png)
 
 ## Beta Tables
 
@@ -53,7 +53,6 @@ This table provides a longitudinal record of changes in a patient's code status 
 The crrt_therapy table captures Continuous Renal Replacement Therapy (CRRT) data, including different CRRT modalities, operational parameters, and fluid exchange details. The intermittent HD, peritoneal dialysis, PERT, and SLED tables are under development.
 
 **Notes**: 
-- `device_id`: Unique ID of the physical dialysis machine used (e.g., machine ACZ3RV91); distinct from `dialysis_machine_name`, which captures the brand/model.
 - **SCUF:** Slow Continuous Ultrafiltration
 - **CVVH:** Continuous Veno-Venous Hemofiltration
 - **CVVHD:** Continuous Veno-Venous Hemodialysis
@@ -292,8 +291,7 @@ The position table is a long form (one position per row) longitudinal table that
 
 The respiratory support table is a wider longitudinal table that captures simultaneously recorded ventilator settings and observed ventilator parameters. The table is designed to capture the most common respiratory support devices and modes used in the ICU. It will be sparse for patients who are not on mechanical ventilation.
 
-**Notes**:
-- `device_id`: Unique ID of the individual machine (e.g., ventilator ACZ3RV91); distinct from `vent_brand_name`, which captures the brand/model.
+
 
 **Expected setting values for each device_category and mode_category**
 
