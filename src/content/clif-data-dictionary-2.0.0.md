@@ -392,7 +392,7 @@ The `key_icu_orders` table captures key orders related to physical therapy (PT) 
 
 ## medication_admin_intermittent
 
-This table has exactly the same schema as [`medication_admin_continuous`](#medication-admin-continuous) described below. The consortium decided to separate the medications that are administered intermittently from the continuously administered medications. The mCIDE for `medication_category` for intermittent meds can be found [here](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/clif_medication_admin_intermittent_med_categories.csv).
+This table has exactly the same schema as [`medication_admin_continuous`](#medication-admin-continuous). The consortium decided to separate the medications that are administered intermittently from the continuously administered medications. The mCIDE for `medication_category` for intermittent meds can be found [here](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/medication_admin_intermittent/clif_medication_admin_intermittent_med_categories.csv).
 
 
 ## medication_orders
