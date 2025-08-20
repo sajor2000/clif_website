@@ -96,31 +96,14 @@ The medication admin continuous table is a long-form (one medication administrat
 The microbiology culture table is a wide longitudinal table that captures the order and result times of microbiology culture tests, the type of fluid collected, the component of the test, and the organism identified.
 
 **Example**:
-| hospitalization_id | order_dttm                  | collect_dttm                | result_dttm                 | fluid_name                           | fluid_category           | method_name | method_category | organism_category       | organism_group           |
-|-------------------|----------------------------|----------------------------|----------------------------|--------------------------------------|------------------------|----------------|-------------------|------------------------|------------------------------|
-| 12345             | 2023-10-01 14:00:00+00:00 UTC | 2023-10-01 15:00:00+00:00 UTC | 2023-10-03 10:00:00+00:00 UTC | culture, blood (bacterial & fungal)  | blood/buffy coat       | culture        | culture           | no growth              | no growth                     |
-| 12345             | 2023-10-01 16:00:00+00:00 UTC | 2023-10-01 17:00:00+00:00 UTC | 2023-10-03 12:00:00+00:00 UTC | culture, urine                       | genito-urinary tract   | culture        | culture           | escherichia_coli       | escherichia (also e. coli)    |
-| 12346             | 2023-11-01 10:30:00+00:00 UTC | 2023-11-01 11:15:00+00:00 UTC | 2023-11-02 09:00:00+00:00 UTC | culture & stain, respiratory         | lower respiratory tract | gram stain     | gram stain        | gram positive cocci    | gram positive cocci (nos)     |
-| 12346             | 2023-11-02 12:00:00+00:00 UTC | 2023-11-02 12:45:00+00:00 UTC | 2023-11-03 08:30:00+00:00 UTC | culture, cerebrospinal fluid         | csf                    | culture        | culture           | no growth              | no growth                     |
-| 12347             | 2023-09-15 14:20:00+00:00 UTC | 2023-09-15 15:00:00+00:00 UTC | 2023-09-17 11:30:00+00:00 UTC | culture & stain, afb                 | other unspecified      | afb smear      | smear             | no growth              | no growth                     |
-| 12348             | 2023-08-10 09:00:00+00:00 UTC | 2023-08-10 09:45:00+00:00 UTC | 2023-08-12 08:00:00+00:00 UTC | culture, blood (bacterial & fungal)  | blood/buffy coat       | culture        | culture           | staphylococcus_aureus  | staphylococcus (all)          |
-| 12349             | 2023-07-25 11:00:00+00:00 UTC | 2023-07-25 11:30:00+00:00 UTC | 2023-07-27 10:15:00+00:00 UTC | culture, urine                       | genito-urinary tract   | culture        | culture           | enterococcus_faecium   | enterococcus (all species)    |
-| 12350             | 2023-06-15 13:30:00+00:00 UTC | 2023-06-15 14:00:00+00:00 UTC | 2023-06-17 09:45:00+00:00 UTC | culture & stain, respiratory         | lower respiratory tract | gram stain     | gram stain        | gram negative rod      | gram negative rod (nos)       |
-
+WIP
 
 ## microbiology_nonculture
 
 The microbiology non-culture table is a wide longitudinal table that captures the order and result times of non-culture microbiology tests, the type of fluid collected, the component of the test, and the result of the test.
 
 **Example**:
-| hospitalization_id | result_dttm                | collect_dttm               | order_dttm                | fluid_name          | component_category      | result_unit_category | result_category |
-|-------------------|---------------------------|---------------------------|---------------------------|--------------------|-----------------------|-------------------|----------------|
-| 101               | 2024-01-01 10:00:00+00:00 UTC | 2024-01-01 08:00:00+00:00 UTC | 2024-01-01 07:30:00+00:00 UTC | Blood               | PCR                    | Units/mL           | Positive        |
-| 102               | 2024-01-02 11:30:00+00:00 UTC | 2024-01-02 09:30:00+00:00 UTC | 2024-01-02 08:15:00+00:00 UTC | Cerebrospinal Fluid | Antigen Detection      | mg/L              | Negative        |
-| 103               | 2024-01-03 15:00:00+00:00 UTC | 2024-01-03 13:00:00+00:00 UTC | 2024-01-03 12:45:00+00:00 UTC | Sputum              | Gene Amplification     | copies/mL          | Detected        |
-| 104               | 2024-01-04 09:45:00+00:00 UTC | 2024-01-04 07:15:00+00:00 UTC | 2024-01-04 06:30:00+00:00 UTC | Urine               | Molecular Pathogen ID  | ng/mL             | Not Detected    |
-| 105               | 2024-01-05 18:00:00+00:00 UTC | 2024-01-05 16:00:00+00:00 UTC | 2024-01-05 15:00:00+00:00 UTC | Pleural Fluid       | Protein Quantification | g/dL              | Elevated        |
-
+WIP
 
 ## patient
 

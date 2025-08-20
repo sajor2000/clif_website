@@ -139,18 +139,19 @@ CREATE TABLE medication_admin_continuous (
 
 
 CREATE TABLE microbiology_culture (
-  hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": ""}',
+  hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
   organism_id VARCHAR COMMENT '{"description": "Distinct numerical identifier that each site creates which links a unique, non-missing organism_category that has a distinct patient_id, hospitalization_id, lab_order_dttm, lab_collect_dttm, lab_result_dttm, and fluid_category with its method_category == culture from the microbiology_culture table to an antibiotic_category and susceptibility_category from the microbiology_susceptibility table", "permissible": "No restriction"}',
   order_dttm DATETIME COMMENT '{"description": "Date and time when the test is ordered.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00"}',
   collect_dttm DATETIME COMMENT '{"description": "Date and time when the specimen is collected.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00"}',
   result_dttm DATETIME COMMENT '{"description": "Date and time when the results are available.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00"}',
-  fluid_name VARCHAR COMMENT '{"description": "Cleaned fluid name string from the raw data.", "permissible": "No restriction. [Check this file for examples](https://github.com/clif-consortium/CLIF/blob/main/mCIDE/mCIDE_mapping_examples/00_mCIDE_mapping_examples/clif_vocab_microbiology_culture_fluid_ucmc.csv)"}',
+  fluid_name VARCHAR COMMENT '{"description": "Fluid name string from the raw data.", "permissible": "No restriction. [Check this file for examples](https://github.com/clif-consortium/CLIF/blob/main/mCIDE/mCIDE_mapping_examples/00_mCIDE_mapping_examples/clif_vocab_microbiology_culture_fluid_ucmc.csv)"}',
   fluid_category VARCHAR COMMENT '{"description": "Fluid categories defined according to the NIH common data elements.", "permissible": "[CDE NIH Infection Site](https://github.com/clif-consortium/CLIF/blob/main/mCIDE/microbiology_culture/clif_microbiology_culture_fluid_categories.csv)"}',
   method_name VARCHAR COMMENT '{"description": "Original method names from the source data.", "permissible": "No restriction"}',
   method_category VARCHAR COMMENT '{"description": "Maps method_name to a standardized list of method categories.", "permissible": "[culture, gram stain, smear](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/microbiology_culture/clif_microbiology_culture_method_categories.csv)"}',
   organism_name VARCHAR COMMENT '{"description": "Organism name from the raw data.", "permissible": "No restriction."}',
-  organism_category VARCHAR COMMENT '{"description": "Cleaned organism name string from the raw data.", "permissible": "Organism species. [Check this file for examples](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/microbiology_culture/clif_microbiology_culture_organism_categories.csv)."}',
-  organism_group VARCHAR COMMENT '{"description": "Maps organism_name to the standardized list of organisms in the NIH CDE.", "permissible": "[CDE NIH Organism](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/microbiology_culture/clif_microbiology_culture_organism_groups.csv)"}'
+  organism_category VARCHAR COMMENT '{"description": "Maps organism_name to the standardized list of organisms under the structure of genus species.", "permissible": "Organism species. [Check this file for examples](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/microbiology_culture/clif_microbiology_culture_organism_categories.csv)."}',
+  organism_group VARCHAR COMMENT '{"description": "Maps organism_category to the standardized list of organisms under the NIH CDE structure.", "permissible": "[CDE NIH Organism](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/microbiology_culture/clif_microbiology_culture_organism_groups.csv)"}',
+  lab_loinc_code VARCHAR COMMENT '{"description": "LOINC code.", "permissible": "No restriction"}'
 );
 
 
@@ -163,9 +164,18 @@ CREATE TABLE microbiology_nonculture(
   collect_dttm DATETIME COMMENT '{"description": "Date and time when the sample was collected. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00"}',
   order_dttm DATETIME COMMENT '{"description": "Date and time when the test was ordered. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00"}',
   fluid_name VARCHAR COMMENT '{"description": "Name of the fluid sample.", "permissible": "No restriction"}',
-  component_category VARCHAR COMMENT '{"description": "Category of the component tested.", "permissible": "No restriction"}',
-  result_unit_category VARCHAR COMMENT '{"description": "Unit category of the test result.", "permissible": "No restriction"}',
-  result_category VARCHAR COMMENT '{"description": "Category of the test result.", "permissible": "No restriction"}'
+  fluid_category VARCHAR COMMENT '{"description": "Fluid categories defined according to the NIH common data elements.", "permissible": "[CDE NIH Infection Site](https://github.com/clif-consortium/CLIF/blob/main/mCIDE/microbiology_culture/clif_microbiology_culture_fluid_categories.csv)"}',
+  method_name VARCHAR COMMENT '{"description": "Original method names from the source data.", "permissible": "No restriction"}',
+  method_category VARCHAR COMMENT '{"description": "Maps method_name to a standardized list of method categories.", "permissible": "[culture, gram stain, smear](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/microbiology_culture/clif_microbiology_culture_method_categories.csv)"}',
+  micro_order_name VARCHAR COMMENT '{"description": "String name of microbiology non-culture test.", "permissible": "No restriction"}',
+  organism_category VARCHAR COMMENT '{"description": "Maps organism_name to the standardized list of organisms under the structure of genus species.", "permissible": "Organism species. [Check this file for examples](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/microbiology_culture/clif_microbiology_culture_organism_categories.csv)."}',
+  organism_group VARCHAR COMMENT '{"description": "Maps organism_category to the standardized list of organisms under the NIH CDE structure.", "permissible": "[CDE NIH Organism](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/microbiology_culture/clif_microbiology_culture_organism_groups.csv)"}',
+  result_name VARCHAR COMMENT '{"description": "Result name from the raw data.", "permissible": "No restriction"}',
+  result_category VARCHAR COMMENT '{"description": "Category of the test result.", "permissible": "No restriction"}',
+  reference_low DOUBLE COMMENT '{"description": "Reference low value.", "permissible": "No restriction"}',
+  reference_high DOUBLE COMMENT '{"description": "Reference high value.", "permissible": "No restriction"}',
+  result_units VARCHAR COMMENT '{"description": "Unit of the test result.", "permissible": "No restriction"}',
+  lab_loinc_code VARCHAR COMMENT '{"description": "LOINC code.", "permissible": "No restriction"}'
 );
 
 -- -----------------------------------------------------
