@@ -292,6 +292,7 @@ The position table is a long form (one position per row) longitudinal table that
 The respiratory support table is a wider longitudinal table that captures simultaneously recorded ventilator settings and observed ventilator parameters. The table is designed to capture the most common respiratory support devices and modes used in the ICU. It will be sparse for patients who are not on mechanical ventilation.
 
 
+**Notes**:
 
 **Expected setting values for each device_category and mode_category**
 

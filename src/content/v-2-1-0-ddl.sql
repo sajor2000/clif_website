@@ -18,9 +18,9 @@ CREATE TABLE adt (
 -- Table: code_status
 -- -----------------------------------------------------
 CREATE TABLE code_status(
-  patient_id VARCHAR COMMENT '{"description": "ID variable for each patient", "permissible": "No restriction"}',
-  start_dttm DATETIME COMMENT '{"description": "The date and time when the specific code status was initiated", "permissible": "Example: 2024-12-03 08:30:00+00:00"}',
-  code_status_name VARCHAR COMMENT '{"description": "The name/description of the code status", "permissible": "Free text to describe the code status"}',
+  patient_id VARCHAR COMMENT '{"description": "Unique identifier for each patient, presumed to be a distinct individual.", "permissible": "No restriction"}',
+  start_dttm DATETIME COMMENT '{"description": "The date and time when the specific code status was initiated", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
+  code_status_name VARCHAR COMMENT '{"description": "The name/description of the code status", "permissible": "No restriction"}',
   code_status_category VARCHAR COMMENT '{"description": "Categorical variable specifying the code status during the hospitalization", "permissible": "[DNR, DNAR, UDNR, DNR/DNI, DNAR/DNI, AND, Full, Presume Full, Other](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/tree/main/mCIDE/code_status/clif_code_status_categories.csv)"}',
   FOREIGN KEY (patient_id) REFERENCES patient(patient_id)
 );
@@ -29,7 +29,7 @@ CREATE TABLE code_status(
 -- Table: crrt_therapy
 -- -----------------------------------------------------
 CREATE TABLE crrt_therapy (
-  hospitalization_id VARCHAR COMMENT '{"description": "Unique identifier for hospitalization episode", "permissible": "No restriction"}',
+  hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
   device_id VARCHAR COMMENT '{"description": "Unique ID of the individual dialysis machine used (e.g., machine ACZ3RV91). Distinct from dialysis_machine_name, which stores the brand/model.", "permissible": "No restriction"}',
   recorded_dttm DATETIME COMMENT '{"description": "Timestamp when CRRT parameters were recorded", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   crrt_mode_name VARCHAR COMMENT '{"description": "Name of CRRT mode (e.g., CVVHDF)", "permissible": "No restriction"}',
@@ -46,7 +46,7 @@ CREATE TABLE crrt_therapy (
 -- Table: ecmo_mcs
 -- -----------------------------------------------------
 CREATE TABLE ecmo_mcs (
-  hospitalization_id VARCHAR COMMENT '{"description": "Unique identifier for the hospitalization event", "permissible": "No restriction"}',
+  hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
   recorded_dttm DATETIME COMMENT '{"description": "Date and time when the device settings and/or measurement was recorded", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   device_name VARCHAR COMMENT '{"description": "Name of the ECMO/MCS device used including brand information, e.g. Centrimag", "permissible": "No restriction"}',
   device_category VARCHAR COMMENT '{"description": "Maps device_name to a standardized mCIDE", "permissible": "[List of device categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/ecmo_mcs/clif_ecmo_mcs_groups.csv)"}',
@@ -62,8 +62,8 @@ CREATE TABLE ecmo_mcs (
 -- Table: hospitalization
 -- -----------------------------------------------------
 CREATE TABLE hospitalization (
-  patient_id VARCHAR COMMENT '{"description": "Unique identifier for each patient, linking to the patient table", "permissible": "No restriction"}',
-  hospitalization_id VARCHAR COMMENT '{"description": "Unique identifier for each hospitalization encounter. Each hospitalization_id represents a unique stay in the hospital", "permissible": "No restriction"}',
+  patient_id VARCHAR COMMENT '{"description": "Unique identifier for each patient, presumed to be a distinct individual.", "permissible": "No restriction"}',
+  hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
   hospitalization_joined_id VARCHAR COMMENT '{"description": "Unique identifier for each continuous inpatient stay in a health system which may span different hospitals (Optional)", "permissible": "No restriction"}',
   admission_dttm DATETIME COMMENT '{"description": "Date and time the patient is admitted to the hospital. All datetime variables must be timezone-aware and set to UTC", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   discharge_dttm DATETIME COMMENT '{"description": "Date and time the patient is discharged from the hospital. All datetime variables must be timezone-aware and set to UTC", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
@@ -87,7 +87,7 @@ CREATE TABLE hospitalization (
 -- Table: hospital_diagnosis
 -- -----------------------------------------------------
 CREATE TABLE hospital_diagnosis (
-  hospitalization_id VARCHAR COMMENT '{"description": "Foreign key to the hospitalization table", "permissible": "Must match a hospitalization_id in the hospitalization table"}',
+  hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "Must match a hospitalization_id in the hospitalization table"}',
   diagnosis_code VARCHAR COMMENT '{"description": "ICD diagnosis code", "permissible": "Valid ICD-9-CM or ICD-10-CM code"}',
   diagnosis_code_format VARCHAR COMMENT '{"description": "Format of the code (e.g., ICD-10-CM, ICD-9-CM)", "permissible": "ICD-10-CM, ICD-9-CM"}',
   diagnosis_name VARCHAR COMMENT '{"description": "Optional human-readable description of the diagnosis", "permissible": "No restriction"}',
@@ -99,7 +99,7 @@ CREATE TABLE hospital_diagnosis (
 -- Table: labs
 -- -----------------------------------------------------
 CREATE TABLE labs (
-  hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter.", "permissible": "No restriction"}',
+  hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
   lab_order_dttm DATETIME COMMENT '{"description": "Date and time when the lab is ordered. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   lab_collect_dttm DATETIME COMMENT '{"description": "Date and time when the specimen is collected. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   lab_result_dttm DATETIME COMMENT '{"description": "Date and time when the lab results are available. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
@@ -139,7 +139,7 @@ CREATE TABLE medication_admin_continuous (
 
 
 CREATE TABLE microbiology_culture (
-  hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter.", "permissible": ""}',
+  hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": ""}',
   organism_id VARCHAR COMMENT '{"description": "Distinct numerical identifier that each site creates which links a unique, non-missing organism_category that has a distinct patient_id, hospitalization_id, lab_order_dttm, lab_collect_dttm, lab_result_dttm, and fluid_category with its method_category == culture from the microbiology_culture table to an antibiotic_category and susceptibility_category from the microbiology_susceptibility table", "permissible": "No restriction"}',
   order_dttm DATETIME COMMENT '{"description": "Date and time when the test is ordered.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00"}',
   collect_dttm DATETIME COMMENT '{"description": "Date and time when the specimen is collected.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00"}',
@@ -158,7 +158,7 @@ CREATE TABLE microbiology_culture (
 -- Table: microbiology-non-culture
 -- -----------------------------------------------------
 CREATE TABLE microbiology_nonculture(
-  hospitalization_id VARCHAR COMMENT '{"description": "Unique identifier for the hospitalization event.", "permissible": "No restriction"}',
+  hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
   result_dttm DATETIME COMMENT '{"description": "Date and time when the non-culture result was obtained. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00"}',
   collect_dttm DATETIME COMMENT '{"description": "Date and time when the sample was collected. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00"}',
   order_dttm DATETIME COMMENT '{"description": "Date and time when the test was ordered. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00"}',
@@ -172,7 +172,7 @@ CREATE TABLE microbiology_nonculture(
 -- Table: patient-assessments
 -- -----------------------------------------------------
 CREATE TABLE patient_assessments (
-  hospitalization_id VARCHAR COMMENT '{"description": "Primary Identifier. Unique identifier linking assessments to a specific patient hospitalization.", "permissible": "No restriction"}',
+  hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
   recorded_dttm DATETIME COMMENT '{"description": "The exact date and time when the assessment was recorded, ensuring temporal accuracy. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   assessment_name VARCHAR COMMENT '{"description": "Assessment Tool Name. The primary name of the assessment tool used (e.g., GCS, NRS, SAT Screen).", "permissible": "No restriction"}',
   assessment_category VARCHAR COMMENT '{"description": "Maps assessment_name to a standardized list of patient assessments", "permissible": "[List of permissible assessment categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/patient_assessments/clif_patient_assessment_categories.csv)"}',
@@ -186,7 +186,7 @@ CREATE TABLE patient_assessments (
 -- Table: patient
 -- -----------------------------------------------------
 CREATE TABLE patient (
-  patient_id VARCHAR COMMENT '{"description": "Unique identifier for each patient. This is presumed to be a distinct individual.", "permissible": "No restriction"}',
+  patient_id VARCHAR COMMENT '{"description": "Unique identifier for each patient, presumed to be a distinct individual.", "permissible": "No restriction"}',
   race_name VARCHAR COMMENT '{"description": "Patient race string from source data", "permissible": "No restriction"}',
   race_category VARCHAR COMMENT '{"description": "A standardized CDE description of patient race per the US Census", "permissible": "[Black or African American, White, American Indian or Alaska Native, Asian, Native Hawaiian or Other Pacific Islander, Unknown, Other](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/patient/clif_patient_race_categories.csv)"}',
   ethnicity_name VARCHAR COMMENT '{"description": "Patient ethnicity string from source data", "permissible": "No restriction"}',
@@ -203,7 +203,7 @@ CREATE TABLE patient (
 -- Table: position
 -- -----------------------------------------------------
 CREATE TABLE position (
-  hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter. This table only includes those encounters that have proning documented ever.", "permissible": "No restriction"}',
+  hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
   recorded_dttm DATETIME COMMENT '{"description": "Date and time when the vital is recorded. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00"}',
   position_name VARCHAR COMMENT '{"description": "Description of the position from the source data. This field is not used for analysis.", "permissible": "No restriction"}',
   position_category VARCHAR COMMENT '{"description": "Maps position_name to either prone or not prone.", "permissible": "[prone, not_prone](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/tree/main/mCIDE/postion/clif_position_categories.csv)"}'
@@ -247,7 +247,7 @@ CREATE TABLE respiratory_support (
 -- -----------------------------------------------------
 
 CREATE TABLE vitals (
-  hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter.", "permissible": "No restriction"}',
+  hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
   recorded_dttm DATETIME COMMENT '{"description": "Date and time when the vital is recorded. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   vital_name VARCHAR COMMENT '{"description": "Description of the flowsheet measure from the source data. Not used for analysis.", "permissible": "No restriction"}',
   vital_category VARCHAR COMMENT '{"description": "Maps vital_name to a list of standard vital sign categories.", "permissible": "[temp_c, heart_rate, sbp, dbp, spo2, respiratory_rate, map, height_cm, weight_kg](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/vitals/clif_vitals_categories.csv)"}',
@@ -259,7 +259,7 @@ CREATE TABLE vitals (
 -- Table: intake_output
 -- -----------------------------------------------------
 CREATE TABLE intake_output (
-  hospitalization_id VARCHAR COMMENT '{"description": "Unique identifier for the hospitalization event.", "permissible": "No restriction"}',
+  hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
   intake_dttm DATETIME COMMENT '{"description": "Date and time of intake. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   fluid_name VARCHAR COMMENT '{"description": "Name of the fluid administered.", "permissible": "No restriction"}',
   amount DOUBLE COMMENT '{"description": "Amount of fluid administered (in mL)", "permissible": "Numeric values in mL"}',
@@ -270,7 +270,7 @@ CREATE TABLE intake_output (
 -- Table: invasive_hemodynamics
 -- -----------------------------------------------------
 CREATE TABLE invasive_hemodynamics (
-  hospitalization_id VARCHAR COMMENT '{"description": "Unique identifier linking to the specific hospitalization.", "permissible": "No restriction"}',
+  hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
   recorded_dttm DATETIME COMMENT '{"description": "The date and time when the measurement was recorded. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   measure_name VARCHAR COMMENT '{"description": "Description of the site or context of the invasive hemodynamic measurement.", "permissible": "Free text (e.g., Right Atrium)"}',
   measure_category VARCHAR COMMENT '{"description": "Categorical variable specifying the type of invasive hemodynamic measurement.", "permissible": "[cvp, ra, rv, pa_systolic, pa_diastolic, pa_mean, pcwp](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/invasive_hemodynamics/clif_invasive_hemodynamics_measure_categories.csv)"}',
@@ -281,7 +281,7 @@ CREATE TABLE invasive_hemodynamics (
 -- Table: key_icu_orders
 -- -----------------------------------------------------
 CREATE TABLE key_icu_orders (
-  hospitalization_id VARCHAR COMMENT '{"description": "Unique identifier linking the order to a specific hospitalization.", "permissible": "No restriction"}',
+  hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
   order_dttm DATETIME COMMENT '{"description": "Date and time when the order was placed. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   order_name VARCHAR COMMENT '{"description": "Name of the specific order (e.g., PT Evaluation, OT Treatment).", "permissible": "No restriction"}',
   order_category VARCHAR COMMENT '{"description": "Category of the order.", "permissible": "Under-development. Some examples include: [pt_evaluation, pt_treat, ot_evaluation, ot_treat](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/key_icu_orders/clif_key_icu_orders_categories.csv)"}',
@@ -310,7 +310,7 @@ CREATE TABLE medication_admin_intermittent (
 -- Table: medication_orders
 -- -----------------------------------------------------
 CREATE TABLE medication_orders (
-  hospitalization_id VARCHAR COMMENT '{"description": "Unique identifier for each hospitalization, linking medication orders to a specific encounter", "permissible": "No restriction"}',
+  hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
   med_order_id VARCHAR COMMENT '{"description": "Unique identifier for each medication order", "permissible": "No restriction"}',
   order_start_dttm DATETIME COMMENT '{"description": "Date and time when the medication order was initiated. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   order_end_dttm DATETIME COMMENT '{"description": "Date and time when the medication order ended or was discontinued. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
@@ -331,8 +331,8 @@ CREATE TABLE medication_orders (
 -- Table: patient_procedures
 -- -----------------------------------------------------
 CREATE TABLE patient_procedures (
-  patient_id VARCHAR COMMENT '{"description": "Uniquely identifies a patient.", "permissible": "No restriction"}',
-  hospitalization_id VARCHAR COMMENT '{"description": "Uniquely identifies a hospitalization event for the patient.", "permissible": "No restriction"}',
+  patient_id VARCHAR COMMENT '{"description": "Unique identifier for each patient, presumed to be a distinct individual.", "permissible": "No restriction"}',
+  hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
   provider_id VARCHAR COMMENT '{"description": "Uniquely identifies the provider associated with the procedure.", "permissible": "No restriction"}',
   procedure_code VARCHAR COMMENT '{"description": "Encoded procedure identifier (e.g., CPT, ICD-10-PCS, SNOMED code).", "permissible": "No restriction"}',
   procedure_code_format VARCHAR COMMENT '{"description": "Code format used (e.g., CPT, ICD-10-PCS, SNOMED).", "permissible": "CPT, ICD-10-PCS, SNOMED, etc."}',
@@ -343,7 +343,7 @@ CREATE TABLE patient_procedures (
 -- Table: place_based_index
 -- -----------------------------------------------------
 CREATE TABLE place_based_index (
-  hospitalization_id VARCHAR COMMENT '{"description": "Foreign key linking to the hospitalization table.", "permissible": "No restriction"}',
+  hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
   index_name VARCHAR COMMENT '{"description": "The name of the index (e.g., Area Deprivation Index, Social Vulnerability Index).", "permissible": "No restriction"}',
   index_value DOUBLE COMMENT '{"description": "The numerical value of the index for the given hospitalization.", "permissible": "Numeric"}',
   index_version VARCHAR COMMENT '{"description": "Version of the index used (e.g., ADI 2019, SVI 2020).", "permissible": "No restriction"}'
@@ -353,7 +353,7 @@ CREATE TABLE place_based_index (
 -- Table: provider
 -- -----------------------------------------------------
 CREATE TABLE provider (
-  hospitalization_id VARCHAR COMMENT '{"description": "Unique identifier for each hospitalization, linking the provider to a specific encounter", "permissible": "No restriction"}',
+  hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
   provider_id VARCHAR COMMENT '{"description": "Unique identifier for each provider. This represents individual healthcare providers", "permissible": "No restriction"}',
   start_dttm DATETIME COMMENT '{"description": "Date and time when the provider’s care or involvement in the patient’s case began. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   stop_dttm DATETIME COMMENT '{"description": "Date and time when the provider’s care or involvement in the patient’s case ended. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
@@ -377,7 +377,7 @@ CREATE TABLE microbiology_susceptibility (
 -- Table: therapy_details
 -- -----------------------------------------------------
 CREATE TABLE therapy_details (
-  hospitalization_id VARCHAR COMMENT '{"description": "Unique identifier for the hospitalization event.", "permissible": "No restriction"}',
+  hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
   session_start_dttm DATETIME COMMENT '{"description": "Date and time when the therapy session started. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   therapy_element_name VARCHAR COMMENT '{"description": "Name of the therapy element.", "permissible": "No restriction"}',
   therapy_element_category VARCHAR COMMENT '{"description": "Category of the therapy element.", "permissible": "No restriction"}',
@@ -388,7 +388,7 @@ CREATE TABLE therapy_details (
 -- Table: transfusion
 -- -----------------------------------------------------
 CREATE TABLE transfusion (
-  hospitalization_id VARCHAR COMMENT '{"description": "Unique identifier linking the transfusion event to a specific hospitalization in the CLIF database.", "permissible": "No restriction"}',
+  hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
   transfusion_start_dttm DATETIME COMMENT '{"description": "The date and time the transfusion of the blood component began. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   transfusion_end_dttm DATETIME COMMENT '{"description": "The date and time the transfusion of the blood component ended. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   component_name VARCHAR COMMENT '{"description": "The name of the blood component transfused.", "permissible": "E.g., Red Blood Cells, Plasma, Platelets"}',
