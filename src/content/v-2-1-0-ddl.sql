@@ -216,8 +216,8 @@ CREATE TABLE position (
 CREATE TABLE respiratory_support (
   hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
   recorded_dttm DATETIME COMMENT '{"description": "Date and time when the device settings and/or measurement was recorded. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00"}',
-  device_name VARCHAR COMMENT '{"description": "Raw string of the device. Not used for analysis.", "permissible": "No restriction"}',
-  device_id VARCHAR COMMENT '{"description": "Unique ID of the individual physical device used (e.g., ventilator ACZ3RV91); enables linkage to continuous waveform data. Distinct from vent_brand_name, which stores the brand/model.", "permissible": "No restriction"}',
+  device_name VARCHAR COMMENT '{"description": "Raw string of the device.", "permissible": "No restriction"}',
+  device_id VARCHAR COMMENT '{"description": "Unique ID of the individual physical device used (e.g. ventilator ACZ3RV91), enables linkage to continuous waveform data. Distinct from vent_brand_name, which stores the brand or model.", "permissible": "No restriction"}',
   device_category VARCHAR COMMENT '{"description": "Maps device_name to a standardized list of respiratory support device categories", "permissible": "[IMV, NIPPV, CPAP, High Flow NC, Face Mask, Trach Collar, Nasal Cannula, Room Air, Other](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/respiratory_support/clif_respiratory_support_device_categories.csv)"}',
   vent_brand_name VARCHAR COMMENT '{"description": "Ventilator model name when device_category is IMV or NIPPV", "permissible": "Optional"}',
   mode_name VARCHAR COMMENT '{"description": "Raw string of ventilation mode (e.g., CMV volume control)", "permissible": "No restriction"}',
