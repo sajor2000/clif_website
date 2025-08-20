@@ -18,7 +18,7 @@ CREATE TABLE adt (
 -- Table: code_status
 -- -----------------------------------------------------
 CREATE TABLE code_status(
-  patient_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
+  patient_id VARCHAR COMMENT '{"description": "ID variable for each patient", "permissible": "No restriction"}',
   start_dttm DATETIME COMMENT '{"description": "The date and time when the specific code status was initiated", "permissible": "Example: 2024-12-03 08:30:00+00:00"}',
   code_status_name VARCHAR COMMENT '{"description": "The name/description of the code status", "permissible": "Free text to describe the code status"}',
   code_status_category VARCHAR COMMENT '{"description": "Categorical variable specifying the code status during the hospitalization", "permissible": "[DNR, DNAR, UDNR, DNR/DNI, DNAR/DNI, AND, Full, Presume Full, Other](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/tree/main/mCIDE/code_status/clif_code_status_categories.csv)"}',
