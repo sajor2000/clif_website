@@ -380,7 +380,7 @@ CREATE TABLE microbiology_susceptibility (
   antibiotic_category VARCHAR COMMENT '{"description": "Category or class of the antibiotic tested", "permissible": "[List of antibiotic categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/microbiology_susceptibility/clif_microbiology_susceptibility_antibiotics_category.csv)"}',
   sensitivity_name VARCHAR COMMENT '{"description": "Name of the test result used to determine susceptibility (e.g., value of mcg/mL or MIC)", "permissible": "No restriction"}',
   susceptibility_name VARCHAR COMMENT '{"description": "Name of the sensitivity interpretation", "permissible": "No restriction"}',
-  susceptibility_category VARCHAR COMMENT '{"description": "Standardized category of susceptibility.", "permissible": "[susceptible, non-susceptible, intermediate, na](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/tree/main/mCIDE/microbiology_susceptibility/clif_microbiology_susceptibility_category.csv)"}'
+  susceptibility_category VARCHAR COMMENT '{"description": "Standardized category of susceptibility.", "permissible": "[susceptible, non susceptible, intermediate, NA](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/tree/main/mCIDE/microbiology_susceptibility/clif_microbiology_susceptibility_category.csv)"}'
 );
 
 -- -----------------------------------------------------
