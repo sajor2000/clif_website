@@ -96,14 +96,28 @@ The medication admin continuous table is a long-form (one medication administrat
 The microbiology culture table is a wide longitudinal table that captures the order and result times of microbiology culture tests, the type of fluid collected, the component of the test, and the organism identified.
 
 **Example**:
-WIP
+
+**Example**:
+
+| hospitalization_id | organism_id | order_dttm                | collect_dttm              | result_dttm               | fluid_name                | fluid_category     | method_name     | method_category | organism_name           | organism_category      | organism_group                                               | lab_loinc_code |
+|-------------------|-------------|---------------------------|---------------------------|---------------------------|---------------------------|--------------------|-----------------|-----------------|------------------------|------------------------|--------------------------------------------------------------|---------------|
+| HOSP12345         | ORG001      | 2025-06-05 08:15:00+00:00 | 2025-06-05 08:45:00+00:00 | 2025-06-06 12:00:00+00:00 | AFB/FUNGAL BLOOD CULTURE | Blood/Buffy Coat   | Blood culture   | culture         | Acinetobacter baumanii | acinetobacter_baumanii | acinetobacter (baumanii, calcoaceticus, lwoffi, other species) |               |
+| HOSP12345         | ORG002      | 2025-06-05 08:15:00+00:00 | 2025-06-05 08:45:00+00:00 | 2025-06-06 12:00:00+00:00 | AFB/FUNGAL BLOOD CULTURE | Blood/Buffy Coat   | Blood culture   | culture         | Candida albicans       | candida_albicans       | candida albicans                                            |               |
+| HOSP67890         | ORG003      | 2025-06-10 14:10:00+00:00 | 2025-06-10 14:35:00+00:00 | 2025-06-11 09:20:00+00:00 | BRAIN BIOPSY CULTURE     | Brain              | Tissue culture  | culture         | Aspergillus fumigatus  | aspergillus_fumigatus  | asperguillus fumigatus                                       |               |
+
 
 ## microbiology_nonculture
 
 The microbiology non-culture table is a wide longitudinal table that captures the order and result times of non-culture microbiology tests, the type of fluid collected, the component of the test, and the result of the test.
 
+
 **Example**:
-WIP
+| patient_id | hospitalization_id | order_dttm                | collect_dttm              | result_dttm               | fluid_name           | fluid_category      | method_name | method_category | micro_order_name                        | organism_category         | organism_group                                         | result_name                                   | result_category | reference_low | reference_high | result_units | lab_loinc_code |
+|------------|-------------------|---------------------------|---------------------------|---------------------------|----------------------|---------------------|-------------|----------------|------------------------------------------|--------------------------|--------------------------------------------------------|-----------------------------------------------|-----------------|--------------|---------------|--------------|---------------|
+| 1          | 12121             | 2025-06-15 09:05:00+00:00 | 2025-06-15 09:30:00+00:00 | 2025-06-15 13:45:00+00:00 | BLOOD                | blood/buffy coat    | PCR         | pcr            | neisseria quantitative pcr, blood        | neisseria_sp             | neisseria (gonorrhoea, meningitidis, other species)    | 100,000 copies/uL of neisseria detected       | detected        |              |               | copies/mL    | 39528-5       |
+| 2          | 32332             | 2025-06-16 11:15:00+00:00 | 2025-06-16 11:40:00+00:00 | 2025-06-16 15:25:00+00:00 | cerebrospinal fluid  | meninges and csf    | PCR         | pcr            | csf hsv pcr                             | herpes_simplex_virus      | herpes simplex (hsv1, hsv2)                           | no herspes simplex DNA measured               | not detected    |              |               | IU/mL        | 16954-2       |
+| 2          | 32332             | 2025-06-17 10:00:00+00:00 | 2025-06-17 10:20:00+00:00 | 2025-06-17 14:05:00+00:00 | feces                | feces/stool         | PCR         | pcr            | stool c. diff toxin                      | clostridioides_difficile  | clostridium difficile                                 | default in test for C. difficile toxin analysis | indeterminant   |              |               | copies/mL    | 34712-0       |
+
 
 ## patient
 
