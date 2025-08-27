@@ -1,0 +1,1116 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Badge from '../components/Badge.astro';
+import CTAButton from '../components/shared/CTAButton.astro';
+---
+
+<BaseLayout
+  title="CLIF Implementation Guide"
+  description="Complete table-by-table guide for implementing CLIF in your EHR system - from planning to deployment with ETL pipelines, validation rules, and best practices"
+>
+  <div class="container mx-auto px-6 py-12">
+    <!-- Hero Section -->
+    <div class="text-center mb-16">
+      <h1 class="text-4xl font-bold text-clif-burgundy mb-6">CLIF Implementation Guide</h1>
+      <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+        Table-by-Table ETL Implementation Resource
+      </p>
+      <p class="text-lg text-gray-600 max-w-4xl mx-auto mt-4">
+        Transform your electronic health record data into the standardized CLIF format with our 
+        comprehensive table-specific resources, validation rules, and ETL guidance.
+      </p>
+    </div>
+
+    <!-- Overview Section -->
+    <section class="mb-16 bg-gradient-to-r from-clif-burgundy/5 to-clif-burgundy/10 p-8 rounded-2xl">
+      <h2 class="text-2xl font-semibold text-gray-800 mb-6 text-center">Implementation Overview</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="text-center">
+          <div class="w-16 h-16 bg-clif-burgundy/10 rounded-full flex items-center justify-center mx-auto mb-3">
+            <svg class="w-8 h-8 text-clif-burgundy" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+            </svg>
+          </div>
+          <h3 class="text-lg font-semibold mb-2">18 Core Tables</h3>
+          <p class="text-sm text-gray-600">Complete ETL guidance for all CLIF data tables</p>
+        </div>
+        <div class="text-center">
+          <div class="w-16 h-16 bg-clif-burgundy/10 rounded-full flex items-center justify-center mx-auto mb-3">
+            <svg class="w-8 h-8 text-clif-burgundy" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          </div>
+          <h3 class="text-lg font-semibold mb-2">Validation Rules</h3>
+          <p class="text-sm text-gray-600">Reference ranges and outlier detection thresholds</p>
+        </div>
+        <div class="text-center">
+          <div class="w-16 h-16 bg-clif-burgundy/10 rounded-full flex items-center justify-center mx-auto mb-3">
+            <svg class="w-8 h-8 text-clif-burgundy" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+            </svg>
+          </div>
+          <h3 class="text-lg font-semibold mb-2">Best Practices</h3>
+          <p class="text-sm text-gray-600">Proven implementation strategies and common solutions</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Table of Contents -->
+    <section class="mb-12">
+      <h2 class="text-2xl font-semibold text-gray-800 mb-8 text-center">CLIF Tables Implementation Guide</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <a href="#patient" class="card-modern p-4 hover:shadow-lg transition-all duration-300 hover:scale-105">
+          <div class="flex items-center">
+            <svg class="w-6 h-6 text-clif-burgundy mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+            </svg>
+            <div>
+              <h3 class="font-semibold">Patient</h3>
+              <p class="text-xs text-gray-600">Core patient demographics</p>
+            </div>
+          </div>
+        </a>
+        <a href="#hospitalization" class="card-modern p-4 hover:shadow-lg transition-all duration-300 hover:scale-105">
+          <div class="flex items-center">
+            <svg class="w-6 h-6 text-clif-burgundy mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+            </svg>
+            <div>
+              <h3 class="font-semibold">Hospitalization</h3>
+              <p class="text-xs text-gray-600">Hospital stays and encounters</p>
+            </div>
+          </div>
+        </a>
+        <a href="#adt" class="card-modern p-4 hover:shadow-lg transition-all duration-300 hover:scale-105">
+          <div class="flex items-center">
+            <svg class="w-6 h-6 text-clif-burgundy mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+            </svg>
+            <div>
+              <h3 class="font-semibold">ADT</h3>
+              <p class="text-xs text-gray-600">Admission, discharge, transfer</p>
+            </div>
+          </div>
+        </a>
+        <a href="#vitals" class="card-modern p-4 hover:shadow-lg transition-all duration-300 hover:scale-105">
+          <div class="flex items-center">
+            <svg class="w-6 h-6 text-clif-burgundy mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+            </svg>
+            <div>
+              <h3 class="font-semibold">Vitals</h3>
+              <p class="text-xs text-gray-600">Vital signs monitoring</p>
+            </div>
+          </div>
+        </a>
+        <a href="#labs" class="card-modern p-4 hover:shadow-lg transition-all duration-300 hover:scale-105">
+          <div class="flex items-center">
+            <svg class="w-6 h-6 text-clif-burgundy mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+            </svg>
+            <div>
+              <h3 class="font-semibold">Labs</h3>
+              <p class="text-xs text-gray-600">Laboratory results</p>
+            </div>
+          </div>
+        </a>
+        <a href="#medication_admin_continuous" class="card-modern p-4 hover:shadow-lg transition-all duration-300 hover:scale-105">
+          <div class="flex items-center">
+            <svg class="w-6 h-6 text-clif-burgundy mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+            </svg>
+            <div>
+              <h3 class="font-semibold">Continuous Medications</h3>
+              <p class="text-xs text-gray-600">IV drips and infusions</p>
+            </div>
+          </div>
+        </a>
+        <a href="#medication_admin_intermittent" class="card-modern p-4 hover:shadow-lg transition-all duration-300 hover:scale-105">
+          <div class="flex items-center">
+            <svg class="w-6 h-6 text-clif-burgundy mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path>
+            </svg>
+            <div>
+              <h3 class="font-semibold">Intermittent Medications</h3>
+              <p class="text-xs text-gray-600">Scheduled and PRN doses</p>
+            </div>
+          </div>
+        </a>
+        <a href="#respiratory_support" class="card-modern p-4 hover:shadow-lg transition-all duration-300 hover:scale-105">
+          <div class="flex items-center">
+            <svg class="w-6 h-6 text-clif-burgundy mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+            </svg>
+            <div>
+              <h3 class="font-semibold">Respiratory Support</h3>
+              <p class="text-xs text-gray-600">Ventilator and oxygen therapy</p>
+            </div>
+          </div>
+        </a>
+        <a href="#microbiology_culture" class="card-modern p-4 hover:shadow-lg transition-all duration-300 hover:scale-105">
+          <div class="flex items-center">
+            <svg class="w-6 h-6 text-clif-burgundy mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+            </svg>
+            <div>
+              <h3 class="font-semibold">Microbiology Culture</h3>
+              <p class="text-xs text-gray-600">Culture results and organisms</p>
+            </div>
+          </div>
+        </a>
+        <a href="#microbiology_nonculture" class="card-modern p-4 hover:shadow-lg transition-all duration-300 hover:scale-105">
+          <div class="flex items-center">
+            <svg class="w-6 h-6 text-clif-burgundy mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path>
+            </svg>
+            <div>
+              <h3 class="font-semibold">Microbiology Non-Culture</h3>
+              <p class="text-xs text-gray-600">PCR, antigen, and other tests</p>
+            </div>
+          </div>
+        </a>
+        <a href="#microbiology_susceptibility" class="card-modern p-4 hover:shadow-lg transition-all duration-300 hover:scale-105">
+          <div class="flex items-center">
+            <svg class="w-6 h-6 text-clif-burgundy mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+            </svg>
+            <div>
+              <h3 class="font-semibold">Susceptibility Testing</h3>
+              <p class="text-xs text-gray-600">Antibiotic sensitivity results</p>
+            </div>
+          </div>
+        </a>
+        <a href="#patient_procedures" class="card-modern p-4 hover:shadow-lg transition-all duration-300 hover:scale-105">
+          <div class="flex items-center">
+            <svg class="w-6 h-6 text-clif-burgundy mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            </svg>
+            <div>
+              <h3 class="font-semibold">Patient Procedures</h3>
+              <p class="text-xs text-gray-600">Medical procedures and interventions</p>
+            </div>
+          </div>
+        </a>
+        <a href="#hospital_diagnosis" class="card-modern p-4 hover:shadow-lg transition-all duration-300 hover:scale-105">
+          <div class="flex items-center">
+            <svg class="w-6 h-6 text-clif-burgundy mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+            </svg>
+            <div>
+              <h3 class="font-semibold">Hospital Diagnosis</h3>
+              <p class="text-xs text-gray-600">ICD codes and diagnoses</p>
+            </div>
+          </div>
+        </a>
+        <a href="#patient_assessments" class="card-modern p-4 hover:shadow-lg transition-all duration-300 hover:scale-105">
+          <div class="flex items-center">
+            <svg class="w-6 h-6 text-clif-burgundy mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+            </svg>
+            <div>
+              <h3 class="font-semibold">Patient Assessments</h3>
+              <p class="text-xs text-gray-600">Clinical scales and scores</p>
+            </div>
+          </div>
+        </a>
+        <a href="#position" class="card-modern p-4 hover:shadow-lg transition-all duration-300 hover:scale-105">
+          <div class="flex items-center">
+            <svg class="w-6 h-6 text-clif-burgundy mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+            </svg>
+            <div>
+              <h3 class="font-semibold">Position</h3>
+              <p class="text-xs text-gray-600">Patient positioning data</p>
+            </div>
+          </div>
+        </a>
+        <a href="#code_status" class="card-modern p-4 hover:shadow-lg transition-all duration-300 hover:scale-105">
+          <div class="flex items-center">
+            <svg class="w-6 h-6 text-clif-burgundy mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+            </svg>
+            <div>
+              <h3 class="font-semibold">Code Status</h3>
+              <p class="text-xs text-gray-600">Resuscitation preferences</p>
+            </div>
+          </div>
+        </a>
+        <a href="#crrt_therapy" class="card-modern p-4 hover:shadow-lg transition-all duration-300 hover:scale-105">
+          <div class="flex items-center">
+            <svg class="w-6 h-6 text-clif-burgundy mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+            </svg>
+            <div>
+              <h3 class="font-semibold">CRRT Therapy</h3>
+              <p class="text-xs text-gray-600">Continuous renal replacement</p>
+            </div>
+          </div>
+        </a>
+        <a href="#ecmo_mcs" class="card-modern p-4 hover:shadow-lg transition-all duration-300 hover:scale-105">
+          <div class="flex items-center">
+            <svg class="w-6 h-6 text-clif-burgundy mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+            </svg>
+            <div>
+              <h3 class="font-semibold">ECMO/MCS</h3>
+              <p class="text-xs text-gray-600">Extracorporeal support</p>
+            </div>
+          </div>
+        </a>
+      </div>
+    </section>
+
+    <!-- Patient Table -->
+    <section id="patient" class="mb-16">
+      <div class="glass-dark text-white p-8 rounded-2xl shadow-xl mb-8">
+        <h2 class="text-3xl font-bold mb-6 flex items-center">
+          <svg class="w-8 h-8 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+          </svg>
+          patient
+          <Badge type="beta" class="ml-3" />
+        </h2>
+        <p class="text-lg mb-6">
+          The foundation table containing core patient demographics and identifiers. This table establishes the primary key relationships for all other CLIF tables.
+        </p>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="bg-white/10 p-6 rounded-lg">
+            <h3 class="text-xl font-semibold mb-4">🔑 Key ETL Considerations</h3>
+            <ul class="space-y-2 text-sm">
+              <li>• Establish patient_id as primary identifier across all tables</li>
+              <li>• Implement robust patient matching algorithms</li>
+              <li>• Handle demographic data standardization</li>
+              <li>• Manage patient merges and identifier changes</li>
+            </ul>
+          </div>
+          
+          <div class="bg-white/10 p-6 rounded-lg">
+            <h3 class="text-xl font-semibold mb-4">📋 Required Fields</h3>
+            <ul class="space-y-2 text-sm">
+              <li>• <code>patient_id</code> - Primary key</li>
+              <li>• <code>sex</code> - Patient gender</li>
+              <li>• <code>race</code> - Race/ethnicity information</li>
+              <li>• <code>birth_date</code> - Date of birth</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="mt-6">
+          <CTAButton
+            href="/data-dictionary"
+            variant="secondary"
+            ariaLabel="View Patient table schema in data dictionary"
+          >
+            View Patient Schema
+          </CTAButton>
+        </div>
+      </div>
+    </section>
+
+    <!-- Vitals Table -->
+    <section id="vitals" class="mb-16">
+      <div class="card-modern p-8">
+        <h2 class="text-2xl font-bold text-clif-burgundy mb-6 flex items-center">
+          <svg class="w-7 h-7 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+          </svg>
+          vitals
+          <Badge type="beta" class="ml-3" />
+        </h2>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div>
+            <h3 class="text-lg font-semibold mb-4">ETL Implementation Guide</h3>
+            <ul class="space-y-3 text-sm">
+              <li><strong>High Volume Processing:</strong> Optimize for millions of vital sign records</li>
+              <li><strong>Real-time Integration:</strong> Handle continuous monitoring data streams</li>
+              <li><strong>Unit Standardization:</strong> Convert to standardized units (°C, mmHg, etc.)</li>
+              <li><strong>Outlier Detection:</strong> Implement validation rules for physiologically impossible values</li>
+              <li><strong>Temporal Accuracy:</strong> Ensure precise datetime stamps for trending</li>
+            </ul>
+          </div>
+          
+          <div>
+            <h3 class="text-lg font-semibold mb-4">Validation & Quality Checks</h3>
+            
+            <details class="bg-gray-50 p-4 rounded-lg">
+              <summary class="font-semibold cursor-pointer flex items-center justify-between">
+                <span class="flex items-center">
+                  <svg class="w-4 h-4 mr-2 text-clif-burgundy" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                  </svg>
+                  Adult Vitals Outlier Thresholds
+                </span>
+                <svg class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+              </summary>
+              <div class="mt-4 overflow-x-auto">
+                <table id="vitalsOutliersTable" class="min-w-full text-xs border border-gray-300">
+                  <thead class="bg-gray-100">
+                    <tr>
+                      <th class="border border-gray-300 px-2 py-1 text-left">Vital Category</th>
+                      <th class="border border-gray-300 px-2 py-1 text-left">Lower Limit</th>
+                      <th class="border border-gray-300 px-2 py-1 text-left">Upper Limit</th>
+                    </tr>
+                  </thead>
+                  <tbody id="vitalsOutliersBody">
+                    <!-- Will be populated by JavaScript -->
+                  </tbody>
+                </table>
+              </div>
+              <div class="mt-3 flex gap-2">
+                <button id="exportVitalsCSV" class="bg-clif-burgundy text-white px-3 py-1 rounded text-xs hover:bg-clif-burgundy-dark">Export CSV</button>
+                <button id="exportVitalsJSON" class="bg-gray-600 text-white px-3 py-1 rounded text-xs hover:bg-gray-700">Export JSON</button>
+              </div>
+            </details>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Labs Table -->
+    <section id="labs" class="mb-16">
+      <div class="card-modern p-8">
+        <h2 class="text-2xl font-bold text-clif-burgundy mb-6 flex items-center">
+          <svg class="w-7 h-7 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+          </svg>
+          labs
+          <Badge type="beta" class="ml-3" />
+        </h2>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div>
+            <h3 class="text-lg font-semibold mb-4">ETL Implementation Guide</h3>
+            <ul class="space-y-3 text-sm">
+              <li><strong>LOINC Mapping:</strong> Map proprietary lab codes to standard LOINC codes</li>
+              <li><strong>Unit Standardization:</strong> Convert all units to CLIF specifications</li>
+              <li><strong>Reference Ranges:</strong> Include normal ranges for clinical context</li>
+              <li><strong>Result Processing:</strong> Handle numeric, categorical, and text results</li>
+              <li><strong>Delta Checks:</strong> Validate against previous results for quality</li>
+            </ul>
+          </div>
+          
+          <div>
+            <h3 class="text-lg font-semibold mb-4">Validation & Quality Checks</h3>
+            
+            <!-- Lab Category Reference Ranges -->
+            <details class="bg-gray-50 p-4 rounded-lg mb-4">
+              <summary class="font-semibold cursor-pointer flex items-center justify-between">
+                <span class="flex items-center">
+                  <svg class="w-4 h-4 mr-2 text-clif-burgundy" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                  </svg>
+                  Laboratory Reference Ranges
+                </span>
+                <svg class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+              </summary>
+              <div class="mt-4 overflow-x-auto">
+                <table id="labRangesTable" class="min-w-full text-xs border border-gray-300">
+                  <thead class="bg-gray-100">
+                    <tr>
+                      <th class="border border-gray-300 px-2 py-1 text-left">Lab Category</th>
+                      <th class="border border-gray-300 px-2 py-1 text-left">Typical Min</th>
+                      <th class="border border-gray-300 px-2 py-1 text-left">Typical Max</th>
+                      <th class="border border-gray-300 px-2 py-1 text-left">Units</th>
+                    </tr>
+                  </thead>
+                  <tbody id="labRangesBody">
+                    <!-- Will be populated by JavaScript -->
+                  </tbody>
+                </table>
+              </div>
+              <div class="mt-3 flex gap-2">
+                <button id="exportLabRangesCSV" class="bg-clif-burgundy text-white px-3 py-1 rounded text-xs hover:bg-clif-burgundy-dark">Export CSV</button>
+                <button id="exportLabRangesJSON" class="bg-gray-600 text-white px-3 py-1 rounded text-xs hover:bg-gray-700">Export JSON</button>
+              </div>
+            </details>
+
+            <!-- Lab Outlier Thresholds -->
+            <details class="bg-gray-50 p-4 rounded-lg">
+              <summary class="font-semibold cursor-pointer flex items-center justify-between">
+                <span class="flex items-center">
+                  <svg class="w-4 h-4 mr-2 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                  </svg>
+                  Laboratory Outlier Thresholds
+                </span>
+                <svg class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+              </summary>
+              <div class="mt-4 overflow-x-auto">
+                <table id="labOutliersTable" class="min-w-full text-xs border border-gray-300">
+                  <thead class="bg-gray-100">
+                    <tr>
+                      <th class="border border-gray-300 px-2 py-1 text-left">Lab Category</th>
+                      <th class="border border-gray-300 px-2 py-1 text-left">Lower Limit</th>
+                      <th class="border border-gray-300 px-2 py-1 text-left">Upper Limit</th>
+                    </tr>
+                  </thead>
+                  <tbody id="labOutliersBody">
+                    <!-- Will be populated by JavaScript -->
+                  </tbody>
+                </table>
+              </div>
+              <div class="mt-3 flex gap-2">
+                <button id="exportLabOutliersCSV" class="bg-clif-burgundy text-white px-3 py-1 rounded text-xs hover:bg-clif-burgundy-dark">Export CSV</button>
+                <button id="exportLabOutliersJSON" class="bg-gray-600 text-white px-3 py-1 rounded text-xs hover:bg-gray-700">Export JSON</button>
+              </div>
+            </details>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Continuous Medications Table -->
+    <section id="medication_admin_continuous" class="mb-16">
+      <div class="card-modern p-8">
+        <h2 class="text-2xl font-bold text-clif-burgundy mb-6 flex items-center">
+          <svg class="w-7 h-7 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+          </svg>
+          medication_admin_continuous
+          <Badge type="beta" class="ml-3" />
+        </h2>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div>
+            <h3 class="text-lg font-semibold mb-4">ETL Implementation Guide</h3>
+            <ul class="space-y-3 text-sm">
+              <li><strong>RxNorm Mapping:</strong> Standardize medication codes to RxNorm</li>
+              <li><strong>Dose Calculations:</strong> Convert to weight-based dosing where appropriate</li>
+              <li><strong>Infusion Rates:</strong> Handle rate changes and titrations over time</li>
+              <li><strong>Start/Stop Times:</strong> Precise timing for medication duration</li>
+              <li><strong>Concentration Tracking:</strong> Capture dilution and concentration data</li>
+            </ul>
+          </div>
+          
+          <div>
+            <h3 class="text-lg font-semibold mb-4">Validation & Quality Checks</h3>
+            
+            <details class="bg-gray-50 p-4 rounded-lg">
+              <summary class="font-semibold cursor-pointer flex items-center justify-between">
+                <span class="flex items-center">
+                  <svg class="w-4 h-4 mr-2 text-clif-burgundy" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+                  </svg>
+                  Continuous Medication Dosage Ranges
+                </span>
+                <svg class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+              </summary>
+              <div class="mt-4 overflow-x-auto">
+                <table id="medRangesTable" class="min-w-full text-xs border border-gray-300">
+                  <thead class="bg-gray-100">
+                    <tr>
+                      <th class="border border-gray-300 px-2 py-1 text-left">Medication</th>
+                      <th class="border border-gray-300 px-2 py-1 text-left">Typical Min</th>
+                      <th class="border border-gray-300 px-2 py-1 text-left">Typical Max</th>
+                      <th class="border border-gray-300 px-2 py-1 text-left">Units</th>
+                    </tr>
+                  </thead>
+                  <tbody id="medRangesBody">
+                    <!-- Will be populated by JavaScript -->
+                  </tbody>
+                </table>
+              </div>
+              <div class="mt-3 flex gap-2">
+                <button id="exportMedRangesCSV" class="bg-clif-burgundy text-white px-3 py-1 rounded text-xs hover:bg-clif-burgundy-dark">Export CSV</button>
+                <button id="exportMedRangesJSON" class="bg-gray-600 text-white px-3 py-1 rounded text-xs hover:bg-gray-700">Export JSON</button>
+              </div>
+            </details>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Respiratory Support Table -->
+    <section id="respiratory_support" class="mb-16">
+      <div class="card-modern p-8">
+        <h2 class="text-2xl font-bold text-clif-burgundy mb-6 flex items-center">
+          <svg class="w-7 h-7 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+          </svg>
+          respiratory_support
+          <Badge type="beta" class="ml-3" />
+        </h2>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div>
+            <h3 class="text-lg font-semibold mb-4">ETL Implementation Guide</h3>
+            <ul class="space-y-3 text-sm">
+              <li><strong>Ventilator Integration:</strong> Extract data from ventilator systems</li>
+              <li><strong>Mode Classification:</strong> Standardize ventilator modes across manufacturers</li>
+              <li><strong>Setting vs Measured:</strong> Distinguish between set parameters and observed values</li>
+              <li><strong>Oxygen Delivery:</strong> Capture FiO2, PEEP, and support levels</li>
+              <li><strong>Weaning Protocols:</strong> Track changes in respiratory support over time</li>
+            </ul>
+          </div>
+          
+          <div>
+            <h3 class="text-lg font-semibold mb-4">Validation & Quality Checks</h3>
+            
+            <details class="bg-gray-50 p-4 rounded-lg">
+              <summary class="font-semibold cursor-pointer flex items-center justify-between">
+                <span class="flex items-center">
+                  <svg class="w-4 h-4 mr-2 text-clif-burgundy" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                  </svg>
+                  Respiratory Support Outlier Thresholds
+                </span>
+                <svg class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+              </summary>
+              <div class="mt-4 overflow-x-auto">
+                <table id="respOutliersTable" class="min-w-full text-xs border border-gray-300">
+                  <thead class="bg-gray-100">
+                    <tr>
+                      <th class="border border-gray-300 px-2 py-1 text-left">Parameter</th>
+                      <th class="border border-gray-300 px-2 py-1 text-left">Lower Limit</th>
+                      <th class="border border-gray-300 px-2 py-1 text-left">Upper Limit</th>
+                    </tr>
+                  </thead>
+                  <tbody id="respOutliersBody">
+                    <!-- Will be populated by JavaScript -->
+                  </tbody>
+                </table>
+              </div>
+              <div class="mt-3 flex gap-2">
+                <button id="exportRespOutliersCSV" class="bg-clif-burgundy text-white px-3 py-1 rounded text-xs hover:bg-clif-burgundy-dark">Export CSV</button>
+                <button id="exportRespOutliersJSON" class="bg-gray-600 text-white px-3 py-1 rounded text-xs hover:bg-gray-700">Export JSON</button>
+              </div>
+            </details>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Microbiology Culture Table -->
+    <section id="microbiology_culture" class="mb-16">
+      <div class="card-modern p-8">
+        <h2 class="text-2xl font-bold text-clif-burgundy mb-6 flex items-center">
+          <svg class="w-7 h-7 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+          </svg>
+          microbiology_culture
+          <Badge type="concept" class="ml-3" />
+        </h2>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div>
+            <h3 class="text-lg font-semibold mb-4">ETL Implementation Guide</h3>
+            <ul class="space-y-3 text-sm">
+              <li><strong>Include Negative Cultures:</strong> Essential for epidemiological research</li>
+              <li><strong>Multiple Organisms:</strong> Create separate rows for each organism in polymicrobial cultures</li>
+              <li><strong>Specimen Source:</strong> Standardize anatomical collection sites</li>
+              <li><strong>Growth Quantification:</strong> Capture colony counts and growth patterns</li>
+              <li><strong>Temporal Accuracy:</strong> Link collection, processing, and result times</li>
+            </ul>
+          </div>
+          
+          <div>
+            <h3 class="text-lg font-semibold mb-4">Special Considerations</h3>
+            <div class="bg-gray-50 p-4 rounded-lg">
+              <h4 class="font-semibold mb-3">Polymicrobial Culture Handling</h4>
+              <p class="text-sm mb-3">When multiple organisms grow from a single culture:</p>
+              <div class="overflow-x-auto">
+                <table class="min-w-full text-xs border border-gray-300">
+                  <thead class="bg-gray-100">
+                    <tr>
+                      <th class="border border-gray-300 px-2 py-1">Patient ID</th>
+                      <th class="border border-gray-300 px-2 py-1">Culture ID</th>
+                      <th class="border border-gray-300 px-2 py-1">Specimen</th>
+                      <th class="border border-gray-300 px-2 py-1">Organism</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td class="border border-gray-300 px-2 py-1">12345</td>
+                      <td class="border border-gray-300 px-2 py-1">BC001</td>
+                      <td class="border border-gray-300 px-2 py-1">Blood</td>
+                      <td class="border border-gray-300 px-2 py-1">E. coli</td>
+                    </tr>
+                    <tr>
+                      <td class="border border-gray-300 px-2 py-1">12345</td>
+                      <td class="border border-gray-300 px-2 py-1">BC001</td>
+                      <td class="border border-gray-300 px-2 py-1">Blood</td>
+                      <td class="border border-gray-300 px-2 py-1">Enterococcus</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    
+    <!-- Resources Section -->
+    <section class="mb-16 bg-gradient-to-r from-clif-burgundy/5 to-clif-burgundy/10 p-8 rounded-2xl">
+      <h2 class="text-2xl font-semibold text-gray-800 mb-6 text-center">Implementation Resources</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="text-center">
+          <a href="https://chatgpt.com/g/g-h1nk6d3eR-clif-assistant" target="_blank" rel="noopener noreferrer" class="card-modern p-6 block hover:shadow-lg transition-shadow">
+            <svg class="w-8 h-8 mx-auto mb-3 text-clif-burgundy" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+            </svg>
+            <h3 class="text-lg font-semibold mb-2">CLIF Assistant</h3>
+            <p class="text-sm text-gray-600">AI-powered implementation support</p>
+          </a>
+        </div>
+        <div class="text-center">
+          <a href="/tools" class="card-modern p-6 block hover:shadow-lg transition-shadow">
+            <svg class="w-8 h-8 mx-auto mb-3 text-clif-burgundy" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            </svg>
+            <h3 class="text-lg font-semibold mb-2">CLIF Tools</h3>
+            <p class="text-sm text-gray-600">Validation and ETL utilities</p>
+          </a>
+        </div>
+        <div class="text-center">
+          <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF" target="_blank" rel="noopener noreferrer" class="card-modern p-6 block hover:shadow-lg transition-shadow">
+            <svg class="w-8 h-8 mx-auto mb-3 text-clif-burgundy" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+            </svg>
+            <h3 class="text-lg font-semibold mb-2">GitHub Repository</h3>
+            <p class="text-sm text-gray-600">Schema, samples, and documentation</p>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="bg-gradient-to-r from-clif-burgundy to-clif-burgundy-dark text-white p-8 rounded-xl text-center">
+      <h2 class="text-2xl font-bold mb-4">Ready to Implement CLIF?</h2>
+      <p class="mb-6 max-w-2xl mx-auto">
+        Start with the core tables (Patient, Hospitalization, Vitals, Labs) and expand your implementation systematically.
+      </p>
+      <div class="flex flex-wrap justify-center gap-4">
+        <CTAButton
+          href="/data-dictionary"
+          variant="secondary"
+          ariaLabel="Browse complete CLIF data dictionary"
+        >
+          View Full Schema
+        </CTAButton>
+        <CTAButton
+          href="/mission"
+          variant="secondary"
+          ariaLabel="Join the CLIF Consortium for support"
+        >
+          Join Consortium
+        </CTAButton>
+      </div>
+    </section>
+  </div>
+
+  <!-- JavaScript for Data Tables -->
+  <script>
+    // Data from GitHub repositories
+    const vitalsOutliersData = `vital_category,lower_limit,upper_limit
+height_cm (adult),76,255
+weight_kg (adult),30,1100
+sbp,0,300
+dbp,0,200
+map,0,250
+heart_rate,0,300
+respiratory_rate,0,60
+spo2,50,100
+temp_c,32,44`;
+
+    const labsOutliersData = `lab_category,lower_limit,upper_limit
+albumin,0,15
+alkaline_phosphatase,0,5000
+alt,0,20000
+ast,0,20000
+basophils_percent,0,100
+basophils_absolute,0,50
+bicarbonate, 0,50 
+bilirubin_total,0,80
+bilirubin_conjugated,0,50
+bilirubin_unconjugated,0,50
+bun,0,250
+calcium_total,0,20
+calcium_ionized,0,20
+chloride,50,140
+creatinine,0,20
+crp,0,1000
+eosinophils_percent,0,100
+eosinophils_absolute,0,50
+esr,0,1000
+ferritin,0,300000
+glucose_fingerstick, 0,2000
+glucose_serum,0,2000
+hemoglobin,2,25
+phosphate,0,15
+inr,0,15
+lactate,0,30
+ldh,0,10000
+lymphocytes_percent,0,100
+lymphocytes_absolute, 0,50
+magnesium,0,10
+monocytes_percent,0,100
+monocytes_absolute,0,50
+neutrophils_percent,0,100
+neutrophils_absolute, 0,50
+pco2_arterial, 0,250
+pco2_venous,0,250
+po2_arterial,0,700
+ph_arterial,6,10
+ph_venous,5,10
+platelet_count,0,2000
+potassium,0,15
+procalcitonin,0,1000
+pt,1,200
+ptt,1,200
+so2_arterial,0,100
+so2_mixed_venous,0,100
+so2_central_venous, 0,100
+sodium,90,210
+total_protein,0,20
+troponin_i,0,10000
+troponin_t, 0,10000
+wbc,0,500`;
+
+    const labRangesData = `lab_category,typical_minimum,typical_maximum,typical_units,reference
+albumin,3.5,5.5,g/dL,MedlinePlus
+alkaline_phosphatase,44,147,U/L,MedlinePlus
+alt,7,56,U/L,MedlinePlus
+ast,10,40,U/L,MedlinePlus
+basophils_percent,0,1,%,MedlinePlus
+basophils_absolute,0,0.1,10^3/µL,MedlinePlus
+bicarbonate,22,29,mmol/L,MedlinePlus
+bilirubin_total,0.1,1.2,mg/dL,MedlinePlus
+bilirubin_conjugated,0,0.3,mg/dL,MedlinePlus
+bilirubin_unconjugated,0.2,0.8,mg/dL,MedlinePlus
+bun,7,20,mg/dL,MedlinePlus
+calcium_total,8.5,10.5,mg/dL,MedlinePlus
+calcium_ionized,4.5,5.3,mg/dL,MedlinePlus
+chloride,96,106,mmol/L,MedlinePlus
+creatinine,0.6,1.3,mg/dL,MedlinePlus
+crp,0,3,mg/L,MedlinePlus
+eosinophils_percent,1,4,%,MedlinePlus
+eosinophils_absolute,0,0.5,10^3/µL,MedlinePlus
+esr,0,20,mm/hour,MedlinePlus
+ferritin,30,400,ng/mL,MedlinePlus
+glucose_fingerstick,70,100,mg/dL,MedlinePlus
+glucose_serum,70,100,mg/dL,MedlinePlus
+hemoglobin,12,17.5,g/dL,MedlinePlus
+phosphate,2.5,4.5,mg/dL,MedlinePlus
+inr,0.8,1.2,(no units),MedlinePlus
+lactate,0.5,2.2,mmol/L,MedlinePlus
+ldh,140,280,U/L,MedlinePlus
+lymphocytes_percent,20,40,%,MedlinePlus
+lymphocytes_absolute,1,4,10^3/µL,MedlinePlus
+magnesium,1.7,2.2,mg/dL,MedlinePlus
+monocytes_percent,2,8,%,MedlinePlus
+monocytes_absolute,0.2,0.8,10^3/µL,MedlinePlus
+neutrophils_percent,40,60,%,MedlinePlus
+neutrophils_absolute,1.5,8,10^3/µL,MedlinePlus
+pco2_arterial,35,45,mmHg,MedlinePlus
+po2_arterial,80,100,mmHg,MedlinePlus
+pco2_venous,40,50,mmHg,MedlinePlus
+ph_arterial,7.35,7.45,(no units),MedlinePlus
+ph_venous,7.31,7.41,(no units),MedlinePlus
+platelet_count,150,450,10^3/µL,MedlinePlus
+potassium,3.5,5.1,mmol/L,MedlinePlus
+procalcitonin,0,0.1,ng/mL,MedlinePlus
+pt,11,13.5,sec,MedlinePlus
+ptt,25,35,sec,MedlinePlus
+so2_arterial,95,100,%,MedlinePlus
+so2_mixed_venous,60,80,%,MedlinePlus
+so2_central_venous,70,75,%,MedlinePlus
+sodium,135,145,mmol/L,MedlinePlus
+total_protein,6.4,8.3,g/dL,MedlinePlus
+troponin_i,0,30,ng/L,MedlinePlus
+troponin_t,0,14,ng/L,MedlinePlus
+wbc,4,11,10^3/µL,MedlinePlus`;
+
+    const medRangesData = `category,typical_minimum,typical_maximum,typical_units,reference
+adenosine,50,150,mcg/kg/min,Lexicomp
+albumin_infusion,0.1,1,g/kg,Lexicomp
+albuterol,2.5,20,mg/hr,Lexicomp
+alprostadil,0.05,0.4,mcg/kg/min,Lexicomp
+aminocaproic,1,4,g/hr,Lexicomp
+aminophylline,0.3,0.9,mg/kg/hr,Lexicomp
+amiodarone,0.5,1,mg/min,Lexicomp
+angiotensin,2,40,ng/kg/min,Lexicomp
+argatroban,0.5,10,mcg/kg/min,Lexicomp
+baclofen,10,120,mcg/hr,Lexicomp
+bivalirudin alteplase,0.05,0.2,mg/kg/hr,Lexicomp
+bumetanide,0.5,2,mg/hr,Lexicomp
+bupivacaine,5,15,mg/hr,Lexicomp
+cangrelor,0.75,4,mcg/kg/min,Lexicomp
+cisatracurium,0.5,10,mcg/kg/min,Lexicomp
+clevidipine,1,21,mg/hr,Lexicomp
+cosyntropin,0.25,1,mg/hr,Lexicomp
+dexmedetomidine,0.2,1.5,mcg/kg/hr,Lexicomp
+dextrose,10,100,mL/hr,Lexicomp
+dextrose_in_water_d5w,10,100,mL/hr,Lexicomp
+diltiazem,5,15,mg/hr,Lexicomp
+dobutamine,2,20,mcg/kg/min,Lexicomp
+dopamine,1,20,mcg/kg/min,Lexicomp
+epinephrine,0.01,0.5,mcg/kg/min,Lexicomp
+epoprostenol,2,50,ng/kg/min,Lexicomp
+eptifibatide,1,2,mcg/kg/min,Lexicomp
+esmolol,50,300,mcg/kg/min,Lexicomp
+esomeprazole,8,8,mg/hr,Lexicomp
+fentanyl,0.7,10,mcg/kg/hr,Lexicomp
+furosemide,5,40,mg/hr,Lexicomp
+heparin,12,18,units/kg/hr,Lexicomp
+hydromorphone,0.1,1,mg/hr,Lexicomp
+insulin,0.05,0.1,units/kg/hr,Lexicomp
+ipratropium,0.5,2,mg/hr,Lexicomp
+isoproterenol,0.01,0.2,mcg/kg/min,Lexicomp
+ketamine,0.1,5,mg/kg/hr,Lexicomp
+labetalol,0.5,8,mg/min,Lexicomp
+lactated_ringers_solution,10,200,mL/hr,Lexicomp
+lidocaine,1,5,mg/min,Lexicomp
+liothyronine,5,20,mcg/hr,Lexicomp
+lorazepam,0.01,0.1,mg/kg/hr,Lexicomp
+magnesium,1,4,g/hr,Lexicomp
+midazolam,0.02,0.1,mg/kg/hr,Lexicomp
+milrinone,0.25,0.75,mcg/kg/min,Lexicomp
+morphine,1,10,mg/hr,Lexicomp
+naloxone,0.4,4,mg/hr,Lexicomp
+narcan,0.4,4,mg/hr,Lexicomp
+nicardipine,5,15,mg/hr,Lexicomp
+nitroglycerin,5,200,mcg/min,Lexicomp
+nitroprusside,0.3,10,mcg/kg/min,Lexicomp
+norepinephrine,0.01,3,mcg/kg/min,Lexicomp
+octreotide,25,50,mcg/hr,Lexicomp
+oxytocin,1,40,milliunits/min,Lexicomp
+pantoprazole,8,8,mg/hr,Lexicomp
+papaverine,30,120,mg/hr,Lexicomp
+pentobarbital,0.5,5,mg/kg/hr,Lexicomp
+phentolamine,0.5,20,mg/hr,Lexicomp
+phenylephrine,0.1,9,mcg/kg/min,Lexicomp
+pitocin,1,40,milliunits/min,Lexicomp
+plasma_lyte,10,200,mL/hr,Lexicomp
+procainamide,1,6,mg/min,Lexicomp
+propofol,5,80,mcg/kg/min,Lexicomp
+remifentanil,0.025,2,mcg/kg/min,Lexicomp
+repletion,10,50,mEq/hr,Lexicomp
+rocuronium,5,12,mcg/kg/min,Lexicomp
+ropivacaine,6,14,mg/hr,Lexicomp
+sodium bicarbonate,1,5,mEq/kg/hr,Lexicomp
+sodium chloride,10,200,mL/hr,Lexicomp
+tacrolimus,0.01,0.04,mg/kg/day,Lexicomp
+terbutaline,0.01,0.4,mg/min,Lexicomp
+thyroid replacement,10,100,mcg/hr,Lexicomp
+tocolyttics,0.5,3,mg/min,Lexicomp
+torsemide,5,20,mg/hr,Lexicomp
+tpn,10,125,mL/hr,Lexicomp
+treprostinil,1.25,40,ng/kg/min,Lexicomp
+vasopressin,0.03,0.04,units/min,Lexicomp
+vecuronium,0.8,1.7,mcg/kg/min,Lexicomp
+zidovudine,1,2,mg/kg/hr,Lexicomp`;
+
+    const respOutliersData = `variable_name,lower_limit,upper_limit
+lpm_set,0,60
+fio2_set,0.21,1
+tidal_volume_set,100,3000
+resp_rate_set,0,200
+pressure_control_set,-50,50
+pressure_support_set,-50,50
+flow_rate_set,-50,100
+peak_inspiratory_pressure_set,-50,100
+inspiratory_time_set,-1,50
+peep_set,0,30
+tidal_volume_obs,100,3000
+resp_rate_obs,0,200
+plateau_pressure_obs,0,100
+peak_inspiratory_pressure_obs,-50,100
+peep_obs,0,50
+minute_vent_obs,0,40
+mean_airway_pressure_obs, 0,50`;
+
+    // Utility functions
+    function parseCSV(csvData) {
+      const lines = csvData.trim().split('\n');
+      const headers = lines[0].split(',');
+      const data = [];
+      
+      for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].split(',');
+        const row = {};
+        headers.forEach((header, index) => {
+          row[header.trim()] = values[index] ? values[index].trim() : '';
+        });
+        data.push(row);
+      }
+      return data;
+    }
+
+    function exportToCSV(data, filename) {
+      const blob = new Blob([data], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    }
+
+    function exportToJSON(data, filename) {
+      const parsedData = parseCSV(data);
+      const jsonData = JSON.stringify(parsedData, null, 2);
+      const blob = new Blob([jsonData], { type: 'application/json' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    }
+
+    // Populate tables
+    function populateVitalsOutliers() {
+      const tbody = document.getElementById('vitalsOutliersBody');
+      if (!tbody) return;
+      
+      const data = parseCSV(vitalsOutliersData);
+      tbody.innerHTML = data.map(row => `
+        <tr class="hover:bg-gray-50">
+          <td class="border border-gray-300 px-2 py-1 font-medium">${row.vital_category}</td>
+          <td class="border border-gray-300 px-2 py-1">${row.lower_limit}</td>
+          <td class="border border-gray-300 px-2 py-1">${row.upper_limit}</td>
+        </tr>
+      `).join('');
+    }
+
+    function populateLabRanges() {
+      const tbody = document.getElementById('labRangesBody');
+      if (!tbody) return;
+      
+      const data = parseCSV(labRangesData);
+      tbody.innerHTML = data.map(row => `
+        <tr class="hover:bg-gray-50">
+          <td class="border border-gray-300 px-2 py-1 font-medium">${row.lab_category.replace(/_/g, ' ')}</td>
+          <td class="border border-gray-300 px-2 py-1">${row.typical_minimum}</td>
+          <td class="border border-gray-300 px-2 py-1">${row.typical_maximum}</td>
+          <td class="border border-gray-300 px-2 py-1">${row.typical_units}</td>
+        </tr>
+      `).join('');
+    }
+
+    function populateLabOutliers() {
+      const tbody = document.getElementById('labOutliersBody');
+      if (!tbody) return;
+      
+      const data = parseCSV(labsOutliersData);
+      tbody.innerHTML = data.map(row => `
+        <tr class="hover:bg-gray-50">
+          <td class="border border-gray-300 px-2 py-1 font-medium">${row.lab_category.replace(/_/g, ' ')}</td>
+          <td class="border border-gray-300 px-2 py-1">${row.lower_limit}</td>
+          <td class="border border-gray-300 px-2 py-1">${row.upper_limit}</td>
+        </tr>
+      `).join('');
+    }
+
+    function populateMedRanges() {
+      const tbody = document.getElementById('medRangesBody');
+      if (!tbody) return;
+      
+      const data = parseCSV(medRangesData);
+      tbody.innerHTML = data.map(row => `
+        <tr class="hover:bg-gray-50">
+          <td class="border border-gray-300 px-2 py-1 font-medium">${row.category.replace(/_/g, ' ')}</td>
+          <td class="border border-gray-300 px-2 py-1">${row.typical_minimum}</td>
+          <td class="border border-gray-300 px-2 py-1">${row.typical_maximum}</td>
+          <td class="border border-gray-300 px-2 py-1">${row.typical_units}</td>
+        </tr>
+      `).join('');
+    }
+
+    function populateRespOutliers() {
+      const tbody = document.getElementById('respOutliersBody');
+      if (!tbody) return;
+      
+      const data = parseCSV(respOutliersData);
+      tbody.innerHTML = data.map(row => `
+        <tr class="hover:bg-gray-50">
+          <td class="border border-gray-300 px-2 py-1 font-medium">${row.variable_name.replace(/_/g, ' ')}</td>
+          <td class="border border-gray-300 px-2 py-1">${row.lower_limit}</td>
+          <td class="border border-gray-300 px-2 py-1">${row.upper_limit}</td>
+        </tr>
+      `).join('');
+    }
+
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', function() {
+      // Populate all tables
+      populateVitalsOutliers();
+      populateLabRanges();
+      populateLabOutliers();
+      populateMedRanges();
+      populateRespOutliers();
+
+      // Add export event listeners
+      const exportButtons = [
+        { id: 'exportVitalsCSV', data: vitalsOutliersData, filename: 'clif_vitals_outliers.csv' },
+        { id: 'exportVitalsJSON', data: vitalsOutliersData, filename: 'clif_vitals_outliers.json', json: true },
+        { id: 'exportLabRangesCSV', data: labRangesData, filename: 'clif_lab_ranges.csv' },
+        { id: 'exportLabRangesJSON', data: labRangesData, filename: 'clif_lab_ranges.json', json: true },
+        { id: 'exportLabOutliersCSV', data: labsOutliersData, filename: 'clif_lab_outliers.csv' },
+        { id: 'exportLabOutliersJSON', data: labsOutliersData, filename: 'clif_lab_outliers.json', json: true },
+        { id: 'exportMedRangesCSV', data: medRangesData, filename: 'clif_med_ranges.csv' },
+        { id: 'exportMedRangesJSON', data: medRangesData, filename: 'clif_med_ranges.json', json: true },
+        { id: 'exportRespOutliersCSV', data: respOutliersData, filename: 'clif_resp_outliers.csv' },
+        { id: 'exportRespOutliersJSON', data: respOutliersData, filename: 'clif_resp_outliers.json', json: true }
+      ];
+
+      exportButtons.forEach(button => {
+        const element = document.getElementById(button.id);
+        if (element) {
+          element.addEventListener('click', () => {
+            if (button.json) {
+              exportToJSON(button.data, button.filename);
+            } else {
+              exportToCSV(button.data, button.filename);
+            }
+          });
+        }
+      });
+
+      // Smooth scrolling for table of contents links
+      document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+          e.preventDefault();
+          const target = document.querySelector(this.getAttribute('href'));
+          if (target) {
+            target.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start'
+            });
+          }
+        });
+      });
+
+      // Animate details toggles
+      document.querySelectorAll('details').forEach(details => {
+        details.addEventListener('toggle', function() {
+          const summary = this.querySelector('summary');
+          const arrow = summary.querySelector('svg');
+          if (arrow) {
+            arrow.style.transform = this.open ? 'rotate(180deg)' : 'rotate(0deg)';
+          }
+        });
+      });
+    });
+  </script>
+</BaseLayout>
