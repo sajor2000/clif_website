@@ -97,12 +97,11 @@ The microbiology culture table is a wide longitudinal table that captures the or
 
 **Example**:
 
-| hospitalization_id | organism_id | order_dttm                | collect_dttm              | result_dttm               | fluid_name                | fluid_category     | method_name     | method_category | organism_name           | organism_category      | organism_group                                               | lab_loinc_code |
-|-------------------|-------------|---------------------------|---------------------------|---------------------------|---------------------------|--------------------|-----------------|-----------------|------------------------|------------------------|--------------------------------------------------------------|---------------|
-| HOSP12345         | ORG001      | 2025-06-05 08:15:00+00:00 | 2025-06-05 08:45:00+00:00 | 2025-06-06 12:00:00+00:00 | AFB/FUNGAL BLOOD CULTURE | Blood/Buffy Coat   | Blood culture   | culture         | Acinetobacter baumanii | acinetobacter_baumanii | acinetobacter (baumanii, calcoaceticus, lwoffi, other species) |               |
-| HOSP12345         | ORG002      | 2025-06-05 08:15:00+00:00 | 2025-06-05 08:45:00+00:00 | 2025-06-06 12:00:00+00:00 | AFB/FUNGAL BLOOD CULTURE | Blood/Buffy Coat   | Blood culture   | culture         | Candida albicans       | candida_albicans       | candida albicans                                            |               |
-| HOSP67890         | ORG003      | 2025-06-10 14:10:00+00:00 | 2025-06-10 14:35:00+00:00 | 2025-06-11 09:20:00+00:00 | BRAIN BIOPSY CULTURE     | Brain              | Tissue culture  | culture         | Aspergillus fumigatus  | aspergillus_fumigatus  | asperguillus fumigatus                                       |               |
-
+| patient_id | hospitalization_id | organism_id | order_dttm                | collect_dttm              | result_dttm               | fluid_name                | fluid_category     | method_name     | method_category | organism_name           | organism_category      | organism_group                                               | lab_loinc_code |
+|------------|-------------------|-------------|---------------------------|---------------------------|---------------------------|---------------------------|--------------------|-----------------|-----------------|------------------------|------------------------|--------------------------------------------------------------|---------------|
+| 12345      | HOSP12345         | ORG001      | 2025-06-05 08:15:00+00:00 | 2025-06-05 08:45:00+00:00 | 2025-06-06 12:00:00+00:00 | AFB/FUNGAL BLOOD CULTURE | Blood/Buffy Coat   | Blood culture   | culture         | Acinetobacter baumanii | acinetobacter_baumanii | acinetobacter (baumanii, calcoaceticus, lwoffi, other species) |               |
+| 12345      | HOSP12345         | ORG002      | 2025-06-05 08:15:00+00:00 | 2025-06-05 08:45:00+00:00 | 2025-06-06 12:00:00+00:00 | AFB/FUNGAL BLOOD CULTURE | Blood/Buffy Coat   | Blood culture   | culture         | Candida albicans       | candida_albicans       | candida albicans                                            |               |
+| 67890      | HOSP67890         | ORG003      | 2025-06-10 14:10:00+00:00 | 2025-06-10 14:35:00+00:00 | 2025-06-11 09:20:00+00:00 | BRAIN BIOPSY CULTURE     | Brain              | Tissue culture  | culture         | Aspergillus fumigatus  | aspergillus_fumigatus  | asperguillus fumigatus                                       |               |
 
 ## microbiology_nonculture
 
@@ -455,7 +454,7 @@ Continuous start stop record of every provider who cared for the patient.
 
 
 
-This table is used to store the susceptibility results of the organisms identified in the `Microbiology Culture` table and may be renamed to `Microbiology_Susceptibility` in 2.1.0.
+This table is used to store the susceptibility results of the organisms identified in the `Microbiology Culture` table and has been renamed to `Microbiology_Susceptibility` in 2.1.0.
 
 
 **Example**:
