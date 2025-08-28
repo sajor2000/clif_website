@@ -57,6 +57,7 @@ The crrt_therapy table captures Continuous Renal Replacement Therapy (CRRT) data
 - **CVVH:** Continuous Veno-Venous Hemofiltration
 - **CVVHD:** Continuous Veno-Venous Hemodialysis
 - **CVVHDF:** Continuous Venous-Venous Hemodiafiltration
+- **AVVH:** Accelerated Veno-venous Hemofiltration also called ARRT or PIIRT
 \
 **CRRT Modalities and Parameter Usage**:
 
@@ -66,6 +67,8 @@ The crrt_therapy table captures Continuous Renal Replacement Therapy (CRRT) data
 | **CVVH**          | Required            | Required                        | Required                        | Not Used                |   Required              |
 | **CVVHD**         | Required            | Not Used                        | Not Used                        | Required                |   Required              |
 | **CVVHDF**        | Required            | Required                        | Required                        | Required                |   Required              |
+| **AVVH**          | TBD                 | TBD                             | TBD                             | TBD                     |   TBD                   |
+
 
 **Example**:
 | hospitalization_id | device_id | recorded_dttm | crrt_mode_name | crrt_mode_category | dialysis_machine_name     | blood_flow_rate | pre_filter_replacement_fluid_rate | post_filter_replacement_fluid_rate | dialysate_flow_rate | ultrafiltration_out |
