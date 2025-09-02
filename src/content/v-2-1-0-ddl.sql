@@ -339,6 +339,19 @@ CREATE TABLE medication_orders (
 );
 
 -- -----------------------------------------------------
+-- Table: patient_diagnosis
+-- -----------------------------------------------------
+CREATE TABLE patient_diagnosis (
+  patient_id VARCHAR COMMENT '{"description": "Unique identifier for each patient, presumed to be a distinct individual.", "permissible": "No restriction"}',
+  hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
+  diagnosis_code VARCHAR COMMENT '{"description": "ICD-10-CM from clinical documentation", "permissible": "Valid ICD-10-CM code"}',
+  diagnosis_code_format VARCHAR COMMENT '{"description": "ICD10CM (clinical data typically ICD-10 only)", "permissible": "ICD10CM"}',
+  source_type VARCHAR COMMENT '{"description": "Source of diagnosis: problem_list, medical_history, encounter_dx (optional)", "permissible": "problem_list, medical_history, encounter_dx"}',
+  start_dttm DATETIME COMMENT '{"description": "When condition started (user-defined)", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
+  end_dttm DATETIME COMMENT '{"description": "When condition ended (NULL if ongoing)", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}'
+);
+
+-- -----------------------------------------------------
 -- Table: patient_procedures
 -- -----------------------------------------------------
 CREATE TABLE patient_procedures (

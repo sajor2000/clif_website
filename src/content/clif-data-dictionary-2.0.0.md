@@ -307,19 +307,17 @@ The ECMO/MCS table is a wider longitudinal table that captures the start and sto
 
 ## hospital_diagnosis
 
-Record of all diagnoses associated with the hospitalization. Expect breaking changes to this table as we seek to align it with existing diagnosis ontologies
+Record of all final billing diagnosis codes for reimbursement and comorbidity scoring. All other disgnosis codes for a patient including final billing diagnosis codes are included under concept table `patient_diagnosis`.
 
 **Example**:
-| hospitalization_id | diagnosis_code | diagnosis_code_format | diagnosis_name                  | diagnosis_type | present_on_admission |
-|-------------------|-----------------|----------------------|----------------------------------|---------------|---------------------|
-| 20010012          | I10             | ICD-10-CM            | Essential (primary) hypertension | Principal     | Yes                 |
-| 20010012          | E11.9           | ICD-10-CM            | Type 2 diabetes mellitus         | Secondary     | No                  |
-| 20010015          | 250.00          | ICD-9-CM             | Diabetes mellitus without mention of complication | Principal     | Yes                 |
-| 20010015          | 401.9           | ICD-9-CM             | Unspecified essential hypertension | Secondary     | No                  |
-| 20010020          | J45.909         | ICD-10-CM            | Unspecified asthma, uncomplicated | Principal     | Yes                 |
-| 20010020          | 530.81          | ICD-9-CM             | Esophageal reflux                | Secondary     | Yes                 |
-
-
+| hospitalization_id | diagnosis_code | diagnosis_code_format | diagnosis_primary | poa_present |
+|-------------------|----------------|----------------------|------------------|-------------|
+| 20010012          | I10            | ICD10CM              | 1                | 1           |
+| 20010012          | E11.9          | ICD10CM              | 0                | 0           |
+| 20010015          | 250.00         | ICD9CM               | 1                | 1           |
+| 20010015          | 401.9          | ICD9CM               | 0                | 0           |
+| 20010020          | J45.909        | ICD10CM              | 1                | 1           |
+| 20010020          | 530.81         | ICD9CM               | 0                | 1           |
 
 ## intake_output
 
@@ -393,10 +391,7 @@ This table has exactly the same schema as [`medication_admin_continuous`](#medic
 
 ## medication_orders
 
-
 This table records the ordering (not administration) of medications. The table is in long form (one medication order per row) longitudinal table. Linkage to the `medication_admin_continuous` and `medication_admin_intermittent` tables is through the `med_order_id` field.
-
-
 
 **Example**:
 
@@ -412,22 +407,33 @@ This table records the ordering (not administration) of medications. The table i
 | 12352             | 456796       | 2023-10-03 20:00:00+00:00 UTC   | 2023-10-04 08:00:00+00:00 UTC   | 2023-10-03 19:45:00+00:00 UTC   | Dexamethasone 10 mg IV                                             | dexamethasone  | steroids      | active              | ongoing                 | Intravenous   | 10.0     | mg           | Once Daily    | 0   |
 
 
+## patient_diagnosis
+
+The `patient_diagnosis` table provides a record of all diagnoses assigned to a patient. 
+
+**Example**:
+
+| patient_id | hospitalization_id | diagnosis_code | diagnosis_code_format | source_type     | start_dttm                  | end_dttm                    |
+|------------|-------------------|---------------|----------------------|-----------------|-----------------------------|-----------------------------|
+| PAT1001    | HOSP1001          | I10           | ICD10CM              | problem_list    | 2024-01-01 08:00:00+00:00   | NULL                        |
+| PAT1001    | HOSP1001          | E11.9         | ICD10CM              | encounter_dx    | 2024-01-01 08:00:00+00:00   | 2024-01-10 12:00:00+00:00   |
+| PAT1002    | HOSP1002          | J18.9         | ICD10CM              | medical_history | 2024-01-05 09:30:00+00:00   | NULL                        |
+| PAT1003    | HOSP1003          | N17.9         | ICD10CM              | encounter_dx    | 2024-01-10 07:00:00+00:00   | 2024-01-15 10:00:00+00:00   |
+
+
 ## patient_procedures
-
-
 
 A longitudinal record of each bedside ICU procedure performed on the patient (e.g. central line placement, chest tube placement). Note that this table is not intended to capture the full set of procedures performed on inpatients.
 
-
-
 **Example**:
-| patient_id | procedure_code | procedure_code_format | recorded_dttm           |
-|------------|----------------|----------------------|-------------------------|
-| 101001     | 36556          | CPT                  | 2024-01-01 08:00:00+00:00 UTC |
-| 101001     | 32551          | CPT                  | 2024-01-01 10:00:00+00:00 UTC |
-| 101002     | 0BH17EZ        | ICD-10-PCS           | 2024-01-05 09:30:00+00:00 UTC |
-| 101002     | 4700000        | SNOMED               | 2024-01-05 11:00:00+00:00 UTC |
-| 101003     | 36620          | CPT                  | 2024-01-10 07:00:00+00:00 UTC |
+
+| hospitalization_id | billing_provider_id | performing_provider_id | procedure_code | procedure_code_format | procedure_billed_dttm           |
+|--------------------|--------------------|-----------------------|----------------|----------------------|----------------------------------|
+| HOSP1001           | BP123              | PP456                 | 36556          | CPT                  | 2024-01-01 08:00:00+00:00 UTC    |
+| HOSP1001           | BP123              | PP789                 | 32551          | CPT                  | 2024-01-01 10:00:00+00:00 UTC    |
+| HOSP1002           | BP234              | PP890                 | 0BH17EZ        | ICD10PCS             | 2024-01-05 09:30:00+00:00 UTC    |
+| HOSP1002           | BP234              | PP890                 | G0008          | HCPCS                | 2024-01-05 11:00:00+00:00 UTC    |
+| HOSP1003           | BP345              | PP901                 | 36620          | CPT                  | 2024-01-10 07:00:00+00:00 UTC    |
 
 
 
