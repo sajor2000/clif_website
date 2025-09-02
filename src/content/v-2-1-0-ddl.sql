@@ -89,10 +89,9 @@ CREATE TABLE hospitalization (
 CREATE TABLE hospital_diagnosis (
   hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "Must match a hospitalization_id in the hospitalization table"}',
   diagnosis_code VARCHAR COMMENT '{"description": "ICD diagnosis code", "permissible": "Valid ICD-9-CM or ICD-10-CM code"}',
-  diagnosis_code_format VARCHAR COMMENT '{"description": "Format of the code (e.g., ICD-10-CM, ICD-9-CM)", "permissible": "ICD-10-CM, ICD-9-CM"}',
-  diagnosis_name VARCHAR COMMENT '{"description": "Optional human-readable description of the diagnosis", "permissible": "No restriction"}',
-  diagnosis_type VARCHAR COMMENT '{"description": "Type of diagnosis (e.g., Principal, Secondary)", "permissible": "Principal, Secondary, Other"}',
-  present_on_admission VARCHAR COMMENT '{"description": "Indicator if the diagnosis was present on admission (Yes/No)", "permissible": "Yes, No"}'
+  diagnosis_code_format VARCHAR COMMENT '{"description": "Format of the code", "permissible": "ICD10CM or ICD9CM"}',
+  diagnosis_primary INT COMMENT '{"description": "Type of diagnosis 1 = primary, 0 = secondary", "permissible": "0, 1"}',
+  poa_present INT COMMENT '{"description": "Indicator if the diagnosis was present on admission, 1 = present, 0 = absent", "permissible": "0, 1"}'
 );
 
 -- -----------------------------------------------------
@@ -343,12 +342,12 @@ CREATE TABLE medication_orders (
 -- Table: patient_procedures
 -- -----------------------------------------------------
 CREATE TABLE patient_procedures (
-  patient_id VARCHAR COMMENT '{"description": "Unique identifier for each patient, presumed to be a distinct individual.", "permissible": "No restriction"}',
   hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
-  provider_id VARCHAR COMMENT '{"description": "Uniquely identifies the provider associated with the procedure.", "permissible": "No restriction"}',
-  procedure_code VARCHAR COMMENT '{"description": "Encoded procedure identifier (e.g., CPT, ICD-10-PCS, SNOMED code).", "permissible": "No restriction"}',
-  procedure_code_format VARCHAR COMMENT '{"description": "Code format used (e.g., CPT, ICD-10-PCS, SNOMED).", "permissible": "CPT, ICD-10-PCS, SNOMED, etc."}',
-  recorded_dttm DATETIME COMMENT '{"description": "Date and time the procedure was performed or recorded. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}'
+  billing_provider_id VARCHAR COMMENT '{"description": "Uniquely identifies the billingprovider associated with the procedure.", "permissible": "No restriction"}',
+  performing_provider_id VARCHAR COMMENT '{"description": "Uniquely identifies the performing provider associated with the procedure.", "permissible": "No restriction"}',
+  procedure_code VARCHAR COMMENT '{"description": "Encoded procedure identifier.", "permissible": "Valid CPT, ICD-10-PCS OR HCPCS code"}',
+  procedure_code_format VARCHAR COMMENT '{"description": "Code format used.", "permissible": "CPT, ICD10PCS, HCPCS"}',
+  procedure_billed_dttm DATETIME COMMENT '{"description": "Date and time the procedure was billed (may differ from actual procedure time). All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}'
 );
 
 -- -----------------------------------------------------
