@@ -424,7 +424,10 @@ The `patient_diagnosis` table provides a record of all diagnoses assigned to a p
 
 ## patient_procedures
 
-A longitudinal record of each bedside ICU procedure performed on the patient (e.g. central line placement, chest tube placement). Note that this table is not intended to capture the full set of procedures performed on inpatients.
+
+A long table of standardized procedural billing codes associated with the hospitalization using the [Healthcare Common Procedure Coding System (HCPCS)](https://www.cms.gov/medicare/regulations-guidance/physician-self-referral/list-cpt-hcpcs-codes). These include two levels **CPT codes billed by clinicians (HCPCS Level 1)** and **Products, supplies, and services that do not have CPT codes (HCPCS Level 2)**.
+\
+Additionally, this table contains [ICD-10-PCS](https://www.cms.gov/medicare/coding-billing/icd-10-codes) procedure codes which are not used for clinician billing but can contribute to the calculation of DRGs for hospital reimbursement and can also appear in the `hospital_diagnosis` table.
 
 **Example**:
 
