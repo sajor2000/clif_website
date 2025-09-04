@@ -88,9 +88,10 @@ CREATE TABLE hospital_diagnosis (
   hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "Must match a hospitalization_id in the hospitalization table"}',
   diagnosis_code VARCHAR COMMENT '{"description": "ICD diagnosis code", "permissible": "Valid ICD-9-CM or ICD-10-CM code"}',
   diagnosis_code_format VARCHAR COMMENT '{"description": "Format of the code", "permissible": "ICD10CM or ICD9CM"}',
-  diagnosis_primary INT COMMENT '{"description": "Type of diagnosis 1 = primary, 0 = secondary", "permissible": "0, 1"}',
-  poa_present INT COMMENT '{"description": "Indicator if the diagnosis was present on admission, 1 = present, 0 = absent", "permissible": "0, 1"}'
+  diagnosis_primary INT COMMENT '{"description": "Type of diagnosis: 1 = primary, 0 = secondary. If diagnoses are ranked, any rank of 2 or above is considered secondary.", "permissible": "0, 1"}',
+  poa_present INT COMMENT '{"description": "Indicator if the diagnosis was present on admission. Only two options are allowed: 1 = Yes (present on admission), 0 = No (not present on admission). No other values (such as Exempt, Unknown, or Unspecified) are permitted.", "permissible": "0, 1"}'
 );
+
 
 -- -----------------------------------------------------
 -- Table: labs

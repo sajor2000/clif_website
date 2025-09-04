@@ -308,7 +308,9 @@ The ECMO/MCS table is a wider longitudinal table that captures the start and sto
 
 ## hospital_diagnosis
 
-Finalized billing diagnosis codes for hospital reimbursement, e.g. calculation of a Diagnosis Related Group (DRG). All other diagnosis codes for a patient are included under concept table `patient_diagnosis`  which has start and end timestamps. This table is appropriate for calculation of comorbidity scores but should not be used as input features into a prediction model for an inpatient event. These diagnoses also do not have timestamps, as they are often finalized after discharge.
+Finalized billing diagnosis codes for hospital reimbursement, e.g. calculation of a Diagnosis Related Group (DRG). These diagnoses also do not have timestamps, as they are often finalized after discharge. The `hospital_diagnosis` table is appropriate for calculation of comorbidity scores but should not be used as input features into a prediction model for an inpatient event.
+\
+All other diagnosis codes for a patient are included under concept table `patient_diagnosis` which has start and end timestamps.
 
 **Example**:
 | hospitalization_id | diagnosis_code | diagnosis_code_format | diagnosis_primary | poa_present |
