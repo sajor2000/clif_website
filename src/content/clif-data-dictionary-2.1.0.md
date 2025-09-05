@@ -200,6 +200,9 @@ The medication admin continuous table is a long-form (one medication administrat
 | 370921            | 2123-02-12 03:14:00+00:00 UTC | PHENYLEPHRINE 5 MG/50 ML (100 MCG/ML) IN 0.9 % SODIUM CHLORIDE    | phenylephrine | vasoactives   | Intravenous    | NA                | 50.0000  | mcg/min       | Rate Change    |
 | 702344            | 2123-04-27 04:30:00+00:00 UTC | HEPARIN (PORCINE) 25,000 UNIT/250 ML IN 0.45 % SODIUM CHLORIDE    | heparin       | anticoagulation| Intravenous    | NA                | 18.0000  | Units/kg/hr   | New Bag        |
 
+**Notes**:
+
+- Include combination medications when mapping medication names to respective categories. Eg. `ACETAMIN-CALCIUM-MAG-CAFFEINE ORAL` -> `acetaminophen`
 
 ## microbiology_culture
 
