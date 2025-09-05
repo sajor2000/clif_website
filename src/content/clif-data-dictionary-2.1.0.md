@@ -203,6 +203,7 @@ The medication admin continuous table is a long-form (one medication administrat
 **Notes**:
 
 - Include combination medications when mapping medication names to respective categories. Eg. `ACETAMIN-CALCIUM-MAG-CAFFEINE ORAL` -> `acetaminophen`
+- Include trial drugs when mapping medication names to respective categories.. Eg. `ACETAMINOPHEN (IRB 140122) 325 MG ORAL TAB` -> `acetaminophen`
 
 ## microbiology_culture
 
