@@ -492,12 +492,12 @@ This table is used to store the susceptibility results of the organisms identifi
 | organism_id | antimicrobial_name                 | antimicrobial_category      | sensitivity_name      | susceptibility_name             | susceptibility_category |
 |-------------|------------------------------------|----------------------------|----------------------|-------------------------------|------------------------|
 | 1           | avycex (ceftazidime/avibactam)     | ceftazidime_avibactam      | 8 MIC                | susceptible                   | susceptible            |
-| 1           | amoxicillin clavulanic acid        | amoxicillin_clavulanate    | < 0.1 ug/mL          | susceptible                   | non-susceptible        |
+| 1           | amoxicillin clavulanic acid        | amoxicillin_clavulanate    | < 0.1 ug/mL          | susceptible                   | susceptible        |
 | 1           | meropenem                         | meropenem                  | intermediate         | intermediate                  | intermediate           |
 | 1           | ampicillin 500mg                   | ampicillin                 | > 0.5 ug/mL          | resistant                     | NA                     |
 | 2           | unasyn                            | ampicillin_sulbactam       | susceptible dose dependent | susceptible             | susceptible            |
 | 2           | Ertapenem                         | ertapenem                  | not reported         | NA                            | NA                     |
-| 2           | Vancomycin (non-Cdiff)            | vancomycin                 | > 0.25 ug/mL         | non susceptible, caution       | non-susceptible        |
+| 2           | Vancomycin (non-Cdiff)            | vancomycin                 | > 0.25 ug/mL         | non susceptible, caution       | non_susceptible        |
 
 
 
