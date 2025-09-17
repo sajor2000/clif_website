@@ -290,7 +290,6 @@ const navigationSections = [
               <div class="expanded-content">
                 <div class="space-y-6">
                   <div>
-                    <h5 class="text-xl font-semibold mb-3">The Problem</h5>
                     <p class="text-sm leading-relaxed mb-3">
                       ADT data often contains overlapping time intervals where a patient appears to be in multiple locations simultaneously. This happens due to:
                     </p>
@@ -384,6 +383,7 @@ const navigationSections = [
           </div>
         </div>
 
+
         <!-- Code Status -->
         <div id="code-status" class="bg-white rounded-lg shadow-md p-6">
           <h4 class="text-lg font-semibold mb-4 text-gray-800">code_status</h4>
@@ -393,9 +393,6 @@ const navigationSections = [
             <li>• Status change tracking</li>
             <li>• Legal documentation compliance</li>
           </ul>
-          <div class="mt-3 p-3 bg-gray-50 rounded text-xs">
-            <strong>Key Fields:</strong> code_status_id, code_status_category
-          </div>
         </div>
 
         <!-- CRRT Therapy -->
@@ -407,9 +404,6 @@ const navigationSections = [
             <li>• Access site documentation</li>
             <li>• Filter change tracking</li>
           </ul>
-          <div class="mt-3 p-3 bg-gray-50 rounded text-xs">
-            <strong>Key Fields:</strong> crrt_id, modality_category, access_category
-          </div>
         </div>
 
         <!-- ECMO/MCS -->
@@ -421,9 +415,6 @@ const navigationSections = [
             <li>• Flow/pressure monitoring</li>
             <li>• Complication documentation</li>
           </ul>
-          <div class="mt-3 p-3 bg-gray-50 rounded text-xs">
-            <strong>Key Fields:</strong> ecmo_id, ecmo_type, support_category
-          </div>
         </div>
 
         <!-- Hospital Diagnosis -->
@@ -435,9 +426,6 @@ const navigationSections = [
             <li>• Diagnosis timing (admission/discharge)</li>
             <li>• SNOMED CT integration</li>
           </ul>
-          <div class="mt-3 p-3 bg-gray-50 rounded text-xs">
-            <strong>Key Fields:</strong> diagnosis_id, icd10_code, diagnosis_category
-          </div>
         </div>
 
         <!-- Hospitalization -->
@@ -459,14 +447,7 @@ const navigationSections = [
         <div id="labs" class="bg-white rounded-lg shadow-md p-6">
           <h4 class="text-lg font-semibold mb-4 text-gray-800">labs</h4>
           <ul class="text-sm text-gray-600 space-y-2">
-            <li>• LOINC code standardization</li>
-            <li>• Reference range handling</li>
-            <li>• Result type (numeric/categorical)</li>
-            <li>• Specimen type mapping</li>
           </ul>
-          <div class="mt-3 p-3 bg-gray-50 rounded text-xs">
-            <strong>Key Fields:</strong> lab_id, loinc_code, lab_category, lab_value
-          </div>
         </div>
 
         <!-- Medication Admin Continuous -->
@@ -478,49 +459,25 @@ const navigationSections = [
                 <span class="text-xs text-gray-500">Click to expand</span>
               </h4>
               <ul class="text-sm text-gray-600 space-y-2">
-                <li>• Continuous infusion tracking</li>
-                <li>• Rate changes over time</li>
-                <li>• Start/stop timestamps</li>
-                <li>• Concentration calculations</li>
+                <li>• Handling of combo, trial and placebo drugs</li>
               </ul>
-              <div class="mt-3 p-3 bg-gray-50 rounded text-xs">
-                <strong>Key Fields:</strong> medication_id, med_category, rate, rate_unit
-              </div>
-              <div class="mt-4 p-3 bg-blue-50 rounded text-xs">
-                <strong>🧪 Special Handling:</strong> Combo drugs, trial drugs, placebo handling
-              </div>
             </div>
             <div class="flip-card-back bg-clif-burgundy rounded-lg shadow-md p-6 text-white overflow-y-auto">
               <button class="modal-close" aria-label="Close">×</button>
-              <h4 class="text-2xl font-bold mb-6">🧪 medication_admin_continuous - Complete Guide</h4>
+              <h4 class="text-2xl font-bold mb-6">medication_admin_continuous - Complete Guide</h4>
 
               <div class="expanded-content">
                 <div class="space-y-6">
                   <div>
-                    <h5 class="text-xl font-semibold mb-3">Overview</h5>
-                    <p class="text-sm leading-relaxed">
-                      Tracks continuous medication infusions including drips, pumps, and constant-rate administrations.
-                      Critical for ICU patients on vasopressors, sedatives, and other continuous therapies.
-                    </p>
-                  </div>
-
-                  <div>
                     <h5 class="text-xl font-semibold mb-3">Combination Drug Handling</h5>
                     <div class="space-y-4">
                       <div>
-                        <strong class="text-yellow-300">Single Component Mapping:</strong>
-                        <div class="bg-white/10 p-3 rounded-lg mt-2 text-sm">
-                          <code>ACETAMIN-CALCIUM-MAG-CAFFEINE ORAL → acetaminophen</code>
-                          <p class="mt-1 text-xs">Map to primary active component</p>
-                        </div>
-                      </div>
-                      <div>
-                        <strong class="text-yellow-300">Multi-Component (Duplicate Rows):</strong>
+                        <strong class="text-yellow-300">Multi-Component (Duplicate rows and map to each med_category in the mCIDE):</strong>
                         <div class="bg-white/10 p-3 rounded-lg mt-2 text-sm">
                           <code>HYDROCODONE-ACETAMINOPHEN 7.5/325</code>
                           <ul class="mt-2 text-xs space-y-1">
-                            <li>→ Row 1: hydrocodone 7.5 mg</li>
-                            <li>→ Row 2: acetaminophen 325 mg</li>
+                            <li>→ Row 1: HYDROCODONE-ACETAMINOPHEN 7.5/325 maps to acetaminophen</li>
+                            <li>→ Row 2: HYDROCODONE-ACETAMINOPHEN 7.5/325 maps to hydrocodone_acetaminophen</li>
                           </ul>
                         </div>
                       </div>
@@ -531,13 +488,13 @@ const navigationSections = [
                     <h5 class="text-xl font-semibold mb-3">Special Cases</h5>
                     <ul class="space-y-3 text-sm">
                       <li>
-                        <strong class="text-blue-300">Trial Drugs:</strong> Include IRB notation
+                        <strong class="text-blue-300">Trial Drugs:</strong> Include 
                         <div class="bg-white/10 p-2 rounded mt-1 text-xs">
                           ACETAMINOPHEN (IRB 140122) 325 MG → acetaminophen + trial flag
                         </div>
                       </li>
                       <li>
-                        <strong class="text-blue-300">Placebo:</strong> Separate category, maintain blinding
+                        <strong class="text-blue-300">Placebo:</strong> Include
                       </li>
                       <li>
                         <strong class="text-blue-300">Brand Names:</strong> Map to generic, preserve brand in notes
@@ -548,60 +505,55 @@ const navigationSections = [
 
                 <div class="space-y-6">
                   <div>
-                    <h5 class="text-xl font-semibold mb-3">ETL Best Practices</h5>
-                    <ul class="space-y-2 text-sm">
-                      <li class="flex items-start">
-                        <span class="text-green-300 mr-2">•</span>
-                        <div>
-                          <strong>Rate Calculations:</strong> Standardize units (ml/hr, mcg/kg/min)
-                        </div>
-                      </li>
-                      <li class="flex items-start">
-                        <span class="text-green-300 mr-2">•</span>
-                        <div>
-                          <strong>Time Handling:</strong> Capture start/stop times accurately
-                        </div>
-                      </li>
-                      <li class="flex items-start">
-                        <span class="text-green-300 mr-2">•</span>
-                        <div>
-                          <strong>Concentration:</strong> Include drug concentration for dose calculations
-                        </div>
-                      </li>
-                    </ul>
-                  </div>
+                    <h5 class="text-xl font-semibold mb-3">Dose Parsing and Unit Standardization</h5>
+                    <p class="text-sm leading-relaxed mb-3">
+                      Doses are often stored as text like "2.5 mg EVERY 4 HOURS" requiring parsing and standardization.
+                    </p>
 
-                  <div>
-                    <h5 class="text-xl font-semibold mb-3">Common Issues</h5>
-                    <ul class="space-y-2 text-sm">
-                      <li class="flex items-start">
-                        <span class="text-red-300 mr-2">•</span>
-                        Unit inconsistencies across pumps
-                      </li>
-                      <li class="flex items-start">
-                        <span class="text-red-300 mr-2">•</span>
-                        Missing stop times for discontinued drips
-                      </li>
-                      <li class="flex items-start">
-                        <span class="text-red-300 mr-2">•</span>
-                        Rate changes not captured as separate events
-                      </li>
-                    </ul>
-                  </div>
+                    <div class="space-y-3">
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p class="text-yellow-300 font-semibold mb-2">Extract Dose Unit:</p>
+                        <div class="font-mono text-xs">
+                        med_dose_unit = str_trim(ifelse(<br/>
+                          is.na(dose_units) | dose_units == "",<br/>
+                          str_replace_all(take_med_dose, "[0-9.]+", ""),  # Remove numbers<br/>
+                          dose_units<br/>
+                        ))
+                        </div>
+                      </div>
 
-                  <div>
-                    <h5 class="text-xl font-semibold mb-3">Key Fields</h5>
-                    <div class="bg-white/10 p-4 rounded-lg">
-                      <ul class="text-sm space-y-1">
-                        <li><strong>medication_id:</strong> Unique identifier</li>
-                        <li><strong>med_category:</strong> Standardized drug name (lowercase)</li>
-                        <li><strong>rate:</strong> Infusion rate (numeric)</li>
-                        <li><strong>rate_unit:</strong> ml/hr, mcg/kg/min, etc.</li>
-                        <li><strong>start_dttm:</strong> Infusion start time</li>
-                        <li><strong>stop_dttm:</strong> Infusion stop time</li>
-                      </ul>
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p class="text-green-300 font-semibold mb-2">Extract Numeric Dose:</p>
+                        <div class="font-mono text-xs">
+med_dose = as.numeric(<br/>
+  str_extract_all(take_med_dose, <br/>
+    "[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?") |&gt;<br/>
+  sapply(function(x) if(length(x) &gt; 0) paste(x, collapse = "") else NA_character_)<br/>
+)
+                        </div>
+                      </div>
+
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p class="text-blue-300 font-semibold mb-2">Filter Continuous Medications:</p>
+                        <div class="font-mono text-xs">
+filter(grepl("min|hr|day", med_dose_unit, ignore.case = TRUE))
+                        </div>
+                      </div>
                     </div>
                   </div>
+
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Special Handling</h5>
+                    <div class="bg-white/10 p-4 rounded-lg">
+                      <p class="text-purple-300 font-semibold mb-2">Medication Categories:</p>
+                      <div class="font-mono text-xs">
+med_category = ifelse(medication_name %like% "PLACEBO", "other", med_category)
+                      </div>
+                      <p class="text-xs mt-2 text-gray-300">Handle special medication categories like placebo treatments</p>
+                    </div>
+                  </div>
+
+                  <!-- The "Key Fields" section inside the flip-card-back is intentionally left as-is, as the prompt only asks to remove the "Key Fields" summary lines in the main table cards, not the detailed field explanations in the expanded/flip-card-back. -->
                 </div>
               </div>
             </div>
@@ -617,9 +569,6 @@ const navigationSections = [
             <li>• Route standardization</li>
             <li>• Dose calculation accuracy</li>
           </ul>
-          <div class="mt-3 p-3 bg-gray-50 rounded text-xs">
-            <strong>Key Fields:</strong> medication_id, med_category, dose, dose_unit
-          </div>
         </div>
 
         <!-- Microbiology Culture -->
@@ -631,9 +580,6 @@ const navigationSections = [
             <li>• Growth result interpretation</li>
             <li>• Specimen quality assessment</li>
           </ul>
-          <div class="mt-3 p-3 bg-gray-50 rounded text-xs">
-            <strong>Key Fields:</strong> culture_id, organism_category, specimen_category
-          </div>
         </div>
 
         <!-- Microbiology Non-Culture -->
@@ -645,9 +591,6 @@ const navigationSections = [
             <li>• Rapid diagnostic tests</li>
             <li>• Viral load quantification</li>
           </ul>
-          <div class="mt-3 p-3 bg-gray-50 rounded text-xs">
-            <strong>Key Fields:</strong> nonculture_id, test_category, result_category
-          </div>
         </div>
 
         <!-- Microbiology Susceptibility -->
@@ -659,9 +602,6 @@ const navigationSections = [
             <li>• Resistance pattern tracking</li>
             <li>• Quality control validation</li>
           </ul>
-          <div class="mt-3 p-3 bg-gray-50 rounded text-xs">
-            <strong>Key Fields:</strong> susceptibility_id, antibiotic_category, interpretation
-          </div>
         </div>
 
         <!-- Patient -->
@@ -787,14 +727,7 @@ const navigationSections = [
         <div id="patient-assessments" class="bg-white rounded-lg shadow-md p-6">
           <h4 class="text-lg font-semibold mb-4 text-gray-800">patient_assessments</h4>
           <ul class="text-sm text-gray-600 space-y-2">
-            <li>• Assessment tool standardization</li>
-            <li>• Score calculation validation</li>
-            <li>• Assessment timing accuracy</li>
-            <li>• Multi-component assessments</li>
           </ul>
-          <div class="mt-3 p-3 bg-gray-50 rounded text-xs">
-            <strong>Key Fields:</strong> assessment_id, assessment_category, assessment_value
-          </div>
         </div>
 
         <!-- Patient Procedures -->
@@ -806,36 +739,296 @@ const navigationSections = [
             <li>• Provider information handling</li>
             <li>• Procedure outcome tracking</li>
           </ul>
-          <div class="mt-3 p-3 bg-gray-50 rounded text-xs">
-            <strong>Key Fields:</strong> procedure_id, procedure_category, procedure_dttm
-          </div>
         </div>
 
         <!-- Position -->
-        <div id="position" class="bg-white rounded-lg shadow-md p-6">
-          <h4 class="text-lg font-semibold mb-4 text-gray-800">position</h4>
-          <ul class="text-sm text-gray-600 space-y-2">
-            <li>• Patient positioning tracking</li>
-            <li>• Prone/supine timing</li>
-            <li>• Position change documentation</li>
-            <li>• Mobility level assessment</li>
-          </ul>
-          <div class="mt-3 p-3 bg-gray-50 rounded text-xs">
-            <strong>Key Fields:</strong> position_id, position_category, mobility_category
+        <div id="position" class="flip-card h-64 cursor-pointer">
+          <div class="flip-card-inner">
+            <div class="flip-card-front bg-white rounded-lg shadow-md p-6 border border-gray-200">
+              <h4 class="text-lg font-semibold mb-4 text-gray-800 flex items-center justify-between">
+                position
+                <span class="text-xs text-gray-500">Click to expand</span>
+              </h4>
+              <ul class="text-sm text-gray-600 space-y-2">
+                <li>• Free text position standardization</li>
+                <li>• Prone position detection</li>
+                <li>• Supine-type consolidation</li>
+                <li>• Missing label handling</li>
+              </ul>
+              <div class="mt-3 p-3 bg-gray-50 rounded text-xs">
+                <strong>Special Processing:</strong> Regex-based position classification
+              </div>
+            </div>
+            <div class="flip-card-back bg-clif-burgundy rounded-lg shadow-md p-6 text-white overflow-y-auto">
+              <button class="modal-close" aria-label="Close">×</button>
+              <h4 class="text-2xl font-bold mb-6">Position Name Processing</h4>
+
+              <div class="expanded-content">
+                <div class="space-y-6">
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Overview</h5>
+                    <p class="text-sm leading-relaxed">
+                      Position names are free text with variations that require standardization through regex pattern matching and logical consolidation of related position types.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 1: Identify Prone Positions</h5>
+                    <div class="bg-white/10 p-4 rounded-lg">
+                      <div class="text-sm">
+                        <p class="mb-2 text-yellow-300 font-semibold">Prone detection using regex:</p>
+                        <div class="font-mono text-xs bg-white/10 p-2 rounded">
+mutate(prone = if_else(str_detect(position_name, <br/>
+  regex("prone", ignore_case = TRUE)), 1, 0))
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 2: Identify Supine-Type Positions</h5>
+                    <div class="space-y-3 text-sm">
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p class="text-green-300 font-semibold mb-2">Individual Position Detection:</p>
+                        <div class="font-mono text-xs space-y-1">
+                          <div>supine = if_else(str_detect(position_name, <br/>
+  regex("supin|supine", ignore_case = TRUE)), 1, NaN)</div>
+                          <div>fowlers = if_else(str_detect(position_name, <br/>
+  regex("fowler", ignore_case = TRUE)), 1, NaN)</div>
+                          <div>sitting = if_else(str_detect(position_name, <br/>
+  regex("sitting", ignore_case = TRUE)), 1, NaN)</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 3: Consolidate Supine-Type</h5>
+                    <div class="bg-white/10 p-4 rounded-lg">
+                      <p class="text-blue-300 font-semibold mb-2">Group related positions:</p>
+                      <div class="font-mono text-xs">
+mutate(supine = if_else(<br/>
+  str_detect(position_name, <br/>
+    regex("fowler|trendelenburg|sitting", ignore_case = TRUE)), <br/>
+  1, supine))
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="space-y-6">
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 4: Handle Missing Labels</h5>
+                    <p class="text-sm leading-relaxed mb-3">
+                      When prone status is clear but supine label is missing, infer the supine status based on prone position.
+                    </p>
+
+                    <div class="bg-white/10 p-4 rounded-lg">
+                      <p class="text-yellow-300 font-semibold mb-2">Missing Label Logic:</p>
+                      <div class="font-mono text-xs space-y-2">
+                        <div>supine = if_else(is.na(supine) & prone == 0, 1, supine)</div>
+                        <div>supine = if_else(is.na(supine) & prone == 1, 0, supine)</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Position Categories</h5>
+                    <div class="space-y-3 text-sm">
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p class="text-green-300 font-semibold mb-2">Prone Positions:</p>
+                        <div class="space-y-1">
+                          <div>• "Prone"</div>
+                          <div>• "Proning"</div>
+                          <div>• "Prone positioning"</div>
+                        </div>
+                      </div>
+
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p class="text-blue-300 font-semibold mb-2">Supine-Type Positions:</p>
+                        <div class="space-y-1">
+                          <div>• "Supine"</div>
+                          <div>• "Fowlers" / "Semi-Fowlers"</div>
+                          <div>• "Trendelenburg"</div>
+                          <div>• "Sitting"</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Implementation Notes</h5>
+                    <ul class="space-y-2 text-sm">
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <div>
+                          <strong>Case Insensitive:</strong> All regex patterns use ignore_case = TRUE
+                        </div>
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <div>
+                          <strong>Binary Classification:</strong> Prone (1/0) and Supine (1/0/NaN)
+                        </div>
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <div>
+                          <strong>Mutual Exclusivity:</strong> If prone=1, then supine=0
+                        </div>
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <div>
+                          <strong>Missing Data:</strong> Use NaN for unidentifiable positions
+                        </div>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
         <!-- Respiratory Support -->
-        <div id="respiratory-support" class="bg-white rounded-lg shadow-md p-6">
-          <h4 class="text-lg font-semibold mb-4 text-gray-800">respiratory_support</h4>
-          <ul class="text-sm text-gray-600 space-y-2">
-            <li>• Ventilator mode standardization</li>
-            <li>• Parameter value validation</li>
-            <li>• Support level categorization</li>
-            <li>• Weaning protocol tracking</li>
-          </ul>
-          <div class="mt-3 p-3 bg-gray-50 rounded text-xs">
-            <strong>Key Fields:</strong> respiratory_id, mode_category, parameter_category
+        <div id="respiratory-support" class="flip-card h-64 cursor-pointer">
+          <div class="flip-card-inner">
+            <div class="flip-card-front bg-white rounded-lg shadow-md p-6 border border-gray-200">
+              <h4 class="text-lg font-semibold mb-4 text-gray-800 flex items-center justify-between">
+                respiratory_support
+                <span class="text-xs text-gray-500">Click to expand</span>
+              </h4>
+              <ul class="text-sm text-gray-600 space-y-2">
+                <li>• Device category assignment</li>
+                <li>• Mode-based overrides</li>
+                <li>• Hierarchical classification</li>
+                <li>• Conflict resolution</li>
+              </ul>
+              <div class="mt-3 p-3 bg-gray-50 rounded text-xs">
+                <strong>Special Processing:</strong> Device name coalescing and category logic
+              </div>
+            </div>
+            <div class="flip-card-back bg-clif-burgundy rounded-lg shadow-md p-6 text-white overflow-y-auto">
+              <button class="modal-close" aria-label="Close">×</button>
+              <h4 class="text-2xl font-bold mb-6">Device Category Assignment</h4>
+
+              <div class="expanded-content">
+                <div class="space-y-6">
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Overview</h5>
+                    <p class="text-sm leading-relaxed">
+                      Device categories are assigned through a hierarchy of rules that coalesce multiple device name columns and apply device category logic with mode-based overrides.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 1: Coalesce Device Names</h5>
+                    <div class="bg-white/10 p-4 rounded-lg">
+                      <div class="text-sm">
+                        <p class="mb-2 text-yellow-300 font-semibold">Multiple device name columns:</p>
+                        <div class="font-mono text-xs bg-white/10 p-2 rounded">
+mutate(device_name = coalesce(device_name, device_name_ed_rt,<br/>
+                              device_name_ni, device_name_ed))
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 2: Device Category Logic</h5>
+                    <div class="space-y-3 text-sm">
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p class="text-green-300 font-semibold mb-2">Invasive Mechanical Ventilation (IMV):</p>
+                        <div class="font-mono text-xs">
+(grepl('Vent', device_name, ignore.case = TRUE)) &<br/>
+  !grepl('Venturi Mask', device_name, ignore.case = TRUE) ~ 'IMV'
+                        </div>
+                      </div>
+
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p class="text-blue-300 font-semibold mb-2">Non-Invasive Positive Pressure:</p>
+                        <div class="font-mono text-xs">
+grepl('NIPPV|Bipap', device_name, ignore.case = TRUE) ~ 'NIPPV'
+                        </div>
+                      </div>
+
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p class="text-purple-300 font-semibold mb-2">Other Categories:</p>
+                        <div class="font-mono text-xs space-y-1">
+                          <div>CPAP → 'CPAP'</div>
+                          <div>High Flow NC → 'High Flow NC'</div>
+                          <div>Cannula → 'Nasal Cannula'</div>
+                          <div>Mask|Non-Rebreather → 'Face Mask'</div>
+                          <div>Room Air → 'Room Air'</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="space-y-6">
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Mode-Based Category Override</h5>
+                    <p class="text-sm leading-relaxed mb-3">
+                      Mode names override device categories when conflicts exist. Ventilator modes can override device categories.
+                    </p>
+
+                    <div class="bg-white/10 p-4 rounded-lg">
+                      <p class="text-yellow-300 font-semibold mb-2">Override Table:</p>
+                      <div class="font-mono text-xs space-y-1">
+                        <div>"SIMV - PC PS" → "IMV"</div>
+                        <div>"A/C Volume" → "IMV"</div>
+                        <div>"CPAP" → "CPAP"</div>
+                        <div>"NIV-PC" → "NIPPV"</div>
+                        <div>"BiPAP" → "NIPPV"</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Apply Overrides</h5>
+                    <div class="bg-white/10 p-4 rounded-lg">
+                      <div class="font-mono text-xs">
+rclif_rs_final &lt;- rclif_rs_final |&gt;<br/>
+  left_join(override_tbl, by = "mode_name") |&gt;<br/>
+  mutate(device_category = coalesce(device_cat_override, device_category))
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Implementation Notes</h5>
+                    <ul class="space-y-2 text-sm">
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <div>
+                          <strong>Hierarchy:</strong> Mode overrides take precedence over device names
+                        </div>
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <div>
+                          <strong>Case Insensitive:</strong> All pattern matching uses ignore.case = TRUE
+                        </div>
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <div>
+                          <strong>Special Handling:</strong> Venturi Mask excluded from IMV category
+                        </div>
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <div>
+                          <strong>Missing Values:</strong> NA device_name results in NA category
+                        </div>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -843,14 +1036,11 @@ const navigationSections = [
         <div id="vitals" class="bg-white rounded-lg shadow-md p-6">
           <h4 class="text-lg font-semibold mb-4 text-gray-800">vitals</h4>
           <ul class="text-sm text-gray-600 space-y-2">
-            <li>• Vital sign measurement mapping</li>
-            <li>• Unit standardization (metric preferred)</li>
-            <li>• Outlier detection and filtering</li>
-            <li>• Measurement method categorization</li>
+            <li>• Range validation: Refer to <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/outlier-handling/outlier_thresholds_adults_vitals.csv" target="_blank" rel="noopener">outlier_thresholds_adults_vitals.csv</a> for plausible ranges</li>
+            <li>• Remove exact duplicates by key fields</li>
+            <li>• Apply unit conversions as needed, with proper rounding</li>
+            <li>• Use <a href="https://clif-icu.com/data-dictionary/data-dictionary-2.1.0#vitals" target="_blank" rel="noopener">CLIF standardized units</a> for each vital sign (e.g., SpO₂ in %, MAP in mmHg)</li>
           </ul>
-          <div class="mt-3 p-3 bg-gray-50 rounded text-xs">
-            <strong>Key Fields:</strong> vitals_id, recorded_dttm, vital_category, vital_value
-          </div>
         </div>
 
       </div>
