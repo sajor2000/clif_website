@@ -534,6 +534,10 @@ This table provides detailed information about transfusion events linked to spec
 | 789012            | 2024-12-04 14:00:00+00:00 UTC       | 2024-12-04 16:30:00+00:00 UTC       | Platelets       | Irradiated        | 250              | mL           | P0205        |
 | 456789            | 2024-12-05 12:15:00+00:00 UTC       | 2024-12-05 13:45:00+00:00 UTC       | Plasma          |                   | 200              | mL           | F0781        |
 
+## clinical_trial
+
+This table captures whether a patient was enrolled in any clinical trial during their hospitalization. It enables longitudinal tracking of trial participation, including trial identifiers, arm assignment, and key consent, randomization, and withdrawal timestamps. This structure supports research into the effects of experimental therapies and interventions on patient outcomes.
+
 
 ## Future Proposed Tables
 
