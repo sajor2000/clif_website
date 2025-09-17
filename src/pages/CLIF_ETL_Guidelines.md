@@ -117,104 +117,17 @@ merged_result <- final_result[, .(
 
 ### 4. Vitals
 
-**The Problem:**
-Vital signs data presents several challenges:
-- Blood pressure stored as combined "120/80" format
-- Multiple unit systems (Imperial vs Metric)
-- Multiple measurement sites (arterial vs cuff)
-- Outlier values from measurement errors
-
-**Solution 1: Blood Pressure Decomposition**
-
-Blood pressure is often stored as a single "systolic/diastolic" value that needs to be split:
-
-```r
-# Step 1: Identify blood pressure records
-bp_df <- rclif_vitals[vital_category == "blood_pressure"]
-
-# Step 2: Split the combined value using tstrsplit
-bp_df[, c("sbp", "dbp") := tstrsplit(vital_value, "/", fixed = TRUE)]
-
-# Step 3: Reshape from wide to long format
-bp_df <- melt(
-  bp_df,
-  id.vars = c("patient_id", "hospitalization_id", "recorded_dttm",
-              "vital_name", "meas_site_name"),
-  measure.vars = c("sbp", "dbp"),
-  variable.name = "vital_category",
-  value.name = "vital_value"
-)
-
-# Step 4: Convert to numeric
-bp_df[, vital_value := as.numeric(vital_value)]
-```
-
-**Example:**
-```
-Original: vital_value = "120/80", vital_category = "blood_pressure"
-Result:
-  Record 1: vital_value = 120, vital_category = "sbp"
-  Record 2: vital_value = 80, vital_category = "dbp"
-```
-
-**Solution 2: Unit Conversions**
-
 **Data Quality Validation:**
-- **Range Validation**: Define physiologically plausible ranges per vital sign
+- **Range Validation**: Refer to [outlier_thresholds_adults_vitals.csv](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/outlier-handling/outlier_thresholds_adults_vitals.csv) to verify plausible ranges for each vital category
 - **Duplicate Handling**: Remove exact duplicates by key fields
-- **Site Consistency**: Validate that measurement sites are appropriate for each vital
-- **Temporal Validation**: Ensure `recorded_dttm` is within hospitalization period
-- Different hospitals may use different unit systems, apply unit conversions with proper rounding
+- Different hospitals may use different unit systems; apply unit conversions with proper rounding.
+- Refer to the [CLIF standardized units](https://clif-icu.com/data-dictionary/data-dictionary-2.1.0#vitals) for each vital sign when performing conversions. Eg - SpO₂ values are reported in percent (%) and MAP values are reported in mmHg.
 
-**Critical Fields:**
-- `vital_category`: Must map to standardized CLIF categories
-- `vital_value`: Numeric, post-conversion, within valid ranges
-- `meas_site_name`: Track measurement location (arterial, cuff, etc.)
-- `recorded_dttm`: UTC timezone
 
-**Business Rules:**
-- Prefer arterial BP over cuff BP when both available at same time
-- Flag discordant arterial vs cuff BP (>10 mmHg difference for SBP)
-- Round converted values to 3 decimal places for consistency
 
 ### 5. Respiratory Support
 
-**The Problem:**
-Respiratory support data is complex because:
-- Multiple flowsheet fields contain device/mode information
-- Device names don't always directly map to categories
-- Ventilator modes can override device categories
-- Numeric parameters need validation by device type
-- Tracheostomy information is scattered across fields
-
-**Solution 1: Data Consolidation and Pivot**
-
-Raw flowsheet data needs to be pivoted from long to wide format:
-
-```r
-# Step 1: Join with mapping table and pivot to wide format
-rclif_rs_clean <- rclif_rs |>
-  # Remove "No" responses for binary fields
-  filter(meas_value != "No") |>
-  # Handle special case: "Yes" responses for NIPPV
-  group_by(patient_id, hospitalization_id, recorded_dttm, flo_meas_name, unique_names) |>
-  mutate(meas_value = ifelse(unique_names == "device_name_ni" & meas_value == "Yes",
-                             "NIPPV", meas_value)) |>
-  # Summarize numeric values (take mean) or first text value
-  summarise(clean_value = {
-    numeric_values <- suppressWarnings(as.numeric(meas_value))
-    if (all(!is.na(numeric_values))) {
-      as.character(mean(numeric_values, na.rm = TRUE))
-    } else {
-      as.character(meas_value[1])
-    }
-  }, .groups = 'drop') |>
-  # Pivot to wide format
-  pivot_wider(names_from = unique_names, values_from = clean_value,
-              id_cols = c("patient_id", "hospitalization_id", "recorded_dttm"))
-```
-
-**Solution 2: Device Category Assignment**
+**Device Category Assignment**
 
 Device categories are assigned through a hierarchy of rules:
 
@@ -245,9 +158,9 @@ device_category = case_when(
 )
 ```
 
-**Solution 3: Mode-Based Category Override**
+**Mode-Based Category Override**
 
-Ventilator modes can override device categories:
+Mode names override device categories when conflicts exist. Ventilator modes can override device categories:
 
 ```r
 # Create override table for specific mode-device conflicts
@@ -267,69 +180,8 @@ rclif_rs_final <- rclif_rs_final |>
   mutate(device_category = coalesce(device_cat_override, device_category))
 ```
 
-**Solution 4: Parameter Validation and Cleaning**
-
-Different device types have different valid parameter ranges:
-
-```r
-# Clean flow rates by device type
-lpm_set = case_when(
-  lpm_set < 0 ~ NA_real_,                                    # Invalid negative
-  device_category == 'Room Air' ~ NA_real_,                 # Not applicable
-  device_category == 'IMV' ~ NA_real_,                      # Not applicable
-  device_category == 'Nasal Cannula' & lpm_set > 6 ~ 6,     # Cap at 6 L/min
-  device_category == 'High Flow NC' & lpm_set > 60 ~ 60,    # Cap at 60 L/min
-  lpm_set > 60 ~ NA_real_,                                   # Invalid high
-  TRUE ~ lpm_set
-)
-
-# Convert FiO2 from percentage to decimal
-fio2_set = as.numeric(fio2_set) / 100
-```
-
-**Solution 5: Tracheostomy Detection**
-
-Tracheostomy status can be indicated in multiple places:
-
-```r
-# Check multiple sources for tracheostomy
-tracheostomy_clean = ifelse(
-  is.na(device_name) & is.na(tracheostomy), NA,
-  ifelse(
-    grepl("Trach", device_name, ignore.case = TRUE) |
-    grepl("Trach", tracheostomy, ignore.case = TRUE), 1, 0
-  )
-)
-```
-
-**Data Quality Validation:**
-- **Parameter Ranges**: Validate numeric parameters are within physiologic ranges
-- **Device-Parameter Consistency**: Ensure parameters are appropriate for device type
-- **Mode-Device Compatibility**: Flag incompatible mode-device combinations
-- **Temporal Validation**: Check that respiratory support timing aligns with hospitalization
-
-**Critical Fields:**
-- `device_category`: Primary categorization (IMV, NIPPV, CPAP, etc.)
-- `mode_category`: Standardized ventilator mode categories
-- `fio2_set`: Decimal format (0.21-1.0), validate range
-- `tracheostomy`: Binary indicator (0/1)
-
-**Business Rules:**
-- Remove all "No" responses for device usage
-- Coalesce multiple parameter columns (set vs observed values)
-- Apply device-specific parameter limits
-- Mode names override device categories when conflicts exist
-
 ### 6. Position
-
-**The Problem:**
-Position data requires sophisticated text processing because:
 - Position names are free text with variations
-- Need to distinguish prone from non-prone positions
-- Must handle conflicting documentation
-- Only meaningful for patients with documented proning
-
-**Solution: Multi-Step Position Classification**
 
 ```r
 # Step 1: Identify prone positions using regex
@@ -352,22 +204,6 @@ mutate(
   supine = if_else(is.na(supine) & prone == 0, 1, supine),
   supine = if_else(is.na(supine) & prone == 1, 0, supine)
 )
-
-# Step 5: Remove conflicting or unclear documentation
-mutate(drop = if_else(((prone == 1 & supine == 1) | (is.na(prone) & is.na(supine))), 1, 0)) |>
-filter(drop == 0)
-
-# Step 6: Create final position category
-mutate(position_category = case_when(
-  prone == 1 ~ 'prone',
-  supine == 1 ~ 'not_prone',
-  TRUE ~ 'unknown'
-))
-
-# Step 7: Filter to patients with meaningful proning data
-group_by(hospitalization_id) |>
-filter(sum(prone, na.rm = TRUE) > 1) |>  # At least 2 prone episodes
-ungroup()
 ```
 
 **Example Classifications:**
