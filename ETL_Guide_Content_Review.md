@@ -29,7 +29,6 @@ value <- as.numeric(parse_number(value))
 - ✓ Calculate **missingness percentages** by field
 - ✓ Validate **date ranges** and distributions
 - ✓ Remove rows with **missing critical identifiers**
-- ✓ **Ensure _category fields are never null or missing** - All standardized category fields must have valid values
 - ✓ **Do NOT handle outliers in ETL** - Preserve all data values for downstream analysis
 
 ### Terminology & Mapping
