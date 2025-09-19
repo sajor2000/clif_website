@@ -32,11 +32,6 @@ value <- as.numeric(parse_number(value))
 - ✓ **Ensure _category fields are never null or missing** - All standardized category fields must have valid values
 - ✓ **Do NOT handle outliers in ETL** - Preserve all data values for downstream analysis
 
-#### Critical Requirement: Category Field Completeness
-
-**All `*_category` fields must have valid, non-null values**
-
-
 ### Terminology & Mapping
 
 #### mCIDE Guidelines
