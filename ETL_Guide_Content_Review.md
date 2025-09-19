@@ -204,8 +204,6 @@ ADT data often contains overlapping time intervals where a patient appears to be
 
 ### hospital_diagnosis
 
-**Special Field Handling**
-
 **poa_present (Present on Admission) Processing:**
 
 When handling POA indicators, only include clear Yes/No values and drop ambiguous entries:
