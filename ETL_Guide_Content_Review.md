@@ -41,7 +41,7 @@ Follow mCIDE (minimum Common ICU Data Elements) mapping guidelines for consisten
 
 #### General Mapping Strategy for Standardized Categories
 
-When mapping raw, site-specific names (medications, positions, devices, etc.) to standardized mCIDE categories, follow a systematic approach. For example - 
+When mapping raw, site-specific names to standardized mCIDE categories, follow a systematic approach. For example - 
 
 **Step 1: Fuzzy Pattern Matching**
 Use fuzzy matching to handle common variations in terminology. 
