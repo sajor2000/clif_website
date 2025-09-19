@@ -336,42 +336,9 @@ Row 2: culture_id: C12345, culture_dttm: 2024-01-15 08:00:00, organism_name: "Kl
 ### patient
 **Composite Keys:** patient_id
 
-**Key Transformations:**
-- Race mapping
+**Multiple Race Values**
 
-**Special Handling: Multiple Race Values**
-
-When patients report multiple races, create separate rows for each race category:
-
-**Example:**
-```
-Patient_id: 12345
-race_name: "Caucasian | Asian"
-```
-
-**CLIF ETL Solution - Create duplicate rows:**
-```
-Row 1: Patient_id: 12345, race_category: "White"
-Row 2: Patient_id: 12345, race_category: "Asian"
-```
-
-**Implementation Logic:**
-```r
-# Split multiple race values and create separate rows
-patient_expanded <- patient_data %>%
-  separate_rows(race_name, sep = "\\|") %>%
-  mutate(race_name = str_trim(race_name)) %>%
-  # Map each race to standardized category
-  left_join(race_mapping_table, by = "race_name") %>%
-  # Remove any unmapped races
-  filter(!is.na(race_category))
-```
-
-**Rationale:**
-- Preserves all race information without loss
-- Enables proper statistical analysis of race distributions
-- Follows CLIF principle of maintaining data granularity
-- Avoids parsing concatenated strings in downstream analysis
+When patients report multiple races, map race_category to `Other`
 
 ### patient_assessments
 *[Content to be added]*
