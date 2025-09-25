@@ -183,11 +183,19 @@ The `lab_value` field often has non-numeric entries that are useful to make proj
 
 ## medication_admin_intermittent
 
+This table captures medications administered as fixed doses at discrete time points. Examples include antibiotics, steroids, and other medications given as boluses or scheduled doses. Each row represents ONE observation for each medication administered.
+
 This table has exactly the same schema as [`medication_admin_continuous`](#medication-admin-continuous). The consortium decided to separate the medications that are administered intermittently from the continuously administered medications. The mCIDE for `medication_category` for intermittent meds can be found [here](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/medication_admin_intermittent/clif_medication_admin_intermittent_med_categories.csv).
+
+**Notes**:
+- Continuous medications are included in this table when given as boluses 
+- Intermittent medications can be given at different rates
 
 ## medication_admin_continuous
 
-The medication admin continuous table is a long-form (one medication administration record per) longitudinal table designed for continuous infusions of common ICU medications such as vasopressors and sedation (Boluses of these drugs should be recorded in `med_admin_intermittent`). Note that it only reflects dose changes of the continuous medication and does not have a specific “end_time” variable to indicate the medication being stopped. The end of a continuous infusion should be recorded as a new row with med_dose = 0 and an appropriate mar_action_name (e.g. "stopped" or "paused").
+This table captures medications administered at a rate over time, with NO set dose to be given. Examples include vasopressors, sedation, and paralysis drips. Multiple observations capture how the medication rate varies over time.
+
+The medication admin continuous table is a long-form (one medication administration record per) longitudinal table designed for continuous infusions of common ICU medications such as vasopressors and sedation (Boluses of these drugs should be recorded in `med_admin_intermittent`). Note that it only reflects dose changes of the continuous medication and does not have a specific "end_time" variable to indicate the medication being stopped. The end of a continuous infusion should be recorded as a new row with med_dose = 0 and an appropriate mar_action_name (e.g. "stopped" or "paused").
 
 **Example**:
 
