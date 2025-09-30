@@ -47,7 +47,7 @@ CREATE TABLE ecmo_mcs (
   hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
   recorded_dttm DATETIME COMMENT '{"description": "Date and time when the device settings and/or measurement was recorded", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   device_name VARCHAR COMMENT '{"description": "Name of the ECMO/MCS device used including brand information, e.g. Centrimag", "permissible": "No restriction"}',
-  device_category VARCHAR COMMENT '{"description": "Maps device_name to a standardized mCIDE", "permissible": "[List of device categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/ecmo/clif_ecmo_mcs_groups.csv)"}',
+  device_category VARCHAR COMMENT '{"description": "Maps device_name to a standardized mCIDE", "permissible": "[List of device categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/ecmo/clif_ecmo_mcs_groups.csv) and [outlier thresholds by device category](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/outlier-handling/outlier_thresholds_ecmo_mcs.csv)"}',
   mcs_group VARCHAR COMMENT '{"description": "Maps device_category to a standardized mCIDE of MCS types", "permissible": "[List of MCS groups in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/ecmo/clif_ecmo_mcs_groups.csv)"}',
   device_metric_name VARCHAR COMMENT '{"description": "String that captures the measure of work rate of the device, e.g., RPMs", "permissible": "No restriction"}',
   device_rate FLOAT COMMENT '{"description": "Numeric value of work rate, e.g., 3000 RPMs", "permissible": "Numeric values"}',
