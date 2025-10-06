@@ -282,9 +282,12 @@ The `patient_diagnosis` table provides a record of all diagnoses assigned to a p
 
 ## patient_procedures
 
-A long table of standardized procedural billing codes associated with the hospitalization using the [Healthcare Common Procedure Coding System (HCPCS)](https://www.cms.gov/medicare/regulations-guidance/physician-self-referral/list-cpt-hcpcs-codes). These include two levels **CPT codes billed by clinicians (HCPCS Level 1)** and **Products, supplies, and services that do not have CPT codes (HCPCS Level 2)**.
+A long table of standardized procedural billing codes associated with the hospitalization using the [Healthcare Common Procedure Coding System (HCPCS)](https://www.cms.gov/medicare/regulations-guidance/physician-self-referral/list-cpt-hcpcs-codes). In CLIF version 2.1, `patient_procedures` only contains professional billing i.e., **CPT codes billed by clinicians (HCPCS Level 1)**.
+\
+Hospital billing i.e., **Products, supplies, and services that do not have CPT codes (HCPCS Level 2)** are not to be included in this table.
 \
 Additionally, this table contains [ICD-10-PCS](https://www.cms.gov/medicare/coding-billing/icd-10-codes) procedure codes which are not used for clinician billing but can contribute to the calculation of DRGs for hospital reimbursement and can also appear in the `hospital_diagnosis` table.
+
 
 **Example**:
 
@@ -292,7 +295,7 @@ Additionally, this table contains [ICD-10-PCS](https://www.cms.gov/medicare/codi
 |--------------------|--------------------|-----------------------|----------------|----------------------|----------------------------------|
 | HOSP1001           | BP123              | PP456                 | 36556          | CPT                  | 2024-01-01 08:00:00+00:00 UTC    |
 | HOSP1001           | BP123              | PP789                 | 32551          | CPT                  | 2024-01-01 10:00:00+00:00 UTC    |
-| HOSP1002           | BP234              | PP890                 | 0BH17EZ        | ICD10PCS             | 2024-01-05 09:30:00+00:00 UTC    |
+| HOSP1002           | BP234              | PP890                 | G0009          | HCPCS                | 2024-01-05 09:30:00+00:00 UTC    |
 | HOSP1002           | BP234              | PP890                 | G0008          | HCPCS                | 2024-01-05 11:00:00+00:00 UTC    |
 | HOSP1003           | BP345              | PP901                 | 36620          | CPT                  | 2024-01-10 07:00:00+00:00 UTC    |
 
