@@ -83,14 +83,15 @@ The medication admin continuous table is a long-form (one medication administrat
 
 **Example**:
 
-| hospitalization_id | admin_dttm                | med_name                                                           | med_category  | med_group     | med_route_name | med_route_category | med_dose | med_dose_unit | mar_action_name |
-|-------------------|---------------------------|--------------------------------------------------------------------|---------------|---------------|----------------|-------------------|----------|---------------|----------------|
-| 792391            | 2123-11-13 12:28:00+00:00 UTC | PROPOFOL 10 MG/ML INTRAVENOUS EMULSION                            | propofol      | sedation      | Intravenous    | NA                | 75.0000  | mcg/kg/min    | New Bag        |
-| 792391            | 2123-11-13 13:49:00+00:00 UTC | REMIFENTANIL CONTINUOUS IV (ANESTHESIA)                           | remifentanil  | sedation      | NA             | NA                | 0.0500   | mcg/kg/min    | New Bag        |
-| 792391            | 2123-11-13 14:03:00+00:00 UTC | PROPOFOL 10 MG/ML INTRAVENOUS EMULSION                            | propofol      | sedation      | Intravenous    | NA                | 0.0000   | mcg/kg/min    | Stopped        |
-| 370921            | 2123-02-12 03:07:00+00:00 UTC | PHENYLEPHRINE 5 MG/50 ML (100 MCG/ML) IN 0.9 % SODIUM CHLORIDE    | phenylephrine | vasoactives   | Intravenous    | NA                | 20.0000  | mcg/min       | New Bag        |
-| 370921            | 2123-02-12 03:14:00+00:00 UTC | PHENYLEPHRINE 5 MG/50 ML (100 MCG/ML) IN 0.9 % SODIUM CHLORIDE    | phenylephrine | vasoactives   | Intravenous    | NA                | 50.0000  | mcg/min       | Rate Change    |
-| 702344            | 2123-04-27 04:30:00+00:00 UTC | HEPARIN (PORCINE) 25,000 UNIT/250 ML IN 0.45 % SODIUM CHLORIDE    | heparin       | anticoagulation| Intravenous    | NA                | 18.0000  | Units/kg/hr   | New Bag        |
+| hospitalization_id | admin_dttm                | med_name                                                           | med_category  | med_group     | med_route_name | med_route_category | med_dose | med_dose_unit | mar_action_name | mar_action_group      |
+|-------------------|---------------------------|--------------------------------------------------------------------|---------------|---------------|----------------|-------------------|----------|---------------|----------------|----------------------|
+| 792391            | 2123-11-13 12:28:00+00:00 UTC | PROPOFOL 10 MG/ML INTRAVENOUS EMULSION                            | propofol      | sedation      | Intravenous    | NA                | 75.0000  | mcg/kg/min    | New Bag        | administered         |
+| 792391            | 2123-11-13 13:49:00+00:00 UTC | REMIFENTANIL CONTINUOUS IV (ANESTHESIA)                           | remifentanil  | sedation      | NA             | NA                | 0.0500   | mcg/kg/min    | New Bag        | administered         |
+| 792391            | 2123-11-13 14:03:00+00:00 UTC | PROPOFOL 10 MG/ML INTRAVENOUS EMULSION                            | propofol      | sedation      | Intravenous    | NA                | 0.0000   | mcg/kg/min    | Stopped        | not_administered     |
+| 370921            | 2123-02-12 03:07:00+00:00 UTC | PHENYLEPHRINE 5 MG/50 ML (100 MCG/ML) IN 0.9 % SODIUM CHLORIDE    | phenylephrine | vasoactives   | Intravenous    | NA                | 20.0000  | mcg/min       | New Bag        | administered         |
+| 370921            | 2123-02-12 03:14:00+00:00 UTC | PHENYLEPHRINE 5 MG/50 ML (100 MCG/ML) IN 0.9 % SODIUM CHLORIDE    | phenylephrine | vasoactives   | Intravenous    | NA                | 50.0000  | mcg/min       | Rate Change    | administered         |
+| 702344            | 2123-04-27 04:30:00+00:00 UTC | HEPARIN (PORCINE) 25,000 UNIT/250 ML IN 0.45 % SODIUM CHLORIDE    | heparin       | anticoagulation| Intravenous    | NA                | 18.0000  | Units/kg/hr   | New Bag        | administered         |
+
 
 **Notes**:
 

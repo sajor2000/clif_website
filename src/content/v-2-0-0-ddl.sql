@@ -128,7 +128,8 @@ CREATE TABLE medication_admin_continuous (
   med_dose FLOAT COMMENT '{"description": "Quantity taken in dose", "permissible": "Numeric"}',
   med_dose_unit VARCHAR COMMENT '{"description": "Unit of dose. It must be a rate, e.g. mcg/min. Boluses should be mapped to med_admin_intermittent", "permissible": "No restriction"}',
   mar_action_name VARCHAR COMMENT '{"description": "MAR (medication administration record) action, e.g. stopped", "permissible": "No restriction"}',
-  mar_action_category VARCHAR COMMENT '{"description": "Maps mar_action_name to a standardized list of MAR actions", "permissible": "[List of continuous action categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/medication_admin_continuous/clif_medication_admin_continuous_action_categories.csv)"}'
+  mar_action_category VARCHAR COMMENT '{"description": "Maps mar_action_name to a standardized list of MAR actions", "permissible": "[List of continuous action categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/medication_admin_continuous/clif_medication_admin_continuous_action_categories.csv)"}',
+  mar_action_group VARCHAR COMMENT '{"description": "Maps mar_action_category to whether the action means the medication was administered or not.", "permissible": "[administered, not_administered, other](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/medication_admin_continuous/clif_medication_admin_continuous_action_categories.csv)"}'
 );
 
 
@@ -312,7 +313,8 @@ CREATE TABLE medication_admin_intermittent (
   med_dose FLOAT COMMENT '{"description": "Quantity taken in dose", "permissible": "Numeric"}',
   med_dose_unit VARCHAR COMMENT '{"description": "Unit of dose. e.g. mg.", "permissible": "No restriction"}',
   mar_action_name VARCHAR COMMENT '{"description": "MAR (medication administration record) action, e.g. stopped", "permissible": "No restriction"}',
-  mar_action_category VARCHAR COMMENT '{"description": "Maps mar_action_name to a standardized list of MAR actions", "permissible": "[List of intermittent action categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/medication_admin_intermittent/clif_medication_admin_intermittent_action_categories.csv)"}'
+  mar_action_category VARCHAR COMMENT '{"description": "Maps mar_action_name to a standardized list of MAR actions", "permissible": "[List of intermittent action categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/medication_admin_intermittent/clif_medication_admin_intermittent_action_categories.csv)"}',
+  mar_action_group VARCHAR COMMENT '{"description": "Maps mar_action_category to whether the action means the medication was administered or not.", "permissible": "[administered, not_administered, other](List of intermittent action categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/medication_admin_intermittent/clif_medication_admin_intermittent_action_categories.csv)"}'
 );
 
 
