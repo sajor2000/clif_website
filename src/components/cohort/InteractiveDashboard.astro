@@ -1,0 +1,676 @@
+---
+import { parseConsortiumCSV, groupCharacteristics } from '../../utils/csvParser';
+import { readFile } from 'fs/promises';
+import { join } from 'path';
+
+// Read and parse the CSV file at build time
+const csvPath = join(process.cwd(), 'src', 'data', 'consortium_t1_by_year_site_1113.csv');
+const csvContent = await readFile(csvPath, 'utf-8');
+const data = parseConsortiumCSV(csvContent);
+const groupedChars = groupCharacteristics(data);
+
+// Convert to JSON for client-side use
+const dataJson = JSON.stringify({
+  allSites: data.allSites,
+  allYears: data.allYears,
+  characteristics: data.characteristics.map(c => ({
+    variable: c.variable,
+    sites: Object.fromEntries(
+      Array.from(c.sites.entries()).map(([site, yearMap]) => [
+        site,
+        Object.fromEntries(yearMap)
+      ])
+    )
+  })),
+  siteYearData: data.siteYearData.map(d => ({
+    site: d.site,
+    year: d.year,
+    characteristics: Object.fromEntries(d.characteristics)
+  }))
+});
+
+const categories = Array.from(groupedChars.keys());
+---
+
+<div class="interactive-dashboard bg-white rounded-2xl shadow-xl p-6 md:p-8">
+  <!-- Dashboard Header -->
+  <div class="mb-8">
+    <h2 class="text-3xl font-bold text-gray-800 mb-2">Interactive Data Explorer</h2>
+    <p class="text-gray-600">
+      Explore consortium data across {data.allSites.length} institutions and {data.allYears.length} years.
+      Use the filters below to customize your view.
+    </p>
+  </div>
+
+  <!-- Filter Controls -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <!-- Site Filter -->
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-2">
+        Select Institutions
+      </label>
+      <div class="relative">
+        <button
+          id="site-filter-toggle"
+          class="w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2 text-left flex items-center justify-between hover:border-clif-burgundy transition-colors"
+        >
+          <span id="site-filter-text" class="text-gray-700">All Sites</span>
+          <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+          </svg>
+        </button>
+        <div
+          id="site-filter-dropdown"
+          class="hidden absolute z-10 mt-2 w-full bg-white border-2 border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto"
+        >
+          <div class="p-2">
+            <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer">
+              <input
+                type="checkbox"
+                id="site-all"
+                class="site-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy"
+                checked
+              />
+              <span class="ml-2 text-sm text-gray-700 font-semibold">All Sites</span>
+            </label>
+            {data.allSites.map(site => (
+              <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer">
+                <input
+                  type="checkbox"
+                  class="site-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy"
+                  value={site}
+                  checked
+                />
+                <span class="ml-2 text-sm text-gray-700">{site}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Year Filter -->
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-2">
+        Select Years
+      </label>
+      <div class="relative">
+        <button
+          id="year-filter-toggle"
+          class="w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2 text-left flex items-center justify-between hover:border-clif-burgundy transition-colors"
+        >
+          <span id="year-filter-text" class="text-gray-700">All Years</span>
+          <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+          </svg>
+        </button>
+        <div
+          id="year-filter-dropdown"
+          class="hidden absolute z-10 mt-2 w-full bg-white border-2 border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto"
+        >
+          <div class="p-2">
+            <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer">
+              <input
+                type="checkbox"
+                id="year-all"
+                class="year-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy"
+                checked
+              />
+              <span class="ml-2 text-sm text-gray-700 font-semibold">All Years</span>
+            </label>
+            {data.allYears.map(year => (
+              <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer">
+                <input
+                  type="checkbox"
+                  class="year-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy"
+                  value={year}
+                  checked
+                />
+                <span class="ml-2 text-sm text-gray-700">{year}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Characteristic Category Filter -->
+    <div>
+      <label for="category-filter" class="block text-sm font-semibold text-gray-700 mb-2">
+        Select Category
+      </label>
+      <select
+        id="category-filter"
+        class="w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2 text-gray-700 hover:border-clif-burgundy focus:border-clif-burgundy focus:ring-2 focus:ring-clif-burgundy focus:ring-opacity-50 transition-colors"
+      >
+        <option value="all">All Categories</option>
+        {categories.map(cat => (
+          <option value={cat}>{cat}</option>
+        ))}
+      </select>
+    </div>
+  </div>
+
+  <!-- View Toggle -->
+  <div class="flex items-center justify-between mb-6 pb-6 border-b-2 border-gray-200">
+    <div class="flex gap-2">
+      <button
+        id="view-charts"
+        class="px-6 py-2 bg-clif-burgundy text-white rounded-lg font-semibold hover:bg-clif-burgundy-dark transition-colors"
+      >
+        Charts
+      </button>
+      <button
+        id="view-table"
+        class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+      >
+        Table
+      </button>
+    </div>
+
+    <!-- Export Button -->
+    <button
+      id="export-data"
+      class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors"
+    >
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+      </svg>
+      Export CSV
+    </button>
+  </div>
+
+  <!-- Charts View -->
+  <div id="charts-view" class="space-y-8">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Chart: Encounter Blocks by Site -->
+      <div class="bg-gray-50 rounded-lg p-6">
+        <h3 class="text-lg font-bold text-gray-800 mb-4">Encounter Blocks by Site</h3>
+        <canvas id="chart-encounters"></canvas>
+      </div>
+
+      <!-- Chart: Unique Patients by Site -->
+      <div class="bg-gray-50 rounded-lg p-6">
+        <h3 class="text-lg font-bold text-gray-800 mb-4">Unique Patients by Site</h3>
+        <canvas id="chart-patients"></canvas>
+      </div>
+    </div>
+
+    <!-- Chart: Race Distribution -->
+    <div class="bg-gray-50 rounded-lg p-6">
+      <h3 class="text-lg font-bold text-gray-800 mb-4">Race Distribution Across Sites</h3>
+      <canvas id="chart-race"></canvas>
+    </div>
+
+    <!-- Chart: Trend Over Time -->
+    <div class="bg-gray-50 rounded-lg p-6">
+      <h3 class="text-lg font-bold text-gray-800 mb-4">Patient Count Trends Over Time</h3>
+      <canvas id="chart-trends"></canvas>
+    </div>
+  </div>
+
+  <!-- Table View -->
+  <div id="table-view" class="hidden">
+    <!-- Search Box -->
+    <div class="mb-4">
+      <input
+        type="text"
+        id="table-search"
+        placeholder="Search characteristics..."
+        class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-clif-burgundy focus:ring-2 focus:ring-clif-burgundy focus:ring-opacity-50"
+      />
+    </div>
+
+    <!-- Data Table -->
+    <div class="overflow-x-auto">
+      <table id="data-table" class="w-full border-collapse">
+        <thead class="bg-clif-burgundy text-white sticky top-0">
+          <tr>
+            <th class="px-4 py-3 text-left font-semibold">Characteristic</th>
+            <th class="px-4 py-3 text-left font-semibold">Site</th>
+            <th class="px-4 py-3 text-left font-semibold">Year</th>
+            <th class="px-4 py-3 text-left font-semibold">Value</th>
+          </tr>
+        </thead>
+        <tbody id="table-body" class="divide-y divide-gray-200">
+          <!-- Populated by JavaScript -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script define:vars={{ dataJson }}>
+  // Parse the data
+  const consortiumData = JSON.parse(dataJson);
+
+  // State management
+  let selectedSites = [...consortiumData.allSites];
+  let selectedYears = [...consortiumData.allYears];
+  let selectedCategory = 'all';
+  let currentView = 'charts';
+
+  // Chart instances
+  let charts = {};
+
+  // Initialize on page load
+  document.addEventListener('DOMContentLoaded', () => {
+    initializeFilters();
+    initializeViewToggle();
+    initializeExport();
+    updateDashboard();
+  });
+
+  function initializeFilters() {
+    // Site filter
+    const siteToggle = document.getElementById('site-filter-toggle');
+    const siteDropdown = document.getElementById('site-filter-dropdown');
+    const siteAll = document.getElementById('site-all');
+    const siteCheckboxes = document.querySelectorAll('.site-checkbox:not(#site-all)');
+
+    siteToggle?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      siteDropdown?.classList.toggle('hidden');
+      document.getElementById('year-filter-dropdown')?.classList.add('hidden');
+    });
+
+    siteAll?.addEventListener('change', (e) => {
+      const checked = e.target.checked;
+      siteCheckboxes.forEach(cb => cb.checked = checked);
+      updateSelectedSites();
+    });
+
+    siteCheckboxes.forEach(cb => {
+      cb.addEventListener('change', () => {
+        updateSelectedSites();
+      });
+    });
+
+    // Year filter
+    const yearToggle = document.getElementById('year-filter-toggle');
+    const yearDropdown = document.getElementById('year-filter-dropdown');
+    const yearAll = document.getElementById('year-all');
+    const yearCheckboxes = document.querySelectorAll('.year-checkbox:not(#year-all)');
+
+    yearToggle?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      yearDropdown?.classList.toggle('hidden');
+      document.getElementById('site-filter-dropdown')?.classList.add('hidden');
+    });
+
+    yearAll?.addEventListener('change', (e) => {
+      const checked = e.target.checked;
+      yearCheckboxes.forEach(cb => cb.checked = checked);
+      updateSelectedYears();
+    });
+
+    yearCheckboxes.forEach(cb => {
+      cb.addEventListener('change', () => {
+        updateSelectedYears();
+      });
+    });
+
+    // Category filter
+    const categoryFilter = document.getElementById('category-filter');
+    categoryFilter?.addEventListener('change', (e) => {
+      selectedCategory = e.target.value;
+      updateDashboard();
+    });
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', () => {
+      siteDropdown?.classList.add('hidden');
+      yearDropdown?.classList.add('hidden');
+    });
+  }
+
+  function updateSelectedSites() {
+    const checkboxes = document.querySelectorAll('.site-checkbox:not(#site-all)');
+    selectedSites = Array.from(checkboxes)
+      .filter(cb => cb.checked)
+      .map(cb => cb.value);
+
+    const siteAll = document.getElementById('site-all');
+    if (siteAll) {
+      siteAll.checked = selectedSites.length === consortiumData.allSites.length;
+    }
+
+    const text = selectedSites.length === consortiumData.allSites.length
+      ? 'All Sites'
+      : `${selectedSites.length} Site${selectedSites.length !== 1 ? 's' : ''}`;
+    document.getElementById('site-filter-text').textContent = text;
+
+    updateDashboard();
+  }
+
+  function updateSelectedYears() {
+    const checkboxes = document.querySelectorAll('.year-checkbox:not(#year-all)');
+    selectedYears = Array.from(checkboxes)
+      .filter(cb => cb.checked)
+      .map(cb => cb.value);
+
+    const yearAll = document.getElementById('year-all');
+    if (yearAll) {
+      yearAll.checked = selectedYears.length === consortiumData.allYears.length;
+    }
+
+    const text = selectedYears.length === consortiumData.allYears.length
+      ? 'All Years'
+      : `${selectedYears.length} Year${selectedYears.length !== 1 ? 's' : ''}`;
+    document.getElementById('year-filter-text').textContent = text;
+
+    updateDashboard();
+  }
+
+  function initializeViewToggle() {
+    const chartsBtn = document.getElementById('view-charts');
+    const tableBtn = document.getElementById('view-table');
+    const chartsView = document.getElementById('charts-view');
+    const tableView = document.getElementById('table-view');
+
+    chartsBtn?.addEventListener('click', () => {
+      currentView = 'charts';
+      chartsBtn.classList.remove('bg-gray-200', 'text-gray-700');
+      chartsBtn.classList.add('bg-clif-burgundy', 'text-white');
+      tableBtn?.classList.remove('bg-clif-burgundy', 'text-white');
+      tableBtn?.classList.add('bg-gray-200', 'text-gray-700');
+      chartsView?.classList.remove('hidden');
+      tableView?.classList.add('hidden');
+    });
+
+    tableBtn?.addEventListener('click', () => {
+      currentView = 'table';
+      tableBtn.classList.remove('bg-gray-200', 'text-gray-700');
+      tableBtn.classList.add('bg-clif-burgundy', 'text-white');
+      chartsBtn?.classList.remove('bg-clif-burgundy', 'text-white');
+      chartsBtn?.classList.add('bg-gray-200', 'text-gray-700');
+      tableView?.classList.remove('hidden');
+      chartsView?.classList.add('hidden');
+      updateTable();
+    });
+
+    // Table search
+    const searchInput = document.getElementById('table-search');
+    searchInput?.addEventListener('input', () => {
+      updateTable();
+    });
+  }
+
+  function initializeExport() {
+    const exportBtn = document.getElementById('export-data');
+    exportBtn?.addEventListener('click', exportToCSV);
+  }
+
+  function updateDashboard() {
+    if (currentView === 'charts') {
+      updateCharts();
+    } else {
+      updateTable();
+    }
+  }
+
+  function getFilteredData() {
+    return consortiumData.siteYearData.filter(d => {
+      return selectedSites.includes(d.site) && selectedYears.includes(d.year);
+    });
+  }
+
+  function extractNumber(value) {
+    if (!value) return 0;
+    const match = value.match(/^[\d,]+/);
+    return match ? parseInt(match[0].replace(/,/g, ''), 10) : 0;
+  }
+
+  function updateCharts() {
+    const filteredData = getFilteredData();
+
+    // Destroy existing charts
+    Object.values(charts).forEach(chart => chart?.destroy());
+    charts = {};
+
+    // Chart 1: Encounter Blocks by Site
+    const encounterData = {};
+    filteredData.forEach(d => {
+      const encounters = d.characteristics['N: Encounter blocks'];
+      if (encounters) {
+        if (!encounterData[d.site]) encounterData[d.site] = 0;
+        encounterData[d.site] += extractNumber(encounters);
+      }
+    });
+
+    const encounterCtx = document.getElementById('chart-encounters');
+    if (encounterCtx) {
+      charts.encounters = new Chart(encounterCtx, {
+        type: 'bar',
+        data: {
+          labels: Object.keys(encounterData),
+          datasets: [{
+            label: 'Encounter Blocks',
+            data: Object.values(encounterData),
+            backgroundColor: 'rgba(139, 0, 0, 0.7)',
+            borderColor: 'rgba(139, 0, 0, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: { beginAtZero: true }
+          }
+        }
+      });
+    }
+
+    // Chart 2: Unique Patients by Site
+    const patientData = {};
+    filteredData.forEach(d => {
+      const patients = d.characteristics['N: Unique patients'];
+      if (patients) {
+        if (!patientData[d.site]) patientData[d.site] = 0;
+        patientData[d.site] += extractNumber(patients);
+      }
+    });
+
+    const patientCtx = document.getElementById('chart-patients');
+    if (patientCtx) {
+      charts.patients = new Chart(patientCtx, {
+        type: 'bar',
+        data: {
+          labels: Object.keys(patientData),
+          datasets: [{
+            label: 'Unique Patients',
+            data: Object.values(patientData),
+            backgroundColor: 'rgba(59, 130, 246, 0.7)',
+            borderColor: 'rgba(59, 130, 246, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: { beginAtZero: true }
+          }
+        }
+      });
+    }
+
+    // Chart 3: Race Distribution (stacked bar)
+    const raceCategories = ['  Race: white', '  Race: black or african american', '  Race: asian', '  Race: other'];
+    const raceData = {};
+
+    selectedSites.forEach(site => {
+      raceData[site] = {};
+      raceCategories.forEach(race => {
+        raceData[site][race] = 0;
+      });
+    });
+
+    filteredData.forEach(d => {
+      raceCategories.forEach(race => {
+        const value = d.characteristics[race];
+        if (value) {
+          raceData[d.site][race] += extractNumber(value);
+        }
+      });
+    });
+
+    const raceCtx = document.getElementById('chart-race');
+    if (raceCtx) {
+      const colors = [
+        'rgba(255, 99, 132, 0.7)',
+        'rgba(54, 162, 235, 0.7)',
+        'rgba(255, 206, 86, 0.7)',
+        'rgba(75, 192, 192, 0.7)'
+      ];
+
+      charts.race = new Chart(raceCtx, {
+        type: 'bar',
+        data: {
+          labels: selectedSites,
+          datasets: raceCategories.map((race, index) => ({
+            label: race.trim().replace('Race: ', ''),
+            data: selectedSites.map(site => raceData[site][race]),
+            backgroundColor: colors[index],
+            borderColor: colors[index].replace('0.7', '1'),
+            borderWidth: 1
+          }))
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          scales: {
+            x: { stacked: true },
+            y: { stacked: true, beginAtZero: true }
+          }
+        }
+      });
+    }
+
+    // Chart 4: Trends over time
+    const trendData = {};
+    selectedYears.forEach(year => {
+      trendData[year] = 0;
+    });
+
+    filteredData.forEach(d => {
+      if (d.year !== 'Overall') {
+        const patients = d.characteristics['N: Unique patients'];
+        if (patients) {
+          trendData[d.year] += extractNumber(patients);
+        }
+      }
+    });
+
+    const trendCtx = document.getElementById('chart-trends');
+    if (trendCtx) {
+      charts.trends = new Chart(trendCtx, {
+        type: 'line',
+        data: {
+          labels: selectedYears.filter(y => y !== 'Overall').sort(),
+          datasets: [{
+            label: 'Unique Patients',
+            data: selectedYears.filter(y => y !== 'Overall').sort().map(year => trendData[year]),
+            backgroundColor: 'rgba(139, 0, 0, 0.2)',
+            borderColor: 'rgba(139, 0, 0, 1)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: { beginAtZero: true }
+          }
+        }
+      });
+    }
+  }
+
+  function updateTable() {
+    const filteredData = getFilteredData();
+    const searchTerm = document.getElementById('table-search')?.value.toLowerCase() || '';
+    const tbody = document.getElementById('table-body');
+
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
+
+    filteredData.forEach(d => {
+      Object.entries(d.characteristics).forEach(([variable, value]) => {
+        if (variable.toLowerCase().includes(searchTerm) || value.toLowerCase().includes(searchTerm)) {
+          const row = document.createElement('tr');
+          row.className = 'hover:bg-gray-50';
+          row.innerHTML = `
+            <td class="px-4 py-3 text-sm text-gray-700">${variable}</td>
+            <td class="px-4 py-3 text-sm text-gray-700">${d.site}</td>
+            <td class="px-4 py-3 text-sm text-gray-700">${d.year}</td>
+            <td class="px-4 py-3 text-sm text-gray-700">${value}</td>
+          `;
+          tbody.appendChild(row);
+        }
+      });
+    });
+  }
+
+  function exportToCSV() {
+    const filteredData = getFilteredData();
+
+    let csv = 'Characteristic,Site,Year,Value\n';
+
+    filteredData.forEach(d => {
+      Object.entries(d.characteristics).forEach(([variable, value]) => {
+        csv += `"${variable}","${d.site}","${d.year}","${value}"\n`;
+      });
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `clif-consortium-data-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  }
+</script>
+
+<style>
+  .interactive-dashboard {
+    animation: fadeIn 0.5s ease-in;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  #data-table {
+    font-size: 0.875rem;
+  }
+
+  #data-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+</style>

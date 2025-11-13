@@ -1,13 +1,17 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import CohortDashboardReal from '../components/cohort/CohortDashboardReal.astro';
+import CohortSummaryFromCSV from '../components/cohort/CohortSummaryFromCSV.astro';
+import InteractiveDashboard from '../components/cohort/InteractiveDashboard.astro';
 import CTAButton from '../components/shared/CTAButton.astro';
 ---
 
 <BaseLayout
   title="CLIF Consortium - Cohort Dashboard"
-  description="Explore aggregated ICU patient data from the CLIF Consortium - 680,158 unique patients, 862,400 ICU encounters across 46 hospitals in 11 participating institutions."
+  description="Explore aggregated Critically Ill patient data from the CLIF Consortium - 808,749 unique patients, 933,058 ICU encounters across 62 hospitals in 12 participating institutions."
 >
+  <!-- Chart.js CDN -->
+  <script is:inline src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
   <div class="min-h-screen bg-gradient-to-b from-gray-50 to-white">
     <div class="container mx-auto px-4 py-8 max-w-7xl">
       <!-- Enhanced Hero Section -->
@@ -16,65 +20,59 @@ import CTAButton from '../components/shared/CTAButton.astro';
           CLIF Cohort Dashboard
         </h1>
         <p class="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto mb-6">
-          Real-time insights from <span class="font-semibold text-clif-burgundy">680,158</span> unique ICU patients 
-          across <span class="font-semibold text-clif-burgundy">46</span> hospitals in 
-          <span class="font-semibold text-clif-burgundy">11</span> participating institutions
+          Real-time insights from <span class="font-semibold text-clif-burgundy">808,749</span> unique critically ill patients 
+          across <span class="font-semibold text-clif-burgundy">62</span> hospitals in 
+          <span class="font-semibold text-clif-burgundy">12</span> participating institutions
         </p>
         <div class="inline-flex items-center gap-6 text-sm text-gray-600 bg-white px-6 py-3 rounded-full shadow-sm">
           <span class="flex items-center gap-2">
             <svg class="w-4 h-4 text-clif-burgundy" fill="currentColor" viewBox="0 0 20 20">
               <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zM4 8h12v8H4V8z" clip-rule="evenodd"/>
             </svg>
-            Data span: 2011-2024
+            Data span: 2011-2025
           </span>
           <span class="flex items-center gap-2">
             <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
               <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
             </svg>
-            Last updated: January 2025
+            Last updated: November 2025
           </span>
         </div>
       </div>
 
-      <!-- Interactive Dashboard CTA -->
+      <!-- Tabbed Dashboard Section -->
       <section class="mb-16">
-        <div class="relative bg-gradient-to-r from-clif-burgundy to-clif-burgundy-dark rounded-2xl shadow-xl overflow-hidden text-white p-8 md:p-12 text-center">
-          <div class="absolute inset-0 bg-grid-pattern opacity-10"></div>
-          <div class="relative">
-            <h2 class="text-3xl md:text-4xl font-bold mb-4">
-              Explore the Interactive Dashboard
-            </h2>
-            <p class="text-lg md:text-xl max-w-3xl mx-auto mb-6 opacity-90">
-              Dive into the CLIF cohort data with our live, interactive dashboard. Filter, analyze, and visualize data from over 680,000 ICU patients in real-time.
-            </p>
-            <p class="text-sm opacity-75 mb-8">
-              <svg class="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"/>
-                <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z"/>
-              </svg>
-              Opens in a new window - Powered by R Shiny
-            </p>
-            <CTAButton
-              href="https://clif-consortium.shinyapps.io/clif-cohort-dashboard/"
-              ariaLabel="Launch the interactive CLIF Cohort Dashboard"
-              class="bg-clif-burgundy text-white hover:bg-clif-burgundy-dark transform hover:scale-105 transition-all duration-200 shadow-lg"
-              size="large"
-              external={true}
+        <!-- Tab Navigation -->
+        <div class="flex justify-center mb-8">
+          <div class="inline-flex bg-gray-100 rounded-lg p-1 shadow-sm">
+            <button
+              id="tab-summary"
+              class="px-8 py-3 text-base font-semibold rounded-md transition-all duration-200 bg-clif-burgundy text-white shadow-md"
             >
-              Launch Interactive Dashboard
-            </CTAButton>
-
+              Summary Statistics
+            </button>
+            <button
+              id="tab-explorer"
+              class="px-8 py-3 text-base font-semibold rounded-md transition-all duration-200 text-gray-700 hover:text-gray-900"
+            >
+              Interactive Data Explorer
+            </button>
           </div>
         </div>
-      </section>
 
-      <!-- Static Summary Dashboard -->
-      <section class="mb-16">
-        <div class="text-center mb-8">
-          <h2 class="text-3xl font-bold text-gray-800 mb-3">Summary Statistics</h2>
-          <p class="text-lg text-gray-600">Overview of the CLIF consortium cohort characteristics</p>
+        <!-- Tab Content: Summary Statistics -->
+        <div id="content-summary" class="tab-content">
+          <div class="text-center mb-8">
+            <h2 class="text-3xl font-bold text-gray-800 mb-3">Summary Statistics</h2>
+            <p class="text-lg text-gray-600">Quick overview of the CLIF consortium cohort characteristics</p>
+          </div>
+          <CohortSummaryFromCSV />
         </div>
-        <CohortDashboardReal />
+
+        <!-- Tab Content: Interactive Data Explorer -->
+        <div id="content-explorer" class="tab-content hidden">
+          <InteractiveDashboard />
+        </div>
       </section>
       
 
@@ -110,4 +108,41 @@ import CTAButton from '../components/shared/CTAButton.astro';
       </section>
     </div>
   </div>
+
+  <!-- Tab Switching Script -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const tabSummary = document.getElementById('tab-summary');
+      const tabExplorer = document.getElementById('tab-explorer');
+      const contentSummary = document.getElementById('content-summary');
+      const contentExplorer = document.getElementById('content-explorer');
+
+      function switchToSummary() {
+        // Update button styles
+        tabSummary?.classList.add('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabSummary?.classList.remove('text-gray-700', 'hover:text-gray-900');
+        tabExplorer?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabExplorer?.classList.add('text-gray-700', 'hover:text-gray-900');
+
+        // Show/hide content
+        contentSummary?.classList.remove('hidden');
+        contentExplorer?.classList.add('hidden');
+      }
+
+      function switchToExplorer() {
+        // Update button styles
+        tabExplorer?.classList.add('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabExplorer?.classList.remove('text-gray-700', 'hover:text-gray-900');
+        tabSummary?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabSummary?.classList.add('text-gray-700', 'hover:text-gray-900');
+
+        // Show/hide content
+        contentExplorer?.classList.remove('hidden');
+        contentSummary?.classList.add('hidden');
+      }
+
+      tabSummary?.addEventListener('click', switchToSummary);
+      tabExplorer?.addEventListener('click', switchToExplorer);
+    });
+  </script>
 </BaseLayout>

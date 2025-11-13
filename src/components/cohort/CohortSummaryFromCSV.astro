@@ -1,0 +1,746 @@
+---
+// CLIF Cohort Summary Dashboard using data from overall_1113.csv
+import { readFile } from 'fs/promises';
+import { join } from 'path';
+
+// Read and parse the CSV file at build time
+const csvPath = join(process.cwd(), 'src', 'data', 'overall_1113.csv');
+const csvContent = await readFile(csvPath, 'utf-8');
+const lines = csvContent.trim().split('\n');
+
+// Parse CSV helper function
+function parseCSVLine(line: string): string[] {
+  const result: string[] = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) {
+      result.push(current);
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  result.push(current);
+  return result;
+}
+
+// Parse all rows into a map
+const dataMap = new Map<string, string>();
+for (let i = 1; i < lines.length; i++) {
+  const values = parseCSVLine(lines[i]);
+  if (values.length >= 2) {
+    const characteristic = values[0].trim();
+    const consortiumValue = values[1].trim();
+    dataMap.set(characteristic, consortiumValue);
+  }
+}
+
+// Extract data
+const uniquePatients = dataMap.get('N: Unique patients') || '808,749';
+const encounterBlocks = dataMap.get('N: Encounter blocks') || '1,029,400';
+const hospitals = dataMap.get('N: Hospitals') || '62';
+const years = dataMap.get('Years') || '2011-2025';
+
+// Demographics - Sex
+const sexMale = dataMap.get('  Sex: male') || '440,597 (54.5%)';
+const sexFemale = dataMap.get('  Sex: female') || '367,997 (45.5%)';
+
+// Demographics - Race
+const raceWhite = dataMap.get('  Race: white') || '511,899 (63.3%)';
+const raceBlack = dataMap.get('  Race: black or african american') || '157,430 (19.5%)';
+const raceAsian = dataMap.get('  Race: asian') || '36,342 (4.5%)';
+const raceOther = dataMap.get('  Race: other') || '41,902 (5.2%)';
+const raceUnknown = dataMap.get('  Race: unknown') || '53,206 (6.6%)';
+
+// Demographics - Ethnicity
+const ethnicityHispanic = dataMap.get('  Ethnicity: hispanic') || '47,271 (5.8%)';
+const ethnicityNonHispanic = dataMap.get('  Ethnicity: non-hispanic') || '700,818 (86.7%)';
+
+// Clinical Outcomes
+const hospitalMortality = dataMap.get('Hospital mortality, n (%)') || '208,813 (25.8%)';
+const icuLOS = dataMap.get('ICU length of stay (days), median [Q1, Q3]') || '1.7 [0.8,5]';
+const hospitalLOS = dataMap.get('Hospital length of stay (days), median [Q1, Q3]') || '6.4 [2.6,18.6]';
+const vasopressorUse = dataMap.get('  Vasoactive support, n (%)') || '347,730 (33.8%)';
+const sofaScore = dataMap.get('  Total SOFA score, median [Q1, Q3]') || '3 [1,9]';
+
+// Helper functions to extract numbers and percentages
+function extractNumber(str: string): string {
+  const match = str.match(/^[\d,]+/);
+  return match ? match[0] : str;
+}
+
+function extractPercentage(str: string): string {
+  const match = str.match(/\(([^)]+)\)/);
+  return match ? match[1] : '';
+}
+
+function extractMedian(str: string): string {
+  const match = str.match(/^[\d.]+/);
+  return match ? match[0] : str;
+}
+
+// Calculate "Other" races (Asian + Other + Unknown + American Indian + Pacific Islander)
+const raceAsianNum = extractNumber(raceAsian);
+const raceOtherNum = extractNumber(raceOther);
+const raceUnknownNum = extractNumber(raceUnknown);
+const raceAmericanIndian = dataMap.get('  Race: american indian or alaska native') || '3,936 (0.5%)';
+const racePacificIslander = dataMap.get('  Race: native hawaiian or other pacific islander') || '2,176 (0.3%)';
+
+// Calculate combined "Other" percentage
+const totalOtherRaces = [
+  parseInt(raceAsianNum.replace(/,/g, '')),
+  parseInt(extractNumber(raceOther).replace(/,/g, '')),
+  parseInt(extractNumber(raceUnknown).replace(/,/g, '')),
+  parseInt(extractNumber(raceAmericanIndian).replace(/,/g, '')),
+  parseInt(extractNumber(racePacificIslander).replace(/,/g, ''))
+].reduce((a, b) => a + b, 0);
+
+const totalPatients = parseInt(uniquePatients.replace(/,/g, ''));
+const otherRacePercentage = ((totalOtherRaces / totalPatients) * 100).toFixed(1);
+
+// Encounter Types
+const icuEncounters = dataMap.get('  ICU encounters, n (%)') || '933,058 (90.6%)';
+const advancedRespiratory = dataMap.get('  Advanced respiratory support, n (%)') || '454,071 (44.1%)';
+const vasoactiveSupport = dataMap.get('  Vasoactive support, n (%)') || '347,730 (33.8%)';
+const otherCriticallyIll = dataMap.get('  Other critically ill, n (%)') || '74,095 (7.2%)';
+
+// Respiratory Support Details
+const imvTotal = dataMap.get('Invasive mechanical ventilation, n (%)') || '315,193 (30.6%)';
+// First location at IMV start
+const imvLocationICU = dataMap.get('  First location at IMV start: icu') || '237,573 (23.1%)';
+const imvLocationED = dataMap.get('  First location at IMV start: ed') || '41,734 (4.1%)';
+const imvLocationProcedural = dataMap.get('  First location at IMV start: procedural') || '23,815 (2.3%)';
+const imvLocationWard = dataMap.get('  First location at IMV start: ward') || '6,039 (0.6%)';
+const imvLocationStepdown = dataMap.get('  First location at IMV start: stepdown') || '1,550 (0.2%)';
+// Initial ventilator mode
+const ventModeACV = dataMap.get('Initial ventilator mode: assist control-volume control') || '188,099 (18.3%)';
+const ventModeSIMV = dataMap.get('  Initial ventilator mode: simv') || '29,872 (2.9%)';
+const ventModePSV = dataMap.get('  Initial ventilator mode: pressure support/cpap') || '19,921 (1.9%)';
+const ventModePCV = dataMap.get('  Initial ventilator mode: pressure control') || '6,473 (0.6%)';
+const ventModePRVC = dataMap.get('  Initial ventilator mode: pressure-regulated volume control') || '52,903 (5.1%)';
+const ventModeOther = dataMap.get('  Initial ventilator mode: other') || '9,677 (0.9%)';
+// IMV device settings
+const fio2Median = dataMap.get('  FiO2 (%), median [Q1, Q3]') || '0.4 [0.3,0.6]';
+const peepMedian = dataMap.get('  PEEP (cmH2O), median [Q1, Q3]') || '5 [5,8]';
+const rrMedian = dataMap.get('  Respiratory rate (breaths/min), median [Q1, Q3]') || '16 [0,20]';
+const tidalVolumeMedian = dataMap.get('  Tidal volume (mL), median [Q1, Q3]') || '450 [400,500]';
+
+// Vasopressor Support Details
+const vasopressorEncounters = dataMap.get('Vasopressor encounters, n (%)') || '260,090 (25.3%)';
+const norepinephrine = dataMap.get('  Norepinephrine, n (%)') || '184,565 (17.9%)';
+const norepinephrineDose = dataMap.get('    Norepinephrine dose (mcg/kg/min), median [Q1, Q3]') || '0.07 [0.03,7]';
+const epinephrine = dataMap.get('  Epinephrine, n (%)') || '69,664 (6.8%)';
+const epinephrineDose = dataMap.get('    Epinephrine dose (mcg/kg/min), median [Q1, Q3]') || '0.04 [0.01,6]';
+const phenylephrine = dataMap.get('  Phenylephrine, n (%)') || '113,088 (11.0%)';
+const phenylephrineDose = dataMap.get('    Phenylephrine dose (mcg/kg/min), median [Q1, Q3]') || '3.33 [0.23,50]';
+const vasopressin = dataMap.get('  Vasopressin, n (%)') || '75,611 (7.3%)';
+const dopamine = dataMap.get('  Dopamine, n (%)') || '15,732 (1.5%)';
+const dopamineDose = dataMap.get('    Dopamine dose (mcg/kg/min), median [Q1, Q3]') || '4 [2,6.12]';
+---
+
+<div class="cohort-dashboard">
+  <!-- Key Statistics Overview -->
+  <section class="mb-12">
+    <h2 class="text-3xl font-bold mb-8 text-center text-gray-800">Consortium Overview</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div class="bg-gradient-to-br from-clif-burgundy to-clif-burgundy/80 text-white p-6 rounded-xl shadow-lg">
+        <div class="text-3xl font-bold mb-2">{extractNumber(uniquePatients)}</div>
+        <div class="text-sm opacity-90 flex items-center gap-1">
+          Unique Critically Ill Patients
+          <div class="relative inline-flex group">
+            <svg class="w-4 h-4 cursor-help" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+            </svg>
+            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-72 bg-gray-900 text-white text-xs rounded-lg p-3 shadow-xl z-10">
+              <div class="font-semibold mb-1">Critically Ill Include Patients with:</div>
+              <ul class="space-y-1 text-left">
+                <li>• ICU admissions</li>
+                <li>• Advanced respiratory support</li>
+                <li>• Vasoactive support</li>
+                <li>• Other intensive monitoring or interventions</li>
+              </ul>
+              <div class="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-900"></div>
+            </div>
+          </div>
+        </div>
+        <div class="text-xs opacity-75 mt-1">Across all participating sites</div>
+      </div>
+
+      <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-xl shadow-lg">
+        <div class="text-3xl font-bold mb-2">{extractNumber(encounterBlocks)}</div>
+        <div class="text-sm opacity-90">Encounters</div>
+        <div class="text-xs opacity-75 mt-1">Total admissions recorded</div>
+      </div>
+
+      <div class="bg-gradient-to-br from-green-500 to-green-600 text-white p-6 rounded-xl shadow-lg">
+        <div class="text-3xl font-bold mb-2">{hospitals}</div>
+        <div class="text-sm opacity-90">Hospitals</div>
+        <div class="text-xs opacity-75 mt-1">Contributing data</div>
+      </div>
+
+      <div class="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-6 rounded-xl shadow-lg">
+        <div class="text-3xl font-bold mb-2">{years}</div>
+        <div class="text-sm opacity-90">Data Timespan</div>
+        <div class="text-xs opacity-75 mt-1">15 years of data</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Demographics Summary -->
+  <section class="mb-12">
+    <h2 class="text-3xl font-bold mb-8 text-center text-gray-800">Patient Demographics</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+
+      <!-- Gender Distribution -->
+      <div class="bg-white p-6 rounded-xl shadow-lg">
+        <h3 class="text-xl font-semibold mb-4 text-gray-800">Gender Distribution</h3>
+        <div class="space-y-3">
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600">Female</span>
+            <span class="font-semibold">{extractNumber(sexFemale)} ({extractPercentage(sexFemale)})</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-3">
+            <div class="bg-pink-500 h-3 rounded-full" style={`width: ${extractPercentage(sexFemale)}`}></div>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600">Male</span>
+            <span class="font-semibold">{extractNumber(sexMale)} ({extractPercentage(sexMale)})</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-3">
+            <div class="bg-blue-500 h-3 rounded-full" style={`width: ${extractPercentage(sexMale)}`}></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Race Distribution -->
+      <div class="bg-white p-6 rounded-xl shadow-lg">
+        <h3 class="text-xl font-semibold mb-4 text-gray-800">Race Distribution</h3>
+        <div class="space-y-3">
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600">White</span>
+            <span class="font-semibold">{extractNumber(raceWhite)} ({extractPercentage(raceWhite)})</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2">
+            <div class="bg-blue-400 h-2 rounded-full" style={`width: ${extractPercentage(raceWhite)}`}></div>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600">Black</span>
+            <span class="font-semibold">{extractNumber(raceBlack)} ({extractPercentage(raceBlack)})</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2">
+            <div class="bg-green-400 h-2 rounded-full" style={`width: ${extractPercentage(raceBlack)}`}></div>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600">Other</span>
+            <span class="font-semibold">{totalOtherRaces.toLocaleString()} ({otherRacePercentage}%)</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2">
+            <div class="bg-purple-400 h-2 rounded-full" style={`width: ${otherRacePercentage}%`}></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ethnicity -->
+      <div class="bg-white p-6 rounded-xl shadow-lg">
+        <h3 class="text-xl font-semibold mb-4 text-gray-800">Hispanic Ethnicity</h3>
+        <div class="space-y-3">
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600">Hispanic</span>
+            <span class="font-semibold">{extractNumber(ethnicityHispanic)} ({extractPercentage(ethnicityHispanic)})</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-3">
+            <div class="bg-orange-500 h-3 rounded-full" style={`width: ${extractPercentage(ethnicityHispanic)}`}></div>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600">Non-Hispanic</span>
+            <span class="font-semibold">{extractNumber(ethnicityNonHispanic)} ({extractPercentage(ethnicityNonHispanic)})</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-3">
+            <div class="bg-gray-500 h-3 rounded-full" style={`width: ${extractPercentage(ethnicityNonHispanic)}`}></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Encounter Types -->
+  <section class="mb-12">
+    <h2 class="text-3xl font-bold mb-8 text-center text-gray-800">Encounter Types</h2>
+    <div class="bg-white p-8 rounded-xl shadow-lg">
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead>
+            <tr class="border-b-2 border-gray-200">
+              <th class="text-left py-3 px-4 text-gray-700 font-semibold">Type</th>
+              <th class="text-right py-3 px-4 text-gray-700 font-semibold">Count</th>
+              <th class="text-right py-3 px-4 text-gray-700 font-semibold">Percentage</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <tr class="hover:bg-gray-50 transition-colors">
+              <td class="py-3 px-4 text-gray-800">ICU encounters</td>
+              <td class="py-3 px-4 text-right font-semibold text-gray-900">{extractNumber(icuEncounters)}</td>
+              <td class="py-3 px-4 text-right">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                  {extractPercentage(icuEncounters)}
+                </span>
+              </td>
+            </tr>
+            <tr class="hover:bg-gray-50 transition-colors">
+              <td class="py-3 px-4 text-gray-800">Advanced respiratory support</td>
+              <td class="py-3 px-4 text-right font-semibold text-gray-900">{extractNumber(advancedRespiratory)}</td>
+              <td class="py-3 px-4 text-right">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+                  {extractPercentage(advancedRespiratory)}
+                </span>
+              </td>
+            </tr>
+            <tr class="hover:bg-gray-50 transition-colors">
+              <td class="py-3 px-4 text-gray-800">Vasoactive support</td>
+              <td class="py-3 px-4 text-right font-semibold text-gray-900">{extractNumber(vasoactiveSupport)}</td>
+              <td class="py-3 px-4 text-right">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                  {extractPercentage(vasoactiveSupport)}
+                </span>
+              </td>
+            </tr>
+            <tr class="hover:bg-gray-50 transition-colors">
+              <td class="py-3 px-4 text-gray-800">Other critically ill</td>
+              <td class="py-3 px-4 text-right font-semibold text-gray-900">{extractNumber(otherCriticallyIll)}</td>
+              <td class="py-3 px-4 text-right">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+                  {extractPercentage(otherCriticallyIll)}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Advanced Support Details -->
+  <section class="mb-12">
+    <h2 class="text-3xl font-bold mb-8 text-center text-gray-800">Advanced Support Details</h2>
+
+    <!-- Respiratory Support Subsection -->
+    <div class="mb-8">
+      <button
+        class="collapsible-header collapsed w-full flex items-center justify-between bg-blue-50 hover:bg-blue-100 p-4 rounded-lg transition-colors duration-200 border border-blue-200"
+        data-target="respiratory-support"
+      >
+        <h3 class="text-2xl font-semibold text-gray-700">Respiratory Support</h3>
+        <svg class="chevron w-6 h-6 text-gray-600 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+        </svg>
+      </button>
+
+      <div id="respiratory-support" class="collapsible-content collapsed mt-6">
+
+    <!-- IMV Overview -->
+    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl shadow-md mb-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 class="text-xl font-bold text-gray-800 mb-1">Invasive Mechanical Ventilation</h3>
+          <p class="text-sm text-gray-600">Patients requiring IMV support</p>
+        </div>
+        <div class="text-right">
+          <div class="text-3xl font-bold text-blue-600">{extractPercentage(imvTotal)}</div>
+          <div class="text-sm text-gray-600">{extractNumber(imvTotal)} encounters</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Three columns layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <!-- First Location at IMV Start -->
+      <div class="bg-white p-6 rounded-xl shadow-lg">
+        <h3 class="text-lg font-semibold mb-4 text-gray-800 border-b pb-2">First Location at IMV Start</h3>
+        <div class="space-y-3">
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-gray-700">ICU</span>
+            <span class="font-semibold text-gray-900">{extractPercentage(imvLocationICU)}</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2">
+            <div class="bg-blue-500 h-2 rounded-full" style={`width: ${extractPercentage(imvLocationICU)}`}></div>
+          </div>
+
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-gray-700">ED</span>
+            <span class="font-semibold text-gray-900">{extractPercentage(imvLocationED)}</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2">
+            <div class="bg-green-500 h-2 rounded-full" style={`width: ${extractPercentage(imvLocationED)}`}></div>
+          </div>
+
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-gray-700">Procedural</span>
+            <span class="font-semibold text-gray-900">{extractPercentage(imvLocationProcedural)}</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2">
+            <div class="bg-purple-500 h-2 rounded-full" style={`width: ${extractPercentage(imvLocationProcedural)}`}></div>
+          </div>
+
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-gray-700">Ward</span>
+            <span class="font-semibold text-gray-900">{extractPercentage(imvLocationWard)}</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2">
+            <div class="bg-orange-500 h-2 rounded-full" style={`width: ${extractPercentage(imvLocationWard)}`}></div>
+          </div>
+
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-gray-700">Stepdown</span>
+            <span class="font-semibold text-gray-900">{extractPercentage(imvLocationStepdown)}</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2">
+            <div class="bg-pink-500 h-2 rounded-full" style={`width: ${extractPercentage(imvLocationStepdown)}`}></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Initial Ventilator Mode -->
+      <div class="bg-white p-6 rounded-xl shadow-lg">
+        <h3 class="text-lg font-semibold mb-4 text-gray-800 border-b pb-2">Initial Ventilator Mode</h3>
+        <div class="space-y-3">
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-gray-700">AC/VC</span>
+            <span class="font-semibold text-gray-900">{extractPercentage(ventModeACV)}</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2">
+            <div class="bg-blue-500 h-2 rounded-full" style={`width: ${extractPercentage(ventModeACV)}`}></div>
+          </div>
+
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-gray-700">PRVC</span>
+            <span class="font-semibold text-gray-900">{extractPercentage(ventModePRVC)}</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2">
+            <div class="bg-green-500 h-2 rounded-full" style={`width: ${extractPercentage(ventModePRVC)}`}></div>
+          </div>
+
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-gray-700">SIMV</span>
+            <span class="font-semibold text-gray-900">{extractPercentage(ventModeSIMV)}</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2">
+            <div class="bg-purple-500 h-2 rounded-full" style={`width: ${extractPercentage(ventModeSIMV)}`}></div>
+          </div>
+
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-gray-700">PSV/CPAP</span>
+            <span class="font-semibold text-gray-900">{extractPercentage(ventModePSV)}</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2">
+            <div class="bg-orange-500 h-2 rounded-full" style={`width: ${extractPercentage(ventModePSV)}`}></div>
+          </div>
+
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-gray-700">PCV</span>
+            <span class="font-semibold text-gray-900">{extractPercentage(ventModePCV)}</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2">
+            <div class="bg-pink-500 h-2 rounded-full" style={`width: ${extractPercentage(ventModePCV)}`}></div>
+          </div>
+
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-gray-700">Other</span>
+            <span class="font-semibold text-gray-900">{extractPercentage(ventModeOther)}</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2">
+            <div class="bg-gray-500 h-2 rounded-full" style={`width: ${extractPercentage(ventModeOther)}`}></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- IMV Device Settings -->
+      <div class="bg-white p-6 rounded-xl shadow-lg">
+        <h3 class="text-lg font-semibold mb-4 text-gray-800 border-b pb-2">IMV Device Settings</h3>
+        <div class="space-y-4">
+          <div class="text-center p-3 bg-blue-50 rounded-lg">
+            <div class="text-sm text-gray-600 mb-1">FiO2 (%)</div>
+            <div class="text-2xl font-bold text-blue-600">{extractMedian(fio2Median)}</div>
+            <div class="text-xs text-gray-500 mt-1">{fio2Median.replace(/^[\d.]+\s*/, '')}</div>
+          </div>
+
+          <div class="text-center p-3 bg-green-50 rounded-lg">
+            <div class="text-sm text-gray-600 mb-1">PEEP (cmH2O)</div>
+            <div class="text-2xl font-bold text-green-600">{extractMedian(peepMedian)}</div>
+            <div class="text-xs text-gray-500 mt-1">{peepMedian.replace(/^[\d.]+\s*/, '')}</div>
+          </div>
+
+          <div class="text-center p-3 bg-purple-50 rounded-lg">
+            <div class="text-sm text-gray-600 mb-1">Tidal Volume (mL)</div>
+            <div class="text-2xl font-bold text-purple-600">{extractMedian(tidalVolumeMedian)}</div>
+            <div class="text-xs text-gray-500 mt-1">{tidalVolumeMedian.replace(/^[\d.]+\s*/, '')}</div>
+          </div>
+
+          <div class="text-center p-3 bg-orange-50 rounded-lg">
+            <div class="text-sm text-gray-600 mb-1">Respiratory Rate (breaths/min)</div>
+            <div class="text-2xl font-bold text-orange-600">{extractMedian(rrMedian)}</div>
+            <div class="text-xs text-gray-500 mt-1">{rrMedian.replace(/^[\d.]+\s*/, '')}</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+      </div>
+    </div>
+
+    <!-- Vasopressor Support Subsection -->
+    <div class="mb-8">
+      <button
+        class="collapsible-header collapsed w-full flex items-center justify-between bg-purple-50 hover:bg-purple-100 p-4 rounded-lg transition-colors duration-200 border border-purple-200"
+        data-target="vasopressor-support"
+      >
+        <h3 class="text-2xl font-semibold text-gray-700">Vasopressor Support</h3>
+        <svg class="chevron w-6 h-6 text-gray-600 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+        </svg>
+      </button>
+
+      <div id="vasopressor-support" class="collapsible-content collapsed mt-6">
+
+    <!-- Vasopressor Overview -->
+    <div class="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl shadow-md mb-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h4 class="text-xl font-bold text-gray-800 mb-1">Vasopressor Encounters</h4>
+          <p class="text-sm text-gray-600">Patients requiring vasopressor support</p>
+        </div>
+        <div class="text-right">
+          <div class="text-3xl font-bold text-purple-600">{extractPercentage(vasopressorEncounters)}</div>
+          <div class="text-sm text-gray-600">{extractNumber(vasopressorEncounters)} encounters</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vasopressor Medications Grid -->
+    <div class="bg-white p-8 rounded-xl shadow-lg">
+      <h4 class="text-lg font-semibold mb-6 text-gray-800 border-b pb-2">Vasopressor Medications</h4>
+      <div class="space-y-6">
+
+        <!-- Norepinephrine -->
+        <div class="border-l-4 border-red-400 pl-4 py-2">
+          <div class="flex justify-between items-start mb-2">
+            <div>
+              <h5 class="font-semibold text-gray-800">Norepinephrine</h5>
+              <div class="text-sm text-gray-600">{extractNumber(norepinephrine)} encounters ({extractPercentage(norepinephrine)})</div>
+            </div>
+            <div class="text-right">
+              <div class="text-sm text-gray-500">Median dose (mcg/kg/min)</div>
+              <div class="text-lg font-bold text-red-600">{extractMedian(norepinephrineDose)}</div>
+              <div class="text-xs text-gray-500">{norepinephrineDose.replace(/^[\d.]+\s*/, '')}</div>
+            </div>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2">
+            <div class="bg-red-400 h-2 rounded-full" style={`width: ${extractPercentage(norepinephrine)}`}></div>
+          </div>
+        </div>
+
+        <!-- Phenylephrine -->
+        <div class="border-l-4 border-blue-400 pl-4 py-2">
+          <div class="flex justify-between items-start mb-2">
+            <div>
+              <h5 class="font-semibold text-gray-800">Phenylephrine</h5>
+              <div class="text-sm text-gray-600">{extractNumber(phenylephrine)} encounters ({extractPercentage(phenylephrine)})</div>
+            </div>
+            <div class="text-right">
+              <div class="text-sm text-gray-500">Median dose (mcg/kg/min)</div>
+              <div class="text-lg font-bold text-blue-600">{extractMedian(phenylephrineDose)}</div>
+              <div class="text-xs text-gray-500">{phenylephrineDose.replace(/^[\d.]+\s*/, '')}</div>
+            </div>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2">
+            <div class="bg-blue-400 h-2 rounded-full" style={`width: ${extractPercentage(phenylephrine)}`}></div>
+          </div>
+        </div>
+
+        <!-- Vasopressin -->
+        <div class="border-l-4 border-green-400 pl-4 py-2">
+          <div class="flex justify-between items-start mb-2">
+            <div>
+              <h5 class="font-semibold text-gray-800">Vasopressin</h5>
+              <div class="text-sm text-gray-600">{extractNumber(vasopressin)} encounters ({extractPercentage(vasopressin)})</div>
+            </div>
+            <div class="text-right">
+              <div class="text-sm text-gray-500 italic">Dose not available</div>
+            </div>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2">
+            <div class="bg-green-400 h-2 rounded-full" style={`width: ${extractPercentage(vasopressin)}`}></div>
+          </div>
+        </div>
+
+        <!-- Epinephrine -->
+        <div class="border-l-4 border-orange-400 pl-4 py-2">
+          <div class="flex justify-between items-start mb-2">
+            <div>
+              <h5 class="font-semibold text-gray-800">Epinephrine</h5>
+              <div class="text-sm text-gray-600">{extractNumber(epinephrine)} encounters ({extractPercentage(epinephrine)})</div>
+            </div>
+            <div class="text-right">
+              <div class="text-sm text-gray-500">Median dose (mcg/kg/min)</div>
+              <div class="text-lg font-bold text-orange-600">{extractMedian(epinephrineDose)}</div>
+              <div class="text-xs text-gray-500">{epinephrineDose.replace(/^[\d.]+\s*/, '')}</div>
+            </div>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2">
+            <div class="bg-orange-400 h-2 rounded-full" style={`width: ${extractPercentage(epinephrine)}`}></div>
+          </div>
+        </div>
+
+        <!-- Dopamine -->
+        <div class="border-l-4 border-purple-400 pl-4 py-2">
+          <div class="flex justify-between items-start mb-2">
+            <div>
+              <h5 class="font-semibold text-gray-800">Dopamine</h5>
+              <div class="text-sm text-gray-600">{extractNumber(dopamine)} encounters ({extractPercentage(dopamine)})</div>
+            </div>
+            <div class="text-right">
+              <div class="text-sm text-gray-500">Median dose (mcg/kg/min)</div>
+              <div class="text-lg font-bold text-purple-600">{extractMedian(dopamineDose)}</div>
+              <div class="text-xs text-gray-500">{dopamineDose.replace(/^[\d.]+\s*/, '')}</div>
+            </div>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2">
+            <div class="bg-purple-400 h-2 rounded-full" style={`width: ${extractPercentage(dopamine)}`}></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- Clinical Outcomes -->
+  <section class="mb-12">
+    <h2 class="text-3xl font-bold mb-8 text-center text-gray-800">Clinical Outcomes</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+
+      <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-red-500">
+        <h3 class="text-lg font-semibold mb-2 text-gray-800">Hospital Mortality</h3>
+        <div class="text-3xl font-bold text-red-600 mb-1">{extractPercentage(hospitalMortality)}</div>
+        <div class="text-sm text-gray-600">{extractNumber(hospitalMortality)} patients</div>
+      </div>
+
+      <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-blue-500">
+        <h3 class="text-lg font-semibold mb-2 text-gray-800">Median ICU Stay</h3>
+        <div class="text-3xl font-bold text-blue-600 mb-1">{extractMedian(icuLOS)}</div>
+        <div class="text-sm text-gray-600">days {icuLOS.replace(/^[\d.]+\s*/, '')}</div>
+      </div>
+
+      <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-green-500">
+        <h3 class="text-lg font-semibold mb-2 text-gray-800">Median Hospital Stay</h3>
+        <div class="text-3xl font-bold text-green-600 mb-1">{extractMedian(hospitalLOS)}</div>
+        <div class="text-sm text-gray-600">days {hospitalLOS.replace(/^[\d.]+\s*/, '')}</div>
+      </div>
+
+      <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-purple-500">
+        <h3 class="text-lg font-semibold mb-2 text-gray-800">Vasopressor Use</h3>
+        <div class="text-3xl font-bold text-purple-600 mb-1">{extractPercentage(vasopressorUse)}</div>
+        <div class="text-sm text-gray-600">{extractNumber(vasopressorUse)} encounters</div>
+      </div>
+
+      <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-orange-500">
+        <h3 class="text-lg font-semibold mb-2 text-gray-800">SOFA Score</h3>
+        <div class="text-3xl font-bold text-orange-600 mb-1">{extractMedian(sofaScore)}</div>
+        <div class="text-sm text-gray-600">{sofaScore.replace(/^[\d.]+\s*/, '')}</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Data Quality Note -->
+  <section class="mb-12">
+    <div class="bg-blue-50 p-6 rounded-lg">
+      <div class="flex">
+        <div class="flex-shrink-0">
+          <svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+          </svg>
+        </div>
+        <div class="ml-3">
+          <h3 class="text-lg font-medium text-blue-800">Data Sources</h3>
+          <div class="mt-2 text-sm text-blue-700 space-y-3">
+            <p>This dashboard presents aggregated, de-identified data from the CLIF Consortium spanning {years}. All data has been standardized according to CLIF data format specifications and undergoes rigorous quality assurance processes. <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF-MIMIC" target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:underline">MIMIC IV data</a> is included for benchmarking purposes.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<style>
+  .cohort-dashboard {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  .cohort-dashboard h2 {
+    position: relative;
+  }
+
+  .cohort-dashboard h2::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--clif-burgundy), var(--clif-burgundy)/0.5);
+    border-radius: 2px;
+  }
+
+  /* Collapsible sections */
+  .collapsible-content {
+    max-height: 5000px;
+    overflow: hidden;
+    transition: max-height 0.5s ease-in-out, opacity 0.3s ease-in-out;
+    opacity: 1;
+  }
+
+  .collapsible-content.collapsed {
+    max-height: 0;
+    opacity: 0;
+    margin-top: 0 !important;
+  }
+
+  .collapsible-header .chevron {
+    transition: transform 0.3s ease-in-out;
+  }
+
+  .collapsible-header.collapsed .chevron {
+    transform: rotate(-90deg);
+  }
+
+  .collapsible-header {
+    cursor: pointer;
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const collapsibleHeaders = document.querySelectorAll('.collapsible-header');
+
+    collapsibleHeaders.forEach(header => {
+      header.addEventListener('click', () => {
+        const targetId = header.getAttribute('data-target');
+        const content = document.getElementById(targetId);
+
+        if (content) {
+          // Toggle collapsed class on both header and content
+          header.classList.toggle('collapsed');
+          content.classList.toggle('collapsed');
+        }
+      });
+    });
+  });
+</script>
