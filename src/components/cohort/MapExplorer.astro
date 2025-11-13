@@ -1,0 +1,348 @@
+---
+// CLIF Map Explorer - Interactive map showing consortium sites
+import { readFile } from 'fs/promises';
+import { join } from 'path';
+
+// Read and parse the CSV file at build time
+const csvPath = join(process.cwd(), 'src', 'data', 'site_details.csv');
+const csvContent = await readFile(csvPath, 'utf-8');
+const lines = csvContent.trim().split('\n');
+
+// Parse CSV helper function
+function parseCSVLine(line: string): string[] {
+  const result: string[] = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) {
+      result.push(current);
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  result.push(current);
+  return result;
+}
+
+// Parse site data
+interface SiteData {
+  name: string;
+  location: string;
+  latitude: number;
+  longitude: number;
+  dataReady: boolean;
+  hospitals: number;
+  encounters: number;
+  patients: number;
+}
+
+const sites: SiteData[] = [];
+for (let i = 1; i < lines.length; i++) {
+  const values = parseCSVLine(lines[i]);
+  if (values.length >= 8) {
+    // Replace Unicode minus sign (U+2212) with regular hyphen-minus
+    const latStr = values[2].trim().replace(/−/g, '-');
+    const lonStr = values[3].trim().replace(/−/g, '-');
+
+    const site: SiteData = {
+      name: values[0].trim(),
+      location: values[1].trim(),
+      latitude: parseFloat(latStr),
+      longitude: parseFloat(lonStr),
+      dataReady: values[4].trim().toLowerCase() === 'yes',
+      hospitals: values[5].trim() ? parseInt(values[5].trim().replace(/,/g, '')) : 0,
+      encounters: values[6].trim() ? parseInt(values[6].trim().replace(/,/g, '')) : 0,
+      patients: values[7].trim() ? parseInt(values[7].trim().replace(/,/g, '')) : 0,
+    };
+    sites.push(site);
+  }
+}
+
+// Serialize sites data for client-side use
+const sitesJSON = JSON.stringify(sites);
+---
+
+<div class="map-explorer">
+  <div class="text-center mb-8">
+    <h2 class="text-3xl font-bold text-gray-800 mb-3">CLIF Consortium Map</h2>
+    <p class="text-lg text-gray-600">Explore participating institutions across North America</p>
+  </div>
+
+  <!-- Map Container with Embedded Legend and Stats -->
+  <div class="relative rounded-xl shadow-lg mb-8">
+    <div id="map" class="rounded-xl" style="height: 600px;"></div>
+
+    <!-- Legend - Embedded in bottom left -->
+    <div class="absolute bottom-8 left-6 bg-white/95 backdrop-blur-sm px-4 py-3 rounded-lg shadow-lg z-[1000]">
+      <div class="flex flex-col gap-2">
+        <div class="flex items-center gap-2">
+          <div class="w-3 h-3 bg-clif-burgundy rounded-full border border-white shadow-sm"></div>
+          <span class="text-xs font-medium text-gray-700">Active Sites</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="w-3 h-3 bg-gray-400 rounded-full border border-white shadow-sm"></div>
+          <span class="text-xs font-medium text-gray-700">Upcoming Sites</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats Panel - Embedded in top right -->
+    <div class="absolute top-6 right-6 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg z-[1000] overflow-hidden">
+      <div class="flex flex-col divide-y divide-gray-100">
+        <!-- Total Institutions -->
+        <div class="px-2.5 py-1.5 hover:bg-gray-50 transition-colors">
+          <div class="text-lg font-bold text-clif-burgundy">{sites.length}</div>
+          <div class="text-[9px] text-gray-600 font-medium uppercase tracking-wide">Institutions</div>
+        </div>
+
+        <!-- Active Sites -->
+        <div class="px-2.5 py-1.5 hover:bg-gray-50 transition-colors">
+          <div class="text-lg font-bold text-clif-burgundy">{sites.filter(s => s.dataReady).length}</div>
+          <div class="text-[9px] text-gray-600 font-medium uppercase tracking-wide">Active Sites</div>
+        </div>
+
+        <!-- Total Hospitals -->
+        <div class="px-2.5 py-1.5 hover:bg-gray-50 transition-colors">
+          <div class="text-lg font-bold text-clif-burgundy">{sites.reduce((sum, s) => sum + s.hospitals, 0)}</div>
+          <div class="text-[9px] text-gray-600 font-medium uppercase tracking-wide">Hospitals</div>
+        </div>
+
+        <!-- Total Patients -->
+        <div class="px-2.5 py-1.5 hover:bg-gray-50 transition-colors">
+          <div class="text-lg font-bold text-clif-burgundy">{sites.reduce((sum, s) => sum + s.patients, 0).toLocaleString()}</div>
+          <div class="text-[9px] text-gray-600 font-medium uppercase tracking-wide">Patients</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .map-explorer {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  #map {
+    z-index: 1;
+  }
+
+  /* Leaflet popup custom styling */
+  :global(.leaflet-popup-content-wrapper) {
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  }
+
+  :global(.leaflet-popup-content) {
+    margin: 16px;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  :global(.site-popup h4) {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 8px;
+  }
+
+  :global(.site-popup .location) {
+    color: #6b7280;
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+
+  :global(.site-popup .stats) {
+    display: grid;
+    gap: 8px;
+    font-size: 14px;
+  }
+
+  :global(.site-popup .stat-row) {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  :global(.site-popup .stat-row:last-child) {
+    border-bottom: none;
+  }
+
+  :global(.site-popup .stat-label) {
+    color: #6b7280;
+    font-weight: 500;
+  }
+
+  :global(.site-popup .stat-value) {
+    color: #1f2937;
+    font-weight: 600;
+  }
+
+  :global(.site-popup .status-badge) {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 8px;
+  }
+
+  :global(.site-popup .status-active) {
+    background-color: #d1fae5;
+    color: #065f46;
+  }
+
+  :global(.site-popup .status-upcoming) {
+    background-color: #e5e7eb;
+    color: #374151;
+  }
+</style>
+
+<script define:vars={{ sitesJSON }}>
+  // Parse sites data
+  const sites = JSON.parse(sitesJSON);
+
+  // Store map instance globally
+  let mapInstance = null;
+
+  // Initialize map function
+  function initializeMap() {
+    // Check if Leaflet is loaded
+    if (typeof L === 'undefined') {
+      console.error('Leaflet library not loaded');
+      return;
+    }
+
+    const mapElement = document.getElementById('map');
+    if (!mapElement) {
+      console.error('Map element not found');
+      return;
+    }
+
+    // Remove existing map if it exists
+    if (mapInstance) {
+      mapInstance.remove();
+    }
+
+    // Add OpenStreetMap tile layer first
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      maxZoom: 18,
+    });
+
+    // Initialize map centered between USA and Toronto with appropriate zoom
+    // Center point roughly at 42°N, 95°W (shifted slightly west and north)
+    // Zoom level 4.5 shows USA coast-to-coast including western sites
+    mapInstance = L.map('map', {
+      center: [42, -98],
+      zoom: 4.5,
+      minZoom: 4,
+      maxZoom: 18,
+      preferCanvas: false,
+    });
+
+    // Add tile layer to the map
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      maxZoom: 18,
+    }).addTo(mapInstance);
+
+    // Set max bounds to prevent excessive panning away from North America
+    const maxBounds = L.latLngBounds(
+      L.latLng(20, -400),  // Southwest (extended west)
+      L.latLng(55, -60)    // Northeast
+    );
+    mapInstance.setMaxBounds(maxBounds);
+
+    // Add markers for each site
+    sites.forEach(site => {
+      const markerColor = site.dataReady ? '#8B1538' : '#9ca3af'; // burgundy for active, gray for upcoming
+
+      // Create custom icon
+      const markerIcon = L.divIcon({
+        className: 'custom-marker',
+        html: `<div style="background-color: ${markerColor}; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"></div>`,
+        iconSize: [24, 24],
+        iconAnchor: [12, 12],
+      });
+
+      // Create popup content
+      let popupContent = `
+        <div class="site-popup">
+          <h4>${site.name}</h4>
+          <div class="location">${site.location}</div>
+      `;
+
+      if (site.dataReady) {
+        popupContent += `
+          <div class="stats">
+            <div class="stat-row">
+              <span class="stat-label">Hospitals:</span>
+              <span class="stat-value">${site.hospitals.toLocaleString()}</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Patients:</span>
+              <span class="stat-value">${site.patients.toLocaleString()}</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Encounters:</span>
+              <span class="stat-value">${site.encounters.toLocaleString()}</span>
+            </div>
+          </div>
+          <div class="status-badge status-active">Active</div>
+        `;
+      } else {
+        popupContent += `<div class="status-badge status-upcoming">Coming Soon</div>`;
+      }
+
+      popupContent += `</div>`;
+
+      // Add marker to map
+      L.marker([site.latitude, site.longitude], { icon: markerIcon })
+        .addTo(mapInstance)
+        .bindPopup(popupContent);
+    });
+
+    // Force map to refresh its size
+    setTimeout(() => {
+      mapInstance.invalidateSize();
+    }, 100);
+  }
+
+  // Initialize map when DOM is ready
+  document.addEventListener('DOMContentLoaded', () => {
+    // Delay initialization to ensure the tab content is ready
+    setTimeout(initializeMap, 300);
+  });
+
+  // Re-initialize map when Map Explorer tab becomes visible
+  // Listen for custom event or mutation observer
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+        const mapContent = document.getElementById('content-map');
+        if (mapContent && !mapContent.classList.contains('hidden')) {
+          setTimeout(() => {
+            if (mapInstance) {
+              mapInstance.invalidateSize();
+            } else {
+              initializeMap();
+            }
+          }, 100);
+        }
+      }
+    });
+  });
+
+  // Observe the map content div for visibility changes
+  setTimeout(() => {
+    const mapContent = document.getElementById('content-map');
+    if (mapContent) {
+      observer.observe(mapContent, { attributes: true });
+    }
+  }, 500);
+</script>

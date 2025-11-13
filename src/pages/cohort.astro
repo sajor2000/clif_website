@@ -2,6 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import CohortSummaryFromCSV from '../components/cohort/CohortSummaryFromCSV.astro';
 import InteractiveDashboard from '../components/cohort/InteractiveDashboard.astro';
+import MapExplorer from '../components/cohort/MapExplorer.astro';
 import CTAButton from '../components/shared/CTAButton.astro';
 ---
 
@@ -11,6 +12,10 @@ import CTAButton from '../components/shared/CTAButton.astro';
 >
   <!-- Chart.js CDN -->
   <script is:inline src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- Leaflet CSS and JS for Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script is:inline src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
   <div class="min-h-screen bg-gradient-to-b from-gray-50 to-white">
     <div class="container mx-auto px-4 py-8 max-w-7xl">
@@ -57,6 +62,12 @@ import CTAButton from '../components/shared/CTAButton.astro';
             >
               Interactive Data Explorer
             </button>
+            <button
+              id="tab-map"
+              class="px-8 py-3 text-base font-semibold rounded-md transition-all duration-200 text-gray-700 hover:text-gray-900"
+            >
+              Map Explorer
+            </button>
           </div>
         </div>
 
@@ -72,6 +83,11 @@ import CTAButton from '../components/shared/CTAButton.astro';
         <!-- Tab Content: Interactive Data Explorer -->
         <div id="content-explorer" class="tab-content hidden">
           <InteractiveDashboard />
+        </div>
+
+        <!-- Tab Content: Map Explorer -->
+        <div id="content-map" class="tab-content hidden">
+          <MapExplorer />
         </div>
       </section>
       
@@ -114,8 +130,10 @@ import CTAButton from '../components/shared/CTAButton.astro';
     document.addEventListener('DOMContentLoaded', () => {
       const tabSummary = document.getElementById('tab-summary');
       const tabExplorer = document.getElementById('tab-explorer');
+      const tabMap = document.getElementById('tab-map');
       const contentSummary = document.getElementById('content-summary');
       const contentExplorer = document.getElementById('content-explorer');
+      const contentMap = document.getElementById('content-map');
 
       function switchToSummary() {
         // Update button styles
@@ -123,10 +141,13 @@ import CTAButton from '../components/shared/CTAButton.astro';
         tabSummary?.classList.remove('text-gray-700', 'hover:text-gray-900');
         tabExplorer?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
         tabExplorer?.classList.add('text-gray-700', 'hover:text-gray-900');
+        tabMap?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabMap?.classList.add('text-gray-700', 'hover:text-gray-900');
 
         // Show/hide content
         contentSummary?.classList.remove('hidden');
         contentExplorer?.classList.add('hidden');
+        contentMap?.classList.add('hidden');
       }
 
       function switchToExplorer() {
@@ -135,14 +156,46 @@ import CTAButton from '../components/shared/CTAButton.astro';
         tabExplorer?.classList.remove('text-gray-700', 'hover:text-gray-900');
         tabSummary?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
         tabSummary?.classList.add('text-gray-700', 'hover:text-gray-900');
+        tabMap?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabMap?.classList.add('text-gray-700', 'hover:text-gray-900');
 
         // Show/hide content
         contentExplorer?.classList.remove('hidden');
         contentSummary?.classList.add('hidden');
+        contentMap?.classList.add('hidden');
+      }
+
+      function switchToMap() {
+        // Update button styles
+        tabMap?.classList.add('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabMap?.classList.remove('text-gray-700', 'hover:text-gray-900');
+        tabSummary?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabSummary?.classList.add('text-gray-700', 'hover:text-gray-900');
+        tabExplorer?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabExplorer?.classList.add('text-gray-700', 'hover:text-gray-900');
+
+        // Show/hide content
+        contentMap?.classList.remove('hidden');
+        contentSummary?.classList.add('hidden');
+        contentExplorer?.classList.add('hidden');
+
+        // Trigger map resize after showing (fixes Leaflet display issues)
+        setTimeout(() => {
+          if (window.L && window.L.map) {
+            const maps = document.querySelectorAll('#map');
+            maps.forEach(mapElement => {
+              if (mapElement._leaflet_id) {
+                const mapInstance = mapElement._leaflet_map || L.map(mapElement);
+                mapInstance.invalidateSize();
+              }
+            });
+          }
+        }, 100);
       }
 
       tabSummary?.addEventListener('click', switchToSummary);
       tabExplorer?.addEventListener('click', switchToExplorer);
+      tabMap?.addEventListener('click', switchToMap);
     });
   </script>
 </BaseLayout>
