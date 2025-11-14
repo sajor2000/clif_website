@@ -235,19 +235,84 @@ export function groupCharacteristics(data: ParsedConsortiumData): Map<string, Ch
   const groups = new Map<string, CharacteristicData[]>();
 
   for (const char of data.characteristics) {
-    const variable = char.variable;
+    const variable = char.variable.trim();
     let category = 'Other';
 
-    if (variable.startsWith('N:')) {
+    // Demographics
+    if (variable.includes('Age at admission') ||
+        variable.includes('Race:') ||
+        variable.includes('Ethnicity:') ||
+        variable.includes('Sex:')) {
+      category = 'Demographics';
+    }
+    // Encounter Information
+    else if (variable.includes('Encounter Types') ||
+             variable.includes('ICU encounters') ||
+             variable.includes('Advanced respiratory support') ||
+             variable.includes('Vasoactive support') ||
+             variable.includes('Other critically ill') ||
+             variable.includes('admission location:') ||
+             variable.includes('Admission type:')) {
+      category = 'Encounter Information';
+    }
+    // Clinical Outcomes
+    else if (variable.includes('Hospital mortality') ||
+             variable.includes('Discharged to hospice') ||
+             variable.includes('Expired') ||
+             variable.includes('length of stay')) {
+      category = 'Clinical Outcomes';
+    }
+    // Comorbidities
+    else if (variable.includes('Charlson') ||
+             variable.includes('Comorbidities') ||
+             variable.includes('Heart Failure') ||
+             variable.includes('Renal Disease') ||
+             variable.includes('Pulmonary Disease') ||
+             variable.includes('Cerebrovascular') ||
+             variable.includes('Cancer') ||
+             variable.includes('Metastatic') ||
+             variable.includes('Vascular Disease') ||
+             variable.includes('Myocardial') ||
+             variable.includes('Dementia') ||
+             variable.includes('Liver Disease') ||
+             variable.includes('Hemiplegia') ||
+             variable.includes('Connective Tissue') ||
+             variable.includes('Peptic Ulcer') ||
+             variable.includes('Aids')) {
+      category = 'Comorbidities';
+    }
+    // Severity Scores
+    else if (variable.includes('SOFA') ||
+             variable.includes('P/F ratio')) {
+      category = 'Severity Scores';
+    }
+    // Respiratory Support
+    else if (variable.includes('mechanical ventilation') ||
+             variable.includes('IMV') ||
+             variable.includes('ventilator mode') ||
+             variable.includes('FiO2') ||
+             variable.includes('PEEP') ||
+             variable.includes('Respiratory rate') ||
+             variable.includes('Tidal volume')) {
+      category = 'Respiratory Support';
+    }
+    // Cardiovascular Support
+    else if (variable.includes('Vasopressor') ||
+             variable.includes('Norepinephrine') ||
+             variable.includes('Epinephrine') ||
+             variable.includes('Phenylephrine') ||
+             variable.includes('Vasopressin') ||
+             variable.includes('Dopamine') ||
+             variable.includes('Dobutamine')) {
+      category = 'Cardiovascular Support';
+    }
+    // Renal Support
+    else if (variable.includes('CRRT')) {
+      category = 'Renal Support';
+    }
+    // Basic Counts
+    else if (variable.startsWith('N:')) {
       category = 'Counts';
-    } else if (variable.includes('Age')) {
-      category = 'Age';
-    } else if (variable.includes('Race:')) {
-      category = 'Race';
-    } else if (variable.includes('Ethnicity:')) {
-      category = 'Ethnicity';
-    } else if (variable.includes('Sex:')) {
-      category = 'Sex';
     }
 
     if (!groups.has(category)) {

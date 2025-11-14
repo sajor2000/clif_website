@@ -48,7 +48,7 @@ const categories = Array.from(groupedChars.keys());
   </div>
 
   <!-- Filter Controls -->
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
     <!-- Site Filter -->
     <div>
       <label class="block text-sm font-semibold text-gray-700 mb-2">
@@ -138,22 +138,6 @@ const categories = Array.from(groupedChars.keys());
         </div>
       </div>
     </div>
-
-    <!-- Characteristic Category Filter -->
-    <div>
-      <label for="category-filter" class="block text-sm font-semibold text-gray-700 mb-2">
-        Select Category
-      </label>
-      <select
-        id="category-filter"
-        class="w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2 text-gray-700 hover:border-clif-burgundy focus:border-clif-burgundy focus:ring-2 focus:ring-clif-burgundy focus:ring-opacity-50 transition-colors"
-      >
-        <option value="all">All Categories</option>
-        {categories.map(cat => (
-          <option value={cat}>{cat}</option>
-        ))}
-      </select>
-    </div>
   </div>
 
   <!-- View Toggle -->
@@ -186,62 +170,84 @@ const categories = Array.from(groupedChars.keys());
   </div>
 
   <!-- Charts View -->
-  <div id="charts-view" class="space-y-6">
-    <!-- Chart Builder Controls -->
-    <div class="bg-gray-50 rounded-lg p-6">
-      <h3 class="text-lg font-bold text-gray-800 mb-4">Chart Builder</h3>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <!-- Chart Type Selector -->
-        <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-2">Chart Type</label>
-          <select
-            id="chart-type-select"
-            class="w-full bg-white border-2 border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:border-clif-burgundy focus:ring-2 focus:ring-clif-burgundy focus:ring-opacity-50"
-          >
-            <option value="bar">Bar Chart</option>
-            <option value="line">Line Chart</option>
-            <option value="horizontalBar">Horizontal Bar</option>
-            <option value="pie">Pie Chart</option>
-            <option value="doughnut">Doughnut Chart</option>
-          </select>
+  <div id="charts-view" class="flex gap-6">
+    <!-- Left Sidebar - Characteristic Categories -->
+    <div class="w-80 flex-shrink-0">
+      <div class="bg-white border-2 border-gray-200 rounded-lg overflow-hidden sticky top-4">
+        <!-- Search Box -->
+        <div class="p-4 border-b border-gray-200">
+          <input
+            type="text"
+            id="characteristic-search"
+            placeholder="Search for a filter"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:border-clif-burgundy focus:ring-2 focus:ring-clif-burgundy focus:ring-opacity-50"
+          />
         </div>
 
-        <!-- Characteristic Selector -->
-        <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-2">Characteristic</label>
-          <select
-            id="chart-characteristic-select"
-            class="w-full bg-white border-2 border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:border-clif-burgundy focus:ring-2 focus:ring-clif-burgundy focus:ring-opacity-50"
-          >
-            <option value="">Select a characteristic...</option>
-          </select>
-        </div>
-
-        <!-- X-Axis Selector -->
-        <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-2">Group By</label>
-          <select
-            id="chart-xaxis-select"
-            class="w-full bg-white border-2 border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:border-clif-burgundy focus:ring-2 focus:ring-clif-burgundy focus:ring-opacity-50"
-          >
-            <option value="site">Site</option>
-            <option value="year">Year</option>
-            <option value="site-year">Site-Year</option>
-          </select>
-        </div>
-
-        <!-- Generate Button -->
-        <div class="flex items-end">
-          <button
-            id="generate-chart-btn"
-            class="w-full px-4 py-2 bg-clif-burgundy text-white rounded-lg font-semibold hover:bg-clif-burgundy-dark transition-colors"
-          >
-            Generate Chart
-          </button>
+        <!-- Categories List -->
+        <div id="categories-list" class="max-h-[600px] overflow-y-auto">
+          <!-- Categories will be populated by JavaScript -->
         </div>
       </div>
     </div>
+
+    <!-- Right Content Area -->
+    <div class="flex-1 space-y-6">
+      <!-- Chart Builder Controls -->
+      <div class="bg-gray-50 rounded-lg p-6">
+        <h3 class="text-lg font-bold text-gray-800 mb-4">Chart Builder</h3>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- Chart Type Selector -->
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Chart Type</label>
+            <select
+              id="chart-type-select"
+              class="w-full bg-white border-2 border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:border-clif-burgundy focus:ring-2 focus:ring-clif-burgundy focus:ring-opacity-50"
+            >
+              <option value="bar">Bar Chart</option>
+              <option value="line">Line Chart</option>
+              <option value="horizontalBar">Horizontal Bar</option>
+              <option value="pie">Pie Chart</option>
+              <option value="doughnut">Doughnut Chart</option>
+            </select>
+          </div>
+
+          <!-- X-Axis Selector -->
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Group By</label>
+            <select
+              id="chart-xaxis-select"
+              class="w-full bg-white border-2 border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:border-clif-burgundy focus:ring-2 focus:ring-clif-burgundy focus:ring-opacity-50"
+            >
+              <option value="site">Site</option>
+              <option value="year">Year</option>
+              <option value="site-year">Site-Year</option>
+            </select>
+          </div>
+
+          <!-- Generate Button -->
+          <div class="flex items-end">
+            <button
+              id="generate-chart-btn"
+              class="w-full px-4 py-2 bg-clif-burgundy text-white rounded-lg font-semibold hover:bg-clif-burgundy-dark transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+              disabled
+            >
+              Generate Chart
+            </button>
+          </div>
+        </div>
+
+        <!-- Selected Characteristic Display -->
+        <div id="selected-characteristic-display" class="mt-4 hidden">
+          <div class="flex items-center gap-2 text-sm text-gray-600">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+            </svg>
+            <span>Selected: <strong id="selected-characteristic-name"></strong></span>
+          </div>
+        </div>
+      </div>
 
     <!-- Chart Display Area -->
     <div id="custom-chart-container" class="bg-white rounded-lg p-6 border-2 border-gray-200 hidden">
@@ -266,8 +272,9 @@ const categories = Array.from(groupedChars.keys());
       </svg>
       <h3 class="text-xl font-bold text-gray-700 mb-2">Create Your Custom Chart</h3>
       <p class="text-gray-600">
-        Select a chart type, characteristic, and grouping option above, then click "Generate Chart" to visualize your data.
+        Select a characteristic from the sidebar, choose a chart type and grouping option, then click "Generate Chart" to visualize your data.
       </p>
+    </div>
     </div>
   </div>
 
@@ -309,7 +316,6 @@ const categories = Array.from(groupedChars.keys());
   // State management
   let selectedSites = [...consortiumData.allSites];
   let selectedYears = [...consortiumData.allYears];
-  let selectedCategory = 'all';
   let currentView = 'charts';
 
   // Chart instances
@@ -370,13 +376,6 @@ const categories = Array.from(groupedChars.keys());
       cb.addEventListener('change', () => {
         updateSelectedYears();
       });
-    });
-
-    // Category filter
-    const categoryFilter = document.getElementById('category-filter');
-    categoryFilter?.addEventListener('change', (e) => {
-      selectedCategory = e.target.value;
-      updateDashboard();
     });
 
     // Close dropdowns when clicking outside
@@ -497,10 +496,11 @@ const categories = Array.from(groupedChars.keys());
     return match ? parseInt(match[0].replace(/,/g, ''), 10) : 0;
   }
 
-  // Helper function to extract numeric value from string like "164 (0.1%)" or "68,359 (57.6%)"
+  // Helper function to extract numeric value from string like "164 (0.1%)" or "68,359 (57.6%)" or "66 [54, 76]"
   function getNumeric(value) {
     if (typeof value !== 'string') return null;
-    const match = value.match(/^\s*([-\d,\.]+)\s*(?:\([^\)]*\))?\s*$/);
+    // Match patterns like: "66 [54, 76]" or "164 (0.1%)" or "68,359 (57.6%)"
+    const match = value.match(/^\s*([-\d,\.]+)\s*(?:\([^\)]*\)|\[[^\]]*\])?\s*$/);
     if (match) {
       const numStr = match[1].replace(/,/g, '');
       try {
@@ -669,27 +669,12 @@ const categories = Array.from(groupedChars.keys());
     return sum.toLocaleString();
   }
 
+  // Track selected characteristic
+  let selectedCharacteristic = null;
+
   function initializeChartBuilder() {
-    // Populate characteristic dropdown
-    const filteredData = getFilteredData();
-    const characteristics = new Set();
-
-    filteredData.forEach(d => {
-      Object.keys(d.characteristics).forEach(char => {
-        characteristics.add(char);
-      });
-    });
-
-    const charSelect = document.getElementById('chart-characteristic-select');
-    if (charSelect) {
-      charSelect.innerHTML = '<option value="">Select a characteristic...</option>';
-      Array.from(characteristics).sort().forEach(char => {
-        const option = document.createElement('option');
-        option.value = char;
-        option.textContent = char;
-        charSelect.appendChild(option);
-      });
-    }
+    // Build the category sidebar
+    buildCategorySidebar();
 
     // Generate chart button
     const generateBtn = document.getElementById('generate-chart-btn');
@@ -698,26 +683,286 @@ const categories = Array.from(groupedChars.keys());
     // Clear chart button
     const clearBtn = document.getElementById('clear-chart-btn');
     clearBtn?.addEventListener('click', clearCustomChart);
+
+    // Characteristic search
+    const searchInput = document.getElementById('characteristic-search');
+    searchInput?.addEventListener('input', (e) => {
+      filterCategorySidebar(e.target.value);
+    });
+  }
+
+  function buildCategorySidebar() {
+    const filteredData = getFilteredData();
+
+    // Get all characteristics
+    const characteristics = new Set();
+    filteredData.forEach(d => {
+      Object.keys(d.characteristics).forEach(char => {
+        characteristics.add(char);
+      });
+    });
+
+    // Group characteristics by category
+    const categories = {
+      'Demographics': [],
+      'Encounter Information': [],
+      'Clinical Outcomes': [],
+      'Comorbidities': [],
+      'Severity Scores': [],
+      'Respiratory Support': [],
+      'Cardiovascular Support': [],
+      'Renal Support': [],
+      'Counts': [],
+      'Other': []
+    };
+
+    characteristics.forEach(char => {
+      const charTrimmed = char.trim();
+      let categorized = false;
+
+      // Demographics
+      if (charTrimmed.includes('Age at admission') ||
+          charTrimmed.includes('Race:') ||
+          charTrimmed.includes('Ethnicity:') ||
+          charTrimmed.includes('Sex:')) {
+        categories['Demographics'].push(charTrimmed);
+        categorized = true;
+      }
+      // Encounter Information
+      else if (charTrimmed.includes('Encounter Types') ||
+               charTrimmed.includes('ICU encounters') ||
+               charTrimmed.includes('Advanced respiratory support') ||
+               charTrimmed.includes('Vasoactive support') ||
+               charTrimmed.includes('Other critically ill') ||
+               charTrimmed.includes('admission location:') ||
+               charTrimmed.includes('Admission type:')) {
+        categories['Encounter Information'].push(charTrimmed);
+        categorized = true;
+      }
+      // Clinical Outcomes
+      else if (charTrimmed.includes('Hospital mortality') ||
+               charTrimmed.includes('Discharged to hospice') ||
+               charTrimmed.includes('Expired') ||
+               charTrimmed.includes('length of stay')) {
+        categories['Clinical Outcomes'].push(charTrimmed);
+        categorized = true;
+      }
+      // Comorbidities
+      else if (charTrimmed.includes('Charlson') ||
+               charTrimmed.includes('Comorbidities') ||
+               charTrimmed.includes('Heart Failure') ||
+               charTrimmed.includes('Renal Disease') ||
+               charTrimmed.includes('Pulmonary Disease') ||
+               charTrimmed.includes('Cerebrovascular') ||
+               charTrimmed.includes('Cancer') ||
+               charTrimmed.includes('Metastatic') ||
+               charTrimmed.includes('Vascular Disease') ||
+               charTrimmed.includes('Myocardial') ||
+               charTrimmed.includes('Dementia') ||
+               charTrimmed.includes('Liver Disease') ||
+               charTrimmed.includes('Hemiplegia') ||
+               charTrimmed.includes('Connective Tissue') ||
+               charTrimmed.includes('Peptic Ulcer') ||
+               charTrimmed.includes('Aids')) {
+        categories['Comorbidities'].push(charTrimmed);
+        categorized = true;
+      }
+      // Severity Scores
+      else if (charTrimmed.includes('SOFA') ||
+               charTrimmed.includes('P/F ratio')) {
+        categories['Severity Scores'].push(charTrimmed);
+        categorized = true;
+      }
+      // Respiratory Support
+      else if (charTrimmed.includes('mechanical ventilation') ||
+               charTrimmed.includes('IMV') ||
+               charTrimmed.includes('ventilator mode') ||
+               charTrimmed.includes('FiO2') ||
+               charTrimmed.includes('PEEP') ||
+               charTrimmed.includes('Respiratory rate') ||
+               charTrimmed.includes('Tidal volume')) {
+        categories['Respiratory Support'].push(charTrimmed);
+        categorized = true;
+      }
+      // Cardiovascular Support
+      else if (charTrimmed.includes('Vasopressor') ||
+               charTrimmed.includes('Norepinephrine') ||
+               charTrimmed.includes('Epinephrine') ||
+               charTrimmed.includes('Phenylephrine') ||
+               charTrimmed.includes('Vasopressin') ||
+               charTrimmed.includes('Dopamine') ||
+               charTrimmed.includes('Dobutamine')) {
+        categories['Cardiovascular Support'].push(charTrimmed);
+        categorized = true;
+      }
+      // Renal Support
+      else if (charTrimmed.includes('CRRT')) {
+        categories['Renal Support'].push(charTrimmed);
+        categorized = true;
+      }
+      // Counts
+      else if (charTrimmed.startsWith('N:')) {
+        categories['Counts'].push(charTrimmed);
+        categorized = true;
+      }
+
+      if (!categorized) {
+        categories['Other'].push(charTrimmed);
+      }
+    });
+
+    // Build the sidebar HTML
+    const categoriesList = document.getElementById('categories-list');
+    if (!categoriesList) return;
+
+    categoriesList.innerHTML = '';
+
+    Object.entries(categories).forEach(([categoryName, chars]) => {
+      if (chars.length === 0) return; // Skip empty categories
+
+      const categoryDiv = document.createElement('div');
+      categoryDiv.className = 'category-section border-b border-gray-200';
+
+      // Category header (collapsible)
+      const header = document.createElement('button');
+      header.className = 'category-header w-full flex items-center justify-between p-3 hover:bg-gray-50 transition-colors text-left';
+      header.innerHTML = `
+        <span class="font-semibold text-gray-800 text-sm">${categoryName}</span>
+        <svg class="chevron w-4 h-4 text-gray-500 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+        </svg>
+      `;
+
+      // Characteristics list
+      const charList = document.createElement('div');
+      charList.className = 'characteristic-list';
+      chars.sort().forEach(char => {
+        const charItem = document.createElement('button');
+        charItem.className = 'characteristic-item w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-clif-burgundy hover:bg-opacity-10 hover:text-clif-burgundy transition-colors';
+        charItem.dataset.characteristic = char;
+        charItem.textContent = char;
+        charItem.addEventListener('click', () => selectCharacteristic(char, charItem));
+        charList.appendChild(charItem);
+      });
+
+      // Toggle collapse on header click
+      header.addEventListener('click', () => {
+        const isExpanded = charList.style.display !== 'none';
+        charList.style.display = isExpanded ? 'none' : 'block';
+        header.querySelector('.chevron').style.transform = isExpanded ? 'rotate(-90deg)' : 'rotate(0deg)';
+      });
+
+      categoryDiv.appendChild(header);
+      categoryDiv.appendChild(charList);
+      categoriesList.appendChild(categoryDiv);
+    });
+  }
+
+  function selectCharacteristic(characteristic, element) {
+    selectedCharacteristic = characteristic;
+
+    // Update UI - remove previous selection
+    document.querySelectorAll('.characteristic-item').forEach(item => {
+      item.classList.remove('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
+    });
+
+    // Highlight selected item
+    element.classList.add('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
+
+    // Show selected characteristic
+    const display = document.getElementById('selected-characteristic-display');
+    const nameEl = document.getElementById('selected-characteristic-name');
+    if (display && nameEl) {
+      nameEl.textContent = characteristic;
+      display.classList.remove('hidden');
+    }
+
+    // Enable generate button
+    const generateBtn = document.getElementById('generate-chart-btn');
+    if (generateBtn) {
+      generateBtn.disabled = false;
+    }
+  }
+
+  function filterCategorySidebar(searchTerm) {
+    const term = searchTerm.toLowerCase();
+    const categories = document.querySelectorAll('.category-section');
+
+    categories.forEach(category => {
+      const characteristics = category.querySelectorAll('.characteristic-item');
+      let hasVisibleChar = false;
+
+      characteristics.forEach(char => {
+        const text = char.textContent.toLowerCase();
+        if (text.includes(term)) {
+          char.style.display = 'block';
+          hasVisibleChar = true;
+        } else {
+          char.style.display = 'none';
+        }
+      });
+
+      // Show/hide category based on whether it has visible characteristics
+      category.style.display = hasVisibleChar ? 'block' : 'none';
+
+      // If searching, expand categories with matches
+      if (term && hasVisibleChar) {
+        const charList = category.querySelector('.characteristic-list');
+        const chevron = category.querySelector('.chevron');
+        charList.style.display = 'block';
+        chevron.style.transform = 'rotate(0deg)';
+      }
+    });
   }
 
   function generateCustomChart() {
     const chartType = document.getElementById('chart-type-select')?.value;
-    const characteristic = document.getElementById('chart-characteristic-select')?.value;
+    const characteristic = selectedCharacteristic;
     const groupBy = document.getElementById('chart-xaxis-select')?.value;
 
     if (!characteristic) {
-      alert('Please select a characteristic to visualize.');
+      alert('Please select a characteristic from the sidebar to visualize.');
       return;
     }
 
     const filteredData = getFilteredData();
 
+    // Debug logging
+    console.log('Selected characteristic:', characteristic);
+    console.log('Filtered data length:', filteredData.length);
+    console.log('First filtered data item:', filteredData[0]);
+    if (filteredData.length > 0) {
+      console.log('Characteristic value:', filteredData[0].characteristics[characteristic]);
+      console.log('All characteristics for first item:', Object.keys(filteredData[0].characteristics));
+    }
+
     // Collect data based on grouping
     const chartData = {};
 
+    // Check if this is a median/IQR characteristic
+    const isMedianChar = characteristic.toLowerCase().includes('median') ||
+                         characteristic.toLowerCase().includes('[q1') ||
+                         (filteredData.length > 0 && valueHasIQR(filteredData[0].characteristics[characteristic] || ''));
+
     filteredData.forEach(d => {
-      const value = d.characteristics[characteristic];
-      if (!value) return;
+      // Try exact match first, then trimmed match
+      let value = d.characteristics[characteristic];
+
+      // If not found, try to find by trimming
+      if (!value) {
+        const charKey = Object.keys(d.characteristics).find(key =>
+          key.trim() === characteristic.trim()
+        );
+        if (charKey) {
+          value = d.characteristics[charKey];
+        }
+      }
+
+      if (!value) {
+        console.log('No value found for characteristic:', characteristic);
+        console.log('Available characteristics:', Object.keys(d.characteristics).slice(0, 10));
+        return;
+      }
 
       // Skip if has small n (privacy protection)
       if (hasSmallN(value)) return;
@@ -733,14 +978,39 @@ const categories = Array.from(groupedChars.keys());
 
       // Extract numeric value
       const numValue = getNumeric(value);
+      console.log('Label:', label, 'Value:', value, 'NumValue:', numValue, 'IsMedian:', isMedianChar);
+
       if (numValue !== null) {
-        if (!chartData[label]) chartData[label] = 0;
-        chartData[label] += numValue;
+        if (isMedianChar) {
+          // For median values, don't sum - just take the value (or average if multiple)
+          if (!chartData[label]) {
+            chartData[label] = { sum: 0, count: 0 };
+          }
+          chartData[label].sum += numValue;
+          chartData[label].count += 1;
+          console.log('Added median data for', label, ':', chartData[label]);
+        } else {
+          // For count values, sum them
+          if (!chartData[label]) chartData[label] = 0;
+          chartData[label] += numValue;
+          console.log('Added count data for', label, ':', chartData[label]);
+        }
+      } else {
+        console.log('numValue is null for:', value);
       }
     });
 
+    console.log('Chart data before averaging:', JSON.parse(JSON.stringify(chartData)));
+
+    // Convert median data to averages
+    if (isMedianChar) {
+      Object.keys(chartData).forEach(key => {
+        chartData[key] = chartData[key].sum / chartData[key].count;
+      });
+    }
+
     if (Object.keys(chartData).length === 0) {
-      alert('No data available for the selected characteristic and filters.');
+      alert(`No data available for "${characteristic}" with the selected filters.\n\nPossible reasons:\n- Not all sites/years have this data point\n- Values may be suppressed for privacy (n < 10)\n- Try selecting different sites or years`);
       return;
     }
 
@@ -818,6 +1088,19 @@ const categories = Array.from(groupedChars.keys());
     }
     document.getElementById('custom-chart-container')?.classList.add('hidden');
     document.getElementById('chart-instructions')?.classList.remove('hidden');
+
+    // Clear selected characteristic
+    selectedCharacteristic = null;
+    document.querySelectorAll('.characteristic-item').forEach(item => {
+      item.classList.remove('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
+    });
+    document.getElementById('selected-characteristic-display')?.classList.add('hidden');
+
+    // Disable generate button
+    const generateBtn = document.getElementById('generate-chart-btn');
+    if (generateBtn) {
+      generateBtn.disabled = true;
+    }
   }
 
   function generateChartColors(count) {
@@ -1160,5 +1443,49 @@ const categories = Array.from(groupedChars.keys());
     position: sticky;
     top: 0;
     z-index: 1;
+  }
+
+  /* Category Sidebar Styles */
+  .category-header:hover {
+    background-color: rgb(249, 250, 251);
+  }
+
+  .characteristic-list {
+    display: none;
+    background-color: rgb(249, 250, 251);
+  }
+
+  .characteristic-item {
+    border-left: 3px solid transparent;
+  }
+
+  .characteristic-item:hover {
+    border-left-color: rgb(136, 19, 55);
+  }
+
+  .characteristic-item.bg-clif-burgundy {
+    border-left-color: rgb(136, 19, 55);
+  }
+
+  .chevron {
+    transition: transform 0.2s ease;
+  }
+
+  /* Scrollbar styling for sidebar */
+  #categories-list::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  #categories-list::-webkit-scrollbar-track {
+    background: rgb(243, 244, 246);
+  }
+
+  #categories-list::-webkit-scrollbar-thumb {
+    background: rgb(209, 213, 219);
+    border-radius: 4px;
+  }
+
+  #categories-list::-webkit-scrollbar-thumb:hover {
+    background: rgb(156, 163, 175);
   }
 </style>
