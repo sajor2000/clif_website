@@ -61,12 +61,41 @@ const raceUnknown = dataMap.get('  Race: unknown') || '53,206 (6.6%)';
 const ethnicityHispanic = dataMap.get('  Ethnicity: hispanic') || '47,271 (5.8%)';
 const ethnicityNonHispanic = dataMap.get('  Ethnicity: non-hispanic') || '700,818 (86.7%)';
 
+// Demographics - Age
+const medianAge = dataMap.get('Age at admission, median [Q1, Q3]') || '66 [47,79]';
+
+// Admission Types
+const admissionED = dataMap.get('  Admission type: ed') || '670,921 (65.2%)';
+const admissionElective = dataMap.get('  Admission type: elective') || '81,078 (7.9%)';
+const admissionOSH = dataMap.get('  Admission type: osh') || '149,423 (14.5%)';
+const admissionFacility = dataMap.get('  Admission type: facility') || '34,120 (3.3%)';
+const admissionDirect = dataMap.get('  Admission type: direct') || '59,731 (5.8%)';
+const admissionOther = dataMap.get('  Admission type: other') || '25,463 (2.5%)';
+
+// Comorbidities
+const comorbCHF = dataMap.get('Congestive Heart Failure') || '217,619 (21.1%)';
+const comorbRenal = dataMap.get('  Renal Disease') || '194,088 (18.9%)';
+const comorbPulmonary = dataMap.get('  Chronic Pulmonary Disease') || '179,526 (17.4%)';
+const comorbCerebrovascular = dataMap.get('  Cerebrovascular Disease') || '138,330 (13.4%)';
+const comorbCancer = dataMap.get('  Cancer') || '75,755 (7.4%)';
+const comorbMetastatic = dataMap.get('  Metastatic Solid Tumor') || '73,649 (7.2%)';
+const comorbPVD = dataMap.get('  Peripheral Vascular Disease') || '63,341 (6.2%)';
+const comorbMI = dataMap.get('  Myocardial Infarction') || '78,700 (7.6%)';
+const comorbDementia = dataMap.get('  Dementia') || '35,096 (3.4%)';
+const comorbLiver = dataMap.get('  Mild Liver Disease') || '34,309 (3.3%)';
+const comorbHemiplegia = dataMap.get('  Hemiplegia') || '40,168 (3.9%)';
+const comorbConnective = dataMap.get('  Connective Tissue Disease') || '23,637 (2.3%)';
+const comorbPeptic = dataMap.get('  Peptic Ulcer Disease') || '19,999 (1.9%)';
+const comorbAIDS = dataMap.get('  Aids') || '4,082 (0.4%)';
+
 // Clinical Outcomes
 const hospitalMortality = dataMap.get('Hospital mortality, n (%)') || '208,813 (25.8%)';
 const icuLOS = dataMap.get('ICU length of stay (days), median [Q1, Q3]') || '1.7 [0.8,5]';
 const hospitalLOS = dataMap.get('Hospital length of stay (days), median [Q1, Q3]') || '6.4 [2.6,18.6]';
 const vasopressorUse = dataMap.get('  Vasoactive support, n (%)') || '347,730 (33.8%)';
 const sofaScore = dataMap.get('  Total SOFA score, median [Q1, Q3]') || '3 [1,9]';
+const charlsonIndex = dataMap.get('Charlson Comorbidity Index, median [Q1, Q3]') || '2 [0,5]';
+const crrt = dataMap.get('CRRT, n (%)') || '34,707 (3.4%)';
 
 // Helper functions to extract numbers and percentages
 function extractNumber(str: string): string {
@@ -109,6 +138,18 @@ const advancedRespiratory = dataMap.get('  Advanced respiratory support, n (%)')
 const vasoactiveSupport = dataMap.get('  Vasoactive support, n (%)') || '347,730 (33.8%)';
 const otherCriticallyIll = dataMap.get('  Other critically ill, n (%)') || '74,095 (7.2%)';
 
+// Calculate encounter type percentages (as proportion of total encounters)
+const icuCount = parseInt(extractNumber(icuEncounters).replace(/,/g, ''));
+const advancedRespiratoryCount = parseInt(extractNumber(advancedRespiratory).replace(/,/g, ''));
+const vasoactiveSupportCount = parseInt(extractNumber(vasoactiveSupport).replace(/,/g, ''));
+const otherCriticallyIllCount = parseInt(extractNumber(otherCriticallyIll).replace(/,/g, ''));
+const totalEncounterTypes = icuCount + advancedRespiratoryCount + vasoactiveSupportCount + otherCriticallyIllCount;
+
+const icuPct = ((icuCount / totalEncounterTypes) * 100).toFixed(1);
+const respiratoryPct = ((advancedRespiratoryCount / totalEncounterTypes) * 100).toFixed(1);
+const vasoactivePct = ((vasoactiveSupportCount / totalEncounterTypes) * 100).toFixed(1);
+const otherPct = ((otherCriticallyIllCount / totalEncounterTypes) * 100).toFixed(1);
+
 // Respiratory Support Details
 const imvTotal = dataMap.get('Invasive mechanical ventilation, n (%)') || '315,193 (30.6%)';
 // First location at IMV start
@@ -144,197 +185,290 @@ const dopamineDose = dataMap.get('    Dopamine dose (mcg/kg/min), median [Q1, Q3
 ---
 
 <div class="cohort-dashboard">
-  <!-- Key Statistics Overview -->
-  <section class="mb-12">
-    <h2 class="text-3xl font-bold mb-8 text-center text-gray-800">Consortium Overview</h2>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      <div class="bg-gradient-to-br from-clif-burgundy to-clif-burgundy/80 text-white p-6 rounded-xl shadow-lg">
-        <div class="text-3xl font-bold mb-2">{extractNumber(uniquePatients)}</div>
-        <div class="text-sm opacity-90 flex items-center gap-1">
-          Unique Critically Ill Patients
-          <div class="relative inline-flex group">
-            <svg class="w-4 h-4 cursor-help" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
-            </svg>
-            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-72 bg-gray-900 text-white text-xs rounded-lg p-3 shadow-xl z-10">
-              <div class="font-semibold mb-1">Critically Ill Include Patients with:</div>
-              <ul class="space-y-1 text-left">
-                <li>• ICU admissions</li>
-                <li>• Advanced respiratory support</li>
-                <li>• Vasoactive support</li>
-                <li>• Other intensive monitoring or interventions</li>
-              </ul>
-              <div class="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-900"></div>
+  <!-- Compact Top Grid Layout -->
+  <section class="mb-8">
+    <div class="flex flex-col lg:flex-row gap-4">
+
+      <!-- Left Column: Key Stats Cards (Stacked) -->
+      <div class="flex-none space-y-3 w-max">
+        <div class="bg-gradient-to-br from-slate-600 to-slate-700 text-white px-4 py-3.5 rounded-lg shadow min-w-full">
+          <div class="text-xl font-bold">{extractNumber(uniquePatients)}</div>
+          <div class="text-xs opacity-90 whitespace-nowrap">Unique Critically Ill Patients</div>
+        </div>
+        <div class="bg-gradient-to-br from-slate-500 to-slate-600 text-white px-4 py-3.5 rounded-lg shadow min-w-full">
+          <div class="text-xl font-bold">{extractNumber(encounterBlocks)}</div>
+          <div class="text-xs opacity-90 whitespace-nowrap">Total Encounters</div>
+        </div>
+        <div class="bg-gradient-to-br from-slate-400 to-slate-500 text-white px-4 py-3.5 rounded-lg shadow min-w-full">
+          <div class="text-xl font-bold">{hospitals}</div>
+          <div class="text-xs opacity-90 whitespace-nowrap">Hospitals</div>
+        </div>
+        <div class="bg-gradient-to-br from-slate-500 to-slate-600 text-white px-4 py-3.5 rounded-lg shadow min-w-full">
+          <div class="text-xl font-bold">{years}</div>
+          <div class="text-xs opacity-90 whitespace-nowrap">Data Timespan</div>
+        </div>
+        <div class="bg-gradient-to-br from-slate-600 to-slate-700 text-white px-4 py-3.5 rounded-lg shadow min-w-full">
+          <div class="text-xl font-bold">{extractPercentage(hospitalMortality)}</div>
+          <div class="text-xs opacity-90 whitespace-nowrap">Hospital Mortality</div>
+        </div>
+      </div>
+
+      <!-- Middle + Right Column: Demographics, Admission Types, Comorbidities, Encounter Types -->
+      <div class="flex-1 space-y-3">
+        <!-- Demographics Row - Full Width -->
+        <div class="bg-white p-4 rounded-lg shadow border border-gray-200">
+          <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 text-center">
+            <!-- Median Age -->
+            <div class="relative py-2">
+              <svg class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 opacity-30 text-slate-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zM4 8h12v8H4V8z" clip-rule="evenodd"/>
+              </svg>
+              <div class="relative text-xl font-bold text-slate-700">{extractMedian(medianAge)}</div>
+              <div class="relative text-xs text-gray-600">Median Age</div>
+            </div>
+            <!-- Female -->
+            <div class="relative py-2">
+              <svg class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 opacity-30 text-slate-400" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/>
+              </svg>
+              <div class="relative text-xl font-bold text-slate-700">{extractPercentage(sexFemale)}</div>
+              <div class="relative text-xs text-gray-600">Female</div>
+            </div>
+            <!-- White -->
+            <div class="relative py-2">
+              <svg class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 opacity-30 text-slate-400" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
+              </svg>
+              <div class="relative text-xl font-bold text-slate-700">{extractPercentage(raceWhite)}</div>
+              <div class="relative text-xs text-gray-600">White</div>
+            </div>
+            <!-- Hispanic -->
+            <div class="relative py-2">
+              <svg class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 opacity-30 text-slate-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
+              </svg>
+              <div class="relative text-xl font-bold text-slate-700">{extractPercentage(ethnicityHispanic)}</div>
+              <div class="relative text-xs text-gray-600">Hispanic</div>
+            </div>
+            <!-- ICU Stay -->
+            <div class="relative py-2">
+              <svg class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 opacity-30 text-slate-400" fill="currentColor" viewBox="0 0 640 512">
+                <path d="M176 256c44.11 0 80-35.89 80-80s-35.89-80-80-80-80 35.89-80 80 35.89 80 80 80zm352-128H304c-8.84 0-16 7.16-16 16v144H64V80c0-8.84-7.16-16-16-16H16C7.16 64 0 71.16 0 80v352c0 8.84 7.16 16 16 16h32c8.84 0 16-7.16 16-16v-48h512v48c0 8.84 7.16 16 16 16h32c8.84 0 16-7.16 16-16V240c0-61.86-50.14-112-112-112z"/>
+              </svg>
+              <div class="relative text-xl font-bold text-slate-700">{extractMedian(icuLOS)}d</div>
+              <div class="relative text-xs text-gray-600">ICU Stay</div>
+            </div>
+            <!-- Hospital Stay -->
+            <div class="relative py-2">
+              <svg class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 opacity-30 text-slate-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clip-rule="evenodd"/>
+              </svg>
+              <div class="relative text-xl font-bold text-slate-700">{extractMedian(hospitalLOS)}d</div>
+              <div class="relative text-xs text-gray-600">Hospital Stay</div>
+            </div>
+            <!-- SOFA -->
+            <div class="relative py-2">
+              <svg class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 opacity-30 text-slate-400" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
+                <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/>
+              </svg>
+              <div class="relative text-xl font-bold text-slate-700">{extractMedian(sofaScore)}</div>
+              <div class="relative text-xs text-gray-600">SOFA Score</div>
+            </div>
+            <!-- Charlson -->
+            <div class="relative py-2">
+              <svg class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 opacity-30 text-slate-400" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/>
+              </svg>
+              <div class="relative text-xl font-bold text-slate-700">{extractMedian(charlsonIndex)}</div>
+              <div class="relative text-xs text-gray-600">Charlson Index</div>
             </div>
           </div>
         </div>
-        <div class="text-xs opacity-75 mt-1">Across all participating sites</div>
+
+        <!-- Three Cards Row: Encounter Types, Admission Types, Top Comorbidities -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+          <!-- Encounter Types -->
+          <div class="bg-white p-4 rounded-lg shadow border border-gray-200 flex flex-col" style="min-height: 320px;">
+            <h3 class="text-sm font-semibold mb-2 text-gray-700">Encounter Types</h3>
+            <div class="flex flex-col items-center gap-2">
+              <!-- Pie Chart -->
+              <div class="w-32 h-32">
+                <canvas id="encounterTypesChart"></canvas>
+              </div>
+              <!-- Data List -->
+              <div class="w-full space-y-1 text-xs">
+                <div class="flex justify-between items-center">
+                  <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-full" style="background-color: rgb(20, 184, 166);"></div>
+                    <span class="text-gray-700">ICU encounters</span>
+                  </div>
+                  <span class="font-semibold text-gray-800">{icuPct}%</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-full" style="background-color: rgb(45, 212, 191);"></div>
+                    <span class="text-gray-700">Advanced respiratory support</span>
+                  </div>
+                  <span class="font-semibold text-gray-800">{respiratoryPct}%</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-full" style="background-color: rgb(94, 234, 212);"></div>
+                    <span class="text-gray-700">Vasoactive support</span>
+                  </div>
+                  <span class="font-semibold text-gray-800">{vasoactivePct}%</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-full" style="background-color: rgb(153, 246, 228);"></div>
+                    <span class="text-gray-700">Other critically ill</span>
+                  </div>
+                  <span class="font-semibold text-gray-800">{otherPct}%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Admission Types -->
+          <div class="bg-white p-4 rounded-lg shadow border border-gray-200 flex flex-col" style="min-height: 320px;">
+            <h3 class="text-sm font-semibold mb-2 text-gray-700">Admission Types</h3>
+            <div class="flex flex-col items-center gap-2">
+              <!-- Pie Chart -->
+              <div class="w-32 h-32">
+                <canvas id="admissionTypesChart"></canvas>
+              </div>
+              <!-- Data List -->
+              <div class="w-full space-y-1 text-xs">
+                <div class="flex justify-between items-center">
+                  <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-full" style="background-color: rgb(136, 19, 55);"></div>
+                    <span class="text-gray-700">ED</span>
+                  </div>
+                  <span class="font-semibold text-gray-800">{extractPercentage(admissionED)}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-full" style="background-color: rgb(159, 18, 57);"></div>
+                    <span class="text-gray-700">OSH</span>
+                  </div>
+                  <span class="font-semibold text-gray-800">{extractPercentage(admissionOSH)}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-full" style="background-color: rgb(190, 18, 60);"></div>
+                    <span class="text-gray-700">Elective</span>
+                  </div>
+                  <span class="font-semibold text-gray-800">{extractPercentage(admissionElective)}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-full" style="background-color: rgb(225, 29, 72);"></div>
+                    <span class="text-gray-700">Direct</span>
+                  </div>
+                  <span class="font-semibold text-gray-800">{extractPercentage(admissionDirect)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Top Comorbidities - Packed Bubble -->
+          <div class="bg-white p-4 rounded-lg shadow border border-gray-200 flex flex-col" style="min-height: 320px;">
+            <div class="flex justify-between items-center mb-2">
+              <h3 class="text-sm font-semibold text-gray-700">Top Comorbidities</h3>
+              <button id="expandComorbidities" class="text-xs text-slate-600 hover:text-slate-800 underline">
+                View All
+              </button>
+            </div>
+            <div class="flex items-center justify-center flex-1">
+              <svg id="comorbidityBubbleChart" class="w-full h-full" style="max-height: 240px;"></svg>
+            </div>
+          </div>
+
+        </div>
+
       </div>
 
-      <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-xl shadow-lg">
-        <div class="text-3xl font-bold mb-2">{extractNumber(encounterBlocks)}</div>
-        <div class="text-sm opacity-90">Encounters</div>
-        <div class="text-xs opacity-75 mt-1">Total admissions recorded</div>
-      </div>
-
-      <div class="bg-gradient-to-br from-green-500 to-green-600 text-white p-6 rounded-xl shadow-lg">
-        <div class="text-3xl font-bold mb-2">{hospitals}</div>
-        <div class="text-sm opacity-90">Hospitals</div>
-        <div class="text-xs opacity-75 mt-1">Contributing data</div>
-      </div>
-
-      <div class="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-6 rounded-xl shadow-lg">
-        <div class="text-3xl font-bold mb-2">{years}</div>
-        <div class="text-sm opacity-90">Data Timespan</div>
-        <div class="text-xs opacity-75 mt-1">15 years of data</div>
-      </div>
     </div>
   </section>
 
-  <!-- Demographics Summary -->
-  <section class="mb-12">
-    <h2 class="text-3xl font-bold mb-8 text-center text-gray-800">Patient Demographics</h2>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+  <!-- Divider -->
+  <div class="border-t border-gray-200 my-6"></div>
 
-      <!-- Gender Distribution -->
-      <div class="bg-white p-6 rounded-xl shadow-lg">
-        <h3 class="text-xl font-semibold mb-4 text-gray-800">Gender Distribution</h3>
-        <div class="space-y-3">
-          <div class="flex justify-between items-center">
-            <span class="text-gray-600">Female</span>
-            <span class="font-semibold">{extractNumber(sexFemale)} ({extractPercentage(sexFemale)})</span>
-          </div>
-          <div class="w-full bg-gray-200 rounded-full h-3">
-            <div class="bg-pink-500 h-3 rounded-full" style={`width: ${extractPercentage(sexFemale)}`}></div>
-          </div>
-          <div class="flex justify-between items-center">
-            <span class="text-gray-600">Male</span>
-            <span class="font-semibold">{extractNumber(sexMale)} ({extractPercentage(sexMale)})</span>
-          </div>
-          <div class="w-full bg-gray-200 rounded-full h-3">
-            <div class="bg-blue-500 h-3 rounded-full" style={`width: ${extractPercentage(sexMale)}`}></div>
+  <!-- Advanced Support Summary Cards -->
+  <section class="mb-8">
+    <h2 class="text-xl font-bold mb-4 text-gray-800">Advanced Support</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <!-- IMV -->
+      <div class="bg-gradient-to-br from-slate-500 to-slate-600 text-white p-4 rounded-lg shadow">
+        <div class="flex items-center gap-2">
+          <svg class="w-20 h-20 opacity-90 breathing-lungs flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2c.5 0 1 .2 1 .5v3c2-1.5 4.5-2 6.5-.5 2.5 2 3 5.5 2.5 8.5-.5 3.5-2 7-4.5 9-1 .8-2 1-3 .5-.8-.4-1.5-1.2-2-2.5V21c0 .3-.5.5-1 .5s-1-.2-1-.5v-1c-.5 1.3-1.2 2.1-2 2.5-1 .5-2 .3-3-.5-2.5-2-4-5.5-4.5-9C.5 10.5 1 7 3.5 5c2-1.5 4.5-1 6.5.5v-3c0-.3.5-.5 1-.5zM6.5 7C5 7.5 4 9 3.5 11c-.5 2.5 0 5.5 1.5 7.5.5.8 1.2 1.5 2 1.8.3.1.5 0 .8-.2.8-.8 1.5-2.2 1.8-4 .2-1.2.2-2.5 0-3.8-.3-1.8-1-3.5-2-4.8-.3-.3-.7-.5-1.1-.5zm11 0c-.4 0-.8.2-1.1.5-1 1.3-1.7 3-2 4.8-.2 1.3-.2 2.6 0 3.8.3 1.8 1 3.2 1.8 4 .3.2.5.3.8.2.8-.3 1.5-1 2-1.8 1.5-2 2-5 1.5-7.5-.5-2-1.5-3.5-3-4z"/>
+          </svg>
+          <div class="text-2xl font-bold">{extractPercentage(imvTotal)}</div>
+          <div class="flex flex-col items-end text-right ml-auto max-w-xs">
+            <div class="text-sm opacity-90">Invasive Mechanical Ventilation</div>
+            <div class="text-xs opacity-75">n={extractNumber(imvTotal)}</div>
           </div>
         </div>
       </div>
 
-      <!-- Race Distribution -->
-      <div class="bg-white p-6 rounded-xl shadow-lg">
-        <h3 class="text-xl font-semibold mb-4 text-gray-800">Race Distribution</h3>
-        <div class="space-y-3">
-          <div class="flex justify-between items-center">
-            <span class="text-gray-600">White</span>
-            <span class="font-semibold">{extractNumber(raceWhite)} ({extractPercentage(raceWhite)})</span>
-          </div>
-          <div class="w-full bg-gray-200 rounded-full h-2">
-            <div class="bg-blue-400 h-2 rounded-full" style={`width: ${extractPercentage(raceWhite)}`}></div>
-          </div>
-          <div class="flex justify-between items-center">
-            <span class="text-gray-600">Black</span>
-            <span class="font-semibold">{extractNumber(raceBlack)} ({extractPercentage(raceBlack)})</span>
-          </div>
-          <div class="w-full bg-gray-200 rounded-full h-2">
-            <div class="bg-green-400 h-2 rounded-full" style={`width: ${extractPercentage(raceBlack)}`}></div>
-          </div>
-          <div class="flex justify-between items-center">
-            <span class="text-gray-600">Other</span>
-            <span class="font-semibold">{totalOtherRaces.toLocaleString()} ({otherRacePercentage}%)</span>
-          </div>
-          <div class="w-full bg-gray-200 rounded-full h-2">
-            <div class="bg-purple-400 h-2 rounded-full" style={`width: ${otherRacePercentage}%`}></div>
+      <!-- Vasopressor -->
+      <div class="bg-gradient-to-br from-slate-600 to-slate-700 text-white p-4 rounded-lg shadow">
+        <div class="flex items-center gap-2">
+          <svg class="w-20 h-20 opacity-90 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="8 0 48 80">
+            <rect x="12" y="8" width="32" height="32" rx="4" stroke-linejoin="round"/>
+            <line x1="16" y1="16" x2="32" y2="16" stroke-width="1.5"/>
+            <path d="M16 28 L40 20 L40 36 L16 36 Z" fill="currentColor" opacity="0.3"/>
+            <circle cx="28" cy="4" r="2" fill="currentColor"/>
+            <line x1="28" y1="4" x2="28" y2="8"/>
+            <line x1="28" y1="44" x2="28" y2="48"/>
+            <circle cx="28" cy="50" r="3"/>
+            <line x1="28" y1="53" x2="28" y2="68"/>
+            <path class="iv-drop iv-drop-1" d="M28 72 Q26 74 28 76 Q30 74 28 72 Z" fill="currentColor"/>
+          </svg>
+          <div class="text-2xl font-bold">{extractPercentage(vasopressorEncounters)}</div>
+          <div class="flex flex-col items-end text-right ml-auto max-w-xs">
+            <div class="text-sm opacity-90">Vasopressor Support</div>
+            <div class="text-xs opacity-75">n={extractNumber(vasopressorEncounters)}</div>
           </div>
         </div>
       </div>
 
-      <!-- Ethnicity -->
-      <div class="bg-white p-6 rounded-xl shadow-lg">
-        <h3 class="text-xl font-semibold mb-4 text-gray-800">Hispanic Ethnicity</h3>
-        <div class="space-y-3">
-          <div class="flex justify-between items-center">
-            <span class="text-gray-600">Hispanic</span>
-            <span class="font-semibold">{extractNumber(ethnicityHispanic)} ({extractPercentage(ethnicityHispanic)})</span>
-          </div>
-          <div class="w-full bg-gray-200 rounded-full h-3">
-            <div class="bg-orange-500 h-3 rounded-full" style={`width: ${extractPercentage(ethnicityHispanic)}`}></div>
-          </div>
-          <div class="flex justify-between items-center">
-            <span class="text-gray-600">Non-Hispanic</span>
-            <span class="font-semibold">{extractNumber(ethnicityNonHispanic)} ({extractPercentage(ethnicityNonHispanic)})</span>
-          </div>
-          <div class="w-full bg-gray-200 rounded-full h-3">
-            <div class="bg-gray-500 h-3 rounded-full" style={`width: ${extractPercentage(ethnicityNonHispanic)}`}></div>
+      <!-- CRRT -->
+      <div class="bg-gradient-to-br from-slate-500 to-slate-600 text-white p-4 rounded-lg shadow">
+        <div class="flex items-center gap-2">
+          <svg class="w-20 h-20 opacity-90 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="-64 -32 176 168">
+            <path d="M15 -30 C-20 -25 -35 10 -35 45 C-35 80 -15 115 15 130 C45 145 70 140 82 115 C94 90 92 75 75 60 C65 50 62 48 68 38 C74 28 85 10 80 -8 C75 -26 45 -35 15 -30 Z"
+                  fill="currentColor" opacity="0.2" stroke-linejoin="round"/>
+            <line x1="-62" y1="54" x2="-16" y2="54" stroke-width="8"/>
+            <circle class="kidney-particle-in kidney-particle-in-1" cx="-48" cy="54" r="6.5" fill="#ef4444"/>
+            <circle class="kidney-particle-in kidney-particle-in-2" cx="-28" cy="54" r="6.5" fill="#ef4444"/>
+            <line x1="70" y1="54" x2="116" y2="54" stroke-width="8"/>
+            <circle class="kidney-particle-out kidney-particle-out-1" cx="72" cy="54" r="6.5" fill="currentColor" opacity="0.9"/>
+            <circle class="kidney-particle-out kidney-particle-out-2" cx="96" cy="54" r="6.5" fill="currentColor" opacity="0.9"/>
+          </svg>
+          <div class="text-2xl font-bold">{extractPercentage(crrt)}</div>
+          <div class="flex flex-col items-end text-right ml-auto max-w-xs">
+            <div class="text-sm opacity-90">Continuous Renal Replacement Therapy</div>
+            <div class="text-xs opacity-75">n={extractNumber(crrt)}</div>
           </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Encounter Types -->
-  <section class="mb-12">
-    <h2 class="text-3xl font-bold mb-8 text-center text-gray-800">Encounter Types</h2>
-    <div class="bg-white p-8 rounded-xl shadow-lg">
-      <div class="overflow-x-auto">
-        <table class="w-full">
-          <thead>
-            <tr class="border-b-2 border-gray-200">
-              <th class="text-left py-3 px-4 text-gray-700 font-semibold">Type</th>
-              <th class="text-right py-3 px-4 text-gray-700 font-semibold">Count</th>
-              <th class="text-right py-3 px-4 text-gray-700 font-semibold">Percentage</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-100">
-            <tr class="hover:bg-gray-50 transition-colors">
-              <td class="py-3 px-4 text-gray-800">ICU encounters</td>
-              <td class="py-3 px-4 text-right font-semibold text-gray-900">{extractNumber(icuEncounters)}</td>
-              <td class="py-3 px-4 text-right">
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                  {extractPercentage(icuEncounters)}
-                </span>
-              </td>
-            </tr>
-            <tr class="hover:bg-gray-50 transition-colors">
-              <td class="py-3 px-4 text-gray-800">Advanced respiratory support</td>
-              <td class="py-3 px-4 text-right font-semibold text-gray-900">{extractNumber(advancedRespiratory)}</td>
-              <td class="py-3 px-4 text-right">
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
-                  {extractPercentage(advancedRespiratory)}
-                </span>
-              </td>
-            </tr>
-            <tr class="hover:bg-gray-50 transition-colors">
-              <td class="py-3 px-4 text-gray-800">Vasoactive support</td>
-              <td class="py-3 px-4 text-right font-semibold text-gray-900">{extractNumber(vasoactiveSupport)}</td>
-              <td class="py-3 px-4 text-right">
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                  {extractPercentage(vasoactiveSupport)}
-                </span>
-              </td>
-            </tr>
-            <tr class="hover:bg-gray-50 transition-colors">
-              <td class="py-3 px-4 text-gray-800">Other critically ill</td>
-              <td class="py-3 px-4 text-right font-semibold text-gray-900">{extractNumber(otherCriticallyIll)}</td>
-              <td class="py-3 px-4 text-right">
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
-                  {extractPercentage(otherCriticallyIll)}
-                </span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </section>
-
-  <!-- Advanced Support Details -->
-  <section class="mb-12">
-    <h2 class="text-3xl font-bold mb-8 text-center text-gray-800">Advanced Support Details</h2>
+  <!-- Detailed Metrics - Collapsible Sections -->
+  <section class="mb-8">
 
     <!-- Respiratory Support Subsection -->
     <div class="mb-8">
       <button
-        class="collapsible-header collapsed w-full flex items-center justify-between bg-blue-50 hover:bg-blue-100 p-4 rounded-lg transition-colors duration-200 border border-blue-200"
+        class="collapsible-header collapsed w-full flex items-center justify-between bg-gray-50 hover:bg-gray-100 p-4 rounded-lg transition-colors duration-200 border border-gray-200"
         data-target="respiratory-support"
       >
-        <h3 class="text-2xl font-semibold text-gray-700">Respiratory Support</h3>
+        <h3 class="text-xl font-bold text-gray-800">Respiratory Support</h3>
         <svg class="chevron w-6 h-6 text-gray-600 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
         </svg>
@@ -342,153 +476,50 @@ const dopamineDose = dataMap.get('    Dopamine dose (mcg/kg/min), median [Q1, Q3
 
       <div id="respiratory-support" class="collapsible-content collapsed mt-6">
 
-    <!-- IMV Overview -->
-    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl shadow-md mb-6">
-      <div class="flex items-center justify-between">
-        <div>
-          <h3 class="text-xl font-bold text-gray-800 mb-1">Invasive Mechanical Ventilation</h3>
-          <p class="text-sm text-gray-600">Patients requiring IMV support</p>
-        </div>
-        <div class="text-right">
-          <div class="text-3xl font-bold text-blue-600">{extractPercentage(imvTotal)}</div>
-          <div class="text-sm text-gray-600">{extractNumber(imvTotal)} encounters</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Three columns layout -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Two columns layout for Location and Mode -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
 
       <!-- First Location at IMV Start -->
-      <div class="bg-white p-6 rounded-xl shadow-lg">
-        <h3 class="text-lg font-semibold mb-4 text-gray-800 border-b pb-2">First Location at IMV Start</h3>
-        <div class="space-y-3">
-          <div class="flex justify-between items-center text-sm">
-            <span class="text-gray-700">ICU</span>
-            <span class="font-semibold text-gray-900">{extractPercentage(imvLocationICU)}</span>
-          </div>
-          <div class="w-full bg-gray-200 rounded-full h-2">
-            <div class="bg-blue-500 h-2 rounded-full" style={`width: ${extractPercentage(imvLocationICU)}`}></div>
-          </div>
-
-          <div class="flex justify-between items-center text-sm">
-            <span class="text-gray-700">ED</span>
-            <span class="font-semibold text-gray-900">{extractPercentage(imvLocationED)}</span>
-          </div>
-          <div class="w-full bg-gray-200 rounded-full h-2">
-            <div class="bg-green-500 h-2 rounded-full" style={`width: ${extractPercentage(imvLocationED)}`}></div>
-          </div>
-
-          <div class="flex justify-between items-center text-sm">
-            <span class="text-gray-700">Procedural</span>
-            <span class="font-semibold text-gray-900">{extractPercentage(imvLocationProcedural)}</span>
-          </div>
-          <div class="w-full bg-gray-200 rounded-full h-2">
-            <div class="bg-purple-500 h-2 rounded-full" style={`width: ${extractPercentage(imvLocationProcedural)}`}></div>
-          </div>
-
-          <div class="flex justify-between items-center text-sm">
-            <span class="text-gray-700">Ward</span>
-            <span class="font-semibold text-gray-900">{extractPercentage(imvLocationWard)}</span>
-          </div>
-          <div class="w-full bg-gray-200 rounded-full h-2">
-            <div class="bg-orange-500 h-2 rounded-full" style={`width: ${extractPercentage(imvLocationWard)}`}></div>
-          </div>
-
-          <div class="flex justify-between items-center text-sm">
-            <span class="text-gray-700">Stepdown</span>
-            <span class="font-semibold text-gray-900">{extractPercentage(imvLocationStepdown)}</span>
-          </div>
-          <div class="w-full bg-gray-200 rounded-full h-2">
-            <div class="bg-pink-500 h-2 rounded-full" style={`width: ${extractPercentage(imvLocationStepdown)}`}></div>
-          </div>
+      <div class="bg-white p-5 rounded-lg shadow border border-gray-200">
+        <h3 class="text-base font-semibold mb-4 text-gray-700">First Location at IMV Start</h3>
+        <div class="flex items-center justify-center" style="height: 280px;">
+          <canvas id="locationPieChart"></canvas>
         </div>
       </div>
 
       <!-- Initial Ventilator Mode -->
-      <div class="bg-white p-6 rounded-xl shadow-lg">
-        <h3 class="text-lg font-semibold mb-4 text-gray-800 border-b pb-2">Initial Ventilator Mode</h3>
-        <div class="space-y-3">
-          <div class="flex justify-between items-center text-sm">
-            <span class="text-gray-700">AC/VC</span>
-            <span class="font-semibold text-gray-900">{extractPercentage(ventModeACV)}</span>
-          </div>
-          <div class="w-full bg-gray-200 rounded-full h-2">
-            <div class="bg-blue-500 h-2 rounded-full" style={`width: ${extractPercentage(ventModeACV)}`}></div>
-          </div>
-
-          <div class="flex justify-between items-center text-sm">
-            <span class="text-gray-700">PRVC</span>
-            <span class="font-semibold text-gray-900">{extractPercentage(ventModePRVC)}</span>
-          </div>
-          <div class="w-full bg-gray-200 rounded-full h-2">
-            <div class="bg-green-500 h-2 rounded-full" style={`width: ${extractPercentage(ventModePRVC)}`}></div>
-          </div>
-
-          <div class="flex justify-between items-center text-sm">
-            <span class="text-gray-700">SIMV</span>
-            <span class="font-semibold text-gray-900">{extractPercentage(ventModeSIMV)}</span>
-          </div>
-          <div class="w-full bg-gray-200 rounded-full h-2">
-            <div class="bg-purple-500 h-2 rounded-full" style={`width: ${extractPercentage(ventModeSIMV)}`}></div>
-          </div>
-
-          <div class="flex justify-between items-center text-sm">
-            <span class="text-gray-700">PSV/CPAP</span>
-            <span class="font-semibold text-gray-900">{extractPercentage(ventModePSV)}</span>
-          </div>
-          <div class="w-full bg-gray-200 rounded-full h-2">
-            <div class="bg-orange-500 h-2 rounded-full" style={`width: ${extractPercentage(ventModePSV)}`}></div>
-          </div>
-
-          <div class="flex justify-between items-center text-sm">
-            <span class="text-gray-700">PCV</span>
-            <span class="font-semibold text-gray-900">{extractPercentage(ventModePCV)}</span>
-          </div>
-          <div class="w-full bg-gray-200 rounded-full h-2">
-            <div class="bg-pink-500 h-2 rounded-full" style={`width: ${extractPercentage(ventModePCV)}`}></div>
-          </div>
-
-          <div class="flex justify-between items-center text-sm">
-            <span class="text-gray-700">Other</span>
-            <span class="font-semibold text-gray-900">{extractPercentage(ventModeOther)}</span>
-          </div>
-          <div class="w-full bg-gray-200 rounded-full h-2">
-            <div class="bg-gray-500 h-2 rounded-full" style={`width: ${extractPercentage(ventModeOther)}`}></div>
-          </div>
-        </div>
+      <div class="bg-white p-5 rounded-lg shadow border border-gray-200">
+        <h3 class="text-base font-semibold mb-4 text-gray-700">Initial Ventilator Mode</h3>
+        <div id="ventModeTreemap" class="w-full" style="height: 256px;"></div>
       </div>
 
-      <!-- IMV Device Settings -->
-      <div class="bg-white p-6 rounded-xl shadow-lg">
-        <h3 class="text-lg font-semibold mb-4 text-gray-800 border-b pb-2">IMV Device Settings</h3>
-        <div class="space-y-4">
-          <div class="text-center p-3 bg-blue-50 rounded-lg">
-            <div class="text-sm text-gray-600 mb-1">FiO2 (%)</div>
-            <div class="text-2xl font-bold text-blue-600">{extractMedian(fio2Median)}</div>
-            <div class="text-xs text-gray-500 mt-1">{fio2Median.replace(/^[\d.]+\s*/, '')}</div>
-          </div>
+    </div>
 
-          <div class="text-center p-3 bg-green-50 rounded-lg">
-            <div class="text-sm text-gray-600 mb-1">PEEP (cmH2O)</div>
-            <div class="text-2xl font-bold text-green-600">{extractMedian(peepMedian)}</div>
-            <div class="text-xs text-gray-500 mt-1">{peepMedian.replace(/^[\d.]+\s*/, '')}</div>
-          </div>
-
-          <div class="text-center p-3 bg-purple-50 rounded-lg">
-            <div class="text-sm text-gray-600 mb-1">Tidal Volume (mL)</div>
-            <div class="text-2xl font-bold text-purple-600">{extractMedian(tidalVolumeMedian)}</div>
-            <div class="text-xs text-gray-500 mt-1">{tidalVolumeMedian.replace(/^[\d.]+\s*/, '')}</div>
-          </div>
-
-          <div class="text-center p-3 bg-orange-50 rounded-lg">
-            <div class="text-sm text-gray-600 mb-1">Respiratory Rate (breaths/min)</div>
-            <div class="text-2xl font-bold text-orange-600">{extractMedian(rrMedian)}</div>
-            <div class="text-xs text-gray-500 mt-1">{rrMedian.replace(/^[\d.]+\s*/, '')}</div>
-          </div>
+    <!-- IMV Device Settings - Integrated Card -->
+    <div class="bg-gradient-to-br from-teal-500 to-teal-600 text-white p-6 rounded-lg shadow mb-6">
+      <h4 class="text-sm font-semibold mb-4 opacity-90">Initial Ventilator Settings</h4>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div class="text-center">
+          <div class="text-xs opacity-75 mb-1">FiO2 (%)</div>
+          <div class="text-3xl font-bold">{extractMedian(fio2Median)}</div>
+          <div class="text-xs opacity-75 mt-1">{fio2Median.replace(/^[\d.]+\s*/, '')}</div>
+        </div>
+        <div class="text-center">
+          <div class="text-xs opacity-75 mb-1">PEEP (cmH2O)</div>
+          <div class="text-3xl font-bold">{extractMedian(peepMedian)}</div>
+          <div class="text-xs opacity-75 mt-1">{peepMedian.replace(/^[\d.]+\s*/, '')}</div>
+        </div>
+        <div class="text-center">
+          <div class="text-xs opacity-75 mb-1">Tidal Volume (mL)</div>
+          <div class="text-3xl font-bold">{extractMedian(tidalVolumeMedian)}</div>
+          <div class="text-xs opacity-75 mt-1">{tidalVolumeMedian.replace(/^[\d.]+\s*/, '')}</div>
+        </div>
+        <div class="text-center">
+          <div class="text-xs opacity-75 mb-1">Respiratory Rate</div>
+          <div class="text-3xl font-bold">{extractMedian(rrMedian)}</div>
+          <div class="text-xs opacity-75 mt-1">{rrMedian.replace(/^[\d.]+\s*/, '')}</div>
         </div>
       </div>
-
     </div>
       </div>
     </div>
@@ -496,10 +527,10 @@ const dopamineDose = dataMap.get('    Dopamine dose (mcg/kg/min), median [Q1, Q3
     <!-- Vasopressor Support Subsection -->
     <div class="mb-8">
       <button
-        class="collapsible-header collapsed w-full flex items-center justify-between bg-purple-50 hover:bg-purple-100 p-4 rounded-lg transition-colors duration-200 border border-purple-200"
+        class="collapsible-header collapsed w-full flex items-center justify-between bg-gray-50 hover:bg-gray-100 p-4 rounded-lg transition-colors duration-200 border border-gray-200"
         data-target="vasopressor-support"
       >
-        <h3 class="text-2xl font-semibold text-gray-700">Vasopressor Support</h3>
+        <h3 class="text-xl font-bold text-gray-800">Vasopressor Support</h3>
         <svg class="chevron w-6 h-6 text-gray-600 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
         </svg>
@@ -507,111 +538,53 @@ const dopamineDose = dataMap.get('    Dopamine dose (mcg/kg/min), median [Q1, Q3
 
       <div id="vasopressor-support" class="collapsible-content collapsed mt-6">
 
-    <!-- Vasopressor Overview -->
-    <div class="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl shadow-md mb-6">
-      <div class="flex items-center justify-between">
-        <div>
-          <h4 class="text-xl font-bold text-gray-800 mb-1">Vasopressor Encounters</h4>
-          <p class="text-sm text-gray-600">Patients requiring vasopressor support</p>
-        </div>
-        <div class="text-right">
-          <div class="text-3xl font-bold text-purple-600">{extractPercentage(vasopressorEncounters)}</div>
-          <div class="text-sm text-gray-600">{extractNumber(vasopressorEncounters)} encounters</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Vasopressor Medications Grid -->
-    <div class="bg-white p-8 rounded-xl shadow-lg">
-      <h4 class="text-lg font-semibold mb-6 text-gray-800 border-b pb-2">Vasopressor Medications</h4>
-      <div class="space-y-6">
+    <!-- Vasopressor Medications - Integrated Card -->
+    <div class="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white p-6 rounded-lg shadow">
+      <h4 class="text-sm font-semibold mb-4 opacity-90">Vasopressor Medications</h4>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
 
         <!-- Norepinephrine -->
-        <div class="border-l-4 border-red-400 pl-4 py-2">
-          <div class="flex justify-between items-start mb-2">
-            <div>
-              <h5 class="font-semibold text-gray-800">Norepinephrine</h5>
-              <div class="text-sm text-gray-600">{extractNumber(norepinephrine)} encounters ({extractPercentage(norepinephrine)})</div>
-            </div>
-            <div class="text-right">
-              <div class="text-sm text-gray-500">Median dose (mcg/kg/min)</div>
-              <div class="text-lg font-bold text-red-600">{extractMedian(norepinephrineDose)}</div>
-              <div class="text-xs text-gray-500">{norepinephrineDose.replace(/^[\d.]+\s*/, '')}</div>
-            </div>
-          </div>
-          <div class="w-full bg-gray-200 rounded-full h-2">
-            <div class="bg-red-400 h-2 rounded-full" style={`width: ${extractPercentage(norepinephrine)}`}></div>
-          </div>
+        <div class="text-center">
+          <div class="text-xs opacity-75 mb-1">Norepinephrine</div>
+          <div class="text-2xl font-bold">{extractPercentage(norepinephrine)}</div>
+          <div class="text-xs opacity-75 mt-1">n={extractNumber(norepinephrine)}</div>
+          <div class="text-xs opacity-90 mt-2 font-semibold">Dose: {extractMedian(norepinephrineDose)}</div>
+          <div class="text-xs opacity-75">{norepinephrineDose.replace(/^[\d.]+\s*/, '')}</div>
         </div>
 
         <!-- Phenylephrine -->
-        <div class="border-l-4 border-blue-400 pl-4 py-2">
-          <div class="flex justify-between items-start mb-2">
-            <div>
-              <h5 class="font-semibold text-gray-800">Phenylephrine</h5>
-              <div class="text-sm text-gray-600">{extractNumber(phenylephrine)} encounters ({extractPercentage(phenylephrine)})</div>
-            </div>
-            <div class="text-right">
-              <div class="text-sm text-gray-500">Median dose (mcg/kg/min)</div>
-              <div class="text-lg font-bold text-blue-600">{extractMedian(phenylephrineDose)}</div>
-              <div class="text-xs text-gray-500">{phenylephrineDose.replace(/^[\d.]+\s*/, '')}</div>
-            </div>
-          </div>
-          <div class="w-full bg-gray-200 rounded-full h-2">
-            <div class="bg-blue-400 h-2 rounded-full" style={`width: ${extractPercentage(phenylephrine)}`}></div>
-          </div>
+        <div class="text-center">
+          <div class="text-xs opacity-75 mb-1">Phenylephrine</div>
+          <div class="text-2xl font-bold">{extractPercentage(phenylephrine)}</div>
+          <div class="text-xs opacity-75 mt-1">n={extractNumber(phenylephrine)}</div>
+          <div class="text-xs opacity-90 mt-2 font-semibold">Dose: {extractMedian(phenylephrineDose)}</div>
+          <div class="text-xs opacity-75">{phenylephrineDose.replace(/^[\d.]+\s*/, '')}</div>
         </div>
 
         <!-- Vasopressin -->
-        <div class="border-l-4 border-green-400 pl-4 py-2">
-          <div class="flex justify-between items-start mb-2">
-            <div>
-              <h5 class="font-semibold text-gray-800">Vasopressin</h5>
-              <div class="text-sm text-gray-600">{extractNumber(vasopressin)} encounters ({extractPercentage(vasopressin)})</div>
-            </div>
-            <div class="text-right">
-              <div class="text-sm text-gray-500 italic">Dose not available</div>
-            </div>
-          </div>
-          <div class="w-full bg-gray-200 rounded-full h-2">
-            <div class="bg-green-400 h-2 rounded-full" style={`width: ${extractPercentage(vasopressin)}`}></div>
-          </div>
+        <div class="text-center">
+          <div class="text-xs opacity-75 mb-1">Vasopressin</div>
+          <div class="text-2xl font-bold">{extractPercentage(vasopressin)}</div>
+          <div class="text-xs opacity-75 mt-1">n={extractNumber(vasopressin)}</div>
+          <div class="text-xs opacity-75 mt-2 italic">Dose not available</div>
         </div>
 
         <!-- Epinephrine -->
-        <div class="border-l-4 border-orange-400 pl-4 py-2">
-          <div class="flex justify-between items-start mb-2">
-            <div>
-              <h5 class="font-semibold text-gray-800">Epinephrine</h5>
-              <div class="text-sm text-gray-600">{extractNumber(epinephrine)} encounters ({extractPercentage(epinephrine)})</div>
-            </div>
-            <div class="text-right">
-              <div class="text-sm text-gray-500">Median dose (mcg/kg/min)</div>
-              <div class="text-lg font-bold text-orange-600">{extractMedian(epinephrineDose)}</div>
-              <div class="text-xs text-gray-500">{epinephrineDose.replace(/^[\d.]+\s*/, '')}</div>
-            </div>
-          </div>
-          <div class="w-full bg-gray-200 rounded-full h-2">
-            <div class="bg-orange-400 h-2 rounded-full" style={`width: ${extractPercentage(epinephrine)}`}></div>
-          </div>
+        <div class="text-center">
+          <div class="text-xs opacity-75 mb-1">Epinephrine</div>
+          <div class="text-2xl font-bold">{extractPercentage(epinephrine)}</div>
+          <div class="text-xs opacity-75 mt-1">n={extractNumber(epinephrine)}</div>
+          <div class="text-xs opacity-90 mt-2 font-semibold">Dose: {extractMedian(epinephrineDose)}</div>
+          <div class="text-xs opacity-75">{epinephrineDose.replace(/^[\d.]+\s*/, '')}</div>
         </div>
 
         <!-- Dopamine -->
-        <div class="border-l-4 border-purple-400 pl-4 py-2">
-          <div class="flex justify-between items-start mb-2">
-            <div>
-              <h5 class="font-semibold text-gray-800">Dopamine</h5>
-              <div class="text-sm text-gray-600">{extractNumber(dopamine)} encounters ({extractPercentage(dopamine)})</div>
-            </div>
-            <div class="text-right">
-              <div class="text-sm text-gray-500">Median dose (mcg/kg/min)</div>
-              <div class="text-lg font-bold text-purple-600">{extractMedian(dopamineDose)}</div>
-              <div class="text-xs text-gray-500">{dopamineDose.replace(/^[\d.]+\s*/, '')}</div>
-            </div>
-          </div>
-          <div class="w-full bg-gray-200 rounded-full h-2">
-            <div class="bg-purple-400 h-2 rounded-full" style={`width: ${extractPercentage(dopamine)}`}></div>
-          </div>
+        <div class="text-center">
+          <div class="text-xs opacity-75 mb-1">Dopamine</div>
+          <div class="text-2xl font-bold">{extractPercentage(dopamine)}</div>
+          <div class="text-xs opacity-75 mt-1">n={extractNumber(dopamine)}</div>
+          <div class="text-xs opacity-90 mt-2 font-semibold">Dose: {extractMedian(dopamineDose)}</div>
+          <div class="text-xs opacity-75">{dopamineDose.replace(/^[\d.]+\s*/, '')}</div>
         </div>
 
       </div>
@@ -619,43 +592,6 @@ const dopamineDose = dataMap.get('    Dopamine dose (mcg/kg/min), median [Q1, Q3
       </div>
     </div>
 
-  </section>
-
-  <!-- Clinical Outcomes -->
-  <section class="mb-12">
-    <h2 class="text-3xl font-bold mb-8 text-center text-gray-800">Clinical Outcomes</h2>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-
-      <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-red-500">
-        <h3 class="text-lg font-semibold mb-2 text-gray-800">Hospital Mortality</h3>
-        <div class="text-3xl font-bold text-red-600 mb-1">{extractPercentage(hospitalMortality)}</div>
-        <div class="text-sm text-gray-600">{extractNumber(hospitalMortality)} patients</div>
-      </div>
-
-      <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-blue-500">
-        <h3 class="text-lg font-semibold mb-2 text-gray-800">Median ICU Stay</h3>
-        <div class="text-3xl font-bold text-blue-600 mb-1">{extractMedian(icuLOS)}</div>
-        <div class="text-sm text-gray-600">days {icuLOS.replace(/^[\d.]+\s*/, '')}</div>
-      </div>
-
-      <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-green-500">
-        <h3 class="text-lg font-semibold mb-2 text-gray-800">Median Hospital Stay</h3>
-        <div class="text-3xl font-bold text-green-600 mb-1">{extractMedian(hospitalLOS)}</div>
-        <div class="text-sm text-gray-600">days {hospitalLOS.replace(/^[\d.]+\s*/, '')}</div>
-      </div>
-
-      <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-purple-500">
-        <h3 class="text-lg font-semibold mb-2 text-gray-800">Vasopressor Use</h3>
-        <div class="text-3xl font-bold text-purple-600 mb-1">{extractPercentage(vasopressorUse)}</div>
-        <div class="text-sm text-gray-600">{extractNumber(vasopressorUse)} encounters</div>
-      </div>
-
-      <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-orange-500">
-        <h3 class="text-lg font-semibold mb-2 text-gray-800">SOFA Score</h3>
-        <div class="text-3xl font-bold text-orange-600 mb-1">{extractMedian(sofaScore)}</div>
-        <div class="text-sm text-gray-600">{sofaScore.replace(/^[\d.]+\s*/, '')}</div>
-      </div>
-    </div>
   </section>
 
   <!-- Data Quality Note -->
@@ -676,6 +612,25 @@ const dopamineDose = dataMap.get('    Dopamine dose (mcg/kg/min), median [Q1, Q3
       </div>
     </div>
   </section>
+
+  <!-- Modal for All Comorbidities -->
+  <div id="comorbiditiesModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl max-w-5xl w-full max-h-[90vh] overflow-hidden">
+      <div class="flex justify-between items-center p-6 border-b">
+        <h2 class="text-2xl font-bold text-gray-800">All Comorbidities</h2>
+        <button id="closeModal" class="text-gray-500 hover:text-gray-700">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="p-6 overflow-y-auto max-h-[calc(90vh-100px)]">
+        <div class="flex items-center justify-center">
+          <svg id="comorbidityBubbleChartFull" class="w-full" style="height: 600px;"></svg>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <style>
@@ -724,11 +679,132 @@ const dopamineDose = dataMap.get('    Dopamine dose (mcg/kg/min), median [Q1, Q3
   .collapsible-header {
     cursor: pointer;
   }
+
+  /* Breathing lungs animation */
+  .breathing-lungs {
+    animation: breathe 2.5s ease-in-out infinite;
+    transform-origin: center;
+  }
+
+  @keyframes breathe {
+    0%, 100% {
+      transform: scale(0.95);
+    }
+    50% {
+      transform: scale(1.15);
+    }
+  }
+
+  /* IV drip animation - drops appear sequentially */
+  .iv-drop {
+    animation: drip 3s ease-in-out infinite;
+  }
+
+  .iv-drop-1 {
+    animation-delay: 0s;
+  }
+
+  .iv-drop-2 {
+    animation-delay: 0.8s;
+  }
+
+  .iv-drop-3 {
+    animation-delay: 1.6s;
+  }
+
+  @keyframes drip {
+    0%, 20% {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    25%, 75% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    80%, 100% {
+      opacity: 0;
+      transform: translateY(2px);
+    }
+  }
+
+  /* Kidney filtration animation - dirty blood flowing in */
+  .kidney-particle-in {
+    animation: flowIn 2.5s ease-in-out infinite;
+  }
+
+  .kidney-particle-in-1 {
+    animation-delay: 0s;
+  }
+
+  .kidney-particle-in-2 {
+    animation-delay: 0.3s;
+  }
+
+  .kidney-particle-in-3 {
+    animation-delay: 0.6s;
+  }
+
+  @keyframes flowIn {
+    0% {
+      opacity: 0;
+      transform: translateX(-8px);
+    }
+    25%, 75% {
+      opacity: 0.8;
+      transform: translateX(0);
+    }
+    100% {
+      opacity: 0;
+      transform: translateX(8px);
+    }
+  }
+
+  /* Kidney filtration animation - clean blood flowing out */
+  .kidney-particle-out {
+    animation: flowOut 2.5s ease-in-out infinite;
+  }
+
+  .kidney-particle-out-1 {
+    animation-delay: 0.9s;
+  }
+
+  .kidney-particle-out-2 {
+    animation-delay: 1.2s;
+  }
+
+  .kidney-particle-out-3 {
+    animation-delay: 1.5s;
+  }
+
+  @keyframes flowOut {
+    0% {
+      opacity: 0;
+      transform: translateX(-8px);
+    }
+    25%, 75% {
+      opacity: 0.9;
+      transform: translateX(0);
+    }
+    100% {
+      opacity: 0;
+      transform: translateX(8px);
+    }
+  }
 </style>
 
-<script>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+
+<script define:vars={{
+  icuEncounters, advancedRespiratory, vasoactiveSupport, otherCriticallyIll,
+  admissionED, admissionOSH, admissionElective, admissionDirect, admissionFacility, admissionOther,
+  comorbCHF, comorbRenal, comorbPulmonary, comorbCerebrovascular, comorbCancer, comorbMetastatic,
+  comorbPVD, comorbMI, comorbDementia, comorbLiver, comorbHemiplegia, comorbConnective, comorbPeptic, comorbAIDS
+}}>
   document.addEventListener('DOMContentLoaded', () => {
     const collapsibleHeaders = document.querySelectorAll('.collapsible-header');
+
+    // Track if respiratory charts have been created
+    let respiratoryChartsCreated = false;
 
     collapsibleHeaders.forEach(header => {
       header.addEventListener('click', () => {
@@ -739,8 +815,514 @@ const dopamineDose = dataMap.get('    Dopamine dose (mcg/kg/min), median [Q1, Q3
           // Toggle collapsed class on both header and content
           header.classList.toggle('collapsed');
           content.classList.toggle('collapsed');
+
+          // If we just opened the respiratory support section, create the charts
+          if (targetId === 'respiratory-support' && !content.classList.contains('collapsed') && !respiratoryChartsCreated) {
+            respiratoryChartsCreated = true;
+
+            // Wait a tick for the section to fully expand
+            setTimeout(() => {
+              // Create Pie Chart for Location using Chart.js
+              const locationPieCtx = document.getElementById('locationPieChart');
+              if (locationPieCtx && typeof Chart !== 'undefined') {
+                new Chart(locationPieCtx, {
+                  type: 'doughnut',
+                  data: {
+                    labels: ['ICU', 'ED', 'Procedural', 'Ward', 'Stepdown'],
+                    datasets: [{
+                      data: [23.1, 4.1, 2.3, 0.6, 0.2],
+                      backgroundColor: [
+                        'rgb(20, 184, 166)',   // teal-500
+                        'rgb(45, 212, 191)',   // teal-400
+                        'rgb(94, 234, 212)',   // teal-300
+                        'rgb(153, 246, 228)',  // teal-200
+                        'rgb(204, 251, 241)'   // teal-100
+                      ],
+                      borderWidth: 2,
+                      borderColor: '#ffffff'
+                    }]
+                  },
+                  options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: {
+                        position: 'bottom',
+                        labels: {
+                          padding: 10,
+                          font: { size: 11 }
+                        }
+                      },
+                      tooltip: {
+                        callbacks: {
+                          label: function(context) {
+                            return context.label + ': ' + context.parsed + '%';
+                          }
+                        }
+                      }
+                    },
+                    cutout: '60%'
+                  }
+                });
+              }
+
+              // Create Treemap for Ventilator Mode using D3
+              if (typeof d3 !== 'undefined') {
+                const ventModeData = {
+                  name: "Modes",
+                  children: [
+                    { name: "Assist Control/Volume Control", shortName: "AC/VC", value: 18.3 },
+                    { name: "Pressure Regulated Volume Control", shortName: "PRVC", value: 5.1 },
+                    { name: "Synchronized Intermittent Mandatory Ventilation", shortName: "SIMV", value: 2.9 },
+                    { name: "Pressure Support Ventilation/CPAP", shortName: "PSV/CPAP", value: 1.9 },
+                    { name: "Pressure Control Ventilation", shortName: "PCV", value: 0.6 },
+                    { name: "Other", shortName: "Other", value: 0.9 }
+                  ]
+                };
+
+                const container = document.getElementById('ventModeTreemap');
+                if (container) {
+                  const width = container.clientWidth;
+                  const height = 256;
+
+                  const colorScale = d3.scaleOrdinal()
+                    .domain([
+                      "Assist Control/Volume Control",
+                      "Pressure Regulated Volume Control",
+                      "Synchronized Intermittent Mandatory Ventilation",
+                      "Pressure Support Ventilation/CPAP",
+                      "Pressure Control Ventilation",
+                      "Other"
+                    ])
+                    .range([
+                      "rgb(20, 184, 166)",   // teal-500
+                      "rgb(45, 212, 191)",   // teal-400
+                      "rgb(94, 234, 212)",   // teal-300
+                      "rgb(153, 246, 228)",  // teal-200
+                      "rgb(204, 251, 241)",  // teal-100
+                      "rgb(240, 253, 250)"   // teal-50
+                    ]);
+
+                  const svg = d3.select('#ventModeTreemap')
+                    .append("svg")
+                    .attr("width", width)
+                    .attr("height", height);
+
+                  const root = d3.hierarchy(ventModeData)
+                    .sum(d => d.value)
+                    .sort((a, b) => b.value - a.value);
+
+                  d3.treemap()
+                    .size([width, height])
+                    .padding(3)
+                    .round(true)(root);
+
+                  const cell = svg.selectAll("g")
+                    .data(root.leaves())
+                    .enter().append("g")
+                    .attr("transform", d => `translate(${d.x0},${d.y0})`);
+
+                  cell.append("rect")
+                    .attr("width", d => d.x1 - d.x0)
+                    .attr("height", d => d.y1 - d.y0)
+                    .attr("fill", d => colorScale(d.data.name))
+                    .attr("stroke", "white")
+                    .attr("stroke-width", 3)
+                    .attr("rx", 6);
+
+                  cell.each(function(d) {
+                    const cellWidth = d.x1 - d.x0;
+                    const cellHeight = d.y1 - d.y0;
+                    const cellArea = cellWidth * cellHeight;
+
+                    if (cellArea > 2000) {
+                      const textGroup = d3.select(this);
+                      const name = d.data.name;
+                      const words = name.split(/[\s\/]+/); // Split on spaces and slashes
+
+                      // For large boxes (like AC/VC), show multi-line text
+                      if (cellArea > 15000) {
+                        const lineHeight = 14;
+                        const numLines = Math.min(words.length, 3);
+                        const startY = cellHeight / 2 - ((numLines - 1) * lineHeight) / 2 - 15;
+
+                        // Split into lines
+                        let lines = [];
+                        if (words.length <= 3) {
+                          lines = words;
+                        } else {
+                          // Combine words to fit on 2-3 lines
+                          const midpoint = Math.ceil(words.length / 2);
+                          lines.push(words.slice(0, midpoint).join(' '));
+                          lines.push(words.slice(midpoint).join(' '));
+                        }
+
+                        lines.forEach((line, i) => {
+                          textGroup.append("text")
+                            .attr("x", cellWidth / 2)
+                            .attr("y", startY + i * lineHeight)
+                            .attr("text-anchor", "middle")
+                            .attr("fill", "#000000")
+                            .attr("font-size", "11px")
+                            .attr("font-weight", "600")
+                            .text(line);
+                        });
+
+                        textGroup.append("text")
+                          .attr("x", cellWidth / 2)
+                          .attr("y", cellHeight / 2 + 20)
+                          .attr("text-anchor", "middle")
+                          .attr("fill", "#000000")
+                          .attr("font-size", "18px")
+                          .attr("font-weight", "700")
+                          .text(d.data.value + '%');
+                      } else {
+                        // For smaller boxes, show abbreviated name
+                        textGroup.append("text")
+                          .attr("x", cellWidth / 2)
+                          .attr("y", cellHeight / 2 - 5)
+                          .attr("text-anchor", "middle")
+                          .attr("fill", "#000000")
+                          .attr("font-size", "11px")
+                          .attr("font-weight", "600")
+                          .text(d.data.shortName || d.data.name);
+
+                        textGroup.append("text")
+                          .attr("x", cellWidth / 2)
+                          .attr("y", cellHeight / 2 + 12)
+                          .attr("text-anchor", "middle")
+                          .attr("fill", "#000000")
+                          .attr("font-size", "16px")
+                          .attr("font-weight", "700")
+                          .text(d.data.value + '%');
+                      }
+                    }
+                  });
+                }
+              }
+            }, 100);
+          }
         }
       });
+    });
+
+    // Helper function to parse count values
+    const parseCount = (str) => {
+      const match = str.match(/^[\d,]+/);
+      return match ? parseInt(match[0].replace(/,/g, '')) : 0;
+    };
+
+    // Create Encounter Types Donut Chart
+    const encounterCtx = document.getElementById('encounterTypesChart');
+    if (encounterCtx && typeof Chart !== 'undefined') {
+      // Get counts
+      const icuCount = parseCount(icuEncounters);
+      const respiratoryCount = parseCount(advancedRespiratory);
+      const vasoactiveCount = parseCount(vasoactiveSupport);
+      const otherCount = parseCount(otherCriticallyIll);
+
+      // Calculate total
+      const total = icuCount + respiratoryCount + vasoactiveCount + otherCount;
+
+      new Chart(encounterCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['ICU Encounters', 'Advanced Respiratory', 'Vasoactive Support', 'Other Critically Ill'],
+          datasets: [{
+            data: [icuCount, respiratoryCount, vasoactiveCount, otherCount],
+            backgroundColor: [
+              'rgb(20, 184, 166)',   // teal-500
+              'rgb(45, 212, 191)',   // teal-400
+              'rgb(94, 234, 212)',   // teal-300
+              'rgb(153, 246, 228)'   // teal-200
+            ],
+            borderWidth: 2,
+            borderColor: '#fff'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const count = context.parsed.toLocaleString();
+                  const pct = ((context.parsed / total) * 100).toFixed(1);
+                  return context.label + ': ' + count + ' (' + pct + '%)';
+                }
+              }
+            }
+          },
+          cutout: '60%'
+        }
+      });
+    }
+
+    // Create Admission Types Donut Chart
+    const admissionCtx = document.getElementById('admissionTypesChart');
+    if (admissionCtx && typeof Chart !== 'undefined') {
+      // Get counts
+      const edCount = parseCount(admissionED);
+      const oshCount = parseCount(admissionOSH);
+      const electiveCount = parseCount(admissionElective);
+      const directCount = parseCount(admissionDirect);
+      const facilityCount = parseCount(admissionFacility);
+      const otherCount = parseCount(admissionOther);
+
+      // Calculate total
+      const totalAdmissions = edCount + oshCount + electiveCount + directCount + facilityCount + otherCount;
+
+      new Chart(admissionCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['ED', 'OSH', 'Elective', 'Direct', 'Facility', 'Other'],
+          datasets: [{
+            data: [edCount, oshCount, electiveCount, directCount, facilityCount, otherCount],
+            backgroundColor: [
+              'rgb(136, 19, 55)',    // rose-900
+              'rgb(159, 18, 57)',    // rose-800
+              'rgb(190, 18, 60)',    // rose-700
+              'rgb(225, 29, 72)',    // rose-600
+              'rgb(244, 63, 94)',    // rose-500
+              'rgb(251, 113, 133)'   // rose-400
+            ],
+            borderWidth: 2,
+            borderColor: '#fff'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const count = context.parsed.toLocaleString();
+                  const pct = ((context.parsed / totalAdmissions) * 100).toFixed(1);
+                  return context.label + ': ' + count + ' (' + pct + '%)';
+                }
+              }
+            }
+          },
+          cutout: '60%'
+        }
+      });
+    }
+
+    // Comorbidity data preparation
+    const parsePercentage = (str) => {
+      const match = str.match(/\(([^)]+)%\)/);
+      return match ? parseFloat(match[1]) : 0;
+    };
+
+    const allComorbidities = [
+      { name: 'CHF', value: parsePercentage(comorbCHF), full: 'Congestive Heart Failure' },
+      { name: 'Renal', value: parsePercentage(comorbRenal), full: 'Renal Disease' },
+      { name: 'Chronic Pulmonary', value: parsePercentage(comorbPulmonary), full: 'Chronic Pulmonary Disease' },
+      { name: 'Cerebrovascular', value: parsePercentage(comorbCerebrovascular), full: 'Cerebrovascular Disease' },
+      { name: 'Cancer', value: parsePercentage(comorbCancer), full: 'Cancer' },
+      { name: 'Metastatic', value: parsePercentage(comorbMetastatic), full: 'Metastatic Solid Tumor' },
+      { name: 'PVD', value: parsePercentage(comorbPVD), full: 'Peripheral Vascular Disease' },
+      { name: 'MI', value: parsePercentage(comorbMI), full: 'Myocardial Infarction' },
+      { name: 'Dementia', value: parsePercentage(comorbDementia), full: 'Dementia' },
+      { name: 'Liver', value: parsePercentage(comorbLiver), full: 'Mild Liver Disease' },
+      { name: 'Hemiplegia', value: parsePercentage(comorbHemiplegia), full: 'Hemiplegia' },
+      { name: 'Connective', value: parsePercentage(comorbConnective), full: 'Connective Tissue Disease' },
+      { name: 'Peptic', value: parsePercentage(comorbPeptic), full: 'Peptic Ulcer Disease' },
+      { name: 'AIDS', value: parsePercentage(comorbAIDS), full: 'AIDS' }
+    ].sort((a, b) => b.value - a.value);
+
+    const top3Comorbidities = allComorbidities.slice(0, 3);
+
+    // For the compact view: top 3 with labels, rest as small blank bubbles
+    const compactViewData = allComorbidities.map((item, index) => ({
+      ...item,
+      isTop3: index < 3,
+      // Reduce size for non-top-3 items
+      value: index < 3 ? item.value : item.value * 0.3 // Make smaller bubbles 30% of their original size
+    }));
+
+    // Function to create bubble chart
+    const createBubbleChart = (svgId, data, width, height) => {
+      const svg = d3.select(`#${svgId}`);
+      svg.selectAll('*').remove(); // Clear existing content
+
+      // Use a larger size for packing, then we'll scale it to fit
+      const packSize = Math.min(width, height);
+      const pack = d3.pack()
+        .size([packSize, packSize])
+        .padding(1);
+
+      const root = d3.hierarchy({ children: data })
+        .sum(d => d.value);
+
+      const nodes = pack(root).leaves();
+
+      // Find the bounds of the packed circles
+      const bounds = {
+        minX: d3.min(nodes, d => d.x - d.r),
+        maxX: d3.max(nodes, d => d.x + d.r),
+        minY: d3.min(nodes, d => d.y - d.r),
+        maxY: d3.max(nodes, d => d.y + d.r)
+      };
+
+      const packedWidth = bounds.maxX - bounds.minX;
+      const packedHeight = bounds.maxY - bounds.minY;
+
+      // Calculate scale to fit with some padding (92% of available space for larger bubbles)
+      const scaleX = (width * 0.92) / packedWidth;
+      const scaleY = (height * 0.92) / packedHeight;
+      const scale = Math.min(scaleX, scaleY);
+
+      // Color scale using purple/indigo tones
+      const colorScale = d3.scaleOrdinal()
+        .domain(data.map(d => d.name))
+        .range([
+          'rgb(79, 70, 229)',    // indigo-600
+          'rgb(99, 102, 241)',   // indigo-500
+          'rgb(129, 140, 248)',  // indigo-400
+          'rgb(67, 56, 202)',    // indigo-700
+          'rgb(165, 180, 252)',  // indigo-300
+          'rgb(55, 48, 163)',    // indigo-800
+          'rgb(199, 210, 254)',  // indigo-200
+          'rgb(49, 46, 129)',    // indigo-900
+          'rgb(224, 231, 255)',  // indigo-100
+          'rgb(99, 102, 241)',   // indigo-500 (repeat)
+          'rgb(79, 70, 229)',    // indigo-600 (repeat)
+          'rgb(129, 140, 248)',  // indigo-400 (repeat)
+          'rgb(67, 56, 202)',    // indigo-700 (repeat)
+          'rgb(165, 180, 252)'   // indigo-300 (repeat)
+        ]);
+
+      // Center offset - shift down to use extra space at bottom
+      const offsetX = width / 2;
+      const offsetY = (height / 2) + 10; // Move down by 10px
+
+      const bubble = svg.selectAll('.bubble')
+        .data(nodes)
+        .enter()
+        .append('g')
+        .attr('class', 'bubble')
+        .attr('transform', d => {
+          const x = offsetX + (d.x - packSize / 2) * scale;
+          const y = offsetY + (d.y - packSize / 2) * scale;
+          return `translate(${x},${y})`;
+        });
+
+      bubble.append('circle')
+        .attr('r', d => d.r * scale)
+        .attr('fill', d => colorScale(d.data.name))
+        .attr('opacity', 0.85)
+        .attr('stroke', '#fff')
+        .attr('stroke-width', 2);
+
+      // Add text only for top 3 bubbles with wrapping support
+      bubble.each(function(d) {
+        if (d.data.isTop3) {
+          const fontSize = Math.min((d.r * scale) / 3.5, 14);
+          const percentFontSize = Math.min((d.r * scale) / 5, 11);
+
+          // Split name by spaces for wrapping
+          const words = d.data.name.split(' ');
+          const textGroup = d3.select(this);
+
+          if (words.length > 1) {
+            // Multi-word name - wrap to multiple lines
+            words.forEach((word, i) => {
+              textGroup.append('text')
+                .attr('text-anchor', 'middle')
+                .attr('dominant-baseline', 'middle')
+                .attr('dy', (i - (words.length - 1) / 2) * (fontSize + 2) - (percentFontSize + 5) / 2)
+                .attr('fill', '#000')
+                .attr('font-size', fontSize + 'px')
+                .attr('font-weight', '600')
+                .text(word);
+            });
+
+            // Percentage below wrapped text
+            textGroup.append('text')
+              .attr('text-anchor', 'middle')
+              .attr('dominant-baseline', 'middle')
+              .attr('dy', ((words.length - 1) / 2) * (fontSize + 2) + percentFontSize + 3)
+              .attr('fill', '#000')
+              .attr('font-size', percentFontSize + 'px')
+              .text(d.data.value.toFixed(1) + '%');
+          } else {
+            // Single word - no wrapping needed
+            textGroup.append('text')
+              .attr('text-anchor', 'middle')
+              .attr('dominant-baseline', 'middle')
+              .attr('fill', '#000')
+              .attr('font-size', fontSize + 'px')
+              .attr('font-weight', '600')
+              .text(d.data.name);
+
+            textGroup.append('text')
+              .attr('text-anchor', 'middle')
+              .attr('dominant-baseline', 'middle')
+              .attr('dy', fontSize + 5)
+              .attr('fill', '#000')
+              .attr('font-size', percentFontSize + 'px')
+              .text(d.data.value.toFixed(1) + '%');
+          }
+        }
+      });
+
+      // Add tooltip for all bubbles
+      bubble.append('title')
+        .text(d => `${d.data.full}: ${d.data.value.toFixed(1)}%`);
+    };
+
+    // Create initial bubble chart (all 14 comorbidities - top 3 with labels, rest blank and smaller)
+    if (typeof d3 !== 'undefined') {
+      const svg = document.getElementById('comorbidityBubbleChart');
+      if (svg) {
+        const width = svg.clientWidth || 300;
+        const height = 240; // Reduced height to match other cards
+        createBubbleChart('comorbidityBubbleChart', compactViewData, width, height);
+      }
+    }
+
+    // Modal handling
+    const modal = document.getElementById('comorbiditiesModal');
+    const expandBtn = document.getElementById('expandComorbidities');
+    const closeBtn = document.getElementById('closeModal');
+
+    expandBtn.addEventListener('click', () => {
+      modal.classList.remove('hidden');
+      // Create full bubble chart with ALL labels visible using full names
+      if (typeof d3 !== 'undefined') {
+        const svg = document.getElementById('comorbidityBubbleChartFull');
+        if (svg) {
+          const width = svg.clientWidth || 800;
+          const height = 600;
+          // Mark all as top3 and use full names for the modal view
+          const allWithFullNames = allComorbidities.map(item => ({
+            ...item,
+            name: item.full,  // Use full name instead of abbreviation
+            isTop3: true
+          }));
+          createBubbleChart('comorbidityBubbleChartFull', allWithFullNames, width, height);
+        }
+      }
+    });
+
+    closeBtn.addEventListener('click', () => {
+      modal.classList.add('hidden');
+    });
+
+    // Close modal on outside click
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.classList.add('hidden');
+      }
     });
   });
 </script>

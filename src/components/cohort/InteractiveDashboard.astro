@@ -36,10 +36,15 @@ const categories = Array.from(groupedChars.keys());
   <!-- Dashboard Header -->
   <div class="mb-8">
     <h2 class="text-3xl font-bold text-gray-800 mb-2">Interactive Data Explorer</h2>
-    <p class="text-gray-600">
+    <p class="text-gray-600 mb-3">
       Explore consortium data across {data.allSites.length} institutions and {data.allYears.length} years.
       Use the filters below to customize your view.
     </p>
+    <div class="bg-blue-50 border-l-4 border-blue-400 p-3 rounded">
+      <p class="text-sm text-blue-800">
+        <strong>Privacy Notice:</strong> To protect patient privacy, characteristics with values where n &lt; 10 are automatically excluded from display and export.
+      </p>
+    </div>
   </div>
 
   <!-- Filter Controls -->
@@ -61,7 +66,7 @@ const categories = Array.from(groupedChars.keys());
         </button>
         <div
           id="site-filter-dropdown"
-          class="hidden absolute z-10 mt-2 w-full bg-white border-2 border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto"
+          class="hidden absolute z-50 mt-2 w-full bg-white border-2 border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto"
         >
           <div class="p-2">
             <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer">
@@ -106,7 +111,7 @@ const categories = Array.from(groupedChars.keys());
         </button>
         <div
           id="year-filter-dropdown"
-          class="hidden absolute z-10 mt-2 w-full bg-white border-2 border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto"
+          class="hidden absolute z-50 mt-2 w-full bg-white border-2 border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto"
         >
           <div class="p-2">
             <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer">
@@ -181,31 +186,88 @@ const categories = Array.from(groupedChars.keys());
   </div>
 
   <!-- Charts View -->
-  <div id="charts-view" class="space-y-8">
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <!-- Chart: Encounter Blocks by Site -->
-      <div class="bg-gray-50 rounded-lg p-6">
-        <h3 class="text-lg font-bold text-gray-800 mb-4">Encounter Blocks by Site</h3>
-        <canvas id="chart-encounters"></canvas>
-      </div>
+  <div id="charts-view" class="space-y-6">
+    <!-- Chart Builder Controls -->
+    <div class="bg-gray-50 rounded-lg p-6">
+      <h3 class="text-lg font-bold text-gray-800 mb-4">Chart Builder</h3>
 
-      <!-- Chart: Unique Patients by Site -->
-      <div class="bg-gray-50 rounded-lg p-6">
-        <h3 class="text-lg font-bold text-gray-800 mb-4">Unique Patients by Site</h3>
-        <canvas id="chart-patients"></canvas>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Chart Type Selector -->
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Chart Type</label>
+          <select
+            id="chart-type-select"
+            class="w-full bg-white border-2 border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:border-clif-burgundy focus:ring-2 focus:ring-clif-burgundy focus:ring-opacity-50"
+          >
+            <option value="bar">Bar Chart</option>
+            <option value="line">Line Chart</option>
+            <option value="horizontalBar">Horizontal Bar</option>
+            <option value="pie">Pie Chart</option>
+            <option value="doughnut">Doughnut Chart</option>
+          </select>
+        </div>
+
+        <!-- Characteristic Selector -->
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Characteristic</label>
+          <select
+            id="chart-characteristic-select"
+            class="w-full bg-white border-2 border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:border-clif-burgundy focus:ring-2 focus:ring-clif-burgundy focus:ring-opacity-50"
+          >
+            <option value="">Select a characteristic...</option>
+          </select>
+        </div>
+
+        <!-- X-Axis Selector -->
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Group By</label>
+          <select
+            id="chart-xaxis-select"
+            class="w-full bg-white border-2 border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:border-clif-burgundy focus:ring-2 focus:ring-clif-burgundy focus:ring-opacity-50"
+          >
+            <option value="site">Site</option>
+            <option value="year">Year</option>
+            <option value="site-year">Site-Year</option>
+          </select>
+        </div>
+
+        <!-- Generate Button -->
+        <div class="flex items-end">
+          <button
+            id="generate-chart-btn"
+            class="w-full px-4 py-2 bg-clif-burgundy text-white rounded-lg font-semibold hover:bg-clif-burgundy-dark transition-colors"
+          >
+            Generate Chart
+          </button>
+        </div>
       </div>
     </div>
 
-    <!-- Chart: Race Distribution -->
-    <div class="bg-gray-50 rounded-lg p-6">
-      <h3 class="text-lg font-bold text-gray-800 mb-4">Race Distribution Across Sites</h3>
-      <canvas id="chart-race"></canvas>
+    <!-- Chart Display Area -->
+    <div id="custom-chart-container" class="bg-white rounded-lg p-6 border-2 border-gray-200 hidden">
+      <div class="flex items-center justify-between mb-4">
+        <h3 id="custom-chart-title" class="text-lg font-bold text-gray-800"></h3>
+        <button
+          id="clear-chart-btn"
+          class="px-3 py-1 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300 transition-colors"
+        >
+          Clear
+        </button>
+      </div>
+      <div class="relative" style="height: 400px;">
+        <canvas id="custom-chart"></canvas>
+      </div>
     </div>
 
-    <!-- Chart: Trend Over Time -->
-    <div class="bg-gray-50 rounded-lg p-6">
-      <h3 class="text-lg font-bold text-gray-800 mb-4">Patient Count Trends Over Time</h3>
-      <canvas id="chart-trends"></canvas>
+    <!-- Instructions (shown when no chart) -->
+    <div id="chart-instructions" class="bg-gray-50 rounded-lg p-8 text-center">
+      <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+      </svg>
+      <h3 class="text-xl font-bold text-gray-700 mb-2">Create Your Custom Chart</h3>
+      <p class="text-gray-600">
+        Select a chart type, characteristic, and grouping option above, then click "Generate Chart" to visualize your data.
+      </p>
     </div>
   </div>
 
@@ -335,9 +397,16 @@ const categories = Array.from(groupedChars.keys());
       siteAll.checked = selectedSites.length === consortiumData.allSites.length;
     }
 
-    const text = selectedSites.length === consortiumData.allSites.length
-      ? 'All Sites'
-      : `${selectedSites.length} Site${selectedSites.length !== 1 ? 's' : ''}`;
+    let text;
+    if (selectedSites.length === consortiumData.allSites.length) {
+      text = 'All Sites';
+    } else if (selectedSites.length === 1) {
+      text = selectedSites[0];
+    } else if (selectedSites.length <= 3) {
+      text = selectedSites.join(', ');
+    } else {
+      text = `${selectedSites.length} Sites`;
+    }
     document.getElementById('site-filter-text').textContent = text;
 
     updateDashboard();
@@ -354,9 +423,16 @@ const categories = Array.from(groupedChars.keys());
       yearAll.checked = selectedYears.length === consortiumData.allYears.length;
     }
 
-    const text = selectedYears.length === consortiumData.allYears.length
-      ? 'All Years'
-      : `${selectedYears.length} Year${selectedYears.length !== 1 ? 's' : ''}`;
+    let text;
+    if (selectedYears.length === consortiumData.allYears.length) {
+      text = 'All Years';
+    } else if (selectedYears.length === 1) {
+      text = selectedYears[0];
+    } else if (selectedYears.length <= 3) {
+      text = selectedYears.join(', ');
+    } else {
+      text = `${selectedYears.length} Years`;
+    }
     document.getElementById('year-filter-text').textContent = text;
 
     updateDashboard();
@@ -421,208 +497,617 @@ const categories = Array.from(groupedChars.keys());
     return match ? parseInt(match[0].replace(/,/g, ''), 10) : 0;
   }
 
-  function updateCharts() {
+  // Helper function to extract numeric value from string like "164 (0.1%)" or "68,359 (57.6%)"
+  function getNumeric(value) {
+    if (typeof value !== 'string') return null;
+    const match = value.match(/^\s*([-\d,\.]+)\s*(?:\([^\)]*\))?\s*$/);
+    if (match) {
+      const numStr = match[1].replace(/,/g, '');
+      try {
+        return parseFloat(numStr);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  // Check if value has IQR pattern [x, y]
+  function valueHasIQR(value) {
+    if (typeof value !== 'string') return false;
+    return /\[.*?,.*?\]/.test(value);
+  }
+
+  // Extract median, q1, q3 from "62 [53, 71]"
+  function extractMedianIQR(value) {
+    if (typeof value !== 'string') return null;
+    const match = value.match(/^\s*([-\d\.]+)\s*\[\s*([-\d\.]+)\s*,\s*([-\d\.]+)\s*\]/);
+    if (match) {
+      try {
+        return {
+          median: parseFloat(match[1]),
+          q1: parseFloat(match[2]),
+          q3: parseFloat(match[3])
+        };
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  // Calculate weighted median
+  function weightedMedian(data, weights) {
+    if (data.length === 0) return null;
+
+    // Create array of [value, weight] pairs and sort by value
+    const pairs = data.map((val, i) => [val, weights[i]]);
+    pairs.sort((a, b) => a[0] - b[0]);
+
+    const sortedData = pairs.map(p => p[0]);
+    const sortedWeights = pairs.map(p => p[1]);
+
+    // Calculate cumulative weights
+    const totalWeight = sortedWeights.reduce((sum, w) => sum + w, 0);
+    const cutoff = totalWeight / 2;
+
+    let cumSum = 0;
+    for (let i = 0; i < sortedWeights.length; i++) {
+      cumSum += sortedWeights[i];
+      if (cumSum >= cutoff) {
+        return sortedData[i];
+      }
+    }
+
+    return sortedData[sortedData.length - 1];
+  }
+
+  // Format number with optional decimal places
+  function formatNumber(num) {
+    return Number.isInteger(num) ? num.toString() : num.toFixed(2);
+  }
+
+  // Check if a value has n < 10 (for privacy protection)
+  function hasSmallN(value) {
+    if (typeof value !== 'string') return false;
+
+    // Extract the first numeric value (before parentheses or brackets)
+    const numericMatch = value.match(/^\s*([\d,]+)/);
+    if (numericMatch) {
+      const num = parseInt(numericMatch[1].replace(/,/g, ''), 10);
+      return num < 10;
+    }
+
+    return false;
+  }
+
+  // Check if any value in a row has n < 10
+  function rowHasSmallN(values) {
+    return values.some(v => hasSmallN(v));
+  }
+
+  // Aggregate values across multiple site-years
+  function aggregateConsortiumValue(variable, siteYearData) {
+    const values = siteYearData.map(d => d.value);
+
+    // Check if any value has IQR - if so, handle as median aggregation
+    if (values.some(v => valueHasIQR(v))) {
+      const extracted = values.map(v => extractMedianIQR(v)).filter(e => e !== null);
+
+      if (extracted.length === 0) return '-';
+
+      // Determine weights based on variable
+      const isAgeVariable = variable.toLowerCase().includes('age at admission');
+      const weights = siteYearData.map((d, i) => {
+        if (extractMedianIQR(values[i]) === null) return 0;
+
+        if (isAgeVariable) {
+          return d.nUniquePatients || 0;
+        } else {
+          return d.nEncounterBlocks || 0;
+        }
+      }).filter((w, i) => extractMedianIQR(values[i]) !== null);
+
+      // If all weights are 0, use uniform weights
+      const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+      const finalWeights = totalWeight > 0 ? weights : weights.map(() => 1);
+
+      const medians = extracted.map(e => e.median);
+      const q1s = extracted.map(e => e.q1);
+      const q3s = extracted.map(e => e.q3);
+
+      const medianWeighted = weightedMedian(medians, finalWeights);
+      const q1Min = Math.min(...q1s);
+      const q3Max = Math.max(...q3s);
+
+      return `${formatNumber(medianWeighted)} [${formatNumber(q1Min)}, ${formatNumber(q3Max)}]`;
+    }
+
+    // Handle numeric values with percentages
+    const numbers = values.map(v => getNumeric(v)).filter(n => n !== null);
+    if (numbers.length === 0) return '-';
+
+    const sum = numbers.reduce((acc, n) => acc + n, 0);
+
+    // Variables that should NOT have percentages
+    const noPercentageVars = [
+      'n: encounter blocks',
+      'n: unique patients',
+      'n: hospitals'
+    ];
+
+    const varLower = variable.toLowerCase();
+    if (noPercentageVars.some(v => varLower.includes(v.toLowerCase()))) {
+      return sum.toLocaleString();
+    }
+
+    // Determine denominator
+    const mortalityVars = [
+      'hospital mortality',
+      'discharged to hospice',
+      'expired'
+    ];
+
+    const usePatientsAsNumerator = (
+      varLower.includes('race:') ||
+      varLower.includes('ethnicity:') ||
+      varLower.includes('sex:') ||
+      mortalityVars.some(term => varLower.includes(term))
+    );
+
+    // Calculate total denominators
+    const totalPatients = siteYearData.reduce((sum, d) => sum + (d.nUniquePatients || 0), 0);
+    const totalEncounters = siteYearData.reduce((sum, d) => sum + (d.nEncounterBlocks || 0), 0);
+
+    const denominator = usePatientsAsNumerator ? totalPatients : totalEncounters;
+
+    if (denominator > 0) {
+      const percentage = (sum / denominator) * 100;
+      return `${sum.toLocaleString()} (${percentage.toFixed(1)}%)`;
+    }
+
+    return sum.toLocaleString();
+  }
+
+  function initializeChartBuilder() {
+    // Populate characteristic dropdown
+    const filteredData = getFilteredData();
+    const characteristics = new Set();
+
+    filteredData.forEach(d => {
+      Object.keys(d.characteristics).forEach(char => {
+        characteristics.add(char);
+      });
+    });
+
+    const charSelect = document.getElementById('chart-characteristic-select');
+    if (charSelect) {
+      charSelect.innerHTML = '<option value="">Select a characteristic...</option>';
+      Array.from(characteristics).sort().forEach(char => {
+        const option = document.createElement('option');
+        option.value = char;
+        option.textContent = char;
+        charSelect.appendChild(option);
+      });
+    }
+
+    // Generate chart button
+    const generateBtn = document.getElementById('generate-chart-btn');
+    generateBtn?.addEventListener('click', generateCustomChart);
+
+    // Clear chart button
+    const clearBtn = document.getElementById('clear-chart-btn');
+    clearBtn?.addEventListener('click', clearCustomChart);
+  }
+
+  function generateCustomChart() {
+    const chartType = document.getElementById('chart-type-select')?.value;
+    const characteristic = document.getElementById('chart-characteristic-select')?.value;
+    const groupBy = document.getElementById('chart-xaxis-select')?.value;
+
+    if (!characteristic) {
+      alert('Please select a characteristic to visualize.');
+      return;
+    }
+
     const filteredData = getFilteredData();
 
-    // Destroy existing charts
-    Object.values(charts).forEach(chart => chart?.destroy());
-    charts = {};
+    // Collect data based on grouping
+    const chartData = {};
 
-    // Chart 1: Encounter Blocks by Site
-    const encounterData = {};
     filteredData.forEach(d => {
-      const encounters = d.characteristics['N: Encounter blocks'];
-      if (encounters) {
-        if (!encounterData[d.site]) encounterData[d.site] = 0;
-        encounterData[d.site] += extractNumber(encounters);
+      const value = d.characteristics[characteristic];
+      if (!value) return;
+
+      // Skip if has small n (privacy protection)
+      if (hasSmallN(value)) return;
+
+      let label;
+      if (groupBy === 'site') {
+        label = d.site;
+      } else if (groupBy === 'year') {
+        label = d.year;
+      } else {
+        label = `${d.site}-${d.year}`;
+      }
+
+      // Extract numeric value
+      const numValue = getNumeric(value);
+      if (numValue !== null) {
+        if (!chartData[label]) chartData[label] = 0;
+        chartData[label] += numValue;
       }
     });
 
-    const encounterCtx = document.getElementById('chart-encounters');
-    if (encounterCtx) {
-      charts.encounters = new Chart(encounterCtx, {
-        type: 'bar',
+    if (Object.keys(chartData).length === 0) {
+      alert('No data available for the selected characteristic and filters.');
+      return;
+    }
+
+    // Destroy existing chart
+    if (charts.custom) {
+      charts.custom.destroy();
+    }
+
+    // Show chart container, hide instructions
+    document.getElementById('custom-chart-container')?.classList.remove('hidden');
+    document.getElementById('chart-instructions')?.classList.add('hidden');
+
+    // Update title
+    const titleEl = document.getElementById('custom-chart-title');
+    if (titleEl) {
+      titleEl.textContent = `${characteristic} by ${groupBy === 'site' ? 'Site' : groupBy === 'year' ? 'Year' : 'Site-Year'}`;
+    }
+
+    // Generate colors
+    const labels = Object.keys(chartData);
+    const colors = generateChartColors(labels.length);
+
+    // Create chart
+    const ctx = document.getElementById('custom-chart');
+    if (ctx) {
+      const config = {
+        type: chartType === 'horizontalBar' ? 'bar' : chartType,
         data: {
-          labels: Object.keys(encounterData),
+          labels: labels,
           datasets: [{
-            label: 'Encounter Blocks',
-            data: Object.values(encounterData),
-            backgroundColor: 'rgba(139, 0, 0, 0.7)',
-            borderColor: 'rgba(139, 0, 0, 1)',
-            borderWidth: 1
+            label: characteristic,
+            data: Object.values(chartData),
+            backgroundColor: colors.background,
+            borderColor: colors.border,
+            borderWidth: 2
           }]
         },
         options: {
           responsive: true,
-          maintainAspectRatio: true,
+          maintainAspectRatio: false,
+          indexAxis: chartType === 'horizontalBar' ? 'y' : 'x',
           plugins: {
-            legend: { display: false }
+            legend: {
+              display: chartType === 'pie' || chartType === 'doughnut',
+              position: 'bottom'
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  let label = context.label || '';
+                  if (label) {
+                    label += ': ';
+                  }
+                  label += context.parsed.y !== undefined ? context.parsed.y.toLocaleString() : context.parsed.toLocaleString();
+                  return label;
+                }
+              }
+            }
           },
-          scales: {
+          scales: (chartType === 'pie' || chartType === 'doughnut') ? {} : {
+            x: { beginAtZero: true },
             y: { beginAtZero: true }
           }
         }
-      });
+      };
+
+      charts.custom = new Chart(ctx, config);
+    }
+  }
+
+  function clearCustomChart() {
+    if (charts.custom) {
+      charts.custom.destroy();
+      charts.custom = null;
+    }
+    document.getElementById('custom-chart-container')?.classList.add('hidden');
+    document.getElementById('chart-instructions')?.classList.remove('hidden');
+  }
+
+  function generateChartColors(count) {
+    const baseColors = [
+      'rgba(139, 0, 0, 0.7)',      // burgundy
+      'rgba(59, 130, 246, 0.7)',   // blue
+      'rgba(16, 185, 129, 0.7)',   // green
+      'rgba(245, 158, 11, 0.7)',   // amber
+      'rgba(168, 85, 247, 0.7)',   // purple
+      'rgba(236, 72, 153, 0.7)',   // pink
+      'rgba(239, 68, 68, 0.7)',    // red
+      'rgba(14, 165, 233, 0.7)',   // sky
+      'rgba(34, 197, 94, 0.7)',    // emerald
+      'rgba(251, 146, 60, 0.7)',   // orange
+    ];
+
+    const background = [];
+    const border = [];
+
+    for (let i = 0; i < count; i++) {
+      const color = baseColors[i % baseColors.length];
+      background.push(color);
+      border.push(color.replace('0.7', '1'));
     }
 
-    // Chart 2: Unique Patients by Site
-    const patientData = {};
-    filteredData.forEach(d => {
-      const patients = d.characteristics['N: Unique patients'];
-      if (patients) {
-        if (!patientData[d.site]) patientData[d.site] = 0;
-        patientData[d.site] += extractNumber(patients);
-      }
-    });
+    return { background, border };
+  }
 
-    const patientCtx = document.getElementById('chart-patients');
-    if (patientCtx) {
-      charts.patients = new Chart(patientCtx, {
-        type: 'bar',
-        data: {
-          labels: Object.keys(patientData),
-          datasets: [{
-            label: 'Unique Patients',
-            data: Object.values(patientData),
-            backgroundColor: 'rgba(59, 130, 246, 0.7)',
-            borderColor: 'rgba(59, 130, 246, 1)',
-            borderWidth: 1
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: true,
-          plugins: {
-            legend: { display: false }
-          },
-          scales: {
-            y: { beginAtZero: true }
-          }
-        }
-      });
-    }
-
-    // Chart 3: Race Distribution (stacked bar)
-    const raceCategories = ['  Race: white', '  Race: black or african american', '  Race: asian', '  Race: other'];
-    const raceData = {};
-
-    selectedSites.forEach(site => {
-      raceData[site] = {};
-      raceCategories.forEach(race => {
-        raceData[site][race] = 0;
-      });
-    });
-
-    filteredData.forEach(d => {
-      raceCategories.forEach(race => {
-        const value = d.characteristics[race];
-        if (value) {
-          raceData[d.site][race] += extractNumber(value);
-        }
-      });
-    });
-
-    const raceCtx = document.getElementById('chart-race');
-    if (raceCtx) {
-      const colors = [
-        'rgba(255, 99, 132, 0.7)',
-        'rgba(54, 162, 235, 0.7)',
-        'rgba(255, 206, 86, 0.7)',
-        'rgba(75, 192, 192, 0.7)'
-      ];
-
-      charts.race = new Chart(raceCtx, {
-        type: 'bar',
-        data: {
-          labels: selectedSites,
-          datasets: raceCategories.map((race, index) => ({
-            label: race.trim().replace('Race: ', ''),
-            data: selectedSites.map(site => raceData[site][race]),
-            backgroundColor: colors[index],
-            borderColor: colors[index].replace('0.7', '1'),
-            borderWidth: 1
-          }))
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: true,
-          scales: {
-            x: { stacked: true },
-            y: { stacked: true, beginAtZero: true }
-          }
-        }
-      });
-    }
-
-    // Chart 4: Trends over time
-    const trendData = {};
-    selectedYears.forEach(year => {
-      trendData[year] = 0;
-    });
-
-    filteredData.forEach(d => {
-      if (d.year !== 'Overall') {
-        const patients = d.characteristics['N: Unique patients'];
-        if (patients) {
-          trendData[d.year] += extractNumber(patients);
-        }
-      }
-    });
-
-    const trendCtx = document.getElementById('chart-trends');
-    if (trendCtx) {
-      charts.trends = new Chart(trendCtx, {
-        type: 'line',
-        data: {
-          labels: selectedYears.filter(y => y !== 'Overall').sort(),
-          datasets: [{
-            label: 'Unique Patients',
-            data: selectedYears.filter(y => y !== 'Overall').sort().map(year => trendData[year]),
-            backgroundColor: 'rgba(139, 0, 0, 0.2)',
-            borderColor: 'rgba(139, 0, 0, 1)',
-            borderWidth: 2,
-            fill: true,
-            tension: 0.4
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: true,
-          plugins: {
-            legend: { display: false }
-          },
-          scales: {
-            y: { beginAtZero: true }
-          }
-        }
-      });
-    }
+  function updateCharts() {
+    // This is called when filters change - reinitialize the chart builder
+    initializeChartBuilder();
   }
 
   function updateTable() {
     const filteredData = getFilteredData();
     const searchTerm = document.getElementById('table-search')?.value.toLowerCase() || '';
     const tbody = document.getElementById('table-body');
+    const thead = document.querySelector('#data-table thead tr');
 
-    if (!tbody) return;
+    if (!tbody || !thead) return;
 
-    tbody.innerHTML = '';
+    // Check if we should pivot
+    const shouldPivotBySites = selectedYears.length === 1 && selectedSites.length > 1;
+    const shouldPivotByYears = selectedSites.length === 1 && selectedYears.length > 1;
+    const shouldPivotSingle = selectedSites.length === 1 && selectedYears.length === 1;
 
-    filteredData.forEach(d => {
-      Object.entries(d.characteristics).forEach(([variable, value]) => {
-        if (variable.toLowerCase().includes(searchTerm) || value.toLowerCase().includes(searchTerm)) {
+    if (shouldPivotSingle) {
+      // Pivot mode: Single site, single year - just Characteristic and Site columns
+      const site = selectedSites[0];
+      const year = selectedYears[0];
+
+      // Update table headers
+      thead.innerHTML = `
+        <th class="px-4 py-3 text-left font-semibold">Characteristic</th>
+        <th class="px-4 py-3 text-left font-semibold">${site}</th>
+      `;
+
+      // Populate table body
+      tbody.innerHTML = '';
+
+      filteredData.forEach(d => {
+        Object.entries(d.characteristics).forEach(([variable, value]) => {
+          // Apply search filter
+          const matchesSearch = variable.toLowerCase().includes(searchTerm) || value.toLowerCase().includes(searchTerm);
+
+          // Check if value has n < 10 (privacy protection)
+          if (matchesSearch && !hasSmallN(value)) {
+            const row = document.createElement('tr');
+            row.className = 'hover:bg-gray-50';
+            row.innerHTML = `
+              <td class="px-4 py-3 text-sm text-gray-700 font-medium">${variable}</td>
+              <td class="px-4 py-3 text-sm text-gray-700">${value}</td>
+            `;
+            tbody.appendChild(row);
+          }
+        });
+      });
+    } else if (shouldPivotBySites) {
+      // Pivot mode: Sites as columns (single year, multiple sites)
+      const year = selectedYears[0];
+
+      // Update table headers
+      thead.innerHTML = `
+        <th class="px-4 py-3 text-left font-semibold">Characteristic</th>
+        ${selectedSites.map(site => `<th class="px-4 py-3 text-left font-semibold">${site}</th>`).join('')}
+      `;
+
+      // Collect all unique characteristics
+      const characteristicsMap = new Map();
+
+      filteredData.forEach(d => {
+        Object.entries(d.characteristics).forEach(([variable, value]) => {
+          if (!characteristicsMap.has(variable)) {
+            characteristicsMap.set(variable, {});
+          }
+          characteristicsMap.get(variable)[d.site] = value;
+        });
+      });
+
+      // Populate table body
+      tbody.innerHTML = '';
+
+      characteristicsMap.forEach((siteValues, variable) => {
+        // Apply search filter
+        const matchesSearch = variable.toLowerCase().includes(searchTerm) ||
+          Object.values(siteValues).some(v => v.toLowerCase().includes(searchTerm));
+
+        // Check if any value in the row has n < 10 (privacy protection)
+        const rowValues = selectedSites.map(site => siteValues[site] || '-');
+        const hasPrivacyIssue = rowHasSmallN(rowValues);
+
+        if (matchesSearch && !hasPrivacyIssue) {
           const row = document.createElement('tr');
           row.className = 'hover:bg-gray-50';
-          row.innerHTML = `
-            <td class="px-4 py-3 text-sm text-gray-700">${variable}</td>
-            <td class="px-4 py-3 text-sm text-gray-700">${d.site}</td>
-            <td class="px-4 py-3 text-sm text-gray-700">${d.year}</td>
-            <td class="px-4 py-3 text-sm text-gray-700">${value}</td>
-          `;
+
+          let html = `<td class="px-4 py-3 text-sm text-gray-700 font-medium">${variable}</td>`;
+          selectedSites.forEach(site => {
+            const value = siteValues[site] || '-';
+            html += `<td class="px-4 py-3 text-sm text-gray-700">${value}</td>`;
+          });
+
+          row.innerHTML = html;
           tbody.appendChild(row);
         }
       });
-    });
+    } else if (shouldPivotByYears) {
+      // Pivot mode: Years as columns (single site, multiple years)
+      const site = selectedSites[0];
+
+      // Collect all unique characteristics and determine which years have data
+      const characteristicsMap = new Map();
+      const yearsWithData = new Set();
+
+      filteredData.forEach(d => {
+        Object.entries(d.characteristics).forEach(([variable, value]) => {
+          if (!characteristicsMap.has(variable)) {
+            characteristicsMap.set(variable, {});
+          }
+          characteristicsMap.get(variable)[d.year] = value;
+          yearsWithData.add(d.year);
+        });
+      });
+
+      // Get only years that have actual data, maintaining selected order
+      const availableYears = selectedYears.filter(year => yearsWithData.has(year));
+
+      // Update table headers
+      thead.innerHTML = `
+        <th class="px-4 py-3 text-left font-semibold">Characteristic</th>
+        ${availableYears.map(year => `<th class="px-4 py-3 text-left font-semibold">${year}</th>`).join('')}
+      `;
+
+      // Populate table body
+      tbody.innerHTML = '';
+
+      characteristicsMap.forEach((yearValues, variable) => {
+        // Apply search filter
+        const matchesSearch = variable.toLowerCase().includes(searchTerm) ||
+          Object.values(yearValues).some(v => v.toLowerCase().includes(searchTerm));
+
+        // Check if any value in the row has n < 10 (privacy protection)
+        const rowValues = availableYears.map(year => yearValues[year] || '-');
+        const hasPrivacyIssue = rowHasSmallN(rowValues);
+
+        if (matchesSearch && !hasPrivacyIssue) {
+          const row = document.createElement('tr');
+          row.className = 'hover:bg-gray-50';
+
+          let html = `<td class="px-4 py-3 text-sm text-gray-700 font-medium">${variable}</td>`;
+          availableYears.forEach(year => {
+            const value = yearValues[year] || '-';
+            html += `<td class="px-4 py-3 text-sm text-gray-700">${value}</td>`;
+          });
+
+          row.innerHTML = html;
+          tbody.appendChild(row);
+        }
+      });
+    } else if (selectedSites.length > 1 && selectedYears.length > 1) {
+      // Multiple sites AND multiple years: Show site-year columns + Consortium aggregation
+
+      // Create site-year combinations for headers
+      const siteYearCombos = [];
+      filteredData.forEach(d => {
+        const combo = `${d.site}-${d.year}`;
+        if (!siteYearCombos.includes(combo)) {
+          siteYearCombos.push(combo);
+        }
+      });
+
+      // Update table headers
+      thead.innerHTML = `
+        <th class="px-4 py-3 text-left font-semibold">Characteristic</th>
+        ${siteYearCombos.map(combo => `<th class="px-4 py-3 text-left font-semibold">${combo}</th>`).join('')}
+        <th class="px-4 py-3 text-left font-semibold bg-clif-burgundy bg-opacity-10">Consortium</th>
+      `;
+
+      // Collect all characteristics and their values per site-year
+      const characteristicsMap = new Map();
+
+      filteredData.forEach(d => {
+        const combo = `${d.site}-${d.year}`;
+        Object.entries(d.characteristics).forEach(([variable, value]) => {
+          if (!characteristicsMap.has(variable)) {
+            characteristicsMap.set(variable, {});
+          }
+          characteristicsMap.get(variable)[combo] = value;
+        });
+      });
+
+      // Get denominators for each site-year combo
+      const siteYearDenominators = new Map();
+      filteredData.forEach(d => {
+        const combo = `${d.site}-${d.year}`;
+        const nEncounters = getNumeric(d.characteristics['N: Encounter blocks']) || 0;
+        const nPatients = getNumeric(d.characteristics['N: Unique patients']) || 0;
+        siteYearDenominators.set(combo, {
+          nEncounterBlocks: nEncounters,
+          nUniquePatients: nPatients
+        });
+      });
+
+      // Populate table body
+      tbody.innerHTML = '';
+
+      characteristicsMap.forEach((comboValues, variable) => {
+        // Apply search filter
+        const matchesSearch = variable.toLowerCase().includes(searchTerm) ||
+          Object.values(comboValues).some(v => v.toLowerCase().includes(searchTerm));
+
+        // Check if any value in the row has n < 10 (privacy protection)
+        const rowValues = siteYearCombos.map(combo => comboValues[combo] || '-');
+        const hasPrivacyIssue = rowHasSmallN(rowValues);
+
+        if (matchesSearch && !hasPrivacyIssue) {
+          const row = document.createElement('tr');
+          row.className = 'hover:bg-gray-50';
+
+          let html = `<td class="px-4 py-3 text-sm text-gray-700 font-medium">${variable}</td>`;
+
+          // Add each site-year value
+          siteYearCombos.forEach(combo => {
+            const value = comboValues[combo] || '-';
+            html += `<td class="px-4 py-3 text-sm text-gray-700">${value}</td>`;
+          });
+
+          // Calculate consortium aggregated value
+          const siteYearData = siteYearCombos.map(combo => ({
+            value: comboValues[combo] || '-',
+            nEncounterBlocks: siteYearDenominators.get(combo)?.nEncounterBlocks || 0,
+            nUniquePatients: siteYearDenominators.get(combo)?.nUniquePatients || 0
+          }));
+
+          const consortiumValue = aggregateConsortiumValue(variable, siteYearData);
+          html += `<td class="px-4 py-3 text-sm text-gray-700 font-semibold bg-clif-burgundy bg-opacity-5">${consortiumValue}</td>`;
+
+          row.innerHTML = html;
+          tbody.appendChild(row);
+        }
+      });
+    } else {
+      // Standard mode: Original layout
+      thead.innerHTML = `
+        <th class="px-4 py-3 text-left font-semibold">Characteristic</th>
+        <th class="px-4 py-3 text-left font-semibold">Site</th>
+        <th class="px-4 py-3 text-left font-semibold">Year</th>
+        <th class="px-4 py-3 text-left font-semibold">Value</th>
+      `;
+
+      tbody.innerHTML = '';
+
+      filteredData.forEach(d => {
+        Object.entries(d.characteristics).forEach(([variable, value]) => {
+          const matchesSearch = variable.toLowerCase().includes(searchTerm) || value.toLowerCase().includes(searchTerm);
+
+          // Check if value has n < 10 (privacy protection)
+          if (matchesSearch && !hasSmallN(value)) {
+            const row = document.createElement('tr');
+            row.className = 'hover:bg-gray-50';
+            row.innerHTML = `
+              <td class="px-4 py-3 text-sm text-gray-700">${variable}</td>
+              <td class="px-4 py-3 text-sm text-gray-700">${d.site}</td>
+              <td class="px-4 py-3 text-sm text-gray-700">${d.year}</td>
+              <td class="px-4 py-3 text-sm text-gray-700">${value}</td>
+            `;
+            tbody.appendChild(row);
+          }
+        });
+      });
+    }
   }
 
   function exportToCSV() {
@@ -632,7 +1117,10 @@ const categories = Array.from(groupedChars.keys());
 
     filteredData.forEach(d => {
       Object.entries(d.characteristics).forEach(([variable, value]) => {
-        csv += `"${variable}","${d.site}","${d.year}","${value}"\n`;
+        // Only export if value doesn't have n < 10 (privacy protection)
+        if (!hasSmallN(value)) {
+          csv += `"${variable}","${d.site}","${d.year}","${value}"\n`;
+        }
       });
     });
 
@@ -671,6 +1159,6 @@ const categories = Array.from(groupedChars.keys());
   #data-table thead {
     position: sticky;
     top: 0;
-    z-index: 10;
+    z-index: 1;
   }
 </style>
