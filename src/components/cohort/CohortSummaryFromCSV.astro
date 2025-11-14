@@ -290,11 +290,11 @@ const dopamineDose = dataMap.get('    Dopamine dose (mcg/kg/min), median [Q1, Q3
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
           <!-- Encounter Types -->
-          <div class="bg-white p-4 rounded-lg shadow border border-gray-200 flex flex-col" style="min-height: 320px;">
+          <div class="bg-white p-4 rounded-lg shadow border border-gray-200 flex flex-col overflow-visible" style="min-height: 320px;">
             <h3 class="text-sm font-semibold mb-2 text-gray-700">Encounter Types</h3>
             <div class="flex flex-col items-center gap-2">
               <!-- Pie Chart -->
-              <div class="w-32 h-32">
+              <div class="w-32 h-32 relative overflow-visible">
                 <canvas id="encounterTypesChart"></canvas>
               </div>
               <!-- Data List -->
@@ -332,11 +332,11 @@ const dopamineDose = dataMap.get('    Dopamine dose (mcg/kg/min), median [Q1, Q3
           </div>
 
           <!-- Admission Types -->
-          <div class="bg-white p-4 rounded-lg shadow border border-gray-200 flex flex-col" style="min-height: 320px;">
+          <div class="bg-white p-4 rounded-lg shadow border border-gray-200 flex flex-col overflow-visible" style="min-height: 320px;">
             <h3 class="text-sm font-semibold mb-2 text-gray-700">Admission Types</h3>
             <div class="flex flex-col items-center gap-2">
               <!-- Pie Chart -->
-              <div class="w-32 h-32">
+              <div class="w-32 h-32 relative overflow-visible">
                 <canvas id="admissionTypesChart"></canvas>
               </div>
               <!-- Data List -->
@@ -1048,11 +1048,19 @@ const dopamineDose = dataMap.get('    Dopamine dose (mcg/kg/min), median [Q1, Q3
               display: false
             },
             tooltip: {
+              enabled: true,
+              position: 'average',
+              padding: 10,
+              displayColors: true,
+              intersect: true,
               callbacks: {
+                title: function(context) {
+                  return context[0].label;
+                },
                 label: function(context) {
                   const count = context.parsed.toLocaleString();
                   const pct = ((context.parsed / total) * 100).toFixed(1);
-                  return context.label + ': ' + count + ' (' + pct + '%)';
+                  return count + ' (' + pct + '%)';
                 }
               }
             }
@@ -1102,11 +1110,19 @@ const dopamineDose = dataMap.get('    Dopamine dose (mcg/kg/min), median [Q1, Q3
               display: false
             },
             tooltip: {
+              enabled: true,
+              position: 'average',
+              padding: 10,
+              displayColors: true,
+              intersect: true,
               callbacks: {
+                title: function(context) {
+                  return context[0].label;
+                },
                 label: function(context) {
                   const count = context.parsed.toLocaleString();
                   const pct = ((context.parsed / totalAdmissions) * 100).toFixed(1);
-                  return context.label + ': ' + count + ' (' + pct + '%)';
+                  return count + ' (' + pct + '%)';
                 }
               }
             }
