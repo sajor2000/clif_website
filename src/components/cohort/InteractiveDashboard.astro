@@ -102,99 +102,6 @@ const categories = Array.from(groupedChars.keys());
     </div>
   </div>
 
-  <!-- Filter Controls -->
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-    <!-- Site Filter -->
-    <div>
-      <label class="block text-sm font-semibold text-gray-700 mb-2">
-        Select Institutions
-      </label>
-      <div class="relative">
-        <button
-          id="site-filter-toggle"
-          class="w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2 text-left flex items-center justify-between hover:border-clif-burgundy transition-colors"
-        >
-          <span id="site-filter-text" class="text-gray-700">All Sites</span>
-          <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
-          </svg>
-        </button>
-        <div
-          id="site-filter-dropdown"
-          class="hidden absolute z-50 mt-2 w-full bg-white border-2 border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto"
-        >
-          <div class="p-2">
-            <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer">
-              <input
-                type="checkbox"
-                id="site-all"
-                class="site-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy"
-                checked
-              />
-              <span class="ml-2 text-sm text-gray-700 font-semibold">All Sites</span>
-            </label>
-            {data.allSites.map(site => (
-              <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer">
-                <input
-                  type="checkbox"
-                  class="site-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy"
-                  value={site}
-                  checked
-                />
-                <span class="ml-2 text-sm text-gray-700">{site}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Year Filter -->
-    <div>
-      <label class="block text-sm font-semibold text-gray-700 mb-2">
-        Select Years
-      </label>
-      <div class="relative">
-        <button
-          id="year-filter-toggle"
-          class="w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2 text-left flex items-center justify-between hover:border-clif-burgundy transition-colors"
-        >
-          <span id="year-filter-text" class="text-gray-700">All Years</span>
-          <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
-          </svg>
-        </button>
-        <div
-          id="year-filter-dropdown"
-          class="hidden absolute z-50 mt-2 w-full bg-white border-2 border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto"
-        >
-          <div class="p-2">
-            <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer">
-              <input
-                type="checkbox"
-                id="year-all"
-                class="year-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy"
-                checked
-              />
-              <span class="ml-2 text-sm text-gray-700 font-semibold">All Years</span>
-            </label>
-            {data.allYears.map(year => (
-              <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer">
-                <input
-                  type="checkbox"
-                  class="year-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy"
-                  value={year}
-                  checked
-                />
-                <span class="ml-2 text-sm text-gray-700">{year}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- View Toggle -->
   <div class="flex items-center justify-between mb-6 pb-6 border-b-2 border-gray-200">
     <div class="flex gap-2">
@@ -211,23 +118,107 @@ const categories = Array.from(groupedChars.keys());
         Table
       </button>
     </div>
-
-    <!-- Export Button -->
-    <button
-      id="export-data"
-      class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors"
-    >
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-      </svg>
-      Export CSV
-    </button>
   </div>
 
   <!-- Charts View -->
-  <div id="charts-view" class="flex gap-6">
-    <!-- Left Sidebar - Characteristic Categories -->
-    <div class="w-80 flex-shrink-0">
+  <div id="charts-view" class="space-y-6">
+    <!-- Filter Controls (Charts only) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Site Filter -->
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-2">
+          Select Institutions
+        </label>
+        <div class="relative">
+          <button
+            id="site-filter-toggle"
+            class="w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2 text-left flex items-center justify-between hover:border-clif-burgundy transition-colors"
+          >
+            <span id="site-filter-text" class="text-gray-700">All Sites</span>
+            <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+            </svg>
+          </button>
+          <div
+            id="site-filter-dropdown"
+            class="hidden absolute z-50 mt-2 w-full bg-white border-2 border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto"
+          >
+            <div class="p-2">
+              <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer">
+                <input
+                  type="checkbox"
+                  id="site-all"
+                  class="site-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy"
+                  checked
+                />
+                <span class="ml-2 text-sm text-gray-700 font-semibold">All Sites</span>
+              </label>
+              {data.allSites.map(site => (
+                <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer">
+                  <input
+                    type="checkbox"
+                    class="site-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy"
+                    value={site}
+                    checked
+                  />
+                  <span class="ml-2 text-sm text-gray-700">{site}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Year Filter -->
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-2">
+          Select Years
+        </label>
+        <div class="relative">
+          <button
+            id="year-filter-toggle"
+            class="w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2 text-left flex items-center justify-between hover:border-clif-burgundy transition-colors"
+          >
+            <span id="year-filter-text" class="text-gray-700">All Years</span>
+            <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+            </svg>
+          </button>
+          <div
+            id="year-filter-dropdown"
+            class="hidden absolute z-50 mt-2 w-full bg-white border-2 border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto"
+          >
+            <div class="p-2">
+              <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer">
+                <input
+                  type="checkbox"
+                  id="year-all"
+                  class="year-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy"
+                  checked
+                />
+                <span class="ml-2 text-sm text-gray-700 font-semibold">All Years</span>
+              </label>
+              {data.allYears.map(year => (
+                <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer">
+                  <input
+                    type="checkbox"
+                    class="year-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy"
+                    value={year}
+                    checked
+                  />
+                  <span class="ml-2 text-sm text-gray-700">{year}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart Builder with Sidebar -->
+    <div class="flex gap-6">
+      <!-- Left Sidebar - Characteristic Categories -->
+      <div class="w-80 flex-shrink-0">
       <div class="bg-white border-2 border-gray-200 rounded-lg overflow-hidden sticky top-4">
         <!-- Search Box -->
         <div class="p-4 border-b border-gray-200">
@@ -331,18 +322,33 @@ const categories = Array.from(groupedChars.keys());
       </p>
     </div>
     </div>
+    </div>
   </div>
 
   <!-- Table View -->
   <div id="table-view" class="hidden">
-    <!-- Search Box -->
-    <div class="mb-4">
-      <input
-        type="text"
-        id="table-search"
-        placeholder="Search characteristics..."
-        class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-clif-burgundy focus:ring-2 focus:ring-clif-burgundy focus:ring-opacity-50"
-      />
+    <!-- Table Header with Export Button -->
+    <div class="flex items-center justify-between mb-4">
+      <!-- Search Box -->
+      <div class="flex-1 mr-4">
+        <input
+          type="text"
+          id="table-search"
+          placeholder="Search characteristics..."
+          class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-clif-burgundy focus:ring-2 focus:ring-clif-burgundy focus:ring-opacity-50"
+        />
+      </div>
+
+      <!-- Export Button -->
+      <button
+        id="export-data"
+        class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors whitespace-nowrap"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+        Export CSV
+      </button>
     </div>
 
     <!-- Data Table -->
