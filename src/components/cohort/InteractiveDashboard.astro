@@ -3,11 +3,64 @@ import { parseConsortiumCSV, groupCharacteristics } from '../../utils/csvParser'
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 
-// Read and parse the CSV file at build time
+// Read and parse the detailed CSV file for Charts view
 const csvPath = join(process.cwd(), 'src', 'data', 'consortium_t1_by_year_site_1113.csv');
 const csvContent = await readFile(csvPath, 'utf-8');
 const data = parseConsortiumCSV(csvContent);
 const groupedChars = groupCharacteristics(data);
+
+// Read the overall CSV file for Table view and Export
+const overallCsvPath = join(process.cwd(), 'src', 'data', 'overall_1113.csv');
+const overallCsvContent = await readFile(overallCsvPath, 'utf-8');
+
+// Helper to parse CSV line with quoted values
+function parseCSVLineHelper(line: string): string[] {
+  const result: string[] = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+
+    if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) {
+      result.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+
+  result.push(current.trim());
+  return result;
+}
+
+// Parse overall CSV into simple format
+function parseOverallCSV(content: string) {
+  const lines = content.trim().split('\n');
+  const headers = parseCSVLineHelper(lines[0]);
+
+  const tableData: Array<{ characteristic: string; values: Record<string, string> }> = [];
+
+  for (let i = 2; i < lines.length; i++) { // Skip header and years row
+    const values = parseCSVLineHelper(lines[i]);
+    const characteristic = values[0];
+
+    if (!characteristic) continue;
+
+    const row: Record<string, string> = {};
+    for (let j = 1; j < headers.length && j < values.length; j++) {
+      row[headers[j]] = values[j] || '-';
+    }
+
+    tableData.push({ characteristic, values: row });
+  }
+
+  return { headers: headers.slice(1), data: tableData }; // Skip "Characteristics" column header
+}
+
+const overallData = parseOverallCSV(overallCsvContent);
 
 // Convert to JSON for client-side use
 const dataJson = JSON.stringify({
@@ -28,6 +81,8 @@ const dataJson = JSON.stringify({
     characteristics: Object.fromEntries(d.characteristics)
   }))
 });
+
+const overallDataJson = JSON.stringify(overallData);
 
 const categories = Array.from(groupedChars.keys());
 ---
@@ -309,9 +364,10 @@ const categories = Array.from(groupedChars.keys());
   </div>
 </div>
 
-<script define:vars={{ dataJson }}>
+<script define:vars={{ dataJson, overallDataJson }}>
   // Parse the data
   const consortiumData = JSON.parse(dataJson);
+  const overallTableData = JSON.parse(overallDataJson);
 
   // State management
   let selectedSites = [...consortiumData.allSites];
@@ -1135,12 +1191,49 @@ const categories = Array.from(groupedChars.keys());
   }
 
   function updateTable() {
-    const filteredData = getFilteredData();
     const searchTerm = document.getElementById('table-search')?.value.toLowerCase() || '';
     const tbody = document.getElementById('table-body');
     const thead = document.querySelector('#data-table thead tr');
 
     if (!tbody || !thead) return;
+
+    // Use overall data for table view (ignores site/year filters)
+    const { headers, data } = overallTableData;
+
+    // Build table headers - Characteristic + all site columns
+    thead.innerHTML = `
+      <th class="px-4 py-3 text-left font-semibold sticky left-0 bg-clif-burgundy z-10">Characteristic</th>
+      ${headers.map(header => `<th class="px-3 py-3 text-left font-semibold text-xs min-w-[100px] max-w-[150px]" style="word-wrap: break-word; white-space: normal;">${header}</th>`).join('')}
+    `;
+
+    // Populate table body
+    tbody.innerHTML = '';
+
+    data.forEach(row => {
+      const characteristic = row.characteristic;
+
+      // Apply search filter
+      const matchesSearch = characteristic.toLowerCase().includes(searchTerm) ||
+        Object.values(row.values).some(v => v.toLowerCase().includes(searchTerm));
+
+      if (matchesSearch) {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-gray-50';
+
+        let html = `<td class="px-4 py-3 text-sm text-gray-700 font-medium sticky left-0 bg-white">${characteristic}</td>`;
+        headers.forEach(header => {
+          const value = row.values[header] || '-';
+          html += `<td class="px-4 py-3 text-sm text-gray-700">${value}</td>`;
+        });
+
+        tr.innerHTML = html;
+        tbody.appendChild(tr);
+      }
+    });
+  }
+
+  // Legacy function - now replaced but keeping structure
+  function updateTableOld() {
 
     // Check if we should pivot
     const shouldPivotBySites = selectedYears.length === 1 && selectedSites.length > 1;
@@ -1394,24 +1487,24 @@ const categories = Array.from(groupedChars.keys());
   }
 
   function exportToCSV() {
-    const filteredData = getFilteredData();
+    // Use overall data for CSV export
+    const { headers, data } = overallTableData;
 
-    let csv = 'Characteristic,Site,Year,Value\n';
+    // Build CSV header
+    let csv = 'Characteristic,' + headers.join(',') + '\n';
 
-    filteredData.forEach(d => {
-      Object.entries(d.characteristics).forEach(([variable, value]) => {
-        // Only export if value doesn't have n < 10 (privacy protection)
-        if (!hasSmallN(value)) {
-          csv += `"${variable}","${d.site}","${d.year}","${value}"\n`;
-        }
-      });
+    // Build CSV rows
+    data.forEach(row => {
+      const characteristic = `"${row.characteristic}"`;
+      const values = headers.map(header => `"${row.values[header] || '-'}"`).join(',');
+      csv += `${characteristic},${values}\n`;
     });
 
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `clif-consortium-data-${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = `clif-overall-data-${new Date().toISOString().split('T')[0]}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
