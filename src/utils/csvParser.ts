@@ -64,9 +64,15 @@ export function parseConsortiumCSV(csvContent: string): ParsedConsortiumData {
   for (let i = 1; i < lines.length; i++) {
     // Split by comma but preserve commas within quotes
     const values = parseCSVLine(lines[i]);
-    const variable = values[0];
+    const variable = values[0].trim(); // Trim leading/trailing spaces from variable names
 
     if (!variable) continue;
+
+    // Debug SOFA scores
+    if (variable.toLowerCase().includes('sofa') || variable.toLowerCase().includes('total')) {
+      console.log('Parsing variable:', variable, 'length:', variable.length);
+      console.log('First 5 chars codes:', variable.substring(0, 5).split('').map(c => c.charCodeAt(0)));
+    }
 
     const charData: CharacteristicData = {
       variable,

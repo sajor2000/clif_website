@@ -14,7 +14,7 @@ const overallCsvPath = join(process.cwd(), 'src', 'data', 'overall_1113.csv');
 const overallCsvContent = await readFile(overallCsvPath, 'utf-8');
 
 // Helper to parse CSV line with quoted values
-function parseCSVLineHelper(line: string): string[] {
+function parseCSVLineHelper(line: string, preserveFirstColumnSpaces: boolean = false): string[] {
   const result: string[] = [];
   let current = '';
   let inQuotes = false;
@@ -25,14 +25,24 @@ function parseCSVLineHelper(line: string): string[] {
     if (char === '"') {
       inQuotes = !inQuotes;
     } else if (char === ',' && !inQuotes) {
-      result.push(current.trim());
+      // For first column (index 0), preserve leading spaces if requested
+      if (preserveFirstColumnSpaces && result.length === 0) {
+        result.push(current.replace(/^"|"$/g, '')); // Remove quotes but keep spaces
+      } else {
+        result.push(current.trim());
+      }
       current = '';
     } else {
       current += char;
     }
   }
 
-  result.push(current.trim());
+  // Handle last field
+  if (preserveFirstColumnSpaces && result.length === 0) {
+    result.push(current.replace(/^"|"$/g, ''));
+  } else {
+    result.push(current.trim());
+  }
   return result;
 }
 
@@ -63,6 +73,16 @@ function parseOverallCSV(content: string) {
 const overallData = parseOverallCSV(overallCsvContent);
 
 // Convert to JSON for client-side use
+// Debug: Check characteristics before JSON serialization
+const firstSiteYear = data.siteYearData[0];
+if (firstSiteYear) {
+  const charEntries = Array.from(firstSiteYear.characteristics.entries());
+  const sofaEntry = charEntries.find(([k, v]) => k.toLowerCase().includes('sofa'));
+  if (sofaEntry) {
+    console.log('Before JSON.stringify - SOFA key:', sofaEntry[0], 'length:', sofaEntry[0].length);
+  }
+}
+
 const dataJson = JSON.stringify({
   allSites: data.allSites,
   allYears: data.allYears,
@@ -81,6 +101,14 @@ const dataJson = JSON.stringify({
     characteristics: Object.fromEntries(d.characteristics)
   }))
 });
+
+// Debug: Check what's in the JSON string
+if (dataJson.includes('Total SOFA')) {
+  const match = dataJson.match(/"([^"]*Total SOFA[^"]*)"/);
+  if (match) {
+    console.log('In JSON string, found:', match[1], 'length:', match[1].length);
+  }
+}
 
 const overallDataJson = JSON.stringify(overallData);
 
@@ -370,10 +398,31 @@ const categories = Array.from(groupedChars.keys());
   </div>
 </div>
 
-<script define:vars={{ dataJson, overallDataJson }}>
-  // Parse the data
-  const consortiumData = JSON.parse(dataJson);
-  const overallTableData = JSON.parse(overallDataJson);
+<!-- JSON data storage -->
+<script type="application/json" id="consortium-json-data" set:html={dataJson}></script>
+<script type="application/json" id="overall-json-data" set:html={overallDataJson}></script>
+
+<script>
+  // Parse data from JSON script tags
+  const consortiumData = JSON.parse(document.getElementById('consortium-json-data').textContent);
+  const overallTableData = JSON.parse(document.getElementById('overall-json-data').textContent);
+
+  // Debug: Check if spaces are preserved after JSON parse
+  const firstItem = consortiumData.siteYearData[0];
+  if (firstItem) {
+    const keys = Object.keys(firstItem.characteristics);
+    const sofaKeys = keys.filter(k => k.toLowerCase().includes('sofa') || k.toLowerCase().includes('total'));
+    console.log('After JSON.parse, SOFA keys:', sofaKeys);
+    if (sofaKeys.length > 0) {
+      console.log('First SOFA key:', sofaKeys[0], 'length:', sofaKeys[0].length);
+      console.log('First 5 chars codes:', sofaKeys[0].substring(0, 5).split('').map(c => c.charCodeAt(0)));
+    }
+
+    // Check ALL SOFA keys
+    sofaKeys.forEach(key => {
+      console.log(`SOFA key: "${key}" length: ${key.length} starts with space: ${key.charCodeAt(0) === 32}`);
+    });
+  }
 
   // State management
   let selectedSites = [...consortiumData.allSites];
@@ -558,11 +607,17 @@ const categories = Array.from(groupedChars.keys());
     return match ? parseInt(match[0].replace(/,/g, ''), 10) : 0;
   }
 
-  // Helper function to extract numeric value from string like "164 (0.1%)" or "68,359 (57.6%)" or "66 [54, 76]"
+  // Helper function to extract numeric value from string like "164 (0.1%)" or "68,359 (57.6%)" or "66 [54, 76]" or "3.0 [1.0, 6.0]"
   function getNumeric(value) {
     if (typeof value !== 'string') return null;
-    // Match patterns like: "66 [54, 76]" or "164 (0.1%)" or "68,359 (57.6%)"
-    const match = value.match(/^\s*([-\d,\.]+)\s*(?:\([^\)]*\)|\[[^\]]*\])?\s*$/);
+
+    // Match patterns:
+    // "3.0 [1.0, 6.0]" -> extract 3.0
+    // "164 (0.1%)" -> extract 164
+    // "68,359 (57.6%)" -> extract 68359
+    // Just extract the first number before any brackets or parentheses
+    const match = value.match(/^\s*([-\d,\.]+)/);
+
     if (match) {
       const numStr = match[1].replace(/,/g, '');
       try {
@@ -632,6 +687,9 @@ const categories = Array.from(groupedChars.keys());
   // Check if a value has n < 10 (for privacy protection)
   function hasSmallN(value) {
     if (typeof value !== 'string') return false;
+
+    // Don't apply privacy filter to median/IQR values (they have brackets)
+    if (valueHasIQR(value)) return false;
 
     // Extract the first numeric value (before parentheses or brackets)
     const numericMatch = value.match(/^\s*([\d,]+)/);
@@ -754,18 +812,34 @@ const categories = Array.from(groupedChars.keys());
   }
 
   function buildCategorySidebar() {
-    const filteredData = getFilteredData();
+    // Use ALL data for sidebar, not filtered data
+    // The sidebar should show all available characteristics regardless of filter selection
+    const allData = consortiumData.siteYearData;
 
-    // Get all characteristics
+    // Get all characteristics, excluding header/placeholder rows
     const characteristics = new Set();
-    filteredData.forEach(d => {
+    const headerPatterns = [
+      'Neuromuscular blocking agents, n (%)',
+      'Sedatives and analgesics, n (%)',
+      'SOFA Scores'
+    ];
+
+    allData.forEach(d => {
       Object.keys(d.characteristics).forEach(char => {
-        characteristics.add(char);
+        // Debug SOFA
+        if (char.toLowerCase().includes('sofa') || char.toLowerCase().includes('total')) {
+          console.log('Found characteristic key:', char, 'length:', char.length);
+        }
+        // Skip if it's a header/placeholder row
+        if (!headerPatterns.includes(char.trim())) {
+          characteristics.add(char);
+        }
       });
     });
 
     // Group characteristics by category
     const categories = {
+      'Population': [],
       'Demographics': [],
       'Encounter Information': [],
       'Clinical Outcomes': [],
@@ -774,19 +848,37 @@ const categories = Array.from(groupedChars.keys());
       'Respiratory Support': [],
       'Cardiovascular Support': [],
       'Renal Support': [],
-      'Counts': [],
+      'Medications': [],
       'Other': []
     };
 
     characteristics.forEach(char => {
       const charTrimmed = char.trim();
+      const charOriginal = char; // Keep original with spaces
       let categorized = false;
 
+      // Severity Scores - HARDCODED exact matches from CSV
+      if (charTrimmed === 'Total SOFA score, median [Q1, Q3]' ||
+          charTrimmed === 'Respiratory, median [Q1, Q3]' ||
+          charTrimmed === 'Coagulation, median [Q1, Q3]' ||
+          charTrimmed === 'Liver, median [Q1, Q3]' ||
+          charTrimmed === 'Cardiovascular, median [Q1, Q3]' ||
+          charTrimmed === 'CNS, median [Q1, Q3]' ||
+          charTrimmed === 'Renal, median [Q1, Q3]' ||
+          charTrimmed === 'P/F ratio, median [Q1, Q3]' ||
+          charTrimmed === 'P/F ratio (imputed), median [Q1, Q3]') {
+        if (charTrimmed.includes('Total')) {
+          console.log('PUSHING Total SOFA:', charOriginal, 'length:', charOriginal.length);
+          console.log('Last 10 chars:', charOriginal.substring(charOriginal.length - 10));
+        }
+        categories['Severity Scores'].push(charOriginal); // Keep original with leading spaces for data lookup
+        categorized = true;
+      }
       // Demographics
-      if (charTrimmed.includes('Age at admission') ||
-          charTrimmed.includes('Race:') ||
-          charTrimmed.includes('Ethnicity:') ||
-          charTrimmed.includes('Sex:')) {
+      else if (charTrimmed.includes('Age at admission') ||
+               charTrimmed.includes('Race:') ||
+               charTrimmed.includes('Ethnicity:') ||
+               charTrimmed.includes('Sex:')) {
         categories['Demographics'].push(charTrimmed);
         categorized = true;
       }
@@ -829,12 +921,6 @@ const categories = Array.from(groupedChars.keys());
         categories['Comorbidities'].push(charTrimmed);
         categorized = true;
       }
-      // Severity Scores
-      else if (charTrimmed.includes('SOFA') ||
-               charTrimmed.includes('P/F ratio')) {
-        categories['Severity Scores'].push(charTrimmed);
-        categorized = true;
-      }
       // Respiratory Support
       else if (charTrimmed.includes('mechanical ventilation') ||
                charTrimmed.includes('IMV') ||
@@ -862,9 +948,20 @@ const categories = Array.from(groupedChars.keys());
         categories['Renal Support'].push(charTrimmed);
         categorized = true;
       }
-      // Counts
+      // Medications
+      else if (charTrimmed.includes('Cisatracurium') ||
+               charTrimmed.includes('Rocuronium') ||
+               charTrimmed.includes('Propofol') ||
+               charTrimmed.includes('Midazolam') ||
+               charTrimmed.includes('Lorazepam') ||
+               charTrimmed.includes('Dexmedetomidine') ||
+               charTrimmed.includes('Fentanyl')) {
+        categories['Medications'].push(charTrimmed);
+        categorized = true;
+      }
+      // Population
       else if (charTrimmed.startsWith('N:')) {
-        categories['Counts'].push(charTrimmed);
+        categories['Population'].push(charTrimmed);
         categorized = true;
       }
 
@@ -882,6 +979,10 @@ const categories = Array.from(groupedChars.keys());
     Object.entries(categories).forEach(([categoryName, chars]) => {
       if (chars.length === 0) return; // Skip empty categories
 
+      if (categoryName === 'Severity Scores') {
+        console.log('Building Severity Scores category with chars:', chars);
+      }
+
       const categoryDiv = document.createElement('div');
       categoryDiv.className = 'category-section border-b border-gray-200';
 
@@ -898,14 +999,25 @@ const categories = Array.from(groupedChars.keys());
       // Characteristics list
       const charList = document.createElement('div');
       charList.className = 'characteristic-list';
+      charList.style.display = 'none'; // Start collapsed
       chars.sort().forEach(char => {
+        if (char.includes('Total') && char.includes('SOFA')) {
+          console.log('Building sidebar item for Total SOFA. char:', char, 'length:', char.length);
+          console.log('Last 10:', char.substring(char.length - 10));
+        }
         const charItem = document.createElement('button');
         charItem.className = 'characteristic-item w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-clif-burgundy hover:bg-opacity-10 hover:text-clif-burgundy transition-colors';
-        charItem.dataset.characteristic = char;
-        charItem.textContent = char;
-        charItem.addEventListener('click', () => selectCharacteristic(char, charItem));
+        charItem.dataset.characteristic = char; // Keep original with spaces for data lookup
+        charItem.textContent = char.trim(); // Display trimmed version
+        charItem.addEventListener('click', () => selectCharacteristic(char, charItem)); // Pass original
         charList.appendChild(charItem);
       });
+
+      // Set initial chevron to collapsed state
+      const chevron = header.querySelector('.chevron');
+      if (chevron) {
+        chevron.style.transform = 'rotate(-90deg)';
+      }
 
       // Toggle collapse on header click
       header.addEventListener('click', () => {
@@ -921,7 +1033,16 @@ const categories = Array.from(groupedChars.keys());
   }
 
   function selectCharacteristic(characteristic, element) {
+    console.log('=== selectCharacteristic CALLED ===');
+    console.log('characteristic:', characteristic);
+    console.log('characteristic length:', characteristic.length);
+    if (characteristic && characteristic.includes('Total')) {
+      console.log('Last 10 chars:', characteristic.substring(characteristic.length - 10));
+      console.log('Last 10 codes:', characteristic.substring(characteristic.length - 10).split('').map(c => c.charCodeAt(0)));
+    }
     selectedCharacteristic = characteristic;
+    console.log('selectedCharacteristic SET TO:', selectedCharacteristic);
+    console.log('selectedCharacteristic length:', selectedCharacteristic.length);
 
     // Update UI - remove previous selection
     document.querySelectorAll('.characteristic-item').forEach(item => {
@@ -935,7 +1056,7 @@ const categories = Array.from(groupedChars.keys());
     const display = document.getElementById('selected-characteristic-display');
     const nameEl = document.getElementById('selected-characteristic-name');
     if (display && nameEl) {
-      nameEl.textContent = characteristic;
+      nameEl.textContent = characteristic.trim(); // Display trimmed version
       display.classList.remove('hidden');
     }
 
@@ -982,6 +1103,15 @@ const categories = Array.from(groupedChars.keys());
     const characteristic = selectedCharacteristic;
     const groupBy = document.getElementById('chart-xaxis-select')?.value;
 
+    console.log('=== generateCustomChart START ===');
+    console.log('selectedCharacteristic:', selectedCharacteristic);
+    console.log('selectedCharacteristic length:', selectedCharacteristic ? selectedCharacteristic.length : 'null');
+    if (selectedCharacteristic && selectedCharacteristic.includes('Total')) {
+      console.log('Full characteristic:', selectedCharacteristic);
+      console.log('Last 10 chars:', selectedCharacteristic.substring(selectedCharacteristic.length - 10));
+      console.log('Last 10 codes:', selectedCharacteristic.substring(selectedCharacteristic.length - 10).split('').map(c => c.charCodeAt(0)));
+    }
+
     if (!characteristic) {
       alert('Please select a characteristic from the sidebar to visualize.');
       return;
@@ -989,13 +1119,12 @@ const categories = Array.from(groupedChars.keys());
 
     const filteredData = getFilteredData();
 
-    // Debug logging
     console.log('Selected characteristic:', characteristic);
     console.log('Filtered data length:', filteredData.length);
-    console.log('First filtered data item:', filteredData[0]);
     if (filteredData.length > 0) {
-      console.log('Characteristic value:', filteredData[0].characteristics[characteristic]);
-      console.log('All characteristics for first item:', Object.keys(filteredData[0].characteristics));
+      console.log('First item characteristics keys:', Object.keys(filteredData[0].characteristics).filter(k => k.includes('SOFA') || k.includes('Total')));
+      console.log('Looking for exact match...');
+      console.log('Exact match result:', filteredData[0].characteristics[characteristic]);
     }
 
     // Collect data based on grouping
@@ -1006,9 +1135,45 @@ const categories = Array.from(groupedChars.keys());
                          characteristic.toLowerCase().includes('[q1') ||
                          (filteredData.length > 0 && valueHasIQR(filteredData[0].characteristics[characteristic] || ''));
 
-    filteredData.forEach(d => {
+    let processedCount = 0;
+    let skippedSmallN = 0;
+    let skippedNullValue = 0;
+    let addedCount = 0;
+
+    console.log('About to loop. characteristic:', characteristic);
+    console.log('characteristic length:', characteristic.length);
+    console.log('characteristic char codes:', characteristic.substring(0, 5).split('').map(c => c.charCodeAt(0)));
+
+    filteredData.forEach((d, idx) => {
       // Try exact match first, then trimmed match
       let value = d.characteristics[characteristic];
+
+      if (idx === 0) {
+        console.log('First item in loop:');
+        console.log('  d.site:', d.site, 'd.year:', d.year);
+        const sofaKeysInLoop = Object.keys(d.characteristics).filter(k => k.includes('SOFA'));
+        console.log('  Keys with SOFA:', sofaKeysInLoop);
+        sofaKeysInLoop.forEach(k => {
+          console.log(`    Key: "${k}" length: ${k.length} matches characteristic: ${k === characteristic}`);
+          if (k.includes('Total')) {
+            console.log(`      Key: "${k}"`);
+            console.log(`      Char: "${characteristic}"`);
+
+            // Show last 10 characters
+            console.log(`      Key last 10: "${k.substring(k.length - 10)}"`);
+            console.log(`      Char last 10: "${characteristic.substring(characteristic.length - 10)}"`);
+
+            console.log(`      Key last 10 codes: [${k.substring(k.length - 10).split('').map(c => c.charCodeAt(0)).join(', ')}]`);
+            console.log(`      Char last 10 codes: [${characteristic.substring(characteristic.length - 10).split('').map(c => c.charCodeAt(0)).join(', ')}]`);
+          }
+        });
+        console.log('  Direct lookup with characteristic:', value);
+
+        // Try manually with the second key (should be Total SOFA)
+        if (sofaKeysInLoop.length > 1) {
+          console.log('  Manual lookup with sofaKeysInLoop[1]:', d.characteristics[sofaKeysInLoop[1]]);
+        }
+      }
 
       // If not found, try to find by trimming
       if (!value) {
@@ -1021,13 +1186,17 @@ const categories = Array.from(groupedChars.keys());
       }
 
       if (!value) {
-        console.log('No value found for characteristic:', characteristic);
-        console.log('Available characteristics:', Object.keys(d.characteristics).slice(0, 10));
+        skippedNullValue++;
         return;
       }
 
+      processedCount++;
+
       // Skip if has small n (privacy protection)
-      if (hasSmallN(value)) return;
+      if (hasSmallN(value)) {
+        skippedSmallN++;
+        return;
+      }
 
       let label;
       if (groupBy === 'site') {
@@ -1040,7 +1209,10 @@ const categories = Array.from(groupedChars.keys());
 
       // Extract numeric value
       const numValue = getNumeric(value);
-      console.log('Label:', label, 'Value:', value, 'NumValue:', numValue, 'IsMedian:', isMedianChar);
+
+      if (processedCount <= 3) {
+        console.log(`Item ${processedCount}: site=${d.site}, year=${d.year}, value="${value}", numValue=${numValue}`);
+      }
 
       if (numValue !== null) {
         if (isMedianChar) {
@@ -1050,19 +1222,17 @@ const categories = Array.from(groupedChars.keys());
           }
           chartData[label].sum += numValue;
           chartData[label].count += 1;
-          console.log('Added median data for', label, ':', chartData[label]);
+          addedCount++;
         } else {
           // For count values, sum them
           if (!chartData[label]) chartData[label] = 0;
           chartData[label] += numValue;
-          console.log('Added count data for', label, ':', chartData[label]);
+          addedCount++;
         }
-      } else {
-        console.log('numValue is null for:', value);
       }
     });
 
-    console.log('Chart data before averaging:', JSON.parse(JSON.stringify(chartData)));
+    console.log(`Processed: ${processedCount}, Skipped (small n): ${skippedSmallN}, Skipped (null): ${skippedNullValue}, Added: ${addedCount}`);
 
     // Convert median data to averages
     if (isMedianChar) {
@@ -1070,6 +1240,10 @@ const categories = Array.from(groupedChars.keys());
         chartData[key] = chartData[key].sum / chartData[key].count;
       });
     }
+
+    console.log('Final chartData:', chartData);
+    console.log('chartData keys:', Object.keys(chartData));
+    console.log('chartData length:', Object.keys(chartData).length);
 
     if (Object.keys(chartData).length === 0) {
       alert(`No data available for "${characteristic}" with the selected filters.\n\nPossible reasons:\n- Not all sites/years have this data point\n- Values may be suppressed for privacy (n < 10)\n- Try selecting different sites or years`);
