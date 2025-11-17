@@ -758,7 +758,7 @@ const categories = Array.from(groupedChars.keys());
     // The sidebar should show all available characteristics regardless of filter selection
     const allData = consortiumData.siteYearData;
 
-    // Get all characteristics, excluding header/placeholder rows
+    // Get all characteristics, excluding header/placeholder rows and metadata
     const characteristics = new Set();
     const headerPatterns = [
       'Neuromuscular blocking agents, n (%)',
@@ -766,7 +766,8 @@ const categories = Array.from(groupedChars.keys());
       'SOFA Scores',
       'Comorbidities, n (%)',
       'Encounter Types',
-      'Vasopressor encounters, n (%)'
+      'Vasopressor encounters, n (%)',
+      'N: Hospitals' // Exclude hospitals count - it's metadata, not a patient characteristic
     ];
 
     allData.forEach(d => {
