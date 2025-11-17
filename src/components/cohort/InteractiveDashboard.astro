@@ -821,7 +821,10 @@ const categories = Array.from(groupedChars.keys());
     const headerPatterns = [
       'Neuromuscular blocking agents, n (%)',
       'Sedatives and analgesics, n (%)',
-      'SOFA Scores'
+      'SOFA Scores',
+      'Comorbidities, n (%)',
+      'Encounter Types',
+      'Vasopressor encounters, n (%)'
     ];
 
     allData.forEach(d => {
@@ -837,19 +840,36 @@ const categories = Array.from(groupedChars.keys());
       });
     });
 
-    // Group characteristics by category
+    // Group characteristics by category with subcategory support
+    // Structure: { categoryName: { items: [], subcategories: { subName: [] } } }
     const categories = {
-      'Population': [],
-      'Demographics': [],
-      'Encounter Information': [],
-      'Clinical Outcomes': [],
-      'Comorbidities': [],
-      'Severity Scores': [],
-      'Respiratory Support': [],
-      'Cardiovascular Support': [],
-      'Renal Support': [],
-      'Medications': [],
-      'Other': []
+      'Population': { items: [], subcategories: {} },
+      'Demographics': { items: [], subcategories: {} },
+      'Encounter Information': {
+        items: [],
+        subcategories: {
+          'Encounter Types': []
+        }
+      },
+      'Clinical Outcomes': { items: [], subcategories: {} },
+      'Comorbidities': { items: [], subcategories: {} },
+      'Severity Scores': {
+        items: [],
+        subcategories: {
+          'SOFA Scores': []
+        }
+      },
+      'Respiratory Support': { items: [], subcategories: {} },
+      'Renal Support': { items: [], subcategories: {} },
+      'Medications': {
+        items: [],
+        subcategories: {
+          'Neuromuscular blocking agents': [],
+          'Sedatives and analgesics': [],
+          'Vasopressors': []
+        }
+      },
+      'Other': { items: [], subcategories: {} }
     };
 
     characteristics.forEach(char => {
@@ -857,21 +877,25 @@ const categories = Array.from(groupedChars.keys());
       const charOriginal = char; // Keep original with spaces
       let categorized = false;
 
-      // Severity Scores - HARDCODED exact matches from CSV
+      // Severity Scores - SOFA Scores subcategory - HARDCODED exact matches from CSV
       if (charTrimmed === 'Total SOFA score, median [Q1, Q3]' ||
           charTrimmed === 'Respiratory, median [Q1, Q3]' ||
           charTrimmed === 'Coagulation, median [Q1, Q3]' ||
           charTrimmed === 'Liver, median [Q1, Q3]' ||
           charTrimmed === 'Cardiovascular, median [Q1, Q3]' ||
           charTrimmed === 'CNS, median [Q1, Q3]' ||
-          charTrimmed === 'Renal, median [Q1, Q3]' ||
-          charTrimmed === 'P/F ratio, median [Q1, Q3]' ||
-          charTrimmed === 'P/F ratio (imputed), median [Q1, Q3]') {
+          charTrimmed === 'Renal, median [Q1, Q3]') {
         if (charTrimmed.includes('Total')) {
           console.log('PUSHING Total SOFA:', charOriginal, 'length:', charOriginal.length);
           console.log('Last 10 chars:', charOriginal.substring(charOriginal.length - 10));
         }
-        categories['Severity Scores'].push(charOriginal); // Keep original with leading spaces for data lookup
+        categories['Severity Scores'].subcategories['SOFA Scores'].push(charOriginal); // Keep original with leading spaces for data lookup
+        categorized = true;
+      }
+      // P/F ratios are separate from SOFA scores
+      else if (charTrimmed === 'P/F ratio, median [Q1, Q3]' ||
+               charTrimmed === 'P/F ratio (imputed), median [Q1, Q3]') {
+        categories['Severity Scores'].items.push(charOriginal);
         categorized = true;
       }
       // Demographics
@@ -879,18 +903,22 @@ const categories = Array.from(groupedChars.keys());
                charTrimmed.includes('Race:') ||
                charTrimmed.includes('Ethnicity:') ||
                charTrimmed.includes('Sex:')) {
-        categories['Demographics'].push(charTrimmed);
+        categories['Demographics'].items.push(charTrimmed);
         categorized = true;
       }
-      // Encounter Information
-      else if (charTrimmed.includes('Encounter Types') ||
-               charTrimmed.includes('ICU encounters') ||
+      // Encounter Information with subcategories
+      else if (charTrimmed.includes('ICU encounters') ||
                charTrimmed.includes('Advanced respiratory support') ||
                charTrimmed.includes('Vasoactive support') ||
-               charTrimmed.includes('Other critically ill') ||
-               charTrimmed.includes('admission location:') ||
+               charTrimmed.includes('Other critically ill')) {
+        // These go into "Encounter Types" subcategory
+        categories['Encounter Information'].subcategories['Encounter Types'].push(charTrimmed);
+        categorized = true;
+      }
+      else if (charTrimmed.includes('admission location:') ||
                charTrimmed.includes('Admission type:')) {
-        categories['Encounter Information'].push(charTrimmed);
+        // These stay at the top level of Encounter Information
+        categories['Encounter Information'].items.push(charTrimmed);
         categorized = true;
       }
       // Clinical Outcomes
@@ -898,7 +926,7 @@ const categories = Array.from(groupedChars.keys());
                charTrimmed.includes('Discharged to hospice') ||
                charTrimmed.includes('Expired') ||
                charTrimmed.includes('length of stay')) {
-        categories['Clinical Outcomes'].push(charTrimmed);
+        categories['Clinical Outcomes'].items.push(charTrimmed);
         categorized = true;
       }
       // Comorbidities
@@ -918,7 +946,7 @@ const categories = Array.from(groupedChars.keys());
                charTrimmed.includes('Connective Tissue') ||
                charTrimmed.includes('Peptic Ulcer') ||
                charTrimmed.includes('Aids')) {
-        categories['Comorbidities'].push(charTrimmed);
+        categories['Comorbidities'].items.push(charTrimmed);
         categorized = true;
       }
       // Respiratory Support
@@ -929,44 +957,46 @@ const categories = Array.from(groupedChars.keys());
                charTrimmed.includes('PEEP') ||
                charTrimmed.includes('Respiratory rate') ||
                charTrimmed.includes('Tidal volume')) {
-        categories['Respiratory Support'].push(charTrimmed);
+        categories['Respiratory Support'].items.push(charTrimmed);
         categorized = true;
       }
-      // Cardiovascular Support
-      else if (charTrimmed.includes('Vasopressor') ||
-               charTrimmed.includes('Norepinephrine') ||
+      // Renal Support
+      else if (charTrimmed.includes('CRRT')) {
+        categories['Renal Support'].items.push(charTrimmed);
+        categorized = true;
+      }
+      // Medications with subcategories
+      else if (charTrimmed.includes('Cisatracurium') ||
+               charTrimmed.includes('Rocuronium')) {
+        categories['Medications'].subcategories['Neuromuscular blocking agents'].push(charTrimmed);
+        categorized = true;
+      }
+      else if (charTrimmed.includes('Propofol') ||
+               charTrimmed.includes('Midazolam') ||
+               charTrimmed.includes('Lorazepam') ||
+               charTrimmed.includes('Dexmedetomidine') ||
+               charTrimmed.includes('Fentanyl')) {
+        categories['Medications'].subcategories['Sedatives and analgesics'].push(charTrimmed);
+        categorized = true;
+      }
+      // Vasopressors - moved from Cardiovascular Support to Medications
+      else if (charTrimmed.includes('Norepinephrine') ||
                charTrimmed.includes('Epinephrine') ||
                charTrimmed.includes('Phenylephrine') ||
                charTrimmed.includes('Vasopressin') ||
                charTrimmed.includes('Dopamine') ||
                charTrimmed.includes('Dobutamine')) {
-        categories['Cardiovascular Support'].push(charTrimmed);
-        categorized = true;
-      }
-      // Renal Support
-      else if (charTrimmed.includes('CRRT')) {
-        categories['Renal Support'].push(charTrimmed);
-        categorized = true;
-      }
-      // Medications
-      else if (charTrimmed.includes('Cisatracurium') ||
-               charTrimmed.includes('Rocuronium') ||
-               charTrimmed.includes('Propofol') ||
-               charTrimmed.includes('Midazolam') ||
-               charTrimmed.includes('Lorazepam') ||
-               charTrimmed.includes('Dexmedetomidine') ||
-               charTrimmed.includes('Fentanyl')) {
-        categories['Medications'].push(charTrimmed);
+        categories['Medications'].subcategories['Vasopressors'].push(charTrimmed);
         categorized = true;
       }
       // Population
       else if (charTrimmed.startsWith('N:')) {
-        categories['Population'].push(charTrimmed);
+        categories['Population'].items.push(charTrimmed);
         categorized = true;
       }
 
       if (!categorized) {
-        categories['Other'].push(charTrimmed);
+        categories['Other'].items.push(charTrimmed);
       }
     });
 
@@ -976,11 +1006,14 @@ const categories = Array.from(groupedChars.keys());
 
     categoriesList.innerHTML = '';
 
-    Object.entries(categories).forEach(([categoryName, chars]) => {
-      if (chars.length === 0) return; // Skip empty categories
+    Object.entries(categories).forEach(([categoryName, categoryData]) => {
+      const hasItems = categoryData.items.length > 0;
+      const hasSubcategories = Object.keys(categoryData.subcategories).length > 0;
+
+      if (!hasItems && !hasSubcategories) return; // Skip empty categories
 
       if (categoryName === 'Severity Scores') {
-        console.log('Building Severity Scores category with chars:', chars);
+        console.log('Building Severity Scores category with items:', categoryData.items);
       }
 
       const categoryDiv = document.createElement('div');
@@ -996,11 +1029,13 @@ const categories = Array.from(groupedChars.keys());
         </svg>
       `;
 
-      // Characteristics list
+      // Characteristics list container
       const charList = document.createElement('div');
       charList.className = 'characteristic-list';
       charList.style.display = 'none'; // Start collapsed
-      chars.sort().forEach(char => {
+
+      // Add top-level items first
+      categoryData.items.sort().forEach(char => {
         if (char.includes('Total') && char.includes('SOFA')) {
           console.log('Building sidebar item for Total SOFA. char:', char, 'length:', char.length);
           console.log('Last 10:', char.substring(char.length - 10));
@@ -1011,6 +1046,56 @@ const categories = Array.from(groupedChars.keys());
         charItem.textContent = char.trim(); // Display trimmed version
         charItem.addEventListener('click', () => selectCharacteristic(char, charItem)); // Pass original
         charList.appendChild(charItem);
+      });
+
+      // Add subcategories
+      Object.entries(categoryData.subcategories).forEach(([subName, subItems]) => {
+        if (subItems.length === 0) return; // Skip empty subcategories
+
+        // Subcategory container
+        const subDiv = document.createElement('div');
+        subDiv.className = 'subcategory-section border-l-2 border-gray-300 ml-2';
+
+        // Subcategory header (collapsible)
+        const subHeader = document.createElement('button');
+        subHeader.className = 'subcategory-header w-full flex items-center justify-between px-3 py-2 hover:bg-gray-50 transition-colors text-left';
+        subHeader.innerHTML = `
+          <span class="font-medium text-gray-700 text-xs">${subName}</span>
+          <svg class="sub-chevron w-3 h-3 text-gray-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+          </svg>
+        `;
+
+        // Subcategory items list
+        const subItemsList = document.createElement('div');
+        subItemsList.className = 'subcategory-items';
+        subItemsList.style.display = 'none'; // Start collapsed
+
+        subItems.sort().forEach(char => {
+          const charItem = document.createElement('button');
+          charItem.className = 'characteristic-item w-full text-left pl-6 pr-4 py-2 text-sm text-gray-700 hover:bg-clif-burgundy hover:bg-opacity-10 hover:text-clif-burgundy transition-colors';
+          charItem.dataset.characteristic = char;
+          charItem.textContent = char.trim();
+          charItem.addEventListener('click', () => selectCharacteristic(char, charItem));
+          subItemsList.appendChild(charItem);
+        });
+
+        // Set initial subcategory chevron to collapsed state
+        const subChevron = subHeader.querySelector('.sub-chevron');
+        if (subChevron) {
+          subChevron.style.transform = 'rotate(-90deg)';
+        }
+
+        // Toggle subcategory collapse on header click
+        subHeader.addEventListener('click', () => {
+          const isExpanded = subItemsList.style.display !== 'none';
+          subItemsList.style.display = isExpanded ? 'none' : 'block';
+          subHeader.querySelector('.sub-chevron').style.transform = isExpanded ? 'rotate(-90deg)' : 'rotate(0deg)';
+        });
+
+        subDiv.appendChild(subHeader);
+        subDiv.appendChild(subItemsList);
+        charList.appendChild(subDiv);
       });
 
       // Set initial chevron to collapsed state
