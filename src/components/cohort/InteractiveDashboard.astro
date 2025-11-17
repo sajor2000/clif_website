@@ -337,6 +337,12 @@ const categories = Array.from(groupedChars.keys());
       <div class="relative" style="height: 400px;">
         <canvas id="custom-chart"></canvas>
       </div>
+      <!-- Data Note - shown below chart only when 2025 data is included -->
+      <div id="year-2025-note" class="bg-amber-50 border-l-4 border-amber-400 p-3 rounded mt-4 hidden">
+        <p class="text-sm text-amber-800">
+          <strong>Note:</strong> 2025 data represents a partial year and is not directly comparable to complete annual data from previous years.
+        </p>
+      </div>
     </div>
 
     <!-- Instructions (shown when no chart) -->
@@ -635,53 +641,77 @@ const categories = Array.from(groupedChars.keys());
     return /\[.*?,.*?\]/.test(value);
   }
 
-  // Extract median, q1, q3 from "62 [53, 71]"
-  function extractMedianIQR(value) {
+  // Extract median and IQR from a value like "66 [54, 76]" or "3.0 [1.0, 6.0]"
+  function extractMedianAndIQR(value) {
     if (typeof value !== 'string') return null;
-    const match = value.match(/^\s*([-\d\.]+)\s*\[\s*([-\d\.]+)\s*,\s*([-\d\.]+)\s*\]/);
+
+    // Match pattern: number [number, number]
+    const match = value.match(/^\s*([\d,\.]+)\s*\[\s*([\d,\.]+)\s*,\s*([\d,\.]+)\s*\]/);
+
     if (match) {
-      try {
-        return {
-          median: parseFloat(match[1]),
-          q1: parseFloat(match[2]),
-          q3: parseFloat(match[3])
-        };
-      } catch {
-        return null;
-      }
+      return {
+        median: parseFloat(match[1].replace(/,/g, '')),
+        q1: parseFloat(match[2].replace(/,/g, '')),
+        q3: parseFloat(match[3].replace(/,/g, ''))
+      };
     }
     return null;
   }
 
-  // Calculate weighted median
-  function weightedMedian(data, weights) {
-    if (data.length === 0) return null;
+  // Get weight for a site-year combination based on characteristic type
+  // For "Age at admission", use "N: Unique patients"
+  // For all other median characteristics, use "N: Encounter blocks"
+  function getWeight(siteYearData, characteristic) {
+    const isAgeAtAdmission = characteristic.trim().toLowerCase().includes('age at admission');
+    const weightKey = isAgeAtAdmission ? 'N: Unique patients' : 'N: Encounter blocks';
 
-    // Create array of [value, weight] pairs and sort by value
-    const pairs = data.map((val, i) => [val, weights[i]]);
-    pairs.sort((a, b) => a[0] - b[0]);
+    // Try exact match first
+    let weightValue = siteYearData.characteristics[weightKey];
 
-    const sortedData = pairs.map(p => p[0]);
-    const sortedWeights = pairs.map(p => p[1]);
-
-    // Calculate cumulative weights
-    const totalWeight = sortedWeights.reduce((sum, w) => sum + w, 0);
-    const cutoff = totalWeight / 2;
-
-    let cumSum = 0;
-    for (let i = 0; i < sortedWeights.length; i++) {
-      cumSum += sortedWeights[i];
-      if (cumSum >= cutoff) {
-        return sortedData[i];
+    // If not found, try to find by trimming
+    if (!weightValue) {
+      const charKey = Object.keys(siteYearData.characteristics).find(key =>
+        key.trim() === weightKey
+      );
+      if (charKey) {
+        weightValue = siteYearData.characteristics[charKey];
       }
     }
 
-    return sortedData[sortedData.length - 1];
+    // Extract numeric value from weight (e.g., "68,359 (57.6%)" -> 68359)
+    if (weightValue) {
+      const numMatch = weightValue.match(/^\s*([\d,]+)/);
+      if (numMatch) {
+        return parseInt(numMatch[1].replace(/,/g, ''), 10);
+      }
+    }
+
+    return 0;
   }
 
-  // Format number with optional decimal places
-  function formatNumber(num) {
-    return Number.isInteger(num) ? num.toString() : num.toFixed(2);
+  // Calculate weighted median from array of {value, weight} objects
+  function calculateWeightedMedian(items) {
+    if (items.length === 0) return null;
+    if (items.length === 1) return items[0].value;
+
+    // Sort by value
+    const sorted = items.slice().sort((a, b) => a.value - b.value);
+
+    // Calculate total weight
+    const totalWeight = sorted.reduce((sum, item) => sum + item.weight, 0);
+
+    // Find the median
+    const halfWeight = totalWeight / 2;
+    let cumulativeWeight = 0;
+
+    for (let i = 0; i < sorted.length; i++) {
+      cumulativeWeight += sorted[i].weight;
+      if (cumulativeWeight >= halfWeight) {
+        return sorted[i].value;
+      }
+    }
+
+    return sorted[sorted.length - 1].value;
   }
 
   // Check if a value has n < 10 (for privacy protection)
@@ -699,94 +729,6 @@ const categories = Array.from(groupedChars.keys());
     }
 
     return false;
-  }
-
-  // Check if any value in a row has n < 10
-  function rowHasSmallN(values) {
-    return values.some(v => hasSmallN(v));
-  }
-
-  // Aggregate values across multiple site-years
-  function aggregateConsortiumValue(variable, siteYearData) {
-    const values = siteYearData.map(d => d.value);
-
-    // Check if any value has IQR - if so, handle as median aggregation
-    if (values.some(v => valueHasIQR(v))) {
-      const extracted = values.map(v => extractMedianIQR(v)).filter(e => e !== null);
-
-      if (extracted.length === 0) return '-';
-
-      // Determine weights based on variable
-      const isAgeVariable = variable.toLowerCase().includes('age at admission');
-      const weights = siteYearData.map((d, i) => {
-        if (extractMedianIQR(values[i]) === null) return 0;
-
-        if (isAgeVariable) {
-          return d.nUniquePatients || 0;
-        } else {
-          return d.nEncounterBlocks || 0;
-        }
-      }).filter((w, i) => extractMedianIQR(values[i]) !== null);
-
-      // If all weights are 0, use uniform weights
-      const totalWeight = weights.reduce((sum, w) => sum + w, 0);
-      const finalWeights = totalWeight > 0 ? weights : weights.map(() => 1);
-
-      const medians = extracted.map(e => e.median);
-      const q1s = extracted.map(e => e.q1);
-      const q3s = extracted.map(e => e.q3);
-
-      const medianWeighted = weightedMedian(medians, finalWeights);
-      const q1Min = Math.min(...q1s);
-      const q3Max = Math.max(...q3s);
-
-      return `${formatNumber(medianWeighted)} [${formatNumber(q1Min)}, ${formatNumber(q3Max)}]`;
-    }
-
-    // Handle numeric values with percentages
-    const numbers = values.map(v => getNumeric(v)).filter(n => n !== null);
-    if (numbers.length === 0) return '-';
-
-    const sum = numbers.reduce((acc, n) => acc + n, 0);
-
-    // Variables that should NOT have percentages
-    const noPercentageVars = [
-      'n: encounter blocks',
-      'n: unique patients',
-      'n: hospitals'
-    ];
-
-    const varLower = variable.toLowerCase();
-    if (noPercentageVars.some(v => varLower.includes(v.toLowerCase()))) {
-      return sum.toLocaleString();
-    }
-
-    // Determine denominator
-    const mortalityVars = [
-      'hospital mortality',
-      'discharged to hospice',
-      'expired'
-    ];
-
-    const usePatientsAsNumerator = (
-      varLower.includes('race:') ||
-      varLower.includes('ethnicity:') ||
-      varLower.includes('sex:') ||
-      mortalityVars.some(term => varLower.includes(term))
-    );
-
-    // Calculate total denominators
-    const totalPatients = siteYearData.reduce((sum, d) => sum + (d.nUniquePatients || 0), 0);
-    const totalEncounters = siteYearData.reduce((sum, d) => sum + (d.nEncounterBlocks || 0), 0);
-
-    const denominator = usePatientsAsNumerator ? totalPatients : totalEncounters;
-
-    if (denominator > 0) {
-      const percentage = (sum / denominator) * 100;
-      return `${sum.toLocaleString()} (${percentage.toFixed(1)}%)`;
-    }
-
-    return sum.toLocaleString();
   }
 
   // Track selected characteristic
@@ -989,8 +931,8 @@ const categories = Array.from(groupedChars.keys());
         categories['Medications'].subcategories['Vasopressors'].push(charTrimmed);
         categorized = true;
       }
-      // Population
-      else if (charTrimmed.startsWith('N:')) {
+      // Population - exclude "N: Hospitals" as it's metadata, not a meaningful characteristic
+      else if (charTrimmed.startsWith('N:') && !charTrimmed.includes('Hospitals')) {
         categories['Population'].items.push(charTrimmed);
         categorized = true;
       }
@@ -1214,6 +1156,7 @@ const categories = Array.from(groupedChars.keys());
 
     // Collect data based on grouping
     const chartData = {};
+    const iqrData = {}; // Store IQR ranges for median characteristics
 
     // Check if this is a median/IQR characteristic
     const isMedianChar = characteristic.toLowerCase().includes('median') ||
@@ -1228,6 +1171,7 @@ const categories = Array.from(groupedChars.keys());
     console.log('About to loop. characteristic:', characteristic);
     console.log('characteristic length:', characteristic.length);
     console.log('characteristic char codes:', characteristic.substring(0, 5).split('').map(c => c.charCodeAt(0)));
+    console.log('Is median characteristic:', isMedianChar);
 
     filteredData.forEach((d, idx) => {
       // Try exact match first, then trimmed match
@@ -1292,24 +1236,44 @@ const categories = Array.from(groupedChars.keys());
         label = `${d.site}-${d.year}`;
       }
 
-      // Extract numeric value
-      const numValue = getNumeric(value);
+      if (isMedianChar) {
+        // For median/IQR values, use weighted median calculation
+        const medianIQR = extractMedianAndIQR(value);
 
-      if (processedCount <= 3) {
-        console.log(`Item ${processedCount}: site=${d.site}, year=${d.year}, value="${value}", numValue=${numValue}`);
-      }
+        if (medianIQR) {
+          const weight = getWeight(d, characteristic);
 
-      if (numValue !== null) {
-        if (isMedianChar) {
-          // For median values, don't sum - just take the value (or average if multiple)
-          if (!chartData[label]) {
-            chartData[label] = { sum: 0, count: 0 };
+          if (processedCount <= 3) {
+            console.log(`Item ${processedCount}: site=${d.site}, year=${d.year}, value="${value}"`);
+            console.log(`  Extracted: median=${medianIQR.median}, Q1=${medianIQR.q1}, Q3=${medianIQR.q3}, weight=${weight}`);
           }
-          chartData[label].sum += numValue;
-          chartData[label].count += 1;
-          addedCount++;
-        } else {
-          // For count values, sum them
+
+          if (weight > 0) {
+            // Store weighted median values
+            if (!chartData[label]) {
+              chartData[label] = [];
+            }
+            chartData[label].push({ value: medianIQR.median, weight: weight });
+
+            // Track IQR ranges - will aggregate to min Q1 and max Q3
+            if (!iqrData[label]) {
+              iqrData[label] = { q1Values: [], q3Values: [] };
+            }
+            iqrData[label].q1Values.push(medianIQR.q1);
+            iqrData[label].q3Values.push(medianIQR.q3);
+
+            addedCount++;
+          }
+        }
+      } else {
+        // For count values, sum them
+        const numValue = getNumeric(value);
+
+        if (processedCount <= 3) {
+          console.log(`Item ${processedCount}: site=${d.site}, year=${d.year}, value="${value}", numValue=${numValue}`);
+        }
+
+        if (numValue !== null) {
           if (!chartData[label]) chartData[label] = 0;
           chartData[label] += numValue;
           addedCount++;
@@ -1319,10 +1283,18 @@ const categories = Array.from(groupedChars.keys());
 
     console.log(`Processed: ${processedCount}, Skipped (small n): ${skippedSmallN}, Skipped (null): ${skippedNullValue}, Added: ${addedCount}`);
 
-    // Convert median data to averages
+    // Calculate weighted medians and aggregate IQR ranges
     if (isMedianChar) {
       Object.keys(chartData).forEach(key => {
-        chartData[key] = chartData[key].sum / chartData[key].count;
+        // Calculate weighted median
+        chartData[key] = calculateWeightedMedian(chartData[key]);
+
+        // Aggregate IQR: min of Q1s, max of Q3s
+        if (iqrData[key]) {
+          iqrData[key].minQ1 = Math.min(...iqrData[key].q1Values);
+          iqrData[key].maxQ3 = Math.max(...iqrData[key].q3Values);
+          console.log(`${key}: Weighted median = ${chartData[key]}, IQR = [${iqrData[key].minQ1}, ${iqrData[key].maxQ3}]`);
+        }
       });
     }
 
@@ -1343,6 +1315,16 @@ const categories = Array.from(groupedChars.keys());
     // Show chart container, hide instructions
     document.getElementById('custom-chart-container')?.classList.remove('hidden');
     document.getElementById('chart-instructions')?.classList.add('hidden');
+
+    // Show 2025 note only if 2025 is in selected years
+    const note2025 = document.getElementById('year-2025-note');
+    if (note2025) {
+      if (selectedYears.includes('2025')) {
+        note2025.classList.remove('hidden');
+      } else {
+        note2025.classList.add('hidden');
+      }
+    }
 
     // Update title
     const titleEl = document.getElementById('custom-chart-title');
@@ -1381,12 +1363,26 @@ const categories = Array.from(groupedChars.keys());
             tooltip: {
               callbacks: {
                 label: function(context) {
-                  let label = context.label || '';
-                  if (label) {
-                    label += ': ';
+                  const labelName = context.label || '';
+                  const value = context.parsed.y !== undefined ? context.parsed.y : context.parsed;
+
+                  if (isMedianChar && iqrData[labelName]) {
+                    // For median characteristics, show weighted median and IQR range
+                    const minQ1 = iqrData[labelName].minQ1;
+                    const maxQ3 = iqrData[labelName].maxQ3;
+                    return [
+                      `${labelName}: ${value.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}`,
+                      `IQR: [${minQ1.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}, ${maxQ3.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}]`
+                    ];
+                  } else {
+                    // For count characteristics, just show the value
+                    let label = labelName;
+                    if (label) {
+                      label += ': ';
+                    }
+                    label += value.toLocaleString();
+                    return label;
                   }
-                  label += context.parsed.y !== undefined ? context.parsed.y.toLocaleString() : context.parsed.toLocaleString();
-                  return label;
                 }
               }
             }
@@ -1495,260 +1491,6 @@ const categories = Array.from(groupedChars.keys());
         tbody.appendChild(tr);
       }
     });
-  }
-
-  // Legacy function - now replaced but keeping structure
-  function updateTableOld() {
-
-    // Check if we should pivot
-    const shouldPivotBySites = selectedYears.length === 1 && selectedSites.length > 1;
-    const shouldPivotByYears = selectedSites.length === 1 && selectedYears.length > 1;
-    const shouldPivotSingle = selectedSites.length === 1 && selectedYears.length === 1;
-
-    if (shouldPivotSingle) {
-      // Pivot mode: Single site, single year - just Characteristic and Site columns
-      const site = selectedSites[0];
-      const year = selectedYears[0];
-
-      // Update table headers
-      thead.innerHTML = `
-        <th class="px-4 py-3 text-left font-semibold">Characteristic</th>
-        <th class="px-4 py-3 text-left font-semibold">${site}</th>
-      `;
-
-      // Populate table body
-      tbody.innerHTML = '';
-
-      filteredData.forEach(d => {
-        Object.entries(d.characteristics).forEach(([variable, value]) => {
-          // Apply search filter
-          const matchesSearch = variable.toLowerCase().includes(searchTerm) || value.toLowerCase().includes(searchTerm);
-
-          // Check if value has n < 10 (privacy protection)
-          if (matchesSearch && !hasSmallN(value)) {
-            const row = document.createElement('tr');
-            row.className = 'hover:bg-gray-50';
-            row.innerHTML = `
-              <td class="px-4 py-3 text-sm text-gray-700 font-medium">${variable}</td>
-              <td class="px-4 py-3 text-sm text-gray-700">${value}</td>
-            `;
-            tbody.appendChild(row);
-          }
-        });
-      });
-    } else if (shouldPivotBySites) {
-      // Pivot mode: Sites as columns (single year, multiple sites)
-      const year = selectedYears[0];
-
-      // Update table headers
-      thead.innerHTML = `
-        <th class="px-4 py-3 text-left font-semibold">Characteristic</th>
-        ${selectedSites.map(site => `<th class="px-4 py-3 text-left font-semibold">${site}</th>`).join('')}
-      `;
-
-      // Collect all unique characteristics
-      const characteristicsMap = new Map();
-
-      filteredData.forEach(d => {
-        Object.entries(d.characteristics).forEach(([variable, value]) => {
-          if (!characteristicsMap.has(variable)) {
-            characteristicsMap.set(variable, {});
-          }
-          characteristicsMap.get(variable)[d.site] = value;
-        });
-      });
-
-      // Populate table body
-      tbody.innerHTML = '';
-
-      characteristicsMap.forEach((siteValues, variable) => {
-        // Apply search filter
-        const matchesSearch = variable.toLowerCase().includes(searchTerm) ||
-          Object.values(siteValues).some(v => v.toLowerCase().includes(searchTerm));
-
-        // Check if any value in the row has n < 10 (privacy protection)
-        const rowValues = selectedSites.map(site => siteValues[site] || '-');
-        const hasPrivacyIssue = rowHasSmallN(rowValues);
-
-        if (matchesSearch && !hasPrivacyIssue) {
-          const row = document.createElement('tr');
-          row.className = 'hover:bg-gray-50';
-
-          let html = `<td class="px-4 py-3 text-sm text-gray-700 font-medium">${variable}</td>`;
-          selectedSites.forEach(site => {
-            const value = siteValues[site] || '-';
-            html += `<td class="px-4 py-3 text-sm text-gray-700">${value}</td>`;
-          });
-
-          row.innerHTML = html;
-          tbody.appendChild(row);
-        }
-      });
-    } else if (shouldPivotByYears) {
-      // Pivot mode: Years as columns (single site, multiple years)
-      const site = selectedSites[0];
-
-      // Collect all unique characteristics and determine which years have data
-      const characteristicsMap = new Map();
-      const yearsWithData = new Set();
-
-      filteredData.forEach(d => {
-        Object.entries(d.characteristics).forEach(([variable, value]) => {
-          if (!characteristicsMap.has(variable)) {
-            characteristicsMap.set(variable, {});
-          }
-          characteristicsMap.get(variable)[d.year] = value;
-          yearsWithData.add(d.year);
-        });
-      });
-
-      // Get only years that have actual data, maintaining selected order
-      const availableYears = selectedYears.filter(year => yearsWithData.has(year));
-
-      // Update table headers
-      thead.innerHTML = `
-        <th class="px-4 py-3 text-left font-semibold">Characteristic</th>
-        ${availableYears.map(year => `<th class="px-4 py-3 text-left font-semibold">${year}</th>`).join('')}
-      `;
-
-      // Populate table body
-      tbody.innerHTML = '';
-
-      characteristicsMap.forEach((yearValues, variable) => {
-        // Apply search filter
-        const matchesSearch = variable.toLowerCase().includes(searchTerm) ||
-          Object.values(yearValues).some(v => v.toLowerCase().includes(searchTerm));
-
-        // Check if any value in the row has n < 10 (privacy protection)
-        const rowValues = availableYears.map(year => yearValues[year] || '-');
-        const hasPrivacyIssue = rowHasSmallN(rowValues);
-
-        if (matchesSearch && !hasPrivacyIssue) {
-          const row = document.createElement('tr');
-          row.className = 'hover:bg-gray-50';
-
-          let html = `<td class="px-4 py-3 text-sm text-gray-700 font-medium">${variable}</td>`;
-          availableYears.forEach(year => {
-            const value = yearValues[year] || '-';
-            html += `<td class="px-4 py-3 text-sm text-gray-700">${value}</td>`;
-          });
-
-          row.innerHTML = html;
-          tbody.appendChild(row);
-        }
-      });
-    } else if (selectedSites.length > 1 && selectedYears.length > 1) {
-      // Multiple sites AND multiple years: Show site-year columns + Consortium aggregation
-
-      // Create site-year combinations for headers
-      const siteYearCombos = [];
-      filteredData.forEach(d => {
-        const combo = `${d.site}-${d.year}`;
-        if (!siteYearCombos.includes(combo)) {
-          siteYearCombos.push(combo);
-        }
-      });
-
-      // Update table headers
-      thead.innerHTML = `
-        <th class="px-4 py-3 text-left font-semibold">Characteristic</th>
-        ${siteYearCombos.map(combo => `<th class="px-4 py-3 text-left font-semibold">${combo}</th>`).join('')}
-        <th class="px-4 py-3 text-left font-semibold bg-clif-burgundy bg-opacity-10">Consortium</th>
-      `;
-
-      // Collect all characteristics and their values per site-year
-      const characteristicsMap = new Map();
-
-      filteredData.forEach(d => {
-        const combo = `${d.site}-${d.year}`;
-        Object.entries(d.characteristics).forEach(([variable, value]) => {
-          if (!characteristicsMap.has(variable)) {
-            characteristicsMap.set(variable, {});
-          }
-          characteristicsMap.get(variable)[combo] = value;
-        });
-      });
-
-      // Get denominators for each site-year combo
-      const siteYearDenominators = new Map();
-      filteredData.forEach(d => {
-        const combo = `${d.site}-${d.year}`;
-        const nEncounters = getNumeric(d.characteristics['N: Encounter blocks']) || 0;
-        const nPatients = getNumeric(d.characteristics['N: Unique patients']) || 0;
-        siteYearDenominators.set(combo, {
-          nEncounterBlocks: nEncounters,
-          nUniquePatients: nPatients
-        });
-      });
-
-      // Populate table body
-      tbody.innerHTML = '';
-
-      characteristicsMap.forEach((comboValues, variable) => {
-        // Apply search filter
-        const matchesSearch = variable.toLowerCase().includes(searchTerm) ||
-          Object.values(comboValues).some(v => v.toLowerCase().includes(searchTerm));
-
-        // Check if any value in the row has n < 10 (privacy protection)
-        const rowValues = siteYearCombos.map(combo => comboValues[combo] || '-');
-        const hasPrivacyIssue = rowHasSmallN(rowValues);
-
-        if (matchesSearch && !hasPrivacyIssue) {
-          const row = document.createElement('tr');
-          row.className = 'hover:bg-gray-50';
-
-          let html = `<td class="px-4 py-3 text-sm text-gray-700 font-medium">${variable}</td>`;
-
-          // Add each site-year value
-          siteYearCombos.forEach(combo => {
-            const value = comboValues[combo] || '-';
-            html += `<td class="px-4 py-3 text-sm text-gray-700">${value}</td>`;
-          });
-
-          // Calculate consortium aggregated value
-          const siteYearData = siteYearCombos.map(combo => ({
-            value: comboValues[combo] || '-',
-            nEncounterBlocks: siteYearDenominators.get(combo)?.nEncounterBlocks || 0,
-            nUniquePatients: siteYearDenominators.get(combo)?.nUniquePatients || 0
-          }));
-
-          const consortiumValue = aggregateConsortiumValue(variable, siteYearData);
-          html += `<td class="px-4 py-3 text-sm text-gray-700 font-semibold bg-clif-burgundy bg-opacity-5">${consortiumValue}</td>`;
-
-          row.innerHTML = html;
-          tbody.appendChild(row);
-        }
-      });
-    } else {
-      // Standard mode: Original layout
-      thead.innerHTML = `
-        <th class="px-4 py-3 text-left font-semibold">Characteristic</th>
-        <th class="px-4 py-3 text-left font-semibold">Site</th>
-        <th class="px-4 py-3 text-left font-semibold">Year</th>
-        <th class="px-4 py-3 text-left font-semibold">Value</th>
-      `;
-
-      tbody.innerHTML = '';
-
-      filteredData.forEach(d => {
-        Object.entries(d.characteristics).forEach(([variable, value]) => {
-          const matchesSearch = variable.toLowerCase().includes(searchTerm) || value.toLowerCase().includes(searchTerm);
-
-          // Check if value has n < 10 (privacy protection)
-          if (matchesSearch && !hasSmallN(value)) {
-            const row = document.createElement('tr');
-            row.className = 'hover:bg-gray-50';
-            row.innerHTML = `
-              <td class="px-4 py-3 text-sm text-gray-700">${variable}</td>
-              <td class="px-4 py-3 text-sm text-gray-700">${d.site}</td>
-              <td class="px-4 py-3 text-sm text-gray-700">${d.year}</td>
-              <td class="px-4 py-3 text-sm text-gray-700">${value}</td>
-            `;
-            tbody.appendChild(row);
-          }
-        });
-      });
-    }
   }
 
   function exportToCSV() {
