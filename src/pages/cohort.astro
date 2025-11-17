@@ -2,6 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import CohortSummaryFromCSV from '../components/cohort/CohortSummaryFromCSV.astro';
 import InteractiveDashboard from '../components/cohort/InteractiveDashboard.astro';
+import HourlyTrends from '../components/cohort/HourlyTrends.astro';
 import MapExplorer from '../components/cohort/MapExplorer.astro';
 import CTAButton from '../components/shared/CTAButton.astro';
 ---
@@ -46,19 +47,25 @@ import CTAButton from '../components/shared/CTAButton.astro';
           <div class="inline-flex bg-gray-100 rounded-lg p-1 shadow-sm">
             <button
               id="tab-summary"
-              class="px-8 py-3 text-base font-semibold rounded-md transition-all duration-200 bg-clif-burgundy text-white shadow-md"
+              class="px-6 py-3 text-sm md:text-base font-semibold rounded-md transition-all duration-200 bg-clif-burgundy text-white shadow-md"
             >
               Summary Statistics
             </button>
             <button
               id="tab-explorer"
-              class="px-8 py-3 text-base font-semibold rounded-md transition-all duration-200 text-gray-700 hover:text-gray-900"
+              class="px-6 py-3 text-sm md:text-base font-semibold rounded-md transition-all duration-200 text-gray-700 hover:text-gray-900"
             >
-              Interactive Data Explorer
+              Data Explorer
+            </button>
+            <button
+              id="tab-hourly"
+              class="px-6 py-3 text-sm md:text-base font-semibold rounded-md transition-all duration-200 text-gray-700 hover:text-gray-900"
+            >
+              Hourly Trends
             </button>
             <button
               id="tab-map"
-              class="px-8 py-3 text-base font-semibold rounded-md transition-all duration-200 text-gray-700 hover:text-gray-900"
+              class="px-6 py-3 text-sm md:text-base font-semibold rounded-md transition-all duration-200 text-gray-700 hover:text-gray-900"
             >
               Map Explorer
             </button>
@@ -77,6 +84,11 @@ import CTAButton from '../components/shared/CTAButton.astro';
         <!-- Tab Content: Interactive Data Explorer -->
         <div id="content-explorer" class="tab-content hidden">
           <InteractiveDashboard />
+        </div>
+
+        <!-- Tab Content: Hourly Trends -->
+        <div id="content-hourly" class="tab-content hidden">
+          <HourlyTrends />
         </div>
 
         <!-- Tab Content: Map Explorer -->
@@ -124,9 +136,11 @@ import CTAButton from '../components/shared/CTAButton.astro';
     document.addEventListener('DOMContentLoaded', () => {
       const tabSummary = document.getElementById('tab-summary');
       const tabExplorer = document.getElementById('tab-explorer');
+      const tabHourly = document.getElementById('tab-hourly');
       const tabMap = document.getElementById('tab-map');
       const contentSummary = document.getElementById('content-summary');
       const contentExplorer = document.getElementById('content-explorer');
+      const contentHourly = document.getElementById('content-hourly');
       const contentMap = document.getElementById('content-map');
 
       function switchToSummary() {
@@ -135,12 +149,15 @@ import CTAButton from '../components/shared/CTAButton.astro';
         tabSummary?.classList.remove('text-gray-700', 'hover:text-gray-900');
         tabExplorer?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
         tabExplorer?.classList.add('text-gray-700', 'hover:text-gray-900');
+        tabHourly?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabHourly?.classList.add('text-gray-700', 'hover:text-gray-900');
         tabMap?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
         tabMap?.classList.add('text-gray-700', 'hover:text-gray-900');
 
         // Show/hide content
         contentSummary?.classList.remove('hidden');
         contentExplorer?.classList.add('hidden');
+        contentHourly?.classList.add('hidden');
         contentMap?.classList.add('hidden');
       }
 
@@ -150,12 +167,33 @@ import CTAButton from '../components/shared/CTAButton.astro';
         tabExplorer?.classList.remove('text-gray-700', 'hover:text-gray-900');
         tabSummary?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
         tabSummary?.classList.add('text-gray-700', 'hover:text-gray-900');
+        tabHourly?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabHourly?.classList.add('text-gray-700', 'hover:text-gray-900');
         tabMap?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
         tabMap?.classList.add('text-gray-700', 'hover:text-gray-900');
 
         // Show/hide content
         contentExplorer?.classList.remove('hidden');
         contentSummary?.classList.add('hidden');
+        contentHourly?.classList.add('hidden');
+        contentMap?.classList.add('hidden');
+      }
+
+      function switchToHourly() {
+        // Update button styles
+        tabHourly?.classList.add('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabHourly?.classList.remove('text-gray-700', 'hover:text-gray-900');
+        tabSummary?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabSummary?.classList.add('text-gray-700', 'hover:text-gray-900');
+        tabExplorer?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabExplorer?.classList.add('text-gray-700', 'hover:text-gray-900');
+        tabMap?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabMap?.classList.add('text-gray-700', 'hover:text-gray-900');
+
+        // Show/hide content
+        contentHourly?.classList.remove('hidden');
+        contentSummary?.classList.add('hidden');
+        contentExplorer?.classList.add('hidden');
         contentMap?.classList.add('hidden');
       }
 
@@ -167,11 +205,14 @@ import CTAButton from '../components/shared/CTAButton.astro';
         tabSummary?.classList.add('text-gray-700', 'hover:text-gray-900');
         tabExplorer?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
         tabExplorer?.classList.add('text-gray-700', 'hover:text-gray-900');
+        tabHourly?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabHourly?.classList.add('text-gray-700', 'hover:text-gray-900');
 
         // Show/hide content
         contentMap?.classList.remove('hidden');
         contentSummary?.classList.add('hidden');
         contentExplorer?.classList.add('hidden');
+        contentHourly?.classList.add('hidden');
 
         // Trigger map resize after showing (fixes Leaflet display issues)
         setTimeout(() => {
@@ -189,6 +230,7 @@ import CTAButton from '../components/shared/CTAButton.astro';
 
       tabSummary?.addEventListener('click', switchToSummary);
       tabExplorer?.addEventListener('click', switchToExplorer);
+      tabHourly?.addEventListener('click', switchToHourly);
       tabMap?.addEventListener('click', switchToMap);
     });
   </script>

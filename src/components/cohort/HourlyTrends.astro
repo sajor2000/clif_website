@@ -1,0 +1,477 @@
+---
+import { readFile } from 'fs/promises';
+import { join } from 'path';
+
+// Read the hourly medications CSV
+const csvPath = join(process.cwd(), 'src', 'data', 'hourly', 'medications_hourly_by_site.csv');
+const csvContent = await readFile(csvPath, 'utf-8');
+
+// Parse CSV to extract site names and medications
+function parseHourlyCSV(content: string) {
+  const lines = content.trim().split('\n');
+  const headers = lines[0].split(',');
+
+  // Extract unique sites and medications from headers
+  const sites = new Set<string>();
+  const medications = new Set<string>();
+
+  headers.slice(1).forEach(header => {
+    // Format: site__medication_metric (e.g., upenn__norepinephrine_n)
+    const match = header.match(/^(.+?)__(.+?)_(n|pct)$/);
+    if (match) {
+      const [, site, med] = match;
+      sites.add(site);
+      medications.add(med);
+    }
+  });
+
+  return {
+    sites: Array.from(sites).sort(),
+    medications: Array.from(medications).sort(),
+    headers,
+    lines: lines.slice(1) // All data rows
+  };
+}
+
+const parsedData = parseHourlyCSV(csvContent);
+
+// Medication categories for grouping
+const medicationCategories = {
+  'Vasopressors': ['norepinephrine', 'epinephrine', 'phenylephrine', 'vasopressin', 'dopamine'],
+  'Sedatives & Analgesics': ['propofol', 'midazolam', 'lorazepam', 'dexmedetomidine', 'fentanyl'],
+  'Neuromuscular Blockers': ['vecuronium', 'rocuronium', 'cisatracurium', 'pancuronium']
+};
+
+// Convert to JSON for client-side use
+const dataJson = JSON.stringify({
+  sites: parsedData.sites,
+  medications: parsedData.medications,
+  headers: parsedData.headers,
+  lines: parsedData.lines,
+  categories: medicationCategories
+});
+---
+
+<div class="hourly-trends bg-white rounded-2xl shadow-xl p-6 md:p-8">
+  <!-- Dashboard Header -->
+  <div class="mb-8">
+    <h2 class="text-3xl font-bold text-gray-800 mb-2">Hourly Medication Trends</h2>
+    <p class="text-gray-600 mb-3">
+      Explore medication usage patterns over the first 7 days (168 hours) of ICU admission across {parsedData.sites.length} institutions.
+    </p>
+    <div class="bg-blue-50 border-l-4 border-blue-400 p-3 rounded">
+      <p class="text-sm text-blue-800">
+        <strong>Note:</strong> Data shows medication administration patterns aggregated across all ICU encounters at each institution.
+      </p>
+    </div>
+  </div>
+
+  <!-- Filter Controls -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+    <!-- Site Selection -->
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-2">
+        Select Sites
+      </label>
+      <div class="relative">
+        <button
+          id="hourly-site-filter-toggle"
+          class="w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2 text-left flex items-center justify-between hover:border-clif-burgundy transition-colors"
+        >
+          <span id="hourly-site-filter-text" class="text-gray-700">All Sites</span>
+          <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+          </svg>
+        </button>
+        <div
+          id="hourly-site-filter-dropdown"
+          class="hidden absolute z-50 mt-2 w-full bg-white border-2 border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto"
+        >
+          <div class="p-2">
+            <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer">
+              <input
+                type="radio"
+                name="hourly-site"
+                id="hourly-site-all"
+                class="w-4 h-4 text-clif-burgundy border-gray-300 focus:ring-clif-burgundy"
+                value="all"
+                checked
+              />
+              <span class="ml-2 text-sm text-gray-700 font-semibold">All Sites (Aggregated)</span>
+            </label>
+            {parsedData.sites.map(site => (
+              <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer">
+                <input
+                  type="radio"
+                  name="hourly-site"
+                  class="w-4 h-4 text-clif-burgundy border-gray-300 focus:ring-clif-burgundy"
+                  value={site}
+                />
+                <span class="ml-2 text-sm text-gray-700">{site.toUpperCase()}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Medication Category -->
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-2">
+        Medication Category
+      </label>
+      <select
+        id="hourly-category-select"
+        class="w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2 text-gray-700 focus:border-clif-burgundy focus:ring-2 focus:ring-clif-burgundy focus:ring-opacity-50"
+      >
+        <option value="Vasopressors">Vasopressors</option>
+        <option value="Sedatives & Analgesics">Sedatives & Analgesics</option>
+        <option value="Neuromuscular Blockers">Neuromuscular Blockers</option>
+      </select>
+    </div>
+
+    <!-- Metric Type -->
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-2">
+        Metric
+      </label>
+      <select
+        id="hourly-metric-select"
+        class="w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2 text-gray-700 focus:border-clif-burgundy focus:ring-2 focus:ring-clif-burgundy focus:ring-opacity-50"
+      >
+        <option value="n">Count (n)</option>
+        <option value="pct">Percentage (%)</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Chart Container -->
+  <div class="bg-white rounded-lg p-6 border-2 border-gray-200">
+    <div class="mb-4">
+      <h3 id="hourly-chart-title" class="text-lg font-bold text-gray-800"></h3>
+    </div>
+    <div class="relative" style="height: 500px;">
+      <canvas id="hourly-chart"></canvas>
+    </div>
+  </div>
+
+  <!-- Legend for medications -->
+  <div id="hourly-legend" class="mt-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+    <!-- Populated by JavaScript -->
+  </div>
+</div>
+
+<!-- JSON data storage -->
+<script type="application/json" id="hourly-data" set:html={dataJson}></script>
+
+<script>
+  // Parse data from JSON
+  const hourlyData = JSON.parse(document.getElementById('hourly-data').textContent);
+
+  // State
+  let selectedSite = 'all';
+  let selectedCategory = 'Vasopressors';
+  let selectedMetric = 'n';
+  let chart = null;
+
+  // Color palette for medications
+  const medicationColors = {
+    'norepinephrine': 'rgba(220, 38, 38, 0.8)',    // red
+    'epinephrine': 'rgba(249, 115, 22, 0.8)',      // orange
+    'phenylephrine': 'rgba(234, 179, 8, 0.8)',     // yellow
+    'vasopressin': 'rgba(34, 197, 94, 0.8)',       // green
+    'dopamine': 'rgba(59, 130, 246, 0.8)',         // blue
+    'propofol': 'rgba(139, 92, 246, 0.8)',         // violet
+    'midazolam': 'rgba(236, 72, 153, 0.8)',        // pink
+    'lorazepam': 'rgba(168, 85, 247, 0.8)',        // purple
+    'dexmedetomidine': 'rgba(14, 165, 233, 0.8)',  // sky
+    'fentanyl': 'rgba(6, 182, 212, 0.8)',          // cyan
+    'vecuronium': 'rgba(245, 158, 11, 0.8)',       // amber
+    'rocuronium': 'rgba(251, 146, 60, 0.8)',       // orange-500
+    'cisatracurium': 'rgba(217, 70, 239, 0.8)',    // fuchsia
+    'pancuronium': 'rgba(20, 184, 166, 0.8)'       // teal
+  };
+
+  // Initialize
+  document.addEventListener('DOMContentLoaded', () => {
+    initializeFilters();
+    updateChart();
+  });
+
+  function initializeFilters() {
+    // Site filter dropdown
+    const siteToggle = document.getElementById('hourly-site-filter-toggle');
+    const siteDropdown = document.getElementById('hourly-site-filter-dropdown');
+
+    siteToggle?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      siteDropdown?.classList.toggle('hidden');
+    });
+
+    // Site selection
+    const siteRadios = document.querySelectorAll('input[name="hourly-site"]');
+    siteRadios.forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        selectedSite = e.target.value;
+        const text = e.target.value === 'all' ? 'All Sites (Aggregated)' : e.target.value.toUpperCase();
+        document.getElementById('hourly-site-filter-text').textContent = text;
+        siteDropdown?.classList.add('hidden');
+        updateChart();
+      });
+    });
+
+    // Category selection
+    document.getElementById('hourly-category-select')?.addEventListener('change', (e) => {
+      selectedCategory = e.target.value;
+      updateChart();
+    });
+
+    // Metric selection
+    document.getElementById('hourly-metric-select')?.addEventListener('change', (e) => {
+      selectedMetric = e.target.value;
+      updateChart();
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', () => {
+      siteDropdown?.classList.add('hidden');
+    });
+  }
+
+  function updateChart() {
+    // Get medications for selected category
+    const medications = hourlyData.categories[selectedCategory];
+
+    // Parse CSV data into structured format
+    const chartData = parseChartData(medications);
+
+    // Update chart title
+    const metricLabel = selectedMetric === 'n' ? 'Count' : 'Percentage';
+    const siteLabel = selectedSite === 'all' ? 'All Sites' : selectedSite.toUpperCase();
+    document.getElementById('hourly-chart-title').textContent =
+      `${selectedCategory} - ${metricLabel} (${siteLabel})`;
+
+    // Update legend
+    updateLegend(medications);
+
+    // Destroy existing chart
+    if (chart) {
+      chart.destroy();
+    }
+
+    // Create new chart
+    const ctx = document.getElementById('hourly-chart');
+    if (ctx && chartData.datasets.length > 0) {
+      chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: chartData.labels,
+          datasets: chartData.datasets
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            mode: 'index',
+            intersect: false,
+          },
+          plugins: {
+            legend: {
+              display: false // We'll use custom legend
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  let label = context.dataset.label || '';
+                  if (label) {
+                    label += ': ';
+                  }
+                  const value = context.parsed.y;
+                  if (selectedMetric === 'pct') {
+                    label += value.toFixed(2) + '%';
+                  } else {
+                    label += Math.round(value).toLocaleString();
+                  }
+                  return label;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: 'Hours from ICU Admission',
+                font: { size: 14, weight: 'bold' }
+              },
+              ticks: {
+                maxTicksLimit: 20
+              }
+            },
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: selectedMetric === 'n' ? 'Number of Patients' : 'Percentage of Patients (%)',
+                font: { size: 14, weight: 'bold' }
+              }
+            }
+          }
+        }
+      });
+    }
+  }
+
+  function parseChartData(medications) {
+    const hours = [];
+    const datasets = [];
+
+    // Initialize datasets for each medication
+    const medData = {};
+    medications.forEach(med => {
+      medData[med] = {};
+    });
+
+    // Parse each row of data into a temporary structure
+    const hourDataMap = [];
+
+    hourlyData.lines.forEach(line => {
+      const values = parseCSVLine(line);
+      if (values.length === 0) return;
+
+      const hour = parseInt(values[0]);
+      if (isNaN(hour)) return;
+
+      const rowData = { hour };
+
+      // Extract values for each medication
+      medications.forEach(med => {
+        let value = 0;
+
+        if (selectedSite === 'all') {
+          // Aggregate across all sites
+          hourlyData.sites.forEach(site => {
+            const colName = `${site}__${med}_${selectedMetric}`;
+            const colIndex = hourlyData.headers.indexOf(colName);
+            if (colIndex !== -1 && values[colIndex]) {
+              const val = parseFloat(values[colIndex]);
+              if (!isNaN(val)) {
+                value += val;
+              }
+            }
+          });
+
+          // For percentages, average them
+          if (selectedMetric === 'pct') {
+            value = value / hourlyData.sites.length;
+          }
+        } else {
+          // Single site
+          const colName = `${selectedSite}__${med}_${selectedMetric}`;
+          const colIndex = hourlyData.headers.indexOf(colName);
+          if (colIndex !== -1 && values[colIndex]) {
+            const val = parseFloat(values[colIndex]);
+            if (!isNaN(val)) {
+              value = val;
+            }
+          }
+        }
+
+        rowData[med] = value;
+      });
+
+      hourDataMap.push(rowData);
+    });
+
+    // Sort by hour
+    hourDataMap.sort((a, b) => a.hour - b.hour);
+
+    // Extract sorted hours and values
+    hourDataMap.forEach(row => {
+      hours.push(row.hour);
+      medications.forEach(med => {
+        if (!medData[med].values) {
+          medData[med].values = [];
+        }
+        medData[med].values.push(row[med]);
+      });
+    });
+
+    // Create datasets
+    medications.forEach(med => {
+      const color = medicationColors[med] || 'rgba(100, 100, 100, 0.8)';
+      datasets.push({
+        label: formatMedicationName(med),
+        data: medData[med].values || [],
+        borderColor: color,
+        backgroundColor: color.replace('0.8', '0.1'),
+        borderWidth: 2,
+        tension: 0.1,
+        pointRadius: 0,
+        pointHoverRadius: 4
+      });
+    });
+
+    return { labels: hours, datasets };
+  }
+
+  function parseCSVLine(line) {
+    // Simple CSV parser that handles quoted values
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      if (char === '"') {
+        inQuotes = !inQuotes;
+      } else if (char === ',' && !inQuotes) {
+        result.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    result.push(current.trim());
+    return result;
+  }
+
+  function formatMedicationName(med) {
+    // Capitalize first letter
+    return med.charAt(0).toUpperCase() + med.slice(1);
+  }
+
+  function updateLegend(medications) {
+    const legend = document.getElementById('hourly-legend');
+    if (!legend) return;
+
+    legend.innerHTML = '';
+    medications.forEach(med => {
+      const color = medicationColors[med] || 'rgba(100, 100, 100, 0.8)';
+      const item = document.createElement('div');
+      item.className = 'flex items-center gap-2';
+      item.innerHTML = `
+        <div class="w-4 h-4 rounded" style="background-color: ${color}"></div>
+        <span class="text-sm text-gray-700">${formatMedicationName(med)}</span>
+      `;
+      legend.appendChild(item);
+    });
+  }
+</script>
+
+<style>
+  .hourly-trends {
+    animation: fadeIn 0.5s ease-in;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+</style>
