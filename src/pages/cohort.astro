@@ -26,8 +26,8 @@ import CTAButton from '../components/shared/CTAButton.astro';
           CLIF Cohort Dashboard
         </h1>
         <p class="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto mb-6">
-          Insights from <span class="font-semibold text-clif-burgundy">808,749</span> unique critically ill patients 
-          across <span class="font-semibold text-clif-burgundy">62</span> hospitals in 
+          Insights from <span class="font-semibold text-clif-burgundy">808,749</span> unique critically ill patients
+          across <span class="font-semibold text-clif-burgundy">62</span> hospitals in
           <span class="font-semibold text-clif-burgundy">12</span> participating institutions
         </p>
         <div class="inline-flex items-center gap-6 text-sm text-gray-600 bg-white px-6 py-3 rounded-full shadow-sm">
@@ -96,8 +96,68 @@ import CTAButton from '../components/shared/CTAButton.astro';
           <MapExplorer />
         </div>
       </section>
-      
 
+      <!-- Data Source & Definitions Section -->
+      <section class="mb-16">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Data Source Info Box -->
+          <div class="bg-gray-50 border-l-4 border-gray-400 rounded-lg p-6 shadow-sm">
+            <div class="flex items-start gap-3">
+              <svg class="w-6 h-6 text-gray-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
+                <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/>
+              </svg>
+              <div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-3">Data Source</h3>
+                <p class="text-gray-700 text-sm">
+                  This dashboard presents aggregated, de-identified data from the CLIF Consortium spanning 2020-2025. All data has been standardized according to CLIF data format specifications and undergoes rigorous quality assurance processes. <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF-MIMIC" target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:underline font-medium">MIMIC IV data</a> is included for benchmarking purposes.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Critically Ill Definition Box -->
+          <div class="bg-blue-50 border-l-4 border-blue-400 rounded-lg p-6 shadow-sm">
+            <div class="flex items-start gap-3">
+              <svg class="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+              </svg>
+              <div>
+                <h3 class="text-lg font-semibold text-blue-900 mb-3">What are Critically Ill Patients?</h3>
+                <p class="text-blue-800 mb-3 text-sm">
+                  Our cohort includes patients meeting any of the following criteria:
+                </p>
+                <ul class="space-y-2 text-blue-800 text-sm">
+                  <li class="flex items-start gap-2">
+                    <svg class="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>
+                    <span><strong>ICU encounters:</strong> Patients admitted to an ICU</span>
+                  </li>
+                  <li class="flex items-start gap-2">
+                    <svg class="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>
+                    <span><strong>Advanced respiratory support:</strong> Mechanical ventilation or similar interventions</span>
+                  </li>
+                  <li class="flex items-start gap-2">
+                    <svg class="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>
+                    <span><strong>Vasoactive support:</strong> Vasopressor medications to maintain blood pressure</span>
+                  </li>
+                  <li class="flex items-start gap-2">
+                    <svg class="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>
+                    <span><strong>Other critically ill:</strong> Meeting institutional criteria for critical illness</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       <!-- Enhanced Call to Action -->
       <section class="relative overflow-hidden rounded-3xl">
