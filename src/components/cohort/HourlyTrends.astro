@@ -57,11 +57,12 @@ const dataJson = JSON.stringify({
   <div class="mb-8">
     <h2 class="text-3xl font-bold text-gray-800 mb-2">Hourly Medication Trends</h2>
     <p class="text-gray-600 mb-3">
-      Explore medication usage patterns over the first 7 days (168 hours) of ICU admission across {parsedData.sites.length} institutions.
+      Explore medication usage patterns over the first 7 days of ICU admission across {parsedData.sites.length} institutions.
     </p>
     <div class="bg-blue-50 border-l-4 border-blue-400 p-3 rounded">
-      <p class="text-sm text-blue-800">
-        <strong>Note:</strong> Data shows medication administration patterns aggregated across all ICU encounters at each institution.
+      <p class="text-sm text-blue-800 mb-2">
+        <strong>Note:</strong> Data shows medication administration patterns aggregated across all ICU encounters at each institution.<br/>
+        Time is measured from each patient's <strong>first ICU admission</strong> (hour 0 = first hour in ICU, hour 24 = end of day 1, hour 167 = end of day 7).
       </p>
     </div>
   </div>

@@ -73,16 +73,6 @@ function parseOverallCSV(content: string) {
 const overallData = parseOverallCSV(overallCsvContent);
 
 // Convert to JSON for client-side use
-// Debug: Check characteristics before JSON serialization
-const firstSiteYear = data.siteYearData[0];
-if (firstSiteYear) {
-  const charEntries = Array.from(firstSiteYear.characteristics.entries());
-  const sofaEntry = charEntries.find(([k, v]) => k.toLowerCase().includes('sofa'));
-  if (sofaEntry) {
-    console.log('Before JSON.stringify - SOFA key:', sofaEntry[0], 'length:', sofaEntry[0].length);
-  }
-}
-
 const dataJson = JSON.stringify({
   allSites: data.allSites,
   allYears: data.allYears,
@@ -101,14 +91,6 @@ const dataJson = JSON.stringify({
     characteristics: Object.fromEntries(d.characteristics)
   }))
 });
-
-// Debug: Check what's in the JSON string
-if (dataJson.includes('Total SOFA')) {
-  const match = dataJson.match(/"([^"]*Total SOFA[^"]*)"/);
-  if (match) {
-    console.log('In JSON string, found:', match[1], 'length:', match[1].length);
-  }
-}
 
 const overallDataJson = JSON.stringify(overallData);
 
@@ -415,21 +397,6 @@ const categories = Array.from(groupedChars.keys());
 
   // Debug: Check if spaces are preserved after JSON parse
   const firstItem = consortiumData.siteYearData[0];
-  if (firstItem) {
-    const keys = Object.keys(firstItem.characteristics);
-    const sofaKeys = keys.filter(k => k.toLowerCase().includes('sofa') || k.toLowerCase().includes('total'));
-    console.log('After JSON.parse, SOFA keys:', sofaKeys);
-    if (sofaKeys.length > 0) {
-      console.log('First SOFA key:', sofaKeys[0], 'length:', sofaKeys[0].length);
-      console.log('First 5 chars codes:', sofaKeys[0].substring(0, 5).split('').map(c => c.charCodeAt(0)));
-    }
-
-    // Check ALL SOFA keys
-    sofaKeys.forEach(key => {
-      console.log(`SOFA key: "${key}" length: ${key.length} starts with space: ${key.charCodeAt(0) === 32}`);
-    });
-  }
-
   // State management
   let selectedSites = [...consortiumData.allSites];
   let selectedYears = [...consortiumData.allYears];
@@ -772,10 +739,6 @@ const categories = Array.from(groupedChars.keys());
 
     allData.forEach(d => {
       Object.keys(d.characteristics).forEach(char => {
-        // Debug SOFA
-        if (char.toLowerCase().includes('sofa') || char.toLowerCase().includes('total')) {
-          console.log('Found characteristic key:', char, 'length:', char.length);
-        }
         // Skip if it's a header/placeholder row
         if (!headerPatterns.includes(char.trim())) {
           characteristics.add(char);
@@ -828,10 +791,6 @@ const categories = Array.from(groupedChars.keys());
           charTrimmed === 'Cardiovascular, median [Q1, Q3]' ||
           charTrimmed === 'CNS, median [Q1, Q3]' ||
           charTrimmed === 'Renal, median [Q1, Q3]') {
-        if (charTrimmed.includes('Total')) {
-          console.log('PUSHING Total SOFA:', charOriginal, 'length:', charOriginal.length);
-          console.log('Last 10 chars:', charOriginal.substring(charOriginal.length - 10));
-        }
         categories['Severity Scores'].subcategories['SOFA Scores'].push(charOriginal); // Keep original with leading spaces for data lookup
         categorized = true;
       }
@@ -955,10 +914,6 @@ const categories = Array.from(groupedChars.keys());
 
       if (!hasItems && !hasSubcategories) return; // Skip empty categories
 
-      if (categoryName === 'Severity Scores') {
-        console.log('Building Severity Scores category with items:', categoryData.items);
-      }
-
       const categoryDiv = document.createElement('div');
       categoryDiv.className = 'category-section border-b border-gray-200';
 
@@ -979,10 +934,6 @@ const categories = Array.from(groupedChars.keys());
 
       // Add top-level items first
       categoryData.items.sort().forEach(char => {
-        if (char.includes('Total') && char.includes('SOFA')) {
-          console.log('Building sidebar item for Total SOFA. char:', char, 'length:', char.length);
-          console.log('Last 10:', char.substring(char.length - 10));
-        }
         const charItem = document.createElement('button');
         charItem.className = 'characteristic-item w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-clif-burgundy hover:bg-opacity-10 hover:text-clif-burgundy transition-colors';
         charItem.dataset.characteristic = char; // Keep original with spaces for data lookup
@@ -1061,16 +1012,7 @@ const categories = Array.from(groupedChars.keys());
   }
 
   function selectCharacteristic(characteristic, element) {
-    console.log('=== selectCharacteristic CALLED ===');
-    console.log('characteristic:', characteristic);
-    console.log('characteristic length:', characteristic.length);
-    if (characteristic && characteristic.includes('Total')) {
-      console.log('Last 10 chars:', characteristic.substring(characteristic.length - 10));
-      console.log('Last 10 codes:', characteristic.substring(characteristic.length - 10).split('').map(c => c.charCodeAt(0)));
-    }
     selectedCharacteristic = characteristic;
-    console.log('selectedCharacteristic SET TO:', selectedCharacteristic);
-    console.log('selectedCharacteristic length:', selectedCharacteristic.length);
 
     // Update UI - remove previous selection
     document.querySelectorAll('.characteristic-item').forEach(item => {
@@ -1131,29 +1073,12 @@ const categories = Array.from(groupedChars.keys());
     const characteristic = selectedCharacteristic;
     const groupBy = document.getElementById('chart-xaxis-select')?.value;
 
-    console.log('=== generateCustomChart START ===');
-    console.log('selectedCharacteristic:', selectedCharacteristic);
-    console.log('selectedCharacteristic length:', selectedCharacteristic ? selectedCharacteristic.length : 'null');
-    if (selectedCharacteristic && selectedCharacteristic.includes('Total')) {
-      console.log('Full characteristic:', selectedCharacteristic);
-      console.log('Last 10 chars:', selectedCharacteristic.substring(selectedCharacteristic.length - 10));
-      console.log('Last 10 codes:', selectedCharacteristic.substring(selectedCharacteristic.length - 10).split('').map(c => c.charCodeAt(0)));
-    }
-
     if (!characteristic) {
       alert('Please select a characteristic from the sidebar to visualize.');
       return;
     }
 
     const filteredData = getFilteredData();
-
-    console.log('Selected characteristic:', characteristic);
-    console.log('Filtered data length:', filteredData.length);
-    if (filteredData.length > 0) {
-      console.log('First item characteristics keys:', Object.keys(filteredData[0].characteristics).filter(k => k.includes('SOFA') || k.includes('Total')));
-      console.log('Looking for exact match...');
-      console.log('Exact match result:', filteredData[0].characteristics[characteristic]);
-    }
 
     // Collect data based on grouping
     const chartData = {};
@@ -1169,41 +1094,9 @@ const categories = Array.from(groupedChars.keys());
     let skippedNullValue = 0;
     let addedCount = 0;
 
-    console.log('About to loop. characteristic:', characteristic);
-    console.log('characteristic length:', characteristic.length);
-    console.log('characteristic char codes:', characteristic.substring(0, 5).split('').map(c => c.charCodeAt(0)));
-    console.log('Is median characteristic:', isMedianChar);
-
     filteredData.forEach((d, idx) => {
       // Try exact match first, then trimmed match
       let value = d.characteristics[characteristic];
-
-      if (idx === 0) {
-        console.log('First item in loop:');
-        console.log('  d.site:', d.site, 'd.year:', d.year);
-        const sofaKeysInLoop = Object.keys(d.characteristics).filter(k => k.includes('SOFA'));
-        console.log('  Keys with SOFA:', sofaKeysInLoop);
-        sofaKeysInLoop.forEach(k => {
-          console.log(`    Key: "${k}" length: ${k.length} matches characteristic: ${k === characteristic}`);
-          if (k.includes('Total')) {
-            console.log(`      Key: "${k}"`);
-            console.log(`      Char: "${characteristic}"`);
-
-            // Show last 10 characters
-            console.log(`      Key last 10: "${k.substring(k.length - 10)}"`);
-            console.log(`      Char last 10: "${characteristic.substring(characteristic.length - 10)}"`);
-
-            console.log(`      Key last 10 codes: [${k.substring(k.length - 10).split('').map(c => c.charCodeAt(0)).join(', ')}]`);
-            console.log(`      Char last 10 codes: [${characteristic.substring(characteristic.length - 10).split('').map(c => c.charCodeAt(0)).join(', ')}]`);
-          }
-        });
-        console.log('  Direct lookup with characteristic:', value);
-
-        // Try manually with the second key (should be Total SOFA)
-        if (sofaKeysInLoop.length > 1) {
-          console.log('  Manual lookup with sofaKeysInLoop[1]:', d.characteristics[sofaKeysInLoop[1]]);
-        }
-      }
 
       // If not found, try to find by trimming
       if (!value) {
@@ -1244,11 +1137,6 @@ const categories = Array.from(groupedChars.keys());
         if (medianIQR) {
           const weight = getWeight(d, characteristic);
 
-          if (processedCount <= 3) {
-            console.log(`Item ${processedCount}: site=${d.site}, year=${d.year}, value="${value}"`);
-            console.log(`  Extracted: median=${medianIQR.median}, Q1=${medianIQR.q1}, Q3=${medianIQR.q3}, weight=${weight}`);
-          }
-
           if (weight > 0) {
             // Store weighted median values
             if (!chartData[label]) {
@@ -1270,10 +1158,6 @@ const categories = Array.from(groupedChars.keys());
         // For count values, sum them
         const numValue = getNumeric(value);
 
-        if (processedCount <= 3) {
-          console.log(`Item ${processedCount}: site=${d.site}, year=${d.year}, value="${value}", numValue=${numValue}`);
-        }
-
         if (numValue !== null) {
           if (!chartData[label]) chartData[label] = 0;
           chartData[label] += numValue;
@@ -1281,8 +1165,6 @@ const categories = Array.from(groupedChars.keys());
         }
       }
     });
-
-    console.log(`Processed: ${processedCount}, Skipped (small n): ${skippedSmallN}, Skipped (null): ${skippedNullValue}, Added: ${addedCount}`);
 
     // Calculate weighted medians and aggregate IQR ranges
     if (isMedianChar) {
@@ -1294,14 +1176,9 @@ const categories = Array.from(groupedChars.keys());
         if (iqrData[key]) {
           iqrData[key].minQ1 = Math.min(...iqrData[key].q1Values);
           iqrData[key].maxQ3 = Math.max(...iqrData[key].q3Values);
-          console.log(`${key}: Weighted median = ${chartData[key]}, IQR = [${iqrData[key].minQ1}, ${iqrData[key].maxQ3}]`);
         }
       });
     }
-
-    console.log('Final chartData:', chartData);
-    console.log('chartData keys:', Object.keys(chartData));
-    console.log('chartData length:', Object.keys(chartData).length);
 
     if (Object.keys(chartData).length === 0) {
       alert(`No data available for "${characteristic}" with the selected filters.\n\nPossible reasons:\n- Not all sites/years have this data point\n- Values may be suppressed for privacy (n < 10)\n- Try selecting different sites or years`);

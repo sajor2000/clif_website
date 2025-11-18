@@ -1,0 +1,782 @@
+---
+import { readFile } from 'fs/promises';
+import { join } from 'path';
+
+// Read the collection stats CSV
+const csvPath = join(process.cwd(), 'src', 'data', 'ecdf', 'collection_stats_by_site.csv');
+const csvContent = await readFile(csvPath, 'utf-8');
+
+// Parse CSV to extract categories and metrics
+function parseCollectionStatsCSV(content: string) {
+  const lines = content.trim().split('\n');
+  const headers = lines[0].split(',');
+
+  // Extract site names from headers (e.g., upenn__whole_stay_mean)
+  const sites = new Set<string>();
+  headers.slice(3).forEach(header => {
+    const match = header.match(/^(.+?)__/);
+    if (match) {
+      sites.add(match[1]);
+    }
+  });
+
+  // Parse data rows
+  const dataByCategory: Record<string, any[]> = {
+    labs: [],
+    vitals: [],
+    respiratory_support: []
+  };
+
+  lines.slice(1).forEach(line => {
+    // Handle quoted values in CSV properly
+    const values = [];
+    let current = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      if (char === '"') {
+        inQuotes = !inQuotes;
+        // Don't add the quote to the value
+      } else if (char === ',' && !inQuotes) {
+        values.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    values.push(current.trim()); // Push the last value
+
+    const dataType = values[0];
+    const category = values[1];
+    const unit = values[2];
+
+    if (dataType && category && (dataType === 'labs' || dataType === 'vitals' || dataType === 'respiratory_support')) {
+      const rowData: any = {
+        data_type: dataType,
+        category: category,
+        unit: unit,
+        by_site: {}
+      };
+
+      // Debug: log first few rows
+      if (dataByCategory[dataType].length < 3) {
+        console.log('Parsed row:', { dataType, category, unit });
+      }
+
+      // Parse site-specific data
+      let colIndex = 3;
+      Array.from(sites).sort().forEach(site => {
+        const siteData: any = {
+          total_number_of_stays: values[colIndex] || '',
+          total_observations: values[colIndex + 1] || '',
+          total_distinct_observations: values[colIndex + 2] || '',
+          mean_icu_los_days: values[colIndex + 3] || '',
+          mean_icu_los_hours: values[colIndex + 4] || '',
+          whole_stay_mean: values[colIndex + 5] || '',
+          whole_stay_median: values[colIndex + 6] || '',
+          whole_stay_iqr: values[colIndex + 7] || '',
+          first_24hr_mean: values[colIndex + 8] || '',
+          first_24hr_median: values[colIndex + 9] || '',
+          first_24hr_iqr: values[colIndex + 10] || '',
+          first_48hr_mean: values[colIndex + 11] || '',
+          first_48hr_median: values[colIndex + 12] || '',
+          first_48hr_iqr: values[colIndex + 13] || '',
+          first_72hr_mean: values[colIndex + 14] || '',
+          first_72hr_median: values[colIndex + 15] || '',
+          first_72hr_iqr: values[colIndex + 16] || ''
+        };
+        rowData.by_site[site] = siteData;
+        colIndex += 17;
+      });
+
+      dataByCategory[dataType].push(rowData);
+    }
+  });
+
+  return {
+    sites: Array.from(sites).sort(),
+    data: dataByCategory
+  };
+}
+
+const parsedData = parseCollectionStatsCSV(csvContent);
+
+// Convert to JSON for client-side use
+const dataJson = JSON.stringify(parsedData);
+---
+
+<div class="lab-vital-distributions bg-white rounded-2xl shadow-xl p-6 md:p-8">
+  <!-- Dashboard Header -->
+  <div class="mb-8">
+    <h2 class="text-3xl font-bold text-gray-800 mb-2">Measurement Collection Patterns</h2>
+    <p class="text-gray-600 mb-3">
+      Compare how frequently labs, vitals, and respiratory support measurements are collected across {parsedData.sites.length} institutions.
+    </p>
+    <div class="bg-blue-50 border-l-4 border-blue-400 p-3 rounded">
+      <div class="mb-3">
+        <p class="text-sm text-blue-800 font-semibold mb-1">What This Shows:</p>
+        <p class="text-sm text-blue-800">
+          For each measurement, we calculated how many times it was collected per ICU stay at each institution.
+          The values represent the <strong>mean or median count of observations per patient</strong> during the selected time window.
+        </p>
+      </div>
+      <div class="mb-3">
+        <p class="text-sm text-blue-800 font-semibold mb-1">Example Interpretation:</p>
+        <p class="text-sm text-blue-800">
+          If glucose shows a median of 5 measurements during "Whole Stay," this means the typical ICU patient had glucose measured 5 times throughout their entire ICU stay at that institution.
+        </p>
+      </div>
+      <div>
+        <p class="text-sm text-blue-800 font-semibold mb-1">ECDF Chart:</p>
+        <p class="text-sm text-blue-800">
+          Shows the cumulative distribution across sites. If the curve reaches 50% at x=3, this means half of the institutions collect this measurement ≤3 times per patient.
+          Steeper curves indicate more consistency across sites; flatter curves show more variation in collection practices.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter Controls -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+    <!-- Category Selection -->
+    <div>
+      <label for="labvital-category-select" class="block text-sm font-semibold text-gray-700 mb-2">
+        Category
+      </label>
+      <select
+        id="labvital-category-select"
+        class="w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-clif-burgundy focus:outline-none transition-colors"
+      >
+        <option value="labs">Labs</option>
+        <option value="vitals">Vitals</option>
+        <option value="respiratory_support">Respiratory Support</option>
+      </select>
+    </div>
+
+    <!-- Metric Selection -->
+    <div>
+      <label for="labvital-metric-select" class="block text-sm font-semibold text-gray-700 mb-2">
+        Metric
+      </label>
+      <select
+        id="labvital-metric-select"
+        class="w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-clif-burgundy focus:outline-none transition-colors"
+      >
+        <!-- Populated by JavaScript -->
+      </select>
+    </div>
+
+    <!-- Chart Type Selection -->
+    <div>
+      <label for="labvital-chart-type-select" class="block text-sm font-semibold text-gray-700 mb-2">
+        Chart Type
+      </label>
+      <select
+        id="labvital-chart-type-select"
+        class="w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-clif-burgundy focus:outline-none transition-colors"
+      >
+        <option value="ecdf">ECDF (Cumulative Distribution)</option>
+        <option value="bar">Bar Chart by Site</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Time Window Selection -->
+  <div class="mb-6">
+    <label class="block text-sm font-semibold text-gray-700 mb-2">
+      Time Window
+    </label>
+    <select
+      id="labvital-timewindow-select"
+      class="w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-clif-burgundy focus:outline-none transition-colors"
+    >
+      <option value="whole_stay">Whole Stay</option>
+      <option value="first_24hr">First 24 Hours</option>
+      <option value="first_48hr">First 48 Hours</option>
+      <option value="first_72hr">First 72 Hours</option>
+    </select>
+  </div>
+
+  <!-- Statistic Type Selection (Mean vs Median) -->
+  <div class="mb-6">
+    <label class="block text-sm font-semibold text-gray-700 mb-2">
+      Statistic Type
+    </label>
+    <div class="flex gap-3">
+      <label class="inline-flex items-center cursor-pointer">
+        <input type="radio" name="labvital-stat-type" class="form-radio h-5 w-5 text-clif-burgundy" value="mean" checked>
+        <span class="ml-2 text-sm text-gray-700">Mean</span>
+      </label>
+      <label class="inline-flex items-center cursor-pointer">
+        <input type="radio" name="labvital-stat-type" class="form-radio h-5 w-5 text-clif-burgundy" value="median">
+        <span class="ml-2 text-sm text-gray-700">Median</span>
+      </label>
+    </div>
+  </div>
+
+  <!-- Summary Statistics Box -->
+  <div id="summary-stats" class="hidden mb-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="bg-white rounded-lg border-2 border-gray-200 p-4">
+      <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">Min</p>
+      <p id="stat-min" class="text-2xl font-bold text-gray-800">-</p>
+    </div>
+    <div class="bg-white rounded-lg border-2 border-gray-200 p-4">
+      <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">25th Percentile</p>
+      <p id="stat-q1" class="text-2xl font-bold text-gray-800">-</p>
+    </div>
+    <div class="bg-white rounded-lg border-2 border-gray-200 p-4">
+      <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">Median</p>
+      <p id="stat-median" class="text-2xl font-bold text-clif-burgundy">-</p>
+    </div>
+    <div class="bg-white rounded-lg border-2 border-gray-200 p-4">
+      <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">75th Percentile</p>
+      <p id="stat-q3" class="text-2xl font-bold text-gray-800">-</p>
+    </div>
+  </div>
+
+  <!-- Chart Container -->
+  <div class="bg-gray-50 rounded-lg p-6">
+    <div id="no-data-message" class="hidden text-center py-12">
+      <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+      </svg>
+      <p class="text-gray-600 text-lg font-medium mb-2">No Data Available</p>
+      <p class="text-gray-500 text-sm">The selected metric does not have collection statistics available yet.</p>
+    </div>
+    <canvas id="distribution-chart" class="w-full" style="max-height: 500px;"></canvas>
+  </div>
+</div>
+
+<!-- JSON data storage -->
+<script type="application/json" id="distribution-json-data" set:html={dataJson}></script>
+
+<!-- Chart.js Script -->
+<script is:inline>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Wait for Chart.js to be available
+    if (typeof Chart === 'undefined') {
+      console.error('Chart.js is not loaded');
+      return;
+    }
+
+    var dataJsonElement = document.getElementById('distribution-json-data');
+    if (!dataJsonElement || !dataJsonElement.textContent) {
+      console.error('Data not found');
+      return;
+    }
+
+    var parsedData = JSON.parse(dataJsonElement.textContent);
+    console.log('[LabVital] Parsed data structure:', {
+      sites: parsedData.sites,
+      labsCount: parsedData.data.labs ? parsedData.data.labs.length : 0,
+      vitalsCount: parsedData.data.vitals ? parsedData.data.vitals.length : 0,
+      respiratoryCount: parsedData.data.respiratory_support ? parsedData.data.respiratory_support.length : 0
+    });
+    console.log('[LabVital] First 3 lab metrics:', parsedData.data.labs ? parsedData.data.labs.slice(0, 3).map(function(m) { return m.category; }) : []);
+
+    var chartInstance = null;
+
+    var categorySelect = document.getElementById('labvital-category-select');
+    var metricSelect = document.getElementById('labvital-metric-select');
+    var chartTypeSelect = document.getElementById('labvital-chart-type-select');
+    var timeWindowSelect = document.getElementById('labvital-timewindow-select');
+    var statTypeRadios = document.querySelectorAll('input[name="labvital-stat-type"]');
+
+    // Populate metric dropdown based on selected category
+    function populateMetrics(category) {
+      metricSelect.innerHTML = '';
+      var metrics = parsedData.data[category] || [];
+      metrics.forEach(function(metric) {
+        var option = document.createElement('option');
+        option.value = metric.category;
+        var displayName = metric.category.replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
+        option.textContent = displayName;
+        metricSelect.appendChild(option);
+      });
+      updateChart();
+    }
+
+    // Get selected time window
+    function getSelectedTimeWindow() {
+      return timeWindowSelect ? timeWindowSelect.value : 'whole_stay';
+    }
+
+    // Get selected statistic type
+    function getSelectedStatType() {
+      var selected = 'mean';
+      statTypeRadios.forEach(function(radio) {
+        if (radio.checked) {
+          selected = radio.value;
+        }
+      });
+      return selected;
+    }
+
+    // Update chart based on selections
+    function updateChart() {
+      var category = categorySelect.value;
+      var metric = metricSelect.value;
+      var chartType = chartTypeSelect ? chartTypeSelect.value : 'NOT FOUND';
+      var timeWindow = getSelectedTimeWindow();
+      var statType = getSelectedStatType();
+
+      console.log('[LabVital] chartTypeSelect element:', chartTypeSelect);
+      console.log('[LabVital] chartTypeSelect.value:', chartType);
+      console.log('[LabVital] updateChart called:', { category: category, metric: metric, chartType: chartType, timeWindow: timeWindow, statType: statType });
+
+      if (!metric) {
+        console.log('[LabVital] No metric selected');
+        return;
+      }
+
+      // Find the metric data
+      var metricData = parsedData.data[category].find(function(m) {
+        return m.category === metric;
+      });
+
+      console.log('[LabVital] Metric data found:', metricData ? 'YES' : 'NO');
+      if (metricData) {
+        console.log('[LabVital] Metric unit:', metricData.unit);
+        console.log('[LabVital] Available sites:', Object.keys(metricData.by_site));
+      }
+
+      if (!metricData) {
+        console.error('[LabVital] No metric data found for:', metric);
+        return;
+      }
+
+      // Prepare data for chart
+      var canvas = document.getElementById('distribution-chart');
+      if (!canvas) {
+        console.error('Canvas not found!');
+        return;
+      }
+      var ctx = canvas.getContext('2d');
+      if (!ctx) {
+        console.error('Could not get canvas context');
+        return;
+      }
+
+      // Destroy existing chart
+      if (chartInstance) {
+        chartInstance.destroy();
+      }
+
+      console.log('[LabVital] About to choose render function. chartType:', chartType);
+
+      if (chartType === 'ecdf') {
+        console.log('[LabVital] Calling renderECDF');
+        renderECDF(ctx, metricData, timeWindow, statType);
+      } else if (chartType === 'bar') {
+        console.log('[LabVital] Calling renderBarChart');
+        renderBarChart(ctx, metricData, timeWindow, statType);
+      } else {
+        console.error('[LabVital] Unknown chart type:', chartType);
+      }
+    }
+
+    // Render ECDF (Empirical Cumulative Distribution Function)
+    function renderECDF(ctx, metricData, timeWindow, statType) {
+      console.log('[LabVital] renderECDF called with:', {
+        metricCategory: metricData.category,
+        timeWindow: timeWindow,
+        statType: statType
+      });
+
+      var values = [];
+
+      // Collect all values from all sites for the selected time window
+      parsedData.sites.forEach(function(site) {
+        var siteData = metricData.by_site[site];
+        if (!siteData) return;
+
+        var key = timeWindow + '_' + statType;
+        var rawValue = siteData[key];
+
+        if (!rawValue || rawValue === '') return;
+
+        var value = parseFloat(rawValue);
+
+        if (!isNaN(value) && value >= 0) {
+          values.push(value);
+        }
+      });
+
+      // Show "no data" message if no data available
+      var noDataMessage = document.getElementById('no-data-message');
+      var canvas = document.getElementById('distribution-chart');
+
+      if (values.length === 0) {
+        noDataMessage.classList.remove('hidden');
+        canvas.classList.add('hidden');
+        return;
+      }
+
+      noDataMessage.classList.add('hidden');
+      canvas.classList.remove('hidden');
+
+      // Sort values for ECDF
+      values.sort(function(a, b) { return a - b; });
+
+      // Calculate and display summary statistics
+      var min = values[0];
+      var q1 = values[Math.floor(values.length * 0.25)];
+      var median = values[Math.floor(values.length * 0.5)];
+      var q3 = values[Math.floor(values.length * 0.75)];
+
+      document.getElementById('stat-min').textContent = min.toFixed(1);
+      document.getElementById('stat-q1').textContent = q1.toFixed(1);
+      document.getElementById('stat-median').textContent = median.toFixed(1);
+      document.getElementById('stat-q3').textContent = q3.toFixed(1);
+      document.getElementById('summary-stats').classList.remove('hidden');
+
+      // Create ECDF data points
+      var ecdfData = [];
+      for (var i = 0; i < values.length; i++) {
+        ecdfData.push({
+          x: values[i],
+          y: (i + 1) / values.length * 100 // Convert to percentage
+        });
+      }
+
+      var timeWindowLabel = timeWindow.replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
+
+      chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          datasets: [{
+            label: 'Cumulative Distribution',
+            data: ecdfData,
+            borderColor: '#991b1b',
+            backgroundColor: '#991b1b20',
+            borderWidth: 3,
+            fill: true,
+            stepped: true,
+            pointRadius: 3,
+            pointBackgroundColor: '#991b1b',
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 2,
+            pointHoverRadius: 7,
+            pointHoverBackgroundColor: '#dc2626',
+            pointHoverBorderColor: '#ffffff',
+            pointHoverBorderWidth: 3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            title: {
+              display: true,
+              text: metricData.category.replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); }) + ' - ECDF (' + timeWindowLabel + ', ' + statType.toUpperCase() + ')',
+              font: { size: 16, weight: 'bold' }
+            },
+            legend: {
+              display: false
+            },
+            tooltip: {
+              backgroundColor: 'rgba(0, 0, 0, 0.9)',
+              padding: 12,
+              titleFont: { size: 14, weight: 'bold' },
+              bodyFont: { size: 13 },
+              bodySpacing: 6,
+              callbacks: {
+                title: function(context) {
+                  var collections = context[0].parsed.x.toFixed(1);
+                  return collections + ' collections per patient';
+                },
+                label: function(context) {
+                  var percent = context.parsed.y;
+                  var collections = context.parsed.x;
+                  var numSites = values.length;
+                  var sitesAtOrBelow = Math.round(percent / 100 * numSites);
+
+                  return [
+                    'Cumulative: ' + percent.toFixed(1) + '% of sites',
+                    '',
+                    sitesAtOrBelow + ' out of ' + numSites + ' institutions',
+                    'collect this ' + collections.toFixed(1) + ' or fewer',
+                    'times per patient (' + statType + ')',
+                    '',
+                    'Remaining ' + (numSites - sitesAtOrBelow) + ' sites (' + (100 - percent).toFixed(1) + '%)',
+                    'collect it more than ' + collections.toFixed(1) + ' times'
+                  ];
+                },
+                footer: function(context) {
+                  var percent = context[0].parsed.y;
+                  if (percent >= 25 && percent <= 27) return ['', '📊 This is near the 25th percentile'];
+                  if (percent >= 49 && percent <= 51) return ['', '📊 This is near the median (50th percentile)'];
+                  if (percent >= 74 && percent <= 76) return ['', '📊 This is near the 75th percentile'];
+                  return [];
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              type: 'linear',
+              title: {
+                display: true,
+                text: statType.charAt(0).toUpperCase() + statType.slice(1) + ' Collections per Patient'
+              },
+              min: Math.max(0, min - (median - min) * 0.1), // Start slightly before min value, but never below 0
+              max: values[values.length - 1] + (values[values.length - 1] - median) * 0.05, // Slight padding after max
+              grid: {
+                color: function(context) {
+                  // Highlight the median collection frequency
+                  if (Math.abs(context.tick.value - median) < 0.5) {
+                    return 'rgba(153, 27, 27, 0.3)';
+                  }
+                  return 'rgba(0, 0, 0, 0.1)';
+                }
+              }
+            },
+            y: {
+              beginAtZero: true,
+              max: 100,
+              title: {
+                display: true,
+                text: 'Cumulative Percentage of Sites (%)'
+              },
+              grid: {
+                color: function(context) {
+                  // Highlight 25%, 50%, and 75% lines
+                  if (context.tick.value === 25 || context.tick.value === 50 || context.tick.value === 75) {
+                    return 'rgba(153, 27, 27, 0.3)';
+                  }
+                  return 'rgba(0, 0, 0, 0.1)';
+                }
+              },
+              ticks: {
+                callback: function(value) {
+                  if (value === 25 || value === 50 || value === 75) {
+                    return value + '% ★';
+                  }
+                  return value + '%';
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // Render Bar Chart (shows data by site for selected time window)
+    function renderBarChart(ctx, metricData, timeWindow, statType) {
+      console.log('[LabVital] renderBarChart called with:', {
+        metricCategory: metricData.category,
+        timeWindow: timeWindow,
+        statType: statType
+      });
+
+      // Hide summary stats for bar chart
+      document.getElementById('summary-stats').classList.add('hidden');
+
+      var siteLabels = [];
+      var siteValues = [];
+      var hasAnyData = false;
+
+      console.log('[LabVital] Processing time window:', timeWindow);
+
+      parsedData.sites.forEach(function(site) {
+        var siteData = metricData.by_site[site];
+        if (!siteData) {
+          console.log('[LabVital] No data for site:', site);
+          return;
+        }
+
+        var key = timeWindow + '_' + statType;
+        var rawValue = siteData[key];
+
+        console.log('[LabVital] Site:', site, 'Key:', key, 'Raw value:', rawValue);
+
+        // Skip empty strings
+        if (!rawValue || rawValue === '') {
+          console.log('[LabVital] Skipping empty value for site:', site);
+          return;
+        }
+
+        var value = parseFloat(rawValue);
+        console.log('[LabVital] Parsed value:', value);
+
+        if (!isNaN(value) && value >= 0) {
+          siteLabels.push(site.toUpperCase());
+          siteValues.push(value);
+          hasAnyData = true;
+          console.log('[LabVital] Added value:', value, 'for site:', site);
+        }
+      });
+
+      console.log('[LabVital] Total sites with data:', siteValues.length);
+
+      // Show "no data" message if no data available
+      var noDataMessage = document.getElementById('no-data-message');
+      var canvas = document.getElementById('distribution-chart');
+
+      if (!hasAnyData || siteValues.length === 0) {
+        noDataMessage.classList.remove('hidden');
+        canvas.classList.add('hidden');
+        return;
+      }
+
+      noDataMessage.classList.add('hidden');
+      canvas.classList.remove('hidden');
+
+      var timeWindowLabel = timeWindow.replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
+
+      chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: siteLabels,
+          datasets: [{
+            label: statType.charAt(0).toUpperCase() + statType.slice(1) + ' Collections',
+            data: siteValues,
+            backgroundColor: '#991b1b80',
+            borderColor: '#991b1b',
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            title: {
+              display: true,
+              text: metricData.category.replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); }) + ' - Collection Frequency by Site (' + timeWindowLabel + ', ' + statType.toUpperCase() + ')',
+              font: { size: 16, weight: 'bold' }
+            },
+            legend: {
+              display: false
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: statType.charAt(0).toUpperCase() + statType.slice(1) + ' Collections per Patient'
+              }
+            },
+            x: {
+              title: {
+                display: true,
+                text: 'Institution'
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // Render Histogram
+    function renderHistogram(ctx, metricData, timeWindow, statType) {
+      var allValues = [];
+
+      // Collect all values from all sites for the selected time window
+      parsedData.sites.forEach(function(site) {
+        var siteData = metricData.by_site[site];
+        if (!siteData) return;
+
+        var key = timeWindow + '_' + statType;
+        var rawValue = siteData[key];
+
+        if (!rawValue || rawValue === '') return;
+
+        var value = parseFloat(rawValue);
+
+        if (!isNaN(value) && value >= 0) {
+          allValues.push(value);
+        }
+      });
+
+      // Show "no data" message if no data available
+      var noDataMessage = document.getElementById('no-data-message');
+      var canvas = document.getElementById('distribution-chart');
+
+      if (allValues.length === 0) {
+        noDataMessage.classList.remove('hidden');
+        canvas.classList.add('hidden');
+        return;
+      }
+
+      noDataMessage.classList.add('hidden');
+      canvas.classList.remove('hidden');
+
+      // Create bins
+      var min = Math.min.apply(Math, allValues);
+      var max = Math.max.apply(Math, allValues);
+      var binCount = 15;
+      var binSize = (max - min) / binCount;
+      var bins = Array(binCount).fill(0);
+      var binLabels = [];
+
+      for (var i = 0; i < binCount; i++) {
+        var binStart = min + i * binSize;
+        var binEnd = binStart + binSize;
+        binLabels.push(binStart.toFixed(1) + '-' + binEnd.toFixed(1));
+      }
+
+      // Fill bins
+      allValues.forEach(function(value) {
+        var binIndex = Math.min(Math.floor((value - min) / binSize), binCount - 1);
+        bins[binIndex]++;
+      });
+
+      var timeWindowLabel = timeWindow.replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
+
+      chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: binLabels,
+          datasets: [{
+            label: 'Frequency',
+            data: bins,
+            backgroundColor: '#991b1b80',
+            borderColor: '#991b1b',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            title: {
+              display: true,
+              text: 'Collection Frequency Distribution: ' + metricData.category.replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); }) + ' (' + timeWindowLabel + ')',
+              font: { size: 16, weight: 'bold' }
+            },
+            legend: {
+              display: false
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Number of Sites'
+              }
+            },
+            x: {
+              title: {
+                display: true,
+                text: statType.charAt(0).toUpperCase() + statType.slice(1) + ' Collections per Patient'
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // Event listeners
+    categorySelect.addEventListener('change', function() { populateMetrics(categorySelect.value); });
+    metricSelect.addEventListener('change', updateChart);
+    chartTypeSelect.addEventListener('change', updateChart);
+    timeWindowSelect.addEventListener('change', updateChart);
+    statTypeRadios.forEach(function(radio) { radio.addEventListener('change', updateChart); });
+
+    // Initialize
+    populateMetrics('labs');
+  });
+</script>

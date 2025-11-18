@@ -3,6 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import CohortSummaryFromCSV from '../components/cohort/CohortSummaryFromCSV.astro';
 import InteractiveDashboard from '../components/cohort/InteractiveDashboard.astro';
 import HourlyTrends from '../components/cohort/HourlyTrends.astro';
+import LabVitalDistributions from '../components/cohort/LabVitalDistributions.astro';
 import MapExplorer from '../components/cohort/MapExplorer.astro';
 import CTAButton from '../components/shared/CTAButton.astro';
 ---
@@ -53,28 +54,34 @@ import CTAButton from '../components/shared/CTAButton.astro';
       <section class="mb-16">
         <!-- Tab Navigation -->
         <div class="flex justify-center mb-8">
-          <div class="inline-flex bg-gray-100 rounded-lg p-1 shadow-sm">
+          <div class="inline-flex bg-gray-100 rounded-lg p-1 shadow-sm overflow-x-auto">
             <button
               id="tab-summary"
-              class="px-6 py-3 text-sm md:text-base font-semibold rounded-md transition-all duration-200 bg-clif-burgundy text-white shadow-md"
+              class="px-4 py-3 text-xs md:text-base font-semibold rounded-md transition-all duration-200 bg-clif-burgundy text-white shadow-md whitespace-nowrap"
             >
               Summary Statistics
             </button>
             <button
               id="tab-explorer"
-              class="px-6 py-3 text-sm md:text-base font-semibold rounded-md transition-all duration-200 text-gray-700 hover:text-gray-900"
+              class="px-4 py-3 text-xs md:text-base font-semibold rounded-md transition-all duration-200 text-gray-700 hover:text-gray-900 whitespace-nowrap"
             >
               Data Explorer
             </button>
             <button
               id="tab-hourly"
-              class="px-6 py-3 text-sm md:text-base font-semibold rounded-md transition-all duration-200 text-gray-700 hover:text-gray-900"
+              class="px-4 py-3 text-xs md:text-base font-semibold rounded-md transition-all duration-200 text-gray-700 hover:text-gray-900 whitespace-nowrap"
             >
               Hourly Trends
             </button>
             <button
+              id="tab-distributions"
+              class="px-4 py-3 text-xs md:text-base font-semibold rounded-md transition-all duration-200 text-gray-700 hover:text-gray-900 whitespace-nowrap"
+            >
+              Collection Patterns
+            </button>
+            <button
               id="tab-map"
-              class="px-6 py-3 text-sm md:text-base font-semibold rounded-md transition-all duration-200 text-gray-700 hover:text-gray-900"
+              class="px-4 py-3 text-xs md:text-base font-semibold rounded-md transition-all duration-200 text-gray-700 hover:text-gray-900 whitespace-nowrap"
             >
               Map Explorer
             </button>
@@ -98,6 +105,11 @@ import CTAButton from '../components/shared/CTAButton.astro';
         <!-- Tab Content: Hourly Trends -->
         <div id="content-hourly" class="tab-content hidden">
           <HourlyTrends />
+        </div>
+
+        <!-- Tab Content: Lab & Vital Distributions -->
+        <div id="content-distributions" class="tab-content hidden">
+          <LabVitalDistributions />
         </div>
 
         <!-- Tab Content: Map Explorer -->
@@ -206,10 +218,12 @@ import CTAButton from '../components/shared/CTAButton.astro';
       const tabSummary = document.getElementById('tab-summary');
       const tabExplorer = document.getElementById('tab-explorer');
       const tabHourly = document.getElementById('tab-hourly');
+      const tabDistributions = document.getElementById('tab-distributions');
       const tabMap = document.getElementById('tab-map');
       const contentSummary = document.getElementById('content-summary');
       const contentExplorer = document.getElementById('content-explorer');
       const contentHourly = document.getElementById('content-hourly');
+      const contentDistributions = document.getElementById('content-distributions');
       const contentMap = document.getElementById('content-map');
 
       function switchToSummary() {
@@ -220,6 +234,8 @@ import CTAButton from '../components/shared/CTAButton.astro';
         tabExplorer?.classList.add('text-gray-700', 'hover:text-gray-900');
         tabHourly?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
         tabHourly?.classList.add('text-gray-700', 'hover:text-gray-900');
+        tabDistributions?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabDistributions?.classList.add('text-gray-700', 'hover:text-gray-900');
         tabMap?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
         tabMap?.classList.add('text-gray-700', 'hover:text-gray-900');
 
@@ -227,6 +243,7 @@ import CTAButton from '../components/shared/CTAButton.astro';
         contentSummary?.classList.remove('hidden');
         contentExplorer?.classList.add('hidden');
         contentHourly?.classList.add('hidden');
+        contentDistributions?.classList.add('hidden');
         contentMap?.classList.add('hidden');
       }
 
@@ -238,6 +255,8 @@ import CTAButton from '../components/shared/CTAButton.astro';
         tabSummary?.classList.add('text-gray-700', 'hover:text-gray-900');
         tabHourly?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
         tabHourly?.classList.add('text-gray-700', 'hover:text-gray-900');
+        tabDistributions?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabDistributions?.classList.add('text-gray-700', 'hover:text-gray-900');
         tabMap?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
         tabMap?.classList.add('text-gray-700', 'hover:text-gray-900');
 
@@ -245,6 +264,7 @@ import CTAButton from '../components/shared/CTAButton.astro';
         contentExplorer?.classList.remove('hidden');
         contentSummary?.classList.add('hidden');
         contentHourly?.classList.add('hidden');
+        contentDistributions?.classList.add('hidden');
         contentMap?.classList.add('hidden');
       }
 
@@ -256,6 +276,8 @@ import CTAButton from '../components/shared/CTAButton.astro';
         tabSummary?.classList.add('text-gray-700', 'hover:text-gray-900');
         tabExplorer?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
         tabExplorer?.classList.add('text-gray-700', 'hover:text-gray-900');
+        tabDistributions?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabDistributions?.classList.add('text-gray-700', 'hover:text-gray-900');
         tabMap?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
         tabMap?.classList.add('text-gray-700', 'hover:text-gray-900');
 
@@ -263,6 +285,28 @@ import CTAButton from '../components/shared/CTAButton.astro';
         contentHourly?.classList.remove('hidden');
         contentSummary?.classList.add('hidden');
         contentExplorer?.classList.add('hidden');
+        contentDistributions?.classList.add('hidden');
+        contentMap?.classList.add('hidden');
+      }
+
+      function switchToDistributions() {
+        // Update button styles
+        tabDistributions?.classList.add('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabDistributions?.classList.remove('text-gray-700', 'hover:text-gray-900');
+        tabSummary?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabSummary?.classList.add('text-gray-700', 'hover:text-gray-900');
+        tabExplorer?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabExplorer?.classList.add('text-gray-700', 'hover:text-gray-900');
+        tabHourly?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabHourly?.classList.add('text-gray-700', 'hover:text-gray-900');
+        tabMap?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabMap?.classList.add('text-gray-700', 'hover:text-gray-900');
+
+        // Show/hide content
+        contentDistributions?.classList.remove('hidden');
+        contentSummary?.classList.add('hidden');
+        contentExplorer?.classList.add('hidden');
+        contentHourly?.classList.add('hidden');
         contentMap?.classList.add('hidden');
       }
 
@@ -276,12 +320,15 @@ import CTAButton from '../components/shared/CTAButton.astro';
         tabExplorer?.classList.add('text-gray-700', 'hover:text-gray-900');
         tabHourly?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
         tabHourly?.classList.add('text-gray-700', 'hover:text-gray-900');
+        tabDistributions?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabDistributions?.classList.add('text-gray-700', 'hover:text-gray-900');
 
         // Show/hide content
         contentMap?.classList.remove('hidden');
         contentSummary?.classList.add('hidden');
         contentExplorer?.classList.add('hidden');
         contentHourly?.classList.add('hidden');
+        contentDistributions?.classList.add('hidden');
 
         // Trigger map resize after showing (fixes Leaflet display issues)
         setTimeout(() => {
@@ -300,6 +347,7 @@ import CTAButton from '../components/shared/CTAButton.astro';
       tabSummary?.addEventListener('click', switchToSummary);
       tabExplorer?.addEventListener('click', switchToExplorer);
       tabHourly?.addEventListener('click', switchToHourly);
+      tabDistributions?.addEventListener('click', switchToDistributions);
       tabMap?.addEventListener('click', switchToMap);
 
       // Handle critically ill info button click
