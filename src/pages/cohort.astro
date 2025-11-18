@@ -26,7 +26,16 @@ import CTAButton from '../components/shared/CTAButton.astro';
           CLIF Cohort Dashboard
         </h1>
         <p class="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto mb-6">
-          Insights from <span class="font-semibold text-clif-burgundy">808,749</span> unique critically ill patients
+          Insights from <span class="font-semibold text-clif-burgundy">808,749</span> unique critically ill patients<button
+            id="critically-ill-info-btn"
+            class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-blue-500 hover:bg-blue-600 text-white transition-colors duration-200 cursor-pointer align-super ml-0.5"
+            aria-label="Learn what critically ill patients means"
+            title="Click to see definition of critically ill patients"
+          >
+            <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+            </svg>
+          </button>
           across <span class="font-semibold text-clif-burgundy">62</span> hospitals in
           <span class="font-semibold text-clif-burgundy">12</span> participating institutions
         </p>
@@ -117,7 +126,7 @@ import CTAButton from '../components/shared/CTAButton.astro';
           </div>
 
           <!-- Critically Ill Definition Box -->
-          <div class="bg-blue-50 border-l-4 border-blue-400 rounded-lg p-6 shadow-sm">
+          <div id="critically-ill-definition" class="bg-blue-50 border-l-4 border-blue-400 rounded-lg p-6 shadow-sm transition-all duration-300">
             <div class="flex items-start gap-3">
               <svg class="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
@@ -292,6 +301,48 @@ import CTAButton from '../components/shared/CTAButton.astro';
       tabExplorer?.addEventListener('click', switchToExplorer);
       tabHourly?.addEventListener('click', switchToHourly);
       tabMap?.addEventListener('click', switchToMap);
+
+      // Handle critically ill info button click
+      const criticallyIllInfoBtn = document.getElementById('critically-ill-info-btn');
+      const criticallyIllDefinition = document.getElementById('critically-ill-definition');
+
+      criticallyIllInfoBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+
+        if (criticallyIllDefinition) {
+          // Scroll to the definition box with smooth behavior
+          criticallyIllDefinition.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+          });
+
+          // Add highlight animation
+          criticallyIllDefinition.classList.add('highlight-pulse');
+
+          // Remove the highlight class after animation completes
+          setTimeout(() => {
+            criticallyIllDefinition.classList.remove('highlight-pulse');
+          }, 2000);
+        }
+      });
     });
   </script>
+
+  <style>
+    /* Highlight animation for critically ill definition box */
+    @keyframes highlightPulse {
+      0%, 100% {
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+        border-left-width: 4px;
+      }
+      50% {
+        box-shadow: 0 0 20px 5px rgba(59, 130, 246, 0.5);
+        border-left-width: 6px;
+      }
+    }
+
+    .highlight-pulse {
+      animation: highlightPulse 1s ease-in-out 2;
+    }
+  </style>
 </BaseLayout>

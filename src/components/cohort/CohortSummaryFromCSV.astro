@@ -42,7 +42,7 @@ for (let i = 1; i < lines.length; i++) {
 
 // Extract data
 const uniquePatients = dataMap.get('N: Unique patients') || '808,749';
-const encounterBlocks = dataMap.get('N: Encounter blocks') || '1,029,400';
+const encounterBlocks = dataMap.get('N: Hospitalizations') || '1,029,400';
 const hospitals = dataMap.get('N: Hospitals') || '62';
 const years = dataMap.get('Years') || '2011-2025';
 
@@ -197,7 +197,7 @@ const dopamineDose = dataMap.get('    Dopamine dose (mcg/kg/min), median [Q1, Q3
         </div>
         <div class="bg-gradient-to-br from-slate-500 to-slate-600 text-white px-4 py-3.5 rounded-lg shadow min-w-full">
           <div class="text-xl font-bold">{extractNumber(encounterBlocks)}</div>
-          <div class="text-xs opacity-90 whitespace-nowrap">Total Encounters</div>
+          <div class="text-xs opacity-90 whitespace-nowrap">Total Hospitalizations</div>
         </div>
         <div class="bg-gradient-to-br from-slate-400 to-slate-500 text-white px-4 py-3.5 rounded-lg shadow min-w-full">
           <div class="text-xl font-bold">{hospitals}</div>

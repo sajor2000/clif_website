@@ -660,10 +660,10 @@ const categories = Array.from(groupedChars.keys());
 
   // Get weight for a site-year combination based on characteristic type
   // For "Age at admission", use "N: Unique patients"
-  // For all other median characteristics, use "N: Encounter blocks"
+  // For all other median characteristics, use "N: Hospitalizations"
   function getWeight(siteYearData, characteristic) {
     const isAgeAtAdmission = characteristic.trim().toLowerCase().includes('age at admission');
-    const weightKey = isAgeAtAdmission ? 'N: Unique patients' : 'N: Encounter blocks';
+    const weightKey = isAgeAtAdmission ? 'N: Unique patients' : 'N: Hospitalizations';
 
     // Try exact match first
     let weightValue = siteYearData.characteristics[weightKey];
