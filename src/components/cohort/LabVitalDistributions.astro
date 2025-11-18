@@ -11,12 +11,15 @@ function parseCollectionStatsCSV(content: string) {
   const lines = content.trim().split('\n');
   const headers = lines[0].split(',');
 
-  // Extract site names from headers (e.g., upenn__whole_stay_mean)
-  const sites = new Set<string>();
+  // Extract site names from headers IN ORDER (e.g., upenn__whole_stay_mean)
+  // Use array to preserve order instead of Set
+  const sitesArray: string[] = [];
+  const seenSites = new Set<string>();
   headers.slice(3).forEach(header => {
     const match = header.match(/^(.+?)__/);
-    if (match) {
-      sites.add(match[1]);
+    if (match && !seenSites.has(match[1])) {
+      sitesArray.push(match[1]);
+      seenSites.add(match[1]);
     }
   });
 
@@ -64,9 +67,9 @@ function parseCollectionStatsCSV(content: string) {
         console.log('Parsed row:', { dataType, category, unit });
       }
 
-      // Parse site-specific data
+      // Parse site-specific data IN THE ORDER THEY APPEAR IN CSV
       let colIndex = 3;
-      Array.from(sites).sort().forEach(site => {
+      sitesArray.forEach(site => {
         const siteData: any = {
           total_number_of_stays: values[colIndex] || '',
           total_observations: values[colIndex + 1] || '',
@@ -95,7 +98,7 @@ function parseCollectionStatsCSV(content: string) {
   });
 
   return {
-    sites: Array.from(sites).sort(),
+    sites: sitesArray, // Return sites in the order they appear in CSV
     data: dataByCategory
   };
 }
