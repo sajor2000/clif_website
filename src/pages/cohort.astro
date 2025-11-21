@@ -85,55 +85,19 @@ import CTAButton from '../components/shared/CTAButton.astro';
         <div id="content-summary" class="tab-content">
           <div class="text-center mb-8">
             <h2 class="text-3xl font-bold text-gray-800 mb-3">Summary Statistics</h2>
-            <p class="text-lg text-gray-600">Quick overview of the CLIF consortium cohort characteristics</p>
-          </div>
-
-          <!-- Collapsible Critically Ill Definition -->
-          <div class="max-w-4xl mx-auto mb-8">
-            <details class="group bg-blue-50 border border-blue-200 rounded-lg shadow-sm">
-              <summary class="flex items-center justify-between cursor-pointer p-4 list-none">
-                <div class="flex items-center gap-2">
-                  <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
-                  </svg>
-                  <span class="font-semibold text-blue-900">What are Critically Ill Patients?</span>
-                </div>
-                <svg class="w-5 h-5 text-blue-600 transition-transform duration-200 group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            <p class="text-lg text-gray-600">
+              Quick overview of the CLIF consortium
+              <button
+                id="critically-ill-trigger"
+                class="text-blue-600 hover:text-blue-800 underline decoration-dotted underline-offset-2 cursor-help inline-flex items-center gap-0.5"
+              >
+                critically ill
+                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
                 </svg>
-              </summary>
-              <div class="px-4 pb-4 pt-2 border-t border-blue-200">
-                <p class="text-blue-800 mb-3 text-sm">
-                  Our cohort includes patients meeting any of the following criteria:
-                </p>
-                <ul class="space-y-2 text-blue-800 text-sm">
-                  <li class="flex items-start gap-2">
-                    <svg class="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                    </svg>
-                    <span><strong>ICU encounters:</strong> Patients admitted to an ICU</span>
-                  </li>
-                  <li class="flex items-start gap-2">
-                    <svg class="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                    </svg>
-                    <span><strong>Advanced respiratory support:</strong> Mechanical ventilation or similar interventions</span>
-                  </li>
-                  <li class="flex items-start gap-2">
-                    <svg class="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                    </svg>
-                    <span><strong>Vasoactive support:</strong> Vasopressor medications to maintain blood pressure</span>
-                  </li>
-                  <li class="flex items-start gap-2">
-                    <svg class="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                    </svg>
-                    <span><strong>Other critically ill:</strong> Meeting institutional criteria for critical illness</span>
-                  </li>
-                </ul>
-              </div>
-            </details>
+              </button>
+              patient cohort characteristics
+            </p>
           </div>
 
           <CohortSummaryFromCSV />
@@ -225,8 +189,57 @@ import CTAButton from '../components/shared/CTAButton.astro';
     </div>
   </div>
 
+  <!-- Critically Ill Modal -->
+  <div id="critically-ill-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <!-- Backdrop -->
+    <div id="modal-backdrop" class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+    <!-- Modal Card -->
+    <div class="relative bg-white rounded-xl shadow-2xl max-w-md w-full p-6 transform transition-all">
+      <button id="modal-close" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+          <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+          </svg>
+        </div>
+        <h3 class="text-xl font-semibold text-gray-900">What are Critically Ill Patients?</h3>
+      </div>
+      <p class="text-gray-600 mb-4">Our cohort includes patients meeting any of the following criteria:</p>
+      <ul class="space-y-3">
+        <li class="flex items-start gap-3">
+          <svg class="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+          </svg>
+          <span class="text-gray-700"><strong class="text-gray-900">ICU encounters:</strong> Patients admitted to an ICU</span>
+        </li>
+        <li class="flex items-start gap-3">
+          <svg class="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+          </svg>
+          <span class="text-gray-700"><strong class="text-gray-900">Advanced respiratory support:</strong> Mechanical ventilation or similar interventions</span>
+        </li>
+        <li class="flex items-start gap-3">
+          <svg class="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+          </svg>
+          <span class="text-gray-700"><strong class="text-gray-900">Vasoactive support:</strong> Vasopressor medications to maintain blood pressure</span>
+        </li>
+        <li class="flex items-start gap-3">
+          <svg class="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+          </svg>
+          <span class="text-gray-700"><strong class="text-gray-900">Other critically ill:</strong> Meeting institutional criteria for critical illness</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+
   <!-- Tab Switching Script -->
-  <script>
+  <script is:inline>
     document.addEventListener('DOMContentLoaded', () => {
       const tabSummary = document.getElementById('tab-summary');
       const tabExplorer = document.getElementById('tab-explorer');
@@ -362,6 +375,31 @@ import CTAButton from '../components/shared/CTAButton.astro';
       tabHourly?.addEventListener('click', switchToHourly);
       tabDistributions?.addEventListener('click', switchToDistributions);
       tabMap?.addEventListener('click', switchToMap);
+
+      // Critically ill modal
+      const criticallyIllTrigger = document.getElementById('critically-ill-trigger');
+      const criticallyIllModal = document.getElementById('critically-ill-modal');
+      const modalBackdrop = document.getElementById('modal-backdrop');
+      const modalClose = document.getElementById('modal-close');
+
+      function openModal() {
+        criticallyIllModal?.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeModal() {
+        criticallyIllModal?.classList.add('hidden');
+        document.body.style.overflow = '';
+      }
+
+      criticallyIllTrigger?.addEventListener('click', openModal);
+      modalBackdrop?.addEventListener('click', closeModal);
+      modalClose?.addEventListener('click', closeModal);
+
+      // Close on Escape key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeModal();
+      });
     });
   </script>
 
