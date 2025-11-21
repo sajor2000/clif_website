@@ -3,6 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import CohortSummaryFromCSV from '../components/cohort/CohortSummaryFromCSV.astro';
 import InteractiveDashboard from '../components/cohort/InteractiveDashboard.astro';
 import HourlyTrends from '../components/cohort/HourlyTrends.astro';
+import DataDistributions from '../components/cohort/DataDistributions.astro';
 import MapExplorer from '../components/cohort/MapExplorer.astro';
 import CTAButton from '../components/shared/CTAButton.astro';
 ---
@@ -28,16 +29,7 @@ import CTAButton from '../components/shared/CTAButton.astro';
           CLIF Cohort Dashboard
         </h1>
         <p class="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto mb-6">
-          Insights from <span class="font-semibold text-clif-burgundy">808,749</span> unique critically ill patients<button
-            id="critically-ill-info-btn"
-            class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-blue-500 hover:bg-blue-600 text-white transition-colors duration-200 cursor-pointer align-super ml-0.5"
-            aria-label="Learn what critically ill patients means"
-            title="Click to see definition of critically ill patients"
-          >
-            <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
-            </svg>
-          </button>
+          Insights from <span class="font-semibold text-clif-burgundy">808,749</span> unique critically ill patients
           across <span class="font-semibold text-clif-burgundy">62</span> hospitals in
           <span class="font-semibold text-clif-burgundy">12</span> participating institutions
         </p>
@@ -75,6 +67,12 @@ import CTAButton from '../components/shared/CTAButton.astro';
               Hourly Trends
             </button>
             <button
+              id="tab-distributions"
+              class="px-4 py-3 text-xs md:text-base font-semibold rounded-md transition-all duration-200 text-gray-700 hover:text-gray-900 whitespace-nowrap"
+            >
+              Data Distributions
+            </button>
+            <button
               id="tab-map"
               class="px-4 py-3 text-xs md:text-base font-semibold rounded-md transition-all duration-200 text-gray-700 hover:text-gray-900 whitespace-nowrap"
             >
@@ -89,52 +87,22 @@ import CTAButton from '../components/shared/CTAButton.astro';
             <h2 class="text-3xl font-bold text-gray-800 mb-3">Summary Statistics</h2>
             <p class="text-lg text-gray-600">Quick overview of the CLIF consortium cohort characteristics</p>
           </div>
-          <CohortSummaryFromCSV />
-        </div>
 
-        <!-- Tab Content: Interactive Data Explorer -->
-        <div id="content-explorer" class="tab-content hidden">
-          <InteractiveDashboard />
-        </div>
-
-        <!-- Tab Content: Hourly Trends -->
-        <div id="content-hourly" class="tab-content hidden">
-          <HourlyTrends />
-        </div>
-
-        <!-- Tab Content: Map Explorer -->
-        <div id="content-map" class="tab-content hidden">
-          <MapExplorer />
-        </div>
-      </section>
-
-      <!-- Data Source & Definitions Section -->
-      <section class="mb-16">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <!-- Data Source Info Box -->
-          <div class="bg-gray-50 border-l-4 border-gray-400 rounded-lg p-6 shadow-sm">
-            <div class="flex items-start gap-3">
-              <svg class="w-6 h-6 text-gray-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
-                <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/>
-              </svg>
-              <div>
-                <h3 class="text-lg font-semibold text-gray-900 mb-3">Data Source</h3>
-                <p class="text-gray-700 text-sm">
-                  This dashboard presents aggregated, de-identified data from the CLIF Consortium spanning 2011-2025. All data has been standardized according to CLIF data format specifications and undergoes rigorous quality assurance processes. <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF-MIMIC" target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:underline font-medium">MIMIC IV data</a> is included for benchmarking purposes.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Critically Ill Definition Box -->
-          <div id="critically-ill-definition" class="bg-blue-50 border-l-4 border-blue-400 rounded-lg p-6 shadow-sm transition-all duration-300">
-            <div class="flex items-start gap-3">
-              <svg class="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
-              </svg>
-              <div>
-                <h3 class="text-lg font-semibold text-blue-900 mb-3">What are Critically Ill Patients?</h3>
+          <!-- Collapsible Critically Ill Definition -->
+          <div class="max-w-4xl mx-auto mb-8">
+            <details class="group bg-blue-50 border border-blue-200 rounded-lg shadow-sm">
+              <summary class="flex items-center justify-between cursor-pointer p-4 list-none">
+                <div class="flex items-center gap-2">
+                  <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                  </svg>
+                  <span class="font-semibold text-blue-900">What are Critically Ill Patients?</span>
+                </div>
+                <svg class="w-5 h-5 text-blue-600 transition-transform duration-200 group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </summary>
+              <div class="px-4 pb-4 pt-2 border-t border-blue-200">
                 <p class="text-blue-800 mb-3 text-sm">
                   Our cohort includes patients meeting any of the following criteria:
                 </p>
@@ -165,6 +133,61 @@ import CTAButton from '../components/shared/CTAButton.astro';
                   </li>
                 </ul>
               </div>
+            </details>
+          </div>
+
+          <CohortSummaryFromCSV />
+        </div>
+
+        <!-- Tab Content: Interactive Data Explorer -->
+        <div id="content-explorer" class="tab-content hidden">
+          <InteractiveDashboard />
+        </div>
+
+        <!-- Tab Content: Hourly Trends -->
+        <div id="content-hourly" class="tab-content hidden">
+          <HourlyTrends />
+        </div>
+
+        <!-- Tab Content: Data Distributions -->
+        <div id="content-distributions" class="tab-content hidden">
+          <DataDistributions />
+        </div>
+
+        <!-- Tab Content: Map Explorer -->
+        <div id="content-map" class="tab-content hidden">
+          <MapExplorer />
+        </div>
+      </section>
+
+      <!-- Data Source & Methodology Section -->
+      <section class="mb-16">
+        <div class="max-w-4xl mx-auto space-y-4">
+          <!-- Data Source Info Box -->
+          <div class="bg-gray-50 border-l-4 border-gray-400 rounded-lg p-6 shadow-sm">
+            <div class="flex items-start gap-3">
+              <svg class="w-6 h-6 text-gray-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
+                <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/>
+              </svg>
+              <div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-3">Data Source</h3>
+                <p class="text-gray-700 text-sm">
+                  This dashboard presents aggregated, de-identified data from the CLIF Consortium spanning 2011-2025. All data has been standardized according to CLIF data format specifications and undergoes rigorous quality assurance processes. <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF-MIMIC" target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:underline font-medium">MIMIC IV data</a> is included for benchmarking purposes.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Methodology Note -->
+          <div class="bg-amber-50 border-l-4 border-amber-400 rounded-lg p-4 shadow-sm">
+            <div class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+              </svg>
+              <p class="text-amber-800 text-sm">
+                <strong>Methodology:</strong> Median values shown are weighted medians calculated using site-specific sample sizes. Interquartile ranges (IQR) represent the minimum Q1 to maximum Q3 observed across sites as an approximation for aggregated data.
+              </p>
             </div>
           </div>
         </div>
@@ -208,10 +231,12 @@ import CTAButton from '../components/shared/CTAButton.astro';
       const tabSummary = document.getElementById('tab-summary');
       const tabExplorer = document.getElementById('tab-explorer');
       const tabHourly = document.getElementById('tab-hourly');
+      const tabDistributions = document.getElementById('tab-distributions');
       const tabMap = document.getElementById('tab-map');
       const contentSummary = document.getElementById('content-summary');
       const contentExplorer = document.getElementById('content-explorer');
       const contentHourly = document.getElementById('content-hourly');
+      const contentDistributions = document.getElementById('content-distributions');
       const contentMap = document.getElementById('content-map');
 
       function switchToSummary() {
@@ -222,6 +247,8 @@ import CTAButton from '../components/shared/CTAButton.astro';
         tabExplorer?.classList.add('text-gray-700', 'hover:text-gray-900');
         tabHourly?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
         tabHourly?.classList.add('text-gray-700', 'hover:text-gray-900');
+        tabDistributions?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabDistributions?.classList.add('text-gray-700', 'hover:text-gray-900');
         tabMap?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
         tabMap?.classList.add('text-gray-700', 'hover:text-gray-900');
 
@@ -229,6 +256,7 @@ import CTAButton from '../components/shared/CTAButton.astro';
         contentSummary?.classList.remove('hidden');
         contentExplorer?.classList.add('hidden');
         contentHourly?.classList.add('hidden');
+        contentDistributions?.classList.add('hidden');
         contentMap?.classList.add('hidden');
       }
 
@@ -240,6 +268,8 @@ import CTAButton from '../components/shared/CTAButton.astro';
         tabSummary?.classList.add('text-gray-700', 'hover:text-gray-900');
         tabHourly?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
         tabHourly?.classList.add('text-gray-700', 'hover:text-gray-900');
+        tabDistributions?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabDistributions?.classList.add('text-gray-700', 'hover:text-gray-900');
         tabMap?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
         tabMap?.classList.add('text-gray-700', 'hover:text-gray-900');
 
@@ -247,6 +277,7 @@ import CTAButton from '../components/shared/CTAButton.astro';
         contentExplorer?.classList.remove('hidden');
         contentSummary?.classList.add('hidden');
         contentHourly?.classList.add('hidden');
+        contentDistributions?.classList.add('hidden');
         contentMap?.classList.add('hidden');
       }
 
@@ -258,6 +289,8 @@ import CTAButton from '../components/shared/CTAButton.astro';
         tabSummary?.classList.add('text-gray-700', 'hover:text-gray-900');
         tabExplorer?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
         tabExplorer?.classList.add('text-gray-700', 'hover:text-gray-900');
+        tabDistributions?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabDistributions?.classList.add('text-gray-700', 'hover:text-gray-900');
         tabMap?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
         tabMap?.classList.add('text-gray-700', 'hover:text-gray-900');
 
@@ -265,6 +298,28 @@ import CTAButton from '../components/shared/CTAButton.astro';
         contentHourly?.classList.remove('hidden');
         contentSummary?.classList.add('hidden');
         contentExplorer?.classList.add('hidden');
+        contentDistributions?.classList.add('hidden');
+        contentMap?.classList.add('hidden');
+      }
+
+      function switchToDistributions() {
+        // Update button styles
+        tabDistributions?.classList.add('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabDistributions?.classList.remove('text-gray-700', 'hover:text-gray-900');
+        tabSummary?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabSummary?.classList.add('text-gray-700', 'hover:text-gray-900');
+        tabExplorer?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabExplorer?.classList.add('text-gray-700', 'hover:text-gray-900');
+        tabHourly?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabHourly?.classList.add('text-gray-700', 'hover:text-gray-900');
+        tabMap?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabMap?.classList.add('text-gray-700', 'hover:text-gray-900');
+
+        // Show/hide content
+        contentDistributions?.classList.remove('hidden');
+        contentSummary?.classList.add('hidden');
+        contentExplorer?.classList.add('hidden');
+        contentHourly?.classList.add('hidden');
         contentMap?.classList.add('hidden');
       }
 
@@ -278,12 +333,15 @@ import CTAButton from '../components/shared/CTAButton.astro';
         tabExplorer?.classList.add('text-gray-700', 'hover:text-gray-900');
         tabHourly?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
         tabHourly?.classList.add('text-gray-700', 'hover:text-gray-900');
+        tabDistributions?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabDistributions?.classList.add('text-gray-700', 'hover:text-gray-900');
 
         // Show/hide content
         contentMap?.classList.remove('hidden');
         contentSummary?.classList.add('hidden');
         contentExplorer?.classList.add('hidden');
         contentHourly?.classList.add('hidden');
+        contentDistributions?.classList.add('hidden');
 
         // Trigger map resize after showing (fixes Leaflet display issues)
         setTimeout(() => {
@@ -302,49 +360,15 @@ import CTAButton from '../components/shared/CTAButton.astro';
       tabSummary?.addEventListener('click', switchToSummary);
       tabExplorer?.addEventListener('click', switchToExplorer);
       tabHourly?.addEventListener('click', switchToHourly);
+      tabDistributions?.addEventListener('click', switchToDistributions);
       tabMap?.addEventListener('click', switchToMap);
-
-      // Handle critically ill info button click
-      const criticallyIllInfoBtn = document.getElementById('critically-ill-info-btn');
-      const criticallyIllDefinition = document.getElementById('critically-ill-definition');
-
-      criticallyIllInfoBtn?.addEventListener('click', (e) => {
-        e.preventDefault();
-
-        if (criticallyIllDefinition) {
-          // Scroll to the definition box with smooth behavior
-          criticallyIllDefinition.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center'
-          });
-
-          // Add highlight animation
-          criticallyIllDefinition.classList.add('highlight-pulse');
-
-          // Remove the highlight class after animation completes
-          setTimeout(() => {
-            criticallyIllDefinition.classList.remove('highlight-pulse');
-          }, 2000);
-        }
-      });
     });
   </script>
 
   <style>
-    /* Highlight animation for critically ill definition box */
-    @keyframes highlightPulse {
-      0%, 100% {
-        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
-        border-left-width: 4px;
-      }
-      50% {
-        box-shadow: 0 0 20px 5px rgba(59, 130, 246, 0.5);
-        border-left-width: 6px;
-      }
-    }
-
-    .highlight-pulse {
-      animation: highlightPulse 1s ease-in-out 2;
+    /* Hide default summary marker in webkit browsers */
+    summary::-webkit-details-marker {
+      display: none;
     }
   </style>
 </BaseLayout>
