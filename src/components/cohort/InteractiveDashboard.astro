@@ -1,0 +1,1876 @@
+---
+import { parseConsortiumCSV, groupCharacteristics } from '../../utils/csvParser';
+import { readFile } from 'fs/promises';
+import { join } from 'path';
+
+// Read and parse the detailed CSV file for Charts view
+const csvPath = join(process.cwd(), 'src', 'data', 'consortium_t1_by_year_site_1113.csv');
+const csvContent = await readFile(csvPath, 'utf-8');
+const data = parseConsortiumCSV(csvContent);
+const groupedChars = groupCharacteristics(data);
+
+// Read the overall CSV file for Table view and Export
+const overallCsvPath = join(process.cwd(), 'src', 'data', 'overall_1113.csv');
+const overallCsvContent = await readFile(overallCsvPath, 'utf-8');
+
+// Helper to parse CSV line with quoted values
+function parseCSVLineHelper(line: string, preserveFirstColumnSpaces: boolean = false): string[] {
+  const result: string[] = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+
+    if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) {
+      // For first column (index 0), preserve leading spaces if requested
+      if (preserveFirstColumnSpaces && result.length === 0) {
+        result.push(current.replace(/^"|"$/g, '')); // Remove quotes but keep spaces
+      } else {
+        result.push(current.trim());
+      }
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+
+  // Handle last field
+  if (preserveFirstColumnSpaces && result.length === 0) {
+    result.push(current.replace(/^"|"$/g, ''));
+  } else {
+    result.push(current.trim());
+  }
+  return result;
+}
+
+// Parse overall CSV into simple format
+function parseOverallCSV(content: string) {
+  const lines = content.trim().split('\n');
+  const headers = parseCSVLineHelper(lines[0]);
+
+  const tableData: Array<{ characteristic: string; values: Record<string, string> }> = [];
+
+  for (let i = 2; i < lines.length; i++) { // Skip header and years row
+    const values = parseCSVLineHelper(lines[i]);
+    const characteristic = values[0];
+
+    if (!characteristic) continue;
+
+    const row: Record<string, string> = {};
+    for (let j = 1; j < headers.length && j < values.length; j++) {
+      row[headers[j]] = values[j] || '-';
+    }
+
+    tableData.push({ characteristic, values: row });
+  }
+
+  return { headers: headers.slice(1), data: tableData }; // Skip "Characteristics" column header
+}
+
+const overallData = parseOverallCSV(overallCsvContent);
+
+// Convert to JSON for client-side use
+const dataJson = JSON.stringify({
+  allSites: data.allSites,
+  allYears: data.allYears,
+  characteristics: data.characteristics.map(c => ({
+    variable: c.variable,
+    sites: Object.fromEntries(
+      Array.from(c.sites.entries()).map(([site, yearMap]) => [
+        site,
+        Object.fromEntries(yearMap)
+      ])
+    )
+  })),
+  siteYearData: data.siteYearData.map(d => ({
+    site: d.site,
+    year: d.year,
+    characteristics: Object.fromEntries(d.characteristics)
+  }))
+});
+
+const overallDataJson = JSON.stringify(overallData);
+
+const categories = Array.from(groupedChars.keys());
+---
+
+<div class="interactive-dashboard bg-white rounded-2xl shadow-xl p-6 md:p-8">
+  <!-- Dashboard Header -->
+  <div class="mb-8">
+    <h2 class="text-3xl font-bold text-gray-800 mb-2">Interactive Data Explorer</h2>
+    <p class="text-gray-600 mb-3">
+      Explore consortium data across {data.allSites.length} institutions and {data.allYears.length} years.
+      Use the filters below to customize your view.
+    </p>
+    <div class="bg-blue-50 border-l-4 border-blue-400 p-3 rounded">
+      <p class="text-sm text-blue-800">
+        <strong>Privacy Notice:</strong> To protect patient privacy, characteristics with values where n &lt; 10 are automatically excluded from display and export.
+      </p>
+    </div>
+    <div class="bg-gray-50 border-l-4 border-gray-400 p-3 rounded mt-3">
+      <p class="text-sm text-gray-700">
+        <strong>Methodology:</strong> Median values are weighted medians calculated using site-specific sample sizes. Interquartile ranges (IQR) shown are approximations representing the range from the minimum Q1 to maximum Q3 observed across selected sites.
+      </p>
+    </div>
+  </div>
+
+  <!-- View Toggle -->
+  <div class="flex items-center justify-between mb-6 pb-6 border-b-2 border-gray-200">
+    <div class="flex gap-2">
+      <button
+        id="view-charts"
+        class="px-6 py-2 bg-clif-burgundy text-white rounded-lg font-semibold hover:bg-clif-burgundy-dark transition-colors"
+      >
+        Charts
+      </button>
+      <button
+        id="view-table"
+        class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+      >
+        Table
+      </button>
+    </div>
+  </div>
+
+  <!-- Charts View -->
+  <div id="charts-view" class="space-y-6">
+    <!-- Filter Controls (Charts only) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Site Filter -->
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-2">
+          Select Sites
+        </label>
+        <div class="relative">
+          <button
+            id="site-filter-toggle"
+            class="w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2 text-left flex items-center justify-between hover:border-clif-burgundy transition-colors"
+          >
+            <span id="site-filter-text" class="text-gray-700">All Sites</span>
+            <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+            </svg>
+          </button>
+          <div
+            id="site-filter-dropdown"
+            class="hidden absolute z-50 mt-2 w-full bg-white border-2 border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto"
+          >
+            <div class="p-2">
+              <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer">
+                <input
+                  type="checkbox"
+                  id="site-all"
+                  class="site-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy"
+                  checked
+                />
+                <span class="ml-2 text-sm text-gray-700 font-semibold">All Sites</span>
+              </label>
+              {data.allSites.map(site => (
+                <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer">
+                  <input
+                    type="checkbox"
+                    class="site-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy"
+                    value={site}
+                    checked
+                  />
+                  <span class="ml-2 text-sm text-gray-700">{site}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Year Filter -->
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-2">
+          Select Years
+        </label>
+        <div class="relative">
+          <button
+            id="year-filter-toggle"
+            class="w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2 text-left flex items-center justify-between hover:border-clif-burgundy transition-colors"
+          >
+            <span id="year-filter-text" class="text-gray-700">All Years</span>
+            <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+            </svg>
+          </button>
+          <div
+            id="year-filter-dropdown"
+            class="hidden absolute z-50 mt-2 w-full bg-white border-2 border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto"
+          >
+            <div class="p-2">
+              <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer">
+                <input
+                  type="checkbox"
+                  id="year-all"
+                  class="year-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy"
+                  checked
+                />
+                <span class="ml-2 text-sm text-gray-700 font-semibold">All Years</span>
+              </label>
+              {data.allYears.map(year => (
+                <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer">
+                  <input
+                    type="checkbox"
+                    class="year-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy"
+                    value={year}
+                    checked
+                  />
+                  <span class="ml-2 text-sm text-gray-700">{year}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart Builder with Sidebar -->
+    <div class="flex gap-6">
+      <!-- Left Sidebar - Characteristic Categories -->
+      <div class="w-80 flex-shrink-0">
+      <div class="bg-white border-2 border-gray-200 rounded-lg overflow-hidden sticky top-4">
+        <!-- Search Box -->
+        <div class="p-4 border-b border-gray-200">
+          <input
+            type="text"
+            id="characteristic-search"
+            placeholder="Search for a filter"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:border-clif-burgundy focus:ring-2 focus:ring-clif-burgundy focus:ring-opacity-50"
+          />
+        </div>
+
+        <!-- Categories List -->
+        <div id="categories-list" class="max-h-[600px] overflow-y-auto">
+          <!-- Categories will be populated by JavaScript -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Content Area -->
+    <div class="flex-1 space-y-6">
+      <!-- Chart Builder Controls -->
+      <div class="bg-gray-50 rounded-lg p-6">
+        <h3 class="text-lg font-bold text-gray-800 mb-4">Chart Builder</h3>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- Chart Type Selector -->
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Chart Type</label>
+            <select
+              id="chart-type-select"
+              class="w-full bg-white border-2 border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:border-clif-burgundy focus:ring-2 focus:ring-clif-burgundy focus:ring-opacity-50"
+            >
+              <option value="bar">Bar Chart</option>
+              <option value="line">Line Chart</option>
+              <option value="horizontalBar">Horizontal Bar</option>
+              <option value="pie">Pie Chart</option>
+              <option value="doughnut">Doughnut Chart</option>
+            </select>
+          </div>
+
+          <!-- X-Axis Selector -->
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Group By</label>
+            <select
+              id="chart-xaxis-select"
+              class="w-full bg-white border-2 border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:border-clif-burgundy focus:ring-2 focus:ring-clif-burgundy focus:ring-opacity-50"
+            >
+              <option value="site">Site</option>
+              <option value="year">Year</option>
+            </select>
+          </div>
+
+          <!-- Generate Button -->
+          <div class="flex items-end">
+            <button
+              id="generate-chart-btn"
+              class="w-full px-4 py-2 bg-clif-burgundy text-white rounded-lg font-semibold hover:bg-clif-burgundy-dark transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+              disabled
+            >
+              Generate Chart
+            </button>
+          </div>
+        </div>
+
+        <!-- Selected Characteristic Display -->
+        <div id="selected-characteristic-display" class="mt-4 hidden">
+          <div class="flex items-center gap-2 text-sm text-gray-600">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+            </svg>
+            <span>Selected: <strong id="selected-characteristic-name"></strong></span>
+          </div>
+        </div>
+      </div>
+
+    <!-- Chart Display Area -->
+    <div id="custom-chart-container" class="bg-white rounded-lg p-6 border-2 border-gray-200 hidden">
+      <div class="flex items-center justify-between mb-2">
+        <div class="flex-1">
+          <h3 id="custom-chart-title" class="text-lg font-bold text-gray-800"></h3>
+          <p id="custom-chart-subtitle" class="text-sm text-gray-600 mt-1"></p>
+        </div>
+        <button
+          id="clear-chart-btn"
+          class="px-3 py-1 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300 transition-colors flex-shrink-0"
+        >
+          Clear
+        </button>
+      </div>
+      <div class="relative" style="height: 400px;">
+        <canvas id="custom-chart"></canvas>
+      </div>
+      <!-- Note for sites without data -->
+      <div id="missing-sites-note" class="bg-gray-50 border-l-4 border-gray-400 p-3 rounded mt-4 hidden">
+        <p class="text-sm text-gray-700">
+          <strong>Sites without data:</strong> <span id="missing-sites-list"></span>
+        </p>
+      </div>
+      <!-- Data Note - shown below chart only when 2025 data is included -->
+      <div id="year-2025-note" class="bg-amber-50 border-l-4 border-amber-400 p-3 rounded mt-4 hidden">
+        <p class="text-sm text-amber-800">
+          <strong>Note:</strong> 2025 data represents a partial year and is not directly comparable to complete annual data from previous years.
+        </p>
+      </div>
+    </div>
+
+    <!-- Instructions (shown when no chart) -->
+    <div id="chart-instructions" class="bg-gray-50 rounded-lg p-8 text-center">
+      <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+      </svg>
+      <h3 class="text-xl font-bold text-gray-700 mb-2">Create Your Custom Chart</h3>
+      <p class="text-gray-600">
+        Select a characteristic from the sidebar, choose a chart type and grouping option, then click "Generate Chart" to visualize your data.
+      </p>
+    </div>
+    </div>
+    </div>
+  </div>
+
+  <!-- Table View -->
+  <div id="table-view" class="hidden">
+    <!-- Table Header with Export Button -->
+    <div class="flex items-center justify-between mb-4">
+      <!-- Search Box -->
+      <div class="flex-1 mr-4">
+        <input
+          type="text"
+          id="table-search"
+          placeholder="Search characteristics..."
+          class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-clif-burgundy focus:ring-2 focus:ring-clif-burgundy focus:ring-opacity-50"
+        />
+      </div>
+
+      <!-- Export Button -->
+      <button
+        id="export-data"
+        class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors whitespace-nowrap"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+        Export CSV
+      </button>
+    </div>
+
+    <!-- Data Table -->
+    <div class="overflow-x-auto max-h-[600px] overflow-y-auto">
+      <table id="data-table" class="w-full border-collapse">
+        <thead class="bg-clif-burgundy text-white sticky top-0 z-10">
+          <tr>
+            <th class="px-4 py-3 text-left font-semibold bg-clif-burgundy">Characteristic</th>
+            <th class="px-4 py-3 text-left font-semibold bg-clif-burgundy">Site</th>
+            <th class="px-4 py-3 text-left font-semibold bg-clif-burgundy">Year</th>
+            <th class="px-4 py-3 text-left font-semibold bg-clif-burgundy">Value</th>
+          </tr>
+        </thead>
+        <tbody id="table-body" class="divide-y divide-gray-200 bg-white">
+          <!-- Populated by JavaScript -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- JSON data storage -->
+<script type="application/json" id="consortium-json-data" set:html={dataJson}></script>
+<script type="application/json" id="overall-json-data" set:html={overallDataJson}></script>
+
+<script>
+  // Parse data from JSON script tags
+  const consortiumData = JSON.parse(document.getElementById('consortium-json-data').textContent);
+  const overallTableData = JSON.parse(document.getElementById('overall-json-data').textContent);
+
+  // Debug: Check if spaces are preserved after JSON parse
+  const firstItem = consortiumData.siteYearData[0];
+  // State management
+  let selectedSites = [...consortiumData.allSites];
+  let selectedYears = [...consortiumData.allYears];
+  let currentView = 'charts';
+
+  // Chart instances
+  let charts = {};
+
+  // Initialize on page load
+  document.addEventListener('DOMContentLoaded', () => {
+    initializeFilters();
+    initializeViewToggle();
+    initializeExport();
+    updateDashboard();
+  });
+
+  function initializeFilters() {
+    // Site filter
+    const siteToggle = document.getElementById('site-filter-toggle');
+    const siteDropdown = document.getElementById('site-filter-dropdown');
+    const siteAll = document.getElementById('site-all');
+    const siteCheckboxes = document.querySelectorAll('.site-checkbox:not(#site-all)');
+
+    siteToggle?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      siteDropdown?.classList.toggle('hidden');
+      document.getElementById('year-filter-dropdown')?.classList.add('hidden');
+    });
+
+    siteAll?.addEventListener('change', (e) => {
+      const checked = e.target.checked;
+      siteCheckboxes.forEach(cb => cb.checked = checked);
+      updateSelectedSites();
+    });
+
+    siteCheckboxes.forEach(cb => {
+      cb.addEventListener('change', () => {
+        updateSelectedSites();
+      });
+    });
+
+    // Year filter
+    const yearToggle = document.getElementById('year-filter-toggle');
+    const yearDropdown = document.getElementById('year-filter-dropdown');
+    const yearAll = document.getElementById('year-all');
+    const yearCheckboxes = document.querySelectorAll('.year-checkbox:not(#year-all)');
+
+    yearToggle?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      yearDropdown?.classList.toggle('hidden');
+      document.getElementById('site-filter-dropdown')?.classList.add('hidden');
+    });
+
+    yearAll?.addEventListener('change', (e) => {
+      const checked = e.target.checked;
+      yearCheckboxes.forEach(cb => cb.checked = checked);
+      updateSelectedYears();
+    });
+
+    yearCheckboxes.forEach(cb => {
+      cb.addEventListener('change', () => {
+        updateSelectedYears();
+      });
+    });
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', () => {
+      siteDropdown?.classList.add('hidden');
+      yearDropdown?.classList.add('hidden');
+    });
+  }
+
+  function updateSelectedSites() {
+    const checkboxes = document.querySelectorAll('.site-checkbox:not(#site-all)');
+    selectedSites = Array.from(checkboxes)
+      .filter(cb => cb.checked)
+      .map(cb => cb.value);
+
+    const siteAll = document.getElementById('site-all');
+    if (siteAll) {
+      siteAll.checked = selectedSites.length === consortiumData.allSites.length;
+    }
+
+    let text;
+    if (selectedSites.length === consortiumData.allSites.length) {
+      text = 'All Sites';
+    } else if (selectedSites.length === 1) {
+      text = selectedSites[0];
+    } else if (selectedSites.length <= 3) {
+      text = selectedSites.join(', ');
+    } else {
+      text = `${selectedSites.length} Sites`;
+    }
+    document.getElementById('site-filter-text').textContent = text;
+
+    updateDashboard();
+  }
+
+  function updateSelectedYears() {
+    const checkboxes = document.querySelectorAll('.year-checkbox:not(#year-all)');
+    selectedYears = Array.from(checkboxes)
+      .filter(cb => cb.checked)
+      .map(cb => cb.value);
+
+    const yearAll = document.getElementById('year-all');
+    if (yearAll) {
+      yearAll.checked = selectedYears.length === consortiumData.allYears.length;
+    }
+
+    let text;
+    if (selectedYears.length === consortiumData.allYears.length) {
+      text = 'All Years';
+    } else if (selectedYears.length === 1) {
+      text = selectedYears[0];
+    } else if (selectedYears.length <= 3) {
+      text = selectedYears.join(', ');
+    } else {
+      text = `${selectedYears.length} Years`;
+    }
+    document.getElementById('year-filter-text').textContent = text;
+
+    updateDashboard();
+  }
+
+  function initializeViewToggle() {
+    const chartsBtn = document.getElementById('view-charts');
+    const tableBtn = document.getElementById('view-table');
+    const chartsView = document.getElementById('charts-view');
+    const tableView = document.getElementById('table-view');
+
+    chartsBtn?.addEventListener('click', () => {
+      currentView = 'charts';
+      chartsBtn.classList.remove('bg-gray-200', 'text-gray-700');
+      chartsBtn.classList.add('bg-clif-burgundy', 'text-white');
+      tableBtn?.classList.remove('bg-clif-burgundy', 'text-white');
+      tableBtn?.classList.add('bg-gray-200', 'text-gray-700');
+      chartsView?.classList.remove('hidden');
+      tableView?.classList.add('hidden');
+    });
+
+    tableBtn?.addEventListener('click', () => {
+      currentView = 'table';
+      tableBtn.classList.remove('bg-gray-200', 'text-gray-700');
+      tableBtn.classList.add('bg-clif-burgundy', 'text-white');
+      chartsBtn?.classList.remove('bg-clif-burgundy', 'text-white');
+      chartsBtn?.classList.add('bg-gray-200', 'text-gray-700');
+      tableView?.classList.remove('hidden');
+      chartsView?.classList.add('hidden');
+      updateTable();
+    });
+
+    // Table search
+    const searchInput = document.getElementById('table-search');
+    searchInput?.addEventListener('input', () => {
+      updateTable();
+    });
+  }
+
+  function initializeExport() {
+    const exportBtn = document.getElementById('export-data');
+    exportBtn?.addEventListener('click', exportToCSV);
+  }
+
+  function updateDashboard() {
+    if (currentView === 'charts') {
+      updateCharts();
+    } else {
+      updateTable();
+    }
+  }
+
+  function getFilteredData() {
+    return consortiumData.siteYearData.filter(d => {
+      return selectedSites.includes(d.site) && selectedYears.includes(d.year);
+    });
+  }
+
+  function extractNumber(value) {
+    if (!value) return 0;
+    const match = value.match(/^[\d,]+/);
+    return match ? parseInt(match[0].replace(/,/g, ''), 10) : 0;
+  }
+
+  // Helper function to extract numeric value from string like "164 (0.1%)" or "68,359 (57.6%)" or "66 [54, 76]" or "3.0 [1.0, 6.0]"
+  function getNumeric(value) {
+    if (typeof value !== 'string') return null;
+
+    // Match patterns:
+    // "3.0 [1.0, 6.0]" -> extract 3.0
+    // "164 (0.1%)" -> extract 164
+    // "68,359 (57.6%)" -> extract 68359
+    // Just extract the first number before any brackets or parentheses
+    const match = value.match(/^\s*([-\d,\.]+)/);
+
+    if (match) {
+      const numStr = match[1].replace(/,/g, '');
+      try {
+        return parseFloat(numStr);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  // Check if value has IQR pattern [x, y]
+  function valueHasIQR(value) {
+    if (typeof value !== 'string') return false;
+    return /\[.*?,.*?\]/.test(value);
+  }
+
+  // Extract median and IQR from a value like "66 [54, 76]" or "3.0 [1.0, 6.0]"
+  function extractMedianAndIQR(value) {
+    if (typeof value !== 'string') return null;
+
+    // Match pattern: number [number, number]
+    const match = value.match(/^\s*([\d,\.]+)\s*\[\s*([\d,\.]+)\s*,\s*([\d,\.]+)\s*\]/);
+
+    if (match) {
+      return {
+        median: parseFloat(match[1].replace(/,/g, '')),
+        q1: parseFloat(match[2].replace(/,/g, '')),
+        q3: parseFloat(match[3].replace(/,/g, ''))
+      };
+    }
+    return null;
+  }
+
+  // Get weight for a site-year combination based on characteristic type
+  // For "Age at admission", use "N: Unique patients"
+  // For all other median characteristics, use "N: Hospitalizations"
+  function getWeight(siteYearData, characteristic) {
+    const isAgeAtAdmission = characteristic.trim().toLowerCase().includes('age at admission');
+    const weightKey = isAgeAtAdmission ? 'N: Unique patients' : 'N: Hospitalizations';
+
+    // Try exact match first
+    let weightValue = siteYearData.characteristics[weightKey];
+
+    // If not found, try to find by trimming
+    if (!weightValue) {
+      const charKey = Object.keys(siteYearData.characteristics).find(key =>
+        key.trim() === weightKey
+      );
+      if (charKey) {
+        weightValue = siteYearData.characteristics[charKey];
+      }
+    }
+
+    // Extract numeric value from weight (e.g., "68,359 (57.6%)" -> 68359)
+    if (weightValue) {
+      const numMatch = weightValue.match(/^\s*([\d,]+)/);
+      if (numMatch) {
+        return parseInt(numMatch[1].replace(/,/g, ''), 10);
+      }
+    }
+
+    return 0;
+  }
+
+  // Calculate weighted median from array of {value, weight} objects
+  function calculateWeightedMedian(items) {
+    if (items.length === 0) return null;
+    if (items.length === 1) return items[0].value;
+
+    // Sort by value
+    const sorted = items.slice().sort((a, b) => a.value - b.value);
+
+    // Calculate total weight
+    const totalWeight = sorted.reduce((sum, item) => sum + item.weight, 0);
+
+    // Find the median
+    const halfWeight = totalWeight / 2;
+    let cumulativeWeight = 0;
+
+    for (let i = 0; i < sorted.length; i++) {
+      cumulativeWeight += sorted[i].weight;
+      if (cumulativeWeight >= halfWeight) {
+        return sorted[i].value;
+      }
+    }
+
+    return sorted[sorted.length - 1].value;
+  }
+
+  // Check if a value has n < 10 (for privacy protection)
+  function hasSmallN(value) {
+    if (typeof value !== 'string') return false;
+
+    // Don't apply privacy filter to median/IQR values (they have brackets)
+    if (valueHasIQR(value)) return false;
+
+    // Extract the first numeric value (before parentheses or brackets)
+    const numericMatch = value.match(/^\s*([\d,]+)/);
+    if (numericMatch) {
+      const num = parseInt(numericMatch[1].replace(/,/g, ''), 10);
+      return num < 10;
+    }
+
+    return false;
+  }
+
+  // Check if value has "n (%)" format (categorical/proportion variables)
+  function hasCountPercentageFormat(value) {
+    if (typeof value !== 'string') return false;
+    // Match pattern: number (percentage%)
+    return /^\s*[\d,]+\s*\([^)]*%\)/.test(value);
+  }
+
+  // Parse "n (%)" format and extract both count and percentage
+  // Example: "511,899 (63.3%)" -> { count: 511899, percentage: 63.3 }
+  function parseCountPercentage(value) {
+    if (typeof value !== 'string') return null;
+
+    // Match pattern: "68,359 (57.6%)" or "164 (0.1%)"
+    const match = value.match(/^\s*([\d,]+)\s*\(([^)]*?)%\)/);
+
+    if (match) {
+      return {
+        count: parseInt(match[1].replace(/,/g, ''), 10),
+        percentage: parseFloat(match[2])
+      };
+    }
+    return null;
+  }
+
+  // Determine which category a characteristic belongs to
+  function getCategoryForCharacteristic(characteristic) {
+    const variable = characteristic.trim();
+
+    // Demographics (uses N: Unique Patients as denominator)
+    if (variable.includes('Age at admission') ||
+        variable.includes('Race:') ||
+        variable.includes('Ethnicity:') ||
+        variable.includes('Sex:')) {
+      return 'Demographics';
+    }
+
+    // All other categories use N: Hospitalizations as denominator
+    return 'Other';
+  }
+
+  // Get total denominator for selected sites
+  // Demographics use "N: Unique patients", others use "N: Hospitalizations"
+  function getTotalDenominator(category, filteredData) {
+    const denominatorKey = category === 'Demographics' ? 'N: Unique patients' : 'N: Hospitalizations';
+
+    let total = 0;
+    filteredData.forEach(d => {
+      let denominatorValue = d.characteristics[denominatorKey];
+
+      // Try trimmed match if exact match fails
+      if (!denominatorValue) {
+        const charKey = Object.keys(d.characteristics).find(key =>
+          key.trim() === denominatorKey
+        );
+        if (charKey) {
+          denominatorValue = d.characteristics[charKey];
+        }
+      }
+
+      if (denominatorValue) {
+        const numMatch = denominatorValue.match(/^\s*([\d,]+)/);
+        if (numMatch) {
+          total += parseInt(numMatch[1].replace(/,/g, ''), 10);
+        }
+      }
+    });
+
+    return total;
+  }
+
+  // Track selected characteristic
+  let selectedCharacteristic = null;
+
+  function initializeChartBuilder() {
+    // Build the category sidebar
+    buildCategorySidebar();
+
+    // Generate chart button
+    const generateBtn = document.getElementById('generate-chart-btn');
+    generateBtn?.addEventListener('click', generateCustomChart);
+
+    // Clear chart button
+    const clearBtn = document.getElementById('clear-chart-btn');
+    clearBtn?.addEventListener('click', clearCustomChart);
+
+    // Characteristic search
+    const searchInput = document.getElementById('characteristic-search');
+    searchInput?.addEventListener('input', (e) => {
+      filterCategorySidebar(e.target.value);
+    });
+  }
+
+  function buildCategorySidebar() {
+    // Use ALL data for sidebar, not filtered data
+    // The sidebar should show all available characteristics regardless of filter selection
+    const allData = consortiumData.siteYearData;
+
+    // Get all characteristics, excluding header/placeholder rows and metadata
+    const characteristics = new Set();
+    const headerPatterns = [
+      'Neuromuscular blocking agents, n (%)',
+      'Sedatives and analgesics, n (%)',
+      'SOFA Scores',
+      'Comorbidities, n (%)',
+      'Encounter Types',
+      'Vasopressor encounters, n (%)',
+      'N: Hospitals' // Exclude hospitals count - it's metadata, not a patient characteristic
+    ];
+
+    allData.forEach(d => {
+      Object.keys(d.characteristics).forEach(char => {
+        // Skip if it's a header/placeholder row
+        if (!headerPatterns.includes(char.trim())) {
+          characteristics.add(char);
+        }
+      });
+    });
+
+    // Group characteristics by category with subcategory support
+    // Structure: { categoryName: { items: [], subcategories: { subName: [] } } }
+    const categories = {
+      'Population': { items: [], subcategories: {} },
+      'Demographics': { items: [], subcategories: {} },
+      'Encounter Information': {
+        items: [],
+        subcategories: {
+          'Encounter Types': []
+        }
+      },
+      'Clinical Outcomes': { items: [], subcategories: {} },
+      'Comorbidities': { items: [], subcategories: {} },
+      'Severity Scores': {
+        items: [],
+        subcategories: {
+          'SOFA Scores': []
+        }
+      },
+      'Respiratory Support': { items: [], subcategories: {} },
+      'Renal Support': { items: [], subcategories: {} },
+      'Medications': {
+        items: [],
+        subcategories: {
+          'Neuromuscular blocking agents': [],
+          'Sedatives and analgesics': [],
+          'Vasopressors': []
+        }
+      },
+      'Other': { items: [], subcategories: {} }
+    };
+
+    characteristics.forEach(char => {
+      const charTrimmed = char.trim();
+      const charOriginal = char; // Keep original with spaces
+      let categorized = false;
+
+      // Severity Scores - SOFA Scores subcategory - HARDCODED exact matches from CSV
+      if (charTrimmed === 'Total SOFA score, median [Q1, Q3]' ||
+          charTrimmed === 'Respiratory, median [Q1, Q3]' ||
+          charTrimmed === 'Coagulation, median [Q1, Q3]' ||
+          charTrimmed === 'Liver, median [Q1, Q3]' ||
+          charTrimmed === 'Cardiovascular, median [Q1, Q3]' ||
+          charTrimmed === 'CNS, median [Q1, Q3]' ||
+          charTrimmed === 'Renal, median [Q1, Q3]') {
+        categories['Severity Scores'].subcategories['SOFA Scores'].push(charOriginal); // Keep original with leading spaces for data lookup
+        categorized = true;
+      }
+      // P/F ratios are separate from SOFA scores
+      else if (charTrimmed === 'P/F ratio, median [Q1, Q3]' ||
+               charTrimmed === 'P/F ratio (imputed), median [Q1, Q3]') {
+        categories['Severity Scores'].items.push(charOriginal);
+        categorized = true;
+      }
+      // Demographics
+      else if (charTrimmed.includes('Age at admission') ||
+               charTrimmed.includes('Race:') ||
+               charTrimmed.includes('Ethnicity:') ||
+               charTrimmed.includes('Sex:')) {
+        categories['Demographics'].items.push(charTrimmed);
+        categorized = true;
+      }
+      // Encounter Information with subcategories
+      else if (charTrimmed.includes('ICU encounters') ||
+               charTrimmed.includes('Advanced respiratory support') ||
+               charTrimmed.includes('Vasoactive support') ||
+               charTrimmed.includes('Other critically ill')) {
+        // These go into "Encounter Types" subcategory
+        categories['Encounter Information'].subcategories['Encounter Types'].push(charTrimmed);
+        categorized = true;
+      }
+      else if (charTrimmed.includes('admission location:') ||
+               charTrimmed.includes('Admission type:')) {
+        // These stay at the top level of Encounter Information
+        categories['Encounter Information'].items.push(charTrimmed);
+        categorized = true;
+      }
+      // Clinical Outcomes
+      else if (charTrimmed.includes('Hospital mortality') ||
+               charTrimmed.includes('Discharged to hospice') ||
+               charTrimmed.includes('Expired') ||
+               charTrimmed.includes('length of stay')) {
+        categories['Clinical Outcomes'].items.push(charTrimmed);
+        categorized = true;
+      }
+      // Comorbidities
+      else if (charTrimmed.includes('Charlson') ||
+               charTrimmed.includes('Comorbidities') ||
+               charTrimmed.includes('Heart Failure') ||
+               charTrimmed.includes('Renal Disease') ||
+               charTrimmed.includes('Pulmonary Disease') ||
+               charTrimmed.includes('Cerebrovascular') ||
+               charTrimmed.includes('Cancer') ||
+               charTrimmed.includes('Metastatic') ||
+               charTrimmed.includes('Vascular Disease') ||
+               charTrimmed.includes('Myocardial') ||
+               charTrimmed.includes('Dementia') ||
+               charTrimmed.includes('Liver Disease') ||
+               charTrimmed.includes('Hemiplegia') ||
+               charTrimmed.includes('Connective Tissue') ||
+               charTrimmed.includes('Peptic Ulcer') ||
+               charTrimmed.includes('Aids')) {
+        categories['Comorbidities'].items.push(charTrimmed);
+        categorized = true;
+      }
+      // Respiratory Support
+      else if (charTrimmed.includes('mechanical ventilation') ||
+               charTrimmed.includes('IMV') ||
+               charTrimmed.includes('ventilator mode') ||
+               charTrimmed.includes('FiO2') ||
+               charTrimmed.includes('PEEP') ||
+               charTrimmed.includes('Respiratory rate') ||
+               charTrimmed.includes('Tidal volume')) {
+        categories['Respiratory Support'].items.push(charTrimmed);
+        categorized = true;
+      }
+      // Renal Support
+      else if (charTrimmed.includes('CRRT')) {
+        categories['Renal Support'].items.push(charTrimmed);
+        categorized = true;
+      }
+      // Medications with subcategories
+      else if (charTrimmed.includes('Cisatracurium') ||
+               charTrimmed.includes('Rocuronium')) {
+        categories['Medications'].subcategories['Neuromuscular blocking agents'].push(charTrimmed);
+        categorized = true;
+      }
+      else if (charTrimmed.includes('Propofol') ||
+               charTrimmed.includes('Midazolam') ||
+               charTrimmed.includes('Lorazepam') ||
+               charTrimmed.includes('Dexmedetomidine') ||
+               charTrimmed.includes('Fentanyl')) {
+        categories['Medications'].subcategories['Sedatives and analgesics'].push(charTrimmed);
+        categorized = true;
+      }
+      // Vasopressors - moved from Cardiovascular Support to Medications
+      else if (charTrimmed.includes('Norepinephrine') ||
+               charTrimmed.includes('Epinephrine') ||
+               charTrimmed.includes('Phenylephrine') ||
+               charTrimmed.includes('Vasopressin') ||
+               charTrimmed.includes('Dopamine') ||
+               charTrimmed.includes('Dobutamine')) {
+        categories['Medications'].subcategories['Vasopressors'].push(charTrimmed);
+        categorized = true;
+      }
+      // Population - exclude "N: Hospitals" as it's metadata, not a meaningful characteristic
+      else if (charTrimmed.startsWith('N:') && !charTrimmed.includes('Hospitals')) {
+        categories['Population'].items.push(charTrimmed);
+        categorized = true;
+      }
+
+      if (!categorized) {
+        categories['Other'].items.push(charTrimmed);
+      }
+    });
+
+    // Build the sidebar HTML
+    const categoriesList = document.getElementById('categories-list');
+    if (!categoriesList) return;
+
+    categoriesList.innerHTML = '';
+
+    Object.entries(categories).forEach(([categoryName, categoryData]) => {
+      const hasItems = categoryData.items.length > 0;
+      const hasSubcategories = Object.keys(categoryData.subcategories).length > 0;
+
+      if (!hasItems && !hasSubcategories) return; // Skip empty categories
+
+      const categoryDiv = document.createElement('div');
+      categoryDiv.className = 'category-section border-b border-gray-200';
+
+      // Category header (collapsible)
+      const header = document.createElement('button');
+      header.className = 'category-header w-full flex items-center justify-between p-3 hover:bg-gray-50 transition-colors text-left';
+      header.innerHTML = `
+        <span class="font-semibold text-gray-800 text-sm">${categoryName}</span>
+        <svg class="chevron w-4 h-4 text-gray-500 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+        </svg>
+      `;
+
+      // Characteristics list container
+      const charList = document.createElement('div');
+      charList.className = 'characteristic-list';
+      charList.style.display = 'none'; // Start collapsed
+
+      // Add top-level items first
+      categoryData.items.sort().forEach(char => {
+        const charItem = document.createElement('button');
+        charItem.className = 'characteristic-item w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-clif-burgundy hover:bg-opacity-10 hover:text-clif-burgundy transition-colors';
+        charItem.dataset.characteristic = char; // Keep original with spaces for data lookup
+        charItem.textContent = char.trim(); // Display trimmed version
+        charItem.addEventListener('click', () => selectCharacteristic(char, charItem)); // Pass original
+        charList.appendChild(charItem);
+      });
+
+      // Add subcategories
+      Object.entries(categoryData.subcategories).forEach(([subName, subItems]) => {
+        if (subItems.length === 0) return; // Skip empty subcategories
+
+        // Subcategory container
+        const subDiv = document.createElement('div');
+        subDiv.className = 'subcategory-section border-l-2 border-gray-300 ml-2';
+
+        // Subcategory header (collapsible)
+        const subHeader = document.createElement('button');
+        subHeader.className = 'subcategory-header w-full flex items-center justify-between px-3 py-2 hover:bg-gray-50 transition-colors text-left';
+        subHeader.innerHTML = `
+          <span class="font-medium text-gray-700 text-xs">${subName}</span>
+          <svg class="sub-chevron w-3 h-3 text-gray-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+          </svg>
+        `;
+
+        // Subcategory items list
+        const subItemsList = document.createElement('div');
+        subItemsList.className = 'subcategory-items';
+        subItemsList.style.display = 'none'; // Start collapsed
+
+        subItems.sort().forEach(char => {
+          const charItem = document.createElement('button');
+          charItem.className = 'characteristic-item w-full text-left pl-6 pr-4 py-2 text-sm text-gray-700 hover:bg-clif-burgundy hover:bg-opacity-10 hover:text-clif-burgundy transition-colors';
+          charItem.dataset.characteristic = char;
+          charItem.textContent = char.trim();
+          charItem.addEventListener('click', () => selectCharacteristic(char, charItem));
+          subItemsList.appendChild(charItem);
+        });
+
+        // Set initial subcategory chevron to collapsed state
+        const subChevron = subHeader.querySelector('.sub-chevron');
+        if (subChevron) {
+          subChevron.style.transform = 'rotate(-90deg)';
+        }
+
+        // Toggle subcategory collapse on header click
+        subHeader.addEventListener('click', () => {
+          const isExpanded = subItemsList.style.display !== 'none';
+          subItemsList.style.display = isExpanded ? 'none' : 'block';
+          subHeader.querySelector('.sub-chevron').style.transform = isExpanded ? 'rotate(-90deg)' : 'rotate(0deg)';
+        });
+
+        subDiv.appendChild(subHeader);
+        subDiv.appendChild(subItemsList);
+        charList.appendChild(subDiv);
+      });
+
+      // Set initial chevron to collapsed state
+      const chevron = header.querySelector('.chevron');
+      if (chevron) {
+        chevron.style.transform = 'rotate(-90deg)';
+      }
+
+      // Toggle collapse on header click
+      header.addEventListener('click', () => {
+        const isExpanded = charList.style.display !== 'none';
+        charList.style.display = isExpanded ? 'none' : 'block';
+        header.querySelector('.chevron').style.transform = isExpanded ? 'rotate(-90deg)' : 'rotate(0deg)';
+      });
+
+      categoryDiv.appendChild(header);
+      categoryDiv.appendChild(charList);
+      categoriesList.appendChild(categoryDiv);
+    });
+  }
+
+  function selectCharacteristic(characteristic, element) {
+    selectedCharacteristic = characteristic;
+
+    // Update UI - remove previous selection
+    document.querySelectorAll('.characteristic-item').forEach(item => {
+      item.classList.remove('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
+    });
+
+    // Highlight selected item
+    element.classList.add('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
+
+    // Show selected characteristic
+    const display = document.getElementById('selected-characteristic-display');
+    const nameEl = document.getElementById('selected-characteristic-name');
+    if (display && nameEl) {
+      nameEl.textContent = characteristic.trim(); // Display trimmed version
+      display.classList.remove('hidden');
+    }
+
+    // Enable generate button
+    const generateBtn = document.getElementById('generate-chart-btn');
+    if (generateBtn) {
+      generateBtn.disabled = false;
+    }
+  }
+
+  function filterCategorySidebar(searchTerm) {
+    const term = searchTerm.toLowerCase();
+    const categories = document.querySelectorAll('.category-section');
+
+    categories.forEach(category => {
+      const characteristics = category.querySelectorAll('.characteristic-item');
+      let hasVisibleChar = false;
+
+      characteristics.forEach(char => {
+        const text = char.textContent.toLowerCase();
+        if (text.includes(term)) {
+          char.style.display = 'block';
+          hasVisibleChar = true;
+        } else {
+          char.style.display = 'none';
+        }
+      });
+
+      // Show/hide category based on whether it has visible characteristics
+      category.style.display = hasVisibleChar ? 'block' : 'none';
+
+      // If searching, expand categories with matches
+      if (term && hasVisibleChar) {
+        const charList = category.querySelector('.characteristic-list');
+        const chevron = category.querySelector('.chevron');
+        charList.style.display = 'block';
+        chevron.style.transform = 'rotate(0deg)';
+      }
+    });
+  }
+
+  function generateCustomChart() {
+    const chartType = document.getElementById('chart-type-select')?.value;
+    const characteristic = selectedCharacteristic;
+    const groupBy = document.getElementById('chart-xaxis-select')?.value;
+
+    if (!characteristic) {
+      alert('Please select a characteristic from the sidebar to visualize.');
+      return;
+    }
+
+    const filteredData = getFilteredData();
+
+    // Check if ALL sites and ALL years are selected - if so, use Overall columns
+    const isAllSites = selectedSites.length === consortiumData.allSites.length;
+    const isAllYears = selectedYears.length === consortiumData.allYears.length;
+    const useOverallColumns = isAllSites && isAllYears && groupBy === 'site';
+
+    console.log(`[Chart] All Sites: ${isAllSites}, All Years: ${isAllYears}, Use Overall: ${useOverallColumns}`);
+
+    // Collect data based on grouping
+    const chartData = {};
+    const chartCounts = {}; // Store raw counts for percentage variables (for data labels)
+    const iqrData = {}; // Store IQR ranges for median characteristics
+    const siteCountsPerGroup = {}; // Track number of sites contributing to each group (for Population variables when grouping by year)
+    const yearsPerGroup = {}; // Track years per site (for Population variables when grouping by site)
+
+    // Check if this is a median/IQR characteristic
+    const isMedianChar = characteristic.toLowerCase().includes('median') ||
+                         characteristic.toLowerCase().includes('[q1') ||
+                         (filteredData.length > 0 && valueHasIQR(filteredData[0].characteristics[characteristic] || ''));
+
+    // Check if this is a categorical/percentage characteristic
+    // Find the first NON-EMPTY value to determine format (some sites may have empty data)
+    let sampleValue = null;
+    for (let i = 0; i < filteredData.length; i++) {
+      const val = filteredData[i].characteristics[characteristic];
+      if (val && val.trim() !== '') {
+        sampleValue = val;
+        break;
+      }
+    }
+    const isCategoricalPercentage = sampleValue && hasCountPercentageFormat(sampleValue);
+    console.log(`[Chart] Format check: sampleValue="${sampleValue}", isCategoricalPercentage=${isCategoricalPercentage}`);
+
+    // Check if this is a Population variable (N: Hospitalizations or N: Unique patients)
+    const isPopulationVariable = characteristic.trim().startsWith('N: ');
+
+    // Get category for percentage calculation (denominator will be calculated per group)
+    let category = null;
+    const groupDenominators = {}; // Store denominators per group label
+    if (isCategoricalPercentage) {
+      category = getCategoryForCharacteristic(characteristic);
+      console.log(`[Chart] Categorical variable detected: "${characteristic}", Category: ${category}`);
+    }
+
+    let processedCount = 0;
+    let skippedSmallN = 0;
+    let skippedNullValue = 0;
+    let addedCount = 0;
+    const sitesWithData = new Set(); // Track which sites have valid data
+
+    // If using Overall columns (All Sites + All Years + grouped by Site), extract directly from characteristics
+    if (useOverallColumns) {
+      console.log('[Chart] Using Overall columns for data extraction');
+
+      // Find the characteristic in consortiumData.characteristics
+      const charData = consortiumData.characteristics.find(c =>
+        c.variable === characteristic || c.variable.trim() === characteristic.trim()
+      );
+
+      if (charData) {
+        // For each selected site, get the Overall value
+        selectedSites.forEach(site => {
+          const siteData = charData.sites[site];
+          if (!siteData) return;
+
+          const overallValue = siteData['Overall'];
+          if (!overallValue || overallValue.trim() === '') {
+            skippedNullValue++;
+            return;
+          }
+
+          processedCount++;
+
+          // Skip if has small n (privacy protection)
+          if (hasSmallN(overallValue)) {
+            skippedSmallN++;
+            return;
+          }
+
+          const label = site;
+
+          if (isMedianChar) {
+            const medianIQR = extractMedianAndIQR(overallValue);
+            if (medianIQR) {
+              chartData[label] = medianIQR.median;
+              iqrData[label] = {
+                q1Values: [medianIQR.q1],
+                q3Values: [medianIQR.q3],
+                minQ1: medianIQR.q1,
+                maxQ3: medianIQR.q3
+              };
+              sitesWithData.add(site);
+              addedCount++;
+            }
+          } else if (isCategoricalPercentage) {
+            const parsed = parseCountPercentage(overallValue);
+            if (parsed) {
+              chartCounts[label] = parsed.count;
+
+              // Get the denominator from Overall column
+              const denominatorKey = category === 'Demographics' ? 'N: Unique patients' : 'N: Hospitalizations';
+              const denomCharData = consortiumData.characteristics.find(c =>
+                c.variable === denominatorKey || c.variable.trim() === denominatorKey
+              );
+
+              if (denomCharData && denomCharData.sites[site]) {
+                const denomOverallValue = denomCharData.sites[site]['Overall'];
+                if (denomOverallValue) {
+                  const numMatch = denomOverallValue.match(/^\s*([\d,]+)/);
+                  if (numMatch) {
+                    const denominator = parseInt(numMatch[1].replace(/,/g, ''), 10);
+                    groupDenominators[label] = denominator;
+                  }
+                }
+              }
+
+              sitesWithData.add(site);
+              addedCount++;
+            }
+          } else {
+            // For regular count values
+            const numValue = getNumeric(overallValue);
+            if (numValue !== null) {
+              chartData[label] = numValue;
+              sitesWithData.add(site);
+
+              // Track years for tooltip (all years)
+              if (isPopulationVariable) {
+                yearsPerGroup[label] = new Set(consortiumData.allYears);
+              }
+
+              addedCount++;
+            }
+          }
+        });
+
+        console.log(`[Chart] Overall extraction complete: ${addedCount} values added from ${sitesWithData.size} sites`);
+      }
+    } else {
+      // Standard data extraction from individual year data
+      filteredData.forEach((d, idx) => {
+      // Try exact match first, then trimmed match
+      let value = d.characteristics[characteristic];
+
+      // If not found, try to find by trimming
+      if (!value) {
+        const charKey = Object.keys(d.characteristics).find(key =>
+          key.trim() === characteristic.trim()
+        );
+        if (charKey) {
+          value = d.characteristics[charKey];
+        }
+      }
+
+      if (!value) {
+        skippedNullValue++;
+        return;
+      }
+
+      processedCount++;
+
+      // Skip if has small n (privacy protection)
+      if (hasSmallN(value)) {
+        skippedSmallN++;
+        return;
+      }
+
+      let label;
+      if (groupBy === 'site') {
+        label = d.site;
+      } else {
+        label = d.year;
+      }
+
+      if (isMedianChar) {
+        // For median/IQR values, use weighted median calculation
+        const medianIQR = extractMedianAndIQR(value);
+
+        if (medianIQR) {
+          const weight = getWeight(d, characteristic);
+
+          if (weight > 0) {
+            // Store weighted median values
+            if (!chartData[label]) {
+              chartData[label] = [];
+            }
+            chartData[label].push({ value: medianIQR.median, weight: weight });
+
+            // Track IQR ranges - will aggregate to min Q1 and max Q3
+            if (!iqrData[label]) {
+              iqrData[label] = { q1Values: [], q3Values: [] };
+            }
+            iqrData[label].q1Values.push(medianIQR.q1);
+            iqrData[label].q3Values.push(medianIQR.q3);
+
+            sitesWithData.add(d.site);
+            addedCount++;
+          }
+        }
+      } else if (isCategoricalPercentage) {
+        // For categorical percentage variables, sum counts and denominators per group
+        const parsed = parseCountPercentage(value);
+
+        if (parsed) {
+          // Sum counts per group
+          if (!chartCounts[label]) chartCounts[label] = 0;
+          chartCounts[label] += parsed.count;
+
+          // Sum denominators per group
+          const denominatorKey = category === 'Demographics' ? 'N: Unique patients' : 'N: Hospitalizations';
+          let denominatorValue = d.characteristics[denominatorKey];
+
+          // Try trimmed match if exact match fails
+          if (!denominatorValue) {
+            const charKey = Object.keys(d.characteristics).find(key =>
+              key.trim() === denominatorKey
+            );
+            if (charKey) {
+              denominatorValue = d.characteristics[charKey];
+            }
+          }
+
+          if (denominatorValue) {
+            const numMatch = denominatorValue.match(/^\s*([\d,]+)/);
+            if (numMatch) {
+              const denominator = parseInt(numMatch[1].replace(/,/g, ''), 10);
+              if (!groupDenominators[label]) groupDenominators[label] = 0;
+              groupDenominators[label] += denominator;
+            }
+          }
+
+          sitesWithData.add(d.site);
+          addedCount++;
+        }
+      } else {
+        // For regular count values, sum them
+        const numValue = getNumeric(value);
+
+        if (numValue !== null) {
+          if (!chartData[label]) chartData[label] = 0;
+          chartData[label] += numValue;
+          sitesWithData.add(d.site);
+
+          // Track site/year info per group for Population variables
+          if (isPopulationVariable) {
+            if (groupBy === 'year') {
+              // Track sites when grouping by year
+              if (!siteCountsPerGroup[label]) siteCountsPerGroup[label] = new Set();
+              siteCountsPerGroup[label].add(d.site);
+            } else if (groupBy === 'site') {
+              // Track years when grouping by site
+              if (!yearsPerGroup[label]) yearsPerGroup[label] = new Set();
+              yearsPerGroup[label].add(d.year);
+            }
+          }
+
+          addedCount++;
+        }
+      }
+    });
+    } // End of else block for standard data extraction
+
+    // Calculate weighted medians and aggregate IQR ranges (only for aggregated data, not Overall columns)
+    if (isMedianChar && !useOverallColumns) {
+      Object.keys(chartData).forEach(key => {
+        // Calculate weighted median
+        chartData[key] = calculateWeightedMedian(chartData[key]);
+
+        // Aggregate IQR: min of Q1s, max of Q3s
+        if (iqrData[key]) {
+          iqrData[key].minQ1 = Math.min(...iqrData[key].q1Values);
+          iqrData[key].maxQ3 = Math.max(...iqrData[key].q3Values);
+        }
+      });
+    }
+
+    // Calculate percentages for categorical variables using per-group denominators
+    if (isCategoricalPercentage) {
+      Object.keys(chartCounts).forEach(key => {
+        const count = chartCounts[key];
+        const denominator = groupDenominators[key];
+
+        if (denominator && denominator > 0) {
+          const percentage = (count / denominator) * 100;
+          chartData[key] = percentage;
+          console.log(`[Chart] ${key}: count=${count}, denominator=${denominator}, percentage=${percentage.toFixed(2)}%`);
+        } else {
+          console.warn(`[Chart] ${key}: No valid denominator found, skipping`);
+        }
+      });
+    }
+
+    if (Object.keys(chartData).length === 0) {
+      alert(`No data available for "${characteristic}" with the selected filters.\n\nPossible reasons:\n- Not all sites/years have this data point\n- Values may be suppressed for privacy (n < 10)\n- Try selecting different sites or years`);
+      return;
+    }
+
+    // Destroy existing chart
+    if (charts.custom) {
+      charts.custom.destroy();
+    }
+
+    // Show chart container, hide instructions
+    document.getElementById('custom-chart-container')?.classList.remove('hidden');
+    document.getElementById('chart-instructions')?.classList.add('hidden');
+
+    // Show 2025 note only if 2025 is in selected years
+    const note2025 = document.getElementById('year-2025-note');
+    if (note2025) {
+      if (selectedYears.includes('2025')) {
+        note2025.classList.remove('hidden');
+      } else {
+        note2025.classList.add('hidden');
+      }
+    }
+
+    // Show missing sites note if some selected sites don't have data
+    const missingSitesNote = document.getElementById('missing-sites-note');
+    const missingSitesList = document.getElementById('missing-sites-list');
+    if (missingSitesNote && missingSitesList) {
+      const missingSites = selectedSites.filter(site => !sitesWithData.has(site));
+      if (missingSites.length > 0) {
+        missingSitesList.textContent = missingSites.map(s => s.toUpperCase()).join(', ');
+        missingSitesNote.classList.remove('hidden');
+      } else {
+        missingSitesNote.classList.add('hidden');
+      }
+    }
+
+    // Update title with enhanced format
+    const titleEl = document.getElementById('custom-chart-title');
+    const subtitleEl = document.getElementById('custom-chart-subtitle');
+
+    if (titleEl) {
+      // Build main title
+      let title = characteristic;
+
+      // Add percentage indicator for categorical variables
+      if (isCategoricalPercentage) {
+        const denominatorType = category === 'Demographics' ? 'Unique Patients' : 'Hospitalizations';
+        title += ` (% of ${denominatorType})`;
+      }
+
+      // Add grouping
+      const groupingText = groupBy === 'site' ? 'Site' : 'Year';
+      title += ` by ${groupingText}`;
+
+      titleEl.textContent = title;
+    }
+
+    if (subtitleEl) {
+      // Build subtitle with scope information
+      let subtitle = '';
+
+      // Sites info
+      if (selectedSites.length === 1) {
+        subtitle += `Site: ${selectedSites[0]}`;
+      } else if (selectedSites.length <= 3) {
+        subtitle += `Sites: ${selectedSites.join(', ')}`;
+      } else if (selectedSites.length === consortiumData.allSites.length) {
+        subtitle += `Sites: All (${selectedSites.length})`;
+      } else {
+        subtitle += `Sites: ${selectedSites.length} selected`;
+      }
+
+      // Years info
+      subtitle += ' | ';
+
+      if (selectedYears.length === 1) {
+        subtitle += `Year: ${selectedYears[0]}`;
+      } else if (selectedYears.length <= 4) {
+        subtitle += `Years: ${selectedYears.join(', ')}`;
+      } else if (selectedYears.length === consortiumData.allYears.length) {
+        subtitle += `Years: All (${selectedYears[0]}-${selectedYears[selectedYears.length-1]})`;
+      } else {
+        subtitle += `Years: ${selectedYears[0]}-${selectedYears[selectedYears.length-1]} (${selectedYears.length} selected)`;
+      }
+
+      // Add aggregation note for percentage variables or overall note
+      if (useOverallColumns) {
+        subtitle += ' • Using site overall values';
+      } else if (isCategoricalPercentage) {
+        if (groupBy === 'year' && selectedSites.length > 1) {
+          subtitle += ' • Sites combined per year';
+        } else if (groupBy === 'site' && selectedYears.length > 1) {
+          subtitle += ' • Years combined per site';
+        }
+      }
+
+      subtitleEl.textContent = subtitle;
+    }
+
+    // Generate colors
+    let labels = Object.keys(chartData);
+
+    // Sort labels: alphabetically for sites, numerically for years
+    if (groupBy === 'site') {
+      labels.sort((a, b) => a.localeCompare(b));
+    } else {
+      labels.sort((a, b) => parseInt(a) - parseInt(b));
+    }
+
+    const colors = generateChartColors(labels.length);
+
+    // Map data values to match the sorted label order
+    const sortedData = labels.map(label => chartData[label]);
+
+    // Create chart
+    const ctx = document.getElementById('custom-chart');
+    if (ctx) {
+      const config = {
+        type: chartType === 'horizontalBar' ? 'bar' : chartType,
+        data: {
+          labels: labels,
+          datasets: [{
+            label: characteristic,
+            data: sortedData,
+            backgroundColor: colors.background,
+            borderColor: colors.border,
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          indexAxis: chartType === 'horizontalBar' ? 'y' : 'x',
+          plugins: {
+            legend: {
+              display: chartType === 'pie' || chartType === 'doughnut',
+              position: 'bottom'
+            },
+            datalabels: isCategoricalPercentage && (chartType === 'bar' || chartType === 'horizontalBar') ? {
+              color: '#000',
+              anchor: 'end',
+              align: 'top',
+              font: {
+                weight: 'bold',
+                size: 11
+              },
+              formatter: function(value, context) {
+                const labelName = context.chart.data.labels[context.dataIndex];
+                const count = chartCounts[labelName];
+                if (count !== undefined) {
+                  return 'n=' + count.toLocaleString();
+                }
+                return '';
+              }
+            } : {
+              display: false
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const labelName = context.label || '';
+                  const value = context.parsed.y !== undefined ? context.parsed.y : context.parsed;
+
+                  if (isMedianChar && iqrData[labelName]) {
+                    // For median characteristics, show weighted median and IQR range
+                    const minQ1 = iqrData[labelName].minQ1;
+                    const maxQ3 = iqrData[labelName].maxQ3;
+                    return [
+                      `${labelName}: ${value.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}`,
+                      `IQR: [${minQ1.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}, ${maxQ3.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}]`
+                    ];
+                  } else if (isCategoricalPercentage) {
+                    // For categorical percentage variables, show both percentage and count
+                    const count = chartCounts[labelName];
+                    return [
+                      `${labelName}: ${value.toFixed(1)}%`,
+                      `n = ${count ? count.toLocaleString() : 'N/A'}`
+                    ];
+                  } else {
+                    // For count characteristics, just show the value
+                    let label = labelName;
+                    if (label) {
+                      label += ': ';
+                    }
+                    label += value.toLocaleString();
+
+                    // For Population variables, show contextual info based on grouping
+                    if (isPopulationVariable) {
+                      if (groupBy === 'year' && siteCountsPerGroup[labelName]) {
+                        // Show site count when grouped by year
+                        const siteCount = siteCountsPerGroup[labelName].size;
+                        return [label, `(${siteCount} site${siteCount !== 1 ? 's' : ''})`];
+                      } else if (groupBy === 'site' && yearsPerGroup[labelName]) {
+                        // Show year range when grouped by site
+                        const years = Array.from(yearsPerGroup[labelName]).sort();
+                        const yearRange = years.length === 1 ? years[0] : `${years[0]}-${years[years.length - 1]}`;
+                        return [label, `(${yearRange})`];
+                      }
+                    }
+                    return label;
+                  }
+                }
+              }
+            }
+          },
+          scales: (chartType === 'pie' || chartType === 'doughnut') ? {} : {
+            x: {
+              beginAtZero: true,
+              title: isCategoricalPercentage && chartType === 'horizontalBar' ? {
+                display: true,
+                text: 'Percentage (%)'
+              } : undefined
+            },
+            y: {
+              beginAtZero: true,
+              title: isCategoricalPercentage && (chartType === 'bar' || chartType === 'line') ? {
+                display: true,
+                text: 'Percentage (%)'
+              } : undefined
+            }
+          }
+        }
+      };
+
+      charts.custom = new Chart(ctx, config);
+    }
+  }
+
+  function clearCustomChart() {
+    if (charts.custom) {
+      charts.custom.destroy();
+      charts.custom = null;
+    }
+    document.getElementById('custom-chart-container')?.classList.add('hidden');
+    document.getElementById('chart-instructions')?.classList.remove('hidden');
+
+    // Clear selected characteristic
+    selectedCharacteristic = null;
+    document.querySelectorAll('.characteristic-item').forEach(item => {
+      item.classList.remove('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
+    });
+    document.getElementById('selected-characteristic-display')?.classList.add('hidden');
+
+    // Disable generate button
+    const generateBtn = document.getElementById('generate-chart-btn');
+    if (generateBtn) {
+      generateBtn.disabled = true;
+    }
+  }
+
+  function generateChartColors(count) {
+    const baseColors = [
+      'rgba(139, 0, 0, 0.7)',      // burgundy
+      'rgba(59, 130, 246, 0.7)',   // blue
+      'rgba(16, 185, 129, 0.7)',   // green
+      'rgba(245, 158, 11, 0.7)',   // amber
+      'rgba(168, 85, 247, 0.7)',   // purple
+      'rgba(236, 72, 153, 0.7)',   // pink
+      'rgba(239, 68, 68, 0.7)',    // red
+      'rgba(14, 165, 233, 0.7)',   // sky
+      'rgba(34, 197, 94, 0.7)',    // emerald
+      'rgba(251, 146, 60, 0.7)',   // orange
+    ];
+
+    const background = [];
+    const border = [];
+
+    for (let i = 0; i < count; i++) {
+      const color = baseColors[i % baseColors.length];
+      background.push(color);
+      border.push(color.replace('0.7', '1'));
+    }
+
+    return { background, border };
+  }
+
+  function updateCharts() {
+    // This is called when filters change - reinitialize the chart builder
+    initializeChartBuilder();
+  }
+
+  function updateTable() {
+    const searchTerm = document.getElementById('table-search')?.value.toLowerCase() || '';
+    const tbody = document.getElementById('table-body');
+    const thead = document.querySelector('#data-table thead tr');
+
+    if (!tbody || !thead) return;
+
+    // Use overall data for table view (ignores site/year filters)
+    const { headers, data } = overallTableData;
+
+    // Build table headers - Characteristic + all site columns
+    thead.innerHTML = `
+      <th class="px-4 py-3 text-left font-semibold sticky left-0 bg-clif-burgundy z-10">Characteristic</th>
+      ${headers.map(header => `<th class="px-3 py-3 text-left font-semibold text-xs min-w-[100px] max-w-[150px]" style="word-wrap: break-word; white-space: normal;">${header}</th>`).join('')}
+    `;
+
+    // Populate table body
+    tbody.innerHTML = '';
+
+    data.forEach(row => {
+      const characteristic = row.characteristic;
+
+      // Apply search filter
+      const matchesSearch = characteristic.toLowerCase().includes(searchTerm) ||
+        Object.values(row.values).some(v => v.toLowerCase().includes(searchTerm));
+
+      if (matchesSearch) {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-gray-50';
+
+        let html = `<td class="px-4 py-3 text-sm text-gray-700 font-medium sticky left-0 bg-white">${characteristic}</td>`;
+        headers.forEach(header => {
+          const value = row.values[header] || '-';
+          html += `<td class="px-4 py-3 text-sm text-gray-700">${value}</td>`;
+        });
+
+        tr.innerHTML = html;
+        tbody.appendChild(tr);
+      }
+    });
+  }
+
+  function exportToCSV() {
+    // Use overall data for CSV export
+    const { headers, data } = overallTableData;
+
+    // Build CSV header
+    let csv = 'Characteristic,' + headers.join(',') + '\n';
+
+    // Build CSV rows
+    data.forEach(row => {
+      const characteristic = `"${row.characteristic}"`;
+      const values = headers.map(header => `"${row.values[header] || '-'}"`).join(',');
+      csv += `${characteristic},${values}\n`;
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `clif-overall-data-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  }
+</script>
+
+<style>
+  .interactive-dashboard {
+    animation: fadeIn 0.5s ease-in;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  #data-table {
+    font-size: 0.875rem;
+  }
+
+  #data-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+
+  /* Category Sidebar Styles */
+  .category-header:hover {
+    background-color: rgb(249, 250, 251);
+  }
+
+  .characteristic-list {
+    display: none;
+    background-color: rgb(249, 250, 251);
+  }
+
+  .characteristic-item {
+    border-left: 3px solid transparent;
+  }
+
+  .characteristic-item:hover {
+    border-left-color: rgb(136, 19, 55);
+  }
+
+  .characteristic-item.bg-clif-burgundy {
+    border-left-color: rgb(136, 19, 55);
+  }
+
+  .chevron {
+    transition: transform 0.2s ease;
+  }
+
+  /* Scrollbar styling for sidebar */
+  #categories-list::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  #categories-list::-webkit-scrollbar-track {
+    background: rgb(243, 244, 246);
+  }
+
+  #categories-list::-webkit-scrollbar-thumb {
+    background: rgb(209, 213, 219);
+    border-radius: 4px;
+  }
+
+  #categories-list::-webkit-scrollbar-thumb:hover {
+    background: rgb(156, 163, 175);
+  }
+</style>
