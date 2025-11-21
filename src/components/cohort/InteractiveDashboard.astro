@@ -278,7 +278,6 @@ const categories = Array.from(groupedChars.keys());
             >
               <option value="site">Site</option>
               <option value="year">Year</option>
-              <option value="site-year">Site-Year</option>
             </select>
           </div>
 
@@ -307,17 +306,26 @@ const categories = Array.from(groupedChars.keys());
 
     <!-- Chart Display Area -->
     <div id="custom-chart-container" class="bg-white rounded-lg p-6 border-2 border-gray-200 hidden">
-      <div class="flex items-center justify-between mb-4">
-        <h3 id="custom-chart-title" class="text-lg font-bold text-gray-800"></h3>
+      <div class="flex items-center justify-between mb-2">
+        <div class="flex-1">
+          <h3 id="custom-chart-title" class="text-lg font-bold text-gray-800"></h3>
+          <p id="custom-chart-subtitle" class="text-sm text-gray-600 mt-1"></p>
+        </div>
         <button
           id="clear-chart-btn"
-          class="px-3 py-1 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300 transition-colors"
+          class="px-3 py-1 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300 transition-colors flex-shrink-0"
         >
           Clear
         </button>
       </div>
       <div class="relative" style="height: 400px;">
         <canvas id="custom-chart"></canvas>
+      </div>
+      <!-- Note for sites without data -->
+      <div id="missing-sites-note" class="bg-gray-50 border-l-4 border-gray-400 p-3 rounded mt-4 hidden">
+        <p class="text-sm text-gray-700">
+          <strong>Sites without data:</strong> <span id="missing-sites-list"></span>
+        </p>
       </div>
       <!-- Data Note - shown below chart only when 2025 data is included -->
       <div id="year-2025-note" class="bg-amber-50 border-l-4 border-amber-400 p-3 rounded mt-4 hidden">
@@ -696,6 +704,76 @@ const categories = Array.from(groupedChars.keys());
     }
 
     return false;
+  }
+
+  // Check if value has "n (%)" format (categorical/proportion variables)
+  function hasCountPercentageFormat(value) {
+    if (typeof value !== 'string') return false;
+    // Match pattern: number (percentage%)
+    return /^\s*[\d,]+\s*\([^)]*%\)/.test(value);
+  }
+
+  // Parse "n (%)" format and extract both count and percentage
+  // Example: "511,899 (63.3%)" -> { count: 511899, percentage: 63.3 }
+  function parseCountPercentage(value) {
+    if (typeof value !== 'string') return null;
+
+    // Match pattern: "68,359 (57.6%)" or "164 (0.1%)"
+    const match = value.match(/^\s*([\d,]+)\s*\(([^)]*?)%\)/);
+
+    if (match) {
+      return {
+        count: parseInt(match[1].replace(/,/g, ''), 10),
+        percentage: parseFloat(match[2])
+      };
+    }
+    return null;
+  }
+
+  // Determine which category a characteristic belongs to
+  function getCategoryForCharacteristic(characteristic) {
+    const variable = characteristic.trim();
+
+    // Demographics (uses N: Unique Patients as denominator)
+    if (variable.includes('Age at admission') ||
+        variable.includes('Race:') ||
+        variable.includes('Ethnicity:') ||
+        variable.includes('Sex:')) {
+      return 'Demographics';
+    }
+
+    // All other categories use N: Hospitalizations as denominator
+    return 'Other';
+  }
+
+  // Get total denominator for selected sites
+  // Demographics use "N: Unique patients", others use "N: Hospitalizations"
+  function getTotalDenominator(category, filteredData) {
+    const denominatorKey = category === 'Demographics' ? 'N: Unique patients' : 'N: Hospitalizations';
+
+    let total = 0;
+    filteredData.forEach(d => {
+      let denominatorValue = d.characteristics[denominatorKey];
+
+      // Try trimmed match if exact match fails
+      if (!denominatorValue) {
+        const charKey = Object.keys(d.characteristics).find(key =>
+          key.trim() === denominatorKey
+        );
+        if (charKey) {
+          denominatorValue = d.characteristics[charKey];
+        }
+      }
+
+      if (denominatorValue) {
+        const numMatch = denominatorValue.match(/^\s*([\d,]+)/);
+        if (numMatch) {
+          total += parseInt(numMatch[1].replace(/,/g, ''), 10);
+        }
+      }
+    });
+
+    return total;
   }
 
   // Track selected characteristic
@@ -1082,17 +1160,45 @@ const categories = Array.from(groupedChars.keys());
 
     // Collect data based on grouping
     const chartData = {};
+    const chartCounts = {}; // Store raw counts for percentage variables (for data labels)
     const iqrData = {}; // Store IQR ranges for median characteristics
+    const siteCountsPerGroup = {}; // Track number of sites contributing to each group (for Population variables when grouping by year)
+    const yearsPerGroup = {}; // Track years per site (for Population variables when grouping by site)
 
     // Check if this is a median/IQR characteristic
     const isMedianChar = characteristic.toLowerCase().includes('median') ||
                          characteristic.toLowerCase().includes('[q1') ||
                          (filteredData.length > 0 && valueHasIQR(filteredData[0].characteristics[characteristic] || ''));
 
+    // Check if this is a categorical/percentage characteristic
+    // Find the first NON-EMPTY value to determine format (some sites may have empty data)
+    let sampleValue = null;
+    for (let i = 0; i < filteredData.length; i++) {
+      const val = filteredData[i].characteristics[characteristic];
+      if (val && val.trim() !== '') {
+        sampleValue = val;
+        break;
+      }
+    }
+    const isCategoricalPercentage = sampleValue && hasCountPercentageFormat(sampleValue);
+    console.log(`[Chart] Format check: sampleValue="${sampleValue}", isCategoricalPercentage=${isCategoricalPercentage}`);
+
+    // Check if this is a Population variable (N: Hospitalizations or N: Unique patients)
+    const isPopulationVariable = characteristic.trim().startsWith('N: ');
+
+    // Get category for percentage calculation (denominator will be calculated per group)
+    let category = null;
+    const groupDenominators = {}; // Store denominators per group label
+    if (isCategoricalPercentage) {
+      category = getCategoryForCharacteristic(characteristic);
+      console.log(`[Chart] Categorical variable detected: "${characteristic}", Category: ${category}`);
+    }
+
     let processedCount = 0;
     let skippedSmallN = 0;
     let skippedNullValue = 0;
     let addedCount = 0;
+    const sitesWithData = new Set(); // Track which sites have valid data
 
     filteredData.forEach((d, idx) => {
       // Try exact match first, then trimmed match
@@ -1124,10 +1230,8 @@ const categories = Array.from(groupedChars.keys());
       let label;
       if (groupBy === 'site') {
         label = d.site;
-      } else if (groupBy === 'year') {
-        label = d.year;
       } else {
-        label = `${d.site}-${d.year}`;
+        label = d.year;
       }
 
       if (isMedianChar) {
@@ -1151,16 +1255,67 @@ const categories = Array.from(groupedChars.keys());
             iqrData[label].q1Values.push(medianIQR.q1);
             iqrData[label].q3Values.push(medianIQR.q3);
 
+            sitesWithData.add(d.site);
             addedCount++;
           }
         }
+      } else if (isCategoricalPercentage) {
+        // For categorical percentage variables, sum counts and denominators per group
+        const parsed = parseCountPercentage(value);
+
+        if (parsed) {
+          // Sum counts per group
+          if (!chartCounts[label]) chartCounts[label] = 0;
+          chartCounts[label] += parsed.count;
+
+          // Sum denominators per group
+          const denominatorKey = category === 'Demographics' ? 'N: Unique patients' : 'N: Hospitalizations';
+          let denominatorValue = d.characteristics[denominatorKey];
+
+          // Try trimmed match if exact match fails
+          if (!denominatorValue) {
+            const charKey = Object.keys(d.characteristics).find(key =>
+              key.trim() === denominatorKey
+            );
+            if (charKey) {
+              denominatorValue = d.characteristics[charKey];
+            }
+          }
+
+          if (denominatorValue) {
+            const numMatch = denominatorValue.match(/^\s*([\d,]+)/);
+            if (numMatch) {
+              const denominator = parseInt(numMatch[1].replace(/,/g, ''), 10);
+              if (!groupDenominators[label]) groupDenominators[label] = 0;
+              groupDenominators[label] += denominator;
+            }
+          }
+
+          sitesWithData.add(d.site);
+          addedCount++;
+        }
       } else {
-        // For count values, sum them
+        // For regular count values, sum them
         const numValue = getNumeric(value);
 
         if (numValue !== null) {
           if (!chartData[label]) chartData[label] = 0;
           chartData[label] += numValue;
+          sitesWithData.add(d.site);
+
+          // Track site/year info per group for Population variables
+          if (isPopulationVariable) {
+            if (groupBy === 'year') {
+              // Track sites when grouping by year
+              if (!siteCountsPerGroup[label]) siteCountsPerGroup[label] = new Set();
+              siteCountsPerGroup[label].add(d.site);
+            } else if (groupBy === 'site') {
+              // Track years when grouping by site
+              if (!yearsPerGroup[label]) yearsPerGroup[label] = new Set();
+              yearsPerGroup[label].add(d.year);
+            }
+          }
+
           addedCount++;
         }
       }
@@ -1176,6 +1331,22 @@ const categories = Array.from(groupedChars.keys());
         if (iqrData[key]) {
           iqrData[key].minQ1 = Math.min(...iqrData[key].q1Values);
           iqrData[key].maxQ3 = Math.max(...iqrData[key].q3Values);
+        }
+      });
+    }
+
+    // Calculate percentages for categorical variables using per-group denominators
+    if (isCategoricalPercentage) {
+      Object.keys(chartCounts).forEach(key => {
+        const count = chartCounts[key];
+        const denominator = groupDenominators[key];
+
+        if (denominator && denominator > 0) {
+          const percentage = (count / denominator) * 100;
+          chartData[key] = percentage;
+          console.log(`[Chart] ${key}: count=${count}, denominator=${denominator}, percentage=${percentage.toFixed(2)}%`);
+        } else {
+          console.warn(`[Chart] ${key}: No valid denominator found, skipping`);
         }
       });
     }
@@ -1204,15 +1375,94 @@ const categories = Array.from(groupedChars.keys());
       }
     }
 
-    // Update title
+    // Show missing sites note if some selected sites don't have data
+    const missingSitesNote = document.getElementById('missing-sites-note');
+    const missingSitesList = document.getElementById('missing-sites-list');
+    if (missingSitesNote && missingSitesList) {
+      const missingSites = selectedSites.filter(site => !sitesWithData.has(site));
+      if (missingSites.length > 0) {
+        missingSitesList.textContent = missingSites.map(s => s.toUpperCase()).join(', ');
+        missingSitesNote.classList.remove('hidden');
+      } else {
+        missingSitesNote.classList.add('hidden');
+      }
+    }
+
+    // Update title with enhanced format
     const titleEl = document.getElementById('custom-chart-title');
+    const subtitleEl = document.getElementById('custom-chart-subtitle');
+
     if (titleEl) {
-      titleEl.textContent = `${characteristic} by ${groupBy === 'site' ? 'Site' : groupBy === 'year' ? 'Year' : 'Site-Year'}`;
+      // Build main title
+      let title = characteristic;
+
+      // Add percentage indicator for categorical variables
+      if (isCategoricalPercentage) {
+        const denominatorType = category === 'Demographics' ? 'Unique Patients' : 'Hospitalizations';
+        title += ` (% of ${denominatorType})`;
+      }
+
+      // Add grouping
+      const groupingText = groupBy === 'site' ? 'Site' : 'Year';
+      title += ` by ${groupingText}`;
+
+      titleEl.textContent = title;
+    }
+
+    if (subtitleEl) {
+      // Build subtitle with scope information
+      let subtitle = '';
+
+      // Sites info
+      if (selectedSites.length === 1) {
+        subtitle += `Site: ${selectedSites[0]}`;
+      } else if (selectedSites.length <= 3) {
+        subtitle += `Sites: ${selectedSites.join(', ')}`;
+      } else if (selectedSites.length === consortiumData.allSites.length) {
+        subtitle += `Sites: All (${selectedSites.length})`;
+      } else {
+        subtitle += `Sites: ${selectedSites.length} selected`;
+      }
+
+      // Years info
+      subtitle += ' | ';
+
+      if (selectedYears.length === 1) {
+        subtitle += `Year: ${selectedYears[0]}`;
+      } else if (selectedYears.length <= 4) {
+        subtitle += `Years: ${selectedYears.join(', ')}`;
+      } else if (selectedYears.length === consortiumData.allYears.length) {
+        subtitle += `Years: All (${selectedYears[0]}-${selectedYears[selectedYears.length-1]})`;
+      } else {
+        subtitle += `Years: ${selectedYears[0]}-${selectedYears[selectedYears.length-1]} (${selectedYears.length} selected)`;
+      }
+
+      // Add aggregation note for percentage variables
+      if (isCategoricalPercentage) {
+        if (groupBy === 'year' && selectedSites.length > 1) {
+          subtitle += ' • Sites combined per year';
+        } else if (groupBy === 'site' && selectedYears.length > 1) {
+          subtitle += ' • Years combined per site';
+        }
+      }
+
+      subtitleEl.textContent = subtitle;
     }
 
     // Generate colors
-    const labels = Object.keys(chartData);
+    let labels = Object.keys(chartData);
+
+    // Sort labels: alphabetically for sites, numerically for years
+    if (groupBy === 'site') {
+      labels.sort((a, b) => a.localeCompare(b));
+    } else {
+      labels.sort((a, b) => parseInt(a) - parseInt(b));
+    }
+
     const colors = generateChartColors(labels.length);
+
+    // Map data values to match the sorted label order
+    const sortedData = labels.map(label => chartData[label]);
 
     // Create chart
     const ctx = document.getElementById('custom-chart');
@@ -1223,7 +1473,7 @@ const categories = Array.from(groupedChars.keys());
           labels: labels,
           datasets: [{
             label: characteristic,
-            data: Object.values(chartData),
+            data: sortedData,
             backgroundColor: colors.background,
             borderColor: colors.border,
             borderWidth: 2
@@ -1237,6 +1487,25 @@ const categories = Array.from(groupedChars.keys());
             legend: {
               display: chartType === 'pie' || chartType === 'doughnut',
               position: 'bottom'
+            },
+            datalabels: isCategoricalPercentage && (chartType === 'bar' || chartType === 'horizontalBar') ? {
+              color: '#000',
+              anchor: 'end',
+              align: 'top',
+              font: {
+                weight: 'bold',
+                size: 11
+              },
+              formatter: function(value, context) {
+                const labelName = context.chart.data.labels[context.dataIndex];
+                const count = chartCounts[labelName];
+                if (count !== undefined) {
+                  return 'n=' + count.toLocaleString();
+                }
+                return '';
+              }
+            } : {
+              display: false
             },
             tooltip: {
               callbacks: {
@@ -1252,6 +1521,13 @@ const categories = Array.from(groupedChars.keys());
                       `${labelName}: ${value.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}`,
                       `IQR: [${minQ1.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}, ${maxQ3.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}]`
                     ];
+                  } else if (isCategoricalPercentage) {
+                    // For categorical percentage variables, show both percentage and count
+                    const count = chartCounts[labelName];
+                    return [
+                      `${labelName}: ${value.toFixed(1)}%`,
+                      `n = ${count ? count.toLocaleString() : 'N/A'}`
+                    ];
                   } else {
                     // For count characteristics, just show the value
                     let label = labelName;
@@ -1259,6 +1535,20 @@ const categories = Array.from(groupedChars.keys());
                       label += ': ';
                     }
                     label += value.toLocaleString();
+
+                    // For Population variables, show contextual info based on grouping
+                    if (isPopulationVariable) {
+                      if (groupBy === 'year' && siteCountsPerGroup[labelName]) {
+                        // Show site count when grouped by year
+                        const siteCount = siteCountsPerGroup[labelName].size;
+                        return [label, `(${siteCount} site${siteCount !== 1 ? 's' : ''})`];
+                      } else if (groupBy === 'site' && yearsPerGroup[labelName]) {
+                        // Show year range when grouped by site
+                        const years = Array.from(yearsPerGroup[labelName]).sort();
+                        const yearRange = years.length === 1 ? years[0] : `${years[0]}-${years[years.length - 1]}`;
+                        return [label, `(${yearRange})`];
+                      }
+                    }
                     return label;
                   }
                 }
@@ -1266,8 +1556,20 @@ const categories = Array.from(groupedChars.keys());
             }
           },
           scales: (chartType === 'pie' || chartType === 'doughnut') ? {} : {
-            x: { beginAtZero: true },
-            y: { beginAtZero: true }
+            x: {
+              beginAtZero: true,
+              title: isCategoricalPercentage && chartType === 'horizontalBar' ? {
+                display: true,
+                text: 'Percentage (%)'
+              } : undefined
+            },
+            y: {
+              beginAtZero: true,
+              title: isCategoricalPercentage && (chartType === 'bar' || chartType === 'line') ? {
+                display: true,
+                text: 'Percentage (%)'
+              } : undefined
+            }
           }
         }
       };

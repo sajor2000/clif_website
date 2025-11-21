@@ -140,81 +140,126 @@ const dataJson = JSON.stringify(parsedData);
     </div>
   </div>
 
-  <!-- Filter Controls -->
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-    <!-- Category Selection -->
-    <div>
-      <label for="labvital-category-select" class="block text-sm font-semibold text-gray-700 mb-2">
-        Category
-      </label>
-      <select
-        id="labvital-category-select"
-        class="w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-clif-burgundy focus:outline-none transition-colors"
-      >
-        <option value="labs">Labs</option>
-        <option value="vitals">Vitals</option>
-        <option value="respiratory_support">Respiratory Support</option>
-      </select>
+  <!-- Filter Controls - Compact Layout -->
+  <div class="bg-gray-50 rounded-lg p-4 mb-4">
+    <!-- Row 1: Category, Metric, Chart Type -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+      <div>
+        <label for="labvital-category-select" class="block text-xs font-semibold text-gray-700 mb-1">
+          Category
+        </label>
+        <select
+          id="labvital-category-select"
+          class="w-full bg-white border border-gray-300 rounded px-3 py-1.5 text-sm focus:border-clif-burgundy focus:outline-none transition-colors"
+        >
+          <option value="labs">Labs</option>
+          <option value="vitals">Vitals</option>
+          <option value="respiratory_support">Respiratory Support</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="labvital-metric-select" class="block text-xs font-semibold text-gray-700 mb-1">
+          Variable
+        </label>
+        <select
+          id="labvital-metric-select"
+          class="w-full bg-white border border-gray-300 rounded px-3 py-1.5 text-sm focus:border-clif-burgundy focus:outline-none transition-colors"
+        >
+          <!-- Populated by JavaScript -->
+        </select>
+      </div>
+
+      <div>
+        <label for="labvital-chart-type-select" class="block text-xs font-semibold text-gray-700 mb-1">
+          Chart Type
+        </label>
+        <select
+          id="labvital-chart-type-select"
+          class="w-full bg-white border border-gray-300 rounded px-3 py-1.5 text-sm focus:border-clif-burgundy focus:outline-none transition-colors"
+        >
+          <option value="ecdf">ECDF (Cumulative Distribution)</option>
+          <option value="bar">Bar Chart by Site</option>
+        </select>
+      </div>
     </div>
 
-    <!-- Metric Selection -->
-    <div>
-      <label for="labvital-metric-select" class="block text-sm font-semibold text-gray-700 mb-2">
-        Metric
-      </label>
-      <select
-        id="labvital-metric-select"
-        class="w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-clif-burgundy focus:outline-none transition-colors"
-      >
-        <!-- Populated by JavaScript -->
-      </select>
+    <!-- Row 2: Time Window and Statistic Type in one row -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+      <div>
+        <label class="block text-xs font-semibold text-gray-700 mb-1">
+          Time Window
+        </label>
+        <select
+          id="labvital-timewindow-select"
+          class="w-full bg-white border border-gray-300 rounded px-3 py-1.5 text-sm focus:border-clif-burgundy focus:outline-none transition-colors"
+        >
+          <option value="whole_stay">Whole Stay</option>
+          <option value="first_24hr">First 24 Hours</option>
+          <option value="first_48hr">First 48 Hours</option>
+          <option value="first_72hr">First 72 Hours</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-gray-700 mb-1">
+          Statistic Type
+        </label>
+        <div class="flex gap-4 items-center h-[34px]">
+          <label class="inline-flex items-center cursor-pointer">
+            <input type="radio" name="labvital-stat-type" class="form-radio h-4 w-4 text-clif-burgundy" value="mean" checked>
+            <span class="ml-1.5 text-sm text-gray-700">Mean</span>
+          </label>
+          <label class="inline-flex items-center cursor-pointer">
+            <input type="radio" name="labvital-stat-type" class="form-radio h-4 w-4 text-clif-burgundy" value="median">
+            <span class="ml-1.5 text-sm text-gray-700">Median</span>
+          </label>
+        </div>
+      </div>
     </div>
 
-    <!-- Chart Type Selection -->
-    <div>
-      <label for="labvital-chart-type-select" class="block text-sm font-semibold text-gray-700 mb-2">
-        Chart Type
-      </label>
-      <select
-        id="labvital-chart-type-select"
-        class="w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-clif-burgundy focus:outline-none transition-colors"
-      >
-        <option value="ecdf">ECDF (Cumulative Distribution)</option>
-        <option value="bar">Bar Chart by Site</option>
-      </select>
-    </div>
-  </div>
-
-  <!-- Time Window Selection -->
-  <div class="mb-6">
-    <label class="block text-sm font-semibold text-gray-700 mb-2">
-      Time Window
-    </label>
-    <select
-      id="labvital-timewindow-select"
-      class="w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-clif-burgundy focus:outline-none transition-colors"
-    >
-      <option value="whole_stay">Whole Stay</option>
-      <option value="first_24hr">First 24 Hours</option>
-      <option value="first_48hr">First 48 Hours</option>
-      <option value="first_72hr">First 72 Hours</option>
-    </select>
-  </div>
-
-  <!-- Statistic Type Selection (Mean vs Median) -->
-  <div class="mb-6">
-    <label class="block text-sm font-semibold text-gray-700 mb-2">
-      Statistic Type
-    </label>
-    <div class="flex gap-3">
-      <label class="inline-flex items-center cursor-pointer">
-        <input type="radio" name="labvital-stat-type" class="form-radio h-5 w-5 text-clif-burgundy" value="mean" checked>
-        <span class="ml-2 text-sm text-gray-700">Mean</span>
-      </label>
-      <label class="inline-flex items-center cursor-pointer">
-        <input type="radio" name="labvital-stat-type" class="form-radio h-5 w-5 text-clif-burgundy" value="median">
-        <span class="ml-2 text-sm text-gray-700">Median</span>
-      </label>
+    <!-- Row 3: Site Selection Dropdown -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div class="relative">
+        <label class="block text-xs font-semibold text-gray-700 mb-1">
+          Select Sites to Include
+        </label>
+        <button
+          id="site-dropdown-btn"
+          type="button"
+          class="w-full bg-white border border-gray-300 rounded px-3 py-1.5 text-sm text-left focus:border-clif-burgundy focus:outline-none transition-colors flex items-center justify-between"
+        >
+          <span id="site-dropdown-label">All Sites Selected</span>
+          <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </button>
+        <div
+          id="site-dropdown-menu"
+          class="hidden absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded shadow-lg max-h-60 overflow-y-auto"
+        >
+          <div class="sticky top-0 bg-gray-50 border-b border-gray-300 p-2 flex gap-1.5">
+            <button
+              id="select-all-sites-btn"
+              type="button"
+              class="flex-1 text-xs px-2 py-1 bg-clif-burgundy text-white rounded hover:bg-clif-burgundy-dark transition-colors"
+            >
+              Select All
+            </button>
+            <button
+              id="deselect-all-sites-btn"
+              type="button"
+              class="flex-1 text-xs px-2 py-1 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
+            >
+              Deselect All
+            </button>
+          </div>
+          <div id="site-checkboxes" class="p-2">
+            <!-- Populated by JavaScript -->
+          </div>
+        </div>
+      </div>
+      <div></div>
     </div>
   </div>
 
@@ -285,6 +330,119 @@ const dataJson = JSON.stringify(parsedData);
     var chartTypeSelect = document.getElementById('labvital-chart-type-select');
     var timeWindowSelect = document.getElementById('labvital-timewindow-select');
     var statTypeRadios = document.querySelectorAll('input[name="labvital-stat-type"]');
+    var siteCheckboxesContainer = document.getElementById('site-checkboxes');
+    var selectAllBtn = document.getElementById('select-all-sites-btn');
+    var deselectAllBtn = document.getElementById('deselect-all-sites-btn');
+    var siteDropdownBtn = document.getElementById('site-dropdown-btn');
+    var siteDropdownMenu = document.getElementById('site-dropdown-menu');
+    var siteDropdownLabel = document.getElementById('site-dropdown-label');
+
+    // Toggle dropdown menu
+    function toggleSiteDropdown() {
+      siteDropdownMenu.classList.toggle('hidden');
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(event) {
+      if (!siteDropdownBtn.contains(event.target) && !siteDropdownMenu.contains(event.target)) {
+        siteDropdownMenu.classList.add('hidden');
+      }
+    });
+
+    // Update dropdown label based on selections
+    function updateSiteDropdownLabel() {
+      var selectedSites = getSelectedSites();
+      var totalSites = parsedData.sites.length;
+
+      console.log('[LabVital] Selected sites count:', selectedSites.length, 'Total sites:', totalSites);
+      console.log('[LabVital] Selected sites:', selectedSites);
+
+      if (selectedSites.length === 0) {
+        siteDropdownLabel.textContent = 'No Sites Selected';
+      } else if (selectedSites.length === totalSites) {
+        siteDropdownLabel.textContent = 'All Sites (' + totalSites + ')';
+      } else if (selectedSites.length === 1) {
+        siteDropdownLabel.textContent = selectedSites[0].toUpperCase();
+      } else if (selectedSites.length <= 3) {
+        // Show site names if 2-3 selected
+        siteDropdownLabel.textContent = selectedSites.map(function(s) { return s.toUpperCase(); }).join(', ');
+      } else {
+        // Show count if more than 3 selected
+        siteDropdownLabel.textContent = selectedSites.length + ' Sites Selected';
+      }
+    }
+
+    // Populate site checkboxes
+    function populateSiteCheckboxes() {
+      // Clear all existing site checkboxes
+      if (siteCheckboxesContainer) {
+        siteCheckboxesContainer.innerHTML = '';
+      }
+
+      console.log('[LabVital] Populating site checkboxes. Total sites:', parsedData.sites.length);
+
+      parsedData.sites.forEach(function(site) {
+        var label = document.createElement('label');
+        label.className = 'flex items-center cursor-pointer hover:bg-gray-50 px-2 py-1.5 rounded';
+
+        var checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'form-checkbox h-4 w-4 text-clif-burgundy rounded border-gray-300 focus:ring-clif-burgundy site-checkbox';
+        checkbox.value = site;
+        checkbox.checked = true; // All sites selected by default
+        checkbox.addEventListener('change', function() {
+          updateSiteDropdownLabel();
+          updateChart();
+        });
+
+        var span = document.createElement('span');
+        span.className = 'ml-2 text-sm text-gray-700';
+        span.textContent = site.toUpperCase();
+
+        label.appendChild(checkbox);
+        label.appendChild(span);
+        siteCheckboxesContainer.appendChild(label);
+      });
+
+      // Verify how many checkboxes were created
+      var checkboxCount = document.querySelectorAll('.site-checkbox').length;
+      console.log('[LabVital] Created', checkboxCount, 'site checkboxes');
+
+      updateSiteDropdownLabel();
+    }
+
+    // Get selected sites
+    function getSelectedSites() {
+      // Only get checkboxes within our specific container to avoid duplicates
+      var checkboxes = siteCheckboxesContainer.querySelectorAll('.site-checkbox');
+      var selected = [];
+      checkboxes.forEach(function(cb) {
+        if (cb.checked) {
+          selected.push(cb.value);
+        }
+      });
+      return selected;
+    }
+
+    // Select all sites
+    function selectAllSites() {
+      var checkboxes = siteCheckboxesContainer.querySelectorAll('.site-checkbox');
+      checkboxes.forEach(function(cb) {
+        cb.checked = true;
+      });
+      updateSiteDropdownLabel();
+      updateChart();
+    }
+
+    // Deselect all sites
+    function deselectAllSites() {
+      var checkboxes = siteCheckboxesContainer.querySelectorAll('.site-checkbox');
+      checkboxes.forEach(function(cb) {
+        cb.checked = false;
+      });
+      updateSiteDropdownLabel();
+      updateChart();
+    }
 
     // Populate metric dropdown based on selected category
     function populateMetrics(category) {
@@ -388,9 +546,12 @@ const dataJson = JSON.stringify(parsedData);
       });
 
       var values = [];
+      var selectedSites = getSelectedSites();
 
-      // Collect all values from all sites for the selected time window
-      parsedData.sites.forEach(function(site) {
+      console.log('[LabVital] Selected sites:', selectedSites);
+
+      // Collect values only from selected sites for the selected time window
+      selectedSites.forEach(function(site) {
         var siteData = metricData.by_site[site];
         if (!siteData) return;
 
@@ -579,10 +740,12 @@ const dataJson = JSON.stringify(parsedData);
       var siteLabels = [];
       var siteValues = [];
       var hasAnyData = false;
+      var selectedSites = getSelectedSites();
 
       console.log('[LabVital] Processing time window:', timeWindow);
+      console.log('[LabVital] Selected sites for bar chart:', selectedSites);
 
-      parsedData.sites.forEach(function(site) {
+      selectedSites.forEach(function(site) {
         var siteData = metricData.by_site[site];
         if (!siteData) {
           console.log('[LabVital] No data for site:', site);
@@ -778,8 +941,23 @@ const dataJson = JSON.stringify(parsedData);
     chartTypeSelect.addEventListener('change', updateChart);
     timeWindowSelect.addEventListener('change', updateChart);
     statTypeRadios.forEach(function(radio) { radio.addEventListener('change', updateChart); });
+    siteDropdownBtn.addEventListener('click', toggleSiteDropdown);
+    selectAllBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      selectAllSites();
+    });
+    deselectAllBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      deselectAllSites();
+    });
 
-    // Initialize
-    populateMetrics('labs');
+    // Initialize (only run once)
+    var initialized = false;
+    if (!initialized) {
+      console.log('[LabVital] Initializing dashboard');
+      populateSiteCheckboxes();
+      populateMetrics('labs');
+      initialized = true;
+    }
   });
 </script>

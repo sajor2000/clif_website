@@ -99,9 +99,12 @@ export function parseConsortiumCSV(csvContent: string): ParsedConsortiumData {
     characteristics.push(charData);
   }
 
-  // Build siteYearData array
+  // Build siteYearData array (exclude "Overall" aggregates to avoid double-counting)
   for (const [site, years] of siteYearMap) {
     for (const year of years) {
+      // Skip "Overall" columns - they are aggregates that would cause double-counting
+      if (year === 'Overall') continue;
+
       const charMap = new Map<string, string>();
 
       for (const char of characteristics) {
