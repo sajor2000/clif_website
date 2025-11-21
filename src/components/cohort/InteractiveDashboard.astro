@@ -1158,6 +1158,13 @@ const categories = Array.from(groupedChars.keys());
 
     const filteredData = getFilteredData();
 
+    // Check if ALL sites and ALL years are selected - if so, use Overall columns
+    const isAllSites = selectedSites.length === consortiumData.allSites.length;
+    const isAllYears = selectedYears.length === consortiumData.allYears.length;
+    const useOverallColumns = isAllSites && isAllYears && groupBy === 'site';
+
+    console.log(`[Chart] All Sites: ${isAllSites}, All Years: ${isAllYears}, Use Overall: ${useOverallColumns}`);
+
     // Collect data based on grouping
     const chartData = {};
     const chartCounts = {}; // Store raw counts for percentage variables (for data labels)
@@ -1200,7 +1207,97 @@ const categories = Array.from(groupedChars.keys());
     let addedCount = 0;
     const sitesWithData = new Set(); // Track which sites have valid data
 
-    filteredData.forEach((d, idx) => {
+    // If using Overall columns (All Sites + All Years + grouped by Site), extract directly from characteristics
+    if (useOverallColumns) {
+      console.log('[Chart] Using Overall columns for data extraction');
+
+      // Find the characteristic in consortiumData.characteristics
+      const charData = consortiumData.characteristics.find(c =>
+        c.variable === characteristic || c.variable.trim() === characteristic.trim()
+      );
+
+      if (charData) {
+        // For each selected site, get the Overall value
+        selectedSites.forEach(site => {
+          const siteData = charData.sites[site];
+          if (!siteData) return;
+
+          const overallValue = siteData['Overall'];
+          if (!overallValue || overallValue.trim() === '') {
+            skippedNullValue++;
+            return;
+          }
+
+          processedCount++;
+
+          // Skip if has small n (privacy protection)
+          if (hasSmallN(overallValue)) {
+            skippedSmallN++;
+            return;
+          }
+
+          const label = site;
+
+          if (isMedianChar) {
+            const medianIQR = extractMedianAndIQR(overallValue);
+            if (medianIQR) {
+              chartData[label] = medianIQR.median;
+              iqrData[label] = {
+                q1Values: [medianIQR.q1],
+                q3Values: [medianIQR.q3],
+                minQ1: medianIQR.q1,
+                maxQ3: medianIQR.q3
+              };
+              sitesWithData.add(site);
+              addedCount++;
+            }
+          } else if (isCategoricalPercentage) {
+            const parsed = parseCountPercentage(overallValue);
+            if (parsed) {
+              chartCounts[label] = parsed.count;
+
+              // Get the denominator from Overall column
+              const denominatorKey = category === 'Demographics' ? 'N: Unique patients' : 'N: Hospitalizations';
+              const denomCharData = consortiumData.characteristics.find(c =>
+                c.variable === denominatorKey || c.variable.trim() === denominatorKey
+              );
+
+              if (denomCharData && denomCharData.sites[site]) {
+                const denomOverallValue = denomCharData.sites[site]['Overall'];
+                if (denomOverallValue) {
+                  const numMatch = denomOverallValue.match(/^\s*([\d,]+)/);
+                  if (numMatch) {
+                    const denominator = parseInt(numMatch[1].replace(/,/g, ''), 10);
+                    groupDenominators[label] = denominator;
+                  }
+                }
+              }
+
+              sitesWithData.add(site);
+              addedCount++;
+            }
+          } else {
+            // For regular count values
+            const numValue = getNumeric(overallValue);
+            if (numValue !== null) {
+              chartData[label] = numValue;
+              sitesWithData.add(site);
+
+              // Track years for tooltip (all years)
+              if (isPopulationVariable) {
+                yearsPerGroup[label] = new Set(consortiumData.allYears);
+              }
+
+              addedCount++;
+            }
+          }
+        });
+
+        console.log(`[Chart] Overall extraction complete: ${addedCount} values added from ${sitesWithData.size} sites`);
+      }
+    } else {
+      // Standard data extraction from individual year data
+      filteredData.forEach((d, idx) => {
       // Try exact match first, then trimmed match
       let value = d.characteristics[characteristic];
 
@@ -1320,9 +1417,10 @@ const categories = Array.from(groupedChars.keys());
         }
       }
     });
+    } // End of else block for standard data extraction
 
-    // Calculate weighted medians and aggregate IQR ranges
-    if (isMedianChar) {
+    // Calculate weighted medians and aggregate IQR ranges (only for aggregated data, not Overall columns)
+    if (isMedianChar && !useOverallColumns) {
       Object.keys(chartData).forEach(key => {
         // Calculate weighted median
         chartData[key] = calculateWeightedMedian(chartData[key]);
@@ -1437,8 +1535,10 @@ const categories = Array.from(groupedChars.keys());
         subtitle += `Years: ${selectedYears[0]}-${selectedYears[selectedYears.length-1]} (${selectedYears.length} selected)`;
       }
 
-      // Add aggregation note for percentage variables
-      if (isCategoricalPercentage) {
+      // Add aggregation note for percentage variables or overall note
+      if (useOverallColumns) {
+        subtitle += ' • Using site overall values';
+      } else if (isCategoricalPercentage) {
         if (groupBy === 'year' && selectedSites.length > 1) {
           subtitle += ' • Sites combined per year';
         } else if (groupBy === 'site' && selectedYears.length > 1) {
