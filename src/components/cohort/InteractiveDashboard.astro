@@ -1535,10 +1535,8 @@ const categories = Array.from(groupedChars.keys());
         subtitle += `Years: ${selectedYears[0]}-${selectedYears[selectedYears.length-1]} (${selectedYears.length} selected)`;
       }
 
-      // Add aggregation note for percentage variables or overall note
-      if (useOverallColumns) {
-        subtitle += ' • Using site overall values';
-      } else if (isCategoricalPercentage) {
+      // Add aggregation note for percentage variables
+      if (isCategoricalPercentage) {
         if (groupBy === 'year' && selectedSites.length > 1) {
           subtitle += ' • Sites combined per year';
         } else if (groupBy === 'site' && selectedYears.length > 1) {
