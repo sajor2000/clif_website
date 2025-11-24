@@ -293,6 +293,23 @@ const categories = Array.from(groupedChars.keys());
           </div>
         </div>
 
+        <!-- Respiratory Support Denominator Selector (hidden by default) -->
+        <div id="resp-denominator-selector" class="mt-4 hidden">
+          <div class="flex items-center gap-4">
+            <label class="text-sm font-semibold text-gray-700">Calculate as % of:</label>
+            <div class="flex items-center gap-4">
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="radio" name="resp-denominator" value="imv" checked class="text-clif-burgundy focus:ring-clif-burgundy">
+                <span class="text-sm text-gray-700">Total IMV Patients</span>
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="radio" name="resp-denominator" value="hospitalizations" class="text-clif-burgundy focus:ring-clif-burgundy">
+                <span class="text-sm text-gray-700">Total Hospitalizations</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
         <!-- Selected Characteristic Display -->
         <div id="selected-characteristic-display" class="mt-4 hidden">
           <div class="flex items-center gap-2 text-sm text-gray-600">
@@ -748,8 +765,9 @@ const categories = Array.from(groupedChars.keys());
 
   // Get total denominator for selected sites
   // Demographics use "N: Unique patients", others use "N: Hospitalizations"
-  function getTotalDenominator(category, filteredData) {
-    const denominatorKey = category === 'Demographics' ? 'N: Unique patients' : 'N: Hospitalizations';
+  // For respiratory support, can optionally use IMV count as denominator
+  function getTotalDenominator(category, filteredData, customDenominatorKey = null) {
+    let denominatorKey = customDenominatorKey || (category === 'Demographics' ? 'N: Unique patients' : 'N: Hospitalizations');
 
     let total = 0;
     filteredData.forEach(d => {
@@ -1108,6 +1126,28 @@ const categories = Array.from(groupedChars.keys());
       display.classList.remove('hidden');
     }
 
+    // Show/hide respiratory support denominator selector
+    const respDenomSelector = document.getElementById('resp-denominator-selector');
+    if (respDenomSelector) {
+      const charTrimmed = characteristic.trim().toLowerCase();
+      const isRespSupport = charTrimmed.includes('mechanical ventilation') ||
+                           charTrimmed.includes('imv') ||
+                           charTrimmed.includes('fio2') ||
+                           charTrimmed.includes('peep') ||
+                           charTrimmed.includes('ventilator mode') ||
+                           charTrimmed.includes('respiratory rate') ||
+                           charTrimmed.includes('tidal volume') ||
+                           charTrimmed.includes('location at imv');
+      const isMedian = charTrimmed.includes('median');
+
+      // Show denominator selector only for non-median respiratory support variables
+      if (isRespSupport && !isMedian) {
+        respDenomSelector.classList.remove('hidden');
+      } else {
+        respDenomSelector.classList.add('hidden');
+      }
+    }
+
     // Enable generate button
     const generateBtn = document.getElementById('generate-chart-btn');
     if (generateBtn) {
@@ -1256,8 +1296,26 @@ const categories = Array.from(groupedChars.keys());
             if (parsed) {
               chartCounts[label] = parsed.count;
 
-              // Get the denominator from Overall column
-              const denominatorKey = category === 'Demographics' ? 'N: Unique patients' : 'N: Hospitalizations';
+              // Determine denominator based on category and user selection
+              let denominatorKey = category === 'Demographics' ? 'N: Unique patients' : 'N: Hospitalizations';
+
+              // Check if user selected IMV as denominator for respiratory support variables
+              const respDenomSelector = document.querySelector('input[name="resp-denominator"]:checked');
+              const useIMVDenom = respDenomSelector && respDenomSelector.value === 'imv';
+              const charLower = characteristic.trim().toLowerCase();
+              const isRespSupportVar = charLower.includes('mechanical ventilation') ||
+                                       charLower.includes('imv') ||
+                                       charLower.includes('fio2') ||
+                                       charLower.includes('peep') ||
+                                       charLower.includes('ventilator mode') ||
+                                       charLower.includes('respiratory rate') ||
+                                       charLower.includes('tidal volume') ||
+                                       charLower.includes('location at imv');
+
+              if (isRespSupportVar && useIMVDenom) {
+                denominatorKey = 'Invasive mechanical ventilation, n (%)';
+              }
+
               const denomCharData = consortiumData.characteristics.find(c =>
                 c.variable === denominatorKey || c.variable.trim() === denominatorKey
               );
@@ -1265,6 +1323,7 @@ const categories = Array.from(groupedChars.keys());
               if (denomCharData && denomCharData.sites[site]) {
                 const denomOverallValue = denomCharData.sites[site]['Overall'];
                 if (denomOverallValue) {
+                  // Handle both formats: "315,193 (30.6%)" and plain numbers
                   const numMatch = denomOverallValue.match(/^\s*([\d,]+)/);
                   if (numMatch) {
                     const denominator = parseInt(numMatch[1].replace(/,/g, ''), 10);
@@ -1365,8 +1424,26 @@ const categories = Array.from(groupedChars.keys());
           if (!chartCounts[label]) chartCounts[label] = 0;
           chartCounts[label] += parsed.count;
 
-          // Sum denominators per group
-          const denominatorKey = category === 'Demographics' ? 'N: Unique patients' : 'N: Hospitalizations';
+          // Determine denominator based on category and user selection
+          let denominatorKey = category === 'Demographics' ? 'N: Unique patients' : 'N: Hospitalizations';
+
+          // Check if user selected IMV as denominator for respiratory support variables
+          const respDenomSelector = document.querySelector('input[name="resp-denominator"]:checked');
+          const useIMVDenom = respDenomSelector && respDenomSelector.value === 'imv';
+          const charLower = characteristic.trim().toLowerCase();
+          const isRespSupportVar = charLower.includes('mechanical ventilation') ||
+                                   charLower.includes('imv') ||
+                                   charLower.includes('fio2') ||
+                                   charLower.includes('peep') ||
+                                   charLower.includes('ventilator mode') ||
+                                   charLower.includes('respiratory rate') ||
+                                   charLower.includes('tidal volume') ||
+                                   charLower.includes('location at imv');
+
+          if (isRespSupportVar && useIMVDenom) {
+            denominatorKey = 'Invasive mechanical ventilation, n (%)';
+          }
+
           let denominatorValue = d.characteristics[denominatorKey];
 
           // Try trimmed match if exact match fails
@@ -1496,7 +1573,25 @@ const categories = Array.from(groupedChars.keys());
 
       // Add percentage indicator for categorical variables
       if (isCategoricalPercentage) {
-        const denominatorType = category === 'Demographics' ? 'Unique Patients' : 'Hospitalizations';
+        let denominatorType = category === 'Demographics' ? 'Unique Patients' : 'Hospitalizations';
+
+        // Check if IMV denominator was used for respiratory support
+        const respDenomSelector = document.querySelector('input[name="resp-denominator"]:checked');
+        const useIMVDenom = respDenomSelector && respDenomSelector.value === 'imv';
+        const charLower = characteristic.trim().toLowerCase();
+        const isRespSupportVar = charLower.includes('mechanical ventilation') ||
+                                 charLower.includes('imv') ||
+                                 charLower.includes('fio2') ||
+                                 charLower.includes('peep') ||
+                                 charLower.includes('ventilator mode') ||
+                                 charLower.includes('respiratory rate') ||
+                                 charLower.includes('tidal volume') ||
+                                 charLower.includes('location at imv');
+
+        if (isRespSupportVar && useIMVDenom) {
+          denominatorType = 'IMV Patients';
+        }
+
         title += ` (% of ${denominatorType})`;
       }
 
@@ -1586,19 +1681,45 @@ const categories = Array.from(groupedChars.keys());
               display: chartType === 'pie' || chartType === 'doughnut',
               position: 'bottom'
             },
-            datalabels: isCategoricalPercentage && (chartType === 'bar' || chartType === 'horizontalBar') ? {
+            datalabels: (chartType === 'bar' || chartType === 'horizontalBar') ? {
               color: '#000',
-              anchor: 'end',
+              anchor: function(context) {
+                // For 0 values, anchor at start so label appears above baseline
+                return context.dataset.data[context.dataIndex] === 0 ? 'start' : 'end';
+              },
               align: 'top',
+              offset: function(context) {
+                // Add more offset for 0 values so they're visible
+                return context.dataset.data[context.dataIndex] === 0 ? 4 : 4;
+              },
               font: {
                 weight: 'bold',
                 size: 11
               },
+              display: function(context) {
+                // Only display labels for 0 values (both median and categorical)
+                const value = context.dataset.data[context.dataIndex];
+                if (isMedianChar || isCategoricalPercentage) {
+                  return value === 0;
+                }
+                return false;
+              },
               formatter: function(value, context) {
                 const labelName = context.chart.data.labels[context.dataIndex];
-                const count = chartCounts[labelName];
-                if (count !== undefined) {
-                  return 'n=' + count.toLocaleString();
+                // Only format for 0 values (display function already filters)
+                if (isCategoricalPercentage) {
+                  // Show "0%" for zero percentage values
+                  return '0%';
+                } else if (isMedianChar) {
+                  // Show the median value with IQR for 0 values
+                  const medianStr = value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 1 });
+                  const iqr = iqrData[labelName];
+                  if (iqr && iqr.minQ1 !== undefined && iqr.maxQ3 !== undefined) {
+                    const q1Str = iqr.minQ1.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 1 });
+                    const q3Str = iqr.maxQ3.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 1 });
+                    return `${medianStr} [${q1Str},${q3Str}]`;
+                  }
+                  return medianStr;
                 }
                 return '';
               }

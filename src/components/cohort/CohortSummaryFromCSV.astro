@@ -206,7 +206,7 @@ const dopamineDose = dataMap.get('    Dopamine dose (mcg/kg/min), median [Q1, Q3
         </div>
         <div class="bg-gradient-to-br from-slate-400 to-slate-500 text-white px-4 py-2 rounded-lg shadow min-w-full">
           <div class="text-xl font-bold">{extractNumber(icuEncounters)}</div>
-          <div class="text-xs opacity-90 whitespace-nowrap">Total ICU Encounters</div>
+          <div class="text-xs opacity-90 whitespace-nowrap">Hospitalizations with an ICU stay</div>
         </div>
         <div class="bg-gradient-to-br from-slate-400 to-slate-500 text-white px-4 py-2 rounded-lg shadow min-w-full">
           <div class="text-xl font-bold">{hospitals}</div>
@@ -1036,6 +1036,9 @@ const dopamineDose = dataMap.get('    Dopamine dose (mcg/kg/min), median [Q1, Q3
             legend: {
               display: false
             },
+            datalabels: {
+              display: false
+            },
             tooltip: {
               enabled: true,
               position: 'average',
@@ -1096,6 +1099,9 @@ const dopamineDose = dataMap.get('    Dopamine dose (mcg/kg/min), median [Q1, Q3
           maintainAspectRatio: true,
           plugins: {
             legend: {
+              display: false
+            },
+            datalabels: {
               display: false
             },
             tooltip: {
