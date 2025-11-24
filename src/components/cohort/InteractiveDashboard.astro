@@ -1730,7 +1730,9 @@ const categories = Array.from(groupedChars.keys());
               callbacks: {
                 label: function(context) {
                   const labelName = context.label || '';
-                  const value = context.parsed.y !== undefined ? context.parsed.y : context.parsed;
+                  // For horizontal bar charts, the value is in parsed.x; for vertical bars, it's in parsed.y
+                  const isHorizontal = chartType === 'horizontalBar';
+                  const value = isHorizontal ? context.parsed.x : (context.parsed.y !== undefined ? context.parsed.y : context.parsed);
 
                   if (isMedianChar && iqrData[labelName]) {
                     // For median characteristics, show weighted median and IQR range

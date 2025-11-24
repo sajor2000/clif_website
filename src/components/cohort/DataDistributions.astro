@@ -515,6 +515,21 @@ const sitesJson = JSON.stringify(availableSites);
 
     availableSitesForParameter = Array.from(sitesInData).sort();
 
+    // Exclude sites with known bad data for specific parameters
+    // Note: Site names are extracted from CSV columns like "emory_probability" -> "emory"
+    const siteExclusions: Record<string, string[]> = {
+      'flow_rate_set': ['emory'],  // emory has all zeros for flow rate
+    };
+
+    if (selectedParameter) {
+      const exclusions = siteExclusions[selectedParameter.name] || [];
+      if (exclusions.length > 0) {
+        availableSitesForParameter = availableSitesForParameter.filter(
+          site => !exclusions.includes(site)
+        );
+      }
+    }
+
     // Update site selection UI
     updateSiteSelectionUI();
   }
