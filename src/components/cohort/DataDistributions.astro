@@ -740,6 +740,10 @@ const sitesJson = JSON.stringify(availableSites);
     const numBins = 30;
     const binWidth = range / numBins;
 
+    // Store ECDF data for tooltip interpolation
+    const siteEcdfMap: Record<string, { x: number; y: number }[]> = {};
+    const siteColorMap: Record<string, string> = {};
+
     selectedSites.forEach((site, siteIndex) => {
       const color = getSiteColor(site, siteIndex);
 
@@ -750,6 +754,10 @@ const sitesJson = JSON.stringify(availableSites);
         .sort((a, b) => a.x - b.x);
 
       if (siteEcdf.length === 0) return;
+
+      // Store for tooltip use
+      siteEcdfMap[site] = siteEcdf;
+      siteColorMap[site] = color.border;
 
       // Compute histogram from ECDF differences
       const histogramBins: { x: number; y: number }[] = [];
@@ -791,14 +799,21 @@ const sitesJson = JSON.stringify(availableSites);
         fill: false,
         tension: 0,
         pointRadius: 0,
+        pointHoverRadius: 0, // Disable hover circles - we use interpolated tooltip instead
         yAxisID: 'y2',
         order: 1,
+        // Store reference for tooltip
+        siteKey: site,
       });
     });
 
-    // Destroy existing chart
+    // Destroy existing chart and tooltip
     if (distributionChart) {
       distributionChart.destroy();
+    }
+    const existingTooltip = document.getElementById('chartjs-tooltip');
+    if (existingTooltip) {
+      existingTooltip.style.opacity = '0';
     }
 
     // Create chart
@@ -816,7 +831,8 @@ const sitesJson = JSON.stringify(availableSites);
           },
         },
         interaction: {
-          mode: 'index',
+          mode: 'nearest',
+          axis: 'x',
           intersect: false,
         },
         scales: {
@@ -874,15 +890,60 @@ const sitesJson = JSON.stringify(availableSites);
             display: false,
           },
           tooltip: {
-            callbacks: {
-              label: function(context: any) {
-                const label = context.dataset.label || '';
-                const value = context.parsed.y;
-                if (label.includes('ECDF')) {
-                  return `${label}: ${value.toFixed(1)}%`;
-                }
-                return `${label}: ${value.toFixed(2)}%`;
-              },
+            enabled: false, // Disable default tooltip
+            external: function(context: any) {
+              // Get or create tooltip element
+              let tooltipEl = document.getElementById('chartjs-tooltip');
+              if (!tooltipEl) {
+                tooltipEl = document.createElement('div');
+                tooltipEl.id = 'chartjs-tooltip';
+                tooltipEl.style.cssText = 'background: rgba(0, 0, 0, 0.8); border-radius: 4px; color: white; padding: 8px 12px; pointer-events: none; position: absolute; font-size: 12px; transition: opacity 0.1s ease; z-index: 1000;';
+                document.body.appendChild(tooltipEl);
+              }
+
+              const tooltipModel = context.tooltip;
+
+              // Hide if no tooltip
+              if (tooltipModel.opacity === 0) {
+                tooltipEl.style.opacity = '0';
+                return;
+              }
+
+              // Get hovered x position from the chart
+              const chart = context.chart;
+              const canvasPosition = chart.canvas.getBoundingClientRect();
+              const mouseX = tooltipModel.caretX;
+
+              // Convert pixel position to data value
+              const xScale = chart.scales.x;
+              const hoveredX = xScale.getValueForPixel(mouseX);
+
+              if (hoveredX === undefined || hoveredX < minVal || hoveredX > maxValForDisplay) {
+                tooltipEl.style.opacity = '0';
+                return;
+              }
+
+              // Build tooltip content with interpolated ECDF values
+              let html = `<div style="font-weight: bold; margin-bottom: 4px;">${hoveredX.toFixed(2)}</div>`;
+
+              selectedSites.forEach(site => {
+                const siteEcdf = siteEcdfMap[site];
+                if (!siteEcdf) return;
+
+                // Interpolate ECDF value at exact hover position
+                const ecdfValue = interpolateECDF(siteEcdf, hoveredX) * 100;
+                const color = siteColorMap[site];
+
+                html += `<div style="display: flex; align-items: center; gap: 6px; margin: 2px 0;">
+                  <span style="display: inline-block; width: 10px; height: 10px; background: ${color}; border-radius: 2px;"></span>
+                  <span>${site.toUpperCase().replace('_', ' ')} ECDF: ${ecdfValue.toFixed(1)}%</span>
+                </div>`;
+              });
+
+              tooltipEl.innerHTML = html;
+              tooltipEl.style.opacity = '1';
+              tooltipEl.style.left = canvasPosition.left + window.scrollX + tooltipModel.caretX + 10 + 'px';
+              tooltipEl.style.top = canvasPosition.top + window.scrollY + tooltipModel.caretY - 10 + 'px';
             },
           },
         },
@@ -963,6 +1024,11 @@ const sitesJson = JSON.stringify(availableSites);
     if (distributionChart) {
       distributionChart.destroy();
       distributionChart = null;
+    }
+    // Clean up tooltip
+    const tooltipEl = document.getElementById('chartjs-tooltip');
+    if (tooltipEl) {
+      tooltipEl.style.opacity = '0';
     }
     document.getElementById('distribution-chart-container')?.classList.add('hidden');
     document.getElementById('distribution-instructions')?.classList.remove('hidden');
