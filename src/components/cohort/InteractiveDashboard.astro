@@ -261,11 +261,7 @@ const categories = Array.from(groupedChars.keys());
               id="chart-type-select"
               class="w-full bg-white border-2 border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:border-clif-burgundy focus:ring-2 focus:ring-clif-burgundy focus:ring-opacity-50"
             >
-              <option value="bar">Bar Chart</option>
-              <option value="line">Line Chart</option>
-              <option value="horizontalBar">Horizontal Bar</option>
-              <option value="pie">Pie Chart</option>
-              <option value="doughnut">Doughnut Chart</option>
+              <!-- Options populated dynamically by JavaScript based on selected characteristic and grouping -->
             </select>
           </div>
 
@@ -306,6 +302,43 @@ const categories = Array.from(groupedChars.keys());
                 <input type="radio" name="resp-denominator" value="hospitalizations" class="text-clif-burgundy focus:ring-clif-burgundy">
                 <span class="text-sm text-gray-700">Total Hospitalizations</span>
               </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Location Type Selector (for First location at IMV start) -->
+        <div id="location-type-selector" class="mt-4 hidden">
+          <div class="flex items-center gap-4">
+            <label class="text-sm font-semibold text-gray-700">Location Types:</label>
+            <div class="relative">
+              <button
+                id="location-type-toggle"
+                class="bg-white border-2 border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 flex items-center justify-between min-w-[200px] hover:border-clif-burgundy transition-colors"
+              >
+                <span id="location-type-text">All Locations</span>
+                <svg class="w-4 h-4 text-gray-400 ml-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                </svg>
+              </button>
+              <div
+                id="location-type-dropdown"
+                class="hidden absolute z-50 mt-2 w-full bg-white border-2 border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto"
+              >
+                <div class="p-2">
+                  <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer">
+                    <input
+                      type="checkbox"
+                      id="location-all"
+                      class="location-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy"
+                      checked
+                    />
+                    <span class="ml-2 text-sm text-gray-700 font-semibold">All Locations</span>
+                  </label>
+                  <div id="location-options-container">
+                    <!-- Options populated dynamically -->
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -420,8 +453,6 @@ const categories = Array.from(groupedChars.keys());
   const consortiumData = JSON.parse(document.getElementById('consortium-json-data').textContent);
   const overallTableData = JSON.parse(document.getElementById('overall-json-data').textContent);
 
-  // Debug: Check if spaces are preserved after JSON parse
-  const firstItem = consortiumData.siteYearData[0];
   // State management
   let selectedSites = [...consortiumData.allSites];
   let selectedYears = [...consortiumData.allYears];
@@ -796,6 +827,114 @@ const categories = Array.from(groupedChars.keys());
 
   // Track selected characteristic
   let selectedCharacteristic = null;
+  let selectedCharacteristicDataType = null; // 'count', 'percentage', or 'median'
+
+  // Store IMV location types for the consolidated dropdown
+  let imvLocationTypes = [];
+  let imvLocationCharacteristics = {}; // Map location type to actual characteristic name
+
+  // Detect the data type of a characteristic based on its values
+  function detectCharacteristicDataType(characteristic) {
+    // First check by name patterns
+    const charTrimmed = characteristic.trim();
+
+    // Count data - starts with "N:"
+    if (charTrimmed.startsWith('N:')) {
+      return 'count';
+    }
+
+    // Median data - contains "median" or "[Q1" in name
+    if (charTrimmed.toLowerCase().includes('median') ||
+        charTrimmed.toLowerCase().includes('[q1')) {
+      return 'median';
+    }
+
+    // Check actual data values to determine type
+    const allData = consortiumData.siteYearData;
+    for (let i = 0; i < allData.length; i++) {
+      let value = allData[i].characteristics[characteristic];
+
+      // Try trimmed match if exact match fails
+      if (!value) {
+        const charKey = Object.keys(allData[i].characteristics).find(key =>
+          key.trim() === characteristic.trim()
+        );
+        if (charKey) {
+          value = allData[i].characteristics[charKey];
+        }
+      }
+
+      if (value && value.trim() !== '') {
+        // Check for IQR pattern: "66 [54, 76]"
+        if (/\[.*?,.*?\]/.test(value)) {
+          return 'median';
+        }
+        // Check for percentage pattern: "164 (0.1%)" or "68,359 (57.6%)"
+        if (/^\s*[\d,]+\s*\([^)]*%\)/.test(value)) {
+          return 'percentage';
+        }
+        // Otherwise it's a count
+        return 'count';
+      }
+    }
+
+    return 'count'; // Default fallback
+  }
+
+  // Get valid chart types based on data type and grouping
+  function getValidChartTypes(dataType, groupBy) {
+    // Always available
+    const types = [
+      { value: 'bar', label: 'Bar Chart' }
+    ];
+
+    // Line chart: only for Year grouping (temporal trends)
+    if (groupBy === 'year') {
+      types.push({ value: 'line', label: 'Line Chart' });
+    }
+
+    // Pie: only for Count data grouped by Site (shows contribution to total)
+    if (dataType === 'count' && groupBy === 'site') {
+      types.push({ value: 'pie', label: 'Pie Chart' });
+    }
+
+    return types;
+  }
+
+  // Update the chart type dropdown based on current selections
+  function updateChartTypeDropdown() {
+    const chartTypeSelect = document.getElementById('chart-type-select');
+    const groupBySelect = document.getElementById('chart-xaxis-select');
+
+    if (!chartTypeSelect || !groupBySelect) return;
+
+    const groupBy = groupBySelect.value;
+    const dataType = selectedCharacteristicDataType || 'count';
+
+    // Get valid chart types
+    const validTypes = getValidChartTypes(dataType, groupBy);
+
+    // Store current selection
+    const currentValue = chartTypeSelect.value;
+
+    // Rebuild dropdown options
+    chartTypeSelect.innerHTML = '';
+    validTypes.forEach(type => {
+      const option = document.createElement('option');
+      option.value = type.value;
+      option.textContent = type.label;
+      chartTypeSelect.appendChild(option);
+    });
+
+    // Try to preserve current selection if still valid
+    const isCurrentValid = validTypes.some(t => t.value === currentValue);
+    if (isCurrentValid) {
+      chartTypeSelect.value = currentValue;
+    } else {
+      // Default to bar chart
+      chartTypeSelect.value = 'bar';
+    }
+  }
 
   function initializeChartBuilder() {
     // Build the category sidebar
@@ -814,6 +953,15 @@ const categories = Array.from(groupedChars.keys());
     searchInput?.addEventListener('input', (e) => {
       filterCategorySidebar(e.target.value);
     });
+
+    // Group By dropdown - update chart types when changed
+    const groupBySelect = document.getElementById('chart-xaxis-select');
+    groupBySelect?.addEventListener('change', () => {
+      updateChartTypeDropdown();
+    });
+
+    // Initialize chart type dropdown with default options
+    updateChartTypeDropdown();
   }
 
   function buildCategorySidebar() {
@@ -947,7 +1095,20 @@ const categories = Array.from(groupedChars.keys());
         categories['Comorbidities'].items.push(charTrimmed);
         categorized = true;
       }
-      // Respiratory Support
+      // Respiratory Support - handle "First location at IMV start" specially
+      else if (charTrimmed.startsWith('First location at IMV start:')) {
+        // Extract the location type (e.g., "ed", "icu", "ward", etc.)
+        const locationType = charTrimmed.replace('First location at IMV start:', '').trim();
+        // Exclude "dialysis" from location types (very low counts across sites)
+        if (locationType && locationType.toLowerCase() !== 'dialysis') {
+          imvLocationCharacteristics[locationType] = charTrimmed;
+          if (!imvLocationTypes.includes(locationType)) {
+            imvLocationTypes.push(locationType);
+          }
+        }
+        categorized = true; // Don't add to sidebar - we'll add a consolidated entry
+      }
+      // Other Respiratory Support items
       else if (charTrimmed.includes('mechanical ventilation') ||
                charTrimmed.includes('IMV') ||
                charTrimmed.includes('ventilator mode') ||
@@ -998,6 +1159,14 @@ const categories = Array.from(groupedChars.keys());
       }
     });
 
+    // Add consolidated "First location at IMV start" entry if we have location types
+    if (imvLocationTypes.length > 0) {
+      // Sort location types alphabetically
+      imvLocationTypes.sort();
+      // Add a special marker for the consolidated entry
+      categories['Respiratory Support'].items.push('__IMV_LOCATION_CONSOLIDATED__');
+    }
+
     // Build the sidebar HTML
     const categoriesList = document.getElementById('categories-list');
     if (!categoriesList) return;
@@ -1032,9 +1201,17 @@ const categories = Array.from(groupedChars.keys());
       categoryData.items.sort().forEach(char => {
         const charItem = document.createElement('button');
         charItem.className = 'characteristic-item w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-clif-burgundy hover:bg-opacity-10 hover:text-clif-burgundy transition-colors';
-        charItem.dataset.characteristic = char; // Keep original with spaces for data lookup
-        charItem.textContent = char.trim(); // Display trimmed version
-        charItem.addEventListener('click', () => selectCharacteristic(char, charItem)); // Pass original
+
+        // Handle consolidated IMV location entry specially
+        if (char === '__IMV_LOCATION_CONSOLIDATED__') {
+          charItem.dataset.characteristic = '__IMV_LOCATION_CONSOLIDATED__';
+          charItem.textContent = 'First location at IMV start';
+          charItem.addEventListener('click', () => selectIMVLocationCharacteristic(charItem));
+        } else {
+          charItem.dataset.characteristic = char; // Keep original with spaces for data lookup
+          charItem.textContent = char.trim(); // Display trimmed version
+          charItem.addEventListener('click', () => selectCharacteristic(char, charItem)); // Pass original
+        }
         charList.appendChild(charItem);
       });
 
@@ -1110,6 +1287,10 @@ const categories = Array.from(groupedChars.keys());
   function selectCharacteristic(characteristic, element) {
     selectedCharacteristic = characteristic;
 
+    // Detect data type and update chart type dropdown
+    selectedCharacteristicDataType = detectCharacteristicDataType(characteristic);
+    updateChartTypeDropdown();
+
     // Update UI - remove previous selection
     document.querySelectorAll('.characteristic-item').forEach(item => {
       item.classList.remove('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
@@ -1153,6 +1334,143 @@ const categories = Array.from(groupedChars.keys());
     if (generateBtn) {
       generateBtn.disabled = false;
     }
+
+    // Hide location type selector for non-IMV characteristics
+    const locationSelector = document.getElementById('location-type-selector');
+    if (locationSelector) {
+      locationSelector.classList.add('hidden');
+    }
+  }
+
+  // Track selected location types for multi-select
+  let selectedLocationTypes = [];
+
+  // Special handler for the consolidated "First location at IMV start" item
+  function selectIMVLocationCharacteristic(element) {
+    // Set a special marker for this selection
+    selectedCharacteristic = '__IMV_LOCATION_CONSOLIDATED__';
+    selectedCharacteristicDataType = 'percentage';
+
+    // Update UI - remove previous selection
+    document.querySelectorAll('.characteristic-item').forEach(item => {
+      item.classList.remove('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
+    });
+
+    // Highlight selected item
+    element.classList.add('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
+
+    // Show selected characteristic
+    const display = document.getElementById('selected-characteristic-display');
+    const nameEl = document.getElementById('selected-characteristic-name');
+    if (display && nameEl) {
+      nameEl.textContent = 'First location at IMV start';
+      display.classList.remove('hidden');
+    }
+
+    // Show location type selector and populate checkboxes
+    const locationSelector = document.getElementById('location-type-selector');
+    const locationOptionsContainer = document.getElementById('location-options-container');
+    const locationToggle = document.getElementById('location-type-toggle');
+    const locationDropdown = document.getElementById('location-type-dropdown');
+    const locationAll = document.getElementById('location-all');
+
+    if (locationSelector && locationOptionsContainer) {
+      // Populate checkboxes with available location types
+      locationOptionsContainer.innerHTML = '';
+      imvLocationTypes.forEach(locType => {
+        const label = document.createElement('label');
+        label.className = 'flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer';
+        label.innerHTML = `
+          <input
+            type="checkbox"
+            class="location-checkbox location-type-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy"
+            value="${locType}"
+            checked
+          />
+          <span class="ml-2 text-sm text-gray-700">${locType.charAt(0).toUpperCase() + locType.slice(1)}</span>
+        `;
+        locationOptionsContainer.appendChild(label);
+      });
+
+      // Initialize: all locations selected
+      selectedLocationTypes = [...imvLocationTypes];
+      locationAll.checked = true;
+
+      // Set up toggle button
+      locationToggle?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        locationDropdown?.classList.toggle('hidden');
+      });
+
+      // Set up "All Locations" checkbox
+      locationAll?.addEventListener('change', (e) => {
+        const checked = e.target.checked;
+        document.querySelectorAll('.location-type-checkbox').forEach(cb => {
+          cb.checked = checked;
+        });
+        updateSelectedLocationTypes();
+      });
+
+      // Set up individual location checkboxes
+      locationOptionsContainer.querySelectorAll('.location-type-checkbox').forEach(cb => {
+        cb.addEventListener('change', () => {
+          updateSelectedLocationTypes();
+        });
+      });
+
+      // Close dropdown when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!locationSelector.contains(e.target)) {
+          locationDropdown?.classList.add('hidden');
+        }
+      });
+
+      locationSelector.classList.remove('hidden');
+    }
+
+    // Show respiratory support denominator selector (these are all percentage variables)
+    const respDenomSelector = document.getElementById('resp-denominator-selector');
+    if (respDenomSelector) {
+      respDenomSelector.classList.remove('hidden');
+    }
+
+    // Update chart type dropdown
+    updateChartTypeDropdown();
+
+    // Enable generate button
+    const generateBtn = document.getElementById('generate-chart-btn');
+    if (generateBtn) {
+      generateBtn.disabled = false;
+    }
+  }
+
+  // Update selected location types and display text
+  function updateSelectedLocationTypes() {
+    const checkboxes = document.querySelectorAll('.location-type-checkbox');
+    selectedLocationTypes = Array.from(checkboxes)
+      .filter(cb => cb.checked)
+      .map(cb => cb.value);
+
+    const locationAll = document.getElementById('location-all');
+    if (locationAll) {
+      locationAll.checked = selectedLocationTypes.length === imvLocationTypes.length;
+    }
+
+    // Update display text
+    const textEl = document.getElementById('location-type-text');
+    if (textEl) {
+      if (selectedLocationTypes.length === imvLocationTypes.length) {
+        textEl.textContent = 'All Locations';
+      } else if (selectedLocationTypes.length === 0) {
+        textEl.textContent = 'Select locations...';
+      } else if (selectedLocationTypes.length === 1) {
+        textEl.textContent = selectedLocationTypes[0].charAt(0).toUpperCase() + selectedLocationTypes[0].slice(1);
+      } else if (selectedLocationTypes.length <= 2) {
+        textEl.textContent = selectedLocationTypes.map(l => l.charAt(0).toUpperCase() + l.slice(1)).join(', ');
+      } else {
+        textEl.textContent = `${selectedLocationTypes.length} Locations`;
+      }
+    }
   }
 
   function filterCategorySidebar(searchTerm) {
@@ -1188,11 +1506,23 @@ const categories = Array.from(groupedChars.keys());
 
   function generateCustomChart() {
     const chartType = document.getElementById('chart-type-select')?.value;
-    const characteristic = selectedCharacteristic;
+    let characteristic = selectedCharacteristic;
     const groupBy = document.getElementById('chart-xaxis-select')?.value;
 
     if (!characteristic) {
       alert('Please select a characteristic from the sidebar to visualize.');
+      return;
+    }
+
+    // Handle IMV location consolidated selection
+    if (characteristic === '__IMV_LOCATION_CONSOLIDATED__') {
+      if (selectedLocationTypes.length === 0) {
+        alert('Please select at least one location type.');
+        return;
+      }
+
+      // Always use stacked chart with selected locations
+      generateStackedIMVLocationChart(chartType, groupBy, selectedLocationTypes);
       return;
     }
 
@@ -1202,8 +1532,6 @@ const categories = Array.from(groupedChars.keys());
     const isAllSites = selectedSites.length === consortiumData.allSites.length;
     const isAllYears = selectedYears.length === consortiumData.allYears.length;
     const useOverallColumns = isAllSites && isAllYears && groupBy === 'site';
-
-    console.log(`[Chart] All Sites: ${isAllSites}, All Years: ${isAllYears}, Use Overall: ${useOverallColumns}`);
 
     // Collect data based on grouping
     const chartData = {};
@@ -1228,7 +1556,6 @@ const categories = Array.from(groupedChars.keys());
       }
     }
     const isCategoricalPercentage = sampleValue && hasCountPercentageFormat(sampleValue);
-    console.log(`[Chart] Format check: sampleValue="${sampleValue}", isCategoricalPercentage=${isCategoricalPercentage}`);
 
     // Check if this is a Population variable (N: Hospitalizations or N: Unique patients)
     const isPopulationVariable = characteristic.trim().startsWith('N: ');
@@ -1238,7 +1565,6 @@ const categories = Array.from(groupedChars.keys());
     const groupDenominators = {}; // Store denominators per group label
     if (isCategoricalPercentage) {
       category = getCategoryForCharacteristic(characteristic);
-      console.log(`[Chart] Categorical variable detected: "${characteristic}", Category: ${category}`);
     }
 
     let processedCount = 0;
@@ -1249,8 +1575,6 @@ const categories = Array.from(groupedChars.keys());
 
     // If using Overall columns (All Sites + All Years + grouped by Site), extract directly from characteristics
     if (useOverallColumns) {
-      console.log('[Chart] Using Overall columns for data extraction');
-
       // Find the characteristic in consortiumData.characteristics
       const charData = consortiumData.characteristics.find(c =>
         c.variable === characteristic || c.variable.trim() === characteristic.trim()
@@ -1351,8 +1675,6 @@ const categories = Array.from(groupedChars.keys());
             }
           }
         });
-
-        console.log(`[Chart] Overall extraction complete: ${addedCount} values added from ${sitesWithData.size} sites`);
       }
     } else {
       // Standard data extraction from individual year data
@@ -1519,9 +1841,6 @@ const categories = Array.from(groupedChars.keys());
         if (denominator && denominator > 0) {
           const percentage = (count / denominator) * 100;
           chartData[key] = percentage;
-          console.log(`[Chart] ${key}: count=${count}, denominator=${denominator}, percentage=${percentage.toFixed(2)}%`);
-        } else {
-          console.warn(`[Chart] ${key}: No valid denominator found, skipping`);
         }
       });
     }
@@ -1589,7 +1908,7 @@ const categories = Array.from(groupedChars.keys());
                                  charLower.includes('location at imv');
 
         if (isRespSupportVar && useIMVDenom) {
-          denominatorType = 'IMV Patients';
+          denominatorType = 'IMV Hospitalizations';
         }
 
         title += ` (% of ${denominatorType})`;
@@ -1661,7 +1980,7 @@ const categories = Array.from(groupedChars.keys());
     const ctx = document.getElementById('custom-chart');
     if (ctx) {
       const config = {
-        type: chartType === 'horizontalBar' ? 'bar' : chartType,
+        type: chartType,
         data: {
           labels: labels,
           datasets: [{
@@ -1675,13 +1994,12 @@ const categories = Array.from(groupedChars.keys());
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          indexAxis: chartType === 'horizontalBar' ? 'y' : 'x',
           plugins: {
             legend: {
-              display: chartType === 'pie' || chartType === 'doughnut',
+              display: chartType === 'pie',
               position: 'bottom'
             },
-            datalabels: (chartType === 'bar' || chartType === 'horizontalBar') ? {
+            datalabels: chartType === 'bar' ? {
               color: '#000',
               anchor: function(context) {
                 // For 0 values, anchor at start so label appears above baseline
@@ -1730,9 +2048,7 @@ const categories = Array.from(groupedChars.keys());
               callbacks: {
                 label: function(context) {
                   const labelName = context.label || '';
-                  // For horizontal bar charts, the value is in parsed.x; for vertical bars, it's in parsed.y
-                  const isHorizontal = chartType === 'horizontalBar';
-                  const value = isHorizontal ? context.parsed.x : (context.parsed.y !== undefined ? context.parsed.y : context.parsed);
+                  const value = context.parsed.y !== undefined ? context.parsed.y : context.parsed;
 
                   if (isMedianChar && iqrData[labelName]) {
                     // For median characteristics, show weighted median and IQR range
@@ -1776,20 +2092,282 @@ const categories = Array.from(groupedChars.keys());
               }
             }
           },
-          scales: (chartType === 'pie' || chartType === 'doughnut') ? {} : {
+          scales: chartType === 'pie' ? {} : {
             x: {
-              beginAtZero: true,
-              title: isCategoricalPercentage && chartType === 'horizontalBar' ? {
-                display: true,
-                text: 'Percentage (%)'
-              } : undefined
+              beginAtZero: true
             },
             y: {
               beginAtZero: true,
-              title: isCategoricalPercentage && (chartType === 'bar' || chartType === 'line') ? {
+              title: isCategoricalPercentage ? {
                 display: true,
                 text: 'Percentage (%)'
               } : undefined
+            }
+          }
+        }
+      };
+
+      charts.custom = new Chart(ctx, config);
+    }
+  }
+
+  // Generate stacked bar chart for selected IMV location types
+  function generateStackedIMVLocationChart(chartType, groupBy, locationTypesToShow) {
+    const filteredData = getFilteredData();
+
+    // Check if ALL sites and ALL years are selected - if so, use Overall columns
+    const isAllSites = selectedSites.length === consortiumData.allSites.length;
+    const isAllYears = selectedYears.length === consortiumData.allYears.length;
+    const useOverallColumns = isAllSites && isAllYears && groupBy === 'site';
+
+    // Use provided location types or default to all
+    const locationsToProcess = locationTypesToShow || imvLocationTypes;
+
+    // First pass: collect ALL counts for selected location types
+    // Structure: { locationType: { label: count } }
+    const allLocationCounts = {};
+    const allLabels = new Set();
+    const sitesWithData = new Set();
+
+    // Collect counts for each location type
+    locationsToProcess.forEach(locationType => {
+      const characteristic = imvLocationCharacteristics[locationType];
+      allLocationCounts[locationType] = {};
+
+      if (useOverallColumns) {
+        const charData = consortiumData.characteristics.find(c =>
+          c.variable === characteristic || c.variable.trim() === characteristic.trim()
+        );
+
+        if (charData) {
+          selectedSites.forEach(site => {
+            const siteData = charData.sites[site];
+            if (!siteData) return;
+
+            const overallValue = siteData['Overall'];
+            if (!overallValue || overallValue.trim() === '' || hasSmallN(overallValue)) return;
+
+            const parsed = parseCountPercentage(overallValue);
+            if (parsed) {
+              allLabels.add(site);
+              allLocationCounts[locationType][site] = parsed.count;
+              sitesWithData.add(site);
+            }
+          });
+        }
+      } else {
+        filteredData.forEach(d => {
+          let value = d.characteristics[characteristic];
+          if (!value) {
+            const charKey = Object.keys(d.characteristics).find(key =>
+              key.trim() === characteristic.trim()
+            );
+            if (charKey) value = d.characteristics[charKey];
+          }
+
+          if (!value || hasSmallN(value)) return;
+
+          const parsed = parseCountPercentage(value);
+          if (parsed) {
+            const label = groupBy === 'site' ? d.site : d.year;
+            allLabels.add(label);
+
+            if (!allLocationCounts[locationType][label]) allLocationCounts[locationType][label] = 0;
+            allLocationCounts[locationType][label] += parsed.count;
+            sitesWithData.add(d.site);
+          }
+        });
+      }
+    });
+
+    // Calculate total counts per label (sum of selected location types)
+    const totalCountsPerLabel = {};
+    Array.from(allLabels).forEach(label => {
+      totalCountsPerLabel[label] = 0;
+      locationsToProcess.forEach(locationType => {
+        totalCountsPerLabel[label] += allLocationCounts[locationType][label] || 0;
+      });
+    });
+
+    // Build datasets with percentages calculated from n values
+    const datasets = [];
+    const colors = generateChartColors(locationsToProcess.length);
+
+    locationsToProcess.forEach((locationType, colorIndex) => {
+      const locationData = {};
+      const locationCounts = allLocationCounts[locationType];
+
+      // Calculate percentages using total counts as denominator
+      Object.keys(locationCounts).forEach(label => {
+        const count = locationCounts[label];
+        const totalForLabel = totalCountsPerLabel[label];
+        if (totalForLabel && totalForLabel > 0) {
+          locationData[label] = (count / totalForLabel) * 100;
+        }
+      });
+
+      datasets.push({
+        label: locationType.charAt(0).toUpperCase() + locationType.slice(1),
+        data: locationData,
+        counts: locationCounts,
+        backgroundColor: colors.background[colorIndex],
+        borderColor: colors.border[colorIndex],
+        borderWidth: 1
+      });
+    });
+
+    if (allLabels.size === 0) {
+      alert('No data available for the selected filters.');
+      return;
+    }
+
+    // Destroy existing chart
+    if (charts.custom) {
+      charts.custom.destroy();
+    }
+
+    // Show chart container, hide instructions
+    document.getElementById('custom-chart-container')?.classList.remove('hidden');
+    document.getElementById('chart-instructions')?.classList.add('hidden');
+
+    // Show 2025 note if applicable
+    const note2025 = document.getElementById('year-2025-note');
+    if (note2025) {
+      note2025.classList.toggle('hidden', !selectedYears.includes('2025'));
+    }
+
+    // Show missing sites note
+    const missingSitesNote = document.getElementById('missing-sites-note');
+    const missingSitesList = document.getElementById('missing-sites-list');
+    if (missingSitesNote && missingSitesList) {
+      const missingSites = selectedSites.filter(site => !sitesWithData.has(site));
+      if (missingSites.length > 0) {
+        missingSitesList.textContent = missingSites.map(s => s.toUpperCase()).join(', ');
+        missingSitesNote.classList.remove('hidden');
+      } else {
+        missingSitesNote.classList.add('hidden');
+      }
+    }
+
+    // Update title
+    const titleEl = document.getElementById('custom-chart-title');
+    const subtitleEl = document.getElementById('custom-chart-subtitle');
+
+    if (titleEl) {
+      const groupingText = groupBy === 'site' ? 'Site' : 'Year';
+      let titleText = 'First Location at IMV Start';
+      if (locationsToProcess.length < imvLocationTypes.length) {
+        // Show which locations are selected
+        if (locationsToProcess.length === 1) {
+          titleText = `First Location at IMV Start: ${locationsToProcess[0].charAt(0).toUpperCase() + locationsToProcess[0].slice(1)}`;
+        } else {
+          titleText = `First Location at IMV Start (${locationsToProcess.length} types)`;
+        }
+      }
+      titleEl.textContent = `${titleText} - Distribution by ${groupingText}`;
+    }
+
+    if (subtitleEl) {
+      let subtitle = '';
+      if (selectedSites.length === consortiumData.allSites.length) {
+        subtitle += `Sites: All (${selectedSites.length})`;
+      } else if (selectedSites.length <= 3) {
+        subtitle += `Sites: ${selectedSites.join(', ')}`;
+      } else {
+        subtitle += `Sites: ${selectedSites.length} selected`;
+      }
+      subtitle += ' | ';
+      if (selectedYears.length === consortiumData.allYears.length) {
+        subtitle += `Years: All (${selectedYears[0]}-${selectedYears[selectedYears.length-1]})`;
+      } else if (selectedYears.length <= 4) {
+        subtitle += `Years: ${selectedYears.join(', ')}`;
+      } else {
+        subtitle += `Years: ${selectedYears[0]}-${selectedYears[selectedYears.length-1]} (${selectedYears.length} selected)`;
+      }
+      subtitleEl.textContent = subtitle;
+    }
+
+    // Sort labels
+    let labels = Array.from(allLabels);
+    if (groupBy === 'site') {
+      labels.sort((a, b) => a.localeCompare(b));
+    } else {
+      labels.sort((a, b) => parseInt(a) - parseInt(b));
+    }
+
+    // Build chart datasets with total counts for tooltip
+    const totalCountsArray = labels.map(label => totalCountsPerLabel[label] || 0);
+    const chartDatasets = datasets.map(ds => ({
+      label: ds.label,
+      data: labels.map(label => ds.data[label] || 0),
+      backgroundColor: ds.backgroundColor,
+      borderColor: ds.borderColor,
+      borderWidth: ds.borderWidth,
+      counts: labels.map(label => ds.counts[label] || 0)
+    }));
+
+    // Create stacked bar chart
+    const ctx = document.getElementById('custom-chart');
+    if (ctx) {
+      const config = {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: chartDatasets,
+          totalCounts: totalCountsArray // Store for tooltip access
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            mode: 'index',
+            intersect: false
+          },
+          plugins: {
+            legend: {
+              display: true,
+              position: 'bottom'
+            },
+            tooltip: {
+              mode: 'index',
+              intersect: false,
+              callbacks: {
+                title: function(tooltipItems) {
+                  return tooltipItems[0]?.label || '';
+                },
+                label: function(context) {
+                  const value = context.parsed.y;
+                  const count = context.dataset.counts[context.dataIndex];
+                  // Only show if there's data (value > 0)
+                  if (value > 0) {
+                    return `${context.dataset.label}: ${value.toFixed(1)}% (n=${count.toLocaleString()})`;
+                  }
+                  return null; // Skip zero values
+                },
+                footer: function(tooltipItems) {
+                  // Show total n for this group
+                  const dataIndex = tooltipItems[0]?.dataIndex;
+                  const totalN = tooltipItems[0]?.chart.data.totalCounts[dataIndex] || 0;
+                  return `Total: n=${totalN.toLocaleString()}`;
+                }
+              }
+            },
+            datalabels: {
+              display: false
+            }
+          },
+          scales: {
+            x: {
+              stacked: true
+            },
+            y: {
+              stacked: true,
+              beginAtZero: true,
+              max: 100,
+              title: {
+                display: true,
+                text: 'Percentage (%)'
+              }
             }
           }
         }
@@ -1809,10 +2387,20 @@ const categories = Array.from(groupedChars.keys());
 
     // Clear selected characteristic
     selectedCharacteristic = null;
+    selectedCharacteristicDataType = null;
     document.querySelectorAll('.characteristic-item').forEach(item => {
       item.classList.remove('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
     });
     document.getElementById('selected-characteristic-display')?.classList.add('hidden');
+
+    // Hide respiratory support denominator selector
+    document.getElementById('resp-denominator-selector')?.classList.add('hidden');
+
+    // Hide location type selector
+    document.getElementById('location-type-selector')?.classList.add('hidden');
+
+    // Reset chart type dropdown to default options
+    updateChartTypeDropdown();
 
     // Disable generate button
     const generateBtn = document.getElementById('generate-chart-btn');
