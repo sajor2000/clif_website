@@ -84,12 +84,14 @@ The crrt_therapy table captures Continuous Renal Replacement Therapy (CRRT) data
 The ECMO/MCS table is a wider longitudinal table that captures the start and stop times of ECMO/MCS support, the type of device used, and the work rate of the device.
 
 **Example**:
-| hospitalization_id | recorded_dttm | device_name | device_category | mcs_group | device_metric_name | device_rate | flow | sweep | fdO2 |
-|-------------------|---------------|-------------|-----------------|-----------|-------------------|-------------|------|-------|------|
-| 1001 | 2024-01-01 08:00:00+00:00 UTC | Centrimag | CentriMag_LV | temporary_LVAD | RPMs | 3000 | 4.5 | NULL | NULL |
-| 1002 | 2024-01-05 12:00:00+00:00 UTC | ECMO VV | VV_ECMO | ECMO | RPMs | NULL | 5.2 | 2.0 | 1.0 |
-| 1003 | 2024-01-10 09:00:00+00:00 UTC | TandemHeart | TandemHeart_LV | temporary_LVAD | RPMs | 2800 | 3.8 | NULL | NULL |
-| 1004 | 2024-01-15 14:00:00+00:00 UTC | ECMO VA | VA_ECMO | ECMO | RPMs | 3500 | 4.0 | 4.0 | 1.0 |
+
+| hospitalization_id | recorded_dttm                | device_name         | device_category     | mcs_group        | ecmo_configuration_category | control_parameter_name | control_parameter_category  | control_parameter_value | flow | sweep_set | fdO2_set |
+|-------------------|------------------------------|---------------------|---------------------|------------------|----------------------------|-----------------------|----------------------------|------------------------|------|-----------|----------|
+| 21002             | 2024-02-18 09:10:00+00:00 UTC| Impella 5.5         | impella_5_5         | impella_lvad     | NULL                       | P5                    | impella_performance        | 5                      | 4.8  | NULL      | NULL     |
+| 21003             | 2024-02-22 11:40:00+00:00 UTC| Abbott IABP         | iabp                | iabp             | NULL                       | IABP Ratio            | iabp_ratio                 | 3                      | NULL | NULL      | NULL     |
+| 21004             | 2024-02-23 14:30:00+00:00 UTC| Heart Mate III LVAD | heartmate_3         | durable_lvad     | NULL                       | RPMs                  | rpm                        | 4200                   | 3.5  | NULL      | NULL     |
+| 21005             | 2024-02-27 16:25:00+00:00 UTC| Centrimag ECMO VV   | centrimag_ecmo      | ecmo             | vv                         | RPMs                  | rpm                        | 3500                   | 3    | 1         | NULL     |
+
 
 
 ## hospitalization
