@@ -53,7 +53,7 @@ function parseOverallCSV(content: string) {
 
   const tableData: Array<{ characteristic: string; values: Record<string, string> }> = [];
 
-  for (let i = 2; i < lines.length; i++) { // Skip header and years row
+  for (let i = 1; i < lines.length; i++) { // Start from row 1 to include Years row
     const values = parseCSVLineHelper(lines[i]);
     const characteristic = values[0];
 
@@ -225,6 +225,14 @@ const categories = Array.from(groupedChars.keys());
       </div>
     </div>
 
+    <!-- Data coverage note - always visible -->
+    <div class="bg-blue-50 border-l-4 border-blue-400 p-3 rounded">
+      <p class="text-sm text-blue-800">
+        <strong>Data Coverage:</strong> Sites have varying data coverage periods (e.g., some sites have data from 2011-2025, others from 2018-2024).
+        Use the <strong>Table</strong> view to see year-by-year coverage for each site, then select appropriate sites and years for valid comparisons.
+      </p>
+    </div>
+
     <!-- Chart Builder with Sidebar -->
     <div class="flex gap-6">
       <!-- Left Sidebar - Characteristic Categories -->
@@ -337,6 +345,244 @@ const categories = Array.from(groupedChars.keys());
                   <div id="location-options-container">
                     <!-- Options populated dynamically -->
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ventilator Mode Type Selector (for Initial ventilator mode) -->
+        <div id="vent-mode-type-selector" class="mt-4 hidden">
+          <div class="flex items-center gap-4">
+            <label class="text-sm font-semibold text-gray-700">Mode Types:</label>
+            <div class="relative">
+              <button
+                id="vent-mode-type-toggle"
+                class="bg-white border-2 border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 flex items-center justify-between min-w-[200px] hover:border-clif-burgundy transition-colors"
+              >
+                <span id="vent-mode-type-text">All Modes</span>
+                <svg class="w-4 h-4 text-gray-400 ml-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                </svg>
+              </button>
+              <div
+                id="vent-mode-type-dropdown"
+                class="hidden absolute z-50 mt-2 w-full bg-white border-2 border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto"
+              >
+                <div class="p-2">
+                  <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer">
+                    <input
+                      type="checkbox"
+                      id="vent-mode-all"
+                      class="vent-mode-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy"
+                      checked
+                    />
+                    <span class="ml-2 text-sm text-gray-700 font-semibold">All Modes</span>
+                  </label>
+                  <div id="vent-mode-options-container">
+                    <!-- Options populated dynamically -->
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ethnicity Type Selector (for Ethnicity consolidated) -->
+        <div id="ethnicity-type-selector" class="mt-4 hidden">
+          <div class="flex items-center gap-4">
+            <label class="text-sm font-semibold text-gray-700">Ethnicity Types:</label>
+            <div class="relative">
+              <button
+                id="ethnicity-type-toggle"
+                class="bg-white border-2 border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 flex items-center justify-between min-w-[200px] hover:border-clif-burgundy transition-colors"
+              >
+                <span id="ethnicity-type-text">All Types</span>
+                <svg class="w-4 h-4 text-gray-400 ml-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                </svg>
+              </button>
+              <div
+                id="ethnicity-type-dropdown"
+                class="hidden absolute z-50 mt-2 w-full bg-white border-2 border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto"
+              >
+                <div class="p-2">
+                  <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer">
+                    <input
+                      type="checkbox"
+                      id="ethnicity-all"
+                      class="ethnicity-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy"
+                      checked
+                    />
+                    <span class="ml-2 text-sm text-gray-700 font-semibold">All Types</span>
+                  </label>
+                  <div id="ethnicity-options-container">
+                    <!-- Options populated dynamically -->
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Race Type Selector (for Race consolidated) -->
+        <div id="race-type-selector" class="mt-4 hidden">
+          <div class="flex items-center gap-4">
+            <label class="text-sm font-semibold text-gray-700">Race Types:</label>
+            <div class="relative">
+              <button
+                id="race-type-toggle"
+                class="bg-white border-2 border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 flex items-center justify-between min-w-[250px] hover:border-clif-burgundy transition-colors"
+              >
+                <span id="race-type-text">All Types</span>
+                <svg class="w-4 h-4 text-gray-400 ml-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                </svg>
+              </button>
+              <div
+                id="race-type-dropdown"
+                class="hidden absolute z-50 mt-2 w-full bg-white border-2 border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto"
+              >
+                <div class="p-2">
+                  <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer">
+                    <input
+                      type="checkbox"
+                      id="race-all"
+                      class="race-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy"
+                      checked
+                    />
+                    <span class="ml-2 text-sm text-gray-700 font-semibold">All Types</span>
+                  </label>
+                  <div id="race-options-container">
+                    <!-- Options populated dynamically -->
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sex Type Selector (for Sex consolidated) -->
+        <div id="sex-type-selector" class="mt-4 hidden">
+          <div class="flex items-center gap-4">
+            <label class="text-sm font-semibold text-gray-700">Sex Types:</label>
+            <div class="relative">
+              <button
+                id="sex-type-toggle"
+                class="bg-white border-2 border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 flex items-center justify-between min-w-[200px] hover:border-clif-burgundy transition-colors"
+              >
+                <span id="sex-type-text">All Types</span>
+                <svg class="w-4 h-4 text-gray-400 ml-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                </svg>
+              </button>
+              <div
+                id="sex-type-dropdown"
+                class="hidden absolute z-50 mt-2 w-full bg-white border-2 border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto"
+              >
+                <div class="p-2">
+                  <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer">
+                    <input
+                      type="checkbox"
+                      id="sex-all"
+                      class="sex-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy"
+                      checked
+                    />
+                    <span class="ml-2 text-sm text-gray-700 font-semibold">All Types</span>
+                  </label>
+                  <div id="sex-options-container">
+                    <!-- Options populated dynamically -->
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Admission Type Selector -->
+        <div id="admission-type-selector" class="mt-4 hidden">
+          <div class="flex items-center gap-4">
+            <label class="text-sm font-semibold text-gray-700">Admission Types:</label>
+            <div class="relative">
+              <button
+                id="admission-type-toggle"
+                class="bg-white border-2 border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 flex items-center justify-between min-w-[200px] hover:border-clif-burgundy transition-colors"
+              >
+                <span id="admission-type-text">All Types</span>
+                <svg class="w-4 h-4 text-gray-400 ml-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                </svg>
+              </button>
+              <div
+                id="admission-type-dropdown"
+                class="hidden absolute z-50 mt-2 w-full bg-white border-2 border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto"
+              >
+                <div class="p-2">
+                  <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer">
+                    <input type="checkbox" id="admission-type-all" class="admission-type-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy" checked />
+                    <span class="ml-2 text-sm text-gray-700 font-semibold">All Types</span>
+                  </label>
+                  <div id="admission-type-options-container"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- First Admission Location Selector -->
+        <div id="first-admission-location-selector" class="mt-4 hidden">
+          <div class="flex items-center gap-4">
+            <label class="text-sm font-semibold text-gray-700">Location Types:</label>
+            <div class="relative">
+              <button
+                id="first-admission-location-toggle"
+                class="bg-white border-2 border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 flex items-center justify-between min-w-[200px] hover:border-clif-burgundy transition-colors"
+              >
+                <span id="first-admission-location-text">All Locations</span>
+                <svg class="w-4 h-4 text-gray-400 ml-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                </svg>
+              </button>
+              <div
+                id="first-admission-location-dropdown"
+                class="hidden absolute z-50 mt-2 w-full bg-white border-2 border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto"
+              >
+                <div class="p-2">
+                  <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer">
+                    <input type="checkbox" id="first-admission-location-all" class="first-admission-location-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy" checked />
+                    <span class="ml-2 text-sm text-gray-700 font-semibold">All Locations</span>
+                  </label>
+                  <div id="first-admission-location-options-container"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Encounter Type Selector -->
+        <div id="encounter-type-selector" class="mt-4 hidden">
+          <div class="flex items-center gap-4">
+            <label class="text-sm font-semibold text-gray-700">Encounter Types:</label>
+            <div class="relative">
+              <button
+                id="encounter-type-toggle"
+                class="bg-white border-2 border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 flex items-center justify-between min-w-[250px] hover:border-clif-burgundy transition-colors"
+              >
+                <span id="encounter-type-text">All Types</span>
+                <svg class="w-4 h-4 text-gray-400 ml-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                </svg>
+              </button>
+              <div
+                id="encounter-type-dropdown"
+                class="hidden absolute z-50 mt-2 w-full bg-white border-2 border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto"
+              >
+                <div class="p-2">
+                  <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer">
+                    <input type="checkbox" id="encounter-type-all" class="encounter-type-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy" checked />
+                    <span class="ml-2 text-sm text-gray-700 font-semibold">All Types</span>
+                  </label>
+                  <div id="encounter-type-options-container"></div>
                 </div>
               </div>
             </div>
@@ -833,6 +1079,26 @@ const categories = Array.from(groupedChars.keys());
   let imvLocationTypes = [];
   let imvLocationCharacteristics = {}; // Map location type to actual characteristic name
 
+  // Store ventilator mode types for the consolidated dropdown
+  let ventModeTypes = [];
+  let ventModeCharacteristics = {}; // Map mode type to actual characteristic name
+
+  // Store demographic types for consolidated dropdowns
+  let ethnicityTypes = [];
+  let ethnicityCharacteristics = {}; // Map ethnicity type to actual characteristic name
+  let raceTypes = [];
+  let raceCharacteristics = {}; // Map race type to actual characteristic name
+  let sexTypes = [];
+  let sexCharacteristics = {}; // Map sex type to actual characteristic name
+
+  // Store encounter-related types for consolidated dropdowns
+  let admissionTypeTypes = [];
+  let admissionTypeCharacteristics = {}; // Map admission type to actual characteristic name
+  let firstAdmissionLocationTypes = [];
+  let firstAdmissionLocationCharacteristics = {}; // Map location type to actual characteristic name
+  let encounterTypeTypes = [];
+  let encounterTypeCharacteristics = {}; // Map encounter type to actual characteristic name
+
   // Detect the data type of a characteristic based on its values
   function detectCharacteristicDataType(characteristic) {
     // First check by name patterns
@@ -883,10 +1149,58 @@ const categories = Array.from(groupedChars.keys());
 
   // Get valid chart types based on data type and grouping
   function getValidChartTypes(dataType, groupBy) {
-    // Always available
-    const types = [
-      { value: 'bar', label: 'Bar Chart' }
-    ];
+    // Check if this is a consolidated multi-type characteristic
+    const isConsolidatedMultiType = selectedCharacteristic &&
+      (selectedCharacteristic === '__IMV_LOCATION_CONSOLIDATED__' ||
+       selectedCharacteristic === '__VENT_MODE_CONSOLIDATED__' ||
+       selectedCharacteristic === '__ETHNICITY_CONSOLIDATED__' ||
+       selectedCharacteristic === '__RACE_CONSOLIDATED__' ||
+       selectedCharacteristic === '__SEX_CONSOLIDATED__' ||
+       selectedCharacteristic === '__ADMISSION_TYPE_CONSOLIDATED__' ||
+       selectedCharacteristic === '__FIRST_ADMISSION_LOCATION_CONSOLIDATED__' ||
+       selectedCharacteristic === '__ENCOUNTER_TYPE_CONSOLIDATED__');
+
+    // For consolidated multi-type items, offer stacked vs grouped bar options
+    if (isConsolidatedMultiType) {
+      const types = [
+        { value: 'stacked', label: 'Stacked' },
+        { value: 'grouped', label: 'Bar' }
+      ];
+
+      // Line chart: only for Year grouping (temporal trends)
+      if (groupBy === 'year') {
+        types.push({ value: 'line', label: 'Line' });
+      }
+
+      return types;
+    }
+
+    // Check if this is a SOFA score characteristic
+    const isSOFAScore = selectedCharacteristic && (
+      selectedCharacteristic.includes('Total SOFA score') ||
+      selectedCharacteristic.includes('Respiratory, median') ||
+      selectedCharacteristic.includes('Coagulation, median') ||
+      selectedCharacteristic.includes('Liver, median') ||
+      selectedCharacteristic.includes('Cardiovascular, median') ||
+      selectedCharacteristic.includes('CNS, median') ||
+      selectedCharacteristic.includes('Renal, median')
+    );
+
+    // For SOFA scores, only show Error Bar option
+    if (isSOFAScore) {
+      return [{ value: 'medianiqr', label: 'Error Bar' }];
+    }
+
+    // Default chart types for regular characteristics
+    const types = [];
+
+    // For median data, Error Bar is the default (first option)
+    if (dataType === 'median') {
+      types.push({ value: 'medianiqr', label: 'Error Bar' });
+      types.push({ value: 'bar', label: 'Bar Chart' });
+    } else {
+      types.push({ value: 'bar', label: 'Bar Chart' });
+    }
 
     // Line chart: only for Year grouping (temporal trends)
     if (groupBy === 'year') {
@@ -900,6 +1214,9 @@ const categories = Array.from(groupedChars.keys());
 
     return types;
   }
+
+  // Track previous data type to detect changes
+  let previousDataType = null;
 
   // Update the chart type dropdown based on current selections
   function updateChartTypeDropdown() {
@@ -926,13 +1243,22 @@ const categories = Array.from(groupedChars.keys());
       chartTypeSelect.appendChild(option);
     });
 
-    // Try to preserve current selection if still valid
-    const isCurrentValid = validTypes.some(t => t.value === currentValue);
-    if (isCurrentValid) {
-      chartTypeSelect.value = currentValue;
+    // Check if data type changed - if so, reset to new default
+    const dataTypeChanged = previousDataType !== null && previousDataType !== dataType;
+    previousDataType = dataType;
+
+    if (dataTypeChanged) {
+      // Data type changed, use the new default (first option)
+      chartTypeSelect.value = validTypes[0]?.value || 'bar';
     } else {
-      // Default to bar chart
-      chartTypeSelect.value = 'bar';
+      // Try to preserve current selection if still valid
+      const isCurrentValid = validTypes.some(t => t.value === currentValue);
+      if (isCurrentValid) {
+        chartTypeSelect.value = currentValue;
+      } else {
+        // Default to first available option
+        chartTypeSelect.value = validTypes[0]?.value || 'bar';
+      }
     }
   }
 
@@ -960,8 +1286,30 @@ const categories = Array.from(groupedChars.keys());
       updateChartTypeDropdown();
     });
 
+    // Chart Type dropdown - show/hide denominator selector based on selection
+    const chartTypeSelect = document.getElementById('chart-type-select');
+    chartTypeSelect?.addEventListener('change', () => {
+      updateDenominatorSelectorVisibility();
+    });
+
     // Initialize chart type dropdown with default options
     updateChartTypeDropdown();
+  }
+
+  // Show/hide denominator selector based on chart type for consolidated items
+  function updateDenominatorSelectorVisibility() {
+    const respDenomSelector = document.getElementById('resp-denominator-selector');
+
+    if (!respDenomSelector) return;
+
+    // Check if this is a consolidated respiratory support item
+    const isRespConsolidated = selectedCharacteristic === '__IMV_LOCATION_CONSOLIDATED__' ||
+                               selectedCharacteristic === '__VENT_MODE_CONSOLIDATED__';
+
+    // Always hide denominator selector for consolidated items - they always use IMV as denominator
+    if (isRespConsolidated) {
+      respDenomSelector.classList.add('hidden');
+    }
   }
 
   function buildCategorySidebar() {
@@ -1044,28 +1392,80 @@ const categories = Array.from(groupedChars.keys());
         categories['Severity Scores'].items.push(charOriginal);
         categorized = true;
       }
-      // Demographics
-      else if (charTrimmed.includes('Age at admission') ||
-               charTrimmed.includes('Race:') ||
-               charTrimmed.includes('Ethnicity:') ||
-               charTrimmed.includes('Sex:')) {
+      // Demographics - Age at admission stays as regular item
+      else if (charTrimmed.includes('Age at admission')) {
         categories['Demographics'].items.push(charTrimmed);
         categorized = true;
       }
-      // Encounter Information with subcategories
+      // Demographics - handle "Ethnicity:" specially for consolidated dropdown
+      else if (charTrimmed.startsWith('Ethnicity:')) {
+        const ethnicityType = charTrimmed.replace('Ethnicity:', '').trim();
+        if (ethnicityType) {
+          ethnicityCharacteristics[ethnicityType] = charTrimmed;
+          if (!ethnicityTypes.includes(ethnicityType)) {
+            ethnicityTypes.push(ethnicityType);
+          }
+        }
+        categorized = true; // Don't add to sidebar - we'll add a consolidated entry
+      }
+      // Demographics - handle "Race:" specially for consolidated dropdown
+      else if (charTrimmed.startsWith('Race:')) {
+        const raceType = charTrimmed.replace('Race:', '').trim();
+        if (raceType) {
+          raceCharacteristics[raceType] = charTrimmed;
+          if (!raceTypes.includes(raceType)) {
+            raceTypes.push(raceType);
+          }
+        }
+        categorized = true; // Don't add to sidebar - we'll add a consolidated entry
+      }
+      // Demographics - handle "Sex:" specially for consolidated dropdown
+      else if (charTrimmed.startsWith('Sex:')) {
+        const sexType = charTrimmed.replace('Sex:', '').trim();
+        if (sexType) {
+          sexCharacteristics[sexType] = charTrimmed;
+          if (!sexTypes.includes(sexType)) {
+            sexTypes.push(sexType);
+          }
+        }
+        categorized = true; // Don't add to sidebar - we'll add a consolidated entry
+      }
+      // Encounter Information - handle "Admission type:" specially for consolidated dropdown
+      else if (charTrimmed.startsWith('Admission type:')) {
+        const admType = charTrimmed.replace('Admission type:', '').trim();
+        if (admType) {
+          admissionTypeCharacteristics[admType] = charTrimmed;
+          if (!admissionTypeTypes.includes(admType)) {
+            admissionTypeTypes.push(admType);
+          }
+        }
+        categorized = true; // Don't add to sidebar - we'll add a consolidated entry
+      }
+      // Encounter Information - handle "First admission location:" specially for consolidated dropdown
+      else if (charTrimmed.startsWith('First admission location:')) {
+        const locType = charTrimmed.replace('First admission location:', '').trim();
+        if (locType) {
+          firstAdmissionLocationCharacteristics[locType] = charTrimmed;
+          if (!firstAdmissionLocationTypes.includes(locType)) {
+            firstAdmissionLocationTypes.push(locType);
+          }
+        }
+        categorized = true; // Don't add to sidebar - we'll add a consolidated entry
+      }
+      // Encounter Information - handle encounter types specially for consolidated dropdown
       else if (charTrimmed.includes('ICU encounters') ||
                charTrimmed.includes('Advanced respiratory support') ||
                charTrimmed.includes('Vasoactive support') ||
                charTrimmed.includes('Other critically ill')) {
-        // These go into "Encounter Types" subcategory
-        categories['Encounter Information'].subcategories['Encounter Types'].push(charTrimmed);
-        categorized = true;
-      }
-      else if (charTrimmed.includes('admission location:') ||
-               charTrimmed.includes('Admission type:')) {
-        // These stay at the top level of Encounter Information
-        categories['Encounter Information'].items.push(charTrimmed);
-        categorized = true;
+        // Extract the encounter type name
+        const encType = charTrimmed.replace(', n (%)', '').trim();
+        if (encType) {
+          encounterTypeCharacteristics[encType] = charTrimmed;
+          if (!encounterTypeTypes.includes(encType)) {
+            encounterTypeTypes.push(encType);
+          }
+        }
+        categorized = true; // Don't add to sidebar - we'll add a consolidated entry
       }
       // Clinical Outcomes
       else if (charTrimmed.includes('Hospital mortality') ||
@@ -1108,10 +1508,21 @@ const categories = Array.from(groupedChars.keys());
         }
         categorized = true; // Don't add to sidebar - we'll add a consolidated entry
       }
+      // Respiratory Support - handle "Initial ventilator mode:" specially
+      else if (charTrimmed.startsWith('Initial ventilator mode:')) {
+        // Extract the mode type (e.g., "assist control-volume control", "simv", etc.)
+        const modeType = charTrimmed.replace('Initial ventilator mode:', '').trim();
+        if (modeType) {
+          ventModeCharacteristics[modeType] = charTrimmed;
+          if (!ventModeTypes.includes(modeType)) {
+            ventModeTypes.push(modeType);
+          }
+        }
+        categorized = true; // Don't add to sidebar - we'll add a consolidated entry
+      }
       // Other Respiratory Support items
       else if (charTrimmed.includes('mechanical ventilation') ||
                charTrimmed.includes('IMV') ||
-               charTrimmed.includes('ventilator mode') ||
                charTrimmed.includes('FiO2') ||
                charTrimmed.includes('PEEP') ||
                charTrimmed.includes('Respiratory rate') ||
@@ -1167,6 +1578,50 @@ const categories = Array.from(groupedChars.keys());
       categories['Respiratory Support'].items.push('__IMV_LOCATION_CONSOLIDATED__');
     }
 
+    // Add consolidated "Initial ventilator mode" entry if we have mode types
+    if (ventModeTypes.length > 0) {
+      // Sort mode types alphabetically
+      ventModeTypes.sort();
+      // Add a special marker for the consolidated entry
+      categories['Respiratory Support'].items.push('__VENT_MODE_CONSOLIDATED__');
+    }
+
+    // Add consolidated "Ethnicity" entry if we have ethnicity types
+    if (ethnicityTypes.length > 0) {
+      ethnicityTypes.sort();
+      categories['Demographics'].items.push('__ETHNICITY_CONSOLIDATED__');
+    }
+
+    // Add consolidated "Race" entry if we have race types
+    if (raceTypes.length > 0) {
+      raceTypes.sort();
+      categories['Demographics'].items.push('__RACE_CONSOLIDATED__');
+    }
+
+    // Add consolidated "Sex" entry if we have sex types
+    if (sexTypes.length > 0) {
+      sexTypes.sort();
+      categories['Demographics'].items.push('__SEX_CONSOLIDATED__');
+    }
+
+    // Add consolidated "Admission type" entry if we have admission types
+    if (admissionTypeTypes.length > 0) {
+      admissionTypeTypes.sort();
+      categories['Encounter Information'].items.push('__ADMISSION_TYPE_CONSOLIDATED__');
+    }
+
+    // Add consolidated "First admission location" entry if we have location types
+    if (firstAdmissionLocationTypes.length > 0) {
+      firstAdmissionLocationTypes.sort();
+      categories['Encounter Information'].items.push('__FIRST_ADMISSION_LOCATION_CONSOLIDATED__');
+    }
+
+    // Add consolidated "Encounter type" entry if we have encounter types
+    if (encounterTypeTypes.length > 0) {
+      encounterTypeTypes.sort();
+      categories['Encounter Information'].items.push('__ENCOUNTER_TYPE_CONSOLIDATED__');
+    }
+
     // Build the sidebar HTML
     const categoriesList = document.getElementById('categories-list');
     if (!categoriesList) return;
@@ -1207,6 +1662,48 @@ const categories = Array.from(groupedChars.keys());
           charItem.dataset.characteristic = '__IMV_LOCATION_CONSOLIDATED__';
           charItem.textContent = 'First location at IMV start';
           charItem.addEventListener('click', () => selectIMVLocationCharacteristic(charItem));
+        }
+        // Handle consolidated ventilator mode entry specially
+        else if (char === '__VENT_MODE_CONSOLIDATED__') {
+          charItem.dataset.characteristic = '__VENT_MODE_CONSOLIDATED__';
+          charItem.textContent = 'Initial ventilator mode';
+          charItem.addEventListener('click', () => selectVentModeCharacteristic(charItem));
+        }
+        // Handle consolidated ethnicity entry specially
+        else if (char === '__ETHNICITY_CONSOLIDATED__') {
+          charItem.dataset.characteristic = '__ETHNICITY_CONSOLIDATED__';
+          charItem.textContent = 'Ethnicity';
+          charItem.addEventListener('click', () => selectEthnicityCharacteristic(charItem));
+        }
+        // Handle consolidated race entry specially
+        else if (char === '__RACE_CONSOLIDATED__') {
+          charItem.dataset.characteristic = '__RACE_CONSOLIDATED__';
+          charItem.textContent = 'Race';
+          charItem.addEventListener('click', () => selectRaceCharacteristic(charItem));
+        }
+        // Handle consolidated sex entry specially
+        else if (char === '__SEX_CONSOLIDATED__') {
+          charItem.dataset.characteristic = '__SEX_CONSOLIDATED__';
+          charItem.textContent = 'Sex';
+          charItem.addEventListener('click', () => selectSexCharacteristic(charItem));
+        }
+        // Handle consolidated admission type entry specially
+        else if (char === '__ADMISSION_TYPE_CONSOLIDATED__') {
+          charItem.dataset.characteristic = '__ADMISSION_TYPE_CONSOLIDATED__';
+          charItem.textContent = 'Admission type';
+          charItem.addEventListener('click', () => selectAdmissionTypeCharacteristic(charItem));
+        }
+        // Handle consolidated first admission location entry specially
+        else if (char === '__FIRST_ADMISSION_LOCATION_CONSOLIDATED__') {
+          charItem.dataset.characteristic = '__FIRST_ADMISSION_LOCATION_CONSOLIDATED__';
+          charItem.textContent = 'First admission location';
+          charItem.addEventListener('click', () => selectFirstAdmissionLocationCharacteristic(charItem));
+        }
+        // Handle consolidated encounter type entry specially
+        else if (char === '__ENCOUNTER_TYPE_CONSOLIDATED__') {
+          charItem.dataset.characteristic = '__ENCOUNTER_TYPE_CONSOLIDATED__';
+          charItem.textContent = 'Encounter type';
+          charItem.addEventListener('click', () => selectEncounterTypeCharacteristic(charItem));
         } else {
           charItem.dataset.characteristic = char; // Keep original with spaces for data lookup
           charItem.textContent = char.trim(); // Display trimmed version
@@ -1311,6 +1808,12 @@ const categories = Array.from(groupedChars.keys());
     const respDenomSelector = document.getElementById('resp-denominator-selector');
     if (respDenomSelector) {
       const charTrimmed = characteristic.trim().toLowerCase();
+
+      // Check if this is the IMV count variable itself (not other IMV-related variables)
+      // For "Invasive mechanical ventilation, n (%)", the IMV denominator doesn't make sense
+      // because IMV/IMV = 100% always. Only show selector for OTHER respiratory variables.
+      const isIMVCountVariable = charTrimmed.startsWith('invasive mechanical ventilation');
+
       const isRespSupport = charTrimmed.includes('mechanical ventilation') ||
                            charTrimmed.includes('imv') ||
                            charTrimmed.includes('fio2') ||
@@ -1322,7 +1825,8 @@ const categories = Array.from(groupedChars.keys());
       const isMedian = charTrimmed.includes('median');
 
       // Show denominator selector only for non-median respiratory support variables
-      if (isRespSupport && !isMedian) {
+      // BUT NOT for "Invasive mechanical ventilation" itself (IMV/IMV = 100% is meaningless)
+      if (isRespSupport && !isMedian && !isIMVCountVariable) {
         respDenomSelector.classList.remove('hidden');
       } else {
         respDenomSelector.classList.add('hidden');
@@ -1340,10 +1844,27 @@ const categories = Array.from(groupedChars.keys());
     if (locationSelector) {
       locationSelector.classList.add('hidden');
     }
+
+    // Hide vent mode type selector for non-vent-mode characteristics
+    const ventModeSelector = document.getElementById('vent-mode-type-selector');
+    if (ventModeSelector) {
+      ventModeSelector.classList.add('hidden');
+    }
+
+    // Hide demographic type selectors for non-demographic characteristics
+    document.getElementById('ethnicity-type-selector')?.classList.add('hidden');
+    document.getElementById('race-type-selector')?.classList.add('hidden');
+    document.getElementById('sex-type-selector')?.classList.add('hidden');
+
+    // Hide encounter type selectors for non-encounter characteristics
+    document.getElementById('admission-type-selector')?.classList.add('hidden');
+    document.getElementById('first-admission-location-selector')?.classList.add('hidden');
+    document.getElementById('encounter-type-selector')?.classList.add('hidden');
   }
 
   // Track selected location types for multi-select
   let selectedLocationTypes = [];
+  let locationDropdownInitialized = false;
 
   // Special handler for the consolidated "First location at IMV start" item
   function selectIMVLocationCharacteristic(element) {
@@ -1392,46 +1913,70 @@ const categories = Array.from(groupedChars.keys());
         locationOptionsContainer.appendChild(label);
       });
 
-      // Initialize: all locations selected
-      selectedLocationTypes = [...imvLocationTypes];
-      locationAll.checked = true;
+      // Initialize: no locations selected - let user choose
+      selectedLocationTypes = [];
+      locationAll.checked = false;
+      const locationTextEl = document.getElementById('location-type-text');
+      if (locationTextEl) locationTextEl.textContent = 'Select Types';
 
-      // Set up toggle button
-      locationToggle?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        locationDropdown?.classList.toggle('hidden');
-      });
-
-      // Set up "All Locations" checkbox
-      locationAll?.addEventListener('change', (e) => {
-        const checked = e.target.checked;
-        document.querySelectorAll('.location-type-checkbox').forEach(cb => {
-          cb.checked = checked;
+      // Only add event listeners once to prevent duplicate handlers
+      if (!locationDropdownInitialized) {
+        // Set up toggle button
+        locationToggle?.addEventListener('click', (e) => {
+          e.stopPropagation();
+          locationDropdown?.classList.toggle('hidden');
         });
-        updateSelectedLocationTypes();
-      });
 
-      // Set up individual location checkboxes
+        // Set up "All Locations" checkbox
+        locationAll?.addEventListener('change', (e) => {
+          const checked = e.target.checked;
+          document.querySelectorAll('.location-type-checkbox').forEach(cb => {
+            cb.checked = checked;
+          });
+          updateSelectedLocationTypes();
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+          if (!locationSelector.contains(e.target)) {
+            locationDropdown?.classList.add('hidden');
+          }
+        });
+
+        locationDropdownInitialized = true;
+      }
+
+      // Set up individual location checkboxes (these are created dynamically, so need to be set up each time)
       locationOptionsContainer.querySelectorAll('.location-type-checkbox').forEach(cb => {
         cb.addEventListener('change', () => {
           updateSelectedLocationTypes();
         });
       });
 
-      // Close dropdown when clicking outside
-      document.addEventListener('click', (e) => {
-        if (!locationSelector.contains(e.target)) {
-          locationDropdown?.classList.add('hidden');
-        }
-      });
-
       locationSelector.classList.remove('hidden');
     }
 
-    // Show respiratory support denominator selector (these are all percentage variables)
+    // Hide vent mode type selector (it's for vent modes, not IMV locations)
+    const ventModeSelector = document.getElementById('vent-mode-type-selector');
+    if (ventModeSelector) {
+      ventModeSelector.classList.add('hidden');
+    }
+
+    // Hide demographic selectors
+    document.getElementById('ethnicity-type-selector')?.classList.add('hidden');
+    document.getElementById('race-type-selector')?.classList.add('hidden');
+    document.getElementById('sex-type-selector')?.classList.add('hidden');
+
+    // Hide encounter selectors
+    document.getElementById('admission-type-selector')?.classList.add('hidden');
+    document.getElementById('first-admission-location-selector')?.classList.add('hidden');
+    document.getElementById('encounter-type-selector')?.classList.add('hidden');
+
+    // Hide respiratory support denominator selector (stacked distribution charts don't use it)
+    // The denominator selector is for single-variable charts, not stacked distributions
     const respDenomSelector = document.getElementById('resp-denominator-selector');
     if (respDenomSelector) {
-      respDenomSelector.classList.remove('hidden');
+      respDenomSelector.classList.add('hidden');
     }
 
     // Update chart type dropdown
@@ -1470,6 +2015,716 @@ const categories = Array.from(groupedChars.keys());
       } else {
         textEl.textContent = `${selectedLocationTypes.length} Locations`;
       }
+    }
+  }
+
+  // Track selected ventilator mode types for multi-select
+  let selectedVentModeTypes = [];
+  let ventModeDropdownInitialized = false;
+
+  // Special handler for the consolidated "Initial ventilator mode" item
+  function selectVentModeCharacteristic(element) {
+    // Set a special marker for this selection
+    selectedCharacteristic = '__VENT_MODE_CONSOLIDATED__';
+    selectedCharacteristicDataType = 'percentage';
+
+    // Update UI - remove previous selection
+    document.querySelectorAll('.characteristic-item').forEach(item => {
+      item.classList.remove('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
+    });
+
+    // Highlight selected item
+    element.classList.add('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
+
+    // Show selected characteristic
+    const display = document.getElementById('selected-characteristic-display');
+    const nameEl = document.getElementById('selected-characteristic-name');
+    if (display && nameEl) {
+      nameEl.textContent = 'Initial ventilator mode';
+      display.classList.remove('hidden');
+    }
+
+    // Hide location type selector (it's for IMV location, not vent modes)
+    const locationSelector = document.getElementById('location-type-selector');
+    if (locationSelector) {
+      locationSelector.classList.add('hidden');
+    }
+
+    // Hide demographic selectors
+    document.getElementById('ethnicity-type-selector')?.classList.add('hidden');
+    document.getElementById('race-type-selector')?.classList.add('hidden');
+    document.getElementById('sex-type-selector')?.classList.add('hidden');
+
+    // Hide encounter selectors
+    document.getElementById('admission-type-selector')?.classList.add('hidden');
+    document.getElementById('first-admission-location-selector')?.classList.add('hidden');
+    document.getElementById('encounter-type-selector')?.classList.add('hidden');
+
+    // Show ventilator mode type selector and populate checkboxes
+    const ventModeSelector = document.getElementById('vent-mode-type-selector');
+    const ventModeOptionsContainer = document.getElementById('vent-mode-options-container');
+    const ventModeToggle = document.getElementById('vent-mode-type-toggle');
+    const ventModeDropdown = document.getElementById('vent-mode-type-dropdown');
+    const ventModeAll = document.getElementById('vent-mode-all');
+
+    if (ventModeSelector && ventModeOptionsContainer) {
+      // Populate checkboxes with available ventilator mode types
+      ventModeOptionsContainer.innerHTML = '';
+      ventModeTypes.forEach(modeType => {
+        const label = document.createElement('label');
+        label.className = 'flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer';
+        // Capitalize first letter of each word for display
+        const displayName = modeType.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+        label.innerHTML = `
+          <input
+            type="checkbox"
+            class="vent-mode-checkbox vent-mode-type-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy"
+            value="${modeType}"
+            checked
+          />
+          <span class="ml-2 text-sm text-gray-700">${displayName}</span>
+        `;
+        ventModeOptionsContainer.appendChild(label);
+      });
+
+      // Initialize: no modes selected - let user choose
+      selectedVentModeTypes = [];
+      ventModeAll.checked = false;
+      const ventModeTextEl = document.getElementById('vent-mode-type-text');
+      if (ventModeTextEl) ventModeTextEl.textContent = 'Select Types';
+
+      // Only add event listeners once to prevent duplicate handlers
+      if (!ventModeDropdownInitialized) {
+        // Set up toggle button
+        ventModeToggle?.addEventListener('click', (e) => {
+          e.stopPropagation();
+          ventModeDropdown?.classList.toggle('hidden');
+        });
+
+        // Set up "All Modes" checkbox
+        ventModeAll?.addEventListener('change', (e) => {
+          const checked = e.target.checked;
+          document.querySelectorAll('.vent-mode-type-checkbox').forEach(cb => {
+            cb.checked = checked;
+          });
+          updateSelectedVentModeTypes();
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+          if (!ventModeSelector.contains(e.target)) {
+            ventModeDropdown?.classList.add('hidden');
+          }
+        });
+
+        ventModeDropdownInitialized = true;
+      }
+
+      // Set up individual mode checkboxes (these are created dynamically, so need to be set up each time)
+      ventModeOptionsContainer.querySelectorAll('.vent-mode-type-checkbox').forEach(cb => {
+        cb.addEventListener('change', () => {
+          updateSelectedVentModeTypes();
+        });
+      });
+
+      ventModeSelector.classList.remove('hidden');
+    }
+
+    // Hide respiratory support denominator selector (stacked distribution charts don't use it)
+    // The denominator selector is for single-variable charts, not stacked distributions
+    const respDenomSelector = document.getElementById('resp-denominator-selector');
+    if (respDenomSelector) {
+      respDenomSelector.classList.add('hidden');
+    }
+
+    // Update chart type dropdown
+    updateChartTypeDropdown();
+
+    // Enable generate button
+    const generateBtn = document.getElementById('generate-chart-btn');
+    if (generateBtn) {
+      generateBtn.disabled = false;
+    }
+  }
+
+  // Update selected ventilator mode types and display text
+  function updateSelectedVentModeTypes() {
+    const checkboxes = document.querySelectorAll('.vent-mode-type-checkbox');
+    selectedVentModeTypes = Array.from(checkboxes)
+      .filter(cb => cb.checked)
+      .map(cb => cb.value);
+
+    const ventModeAll = document.getElementById('vent-mode-all');
+    if (ventModeAll) {
+      ventModeAll.checked = selectedVentModeTypes.length === ventModeTypes.length;
+    }
+
+    // Update display text
+    const textEl = document.getElementById('vent-mode-type-text');
+    if (textEl) {
+      if (selectedVentModeTypes.length === ventModeTypes.length) {
+        textEl.textContent = 'All Modes';
+      } else if (selectedVentModeTypes.length === 0) {
+        textEl.textContent = 'Select modes...';
+      } else if (selectedVentModeTypes.length === 1) {
+        const displayName = selectedVentModeTypes[0].split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+        textEl.textContent = displayName;
+      } else if (selectedVentModeTypes.length <= 2) {
+        textEl.textContent = selectedVentModeTypes.map(m => m.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')).join(', ');
+      } else {
+        textEl.textContent = `${selectedVentModeTypes.length} Modes`;
+      }
+    }
+  }
+
+  // Track selected demographic types for multi-select
+  let selectedEthnicityTypes = [];
+  let ethnicityDropdownInitialized = false;
+  let selectedRaceTypes = [];
+  let raceDropdownInitialized = false;
+  let selectedSexTypes = [];
+  let sexDropdownInitialized = false;
+
+  // Helper function to hide all demographic selectors
+  function hideAllDemographicSelectors() {
+    document.getElementById('ethnicity-type-selector')?.classList.add('hidden');
+    document.getElementById('race-type-selector')?.classList.add('hidden');
+    document.getElementById('sex-type-selector')?.classList.add('hidden');
+  }
+
+  // Special handler for the consolidated "Ethnicity" item
+  function selectEthnicityCharacteristic(element) {
+    selectedCharacteristic = '__ETHNICITY_CONSOLIDATED__';
+    selectedCharacteristicDataType = 'percentage';
+
+    // Update UI - remove previous selection
+    document.querySelectorAll('.characteristic-item').forEach(item => {
+      item.classList.remove('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
+    });
+    element.classList.add('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
+
+    // Show selected characteristic
+    const display = document.getElementById('selected-characteristic-display');
+    const nameEl = document.getElementById('selected-characteristic-name');
+    if (display && nameEl) {
+      nameEl.textContent = 'Ethnicity';
+      display.classList.remove('hidden');
+    }
+
+    // Hide other selectors
+    document.getElementById('location-type-selector')?.classList.add('hidden');
+    document.getElementById('vent-mode-type-selector')?.classList.add('hidden');
+    document.getElementById('race-type-selector')?.classList.add('hidden');
+    document.getElementById('sex-type-selector')?.classList.add('hidden');
+    document.getElementById('resp-denominator-selector')?.classList.add('hidden');
+
+    // Show ethnicity type selector
+    const selector = document.getElementById('ethnicity-type-selector');
+    const optionsContainer = document.getElementById('ethnicity-options-container');
+    const toggle = document.getElementById('ethnicity-type-toggle');
+    const dropdown = document.getElementById('ethnicity-type-dropdown');
+    const allCheckbox = document.getElementById('ethnicity-all');
+
+    if (selector && optionsContainer) {
+      optionsContainer.innerHTML = '';
+      ethnicityTypes.forEach(type => {
+        const label = document.createElement('label');
+        label.className = 'flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer';
+        const displayName = type.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+        label.innerHTML = `
+          <input type="checkbox" class="ethnicity-checkbox ethnicity-type-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy" value="${type}" checked />
+          <span class="ml-2 text-sm text-gray-700">${displayName}</span>
+        `;
+        optionsContainer.appendChild(label);
+      });
+
+      selectedEthnicityTypes = [...ethnicityTypes];
+      allCheckbox.checked = true;
+
+      if (!ethnicityDropdownInitialized) {
+        toggle?.addEventListener('click', (e) => {
+          e.stopPropagation();
+          dropdown?.classList.toggle('hidden');
+        });
+        allCheckbox?.addEventListener('change', (e) => {
+          document.querySelectorAll('.ethnicity-type-checkbox').forEach(cb => cb.checked = e.target.checked);
+          updateSelectedEthnicityTypes();
+        });
+        document.addEventListener('click', (e) => {
+          if (!selector.contains(e.target)) dropdown?.classList.add('hidden');
+        });
+        ethnicityDropdownInitialized = true;
+      }
+
+      optionsContainer.querySelectorAll('.ethnicity-type-checkbox').forEach(cb => {
+        cb.addEventListener('change', () => updateSelectedEthnicityTypes());
+      });
+      selector.classList.remove('hidden');
+    }
+
+    updateChartTypeDropdown();
+    document.getElementById('generate-chart-btn').disabled = false;
+  }
+
+  function updateSelectedEthnicityTypes() {
+    selectedEthnicityTypes = Array.from(document.querySelectorAll('.ethnicity-type-checkbox'))
+      .filter(cb => cb.checked).map(cb => cb.value);
+    const allCheckbox = document.getElementById('ethnicity-all');
+    if (allCheckbox) allCheckbox.checked = selectedEthnicityTypes.length === ethnicityTypes.length;
+    const textEl = document.getElementById('ethnicity-type-text');
+    if (textEl) {
+      if (selectedEthnicityTypes.length === ethnicityTypes.length) textEl.textContent = 'All Types';
+      else if (selectedEthnicityTypes.length === 0) textEl.textContent = 'Select types...';
+      else if (selectedEthnicityTypes.length <= 2) textEl.textContent = selectedEthnicityTypes.map(t => t.charAt(0).toUpperCase() + t.slice(1)).join(', ');
+      else textEl.textContent = `${selectedEthnicityTypes.length} Types`;
+    }
+  }
+
+  // Special handler for the consolidated "Race" item
+  function selectRaceCharacteristic(element) {
+    selectedCharacteristic = '__RACE_CONSOLIDATED__';
+    selectedCharacteristicDataType = 'percentage';
+
+    document.querySelectorAll('.characteristic-item').forEach(item => {
+      item.classList.remove('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
+    });
+    element.classList.add('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
+
+    const display = document.getElementById('selected-characteristic-display');
+    const nameEl = document.getElementById('selected-characteristic-name');
+    if (display && nameEl) {
+      nameEl.textContent = 'Race';
+      display.classList.remove('hidden');
+    }
+
+    // Hide other selectors
+    document.getElementById('location-type-selector')?.classList.add('hidden');
+    document.getElementById('vent-mode-type-selector')?.classList.add('hidden');
+    document.getElementById('ethnicity-type-selector')?.classList.add('hidden');
+    document.getElementById('sex-type-selector')?.classList.add('hidden');
+    document.getElementById('resp-denominator-selector')?.classList.add('hidden');
+
+    const selector = document.getElementById('race-type-selector');
+    const optionsContainer = document.getElementById('race-options-container');
+    const toggle = document.getElementById('race-type-toggle');
+    const dropdown = document.getElementById('race-type-dropdown');
+    const allCheckbox = document.getElementById('race-all');
+
+    if (selector && optionsContainer) {
+      optionsContainer.innerHTML = '';
+      raceTypes.forEach(type => {
+        const label = document.createElement('label');
+        label.className = 'flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer';
+        const displayName = type.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+        label.innerHTML = `
+          <input type="checkbox" class="race-checkbox race-type-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy" value="${type}" checked />
+          <span class="ml-2 text-sm text-gray-700">${displayName}</span>
+        `;
+        optionsContainer.appendChild(label);
+      });
+
+      selectedRaceTypes = [...raceTypes];
+      allCheckbox.checked = true;
+
+      if (!raceDropdownInitialized) {
+        toggle?.addEventListener('click', (e) => {
+          e.stopPropagation();
+          dropdown?.classList.toggle('hidden');
+        });
+        allCheckbox?.addEventListener('change', (e) => {
+          document.querySelectorAll('.race-type-checkbox').forEach(cb => cb.checked = e.target.checked);
+          updateSelectedRaceTypes();
+        });
+        document.addEventListener('click', (e) => {
+          if (!selector.contains(e.target)) dropdown?.classList.add('hidden');
+        });
+        raceDropdownInitialized = true;
+      }
+
+      optionsContainer.querySelectorAll('.race-type-checkbox').forEach(cb => {
+        cb.addEventListener('change', () => updateSelectedRaceTypes());
+      });
+      selector.classList.remove('hidden');
+    }
+
+    updateChartTypeDropdown();
+    document.getElementById('generate-chart-btn').disabled = false;
+  }
+
+  function updateSelectedRaceTypes() {
+    selectedRaceTypes = Array.from(document.querySelectorAll('.race-type-checkbox'))
+      .filter(cb => cb.checked).map(cb => cb.value);
+    const allCheckbox = document.getElementById('race-all');
+    if (allCheckbox) allCheckbox.checked = selectedRaceTypes.length === raceTypes.length;
+    const textEl = document.getElementById('race-type-text');
+    if (textEl) {
+      if (selectedRaceTypes.length === raceTypes.length) textEl.textContent = 'All Types';
+      else if (selectedRaceTypes.length === 0) textEl.textContent = 'Select types...';
+      else if (selectedRaceTypes.length <= 2) textEl.textContent = selectedRaceTypes.map(t => t.charAt(0).toUpperCase() + t.slice(1)).join(', ');
+      else textEl.textContent = `${selectedRaceTypes.length} Types`;
+    }
+  }
+
+  // Special handler for the consolidated "Sex" item
+  function selectSexCharacteristic(element) {
+    selectedCharacteristic = '__SEX_CONSOLIDATED__';
+    selectedCharacteristicDataType = 'percentage';
+
+    document.querySelectorAll('.characteristic-item').forEach(item => {
+      item.classList.remove('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
+    });
+    element.classList.add('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
+
+    const display = document.getElementById('selected-characteristic-display');
+    const nameEl = document.getElementById('selected-characteristic-name');
+    if (display && nameEl) {
+      nameEl.textContent = 'Sex';
+      display.classList.remove('hidden');
+    }
+
+    // Hide other selectors
+    document.getElementById('location-type-selector')?.classList.add('hidden');
+    document.getElementById('vent-mode-type-selector')?.classList.add('hidden');
+    document.getElementById('ethnicity-type-selector')?.classList.add('hidden');
+    document.getElementById('race-type-selector')?.classList.add('hidden');
+    document.getElementById('resp-denominator-selector')?.classList.add('hidden');
+
+    const selector = document.getElementById('sex-type-selector');
+    const optionsContainer = document.getElementById('sex-options-container');
+    const toggle = document.getElementById('sex-type-toggle');
+    const dropdown = document.getElementById('sex-type-dropdown');
+    const allCheckbox = document.getElementById('sex-all');
+
+    if (selector && optionsContainer) {
+      optionsContainer.innerHTML = '';
+      sexTypes.forEach(type => {
+        const label = document.createElement('label');
+        label.className = 'flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer';
+        const displayName = type.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+        label.innerHTML = `
+          <input type="checkbox" class="sex-checkbox sex-type-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy" value="${type}" checked />
+          <span class="ml-2 text-sm text-gray-700">${displayName}</span>
+        `;
+        optionsContainer.appendChild(label);
+      });
+
+      selectedSexTypes = [...sexTypes];
+      allCheckbox.checked = true;
+
+      if (!sexDropdownInitialized) {
+        toggle?.addEventListener('click', (e) => {
+          e.stopPropagation();
+          dropdown?.classList.toggle('hidden');
+        });
+        allCheckbox?.addEventListener('change', (e) => {
+          document.querySelectorAll('.sex-type-checkbox').forEach(cb => cb.checked = e.target.checked);
+          updateSelectedSexTypes();
+        });
+        document.addEventListener('click', (e) => {
+          if (!selector.contains(e.target)) dropdown?.classList.add('hidden');
+        });
+        sexDropdownInitialized = true;
+      }
+
+      optionsContainer.querySelectorAll('.sex-type-checkbox').forEach(cb => {
+        cb.addEventListener('change', () => updateSelectedSexTypes());
+      });
+      selector.classList.remove('hidden');
+    }
+
+    updateChartTypeDropdown();
+    document.getElementById('generate-chart-btn').disabled = false;
+  }
+
+  function updateSelectedSexTypes() {
+    selectedSexTypes = Array.from(document.querySelectorAll('.sex-type-checkbox'))
+      .filter(cb => cb.checked).map(cb => cb.value);
+    const allCheckbox = document.getElementById('sex-all');
+    if (allCheckbox) allCheckbox.checked = selectedSexTypes.length === sexTypes.length;
+    const textEl = document.getElementById('sex-type-text');
+    if (textEl) {
+      if (selectedSexTypes.length === sexTypes.length) textEl.textContent = 'All Types';
+      else if (selectedSexTypes.length === 0) textEl.textContent = 'Select types...';
+      else if (selectedSexTypes.length <= 2) textEl.textContent = selectedSexTypes.map(t => t.charAt(0).toUpperCase() + t.slice(1)).join(', ');
+      else textEl.textContent = `${selectedSexTypes.length} Types`;
+    }
+  }
+
+  // Track selected encounter-related types for multi-select
+  let selectedAdmissionTypes = [];
+  let admissionTypeDropdownInitialized = false;
+  let selectedFirstAdmissionLocationTypes = [];
+  let firstAdmissionLocationDropdownInitialized = false;
+  let selectedEncounterTypes = [];
+  let encounterTypeDropdownInitialized = false;
+
+  // Helper function to hide all encounter selectors
+  function hideAllEncounterSelectors() {
+    document.getElementById('admission-type-selector')?.classList.add('hidden');
+    document.getElementById('first-admission-location-selector')?.classList.add('hidden');
+    document.getElementById('encounter-type-selector')?.classList.add('hidden');
+  }
+
+  // Special handler for the consolidated "Admission type" item
+  function selectAdmissionTypeCharacteristic(element) {
+    selectedCharacteristic = '__ADMISSION_TYPE_CONSOLIDATED__';
+    selectedCharacteristicDataType = 'percentage';
+
+    document.querySelectorAll('.characteristic-item').forEach(item => {
+      item.classList.remove('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
+    });
+    element.classList.add('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
+
+    const display = document.getElementById('selected-characteristic-display');
+    const nameEl = document.getElementById('selected-characteristic-name');
+    if (display && nameEl) {
+      nameEl.textContent = 'Admission type';
+      display.classList.remove('hidden');
+    }
+
+    // Hide other selectors
+    document.getElementById('location-type-selector')?.classList.add('hidden');
+    document.getElementById('vent-mode-type-selector')?.classList.add('hidden');
+    document.getElementById('ethnicity-type-selector')?.classList.add('hidden');
+    document.getElementById('race-type-selector')?.classList.add('hidden');
+    document.getElementById('sex-type-selector')?.classList.add('hidden');
+    document.getElementById('first-admission-location-selector')?.classList.add('hidden');
+    document.getElementById('encounter-type-selector')?.classList.add('hidden');
+    document.getElementById('resp-denominator-selector')?.classList.add('hidden');
+
+    const selector = document.getElementById('admission-type-selector');
+    const optionsContainer = document.getElementById('admission-type-options-container');
+    const toggle = document.getElementById('admission-type-toggle');
+    const dropdown = document.getElementById('admission-type-dropdown');
+    const allCheckbox = document.getElementById('admission-type-all');
+
+    if (selector && optionsContainer) {
+      optionsContainer.innerHTML = '';
+      admissionTypeTypes.forEach(type => {
+        const label = document.createElement('label');
+        label.className = 'flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer';
+        const displayName = type.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+        label.innerHTML = `
+          <input type="checkbox" class="admission-type-checkbox admission-type-type-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy" value="${type}" checked />
+          <span class="ml-2 text-sm text-gray-700">${displayName}</span>
+        `;
+        optionsContainer.appendChild(label);
+      });
+
+      selectedAdmissionTypes = [...admissionTypeTypes];
+      allCheckbox.checked = true;
+
+      if (!admissionTypeDropdownInitialized) {
+        toggle?.addEventListener('click', (e) => {
+          e.stopPropagation();
+          dropdown?.classList.toggle('hidden');
+        });
+        allCheckbox?.addEventListener('change', (e) => {
+          document.querySelectorAll('.admission-type-type-checkbox').forEach(cb => cb.checked = e.target.checked);
+          updateSelectedAdmissionTypes();
+        });
+        document.addEventListener('click', (e) => {
+          if (!selector.contains(e.target)) dropdown?.classList.add('hidden');
+        });
+        admissionTypeDropdownInitialized = true;
+      }
+
+      optionsContainer.querySelectorAll('.admission-type-type-checkbox').forEach(cb => {
+        cb.addEventListener('change', () => updateSelectedAdmissionTypes());
+      });
+      selector.classList.remove('hidden');
+    }
+
+    updateChartTypeDropdown();
+    document.getElementById('generate-chart-btn').disabled = false;
+  }
+
+  function updateSelectedAdmissionTypes() {
+    selectedAdmissionTypes = Array.from(document.querySelectorAll('.admission-type-type-checkbox'))
+      .filter(cb => cb.checked).map(cb => cb.value);
+    const allCheckbox = document.getElementById('admission-type-all');
+    if (allCheckbox) allCheckbox.checked = selectedAdmissionTypes.length === admissionTypeTypes.length;
+    const textEl = document.getElementById('admission-type-text');
+    if (textEl) {
+      if (selectedAdmissionTypes.length === admissionTypeTypes.length) textEl.textContent = 'All Types';
+      else if (selectedAdmissionTypes.length === 0) textEl.textContent = 'Select types...';
+      else if (selectedAdmissionTypes.length <= 2) textEl.textContent = selectedAdmissionTypes.map(t => t.charAt(0).toUpperCase() + t.slice(1)).join(', ');
+      else textEl.textContent = `${selectedAdmissionTypes.length} Types`;
+    }
+  }
+
+  // Special handler for the consolidated "First admission location" item
+  function selectFirstAdmissionLocationCharacteristic(element) {
+    selectedCharacteristic = '__FIRST_ADMISSION_LOCATION_CONSOLIDATED__';
+    selectedCharacteristicDataType = 'percentage';
+
+    document.querySelectorAll('.characteristic-item').forEach(item => {
+      item.classList.remove('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
+    });
+    element.classList.add('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
+
+    const display = document.getElementById('selected-characteristic-display');
+    const nameEl = document.getElementById('selected-characteristic-name');
+    if (display && nameEl) {
+      nameEl.textContent = 'First admission location';
+      display.classList.remove('hidden');
+    }
+
+    // Hide other selectors
+    document.getElementById('location-type-selector')?.classList.add('hidden');
+    document.getElementById('vent-mode-type-selector')?.classList.add('hidden');
+    document.getElementById('ethnicity-type-selector')?.classList.add('hidden');
+    document.getElementById('race-type-selector')?.classList.add('hidden');
+    document.getElementById('sex-type-selector')?.classList.add('hidden');
+    document.getElementById('admission-type-selector')?.classList.add('hidden');
+    document.getElementById('encounter-type-selector')?.classList.add('hidden');
+    document.getElementById('resp-denominator-selector')?.classList.add('hidden');
+
+    const selector = document.getElementById('first-admission-location-selector');
+    const optionsContainer = document.getElementById('first-admission-location-options-container');
+    const toggle = document.getElementById('first-admission-location-toggle');
+    const dropdown = document.getElementById('first-admission-location-dropdown');
+    const allCheckbox = document.getElementById('first-admission-location-all');
+
+    if (selector && optionsContainer) {
+      optionsContainer.innerHTML = '';
+      firstAdmissionLocationTypes.forEach(type => {
+        const label = document.createElement('label');
+        label.className = 'flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer';
+        const displayName = type.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+        label.innerHTML = `
+          <input type="checkbox" class="first-admission-location-checkbox first-admission-location-type-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy" value="${type}" checked />
+          <span class="ml-2 text-sm text-gray-700">${displayName}</span>
+        `;
+        optionsContainer.appendChild(label);
+      });
+
+      selectedFirstAdmissionLocationTypes = [...firstAdmissionLocationTypes];
+      allCheckbox.checked = true;
+
+      if (!firstAdmissionLocationDropdownInitialized) {
+        toggle?.addEventListener('click', (e) => {
+          e.stopPropagation();
+          dropdown?.classList.toggle('hidden');
+        });
+        allCheckbox?.addEventListener('change', (e) => {
+          document.querySelectorAll('.first-admission-location-type-checkbox').forEach(cb => cb.checked = e.target.checked);
+          updateSelectedFirstAdmissionLocationTypes();
+        });
+        document.addEventListener('click', (e) => {
+          if (!selector.contains(e.target)) dropdown?.classList.add('hidden');
+        });
+        firstAdmissionLocationDropdownInitialized = true;
+      }
+
+      optionsContainer.querySelectorAll('.first-admission-location-type-checkbox').forEach(cb => {
+        cb.addEventListener('change', () => updateSelectedFirstAdmissionLocationTypes());
+      });
+      selector.classList.remove('hidden');
+    }
+
+    updateChartTypeDropdown();
+    document.getElementById('generate-chart-btn').disabled = false;
+  }
+
+  function updateSelectedFirstAdmissionLocationTypes() {
+    selectedFirstAdmissionLocationTypes = Array.from(document.querySelectorAll('.first-admission-location-type-checkbox'))
+      .filter(cb => cb.checked).map(cb => cb.value);
+    const allCheckbox = document.getElementById('first-admission-location-all');
+    if (allCheckbox) allCheckbox.checked = selectedFirstAdmissionLocationTypes.length === firstAdmissionLocationTypes.length;
+    const textEl = document.getElementById('first-admission-location-text');
+    if (textEl) {
+      if (selectedFirstAdmissionLocationTypes.length === firstAdmissionLocationTypes.length) textEl.textContent = 'All Locations';
+      else if (selectedFirstAdmissionLocationTypes.length === 0) textEl.textContent = 'Select locations...';
+      else if (selectedFirstAdmissionLocationTypes.length <= 2) textEl.textContent = selectedFirstAdmissionLocationTypes.map(t => t.charAt(0).toUpperCase() + t.slice(1)).join(', ');
+      else textEl.textContent = `${selectedFirstAdmissionLocationTypes.length} Locations`;
+    }
+  }
+
+  // Special handler for the consolidated "Encounter type" item
+  function selectEncounterTypeCharacteristic(element) {
+    selectedCharacteristic = '__ENCOUNTER_TYPE_CONSOLIDATED__';
+    selectedCharacteristicDataType = 'percentage';
+
+    document.querySelectorAll('.characteristic-item').forEach(item => {
+      item.classList.remove('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
+    });
+    element.classList.add('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
+
+    const display = document.getElementById('selected-characteristic-display');
+    const nameEl = document.getElementById('selected-characteristic-name');
+    if (display && nameEl) {
+      nameEl.textContent = 'Encounter type';
+      display.classList.remove('hidden');
+    }
+
+    // Hide other selectors
+    document.getElementById('location-type-selector')?.classList.add('hidden');
+    document.getElementById('vent-mode-type-selector')?.classList.add('hidden');
+    document.getElementById('ethnicity-type-selector')?.classList.add('hidden');
+    document.getElementById('race-type-selector')?.classList.add('hidden');
+    document.getElementById('sex-type-selector')?.classList.add('hidden');
+    document.getElementById('admission-type-selector')?.classList.add('hidden');
+    document.getElementById('first-admission-location-selector')?.classList.add('hidden');
+    document.getElementById('resp-denominator-selector')?.classList.add('hidden');
+
+    const selector = document.getElementById('encounter-type-selector');
+    const optionsContainer = document.getElementById('encounter-type-options-container');
+    const toggle = document.getElementById('encounter-type-toggle');
+    const dropdown = document.getElementById('encounter-type-dropdown');
+    const allCheckbox = document.getElementById('encounter-type-all');
+
+    if (selector && optionsContainer) {
+      optionsContainer.innerHTML = '';
+      encounterTypeTypes.forEach(type => {
+        const label = document.createElement('label');
+        label.className = 'flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer';
+        label.innerHTML = `
+          <input type="checkbox" class="encounter-type-checkbox encounter-type-type-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy" value="${type}" checked />
+          <span class="ml-2 text-sm text-gray-700">${type}</span>
+        `;
+        optionsContainer.appendChild(label);
+      });
+
+      selectedEncounterTypes = [...encounterTypeTypes];
+      allCheckbox.checked = true;
+
+      if (!encounterTypeDropdownInitialized) {
+        toggle?.addEventListener('click', (e) => {
+          e.stopPropagation();
+          dropdown?.classList.toggle('hidden');
+        });
+        allCheckbox?.addEventListener('change', (e) => {
+          document.querySelectorAll('.encounter-type-type-checkbox').forEach(cb => cb.checked = e.target.checked);
+          updateSelectedEncounterTypes();
+        });
+        document.addEventListener('click', (e) => {
+          if (!selector.contains(e.target)) dropdown?.classList.add('hidden');
+        });
+        encounterTypeDropdownInitialized = true;
+      }
+
+      optionsContainer.querySelectorAll('.encounter-type-type-checkbox').forEach(cb => {
+        cb.addEventListener('change', () => updateSelectedEncounterTypes());
+      });
+      selector.classList.remove('hidden');
+    }
+
+    updateChartTypeDropdown();
+    document.getElementById('generate-chart-btn').disabled = false;
+  }
+
+  function updateSelectedEncounterTypes() {
+    selectedEncounterTypes = Array.from(document.querySelectorAll('.encounter-type-type-checkbox'))
+      .filter(cb => cb.checked).map(cb => cb.value);
+    const allCheckbox = document.getElementById('encounter-type-all');
+    if (allCheckbox) allCheckbox.checked = selectedEncounterTypes.length === encounterTypeTypes.length;
+    const textEl = document.getElementById('encounter-type-text');
+    if (textEl) {
+      if (selectedEncounterTypes.length === encounterTypeTypes.length) textEl.textContent = 'All Types';
+      else if (selectedEncounterTypes.length === 0) textEl.textContent = 'Select types...';
+      else if (selectedEncounterTypes.length <= 2) textEl.textContent = selectedEncounterTypes.join(', ');
+      else textEl.textContent = `${selectedEncounterTypes.length} Types`;
     }
   }
 
@@ -1523,6 +2778,78 @@ const categories = Array.from(groupedChars.keys());
 
       // Always use stacked chart with selected locations
       generateStackedIMVLocationChart(chartType, groupBy, selectedLocationTypes);
+      return;
+    }
+
+    // Handle ventilator mode consolidated selection
+    if (characteristic === '__VENT_MODE_CONSOLIDATED__') {
+      if (selectedVentModeTypes.length === 0) {
+        alert('Please select at least one ventilator mode type.');
+        return;
+      }
+
+      // Always use stacked chart with selected modes
+      generateStackedVentModeChart(chartType, groupBy, selectedVentModeTypes);
+      return;
+    }
+
+    // Handle ethnicity consolidated selection
+    if (characteristic === '__ETHNICITY_CONSOLIDATED__') {
+      if (selectedEthnicityTypes.length === 0) {
+        alert('Please select at least one ethnicity type.');
+        return;
+      }
+      generateStackedDemographicChart(chartType, groupBy, selectedEthnicityTypes, ethnicityCharacteristics, 'Ethnicity');
+      return;
+    }
+
+    // Handle race consolidated selection
+    if (characteristic === '__RACE_CONSOLIDATED__') {
+      if (selectedRaceTypes.length === 0) {
+        alert('Please select at least one race type.');
+        return;
+      }
+      generateStackedDemographicChart(chartType, groupBy, selectedRaceTypes, raceCharacteristics, 'Race');
+      return;
+    }
+
+    // Handle sex consolidated selection
+    if (characteristic === '__SEX_CONSOLIDATED__') {
+      if (selectedSexTypes.length === 0) {
+        alert('Please select at least one sex type.');
+        return;
+      }
+      generateStackedDemographicChart(chartType, groupBy, selectedSexTypes, sexCharacteristics, 'Sex');
+      return;
+    }
+
+    // Handle admission type consolidated selection
+    if (characteristic === '__ADMISSION_TYPE_CONSOLIDATED__') {
+      if (selectedAdmissionTypes.length === 0) {
+        alert('Please select at least one admission type.');
+        return;
+      }
+      generateStackedDemographicChart(chartType, groupBy, selectedAdmissionTypes, admissionTypeCharacteristics, 'Admission Type');
+      return;
+    }
+
+    // Handle first admission location consolidated selection
+    if (characteristic === '__FIRST_ADMISSION_LOCATION_CONSOLIDATED__') {
+      if (selectedFirstAdmissionLocationTypes.length === 0) {
+        alert('Please select at least one location type.');
+        return;
+      }
+      generateStackedDemographicChart(chartType, groupBy, selectedFirstAdmissionLocationTypes, firstAdmissionLocationCharacteristics, 'First Admission Location');
+      return;
+    }
+
+    // Handle encounter type consolidated selection
+    if (characteristic === '__ENCOUNTER_TYPE_CONSOLIDATED__') {
+      if (selectedEncounterTypes.length === 0) {
+        alert('Please select at least one encounter type.');
+        return;
+      }
+      generateStackedDemographicChart(chartType, groupBy, selectedEncounterTypes, encounterTypeCharacteristics, 'Encounter Type');
       return;
     }
 
@@ -1627,6 +2954,8 @@ const categories = Array.from(groupedChars.keys());
               const respDenomSelector = document.querySelector('input[name="resp-denominator"]:checked');
               const useIMVDenom = respDenomSelector && respDenomSelector.value === 'imv';
               const charLower = characteristic.trim().toLowerCase();
+              // Don't use IMV denominator for "Invasive mechanical ventilation" itself (IMV/IMV = 100% always)
+              const isIMVCountVariable = charLower.startsWith('invasive mechanical ventilation');
               const isRespSupportVar = charLower.includes('mechanical ventilation') ||
                                        charLower.includes('imv') ||
                                        charLower.includes('fio2') ||
@@ -1636,7 +2965,7 @@ const categories = Array.from(groupedChars.keys());
                                        charLower.includes('tidal volume') ||
                                        charLower.includes('location at imv');
 
-              if (isRespSupportVar && useIMVDenom) {
+              if (isRespSupportVar && useIMVDenom && !isIMVCountVariable) {
                 denominatorKey = 'Invasive mechanical ventilation, n (%)';
               }
 
@@ -1666,9 +2995,16 @@ const categories = Array.from(groupedChars.keys());
               chartData[label] = numValue;
               sitesWithData.add(site);
 
-              // Track years for tooltip (all years)
+              // Track actual years that have data for this site (for tooltip)
               if (isPopulationVariable) {
-                yearsPerGroup[label] = new Set(consortiumData.allYears);
+                const siteYears = Object.keys(siteData)
+                  .filter(key => key !== 'Overall' && !isNaN(parseInt(key)))
+                  .filter(year => {
+                    const yearValue = siteData[year];
+                    return yearValue && yearValue.trim() !== '' && getNumeric(yearValue) !== null;
+                  })
+                  .sort();
+                yearsPerGroup[label] = new Set(siteYears);
               }
 
               addedCount++;
@@ -1753,6 +3089,8 @@ const categories = Array.from(groupedChars.keys());
           const respDenomSelector = document.querySelector('input[name="resp-denominator"]:checked');
           const useIMVDenom = respDenomSelector && respDenomSelector.value === 'imv';
           const charLower = characteristic.trim().toLowerCase();
+          // Don't use IMV denominator for "Invasive mechanical ventilation" itself (IMV/IMV = 100% always)
+          const isIMVCountVariable = charLower.startsWith('invasive mechanical ventilation');
           const isRespSupportVar = charLower.includes('mechanical ventilation') ||
                                    charLower.includes('imv') ||
                                    charLower.includes('fio2') ||
@@ -1762,7 +3100,7 @@ const categories = Array.from(groupedChars.keys());
                                    charLower.includes('tidal volume') ||
                                    charLower.includes('location at imv');
 
-          if (isRespSupportVar && useIMVDenom) {
+          if (isRespSupportVar && useIMVDenom && !isIMVCountVariable) {
             denominatorKey = 'Invasive mechanical ventilation, n (%)';
           }
 
@@ -1887,8 +3225,8 @@ const categories = Array.from(groupedChars.keys());
     const subtitleEl = document.getElementById('custom-chart-subtitle');
 
     if (titleEl) {
-      // Build main title
-      let title = characteristic;
+      // Build main title - remove redundant ", n (%)" suffix since we'll add the denominator info
+      let title = characteristic.replace(/, n \(%\)$/, '').replace(/, n$/, '');
 
       // Add percentage indicator for categorical variables
       if (isCategoricalPercentage) {
@@ -1898,6 +3236,8 @@ const categories = Array.from(groupedChars.keys());
         const respDenomSelector = document.querySelector('input[name="resp-denominator"]:checked');
         const useIMVDenom = respDenomSelector && respDenomSelector.value === 'imv';
         const charLower = characteristic.trim().toLowerCase();
+        // Don't use IMV denominator for "Invasive mechanical ventilation" itself (IMV/IMV = 100% always)
+        const isIMVCountVariable = charLower.startsWith('invasive mechanical ventilation');
         const isRespSupportVar = charLower.includes('mechanical ventilation') ||
                                  charLower.includes('imv') ||
                                  charLower.includes('fio2') ||
@@ -1907,7 +3247,7 @@ const categories = Array.from(groupedChars.keys());
                                  charLower.includes('tidal volume') ||
                                  charLower.includes('location at imv');
 
-        if (isRespSupportVar && useIMVDenom) {
+        if (isRespSupportVar && useIMVDenom && !isIMVCountVariable) {
           denominatorType = 'IMV Hospitalizations';
         }
 
@@ -1975,6 +3315,165 @@ const categories = Array.from(groupedChars.keys());
 
     // Map data values to match the sorted label order
     const sortedData = labels.map(label => chartData[label]);
+
+    // Handle Error Bar chart type specially
+    if (chartType === 'medianiqr' && isMedianChar) {
+      const ctx = document.getElementById('custom-chart');
+      if (ctx) {
+        // Check if this is a SOFA component score (not Total SOFA)
+        const isSOFAComponent = characteristic.includes('Respiratory, median') ||
+                                characteristic.includes('Coagulation, median') ||
+                                characteristic.includes('Liver, median') ||
+                                characteristic.includes('Cardiovascular, median') ||
+                                characteristic.includes('CNS, median') ||
+                                characteristic.includes('Renal, median');
+
+        // Create data for scatter plot with error bars drawn via plugin
+        const medianPoints = labels.map((label, index) => ({
+          x: index,
+          y: chartData[label]
+        }));
+
+        // Store IQR data for the error bar plugin
+        const errorBarData = labels.map(label => {
+          const iqr = iqrData[label];
+          if (iqr && iqr.minQ1 !== undefined && iqr.maxQ3 !== undefined) {
+            return { q1: iqr.minQ1, q3: iqr.maxQ3 };
+          }
+          return { q1: 0, q3: 0 };
+        });
+
+        // Calculate max Y value to ensure all Q3 values are visible
+        const maxQ3 = Math.max(...errorBarData.map(d => d.q3).filter(v => v > 0));
+        const maxMedian = Math.max(...medianPoints.map(p => p.y).filter(v => v > 0));
+        const dataMax = Math.max(maxQ3, maxMedian);
+        // Round up to a nice number for the Y-axis max
+        let yAxisMax;
+        if (isSOFAComponent) {
+          yAxisMax = 4;
+        } else {
+          // Add padding and round to a nice number
+          const paddedMax = dataMax * 1.1;
+          if (paddedMax <= 10) {
+            yAxisMax = Math.ceil(paddedMax); // Round to nearest integer for small values
+          } else if (paddedMax <= 50) {
+            yAxisMax = Math.ceil(paddedMax / 5) * 5; // Round to nearest 5
+          } else if (paddedMax <= 100) {
+            yAxisMax = Math.ceil(paddedMax / 10) * 10; // Round to nearest 10
+          } else {
+            yAxisMax = Math.ceil(paddedMax / 50) * 50; // Round to nearest 50 for large values
+          }
+        }
+
+        // Custom plugin to draw error bars (vertical lines)
+        const errorBarPlugin = {
+          id: 'errorBars',
+          afterDatasetsDraw: function(chart) {
+            const ctx = chart.ctx;
+            const xAxis = chart.scales.x;
+            const yAxis = chart.scales.y;
+            const dataset = chart.data.datasets[0];
+
+            ctx.save();
+            ctx.strokeStyle = 'rgba(128, 0, 32, 0.8)';
+            ctx.lineWidth = 2;
+
+            dataset.data.forEach((point, index) => {
+              const errorData = errorBarData[index];
+              if (!errorData) return;
+
+              const x = xAxis.getPixelForValue(index);
+              const yQ1 = yAxis.getPixelForValue(errorData.q1);
+              const yQ3 = yAxis.getPixelForValue(errorData.q3);
+
+              // Draw vertical line from Q1 to Q3
+              ctx.beginPath();
+              ctx.moveTo(x, yQ1);
+              ctx.lineTo(x, yQ3);
+              ctx.stroke();
+
+              // Draw horizontal caps at Q1 and Q3
+              const capWidth = 8;
+              ctx.beginPath();
+              ctx.moveTo(x - capWidth, yQ1);
+              ctx.lineTo(x + capWidth, yQ1);
+              ctx.stroke();
+
+              ctx.beginPath();
+              ctx.moveTo(x - capWidth, yQ3);
+              ctx.lineTo(x + capWidth, yQ3);
+              ctx.stroke();
+            });
+
+            ctx.restore();
+          }
+        };
+
+        const config = {
+          type: 'scatter',
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: 'Median [IQR]',
+                data: medianPoints,
+                backgroundColor: 'rgba(128, 0, 32, 1)',
+                borderColor: 'rgba(128, 0, 32, 1)',
+                pointRadius: 8,
+                pointStyle: 'circle'
+              }
+            ]
+          },
+          plugins: [errorBarPlugin],
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                display: false
+              },
+              datalabels: {
+                display: false
+              },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    const index = context.dataIndex;
+                    const labelName = labels[index];
+                    const median = context.parsed.y;
+                    const iqr = iqrData[labelName];
+                    if (iqr) {
+                      return `${labelName}: ${median.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} [${iqr.minQ1.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}, ${iqr.maxQ3.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}]`;
+                    }
+                    return `${labelName}: ${median.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}`;
+                  }
+                }
+              }
+            },
+            scales: {
+              x: {
+                type: 'category',
+                labels: labels,
+                grid: {
+                  display: true
+                }
+              },
+              y: {
+                beginAtZero: true,
+                max: yAxisMax, // SOFA components are 0-4, others scale to fit Q3 values
+                title: {
+                  display: true,
+                  text: characteristic.replace(/, median \[Q1, Q3\]/, '').replace(/ median \[Q1, Q3\]/, '')
+                }
+              }
+            }
+          }
+        };
+
+        charts.custom = new Chart(ctx, config);
+        return; // Exit early - chart is created
+      }
+    }
 
     // Create chart
     const ctx = document.getElementById('custom-chart');
@@ -2123,11 +3622,21 @@ const categories = Array.from(groupedChars.keys());
     // Use provided location types or default to all
     const locationsToProcess = locationTypesToShow || imvLocationTypes;
 
+    // Check if this is a grouped bar or line chart (% of IMV comparison)
+    // Only stacked bar uses distribution; grouped bar and line use % of IMV
+    const useIMVPercentage = chartType === 'grouped' || chartType === 'line';
+
+    // For grouped bar and line charts, always use IMV hospitalizations as denominator
+    const useIMVDenom = true;
+
     // First pass: collect ALL counts for selected location types
     // Structure: { locationType: { label: count } }
     const allLocationCounts = {};
     const allLabels = new Set();
     const sitesWithData = new Set();
+
+    // For grouped bar charts, also collect denominator counts
+    const denominatorCounts = {};
 
     // Collect counts for each location type
     locationsToProcess.forEach(locationType => {
@@ -2180,7 +3689,54 @@ const categories = Array.from(groupedChars.keys());
       }
     });
 
-    // Calculate total counts per label (sum of selected location types)
+    // For grouped bar and line charts, collect denominator counts (% of IMV)
+    if (useIMVPercentage) {
+      const denominatorKey = 'Invasive mechanical ventilation, n (%)';
+
+      if (useOverallColumns) {
+        const denomCharData = consortiumData.characteristics.find(c =>
+          c.variable === denominatorKey || c.variable.trim() === denominatorKey
+        );
+
+        if (denomCharData) {
+          selectedSites.forEach(site => {
+            const siteData = denomCharData.sites[site];
+            if (!siteData) return;
+
+            const overallValue = siteData['Overall'];
+            if (overallValue) {
+              const numMatch = overallValue.match(/^\s*([\d,]+)/);
+              if (numMatch) {
+                denominatorCounts[site] = parseInt(numMatch[1].replace(/,/g, ''), 10);
+              }
+            }
+          });
+        }
+      } else {
+        // Aggregate denominator counts per label
+        filteredData.forEach(d => {
+          let value = d.characteristics[denominatorKey];
+          if (!value) {
+            const charKey = Object.keys(d.characteristics).find(key =>
+              key.trim() === denominatorKey.trim()
+            );
+            if (charKey) value = d.characteristics[charKey];
+          }
+
+          if (value) {
+            const numMatch = value.match(/^\s*([\d,]+)/);
+            if (numMatch) {
+              const count = parseInt(numMatch[1].replace(/,/g, ''), 10);
+              const label = groupBy === 'site' ? d.site : d.year;
+              if (!denominatorCounts[label]) denominatorCounts[label] = 0;
+              denominatorCounts[label] += count;
+            }
+          }
+        });
+      }
+    }
+
+    // Calculate total counts per label (sum of selected location types) - for stacked distribution
     const totalCountsPerLabel = {};
     Array.from(allLabels).forEach(label => {
       totalCountsPerLabel[label] = 0;
@@ -2197,12 +3753,22 @@ const categories = Array.from(groupedChars.keys());
       const locationData = {};
       const locationCounts = allLocationCounts[locationType];
 
-      // Calculate percentages using total counts as denominator
+      // Calculate percentages based on chart type
       Object.keys(locationCounts).forEach(label => {
         const count = locationCounts[label];
-        const totalForLabel = totalCountsPerLabel[label];
-        if (totalForLabel && totalForLabel > 0) {
-          locationData[label] = (count / totalForLabel) * 100;
+
+        if (useIMVPercentage) {
+          // For grouped bar and line: use IMV hospitalizations as denominator
+          const denominator = denominatorCounts[label];
+          if (denominator && denominator > 0) {
+            locationData[label] = (count / denominator) * 100;
+          }
+        } else {
+          // For stacked: use total counts of selected location types as denominator
+          const totalForLabel = totalCountsPerLabel[label];
+          if (totalForLabel && totalForLabel > 0) {
+            locationData[label] = (count / totalForLabel) * 100;
+          }
         }
       });
 
@@ -2264,7 +3830,12 @@ const categories = Array.from(groupedChars.keys());
           titleText = `First Location at IMV Start (${locationsToProcess.length} types)`;
         }
       }
-      titleEl.textContent = `${titleText} - Distribution by ${groupingText}`;
+
+      if (useIMVPercentage) {
+        titleEl.textContent = `${titleText} (% of IMV Hospitalizations) by ${groupingText}`;
+      } else {
+        titleEl.textContent = `${titleText} - Distribution by ${groupingText}`;
+      }
     }
 
     if (subtitleEl) {
@@ -2297,20 +3868,36 @@ const categories = Array.from(groupedChars.keys());
 
     // Build chart datasets with total counts for tooltip
     const totalCountsArray = labels.map(label => totalCountsPerLabel[label] || 0);
-    const chartDatasets = datasets.map(ds => ({
-      label: ds.label,
-      data: labels.map(label => ds.data[label] || 0),
-      backgroundColor: ds.backgroundColor,
-      borderColor: ds.borderColor,
-      borderWidth: ds.borderWidth,
-      counts: labels.map(label => ds.counts[label] || 0)
-    }));
 
-    // Create stacked bar chart
+    // Determine if we're creating a line chart or bar chart
+    const isLineChart = chartType === 'line';
+
+    const chartDatasets = datasets.map(ds => {
+      const baseDataset = {
+        label: ds.label,
+        data: labels.map(label => ds.data[label] || 0),
+        backgroundColor: ds.backgroundColor,
+        borderColor: ds.borderColor,
+        borderWidth: isLineChart ? 2 : 1,
+        counts: labels.map(label => ds.counts[label] || 0)
+      };
+
+      // Add line chart specific properties
+      if (isLineChart) {
+        baseDataset.fill = false;
+        baseDataset.tension = 0.1;
+        baseDataset.pointRadius = 4;
+        baseDataset.pointHoverRadius = 6;
+      }
+
+      return baseDataset;
+    });
+
+    // Create chart (bar or line based on selection)
     const ctx = document.getElementById('custom-chart');
     if (ctx) {
       const config = {
-        type: 'bar',
+        type: isLineChart ? 'line' : 'bar',
         data: {
           labels: labels,
           datasets: chartDatasets,
@@ -2358,12 +3945,635 @@ const categories = Array.from(groupedChars.keys());
           },
           scales: {
             x: {
-              stacked: true
+              stacked: !useIMVPercentage // Stack only for stacked bar charts
             },
             y: {
-              stacked: true,
+              stacked: !useIMVPercentage, // Stack only for stacked bar charts
               beginAtZero: true,
-              max: 100,
+              max: useIMVPercentage ? undefined : 100, // Remove max for % of IMV charts
+              title: {
+                display: true,
+                text: 'Percentage (%)'
+              }
+            }
+          }
+        }
+      };
+
+      charts.custom = new Chart(ctx, config);
+    }
+  }
+
+  // Generate chart for selected ventilator mode types
+  function generateStackedVentModeChart(chartType, groupBy, modeTypesToShow) {
+    const filteredData = getFilteredData();
+
+    // Check if ALL sites and ALL years are selected - if so, use Overall columns
+    const isAllSites = selectedSites.length === consortiumData.allSites.length;
+    const isAllYears = selectedYears.length === consortiumData.allYears.length;
+    const useOverallColumns = isAllSites && isAllYears && groupBy === 'site';
+
+    // Use provided mode types or default to all
+    const modesToProcess = modeTypesToShow || ventModeTypes;
+
+    // Check if this is a grouped bar or line chart (% of IMV comparison)
+    // Only stacked bar uses distribution; grouped bar and line use % of IMV
+    const useIMVPercentage = chartType === 'grouped' || chartType === 'line';
+
+    // For grouped bar and line charts, always use IMV hospitalizations as denominator
+    const useIMVDenom = true;
+
+    // First pass: collect ALL counts for selected mode types
+    // Structure: { modeType: { label: count } }
+    const allModeCounts = {};
+    const allLabels = new Set();
+    const sitesWithData = new Set();
+
+    // For grouped bar and line charts, collect denominator counts
+    const denominatorCounts = {};
+
+    // Collect counts for each mode type
+    modesToProcess.forEach(modeType => {
+      const characteristic = ventModeCharacteristics[modeType];
+      allModeCounts[modeType] = {};
+
+      if (useOverallColumns) {
+        const charData = consortiumData.characteristics.find(c =>
+          c.variable === characteristic || c.variable.trim() === characteristic.trim()
+        );
+
+        if (charData) {
+          selectedSites.forEach(site => {
+            const siteData = charData.sites[site];
+            if (!siteData) return;
+
+            const overallValue = siteData['Overall'];
+            if (!overallValue || overallValue.trim() === '' || hasSmallN(overallValue)) return;
+
+            const parsed = parseCountPercentage(overallValue);
+            if (parsed) {
+              allLabels.add(site);
+              allModeCounts[modeType][site] = parsed.count;
+              sitesWithData.add(site);
+            }
+          });
+        }
+      } else {
+        filteredData.forEach(d => {
+          let value = d.characteristics[characteristic];
+          if (!value) {
+            const charKey = Object.keys(d.characteristics).find(key =>
+              key.trim() === characteristic.trim()
+            );
+            if (charKey) value = d.characteristics[charKey];
+          }
+
+          if (!value || hasSmallN(value)) return;
+
+          const parsed = parseCountPercentage(value);
+          if (parsed) {
+            const label = groupBy === 'site' ? d.site : d.year;
+            allLabels.add(label);
+
+            if (!allModeCounts[modeType][label]) allModeCounts[modeType][label] = 0;
+            allModeCounts[modeType][label] += parsed.count;
+            sitesWithData.add(d.site);
+          }
+        });
+      }
+    });
+
+    // For grouped bar and line charts, collect denominator counts (% of IMV)
+    if (useIMVPercentage) {
+      const denominatorKey = 'Invasive mechanical ventilation, n (%)';
+
+      if (useOverallColumns) {
+        const denomCharData = consortiumData.characteristics.find(c =>
+          c.variable === denominatorKey || c.variable.trim() === denominatorKey
+        );
+
+        if (denomCharData) {
+          selectedSites.forEach(site => {
+            const siteData = denomCharData.sites[site];
+            if (!siteData) return;
+
+            const overallValue = siteData['Overall'];
+            if (overallValue) {
+              const numMatch = overallValue.match(/^\s*([\d,]+)/);
+              if (numMatch) {
+                denominatorCounts[site] = parseInt(numMatch[1].replace(/,/g, ''), 10);
+              }
+            }
+          });
+        }
+      } else {
+        // Aggregate denominator counts per label
+        filteredData.forEach(d => {
+          let value = d.characteristics[denominatorKey];
+          if (!value) {
+            const charKey = Object.keys(d.characteristics).find(key =>
+              key.trim() === denominatorKey.trim()
+            );
+            if (charKey) value = d.characteristics[charKey];
+          }
+
+          if (value) {
+            const numMatch = value.match(/^\s*([\d,]+)/);
+            if (numMatch) {
+              const count = parseInt(numMatch[1].replace(/,/g, ''), 10);
+              const label = groupBy === 'site' ? d.site : d.year;
+              if (!denominatorCounts[label]) denominatorCounts[label] = 0;
+              denominatorCounts[label] += count;
+            }
+          }
+        });
+      }
+    }
+
+    // Calculate total counts per label (sum of selected mode types) - for stacked distribution
+    const totalCountsPerLabel = {};
+    Array.from(allLabels).forEach(label => {
+      totalCountsPerLabel[label] = 0;
+      modesToProcess.forEach(modeType => {
+        totalCountsPerLabel[label] += allModeCounts[modeType][label] || 0;
+      });
+    });
+
+    // Build datasets with percentages calculated from n values
+    const datasets = [];
+    const colors = generateChartColors(modesToProcess.length);
+
+    modesToProcess.forEach((modeType, colorIndex) => {
+      const modeData = {};
+      const modeCounts = allModeCounts[modeType];
+
+      // Calculate percentages based on chart type
+      Object.keys(modeCounts).forEach(label => {
+        const count = modeCounts[label];
+
+        if (useIMVPercentage) {
+          // For grouped bar and line: use IMV hospitalizations as denominator
+          const denominator = denominatorCounts[label];
+          if (denominator && denominator > 0) {
+            modeData[label] = (count / denominator) * 100;
+          }
+        } else {
+          // For stacked: use total counts of selected mode types as denominator
+          const totalForLabel = totalCountsPerLabel[label];
+          if (totalForLabel && totalForLabel > 0) {
+            modeData[label] = (count / totalForLabel) * 100;
+          }
+        }
+      });
+
+      // Capitalize first letter of each word for display
+      const displayName = modeType.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+
+      datasets.push({
+        label: displayName,
+        data: modeData,
+        counts: modeCounts,
+        backgroundColor: colors.background[colorIndex],
+        borderColor: colors.border[colorIndex],
+        borderWidth: 1
+      });
+    });
+
+    if (allLabels.size === 0) {
+      alert('No data available for the selected filters.');
+      return;
+    }
+
+    // Destroy existing chart
+    if (charts.custom) {
+      charts.custom.destroy();
+    }
+
+    // Show chart container, hide instructions
+    document.getElementById('custom-chart-container')?.classList.remove('hidden');
+    document.getElementById('chart-instructions')?.classList.add('hidden');
+
+    // Show 2025 note if applicable
+    const note2025 = document.getElementById('year-2025-note');
+    if (note2025) {
+      note2025.classList.toggle('hidden', !selectedYears.includes('2025'));
+    }
+
+    // Show missing sites note
+    const missingSitesNote = document.getElementById('missing-sites-note');
+    const missingSitesList = document.getElementById('missing-sites-list');
+    if (missingSitesNote && missingSitesList) {
+      const missingSites = selectedSites.filter(site => !sitesWithData.has(site));
+      if (missingSites.length > 0) {
+        missingSitesList.textContent = missingSites.map(s => s.toUpperCase()).join(', ');
+        missingSitesNote.classList.remove('hidden');
+      } else {
+        missingSitesNote.classList.add('hidden');
+      }
+    }
+
+    // Update title
+    const titleEl = document.getElementById('custom-chart-title');
+    const subtitleEl = document.getElementById('custom-chart-subtitle');
+
+    if (titleEl) {
+      const groupingText = groupBy === 'site' ? 'Site' : 'Year';
+      let titleText = 'Initial Ventilator Mode';
+      if (modesToProcess.length < ventModeTypes.length) {
+        // Show which modes are selected
+        if (modesToProcess.length === 1) {
+          const displayName = modesToProcess[0].split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+          titleText = `Initial Ventilator Mode: ${displayName}`;
+        } else {
+          titleText = `Initial Ventilator Mode (${modesToProcess.length} types)`;
+        }
+      }
+
+      if (useIMVPercentage) {
+        titleEl.textContent = `${titleText} (% of IMV Hospitalizations) by ${groupingText}`;
+      } else {
+        titleEl.textContent = `${titleText} - Distribution by ${groupingText}`;
+      }
+    }
+
+    if (subtitleEl) {
+      let subtitle = '';
+      if (selectedSites.length === consortiumData.allSites.length) {
+        subtitle += `Sites: All (${selectedSites.length})`;
+      } else if (selectedSites.length <= 3) {
+        subtitle += `Sites: ${selectedSites.join(', ')}`;
+      } else {
+        subtitle += `Sites: ${selectedSites.length} selected`;
+      }
+      subtitle += ' | ';
+      if (selectedYears.length === consortiumData.allYears.length) {
+        subtitle += `Years: All (${selectedYears[0]}-${selectedYears[selectedYears.length-1]})`;
+      } else if (selectedYears.length <= 4) {
+        subtitle += `Years: ${selectedYears.join(', ')}`;
+      } else {
+        subtitle += `Years: ${selectedYears[0]}-${selectedYears[selectedYears.length-1]} (${selectedYears.length} selected)`;
+      }
+      subtitleEl.textContent = subtitle;
+    }
+
+    // Sort labels
+    let labels = Array.from(allLabels);
+    if (groupBy === 'site') {
+      labels.sort((a, b) => a.localeCompare(b));
+    } else {
+      labels.sort((a, b) => parseInt(a) - parseInt(b));
+    }
+
+    // Build chart datasets with total counts for tooltip
+    const totalCountsArray = labels.map(label => totalCountsPerLabel[label] || 0);
+
+    // Determine if we're creating a line chart or bar chart
+    const isLineChart = chartType === 'line';
+
+    const chartDatasets = datasets.map(ds => {
+      const baseDataset = {
+        label: ds.label,
+        data: labels.map(label => ds.data[label] || 0),
+        backgroundColor: ds.backgroundColor,
+        borderColor: ds.borderColor,
+        borderWidth: isLineChart ? 2 : 1,
+        counts: labels.map(label => ds.counts[label] || 0)
+      };
+
+      // Add line chart specific properties
+      if (isLineChart) {
+        baseDataset.fill = false;
+        baseDataset.tension = 0.1;
+        baseDataset.pointRadius = 4;
+        baseDataset.pointHoverRadius = 6;
+      }
+
+      return baseDataset;
+    });
+
+    // Create chart (bar or line based on selection)
+    const ctx = document.getElementById('custom-chart');
+    if (ctx) {
+      const config = {
+        type: isLineChart ? 'line' : 'bar',
+        data: {
+          labels: labels,
+          datasets: chartDatasets,
+          totalCounts: totalCountsArray // Store for tooltip access
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            mode: 'index',
+            intersect: false
+          },
+          plugins: {
+            legend: {
+              display: true,
+              position: 'bottom'
+            },
+            tooltip: {
+              mode: 'index',
+              intersect: false,
+              callbacks: {
+                title: function(tooltipItems) {
+                  return tooltipItems[0]?.label || '';
+                },
+                label: function(context) {
+                  const value = context.parsed.y;
+                  const count = context.dataset.counts[context.dataIndex];
+                  // Only show if there's data (value > 0)
+                  if (value > 0) {
+                    return `${context.dataset.label}: ${value.toFixed(1)}% (n=${count.toLocaleString()})`;
+                  }
+                  return null; // Skip zero values
+                },
+                footer: function(tooltipItems) {
+                  // Show total n for this group
+                  const dataIndex = tooltipItems[0]?.dataIndex;
+                  const totalN = tooltipItems[0]?.chart.data.totalCounts[dataIndex] || 0;
+                  return `Total: n=${totalN.toLocaleString()}`;
+                }
+              }
+            },
+            datalabels: {
+              display: false
+            }
+          },
+          scales: {
+            x: {
+              stacked: !useIMVPercentage // Stack only for stacked bar charts
+            },
+            y: {
+              stacked: !useIMVPercentage, // Stack only for stacked bar charts
+              beginAtZero: true,
+              max: useIMVPercentage ? undefined : 100, // Remove max for % of IMV charts
+              title: {
+                display: true,
+                text: 'Percentage (%)'
+              }
+            }
+          }
+        }
+      };
+
+      charts.custom = new Chart(ctx, config);
+    }
+  }
+
+  // Generic function to generate stacked demographic charts (Ethnicity, Race, Sex)
+  function generateStackedDemographicChart(chartType, groupBy, typesToShow, characteristicsMap, demographicName) {
+    const filteredData = getFilteredData();
+
+    const isAllSites = selectedSites.length === consortiumData.allSites.length;
+    const isAllYears = selectedYears.length === consortiumData.allYears.length;
+    const useOverallColumns = isAllSites && isAllYears && groupBy === 'site';
+
+    // Collect counts for each type
+    const allTypeCounts = {};
+    const allLabels = new Set();
+    const sitesWithData = new Set();
+
+    typesToShow.forEach(type => {
+      const characteristic = characteristicsMap[type];
+      allTypeCounts[type] = {};
+
+      if (useOverallColumns) {
+        const charData = consortiumData.characteristics.find(c =>
+          c.variable === characteristic || c.variable.trim() === characteristic.trim()
+        );
+
+        if (charData) {
+          selectedSites.forEach(site => {
+            const siteData = charData.sites[site];
+            if (!siteData) return;
+
+            const overallValue = siteData['Overall'];
+            if (!overallValue || overallValue.trim() === '' || hasSmallN(overallValue)) return;
+
+            const parsed = parseCountPercentage(overallValue);
+            if (parsed) {
+              allLabels.add(site);
+              allTypeCounts[type][site] = parsed.count;
+              sitesWithData.add(site);
+            }
+          });
+        }
+      } else {
+        filteredData.forEach(d => {
+          let value = d.characteristics[characteristic];
+          if (!value) {
+            const charKey = Object.keys(d.characteristics).find(key =>
+              key.trim() === characteristic.trim()
+            );
+            if (charKey) value = d.characteristics[charKey];
+          }
+
+          if (!value || hasSmallN(value)) return;
+
+          const parsed = parseCountPercentage(value);
+          if (parsed) {
+            const label = groupBy === 'site' ? d.site : d.year;
+            allLabels.add(label);
+
+            if (!allTypeCounts[type][label]) allTypeCounts[type][label] = 0;
+            allTypeCounts[type][label] += parsed.count;
+            sitesWithData.add(d.site);
+          }
+        });
+      }
+    });
+
+    // Calculate totals per label (for percentage calculation)
+    const totalCountsPerLabel = {};
+    Array.from(allLabels).forEach(label => {
+      totalCountsPerLabel[label] = 0;
+      typesToShow.forEach(type => {
+        totalCountsPerLabel[label] += allTypeCounts[type][label] || 0;
+      });
+    });
+
+    // Build datasets
+    const datasets = [];
+    const colors = generateChartColors(typesToShow.length);
+
+    typesToShow.forEach((type, colorIndex) => {
+      const typeData = {};
+      const typeCounts = allTypeCounts[type];
+
+      Object.keys(typeCounts).forEach(label => {
+        const count = typeCounts[label];
+        const totalForLabel = totalCountsPerLabel[label];
+        if (totalForLabel && totalForLabel > 0) {
+          typeData[label] = (count / totalForLabel) * 100;
+        }
+      });
+
+      const displayName = type.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+
+      datasets.push({
+        label: displayName,
+        data: typeData,
+        counts: typeCounts,
+        backgroundColor: colors.background[colorIndex],
+        borderColor: colors.border[colorIndex],
+        borderWidth: 1
+      });
+    });
+
+    if (allLabels.size === 0) {
+      alert('No data available for the selected filters.');
+      return;
+    }
+
+    if (charts.custom) {
+      charts.custom.destroy();
+    }
+
+    document.getElementById('custom-chart-container')?.classList.remove('hidden');
+    document.getElementById('chart-instructions')?.classList.add('hidden');
+
+    const note2025 = document.getElementById('year-2025-note');
+    if (note2025) {
+      note2025.classList.toggle('hidden', !selectedYears.includes('2025'));
+    }
+
+    const missingSitesNote = document.getElementById('missing-sites-note');
+    const missingSitesList = document.getElementById('missing-sites-list');
+    if (missingSitesNote && missingSitesList) {
+      const missingSites = selectedSites.filter(site => !sitesWithData.has(site));
+      if (missingSites.length > 0) {
+        missingSitesList.textContent = missingSites.map(s => s.toUpperCase()).join(', ');
+        missingSitesNote.classList.remove('hidden');
+      } else {
+        missingSitesNote.classList.add('hidden');
+      }
+    }
+
+    const titleEl = document.getElementById('custom-chart-title');
+    const subtitleEl = document.getElementById('custom-chart-subtitle');
+
+    if (titleEl) {
+      const groupingText = groupBy === 'site' ? 'Site' : 'Year';
+      const allTypes = Object.keys(characteristicsMap);
+      let titleText = demographicName;
+      if (typesToShow.length < allTypes.length) {
+        if (typesToShow.length === 1) {
+          const displayName = typesToShow[0].split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+          titleText = `${demographicName}: ${displayName}`;
+        } else {
+          titleText = `${demographicName} (${typesToShow.length} types)`;
+        }
+      }
+      titleEl.textContent = `${titleText} - Distribution by ${groupingText}`;
+    }
+
+    if (subtitleEl) {
+      let subtitle = '';
+      if (selectedSites.length === consortiumData.allSites.length) {
+        subtitle += `Sites: All (${selectedSites.length})`;
+      } else if (selectedSites.length <= 3) {
+        subtitle += `Sites: ${selectedSites.join(', ')}`;
+      } else {
+        subtitle += `Sites: ${selectedSites.length} selected`;
+      }
+      subtitle += ' | ';
+      if (selectedYears.length === consortiumData.allYears.length) {
+        subtitle += `Years: All (${selectedYears[0]}-${selectedYears[selectedYears.length-1]})`;
+      } else if (selectedYears.length <= 4) {
+        subtitle += `Years: ${selectedYears.join(', ')}`;
+      } else {
+        subtitle += `Years: ${selectedYears[0]}-${selectedYears[selectedYears.length-1]} (${selectedYears.length} selected)`;
+      }
+      subtitleEl.textContent = subtitle;
+    }
+
+    let labels = Array.from(allLabels);
+    if (groupBy === 'site') {
+      labels.sort((a, b) => a.localeCompare(b));
+    } else {
+      labels.sort((a, b) => parseInt(a) - parseInt(b));
+    }
+
+    const totalCountsArray = labels.map(label => totalCountsPerLabel[label] || 0);
+    const isLineChart = chartType === 'line';
+
+    const chartDatasets = datasets.map(ds => {
+      const baseDataset = {
+        label: ds.label,
+        data: labels.map(label => ds.data[label] || 0),
+        backgroundColor: ds.backgroundColor,
+        borderColor: ds.borderColor,
+        borderWidth: isLineChart ? 2 : 1,
+        counts: labels.map(label => ds.counts[label] || 0)
+      };
+
+      if (isLineChart) {
+        baseDataset.fill = false;
+        baseDataset.tension = 0.1;
+        baseDataset.pointRadius = 4;
+        baseDataset.pointHoverRadius = 6;
+      }
+
+      return baseDataset;
+    });
+
+    const ctx = document.getElementById('custom-chart');
+    if (ctx) {
+      const config = {
+        type: isLineChart ? 'line' : 'bar',
+        data: {
+          labels: labels,
+          datasets: chartDatasets,
+          totalCounts: totalCountsArray
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            mode: 'index',
+            intersect: false
+          },
+          plugins: {
+            legend: {
+              display: true,
+              position: 'bottom'
+            },
+            tooltip: {
+              mode: 'index',
+              intersect: false,
+              callbacks: {
+                title: function(tooltipItems) {
+                  return tooltipItems[0]?.label || '';
+                },
+                label: function(context) {
+                  const value = context.parsed.y;
+                  const count = context.dataset.counts[context.dataIndex];
+                  if (value > 0) {
+                    return `${context.dataset.label}: ${value.toFixed(1)}% (n=${count.toLocaleString()})`;
+                  }
+                  return null;
+                },
+                footer: function(tooltipItems) {
+                  const dataIndex = tooltipItems[0]?.dataIndex;
+                  const totalN = tooltipItems[0]?.chart.data.totalCounts[dataIndex] || 0;
+                  return `Total: n=${totalN.toLocaleString()}`;
+                }
+              }
+            },
+            datalabels: {
+              display: false
+            }
+          },
+          scales: {
+            x: {
+              stacked: !isLineChart
+            },
+            y: {
+              stacked: !isLineChart,
+              beginAtZero: true,
+              max: isLineChart ? undefined : 100,
               title: {
                 display: true,
                 text: 'Percentage (%)'
@@ -2385,6 +4595,10 @@ const categories = Array.from(groupedChars.keys());
     document.getElementById('custom-chart-container')?.classList.add('hidden');
     document.getElementById('chart-instructions')?.classList.remove('hidden');
 
+    // Hide all notes
+    document.getElementById('year-2025-note')?.classList.add('hidden');
+    document.getElementById('missing-sites-note')?.classList.add('hidden');
+
     // Clear selected characteristic
     selectedCharacteristic = null;
     selectedCharacteristicDataType = null;
@@ -2398,6 +4612,19 @@ const categories = Array.from(groupedChars.keys());
 
     // Hide location type selector
     document.getElementById('location-type-selector')?.classList.add('hidden');
+
+    // Hide ventilator mode type selector
+    document.getElementById('vent-mode-type-selector')?.classList.add('hidden');
+
+    // Hide demographic type selectors
+    document.getElementById('ethnicity-type-selector')?.classList.add('hidden');
+    document.getElementById('race-type-selector')?.classList.add('hidden');
+    document.getElementById('sex-type-selector')?.classList.add('hidden');
+
+    // Hide encounter type selectors
+    document.getElementById('admission-type-selector')?.classList.add('hidden');
+    document.getElementById('first-admission-location-selector')?.classList.add('hidden');
+    document.getElementById('encounter-type-selector')?.classList.add('hidden');
 
     // Reset chart type dropdown to default options
     updateChartTypeDropdown();
