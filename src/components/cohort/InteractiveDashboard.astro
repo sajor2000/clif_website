@@ -229,7 +229,7 @@ const categories = Array.from(groupedChars.keys());
     <div class="bg-blue-50 border-l-4 border-blue-400 p-3 rounded">
       <p class="text-sm text-blue-800">
         <strong>Data Coverage:</strong> Sites have varying data coverage periods (e.g., some sites have data from 2011-2025, others from 2018-2024).
-        Use the <strong>Table</strong> view to see year-by-year coverage for each site, then select appropriate sites and years for valid comparisons.
+        Use the <strong>Table</strong> view to see years covered for each site, then select appropriate sites and years for valid comparisons.
       </p>
     </div>
 
@@ -4330,12 +4330,16 @@ const categories = Array.from(groupedChars.keys());
     const isAllYears = selectedYears.length === consortiumData.allYears.length;
     const useOverallColumns = isAllSites && isAllYears && groupBy === 'site';
 
-    // Collect counts for each type
+    // Get ALL types from characteristicsMap (not just selected ones) for proper denominator calculation
+    const allTypes = Object.keys(characteristicsMap);
+
+    // Collect counts for ALL types (needed for proper percentage calculation)
     const allTypeCounts = {};
     const allLabels = new Set();
     const sitesWithData = new Set();
 
-    typesToShow.forEach(type => {
+    // First, collect data for ALL types to calculate proper totals
+    allTypes.forEach(type => {
       const characteristic = characteristicsMap[type];
       allTypeCounts[type] = {};
 
@@ -4356,7 +4360,10 @@ const categories = Array.from(groupedChars.keys());
             if (parsed) {
               allLabels.add(site);
               allTypeCounts[type][site] = parsed.count;
-              sitesWithData.add(site);
+              // Only track sitesWithData for types we're showing
+              if (typesToShow.includes(type)) {
+                sitesWithData.add(site);
+              }
             }
           });
         }
@@ -4379,17 +4386,20 @@ const categories = Array.from(groupedChars.keys());
 
             if (!allTypeCounts[type][label]) allTypeCounts[type][label] = 0;
             allTypeCounts[type][label] += parsed.count;
-            sitesWithData.add(d.site);
+            // Only track sitesWithData for types we're showing
+            if (typesToShow.includes(type)) {
+              sitesWithData.add(d.site);
+            }
           }
         });
       }
     });
 
-    // Calculate totals per label (for percentage calculation)
+    // Calculate totals per label using ALL types (proper denominator)
     const totalCountsPerLabel = {};
     Array.from(allLabels).forEach(label => {
       totalCountsPerLabel[label] = 0;
-      typesToShow.forEach(type => {
+      allTypes.forEach(type => {
         totalCountsPerLabel[label] += allTypeCounts[type][label] || 0;
       });
     });
@@ -4498,6 +4508,8 @@ const categories = Array.from(groupedChars.keys());
 
     const totalCountsArray = labels.map(label => totalCountsPerLabel[label] || 0);
     const isLineChart = chartType === 'line';
+    const isGroupedBar = chartType === 'grouped';
+    const isStacked = chartType === 'stacked';
 
     const chartDatasets = datasets.map(ds => {
       const baseDataset = {
@@ -4568,12 +4580,12 @@ const categories = Array.from(groupedChars.keys());
           },
           scales: {
             x: {
-              stacked: !isLineChart
+              stacked: isStacked
             },
             y: {
-              stacked: !isLineChart,
+              stacked: isStacked,
               beginAtZero: true,
-              max: isLineChart ? undefined : 100,
+              max: isStacked ? 100 : undefined,
               title: {
                 display: true,
                 text: 'Percentage (%)'
