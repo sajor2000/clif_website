@@ -68,12 +68,6 @@ export function parseConsortiumCSV(csvContent: string): ParsedConsortiumData {
 
     if (!variable) continue;
 
-    // Debug SOFA scores
-    if (variable.toLowerCase().includes('sofa') || variable.toLowerCase().includes('total')) {
-      console.log('Parsing variable:', variable, 'length:', variable.length);
-      console.log('First 5 chars codes:', variable.substring(0, 5).split('').map(c => c.charCodeAt(0)));
-    }
-
     const charData: CharacteristicData = {
       variable,
       sites: new Map(),
