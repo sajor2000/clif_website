@@ -60,8 +60,8 @@ The hospitalization table contains information about each hospitalization event.
 The labs table is a long form (one lab result per row) longitudinal table. 
 
 **Notes**:
-
-The `lab_value` field often has non-numeric entries that are useful to make project-specific decisions. A site may choose to keep the `lab_value` field as a character and create a new field `lab_value_numeric` that only parses the character field to extract the numeric part of the string.
+- All lab values must be reported using the lab's *reference units* linked above in permissible values. Only the listed reference units are permissible for respective lab categories in the CLIF labs table. Sites must ensure that any raw laboratory values are converted to the reference units during the ETL process. Entries with other units must be transformed prior to loading into CLIF.
+- The `lab_value` field often has non-numeric entries that are useful to make project-specific decisions. A site may choose to keep the `lab_value` field as a character and create a new field `lab_value_numeric` that only parses the character field to extract the numeric part of the string.
 \
 **Example**:
 
@@ -253,7 +253,7 @@ A planned future CLIF table that has yet to be used in a federated project. The 
 
 ## code_status
 
-This table provides a longitudinal record of changes in a patient's code status during their hospitalization. It tracks the timeline and categorization of code status updates, facilitating the analysis of care preferences and decisions.
+This table provides a longitudinal record of changes in a patient's code status during their hospitalization, as derived from code status orders. It tracks the timeline and categorization of code status updates based on these orders.
 
 
 **Notes**:

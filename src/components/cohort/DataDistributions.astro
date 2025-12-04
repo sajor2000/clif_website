@@ -645,7 +645,7 @@ const sitesJson = JSON.stringify(availableSites);
     // Fetch ECDF data if not cached
     if (!ecdfCache[cacheKey]) {
       try {
-        const response = await fetch(`/data/ecdf/${category}/${name}.csv`);
+        const response = await fetch(`/api/ecdf/${category}/${name}.csv`);
         if (!response.ok) throw new Error('Failed to load data');
         const csvText = await response.text();
         ecdfCache[cacheKey] = parseECDFCSV(csvText);
