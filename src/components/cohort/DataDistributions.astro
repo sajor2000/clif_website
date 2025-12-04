@@ -390,22 +390,36 @@ const sitesJson = JSON.stringify(availableSites);
   let ecdfCache: Record<string, any> = {};
   let availableSitesForParameter: string[] = [];
 
-  // Chart colors matching other tabs (Interactive Dashboard, Hourly Trends)
-  const chartColors = [
-    { bg: 'rgba(139, 0, 0, 0.35)', border: 'rgba(139, 0, 0, 1)', line: 'rgba(139, 0, 0, 1)' },        // burgundy
-    { bg: 'rgba(59, 130, 246, 0.35)', border: 'rgba(59, 130, 246, 1)', line: 'rgba(59, 130, 246, 1)' }, // blue
-    { bg: 'rgba(16, 185, 129, 0.35)', border: 'rgba(16, 185, 129, 1)', line: 'rgba(16, 185, 129, 1)' }, // green
-    { bg: 'rgba(245, 158, 11, 0.35)', border: 'rgba(245, 158, 11, 1)', line: 'rgba(245, 158, 11, 1)' }, // amber
-    { bg: 'rgba(168, 85, 247, 0.35)', border: 'rgba(168, 85, 247, 1)', line: 'rgba(168, 85, 247, 1)' }, // purple
-    { bg: 'rgba(236, 72, 153, 0.35)', border: 'rgba(236, 72, 153, 1)', line: 'rgba(236, 72, 153, 1)' }, // pink
-    { bg: 'rgba(239, 68, 68, 0.35)', border: 'rgba(239, 68, 68, 1)', line: 'rgba(239, 68, 68, 1)' },    // red
-    { bg: 'rgba(14, 165, 233, 0.35)', border: 'rgba(14, 165, 233, 1)', line: 'rgba(14, 165, 233, 1)' }, // sky
-    { bg: 'rgba(34, 197, 94, 0.35)', border: 'rgba(34, 197, 94, 1)', line: 'rgba(34, 197, 94, 1)' },    // emerald
-    { bg: 'rgba(251, 146, 60, 0.35)', border: 'rgba(251, 146, 60, 1)', line: 'rgba(251, 146, 60, 1)' }, // orange
+  // Site-specific colors for consistent visualization across all charts
+  // These colors are unique to sites and NOT used by any other chart elements
+  const SITE_COLORS: Record<string, { bg: string; border: string; line: string }> = {
+    'emory':    { bg: 'rgba(165, 42, 42, 0.35)', border: 'rgba(165, 42, 42, 1)', line: 'rgba(165, 42, 42, 1)' },     // brown
+    'jhu':      { bg: 'rgba(0, 114, 178, 0.35)', border: 'rgba(0, 114, 178, 1)', line: 'rgba(0, 114, 178, 1)' },     // blue
+    'nu':       { bg: 'rgba(0, 158, 115, 0.35)', border: 'rgba(0, 158, 115, 1)', line: 'rgba(0, 158, 115, 1)' },     // teal-green
+    'ohsu':     { bg: 'rgba(230, 159, 0, 0.35)', border: 'rgba(230, 159, 0, 1)', line: 'rgba(230, 159, 0, 1)' },     // golden yellow
+    'rush':     { bg: 'rgba(128, 0, 128, 0.35)', border: 'rgba(128, 0, 128, 1)', line: 'rgba(128, 0, 128, 1)' },     // purple
+    'ucmc':     { bg: 'rgba(86, 180, 233, 0.35)', border: 'rgba(86, 180, 233, 1)', line: 'rgba(86, 180, 233, 1)' },  // sky blue
+    'ucsf':     { bg: 'rgba(240, 128, 128, 0.35)', border: 'rgba(240, 128, 128, 1)', line: 'rgba(240, 128, 128, 1)' }, // light coral/pink
+    'umich':    { bg: 'rgba(105, 105, 105, 0.35)', border: 'rgba(105, 105, 105, 1)', line: 'rgba(105, 105, 105, 1)' }, // dim gray
+    'umn':      { bg: 'rgba(0, 128, 0, 0.35)', border: 'rgba(0, 128, 0, 1)', line: 'rgba(0, 128, 0, 1)' },           // green
+    'upenn':    { bg: 'rgba(255, 127, 14, 0.35)', border: 'rgba(255, 127, 14, 1)', line: 'rgba(255, 127, 14, 1)' },  // orange
+    'utoronto': { bg: 'rgba(139, 0, 0, 0.35)', border: 'rgba(139, 0, 0, 1)', line: 'rgba(139, 0, 0, 1)' },           // dark red
+  };
+
+  // Fallback colors for unknown sites
+  const fallbackColors = [
+    { bg: 'rgba(139, 0, 0, 0.35)', border: 'rgba(139, 0, 0, 1)', line: 'rgba(139, 0, 0, 1)' },
+    { bg: 'rgba(59, 130, 246, 0.35)', border: 'rgba(59, 130, 246, 1)', line: 'rgba(59, 130, 246, 1)' },
+    { bg: 'rgba(16, 185, 129, 0.35)', border: 'rgba(16, 185, 129, 1)', line: 'rgba(16, 185, 129, 1)' },
   ];
 
   function getSiteColor(site: string, index: number) {
-    return chartColors[index % chartColors.length];
+    const normalizedSite = site.toLowerCase().trim();
+    if (SITE_COLORS[normalizedSite]) {
+      return SITE_COLORS[normalizedSite];
+    }
+    // Fallback for unknown sites
+    return fallbackColors[index % fallbackColors.length];
   }
 
   // Calculate percentile from ECDF data

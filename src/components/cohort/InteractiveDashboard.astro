@@ -3311,7 +3311,7 @@ const categories = Array.from(groupedChars.keys());
       labels.sort((a, b) => parseInt(a) - parseInt(b));
     }
 
-    const colors = generateChartColors(labels.length);
+    const colors = generateChartColors(labels.length, labels, groupBy);
 
     // Map data values to match the sorted label order
     const sortedData = labels.map(label => chartData[label]);
@@ -3365,6 +3365,11 @@ const categories = Array.from(groupedChars.keys());
           }
         }
 
+        // Get site-specific colors for error bars when grouped by site
+        const errorBarColors = groupBy === 'site'
+          ? labels.map(label => getSiteColor(label, 1)) // Full opacity for error bars
+          : labels.map(() => 'rgba(128, 0, 32, 1)');
+
         // Custom plugin to draw error bars (vertical lines)
         const errorBarPlugin = {
           id: 'errorBars',
@@ -3375,12 +3380,14 @@ const categories = Array.from(groupedChars.keys());
             const dataset = chart.data.datasets[0];
 
             ctx.save();
-            ctx.strokeStyle = 'rgba(128, 0, 32, 0.8)';
             ctx.lineWidth = 2;
 
             dataset.data.forEach((point, index) => {
               const errorData = errorBarData[index];
               if (!errorData) return;
+
+              // Use site-specific color for this error bar
+              ctx.strokeStyle = errorBarColors[index];
 
               const x = xAxis.getPixelForValue(index);
               const yQ1 = yAxis.getPixelForValue(errorData.q1);
@@ -3409,6 +3416,11 @@ const categories = Array.from(groupedChars.keys());
           }
         };
 
+        // Get point colors - site-specific when grouped by site
+        const pointColors = groupBy === 'site'
+          ? labels.map(label => getSiteColor(label, 1))
+          : labels.map(() => 'rgba(128, 0, 32, 1)');
+
         const config = {
           type: 'scatter',
           data: {
@@ -3417,8 +3429,8 @@ const categories = Array.from(groupedChars.keys());
               {
                 label: 'Median [IQR]',
                 data: medianPoints,
-                backgroundColor: 'rgba(128, 0, 32, 1)',
-                borderColor: 'rgba(128, 0, 32, 1)',
+                backgroundColor: pointColors,
+                borderColor: pointColors,
                 pointRadius: 8,
                 pointStyle: 'circle'
               }
@@ -4406,7 +4418,20 @@ const categories = Array.from(groupedChars.keys());
 
     // Build datasets
     const datasets = [];
-    const colors = generateChartColors(typesToShow.length);
+
+    // Get sorted labels first (needed for single-type site coloring)
+    let sortedLabels = Array.from(allLabels);
+    if (groupBy === 'site') {
+      sortedLabels.sort((a, b) => a.localeCompare(b));
+    } else {
+      sortedLabels.sort((a, b) => parseInt(a) - parseInt(b));
+    }
+
+    // When only one type is selected and grouping by site, use site-specific colors
+    const useSiteColors = typesToShow.length === 1 && groupBy === 'site';
+    const colors = useSiteColors
+      ? generateChartColors(sortedLabels.length, sortedLabels, 'site')
+      : generateChartColors(typesToShow.length);
 
     typesToShow.forEach((type, colorIndex) => {
       const typeData = {};
@@ -4422,14 +4447,26 @@ const categories = Array.from(groupedChars.keys());
 
       const displayName = type.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 
-      datasets.push({
-        label: displayName,
-        data: typeData,
-        counts: typeCounts,
-        backgroundColor: colors.background[colorIndex],
-        borderColor: colors.border[colorIndex],
-        borderWidth: 1
-      });
+      // For single type with site grouping, use per-bar colors
+      if (useSiteColors) {
+        datasets.push({
+          label: displayName,
+          data: typeData,
+          counts: typeCounts,
+          backgroundColor: colors.background, // Array of colors per bar
+          borderColor: colors.border,
+          borderWidth: 1
+        });
+      } else {
+        datasets.push({
+          label: displayName,
+          data: typeData,
+          counts: typeCounts,
+          backgroundColor: colors.background[colorIndex],
+          borderColor: colors.border[colorIndex],
+          borderWidth: 1
+        });
+      }
     });
 
     if (allLabels.size === 0) {
@@ -4499,12 +4536,8 @@ const categories = Array.from(groupedChars.keys());
       subtitleEl.textContent = subtitle;
     }
 
-    let labels = Array.from(allLabels);
-    if (groupBy === 'site') {
-      labels.sort((a, b) => a.localeCompare(b));
-    } else {
-      labels.sort((a, b) => parseInt(a) - parseInt(b));
-    }
+    // Use already sorted labels
+    const labels = sortedLabels;
 
     const totalCountsArray = labels.map(label => totalCountsPerLabel[label] || 0);
     const isLineChart = chartType === 'line';
@@ -4648,8 +4681,34 @@ const categories = Array.from(groupedChars.keys());
     }
   }
 
-  function generateChartColors(count) {
-    const baseColors = [
+  // Site-specific colors for consistent visualization across all charts
+  // These colors are unique to sites and NOT used by any other chart elements
+  const SITE_COLORS = {
+    'emory':    'rgba(165, 42, 42, 0.7)',     // brown
+    'jhu':      'rgba(0, 114, 178, 0.7)',     // blue
+    'nu':       'rgba(0, 158, 115, 0.7)',     // teal-green
+    'ohsu':     'rgba(230, 159, 0, 0.7)',     // golden yellow
+    'rush':     'rgba(128, 0, 128, 0.7)',     // purple
+    'ucmc':     'rgba(86, 180, 233, 0.7)',    // sky blue
+    'ucsf':     'rgba(240, 128, 128, 0.7)',   // light coral/pink
+    'umich':    'rgba(105, 105, 105, 0.7)',   // dim gray
+    'umn':      'rgba(0, 128, 0, 0.7)',       // green
+    'upenn':    'rgba(255, 127, 14, 0.7)',    // orange
+    'utoronto': 'rgba(139, 0, 0, 0.7)',       // dark red
+  };
+
+  function getSiteColor(siteName, opacity = 0.7) {
+    const normalizedSite = siteName.toLowerCase().trim();
+    const color = SITE_COLORS[normalizedSite];
+    if (color) {
+      return opacity === 0.7 ? color : color.replace('0.7', String(opacity));
+    }
+    // Fallback for unknown sites
+    return `rgba(100, 100, 100, ${opacity})`;
+  }
+
+  function generateChartColors(count, labels = null, groupBy = null) {
+    const fallbackColors = [
       'rgba(139, 0, 0, 0.7)',      // burgundy
       'rgba(59, 130, 246, 0.7)',   // blue
       'rgba(16, 185, 129, 0.7)',   // green
@@ -4665,10 +4724,20 @@ const categories = Array.from(groupedChars.keys());
     const background = [];
     const border = [];
 
-    for (let i = 0; i < count; i++) {
-      const color = baseColors[i % baseColors.length];
-      background.push(color);
-      border.push(color.replace('0.7', '1'));
+    // If grouping by site and labels are provided, use site-specific colors
+    if (groupBy === 'site' && labels && labels.length > 0) {
+      for (let i = 0; i < labels.length; i++) {
+        const siteColor = getSiteColor(labels[i]);
+        background.push(siteColor);
+        border.push(siteColor.replace('0.7', '1'));
+      }
+    } else {
+      // Use fallback colors for non-site groupings
+      for (let i = 0; i < count; i++) {
+        const color = fallbackColors[i % fallbackColors.length];
+        background.push(color);
+        border.push(color.replace('0.7', '1'));
+      }
     }
 
     return { background, border };

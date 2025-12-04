@@ -264,16 +264,21 @@ const dataJson = JSON.stringify({
   let selectedMetric = 'n'; // for medications only
   let chart = null;
 
-  // Site colors for multi-site display
+  // Site colors for multi-site display (consistent across all charts)
+  // These colors are unique to sites and NOT used by any other chart elements
   const siteColors = {
-    'emory': 'rgba(220, 38, 38, 0.8)',       // red
-    'mimic_iv': 'rgba(249, 115, 22, 0.8)',   // orange
-    'nu': 'rgba(234, 179, 8, 0.8)',          // yellow
-    'ohsu': 'rgba(34, 197, 94, 0.8)',        // green
-    'rush': 'rgba(59, 130, 246, 0.8)',       // blue
-    'ucmc': 'rgba(139, 92, 246, 0.8)',       // violet
-    'umn': 'rgba(236, 72, 153, 0.8)',        // pink
-    'upenn': 'rgba(14, 165, 233, 0.8)'       // sky
+    'emory':    'rgba(165, 42, 42, 0.8)',     // brown
+    'jhu':      'rgba(0, 114, 178, 0.8)',     // blue
+    'mimic_iv': 'rgba(249, 115, 22, 0.8)',    // orange (legacy)
+    'nu':       'rgba(0, 158, 115, 0.8)',     // teal-green
+    'ohsu':     'rgba(230, 159, 0, 0.8)',     // golden yellow
+    'rush':     'rgba(128, 0, 128, 0.8)',     // purple
+    'ucmc':     'rgba(86, 180, 233, 0.8)',    // sky blue
+    'ucsf':     'rgba(240, 128, 128, 0.8)',   // light coral/pink
+    'umich':    'rgba(105, 105, 105, 0.8)',   // dim gray
+    'umn':      'rgba(0, 128, 0, 0.8)',       // green
+    'upenn':    'rgba(255, 127, 14, 0.8)',    // orange
+    'utoronto': 'rgba(139, 0, 0, 0.8)',       // dark red
   };
 
   // Color palette for medications
