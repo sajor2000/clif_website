@@ -31,7 +31,7 @@ The admission, discharge, and transfer (adt) table is a start-stop longitudinal 
 
 ## code_status
 
-This table provides a longitudinal record of changes in a patient's code status during their hospitalization, as derived from code status orders. It tracks the timeline and categorization of code status updates based on these orders.
+This table contains only code status orders placed by clinicians. It is NOT equivalent to the code status display name in the EMR.
 
 **Notes**:
 
