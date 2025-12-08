@@ -54,10 +54,82 @@ const navItems = [
       </div>
     ))
   }
+
+  <!-- Inline Search -->
+  <div class="relative">
+    <div class="flex items-center border border-gray-300 rounded-lg px-3 py-1.5 focus-within:border-clif-burgundy focus-within:ring-1 focus-within:ring-clif-burgundy transition-colors">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="text-gray-400 shrink-0"
+        aria-hidden="true"
+      >
+        <circle cx="11" cy="11" r="8"></circle>
+        <path d="m21 21-4.3-4.3"></path>
+      </svg>
+      <input
+        type="text"
+        id="search-input"
+        class="w-48 text-sm text-gray-900 placeholder-gray-400 focus:outline-none bg-transparent ml-2"
+        placeholder="Search..."
+        autocomplete="off"
+      />
+    </div>
+
+    <!-- Search Results Dropdown -->
+    <div
+      id="search-results"
+      class="hidden absolute right-0 top-full mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 max-h-80 overflow-y-auto z-50"
+    >
+    </div>
+  </div>
 </nav>
 
+
 <!-- Mobile Navigation -->
-<div class="md:hidden">
+<div class="md:hidden flex items-center gap-3">
+  <!-- Mobile Search -->
+  <div class="relative">
+    <div class="flex items-center border border-gray-300 rounded-lg px-2 py-1 focus-within:border-clif-burgundy">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="text-gray-400 shrink-0"
+        aria-hidden="true"
+      >
+        <circle cx="11" cy="11" r="8"></circle>
+        <path d="m21 21-4.3-4.3"></path>
+      </svg>
+      <input
+        type="text"
+        id="mobile-search-input"
+        class="w-24 text-sm text-gray-900 placeholder-gray-400 focus:outline-none bg-transparent ml-1.5"
+        placeholder="Search..."
+        autocomplete="off"
+      />
+    </div>
+    <!-- Mobile Search Results -->
+    <div
+      id="mobile-search-results"
+      class="hidden absolute right-0 top-full mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 max-h-60 overflow-y-auto z-50"
+    >
+    </div>
+  </div>
+
   <button
     id="mobile-menu-button"
     class="text-gray-700 hover:text-clif-burgundy"
@@ -148,22 +220,117 @@ const navItems = [
   </div>
 </div>
 
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const mobileMenuButton = document.getElementById('mobile-menu-button');
-    const mobileMenuClose = document.getElementById('mobile-menu-close');
-    const mobileMenu = document.getElementById('mobile-menu');
+<script is:inline>
+  document.addEventListener('DOMContentLoaded', async function() {
+    // Mobile menu functionality
+    var mobileMenuButton = document.getElementById('mobile-menu-button');
+    var mobileMenuClose = document.getElementById('mobile-menu-close');
+    var mobileMenu = document.getElementById('mobile-menu');
 
-    mobileMenuButton?.addEventListener('click', () => {
-      mobileMenu?.classList.remove('hidden');
-      mobileMenuButton.setAttribute('aria-expanded', 'true');
-      document.body.style.overflow = 'hidden';
-    });
+    if (mobileMenuButton) {
+      mobileMenuButton.addEventListener('click', function() {
+        if (mobileMenu) mobileMenu.classList.remove('hidden');
+        mobileMenuButton.setAttribute('aria-expanded', 'true');
+        document.body.style.overflow = 'hidden';
+      });
+    }
 
-    mobileMenuClose?.addEventListener('click', () => {
-      mobileMenu?.classList.add('hidden');
-      mobileMenuButton?.setAttribute('aria-expanded', 'false');
-      document.body.style.overflow = '';
+    if (mobileMenuClose) {
+      mobileMenuClose.addEventListener('click', function() {
+        if (mobileMenu) mobileMenu.classList.add('hidden');
+        if (mobileMenuButton) mobileMenuButton.setAttribute('aria-expanded', 'false');
+        document.body.style.overflow = '';
+      });
+    }
+
+    // Pagefind search functionality
+    var searchInput = document.getElementById('search-input');
+    var searchResults = document.getElementById('search-results');
+    var mobileSearchInput = document.getElementById('mobile-search-input');
+    var mobileSearchResults = document.getElementById('mobile-search-results');
+
+    var pagefind = null;
+    var debounceTimer;
+
+    // Load Pagefind on first interaction (dynamically at runtime)
+    async function loadPagefind() {
+      if (pagefind) return pagefind;
+      try {
+        pagefind = await import('/pagefind/pagefind.js');
+        await pagefind.init();
+        return pagefind;
+      } catch (e) {
+        console.warn('Pagefind not available (run npm run build to generate search index)');
+        return null;
+      }
+    }
+
+    async function performSearch(query, resultsEl) {
+      if (!resultsEl) return;
+
+      if (!query.trim()) {
+        resultsEl.classList.add('hidden');
+        return;
+      }
+
+      var pf = await loadPagefind();
+      if (!pf) {
+        resultsEl.innerHTML = '<p class="px-3 py-2 text-sm text-gray-500">Search unavailable in dev mode. Run build first.</p>';
+        resultsEl.classList.remove('hidden');
+        return;
+      }
+
+      var search = await pf.search(query);
+
+      if (search.results.length === 0) {
+        resultsEl.innerHTML = '<p class="px-3 py-2 text-sm text-gray-500">No results found.</p>';
+        resultsEl.classList.remove('hidden');
+        return;
+      }
+
+      // Load the first 5 results
+      var results = await Promise.all(
+        search.results.slice(0, 5).map(function(r) { return r.data(); })
+      );
+
+      resultsEl.innerHTML = results.map(function(result) {
+        return '<a href="' + result.url + '" class="block px-3 py-2 hover:bg-gray-100 transition-colors first:rounded-t-lg last:rounded-b-lg">' +
+          '<div class="font-medium text-gray-900 text-sm">' + (result.meta?.title || 'Untitled') + '</div>' +
+          '<div class="text-xs text-gray-500 line-clamp-2">' + (result.excerpt || '') + '</div>' +
+        '</a>';
+      }).join('');
+      resultsEl.classList.remove('hidden');
+    }
+
+    // Debounced search for desktop
+    if (searchInput) {
+      searchInput.addEventListener('input', function(e) {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(function() {
+          performSearch(e.target.value, searchResults);
+        }, 200);
+      });
+    }
+
+    // Debounced search for mobile
+    if (mobileSearchInput) {
+      mobileSearchInput.addEventListener('input', function(e) {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(function() {
+          performSearch(e.target.value, mobileSearchResults);
+        }, 200);
+      });
+    }
+
+    // Close results when clicking outside
+    document.addEventListener('click', function(e) {
+      var target = e.target;
+      if (!target.closest('#search-input') && !target.closest('#search-results')) {
+        if (searchResults) searchResults.classList.add('hidden');
+      }
+      if (!target.closest('#mobile-search-input') && !target.closest('#mobile-search-results')) {
+        if (mobileSearchResults) mobileSearchResults.classList.add('hidden');
+      }
     });
   });
 </script>
