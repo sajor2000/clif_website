@@ -1,0 +1,485 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Badge from '../../components/Badge.astro';
+import fs from 'node:fs';
+import path from 'node:path';
+import MarkdownIt from 'markdown-it';
+
+// Read the DDL file at build time
+const ddlPath = path.join(process.cwd(), 'src/content/v-2-2-0-ddl.sql');
+const ddlContent = fs.readFileSync(ddlPath, 'utf-8');
+
+// Read the Markdown file for documentation (if it exists)
+let markdownContent = '';
+const markdownPath = path.join(process.cwd(), 'src/content/clif-data-dictionary-2.2.0.md');
+try {
+  markdownContent = fs.readFileSync(markdownPath, 'utf-8');
+} catch (e) {
+  markdownContent = '';
+}
+
+
+const md = new MarkdownIt({ 
+  html: true, 
+  breaks: true, 
+  linkify: true, 
+  typographer: true
+});
+
+// Explicitly enable table rendering
+md.enable('table');
+
+
+
+// Parse all CREATE TABLE statements and columns with JSON-in-COMMENT
+function parseAllTables(ddl) {
+  const tableRegex = /CREATE TABLE ([a-zA-Z0-9_]+)\s*\(([^;]*?)\);/gis;
+  let match;
+  const tables = [];
+  while ((match = tableRegex.exec(ddl)) !== null) {
+    const tableName = match[1];
+    const columns = [];
+    // Remove foreign key constraints before parsing columns
+    const tableContent = match[2].replace(/FOREIGN KEY\s*\([^)]+\)\s*REFERENCES\s*[^,)]+/gi, '');
+    const columnRegex = /([a-zA-Z0-9_]+)\s+([A-Z]+(?:\([^)]*\))?)(?:\s+COMMENT\s+'([^']*)')?/g;
+    let colMatch;
+    while ((colMatch = columnRegex.exec(tableContent)) !== null) {
+      let meta = { description: '', permissible: ''};
+      if (colMatch[3]) {
+        try { meta = JSON.parse(colMatch[3]); } catch (e) { meta.description = colMatch[3]; }
+      }
+      columns.push({
+        name: colMatch[1],
+        type: colMatch[2],
+        ...meta
+      });
+    }
+    // Only add table if it has columns
+    if (columns.length > 0) {
+      tables.push({ name: tableName, columns });
+    }
+  }
+  return tables;
+}
+
+const allTables = parseAllTables(ddlContent);
+
+// For sidebar: split into Beta and Concept tables by name (as before)
+const betaTableNames = [
+  'adt', 'code_status', 'crrt_therapy', 'hospitalization',
+  'hospital_diagnosis', 'labs', 'medication_admin_continuous', 'medication_admin_intermittent',
+  'microbiology_culture', 'microbiology_susceptibility', 'patient',
+  'patient_assessments', 'patient_procedures', 'position', 'respiratory_support', 'vitals'
+];
+const conceptTableNames = [
+  'clinical_trial', 'ecmo_mcs', 'intake_output', 'invasive_hemodynamics', 'key_icu_orders', 'medication_orders', 'microbiology_nonculture', 'patient_diagnosis', 'place_based_index',
+  'provider', 'therapy_details', 'transfusion', 'validated_diagnosis'
+];
+const betaTables = allTables
+  .filter(t => betaTableNames.includes(t.name))
+  .sort((a, b) => a.name.localeCompare(b.name));;
+const conceptTables = allTables
+  .filter(t => conceptTableNames.includes(t.name))
+  .sort((a, b) => a.name.localeCompare(b.name));
+
+
+
+// Helper: Extract intro and table-level intros from Markdown
+function extractMarkdownSections(mdContent) {
+  if (!mdContent) return { intro: '', tableSections: {} };
+  const lines = mdContent.split('\n');
+  let intro = '';
+  const tableSections = {};
+  let currentTable = null;
+  let buffer = [];
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const tableMatch = line.match(/^##\s+([A-Za-z0-9_ ]+)/);
+    if (tableMatch) {
+      if (currentTable && buffer.length) {
+        tableSections[currentTable] = buffer.join('\n').trim();
+      }
+      currentTable = tableMatch[1].replace(/ /g, '_').replace(/[^A-Za-z0-9_]/g, '');
+      buffer = []; // FIX: do not include the heading line
+    } else {
+      if (currentTable) buffer.push(line);
+      else intro += line + '\n';
+    }
+  }
+  if (currentTable && buffer.length) {
+    tableSections[currentTable] = buffer.join('\n').trim();
+  }
+  return { intro: intro.trim(), tableSections };
+}
+
+// Helper: Split a table section into intro (before first Example/Notes) and extras (after)
+function splitTableSection(section) {
+  if (!section) return { intro: '', extras: '' };
+  // Split on first occurrence of '**Example**' or '**Notes**' (case-insensitive)
+  const regex = /^(.*?)(\*\*Example\*\*|\*\*Notes\*\*|^Example:|^Notes:)/ims;
+  const match = section.match(regex);
+  if (match) {
+    const intro = match[1].trim();
+    const extras = section.substring(intro.length).trim();
+    return { intro, extras };
+  }
+  return { intro: section, extras: '' };
+}
+
+const { intro: markdownIntro, tableSections: markdownTableSections } = extractMarkdownSections(markdownContent);
+
+// After extracting markdownIntro and markdownTableSections, also extract the Beta and Concept section headers and instructions from the Markdown.
+// Render these as styled headers and paragraphs just before the first Beta and Concept table sections in the main content area.
+// Use Tailwind classes: text-3xl font-bold mb-6 mt-8 text-clif-burgundy for Beta, text-3xl font-bold mb-6 mt-8 text-purple-800 for Concept.
+const betaSectionHeader = markdownTableSections['Beta_Tables'] || '';
+const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
+---
+
+<BaseLayout
+  title="CLIF-2.2.0 Data Dictionary (Future Release)"
+  description="Upcoming version of the Common Longitudinal ICU data Format"
+>
+  <div class="container mx-auto px-6 py-12">
+    <div class="max-w-7xl mx-auto">
+      <!-- Render Markdown intro if present -->
+      {markdownIntro && (
+        <div class="prose mb-8" set:html={md.render(markdownIntro)} />
+      )}
+      <!-- Header -->
+      <header class="mb-8 bg-gradient-to-r from-blue-50 to-clif-burgundy/10 rounded-xl p-6 shadow-sm">
+        <h1 class="text-4xl font-bold mb-4 text-clif-burgundy">CLIF Data Dictionary 2.2.0</h1>
+        <p class="text-gray-700 leading-relaxed">
+          <div class="bg-clif-burgundy-light/10 border-2 border-clif-burgundy/20 p-4 rounded-lg mb-8 shadow-sm">
+          <p class="text-lg font-semibold text-blue-800 m-0">
+            Version <span class="text-clif-burgundy">CLIF v2.2.0</span> is the current implementation. 
+          </p>
+          </div>
+          The next evolution of CLIF featuring promoted tables, new mCIDE categories, 
+          and enhanced support for advanced ICU therapies and monitoring.
+        </p>
+      </header>
+      <div class="lg:grid lg:grid-cols-4 lg:gap-8">
+        <!-- Sidebar -->
+        <aside class="hidden lg:block lg:col-span-1">
+          <nav class="sticky top-20 bg-white rounded-lg border p-4 max-h-[calc(100vh-6rem)] overflow-y-auto">
+            <h2 class="text-lg font-semibold mb-4 text-gray-900">Data Tables</h2>
+            <div class="mb-4">
+              <input
+                type="search"
+                placeholder="Search tables..."
+                class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-clif-burgundy"
+                onInput={e => {
+                  // Implement filtering logic if needed
+                }}
+              />
+            </div>
+            <!-- Beta Tables -->
+            <div class="mb-4">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="font-medium">Beta Tables</span>
+                <span class="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-full">{betaTables.length}</span>
+              </div>
+              <div class="pl-4 space-y-1">
+                {betaTables.map(table => (
+                  <a href={`#${table.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                     class="table-link block py-1 px-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded">
+                    {table.name}
+                  </a>
+                ))}
+              </div>
+            </div>
+            <!-- Concept Tables -->
+            <div class="mb-4">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="font-medium">Concept Tables</span>
+                <span class="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full">{conceptTables.length}</span>
+              </div>
+              <div class="pl-4 space-y-1">
+                {conceptTables.map(table => (
+                  <a href={`#${table.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                     class="table-link block py-1 px-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded">
+                    {table.name}
+                  </a>
+                ))}
+              </div>
+            </div>
+            <!-- Future Proposed Tables -->
+            <div class="mb-4">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="font-medium">Future Proposed Tables</span>
+              </div>
+              {/* No links under this section */}
+            </div>
+          </nav>
+        </aside>
+        <!-- Main Content -->
+        <article class="lg:col-span-3">
+
+          {/* Render markdown sections that do not have a DDL table */}
+          {Object.entries(markdownTableSections)
+            .filter(([sectionName]) =>
+              !betaTableNames.includes(sectionName) &&
+              !conceptTableNames.includes(sectionName) &&
+              sectionName !== 'Beta_Tables' &&
+              sectionName !== 'Concept_Tables' &&
+              sectionName !== 'Future_Proposed_Tables'
+            )
+            .map(([sectionName, sectionContent]) => (
+              <section id={sectionName.toLowerCase().replace(/[^a-z0-9]+/g, '-')} class="mb-12">
+                <h2 class="text-2xl font-semibold mb-4 mt-6 text-gray-900 scroll-mt-20 border-b border-gray-200 pb-2">
+                  {sectionName.replace(/_/g, ' ')}
+                </h2>
+                <div class="prose mb-4" set:html={md.render(sectionContent)} />
+              </section>
+            ))}
+          {/* Render Beta Tables header and instructions */}
+          {betaSectionHeader && (
+            <div>
+              <h2 class="section-header">Beta Tables</h2>
+              <div class="prose mb-8" set:html={md.render(betaSectionHeader)} />
+            </div>
+          )}
+          
+          {betaTables.map(table => {
+            const section = markdownTableSections[table.name] || '';
+            const { intro, extras } = splitTableSection(section);
+            return (
+              <section id={table.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}
+                       class="mb-12">
+                <h2 class="text-2xl font-semibold mb-4 mt-6 text-gray-900 scroll-mt-20 border-b border-gray-200 pb-2 flex items-center gap-2">
+                  {table.name.replace(/_/g, ' ')}
+                  <span class="badge-beta ml-2">Beta</span>
+                </h2>
+                {intro && (
+                  <div class="prose mb-4" set:html={md.render(intro)} />
+                )}
+                <div class="table-wrapper relative overflow-visible rounded-lg shadow-sm border border-gray-200 my-6">
+                  <img src="/images/icons/unstable.png" alt="Unstable" class="absolute -top-8 -right-8 w-32 rotate-[15deg] pointer-events-none select-none z-40" />
+                  <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50 sticky top-0 z-10">
+                      <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">Column</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">Type</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">Description</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">Permissible Values</th>
+                      </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                      {table.columns.map(col => (
+                        <tr>
+                          <td class="px-6 py-4 text-sm text-gray-900">{col.name}</td>
+                          <td class="px-6 py-4 text-sm text-gray-900">{col.type}</td>
+                          <td class="px-6 py-4 text-sm text-gray-900">
+                            {col.description ? <span set:html={md.renderInline(col.description)} /> : ''}
+                          </td>
+                          <td class="px-6 py-4 text-sm text-gray-900">
+                            {col.permissible ? <span set:html={md.renderInline(Array.isArray(col.permissible) ? col.permissible.join(', ') : col.permissible)} /> : ''}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {extras && (
+                  <div class="prose mt-4" set:html={md.render(extras)} />
+                )}
+              </section>
+            );
+          })}
+
+          {/* Render Concept tables header and instructions */}
+          {conceptSectionHeader && (
+            <div>
+              <h2 class="section-header">Concept Tables</h2>
+              <div class="prose mb-8" set:html={md.render(conceptSectionHeader)} />
+            </div>
+          )}
+          {conceptTables.map(table => {
+            const section = markdownTableSections[table.name] || '';
+            const { intro, extras } = splitTableSection(section);
+            return (
+              <section id={table.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}
+                       class="mb-12">
+                <h2 class="text-2xl font-semibold mb-4 mt-6 text-gray-900 scroll-mt-20 border-b border-gray-200 pb-2 flex items-center gap-2">
+                  {table.name.replace(/_/g, ' ')}
+                  <span class="badge-concept ml-2">Concept</span>
+                                  </h2>
+                {intro && (
+                  <div class="prose mb-4" set:html={md.render(intro)} />
+                )}
+                <div class="table-wrapper relative overflow-visible rounded-lg shadow-sm border border-gray-200 my-6">
+                  <img src="/images/icons/unstable.png" alt="Unstable" class="absolute -top-8 -right-8 w-32 rotate-[15deg] pointer-events-none select-none z-40" />
+                  <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50 sticky top-0 z-10">
+                      <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">Column</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">Type</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">Description</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">Permissible Values</th>
+                      </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                      {table.columns.map(col => (
+                        <tr>
+                          <td class="px-6 py-4 text-sm text-gray-900">{col.name}</td>
+                          <td class="px-6 py-4 text-sm text-gray-900">{col.type}</td>
+                          <td class="px-6 py-4 text-sm text-gray-900">
+                            {col.description ? <span set:html={md.renderInline(col.description)} /> : ''}
+                          </td>
+                          <td class="px-6 py-4 text-sm text-gray-900">
+                            {col.permissible ? <span set:html={md.renderInline(Array.isArray(col.permissible) ? col.permissible.join(', ') : col.permissible)} /> : ''}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {extras && (
+                  <div class="prose mt-4" set:html={md.render(extras)} />
+                )}
+              </section>
+            );
+          })}
+
+          {/* Render Future Proposed Tables section if present */}
+          {markdownTableSections['Future_Proposed_Tables'] && (
+            <div>
+              <h2 class="section-header">Future Proposed Tables</h2>
+              <div class="prose mb-8" set:html={md.render(markdownTableSections['Future_Proposed_Tables'])} />
+            </div>
+          )}
+        </article>
+      </div>
+    </div>
+  </div>
+  <style>
+    .prose table, .markdown-content table {
+      border: 1px solid #e5e7eb !important;
+      background: #fff !important;
+      border-radius: 0.5rem !important;
+      width: 100%;
+      box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.05);
+      margin-top: 1.5rem;
+      margin-bottom: 1.5rem;
+      border-collapse: separate;
+      border-spacing: 0;
+      overflow-x: auto;
+    }
+    .table-link { @apply block py-1 px-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded; }
+    .table-link.active { @apply text-blue-600 bg-blue-50 font-medium; }
+    .badge-beta { @apply bg-gradient-to-r from-orange-400 to-orange-500 text-orange-900 border border-orange-600 inline-flex items-center gap-1 px-3 py-1 text-sm font-bold rounded-full shadow-sm; }
+    .badge-concept { @apply bg-purple-100 text-purple-800 border border-purple-300 inline-flex items-center gap-1 px-3 py-1 text-sm font-bold rounded-full shadow-sm; }
+    .table-wrapper {
+      border: 1px solid #e5e7eb !important;
+      background: #fff !important;
+      border-radius: 0.5rem !important;
+    }
+    .table-wrapper > table {
+      @apply w-full;
+    }
+    .table-wrapper th, .table-wrapper td {
+      @apply px-6 py-4 text-sm text-gray-900;
+    }
+    .table-wrapper tbody tr {
+      @apply transition-colors duration-150;
+    }
+    .table-wrapper tbody tr:nth-child(even) {
+      @apply bg-gray-50/50;
+    }
+    .table-wrapper tbody tr:hover {
+      @apply bg-blue-50/30;
+    }
+    html { scroll-behavior: smooth; }
+    /* --- Enhanced Markdown Styling --- */
+    .prose blockquote {
+      @apply border-l-4 border-blue-400 pl-4 my-4 text-gray-700 bg-blue-50 py-3 pr-4 rounded-r font-normal;
+    }
+    .prose code {
+      @apply bg-gray-100 px-2 py-1 rounded text-sm font-mono text-gray-800 border border-gray-200;
+    }
+    .prose pre {
+      @apply bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto mb-4 shadow-md border border-gray-800;
+    }
+    .prose pre code {
+      @apply bg-transparent p-0 border-0;
+    }
+    .prose strong {
+      @apply font-semibold text-gray-900;
+    }
+    .section-header {
+      color: #8B1C3B; /* CLIF burgundy */
+      font-size: 2rem;
+      font-weight: 700;
+      margin-top: 2.5rem;
+      margin-bottom: 1.5rem;
+      letter-spacing: -0.01em;
+    }
+    .prose th, .markdown-content th {
+      padding: 1rem 1.5rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: #6b7280;
+      background: #f9fafb;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .prose td, .markdown-content td {
+      padding: 1rem 1.5rem;
+      font-size: 1rem;
+      color: #1a202c;
+    }
+    .prose tbody tr, .markdown-content tbody tr {
+      transition: background 0.15s;
+    }
+    .prose tbody tr:nth-child(even), .markdown-content tbody tr:nth-child(even) {
+      background: #f9fafb;
+    }
+    .prose tbody tr:hover, .markdown-content tbody tr:hover {
+      background: #eff6ff;
+    }
+    .prose thead th, .markdown-content thead th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    .prose {
+      overflow-x: auto;
+    }
+    .prose ol, .prose ul {
+      list-style: revert !important;
+      margin-left: 2em !important;
+      padding-left: 1.5em !important;
+      display: block !important;
+    }
+    .prose li {
+      display: list-item !important;
+      margin-bottom: 0.5em;
+    }
+  </style>
+  <style is:global>
+    .table-wrapper a {
+      color: #8B1C3B !important;
+      text-decoration: underline !important;
+      font-weight: 700 !important;
+    }
+    .table-wrapper a:hover {
+      color: #B22234 !important;
+    }
+    .prose ul {
+      list-style-type: disc !important;
+      list-style: disc inside !important;
+    }
+
+    .prose ol{
+      list-style-type: decimal !important;
+      list-style: decimal inside !important;
+    }
+    .table-link {
+      text-decoration: none !important;
+    }
+    .table-link:hover {
+      text-decoration: underline !important;
+    }
+  </style>
+</BaseLayout>
