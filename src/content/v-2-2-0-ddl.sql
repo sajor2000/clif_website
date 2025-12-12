@@ -113,7 +113,8 @@ CREATE TABLE labs (
   reference_unit VARCHAR COMMENT '{"description": "Unit of measurement for that lab.", "permissible": "Permissible reference values for each lab_category listed [here](https://github.com/clif-consortium/CLIF/blob/main/mCIDE/labs/clif_lab_categories.csv)"}',
   lab_specimen_name VARCHAR COMMENT '{"description": "Original fluid or tissue name the lab was collected from as given in the source data", "permissible": "No restriction"}',
   lab_specimen_category VARCHAR COMMENT '{"description": "Fluid or tissue the lab was collected from, analogous to the LOINC \"system\" component.", "permissible": "working CDE c(blood/plasma/serum, urine, csf, other)"}',
-  lab_loinc_code VARCHAR COMMENT '{"description": "[LOINC](https://loinc.org/get-started/loinc-term-basics/) code for the lab", "permissible": "No restrictions"}'
+  lab_loinc_code VARCHAR COMMENT '{"description": "[LOINC](https://loinc.org/get-started/loinc-term-basics/) code for the lab", "permissible": "No restrictions"}',
+  loinc_version VARCHAR COMMENT '{"description": "Version or release of the LOINC coding system used for lab_loinc_code, e.g. 1.0 or 1.1.", "permissible": "No restriction"}'
 );
 
 -- -----------------------------------------------------
@@ -437,4 +438,19 @@ CREATE TABLE clinical_trial (
   consent_dttm DATETIME COMMENT '{"description": "Timestamp of patient consent for the clinical trial. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   randomized_dttm DATETIME COMMENT '{"description": "Timestamp of patient randomization in the clinical trial. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   withdrawal_dttm DATETIME COMMENT '{"description": "Timestamp of trial withdrawal if applicable. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}'
+);
+
+-- -----------------------------------------------------
+-- Table: validated_diagnosis
+-- -----------------------------------------------------
+CREATE TABLE validated_diagnosis (
+  hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter.", "permissible": "No restriction"}',
+  diagnosis_name VARCHAR COMMENT '{"description": "Free-text name of the diagnosis (clinician-entered or source name).", "permissible": "No restriction"}',
+  diagnosis_category VARCHAR COMMENT '{"description": "Maps diagnosis_name to a standardized list of diagnosis categories.", "permissible": "e.g., sepsis, arf, aki, stroke, etc."}',
+  diagnosis_start_dttm DATETIME COMMENT '{"description": "Date and time when the diagnosis is deemed clinically active.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
+  diagnosis_end_dttm DATETIME COMMENT '{"description": "Date and time when the diagnosis was resolved or deemed no longer active (optional).", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
+  validation_method VARCHAR COMMENT '{"description": "Method of clinician validation used for this label.", "permissible": "manual_chart_review, consensus_panel, automated_with_review"}',
+  diagnosis_status VARCHAR COMMENT '{"description": "Final reviewer determination.", "permissible": "confirmed, ruled_out, uncertain"}',
+  reviewer_id VARCHAR COMMENT '{"description": "Anonymized ID of the clinician or reviewer responsible for this label.", "permissible": "No restriction"}',
+  review_timestamp DATETIME COMMENT '{"description": "Time when the label was finalized or adjudicated.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}'
 );
