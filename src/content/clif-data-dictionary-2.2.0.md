@@ -553,6 +553,14 @@ This table provides detailed information about transfusion events linked to spec
 
 This table captures whether a patient was enrolled in any clinical trial during their hospitalization. It enables longitudinal tracking of trial participation, including trial identifiers, arm assignment, and key consent, randomization, and withdrawal timestamps. This structure supports research into the effects of experimental therapies and interventions on patient outcomes.
 
+**Example**:
+
+| participant_id | patient_id | hospitalization_id | trial_id | trial_name                                    | arm_id     | consent_dttm                  | enrollment_dttm                | randomized_dttm                | withdrawal_dttm                |
+|----------------|-----------|--------------------|----------|-----------------------------------------------|------------|-------------------------------|-------------------------------|-------------------------------|-------------------------------|
+| PT1234         | 567890    | 234567             | T-001    | Early Vasopressor in Septic Shock (EVSS)      | Arm A      | 2024-06-01 10:15:00+00:00 UTC | 2024-06-01 14:00:00+00:00 UTC | 2024-06-01 15:00:00+00:00 UTC |                               |
+| PT2345         | 678901    | 345678             | NCT04321 | Lung Protective Ventilation                   | Standard   | 2024-06-11 12:00:00+00:00 UTC | 2024-06-11 13:15:00+00:00 UTC |                               |                               |
+| PT3456         | 789012    | 456789             | T-017    | Multi-center COVID-19 Anticoagulation Trial   | High Dose  | 2024-07-15 09:10:00+00:00 UTC | 2024-07-15 09:45:00+00:00 UTC | 2024-07-15 10:00:00+00:00 UTC | 2024-07-20 08:30:00+00:00 UTC |
+
 
 ## validated_diagnosis
 

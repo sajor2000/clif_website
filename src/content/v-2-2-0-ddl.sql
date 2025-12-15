@@ -431,12 +431,15 @@ CREATE TABLE transfusion (
 -- Table: clinical_trial
 -- -----------------------------------------------------
 CREATE TABLE clinical_trial (
+  participant_id VARCHAR COMMENT '{"description": "Unique identifier for each clinical trial participant from clinical trial management software, used for pipelines to electronic data capture software. NOT the same as patient_id", "permissible": "No restriction"}',
+  patient_id VARCHAR COMMENT '{"description": "Unique identifier for each patient, presumed to be a distinct individual.", "permissible": "No restriction"}',
   hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter.", "permissible": "No restriction"}',
   trial_id VARCHAR COMMENT '{"description": "Unique identifier for the clinical trial (e.g., institutional trial ID, NCT number).", "permissible": "No restriction"}',
   trial_name VARCHAR COMMENT '{"description": "Descriptive name of the clinical trial.", "permissible": "No restriction"}',
-  arm_id VARCHAR COMMENT '{"description": "Identifier indicating which arm of the trial the patient was enrolled in.", "permissible": "No restriction"}',
-  consent_dttm DATETIME COMMENT '{"description": "Timestamp of patient consent for the clinical trial. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
-  randomized_dttm DATETIME COMMENT '{"description": "Timestamp of patient randomization in the clinical trial. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
+  arm_id VARCHAR COMMENT '{"description": "Identifier indicating which arm of the trial the participant was enrolled in.", "permissible": "No restriction"}',
+  consent_dttm DATETIME COMMENT '{"description": "Timestamp of participant consent for the clinical trial. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
+  enrollment_dttm DATETIME COMMENT '{"description": "Timestamp of participant enrollment in the clinical trial. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
+  randomized_dttm DATETIME COMMENT '{"description": "Timestamp of participant randomization in the clinical trial. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   withdrawal_dttm DATETIME COMMENT '{"description": "Timestamp of trial withdrawal if applicable. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}'
 );
 
