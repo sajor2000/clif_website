@@ -32,7 +32,7 @@ const navigationSections = [
     <div class="text-center mb-12">
       <h1 class="text-4xl font-bold mb-6 text-gray-900">CLIF ETL Guide</h1>
       <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-        From EHR to CLIF: Your Complete Resource for Data Transformation
+        General ETL guidance for transforming EHR data into CLIF format. Implementation details may vary by site depending on your source data structure.
       </p>
     </div>
 
@@ -216,9 +216,9 @@ const navigationSections = [
       </div>
     </section>
 
-    <!-- Section 2: CLIF Table-Specific ETL Guidance -->
+    <!-- Section 2: ETL Guidance by Table -->
     <section id="etl-pipeline" class="mb-16">
-      <h2 class="text-3xl font-bold mb-8 text-gray-900">CLIF Table-Specific ETL Guidance</h2>
+      <h2 class="text-3xl font-bold mb-8 text-gray-900">Table Specific Guidelines</h2>
 
       <!-- All Tables in Alphabetical Order -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -406,7 +406,7 @@ const navigationSections = [
 
                   <!-- Step 2 -->
                   <div>
-                    <h5 class="text-xl font-semibold mb-3">Step 2: Filter to Inpatient Hospitalizations</h5>
+                    <h5 class="text-xl font-semibold mb-3">Step 2: Filter to Patients with Inpatient Hospitalizations</h5>
                     <p class="text-sm">Filter your code status data to include only patients with an inpatient hospitalization. Since code status is at the patient level, include only patients whose <code class="bg-white/20 px-1 rounded">hospitalization_id</code> exists in your CLIF ADT table.</p>
                   </div>
                 </div>
@@ -448,10 +448,6 @@ const navigationSections = [
                       <li class="flex items-start">
                         <span class="text-green-300 mr-2">✓</span>
                         Ensure all <code class="bg-white/20 px-1 rounded">hospitalization_id</code> values exist in ADT table
-                      </li>
-                      <li class="flex items-start">
-                        <span class="text-green-300 mr-2">✓</span>
-                        Check for remaining duplicates by composite key
                       </li>
                     </ul>
                   </div>
@@ -508,13 +504,38 @@ const navigationSections = [
                   <!-- Step 4 -->
                   <div>
                     <h5 class="text-xl font-semibold mb-3">Step 4: Unit Conversions</h5>
-                    <p class="text-sm mb-3">If your source data uses different units, convert to CLIF standards:</p>
+                    <div class="bg-yellow-500/20 p-3 rounded-lg border border-yellow-400/30 text-sm mb-3">
+                      <p class="text-yellow-300 font-semibold mb-2">Critical Requirement:</p>
+                      <p class="text-sm">All CRRT parameters must be reported using CLIF units. Please refer to the data dictionary page for CRRT setting units.</p>
+                    </div>
+                    <p class="text-sm mb-3">If your source data uses different units, convert to CLIF standards. Eg:</p>
                     <div class="bg-white/10 p-3 rounded-lg text-sm">
-                      <ul class="space-y-2">
-                        <li><code class="bg-white/20 px-1 rounded">blood_flow_rate</code> → <strong class="text-green-300">mL/min</strong></li>
-                        <li><code class="bg-white/20 px-1 rounded">dialysate_flow_rate</code> → <strong class="text-green-300">mL/hr</strong> <span class="text-gray-300">(e.g., convert from L/hr)</span></li>
-                        <li><code class="bg-white/20 px-1 rounded">ultrafiltration_out</code> → <strong class="text-green-300">mL/hr</strong> <span class="text-gray-300">(e.g., convert from mL total)</span></li>
-                      </ul>
+                      <table class="text-xs w-full">
+                        <thead>
+                          <tr class="border-b border-white/20">
+                            <th class="text-left py-1 pr-2">Parameter</th>
+                            <th class="text-left py-1 pr-2">CLIF Unit</th>
+                            <th class="text-left py-1">Conversion Example</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr class="border-b border-white/10">
+                            <td class="py-1 pr-2"><code class="bg-white/20 px-1 rounded">blood_flow_rate</code></td>
+                            <td class="py-1 pr-2 text-green-300">mL/min</td>
+                            <td class="py-1 text-gray-300">0.2 L/min → 200 mL/min</td>
+                          </tr>
+                          <tr class="border-b border-white/10">
+                            <td class="py-1 pr-2"><code class="bg-white/20 px-1 rounded">dialysate_flow_rate</code></td>
+                            <td class="py-1 pr-2 text-green-300">mL/hr</td>
+                            <td class="py-1 text-gray-300">2 L/hr → 2000 mL/hr</td>
+                          </tr>
+                          <tr>
+                            <td class="py-1 pr-2"><code class="bg-white/20 px-1 rounded">ultrafiltration_out</code></td>
+                            <td class="py-1 pr-2 text-green-300">mL/hr</td>
+                            <td class="py-1 text-gray-300">1.5 L/hr → 1500 mL/hr</td>
+                          </tr>
+                        </tbody>
+                      </table>
                     </div>
                   </div>
                 </div>
@@ -537,16 +558,16 @@ const navigationSections = [
                           </tr>
                         </thead>
                         <tbody class="text-xs">
-                          <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">SCUF</td><td class="px-2 py-1 text-green-300">Req</td><td class="px-2 py-1 text-gray-400">—</td><td class="px-2 py-1 text-gray-400">—</td><td class="px-2 py-1 text-gray-400">—</td><td class="px-2 py-1 text-green-300">Req</td></tr>
-                          <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">CVVH</td><td class="px-2 py-1 text-green-300">Req</td><td class="px-2 py-1 text-green-300">Req</td><td class="px-2 py-1 text-green-300">Req</td><td class="px-2 py-1 text-gray-400">—</td><td class="px-2 py-1 text-green-300">Req</td></tr>
-                          <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">CVVHD</td><td class="px-2 py-1 text-green-300">Req</td><td class="px-2 py-1 text-gray-400">—</td><td class="px-2 py-1 text-gray-400">—</td><td class="px-2 py-1 text-green-300">Req</td><td class="px-2 py-1 text-green-300">Req</td></tr>
-                          <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">CVVHDF</td><td class="px-2 py-1 text-green-300">Req</td><td class="px-2 py-1 text-green-300">Req</td><td class="px-2 py-1 text-green-300">Req</td><td class="px-2 py-1 text-green-300">Req</td><td class="px-2 py-1 text-green-300">Req</td></tr>
-                          <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">AVVH</td><td class="px-2 py-1 text-green-300">Req</td><td class="px-2 py-1 text-yellow-300">May</td><td class="px-2 py-1 text-yellow-300">May</td><td class="px-2 py-1 text-gray-400">—</td><td class="px-2 py-1 text-green-300">Req</td></tr>
-                          <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">AVVHD</td><td class="px-2 py-1 text-green-300">Req</td><td class="px-2 py-1 text-gray-400">—</td><td class="px-2 py-1 text-gray-400">—</td><td class="px-2 py-1 text-yellow-300">May</td><td class="px-2 py-1 text-green-300">Req</td></tr>
-                          <tr><td class="px-2 py-1 font-semibold">AVVHF</td><td class="px-2 py-1 text-green-300">Req</td><td class="px-2 py-1 text-yellow-300">May</td><td class="px-2 py-1 text-yellow-300">May</td><td class="px-2 py-1 text-yellow-300">May</td><td class="px-2 py-1 text-green-300">Req</td></tr>
+                          <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">SCUF</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1"></td><td class="px-2 py-1"></td><td class="px-2 py-1"></td><td class="px-2 py-1 text-green-300">E</td></tr>
+                          <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">CVVH</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1"></td><td class="px-2 py-1 text-green-300">E</td></tr>
+                          <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">CVVHD</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1"></td><td class="px-2 py-1"></td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-green-300">E</td></tr>
+                          <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">CVVHDF</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-green-300">E</td></tr>
+                          <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">AVVH</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-yellow-300">P</td><td class="px-2 py-1 text-yellow-300">P</td><td class="px-2 py-1"></td><td class="px-2 py-1 text-green-300">E</td></tr>
+                          <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">AVVHD</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1"></td><td class="px-2 py-1"></td><td class="px-2 py-1 text-yellow-300">P</td><td class="px-2 py-1 text-green-300">E</td></tr>
+                          <tr><td class="px-2 py-1 font-semibold">AVVHF</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-yellow-300">P</td><td class="px-2 py-1 text-yellow-300">P</td><td class="px-2 py-1 text-yellow-300">P</td><td class="px-2 py-1 text-green-300">E</td></tr>
                         </tbody>
                       </table>
-                      <p class="text-xs mt-2 text-gray-300"><span class="text-green-300">Req</span> = Required | <span class="text-yellow-300">May</span> = May Be Used | <span class="text-gray-400">—</span> = Not Used</p>
+                      <p class="text-xs mt-2 text-gray-300"><span class="text-green-300">E</span> = Expected | <span class="text-yellow-300">P</span> = Possible | Empty = Not applicable</p>
                     </div>
                   </div>
 
@@ -1010,15 +1031,18 @@ const navigationSections = [
                   <div>
                     <h5 class="text-xl font-semibold mb-3">Step 1: Create Medication Mappings</h5>
                     <p class="text-sm mb-3">Before transforming your medication data, prepare the mapping files:</p>
-                    <div class="space-y-2 text-sm">
-                      <div class="bg-white/10 p-2 rounded-lg">
-                        <p><strong class="text-blue-300">a.</strong> Map <code class="bg-white/20 px-1 rounded">mar_action_name</code> → <code class="bg-white/20 px-1 rounded">mar_action_category</code> and <code class="bg-white/20 px-1 rounded">mar_action_group</code></p>
+                    <div class="space-y-3 text-sm">
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p><strong class="text-blue-300">a. Action Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">mar_action_name</code> → <code class="bg-white/20 px-1 rounded">mar_action_category</code></p>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/medication_admin_continuous/clif_medication_admin_continuous_action_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_medication_admin_continuous_action_categories.csv</a>
                       </div>
-                      <div class="bg-white/10 p-2 rounded-lg">
-                        <p><strong class="text-blue-300">b.</strong> Map <code class="bg-white/20 px-1 rounded">med_name</code> → <code class="bg-white/20 px-1 rounded">med_category</code></p>
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p><strong class="text-blue-300">b. Med Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">med_name</code> → <code class="bg-white/20 px-1 rounded">med_category</code></p>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/medication_admin_continuous/clif_medication_admin_continuous_med_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_medication_admin_continuous_med_categories.csv</a>
                       </div>
-                      <div class="bg-white/10 p-2 rounded-lg">
-                        <p><strong class="text-blue-300">c.</strong> Map <code class="bg-white/20 px-1 rounded">med_route_name</code> → <code class="bg-white/20 px-1 rounded">med_route_category</code></p>
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p><strong class="text-blue-300">c. Route Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">med_route_name</code> → <code class="bg-white/20 px-1 rounded">med_route_category</code></p>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/medication_admin_continuous/clif_medication_admin_continuous_med_route_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_medication_admin_continuous_med_route_categories.csv</a>
                       </div>
                     </div>
                   </div>
@@ -1058,7 +1082,8 @@ const navigationSections = [
                 <div class="space-y-6">
                   <!-- Step 6 - Combination Drugs -->
                   <div>
-                    <h5 class="text-xl font-semibold mb-3">Step 6: Handle Combination and Trial Drugs</h5>
+                    <h5 class="text-xl font-semibold mb-3">Step 6: Handle Combination & Trial Drugs</h5>
+                    <h5 class="text-xl font-semibold mb-3">A. Combination Drugs</h5>
                     <div class="bg-white/10 p-3 rounded-lg text-sm mb-3">
                       <p class="text-yellow-300 font-semibold mb-2">When to duplicate rows:</p>
                       <p class="text-xs mb-2">Only duplicate combo meds that are <strong>not</strong> in the mCIDE as a med_category itself. Assign a duplicated row for each component med_category.</p>
@@ -1081,7 +1106,7 @@ const navigationSections = [
 
                   <!-- Trial Drugs & Placebos -->
                   <div>
-                    <h5 class="text-xl font-semibold mb-3">Trial Drugs & Placebos</h5>
+                    <h5 class="text-xl font-semibold mb-3">B. Trial Drugs & Placebos</h5>
                     <div class="bg-white/10 p-3 rounded-lg text-sm mb-3">
                       <p class="mb-2">Map trial drugs to <code class="bg-white/20 px-1 rounded">trial_drug</code> as med_category. Leave <code class="bg-white/20 px-1 rounded">med_group</code> empty if with placebo.</p>
                       <div class="bg-white/10 p-2 rounded text-xs mt-2">
@@ -1167,15 +1192,18 @@ const navigationSections = [
                   <div>
                     <h5 class="text-xl font-semibold mb-3">Step 1: Create Medication Mappings</h5>
                     <p class="text-sm mb-3">Before transforming your medication data, prepare the mapping files:</p>
-                    <div class="space-y-2 text-sm">
-                      <div class="bg-white/10 p-2 rounded-lg">
-                        <p><strong class="text-blue-300">a.</strong> Map <code class="bg-white/20 px-1 rounded">mar_action_name</code> → <code class="bg-white/20 px-1 rounded">mar_action_category</code> and <code class="bg-white/20 px-1 rounded">mar_action_group</code></p>
+                    <div class="space-y-3 text-sm">
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p><strong class="text-blue-300">a. Action Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">mar_action_name</code> → <code class="bg-white/20 px-1 rounded">mar_action_category</code></p>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/medication_admin_intermittent/clif_medication_admin_intermittent_action_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_medication_admin_intermittent_action_categories.csv</a>
                       </div>
-                      <div class="bg-white/10 p-2 rounded-lg">
-                        <p><strong class="text-blue-300">b.</strong> Map <code class="bg-white/20 px-1 rounded">med_name</code> → <code class="bg-white/20 px-1 rounded">med_category</code></p>
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p><strong class="text-blue-300">b. Med Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">med_name</code> → <code class="bg-white/20 px-1 rounded">med_category</code></p>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/medication_admin_intermittent/clif_medication_admin_intermittent_med_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_medication_admin_intermittent_med_categories.csv</a>
                       </div>
-                      <div class="bg-white/10 p-2 rounded-lg">
-                        <p><strong class="text-blue-300">c.</strong> Map <code class="bg-white/20 px-1 rounded">med_route_name</code> → <code class="bg-white/20 px-1 rounded">med_route_category</code></p>
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p><strong class="text-blue-300">c. Route Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">med_route_name</code> → <code class="bg-white/20 px-1 rounded">med_route_category</code></p>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/medication_admin_intermittent/clif_medication_admin_intermittent_med_route_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_medication_admin_intermittent_med_route_categories.csv</a>
                       </div>
                     </div>
                   </div>
@@ -1215,7 +1243,8 @@ const navigationSections = [
                 <div class="space-y-6">
                   <!-- Step 6 - Combination Drugs -->
                   <div>
-                    <h5 class="text-xl font-semibold mb-3">Step 6: Handle Combination Drugs</h5>
+                    <h5 class="text-xl font-semibold mb-3">Step 6: Handle Combination & Trial Drugs</h5>
+                    <h5 class="text-xl font-semibold mb-3">A. Combination Drugs</h5>
                     <div class="bg-white/10 p-3 rounded-lg text-sm mb-3">
                       <p class="text-yellow-300 font-semibold mb-2">When to duplicate rows:</p>
                       <p class="text-xs mb-2">Only duplicate combo meds that are <strong>not</strong> in the mCIDE as a med_category itself. Assign a duplicated row for each component med_category.</p>
@@ -1238,7 +1267,7 @@ const navigationSections = [
 
                   <!-- Trial Drugs & Placebos -->
                   <div>
-                    <h5 class="text-xl font-semibold mb-3">Trial Drugs & Placebos</h5>
+                    <h5 class="text-xl font-semibold mb-3">B. Trial Drugs & Placebos</h5>
                     <div class="bg-white/10 p-3 rounded-lg text-sm mb-3">
                       <p class="mb-2">Map trial drugs to <code class="bg-white/20 px-1 rounded">trial_drug</code> as med_category. Leave <code class="bg-white/20 px-1 rounded">med_group</code> empty if with placebo.</p>
                       <div class="bg-white/10 p-2 rounded text-xs mt-2">
@@ -1326,18 +1355,22 @@ const navigationSections = [
                   <div>
                     <h5 class="text-xl font-semibold mb-3">Step 1: Create Patient Mappings</h5>
                     <p class="text-sm mb-3">Before transforming your patient data, prepare the mapping files:</p>
-                    <div class="space-y-2 text-sm">
-                      <div class="bg-white/10 p-2 rounded-lg">
-                        <p><strong class="text-blue-300">a.</strong> Map <code class="bg-white/20 px-1 rounded">race_name</code> → <code class="bg-white/20 px-1 rounded">race_category</code></p>
+                    <div class="space-y-3 text-sm">
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p><strong class="text-blue-300">a. Race Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">race_name</code> → <code class="bg-white/20 px-1 rounded">race_category</code></p>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/patient/clif_patient_race_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_patient_race_categories.csv</a>
                       </div>
-                      <div class="bg-white/10 p-2 rounded-lg">
-                        <p><strong class="text-blue-300">b.</strong> Map <code class="bg-white/20 px-1 rounded">sex_name</code> → <code class="bg-white/20 px-1 rounded">sex_category</code></p>
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p><strong class="text-blue-300">b. Sex Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">sex_name</code> → <code class="bg-white/20 px-1 rounded">sex_category</code></p>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/patient/clif_patient_sex_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_patient_sex_categories.csv</a>
                       </div>
-                      <div class="bg-white/10 p-2 rounded-lg">
-                        <p><strong class="text-blue-300">c.</strong> Map <code class="bg-white/20 px-1 rounded">ethnicity_name</code> → <code class="bg-white/20 px-1 rounded">ethnicity_category</code></p>
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p><strong class="text-blue-300">c. Ethnicity Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">ethnicity_name</code> → <code class="bg-white/20 px-1 rounded">ethnicity_category</code></p>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/patient/clif_patient_ethinicity_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_patient_ethinicity_categories.csv</a>
                       </div>
-                      <div class="bg-white/10 p-2 rounded-lg">
-                        <p><strong class="text-blue-300">d.</strong> Map <code class="bg-white/20 px-1 rounded">language_name</code> → <code class="bg-white/20 px-1 rounded">language_category</code></p>
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p><strong class="text-blue-300">d. Language Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">language_name</code> → <code class="bg-white/20 px-1 rounded">language_category</code></p>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/patient/clif_patient_language_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_patient_language_categories.csv</a>
                       </div>
                     </div>
                   </div>
@@ -1345,7 +1378,7 @@ const navigationSections = [
                   <!-- Step 2 -->
                   <div>
                     <h5 class="text-xl font-semibold mb-3">Step 2: Filter to Inpatient Patients</h5>
-                    <p class="text-sm">Filter your patient data to include only patients with an inpatient hospitalization from ADT.</p>
+                    <p class="text-sm">Filter your patient data to include only patients whose hospitalization_id exists in your CLIF ADT table.</p>
                   </div>
                 </div>
 
@@ -1431,9 +1464,10 @@ const navigationSections = [
                   <div>
                     <h5 class="text-xl font-semibold mb-3">Step 1: Create Assessment Mappings</h5>
                     <p class="text-sm mb-3">Before transforming your assessment data, prepare the mapping file:</p>
-                    <div class="space-y-2 text-sm">
-                      <div class="bg-white/10 p-2 rounded-lg">
-                        <p>Map <code class="bg-white/20 px-1 rounded">assessment_name</code> → <code class="bg-white/20 px-1 rounded">assessment_category</code> and <code class="bg-white/20 px-1 rounded">assessment_group</code></p>
+                    <div class="space-y-3 text-sm">
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p><strong class="text-blue-300">Assessment Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">assessment_name</code> → <code class="bg-white/20 px-1 rounded">assessment_category</code></p>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/patient_assessments/clif_patient_assessment_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_patient_assessment_categories.csv</a>
                       </div>
                     </div>
                   </div>
@@ -1495,10 +1529,6 @@ const navigationSections = [
                       <li class="flex items-start">
                         <span class="text-green-300 mr-2">✓</span>
                         Verify value type casting is correct for each assessment
-                      </li>
-                      <li class="flex items-start">
-                        <span class="text-green-300 mr-2">✓</span>
-                        Check for remaining duplicates by composite key
                       </li>
                     </ul>
                   </div>
@@ -1587,10 +1617,6 @@ const navigationSections = [
                       <li class="flex items-start">
                         <span class="text-green-300 mr-2">✓</span>
                         Ensure only completed procedures are included
-                      </li>
-                      <li class="flex items-start">
-                        <span class="text-green-300 mr-2">✓</span>
-                        Check for remaining duplicates by composite key
                       </li>
                     </ul>
                   </div>
@@ -1771,18 +1797,16 @@ mutate(prone = if_else(str_detect(position_name, <br/>
                 <div class="space-y-6">
                   <!-- Step 1 -->
                   <div>
-                    <h5 class="text-xl font-semibold mb-3">Step 1: Create Mappings</h5>
-                    <p class="text-sm mb-3">Create mappings for device_name → device_category and mode_name → mode_category:</p>
-                    <div class="bg-white/10 p-3 rounded-lg text-sm space-y-2">
-                      <div>
-                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/respiratory_support/clif_respiratory_support_device_categories.csv" target="_blank" rel="noopener" class="text-yellow-300 hover:text-yellow-100 underline text-xs">
-                          → Device Categories mCIDE
-                        </a>
+                    <h5 class="text-xl font-semibold mb-3">Step 1: Create Respiratory Support Mappings</h5>
+                    <p class="text-sm mb-3">Before transforming your respiratory support data, prepare the mapping files:</p>
+                    <div class="space-y-3 text-sm">
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p><strong class="text-blue-300">a. Device Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">device_name</code> → <code class="bg-white/20 px-1 rounded">device_category</code></p>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/respiratory_support/clif_respiratory_support_device_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_respiratory_support_device_categories.csv</a>
                       </div>
-                      <div>
-                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/respiratory_support/clif_respiratory_support_mode_categories.csv" target="_blank" rel="noopener" class="text-yellow-300 hover:text-yellow-100 underline text-xs">
-                          → Mode Categories mCIDE
-                        </a>
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p><strong class="text-blue-300">b. Mode Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">mode_name</code> → <code class="bg-white/20 px-1 rounded">mode_category</code></p>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/respiratory_support/clif_respiratory_support_mode_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_respiratory_support_mode_categories.csv</a>
                       </div>
                     </div>
                   </div>
@@ -2119,12 +2143,13 @@ grepl('Vent', device_name, ignore.case = TRUE) &<br/>
                 <div class="space-y-6">
                   <!-- Step 1 -->
                   <div>
-                    <h5 class="text-xl font-semibold mb-3">Step 1: Create Mappings</h5>
-                    <p class="text-sm mb-3">Create mapping for vital_name → vital_category:</p>
-                    <div class="bg-white/10 p-3 rounded-lg text-sm">
-                      <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/vitals/clif_vitals_categories.csv" target="_blank" rel="noopener" class="text-yellow-300 hover:text-yellow-100 underline text-xs">
-                        → Vitals Categories mCIDE
-                      </a>
+                    <h5 class="text-xl font-semibold mb-3">Step 1: Create Vitals Mappings</h5>
+                    <p class="text-sm mb-3">Before transforming your vitals data, prepare the mapping file:</p>
+                    <div class="space-y-3 text-sm">
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p><strong class="text-blue-300">Vital Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">vital_name</code> → <code class="bg-white/20 px-1 rounded">vital_category</code></p>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/vitals/clif_vitals_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_vitals_categories.csv</a>
+                      </div>
                     </div>
                   </div>
 
