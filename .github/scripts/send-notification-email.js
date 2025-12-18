@@ -204,8 +204,8 @@ async function main() {
       console.log(`  Sent to: ${email}`);
       successCount++;
 
-      // Small delay between emails (100ms)
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      // Delay between emails to respect Resend rate limit (2 requests/second)
+      await new Promise((resolve) => setTimeout(resolve, 550));
     } catch (error) {
       console.error(`  Failed: ${email} - ${error.message}`);
       failCount++;
