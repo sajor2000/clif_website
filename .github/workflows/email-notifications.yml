@@ -10,17 +10,11 @@ on:
       - 'src/content/clif-data-dictionary-*.md'
       # Change log
       - 'src/pages/data-dictionary/change-log.astro'
-      # SQL schema files (if you want to include these)
+      # SQL schema files 
       - 'src/content/*.sql'
 
-  # Allow manual trigger for testing
+  # Allow manual trigger
   workflow_dispatch:
-    inputs:
-      test_mode:
-        description: 'Send only to test email (not full list)'
-        required: false
-        default: 'true'
-        type: boolean
 
 jobs:
   send-notification:
@@ -66,8 +60,6 @@ jobs:
         env:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           SUBSCRIBERS: ${{ secrets.EMAIL_SUBSCRIBERS }}
-          TEST_EMAIL: ${{ secrets.TEST_EMAIL }}
-          TEST_MODE: ${{ github.event.inputs.test_mode || 'false' }}
           UPDATE_TYPE: ${{ steps.changed-files.outputs.update_type }}
           CHANGED_FILES: ${{ steps.changed-files.outputs.files }}
           COMMIT_MESSAGE: ${{ steps.commit-info.outputs.message }}

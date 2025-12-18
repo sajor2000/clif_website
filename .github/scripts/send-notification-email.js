@@ -5,8 +5,6 @@
  * Required environment variables:
  * - RESEND_API_KEY: Your Resend API key
  * - SUBSCRIBERS: JSON array of email addresses (stored as GitHub secret)
- * - TEST_EMAIL: Email for test mode
- * - TEST_MODE: 'true' to only send to TEST_EMAIL
  * - UPDATE_TYPE: 'data-dictionary', 'changelog', or 'schema'
  * - CHANGED_FILES: List of changed files
  * - COMMIT_MESSAGE: The commit message
@@ -146,8 +144,6 @@ async function main() {
   const {
     RESEND_API_KEY,
     SUBSCRIBERS,
-    TEST_EMAIL,
-    TEST_MODE,
     UPDATE_TYPE,
     CHANGED_FILES,
     COMMIT_MESSAGE,
@@ -160,27 +156,18 @@ async function main() {
     process.exit(1);
   }
 
-  // Determine recipients
-  let recipients = [];
+  if (!SUBSCRIBERS) {
+    console.error('Error: SUBSCRIBERS is required');
+    process.exit(1);
+  }
 
-  if (TEST_MODE === 'true') {
-    if (!TEST_EMAIL) {
-      console.error('Error: TEST_EMAIL is required when TEST_MODE is true');
-      process.exit(1);
-    }
-    recipients = [TEST_EMAIL];
-    console.log('Running in TEST MODE - sending only to:', TEST_EMAIL);
-  } else {
-    if (!SUBSCRIBERS) {
-      console.error('Error: SUBSCRIBERS is required when not in test mode');
-      process.exit(1);
-    }
-    try {
-      recipients = JSON.parse(SUBSCRIBERS);
-    } catch (e) {
-      console.error('Error: SUBSCRIBERS must be a valid JSON array');
-      process.exit(1);
-    }
+  // Parse recipients
+  let recipients = [];
+  try {
+    recipients = JSON.parse(SUBSCRIBERS);
+  } catch (e) {
+    console.error('Error: SUBSCRIBERS must be a valid JSON array');
+    process.exit(1);
   }
 
   if (recipients.length === 0) {
