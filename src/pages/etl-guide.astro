@@ -1606,6 +1606,21 @@ const navigationSections = [
                     </ul>
                   </div>
 
+                  <!-- Date-Only Columns Tip -->
+                  <div class="bg-blue-500/20 p-4 rounded-lg border border-blue-400/30">
+                    <h5 class="text-lg font-semibold mb-2 text-blue-300">Date-Only Columns</h5>
+                    <p class="text-sm mb-2">When your source data only contains a date (no time component):</p>
+                    <ul class="space-y-2 text-sm">
+                      <li>• Set the time to midnight (00:00:00) in your local timezone</li>
+                      <li>• Make it timezone-aware</li>
+                      <li>• Then convert to UTC</li>
+                    </ul>
+                    <p class="text-sm mt-3 text-blue-200">
+                      <strong>Example:</strong> A date of 2021-08-26 becomes 2021-08-26 00:00:00 local time,
+                      which converts to 2021-08-26 05:00:00+00:00 UTC (for US/Central timezone).
+                    </p>
+                  </div>
+
                   <!-- Data Quality Checks -->
                   <div>
                     <h5 class="text-xl font-semibold mb-3">Data Quality Checks</h5>
