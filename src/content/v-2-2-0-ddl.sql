@@ -457,5 +457,3 @@ CREATE TABLE validated_diagnosis (
   reviewer_id VARCHAR COMMENT '{"description": "Anonymized ID of the clinician or reviewer responsible for this label.", "permissible": "No restriction"}',
   review_timestamp DATETIME COMMENT '{"description": "Time when the label was finalized or adjudicated.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}'
 );
-
-----test email automation updates ------

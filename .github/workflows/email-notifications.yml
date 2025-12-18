@@ -8,10 +8,9 @@ on:
       # Data dictionary pages
       - 'src/pages/data-dictionary/**'
       - 'src/content/clif-data-dictionary-*.md'
+      - 'src/content/*.sql'
       # Change log
       - 'src/pages/data-dictionary/change-log.astro'
-      # SQL schema files 
-      - 'src/content/*.sql'
 
   # Allow manual trigger
   workflow_dispatch:
@@ -31,37 +30,19 @@ jobs:
         with:
           node-version: 20
 
-      - name: Get changed files
-        id: changed-files
-        run: |
-          # Get list of changed files
-          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD | grep -E '(data-dictionary|change-log|\.sql)' || true)
-          echo "files<<EOF" >> $GITHUB_OUTPUT
-          echo "$CHANGED_FILES" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
-          # Determine what type of update this is
-          if echo "$CHANGED_FILES" | grep -q "change-log"; then
-            echo "update_type=changelog" >> $GITHUB_OUTPUT
-          elif echo "$CHANGED_FILES" | grep -q "data-dictionary"; then
-            echo "update_type=data-dictionary" >> $GITHUB_OUTPUT
-          else
-            echo "update_type=schema" >> $GITHUB_OUTPUT
-          fi
-
       - name: Get commit info
         id: commit-info
         run: |
-          echo "message=$(git log -1 --pretty=%B | head -1)" >> $GITHUB_OUTPUT
-          echo "author=$(git log -1 --pretty=%an)" >> $GITHUB_OUTPUT
+          # Get full commit message (subject + body)
+          echo "message<<EOF" >> $GITHUB_OUTPUT
+          git log -1 --pretty=%B >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
           echo "date=$(git log -1 --pretty=%cd --date=format:'%B %d, %Y')" >> $GITHUB_OUTPUT
 
       - name: Send email notifications
         env:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           SUBSCRIBERS: ${{ secrets.EMAIL_SUBSCRIBERS }}
-          UPDATE_TYPE: ${{ steps.changed-files.outputs.update_type }}
-          CHANGED_FILES: ${{ steps.changed-files.outputs.files }}
           COMMIT_MESSAGE: ${{ steps.commit-info.outputs.message }}
           COMMIT_DATE: ${{ steps.commit-info.outputs.date }}
         run: |

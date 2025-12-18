@@ -5,14 +5,12 @@
  * Required environment variables:
  * - RESEND_API_KEY: Your Resend API key
  * - SUBSCRIBERS: JSON array of email addresses (stored as GitHub secret)
- * - UPDATE_TYPE: 'data-dictionary', 'changelog', or 'schema'
- * - CHANGED_FILES: List of changed files
- * - COMMIT_MESSAGE: The commit message
+ * - COMMIT_MESSAGE: The full commit message (subject + body)
  * - COMMIT_DATE: The commit date
  */
 
-const WEBSITE_URL = 'https://clif-icu.com'; 
-const FROM_EMAIL = 'CLIF Consortium <updates@clifconsortium.org>'; 
+const WEBSITE_URL = 'https://clif-icu.com';
+const FROM_EMAIL = 'CLIF Consortium <updates@clifconsortium.org>';
 
 async function sendEmail(to, subject, htmlContent) {
   const response = await fetch('https://api.resend.com/emails', {
@@ -37,30 +35,17 @@ async function sendEmail(to, subject, htmlContent) {
   return response.json();
 }
 
-function getEmailSubject(updateType) {
-  const subjects = {
-    'data-dictionary': 'CLIF Data Dictionary Has Been Updated',
-    changelog: 'CLIF Change Log Has Been Updated',
-    schema: 'CLIF Schema Files Have Been Updated',
-  };
-  return subjects[updateType] || 'CLIF Documentation Has Been Updated';
+function formatCommitMessage(message) {
+  // Convert newlines to HTML breaks and escape HTML
+  return message
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\n/g, '<br>');
 }
 
-function getEmailContent(updateType, changedFiles, commitMessage, commitDate) {
-  const updateTypeLabels = {
-    'data-dictionary': 'Data Dictionary',
-    changelog: 'Change Log',
-    schema: 'Schema Files',
-  };
-
-  const updateLabel = updateTypeLabels[updateType] || 'Documentation';
-
-  // Format changed files as a list
-  const filesList = changedFiles
-    .split('\n')
-    .filter((f) => f.trim())
-    .map((f) => `<li><code>${f}</code></li>`)
-    .join('\n');
+function getEmailContent(commitMessage, commitDate) {
+  const formattedMessage = formatCommitMessage(commitMessage);
 
   return `
 <!DOCTYPE html>
@@ -81,29 +66,16 @@ function getEmailContent(updateType, changedFiles, commitMessage, commitDate) {
   <!-- Main Content -->
   <div style="background-color: #f9f9f9; padding: 30px; border: 1px solid #e0e0e0; border-top: none;">
 
-    <h2 style="color: #722F37; margin-top: 0;">${updateLabel} Update</h2>
+    <h2 style="color: #722F37; margin-top: 0;">Data Dictionary Update</h2>
 
     <p>Hello,</p>
 
-    <p>The CLIF ${updateLabel} has been updated on <strong>${commitDate}</strong>.</p>
+    <p>The CLIF Data Dictionary and mCIDE have been updated on <strong>${commitDate}</strong>.</p>
 
     <div style="background-color: #fff; padding: 15px; border-left: 4px solid #722F37; margin: 20px 0;">
-      <strong>Update Summary:</strong><br>
-      ${commitMessage}
+      <strong>What Changed:</strong><br><br>
+      ${formattedMessage}
     </div>
-
-    ${
-      filesList
-        ? `
-    <details style="margin: 20px 0;">
-      <summary style="cursor: pointer; color: #722F37; font-weight: bold;">Files Changed</summary>
-      <ul style="background-color: #fff; padding: 15px 15px 15px 35px; margin-top: 10px; border-radius: 4px;">
-        ${filesList}
-      </ul>
-    </details>
-    `
-        : ''
-    }
 
     <!-- CTA Button -->
     <div style="text-align: center; margin: 30px 0;">
@@ -117,7 +89,6 @@ function getEmailContent(updateType, changedFiles, commitMessage, commitDate) {
     <ul>
       <li><a href="${WEBSITE_URL}/data-dictionary" style="color: #722F37;">Data Dictionary (Latest)</a></li>
       <li><a href="${WEBSITE_URL}/data-dictionary/change-log" style="color: #722F37;">Change Log</a></li>
-      <li><a href="https://github.com/clif-consortium/CLIF" style="color: #722F37;">GitHub Repository</a></li>
     </ul>
 
   </div>
@@ -131,7 +102,7 @@ function getEmailContent(updateType, changedFiles, commitMessage, commitDate) {
       To unsubscribe, please reply to this email with "UNSUBSCRIBE" in the subject line.
     </p>
     <p style="margin: 10px 0 0 0; color: #666;">
-      CLIF Consortium | <a href="${WEBSITE_URL}" style="color: #999;">clif-consortium.org</a>
+      CLIF Consortium | <a href="${WEBSITE_URL}" style="color: #999;">clif-icu.com</a>
     </p>
   </div>
 
@@ -141,14 +112,8 @@ function getEmailContent(updateType, changedFiles, commitMessage, commitDate) {
 }
 
 async function main() {
-  const {
-    RESEND_API_KEY,
-    SUBSCRIBERS,
-    UPDATE_TYPE,
-    CHANGED_FILES,
-    COMMIT_MESSAGE,
-    COMMIT_DATE,
-  } = process.env;
+  const { RESEND_API_KEY, SUBSCRIBERS, COMMIT_MESSAGE, COMMIT_DATE } =
+    process.env;
 
   // Validate required env vars
   if (!RESEND_API_KEY) {
@@ -176,12 +141,15 @@ async function main() {
   }
 
   // Generate email content
-  const subject = getEmailSubject(UPDATE_TYPE);
-  const htmlContent = getEmailContent(UPDATE_TYPE, CHANGED_FILES || '', COMMIT_MESSAGE || 'Documentation updated', COMMIT_DATE || new Date().toLocaleDateString());
+  const subject = 'CLIF Data Dictionary and mCIDE Have Been Updated';
+  const htmlContent = getEmailContent(
+    COMMIT_MESSAGE || 'Documentation updated',
+    COMMIT_DATE || new Date().toLocaleDateString()
+  );
 
   console.log(`Sending "${subject}" to ${recipients.length} recipient(s)...`);
 
-  // Send emails (with small delay to avoid rate limits)
+  // Send emails (with delay to respect Resend rate limit)
   let successCount = 0;
   let failCount = 0;
 
