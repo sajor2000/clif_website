@@ -173,3 +173,11 @@ gh secret list
   workflow run with:                                                                  
                                                                                       
   gh run watch 
+
+  gh secret set EMAIL_SUBSCRIBERS --body '["kaveri@uchicago.edu", "theresemaria98@gmail.com"]'
+
+  If it fails, you can see the logs with:                                             
+                                                                                      
+  gh run view --log
+
+  To see runs for this workflow, try: gh run list --workflow=email-notifications.yml
