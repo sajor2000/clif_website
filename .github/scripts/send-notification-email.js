@@ -13,8 +13,8 @@
  * - COMMIT_DATE: The commit date
  */
 
-const WEBSITE_URL = 'https://clif-consortium.org'; // Update with your actual URL
-const FROM_EMAIL = 'CLIF Consortium <updates@clif-consortium.org>'; // Update after domain verification
+const WEBSITE_URL = 'https://clifconsortium.org';
+const FROM_EMAIL = 'CLIF Consortium <updates@clifconsortium.org>';
 
 async function sendEmail(to, subject, htmlContent) {
   const response = await fetch('https://api.resend.com/emails', {
