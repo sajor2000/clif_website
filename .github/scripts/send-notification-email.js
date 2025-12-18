@@ -86,6 +86,7 @@ function getEmailContent(commitMessage, commitDate) {
     <p style="margin-top: 30px;">Quick Links:</p>
     <ul>
       <li><a href="${WEBSITE_URL}/data-dictionary/data-dictionary-2.1.0" style="color: #722F37;">Data Dictionary 2.1.0 (Current Implementation)</a></li>
+      <li><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/tree/main/mCIDE" style="color: #722F37;">mCIDE</a></li>
       <li><a href="${WEBSITE_URL}/data-dictionary/change-log" style="color: #722F37;">Change Log</a></li>
     </ul>
 
