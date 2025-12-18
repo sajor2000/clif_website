@@ -13,9 +13,8 @@
  * - COMMIT_DATE: The commit date
  */
 
-const WEBSITE_URL = 'https://clifconsortium.org';
-// TODO: Change back to 'CLIF Consortium <updates@clifconsortium.org>' once domain issue is resolved
-const FROM_EMAIL = 'CLIF Consortium <onboarding@resend.dev>';
+const WEBSITE_URL = 'https://clif-icu.com'; 
+const FROM_EMAIL = 'CLIF Consortium <updates@clifconsortium.org>'; 
 
 async function sendEmail(to, subject, htmlContent) {
   const response = await fetch('https://api.resend.com/emails', {
