@@ -85,6 +85,7 @@ function getEmailContent(commitMessage, commitDate) {
 
     <p style="margin-top: 30px;">Quick Links:</p>
     <ul>
+      <li><a href="${WEBSITE_URL}" style="color: #722F37;">CLIF Website</a></li>
       <li><a href="${WEBSITE_URL}/data-dictionary" style="color: #722F37;">Data Dictionary (Latest)</a></li>
       <li><a href="${WEBSITE_URL}/data-dictionary/change-log" style="color: #722F37;">Change Log</a></li>
     </ul>
