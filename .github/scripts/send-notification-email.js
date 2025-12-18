@@ -66,8 +66,6 @@ function getEmailContent(commitMessage, commitDate) {
   <!-- Main Content -->
   <div style="background-color: #f9f9f9; padding: 30px; border: 1px solid #e0e0e0; border-top: none;">
 
-    <h2 style="color: #722F37; margin-top: 0;">Data Dictionary Update</h2>
-
     <p>Hello,</p>
 
     <p>The CLIF Data Dictionary and mCIDE have been updated on <strong>${commitDate}</strong>.</p>
