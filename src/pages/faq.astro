@@ -29,6 +29,12 @@ import CTAButton from '../components/shared/CTAButton.astro';
         <div class="sticky top-24">
           <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4">Quick Navigation</h3>
           <nav class="space-y-2">
+            <a href="#governance" class="flex items-center gap-2 text-gray-600 hover:text-clif-burgundy transition-colors p-2 rounded-lg hover:bg-gray-50">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+              </svg>
+              <span class="text-sm">Governance</span>
+            </a>
             <a href="#technical" class="flex items-center gap-2 text-gray-600 hover:text-clif-burgundy transition-colors p-2 rounded-lg hover:bg-gray-50">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
@@ -54,10 +60,56 @@ import CTAButton from '../components/shared/CTAButton.astro';
       <!-- FAQ Content -->
       <div class="flex-1 space-y-6">
 
+        <!-- Governance Section -->
+        <section id="governance" class="scroll-mt-24">
+          <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+            <span class="text-clif-burgundy">01</span>
+            Governance & Structure
+          </h2>
+
+          <!-- Governance Structure -->
+          <div class="faq-item bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover-lift mb-4 border border-gray-100 overflow-hidden">
+            <button class="faq-trigger w-full text-left p-6 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:ring-inset" aria-expanded="false">
+              <div class="flex items-start gap-4">
+                <div class="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-clif-burgundy/20 to-clif-burgundy/40 rounded-xl flex items-center justify-center">
+                  <svg class="w-6 h-6 text-clif-burgundy" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                  </svg>
+                </div>
+                <div class="flex-1">
+                  <h3 class="text-xl font-semibold text-gray-900 mb-1">How is the CLIF consortium governed?</h3>
+                  <p class="text-gray-600 text-sm">Our federated structure and data privacy approach</p>
+                </div>
+                <svg class="faq-chevron w-5 h-5 text-gray-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </div>
+            </button>
+            <div class="faq-content hidden px-6 pb-6">
+              <div class="ml-16">
+                <p class="text-lg text-gray-700 leading-relaxed">
+                  CLIF is a strictly federated consortium of collaborative research labs. Participation is entirely optional and flexible—each site may choose how and when to engage.
+                </p>
+                <div class="mt-4 space-y-3">
+                  <p class="text-lg text-gray-700 leading-relaxed font-semibold">Key principles:</p>
+                  <ul class="list-disc list-inside space-y-2 text-lg text-gray-700">
+                    <li>All participating sites maintain <strong>independent IRB approval</strong> and retain full responsibility for their own IRB processes</li>
+                    <li>CLIF does not involve the sharing of patient-level data—<strong>all analyses are performed locally</strong></li>
+                    <li>Because no patient-level data is exchanged, <strong>no data user agreements (DUAs) are required</strong> between sites</li>
+                  </ul>
+                </div>
+                <p class="text-lg text-gray-700 leading-relaxed mt-4">
+                  This federated approach ensures maximum flexibility while maintaining rigorous ethical standards and data privacy protections.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <!-- Technical Section -->
         <section id="technical" class="scroll-mt-24">
           <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <span class="text-clif-burgundy">01</span>
+            <span class="text-clif-burgundy">02</span>
             Technical Details
           </h2>
           
@@ -266,7 +318,7 @@ import CTAButton from '../components/shared/CTAButton.astro';
         <!-- Getting Started Section -->
         <section id="joining" class="scroll-mt-24">
           <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <span class="text-clif-burgundy">02</span>
+            <span class="text-clif-burgundy">03</span>
             Getting Started
           </h2>
           
@@ -362,9 +414,54 @@ import CTAButton from '../components/shared/CTAButton.astro';
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
                     </svg>
                   </button> 
-                  with a brief description of your project. Our scientific committee reviews proposals and can help connect you 
+                  with a brief description of your project. Our scientific committee reviews proposals and can help connect you
                   with participating sites and resources.
                 </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Best Practices -->
+          <div class="faq-item bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover-lift mb-4 border border-gray-100 overflow-hidden">
+            <button class="faq-trigger w-full text-left p-6 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:ring-inset" aria-expanded="false">
+              <div class="flex items-start gap-4">
+                <div class="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-cyan-100 to-cyan-200 rounded-xl flex items-center justify-center">
+                  <svg class="w-6 h-6 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                </div>
+                <div class="flex-1">
+                  <h3 class="text-xl font-semibold text-gray-900 mb-1">What are the best practices for CLIF projects?</h3>
+                  <p class="text-gray-600 text-sm">Guidelines for successful collaborative research</p>
+                </div>
+                <svg class="faq-chevron w-5 h-5 text-gray-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </div>
+            </button>
+            <div class="faq-content hidden px-6 pb-6">
+              <div class="ml-16">
+                <p class="text-lg text-gray-700 leading-relaxed">
+                  To ensure successful and reproducible research across the consortium, we recommend following these best practices:
+                </p>
+                <ol class="list-decimal list-inside space-y-3 text-lg text-gray-700 mt-4">
+                  <li class="flex items-start">
+                    <span class="font-semibold mr-2">1.</span>
+                    <span><strong>Use the official project template</strong> — Start your project using our <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF-Project-Template" class="text-clif-burgundy underline hover:text-clif-burgundy-dark" target="_blank" rel="noopener">CLIF Project Template</a> which provides standardized code structure and documentation</span>
+                  </li>
+                  <li class="flex items-start">
+                    <span class="font-semibold mr-2">2.</span>
+                    <span><strong>Buddy coding with another site</strong> — Pair with a researcher from a different institution to validate your code works across different CLIF implementations</span>
+                  </li>
+                  <li class="flex items-start">
+                    <span class="font-semibold mr-2">3.</span>
+                    <span><strong>No patient-level data exports</strong> — Never export or share patient-level (row-level) data between sites</span>
+                  </li>
+                  <li class="flex items-start">
+                    <span class="font-semibold mr-2">4.</span>
+                    <span><strong>Minimum cell counts</strong> — All aggregate results must contain data from more than 10 patients per cell to protect patient privacy</span>
+                  </li>
+                </ol>
               </div>
             </div>
           </div>

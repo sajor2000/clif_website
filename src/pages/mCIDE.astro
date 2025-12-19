@@ -98,115 +98,6 @@ import CTAButton from '../components/shared/CTAButton.astro';
       </div>
     </section>
 
-    <!-- Key mCIDE Categories -->
-    <section class="mb-16">
-      <h2 class="text-3xl font-bold mb-8">Key mCIDE Categories</h2>
-
-      <div class="space-y-6">
-        <!-- Laboratory Values -->
-        <div class="bg-white rounded-xl shadow-lg p-8">
-          <h3 class="text-2xl font-semibold mb-4 text-clif-burgundy">Laboratory Values</h3>
-          <p class="mb-4">
-            Standardized lab categories ensure consistent interpretation of critical biomarkers
-            across institutions.
-          </p>
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-            <div class="bg-gray-50 p-3 rounded">
-              <p class="font-semibold">Chemistry</p>
-              <p class="text-gray-600">Sodium, Potassium, Creatinine, BUN</p>
-            </div>
-            <div class="bg-gray-50 p-3 rounded">
-              <p class="font-semibold">Hematology</p>
-              <p class="text-gray-600">WBC, Hemoglobin, Platelets</p>
-            </div>
-            <div class="bg-gray-50 p-3 rounded">
-              <p class="font-semibold">Blood Gas</p>
-              <p class="text-gray-600">pH, PaO2, PaCO2, Lactate</p>
-            </div>
-            <div class="bg-gray-50 p-3 rounded">
-              <p class="font-semibold">Infection</p>
-              <p class="text-gray-600">Procalcitonin, CRP</p>
-            </div>
-          </div>
-          <p class="mt-4 text-sm text-gray-600">
-            <a
-              href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/clif_lab_categories.csv"
-              class="text-clif-burgundy hover:underline"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              View complete lab categories on GitHub →
-            </a>
-          </p>
-        </div>
-
-        <!-- ADT Locations -->
-        <div class="bg-white rounded-xl shadow-lg p-8">
-          <h3 class="text-2xl font-semibold mb-4 text-clif-burgundy">ADT Location Categories</h3>
-          <p class="mb-4">
-            Harmonized location categories enable tracking of patient flow and resource utilization
-            patterns.
-          </p>
-          <div class="flex flex-wrap gap-2">
-            <span class="bg-clif-burgundy text-white px-3 py-1 rounded-full text-sm">ICU</span>
-            <span class="bg-clif-burgundy text-white px-3 py-1 rounded-full text-sm">Ward</span>
-            <span class="bg-clif-burgundy text-white px-3 py-1 rounded-full text-sm">Stepdown</span>
-            <span class="bg-clif-burgundy text-white px-3 py-1 rounded-full text-sm">ED</span>
-            <span class="bg-clif-burgundy text-white px-3 py-1 rounded-full text-sm"
-              >Procedural</span
-            >
-            <span class="bg-clif-burgundy text-white px-3 py-1 rounded-full text-sm">Dialysis</span>
-            <span class="bg-clif-burgundy text-white px-3 py-1 rounded-full text-sm">Radiology</span
-            >
-          </div>
-        </div>
-
-        <!-- Respiratory Support -->
-        <div class="bg-white rounded-xl shadow-lg p-8">
-          <h3 class="text-2xl font-semibold mb-4 text-clif-burgundy">
-            Respiratory Support Devices
-          </h3>
-          <p class="mb-4">
-            Standardized device categories critical for ARDS research and ventilator management
-            studies.
-          </p>
-          <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <div class="border-l-4 border-green-500 pl-3">
-              <p class="font-semibold">Invasive</p>
-              <p class="text-sm text-gray-600">IMV, Trach Collar</p>
-            </div>
-            <div class="border-l-4 border-blue-500 pl-3">
-              <p class="font-semibold">Non-invasive</p>
-              <p class="text-sm text-gray-600">NIPPV, CPAP</p>
-            </div>
-            <div class="border-l-4 border-yellow-500 pl-3">
-              <p class="font-semibold">Supplemental O2</p>
-              <p class="text-sm text-gray-600">High Flow NC, Face Mask, Nasal Cannula</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Discharge Disposition -->
-        <div class="bg-white rounded-xl shadow-lg p-8">
-          <h3 class="text-2xl font-semibold mb-4 text-clif-burgundy">Discharge Categories</h3>
-          <p class="mb-4">
-            Harmonized discharge dispositions enable outcome comparisons and post-ICU trajectory
-            analyses.
-          </p>
-          <div class="text-sm space-y-2">
-            <div class="flex flex-wrap gap-2">
-              <span class="bg-green-100 text-green-800 px-2 py-1 rounded">Home</span>
-              <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded">SNF</span>
-              <span class="bg-purple-100 text-purple-800 px-2 py-1 rounded">LTACH</span>
-              <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Acute Rehab</span>
-              <span class="bg-red-100 text-red-800 px-2 py-1 rounded">Expired</span>
-              <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded">Hospice</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <!-- Implementation Guide -->
     <section class="mb-16">
       <h2 class="text-3xl font-bold mb-8">Implementing mCIDE</h2>
@@ -253,7 +144,7 @@ import CTAButton from '../components/shared/CTAButton.astro';
                     d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
                   ></path>
                 </svg>
-                <span>Use CLIF Lighthouse to validate mappings</span>
+                <span>Use CLIF Lighthouse AND CLIFpy to validate mappings</span>
               </li>
             </ul>
           </div>
@@ -303,38 +194,6 @@ import CTAButton from '../components/shared/CTAButton.astro';
             </ul>
           </div>
         </div>
-      </div>
-    </section>
-
-    <!-- Resources -->
-    <section class="mb-16">
-      <h2 class="text-3xl font-bold mb-8 text-center">mCIDE Resources</h2>
-
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <FeatureCard
-          title="GitHub Repository"
-          description="Access the complete mCIDE specifications, category mappings, and contribute to ongoing development."
-          href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/tree/main/mCIDE"
-          external={true}
-          ariaLabel="Visit mCIDE GitHub repository (opens in new tab)"
-          class="hover:border-clif-burgundy"
-        />
-
-        <FeatureCard
-          title="Implementation Guide"
-          description="Step-by-step instructions for mapping your institution's data to mCIDE categories."
-          href="/data-dictionary"
-          ariaLabel="View CLIF Data Dictionary with mCIDE implementation details"
-          class="hover:border-clif-burgundy"
-        />
-
-        <FeatureCard
-          title="Validation Tools"
-          description="Use CLIF Lighthouse to validate your mCIDE mappings and ensure compliance."
-          href="/tools#clif-lighthouse"
-          ariaLabel="Learn about CLIF Lighthouse validation tool"
-          class="hover:border-clif-burgundy"
-        />
       </div>
     </section>
 
