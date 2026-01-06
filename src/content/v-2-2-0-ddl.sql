@@ -209,7 +209,7 @@ CREATE TABLE patient (
   sex_name VARCHAR COMMENT '{"description": "Patient’s biological sex as given in the source data", "permissible": "No restriction"}',
   sex_category VARCHAR COMMENT '{"description": "Patient biological sex", "permissible": "[Male, Female, Unknown](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/patient/clif_patient_sex_categories.csv)"}',
   birth_date DATE COMMENT '{"description": "Patient’s date of birth", "permissible": "Date format should be YYYY-MM-DD"}',
-  death_dttm DATETIME COMMENT '{"description": "Patient’s death date, including time", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
+  death_dttm DATETIME COMMENT '{"description": "Patient’s death date, including time. Can be sourced from hospital records, or external sources like state vital records registries", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   language_name VARCHAR COMMENT '{"description": "Patient’s preferred language", "permissible": "Original string from the source data"}',
   language_category VARCHAR COMMENT '{"description": "Maps language_name to a standardized list of spoken languages", "permissible": "[List of language categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/patient/clif_patient_language_categories.csv)"}'
 );
