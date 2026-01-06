@@ -322,15 +322,15 @@ const navigationSections = [
                     <ul class="space-y-2 text-sm">
                       <li class="flex items-start">
                         <span class="text-green-300 mr-2">•</span>
-                        <strong>Deduplicate:</strong> Remove duplicates by composite key <code class="bg-white/20 px-1 rounded">hospitalization_id</code>, <code class="bg-white/20 px-1 rounded">in_dttm</code>
+                        <span><strong>Deduplicate:</strong> Remove duplicates by composite key <code class="bg-white/20 px-1 rounded">hospitalization_id</code>, <code class="bg-white/20 px-1 rounded">in_dttm</code></span>
                       </li>
                       <li class="flex items-start">
                         <span class="text-green-300 mr-2">•</span>
-                        <strong>UTC Conversion:</strong> Convert all datetime fields to UTC timezone
+                        <span><strong>UTC Conversion:</strong> Convert all datetime fields to UTC timezone</span>
                       </li>
                       <li class="flex items-start">
                         <span class="text-green-300 mr-2">•</span>
-                        <strong>Data Types:</strong> Ensure all variables match data dictionary specifications
+                        <span><strong>Data Types:</strong> Ensure all variables match data dictionary specifications</span>
                       </li>
                     </ul>
                   </div>
@@ -341,19 +341,19 @@ const navigationSections = [
                     <ul class="space-y-2 text-sm">
                       <li class="flex items-start">
                         <span class="text-green-300 mr-2">✓</span>
-                        Ensure <code class="bg-white/20 px-1 rounded">out_dttm > in_dttm</code> for all records
+                        <span>Ensure <code class="bg-white/20 px-1 rounded">out_dttm > in_dttm</code> for all records</span>
                       </li>
                       <li class="flex items-start">
                         <span class="text-green-300 mr-2">✓</span>
-                        Validate <code class="bg-white/20 px-1 rounded">location_category</code> mappings against mCIDE
+                        <span>Validate <code class="bg-white/20 px-1 rounded">location_category</code> mappings against mCIDE</span>
                       </li>
                       <li class="flex items-start">
                         <span class="text-green-300 mr-2">✓</span>
-                        Flag cases where ED visits occur after ICU/Ward
+                        <span>Flag cases where ED visits occur after ICU/Ward</span>
                       </li>
                       <li class="flex items-start">
                         <span class="text-green-300 mr-2">✓</span>
-                        Check for remaining duplicates by composite key
+                        <span>Check for remaining duplicates by composite key</span>
                       </li>
                     </ul>
                   </div>
@@ -842,15 +842,15 @@ const navigationSections = [
                     <ul class="space-y-2 text-sm">
                       <li class="flex items-start">
                         <span class="text-green-300 mr-2">•</span>
-                        <strong>Deduplicate:</strong> Remove duplicate rows
+                        <span><strong>Deduplicate:</strong> Remove duplicate rows by composite key <code class="bg-white/20 px-1 rounded">hospitalization_id</code></span>
                       </li>
                       <li class="flex items-start">
                         <span class="text-green-300 mr-2">•</span>
-                        <strong>UTC Conversion:</strong> Convert all datetime fields to UTC timezone
+                        <span><strong>UTC Conversion:</strong> Convert all datetime fields to UTC timezone</span>
                       </li>
                       <li class="flex items-start">
                         <span class="text-green-300 mr-2">•</span>
-                        <strong>Data Types:</strong> Ensure all variables match data dictionary specifications
+                        <span><strong>Data Types:</strong> Ensure all variables match data dictionary specifications</span>
                       </li>
                     </ul>
                   </div>
@@ -861,15 +861,15 @@ const navigationSections = [
                     <ul class="space-y-2 text-sm">
                       <li class="flex items-start">
                         <span class="text-green-300 mr-2">✓</span>
-                        Ensure <code class="bg-white/20 px-1 rounded">discharge_dttm</code> ≥ <code class="bg-white/20 px-1 rounded">admission_dttm</code>
+                        <span>Ensure <code class="bg-white/20 px-1 rounded">discharge_dttm</code> ≥ <code class="bg-white/20 px-1 rounded">admission_dttm</code></span>
                       </li>
                       <li class="flex items-start">
                         <span class="text-green-300 mr-2">✓</span>
-                        Verify FIPS codes have correct digit lengths
+                        <span>Verify FIPS codes have correct digit lengths</span>
                       </li>
                       <li class="flex items-start">
                         <span class="text-green-300 mr-2">✓</span>
-                        Validate category mappings against mCIDE
+                        <span>Validate category mappings against mCIDE</span>
                       </li>
                     </ul>
                   </div>
@@ -1380,9 +1380,7 @@ const navigationSections = [
                     <h5 class="text-xl font-semibold mb-3">Step 2: Filter to Inpatient Patients</h5>
                     <p class="text-sm">Filter your patient data to include only patients whose hospitalization_id exists in your CLIF ADT table.</p>
                   </div>
-                </div>
 
-                <div class="space-y-6">
                   <!-- Step 3 -->
                   <div>
                     <h5 class="text-xl font-semibold mb-3">Step 3: Apply Mappings & Handle Missing Values</h5>
@@ -1397,22 +1395,40 @@ const navigationSections = [
                       </ul>
                     </div>
                   </div>
+                </div>
 
+                <div class="space-y-6">
                   <!-- Step 4 -->
                   <div>
-                    <h5 class="text-xl font-semibold mb-3">Step 4: Final Cleanup</h5>
+                    <h5 class="text-xl font-semibold mb-3">Step 4: Handle External Death Data Sources</h5>
+                    <p class="text-sm mb-3">If using an external source like a state vital records registry to extract <code class="bg-white/20 px-1 rounded">death_dttm</code> and the death records are only in date format (no timestamp):</p>
+                    <ul class="space-y-2 text-sm">
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">1.</span>
+                        <span><strong>Same day as discharge:</strong> If the external death date matches the patient's <code class="bg-white/20 px-1 rounded">discharge_dttm</code> date, use the <code class="bg-white/20 px-1 rounded">discharge_dttm</code> as the <code class="bg-white/20 px-1 rounded">death_dttm</code></span>
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">2.</span>
+                        <span><strong>After discharge:</strong> If the death date occurs after <code class="bg-white/20 px-1 rounded">discharge_dttm</code>, use the death date and add midnight as the timestamp (format: <code class="bg-white/20 px-1 rounded">YYYY-MM-DD 00:00:00+00:00</code>)</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <!-- Step 5 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 5: Final Cleanup</h5>
                     <ul class="space-y-2 text-sm">
                       <li class="flex items-start">
                         <span class="text-green-300 mr-2">•</span>
-                        <strong>Deduplicate:</strong> Remove duplicate rows by composite key <code class="bg-white/20 px-1 rounded">patient_id</code>. Ensure one record per patient_id
+                        <span><strong>Deduplicate:</strong> Remove duplicate rows by composite key <code class="bg-white/20 px-1 rounded">patient_id</code>. Ensure one record per patient_id</span>
                       </li>
                       <li class="flex items-start">
                         <span class="text-green-300 mr-2">•</span>
-                        <strong>UTC Conversion:</strong> Convert all datetime fields to UTC timezone
+                        <span><strong>UTC Conversion:</strong> Convert all datetime fields to UTC timezone</span>
                       </li>
                       <li class="flex items-start">
                         <span class="text-green-300 mr-2">•</span>
-                        <strong>Data Types:</strong> Ensure all variables match data dictionary specifications
+                        <span><strong>Data Types:</strong> Ensure all variables match data dictionary specifications</span>
                       </li>
                     </ul>
                   </div>
@@ -1423,15 +1439,15 @@ const navigationSections = [
                     <ul class="space-y-2 text-sm">
                       <li class="flex items-start">
                         <span class="text-green-300 mr-2">✓</span>
-                        Ensure one record per <code class="bg-white/20 px-1 rounded">patient_id</code>
+                        <span>Ensure one record per <code class="bg-white/20 px-1 rounded">patient_id</code></span>
                       </li>
                       <li class="flex items-start">
                         <span class="text-green-300 mr-2">✓</span>
-                        Validate all category mappings against mCIDE
+                        <span>Validate all category mappings against mCIDE</span>
                       </li>
                       <li class="flex items-start">
                         <span class="text-green-300 mr-2">✓</span>
-                        Verify no null values remain in category fields
+                        <span>Verify no null values remain in category fields</span>
                       </li>
                     </ul>
                   </div>
