@@ -36,6 +36,7 @@ The hospitalization table contains information about each hospitalization event.
 **Notes**:
 
 - If a patient is discharged to Home/Hospice, then `discharge_category == Hospice`.
+- **Mortality Outcomes**: Mortality is identified by `discharge_category == "Expired"`. Some studies also include `discharge_category == "Hospice"` (i.e., both "Expired" and "Hospice") when defining death outcomes.
 - The geographical indicators (`zipcode_nine_digit`, `zipcode_five_digit`, `census_block_code`, `census_block_group_code`, `census_tract`, `state_code`, `county_code`) should be added if they are available in your source dataset. `zipcode_nine_digit` is preferred over `zipcode_five_digit`, and `census_block_code` is ideal for census based indicators. The choice of geographical indicators may differ depending on the project.
 - If a patient is transferred between different hospitals within a health system, a new `hospitalization_id` should be created.
 - If a patient is initially seen in an ER in hospital A and then admitted to inpatient status in hospital B, one `hospitalization_id` should be created for data from both stays.
