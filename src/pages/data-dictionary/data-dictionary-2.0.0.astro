@@ -73,7 +73,7 @@ const betaTableNames = [
 ];
 const conceptTableNames = [
   'code_status', 'crrt_therapy', 'ecmo_mcs', 'hospital_diagnosis', 'intake_output', 'invasive_hemodynamics', 'key_icu_orders',
-  'medication_admin_intermittent', 'medication_orders', 'microbiology_culture', 'microbiology_nonculture', 'patient_procedures',
+  'medication_admin_intermittent', 'medication_orders', 'microbiology_culture', 'microbiology_nonculture', 'patient_diagnosis', 'patient_procedures',
   'provider', 'sensitivity', 'therapy_details', 'transfusion'
 ];
 const betaTables = allTables.filter(t => betaTableNames.includes(t.name));
@@ -141,7 +141,7 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
 ---
 
 <BaseLayout
-  title="CLIF-2.0.0 Data Dictionary (Future Release)"
+  title="CLIF-2.0.0 Data Dictionary"
   description="Upcoming version of the Common Longitudinal ICU data Format"
 >
   <div class="container mx-auto px-6 py-12">
@@ -150,23 +150,18 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
       {markdownIntro && (
         <div class="prose mb-8" set:html={md.render(markdownIntro)} />
       )}
-      <!-- Future Release Notice -->
-      <div class="bg-clif-burgundy-light/10 border-2 border-clif-burgundy/20 p-4 rounded-lg mb-8 shadow-sm">
-        <p class="text-lg font-semibold text-blue-800 m-0">
-          Version <span class="text-clif-burgundy">CLIF v2.0.0</span> is the current implementation.
-        </p>
-      </div>
       <!-- Header -->
       <header class="mb-8 bg-gradient-to-r from-blue-50 to-clif-burgundy/10 rounded-xl p-6 shadow-sm">
         <h1 class="text-4xl font-bold mb-4 text-clif-burgundy">CLIF Data Dictionary 2.0.0</h1>
         <div class="flex items-center gap-4 mb-4">
-          <Badge type="future" size="large" />
-          <span class="text-gray-600 font-medium">Future Release</span>
         </div>
-        <p class="text-gray-700 leading-relaxed">
-          The next evolution of CLIF featuring promoted tables, new mCIDE categories, 
-          and enhanced support for advanced ICU therapies and monitoring.
+        <div class="bg-clif-burgundy-light/10 border-2 border-clif-burgundy/20 p-4 rounded-lg mb-8 shadow-sm">
+        <p class="text-lg font-semibold text-blue-800 m-0">
+          Version <span class="text-clif-burgundy">CLIF v2.1.0</span> is the current implementation. For current implementation, use <a
+            href="/data-dictionary"
+            class="text-clif-burgundy hover:underline">CLIF v2.1.0</a
         </p>
+        </div>
       </header>
       <div class="lg:grid lg:grid-cols-4 lg:gap-8">
         <!-- Sidebar -->

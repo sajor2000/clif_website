@@ -2,7 +2,7 @@
 
 The CLIF Data Dictionary serves as a comprehensive guide to the Common Longitudinal ICU data Format, detailing the structure and purpose of each table within the framework. Designed to standardize and harmonize electronic health record data across multiple institutions, the dictionary outlines the entity-relationship model, variable definitions, and permissible values.
 
-![ERD](/images/data-dictionary/ERD-2.1.0-08252025.png) 
+![ERD](/images/data-dictionary/ERD-2.1.0-12082025.png) 
 
 ## Beta Tables
 
@@ -31,8 +31,7 @@ The admission, discharge, and transfer (adt) table is a start-stop longitudinal 
 
 ## code_status
 
-This table provides a longitudinal record of changes in a patient's code status during their hospitalization. It tracks the timeline and categorization of code status updates, facilitating the analysis of care preferences and decisions.
-
+This table contains only code status orders placed by clinicians. It is NOT equivalent to the code status display name in the EMR.
 
 **Notes**:
 
@@ -57,6 +56,7 @@ The crrt_therapy table captures Continuous Renal Replacement Therapy (CRRT) data
 - **CVVH:** Continuous Veno-Venous Hemofiltration
 - **CVVHD:** Continuous Veno-Venous Hemodialysis
 - **CVVHDF:** Continuous Venous-Venous Hemodiafiltration
+- **AVVH:** Accelerated Veno-venous Hemofiltration also called ARRT or PIIRT 
 \
 **CRRT Modalities and Parameter Usage**:
 
@@ -66,6 +66,9 @@ The crrt_therapy table captures Continuous Renal Replacement Therapy (CRRT) data
 | **CVVH**          | Required            | Required                        | Required                        | Not Used                |   Required              |
 | **CVVHD**         | Required            | Not Used                        | Not Used                        | Required                |   Required              |
 | **CVVHDF**        | Required            | Required                        | Required                        | Required                |   Required              |
+| **AVVH (VVH)**    | Required            | May Be Used                     | May Be Used                     | Not Used                |   Required              |
+| **AVVH (VVHD)**   | Required            | Not Used                        | Not Used                        | May Be Used             |   Required              |
+| **AVVH (VVHF)**   | Required            | May Be Used                     | May Be Used                     | May Be Used             |   Required              |
 
 **Example**:
 | hospitalization_id | device_id | recorded_dttm | crrt_mode_name | crrt_mode_category | dialysis_machine_name     | blood_flow_rate | pre_filter_replacement_fluid_rate | post_filter_replacement_fluid_rate | dialysate_flow_rate | ultrafiltration_out |
@@ -80,12 +83,14 @@ The crrt_therapy table captures Continuous Renal Replacement Therapy (CRRT) data
 The ECMO/MCS table is a wider longitudinal table that captures the start and stop times of ECMO/MCS support, the type of device used, and the work rate of the device.
 
 **Example**:
-| hospitalization_id | recorded_dttm | device_name | device_category | mcs_group | device_metric_name | device_rate | flow | sweep | fdO2 |
-|-------------------|---------------|-------------|-----------------|-----------|-------------------|-------------|------|-------|------|
-| 1001 | 2024-01-01 08:00:00+00:00 UTC | Centrimag | CentriMag_LV | temporary_LVAD | RPMs | 3000 | 4.5 | NULL | NULL |
-| 1002 | 2024-01-05 12:00:00+00:00 UTC | ECMO VV | VV_ECMO | ECMO | RPMs | NULL | 5.2 | 2.0 | 1.0 |
-| 1003 | 2024-01-10 09:00:00+00:00 UTC | TandemHeart | TandemHeart_LV | temporary_LVAD | RPMs | 2800 | 3.8 | NULL | NULL |
-| 1004 | 2024-01-15 14:00:00+00:00 UTC | ECMO VA | VA_ECMO | ECMO | RPMs | 3500 | 4.0 | 4.0 | 1.0 |
+
+| hospitalization_id | recorded_dttm                | device_name         | device_category     | mcs_group        | ecmo_configuration_category | control_parameter_name | control_parameter_category  | control_parameter_value | flow | sweep_set | fdO2_set |
+|-------------------|------------------------------|---------------------|---------------------|------------------|----------------------------|-----------------------|----------------------------|------------------------|------|-----------|----------|
+| 21002             | 2024-02-18 09:10:00+00:00 UTC| Impella 5.5         | impella_5_5         | impella_lvad     | NULL                       | P5                    | impella_performance        | 5                      | 4.8  | NULL      | NULL     |
+| 21003             | 2024-02-22 11:40:00+00:00 UTC| Abbott IABP         | iabp                | iabp             | NULL                       | IABP Ratio            | iabp_ratio                 | 3                      | NULL | NULL      | NULL     |
+| 21004             | 2024-02-23 14:30:00+00:00 UTC| Heart Mate III LVAD | heartmate_3         | durable_lvad     | NULL                       | RPMs                  | rpm                        | 4200                   | 3.5  | NULL      | NULL     |
+| 21005             | 2024-02-27 16:25:00+00:00 UTC| Centrimag ECMO VV   | centrimag_ecmo      | ecmo             | vv                         | RPMs                  | rpm                        | 3500                   | 3    | 1         | NULL     |
+
 
 
 ## hospitalization
@@ -96,6 +101,7 @@ The hospitalization table contains information about each hospitalization event.
 **Notes**:
 
 - If a patient is discharged to Home/Hospice, then `discharge_category == Hospice`.
+- **Mortality Outcomes**: Mortality is identified by `discharge_category == "Expired"`. Some studies also include `discharge_category == "Hospice"` (i.e., both "Expired" and "Hospice") when defining death outcomes.
 - The geographical indicators (`zipcode_nine_digit`, `zipcode_five_digit`, `census_block_code`, `census_block_group_code`, `census_tract`, `state_code`, `county_code`) should be added if they are available in your source dataset. `zipcode_nine_digit` is preferred over `zipcode_five_digit`, and `census_block_code` is ideal for census based indicators. The choice of geographical indicators may differ depending on the project.
 - If a patient is transferred between different hospitals within a health system, a new `hospitalization_id` should be created.
 - If a patient is initially seen in an ER in hospital A and then admitted to inpatient status in hospital B, one `hospitalization_id` should be created for data from both stays.
@@ -115,17 +121,19 @@ The hospitalization table contains information about each hospitalization event.
 
 ## hospital_diagnosis
 
-Record of all diagnoses associated with the hospitalization. Expect breaking changes to this table as we seek to align it with existing diagnosis ontologies
+Finalized billing diagnosis codes for hospital reimbursement, e.g. calculation of a Diagnosis Related Group (DRG). These diagnoses also do not have timestamps, as they are often finalized after discharge. The `hospital_diagnosis` table is appropriate for calculation of comorbidity scores but should not be used as input features into a prediction model for an inpatient event.
+\
+All other diagnosis codes for a patient are included under concept table `patient_diagnosis` which has start and end timestamps.
 
 **Example**:
-| hospitalization_id | diagnosis_code | diagnosis_code_format | diagnosis_name                  | diagnosis_type | present_on_admission |
-|-------------------|-----------------|----------------------|----------------------------------|---------------|---------------------|
-| 20010012          | I10             | ICD-10-CM            | Essential (primary) hypertension | Principal     | Yes                 |
-| 20010012          | E11.9           | ICD-10-CM            | Type 2 diabetes mellitus         | Secondary     | No                  |
-| 20010015          | 250.00          | ICD-9-CM             | Diabetes mellitus without mention of complication | Principal     | Yes                 |
-| 20010015          | 401.9           | ICD-9-CM             | Unspecified essential hypertension | Secondary     | No                  |
-| 20010020          | J45.909         | ICD-10-CM            | Unspecified asthma, uncomplicated | Principal     | Yes                 |
-| 20010020          | 530.81          | ICD-9-CM             | Esophageal reflux                | Secondary     | Yes                 |
+| hospitalization_id | diagnosis_code | diagnosis_code_format | diagnosis_primary | poa_present |
+|-------------------|----------------|----------------------|------------------|-------------|
+| 20010012          | I10            | ICD10CM              | 1                | 1           |
+| 20010012          | E11.9          | ICD10CM              | 0                | 0           |
+| 20010015          | 250.00         | ICD9CM               | 1                | 1           |
+| 20010015          | 401.9          | ICD9CM               | 0                | 0           |
+| 20010020          | J45.909        | ICD10CM              | 1                | 1           |
+| 20010020          | 530.81         | ICD9CM               | 0                | 1           |
 
 
 ## invasive_hemodynamics
@@ -161,7 +169,9 @@ The labs table is a long form (one lab result per row) longitudinal table.
 
 **Notes**:
 
-The `lab_value` field often has non-numeric entries that are useful to make project-specific decisions. A site may choose to keep the `lab_value` field as a character and create a new field `lab_value_numeric` that only parses the character field to extract the numeric part of the string.
+- All lab values must be reported using the lab's *reference units* linked above in permissible values. Only the listed reference units are permissible for respective lab categories in the CLIF labs table. Sites must ensure that any raw laboratory values are converted to the reference units during the ETL process. Entries with other units must be transformed prior to loading into CLIF.
+- The `lab_value` field often has non-numeric entries that are useful to make project-specific decisions. A site may choose to keep the `lab_value` field as a character and create a new field `lab_value_numeric` that only parses the character field to extract the numeric part of the string.
+
 \
 **Example**:
 
@@ -177,23 +187,36 @@ The `lab_value` field often has non-numeric entries that are useful to make proj
 
 ## medication_admin_intermittent
 
+This table captures medications administered as fixed doses at discrete time points. Examples include antibiotics, steroids, and other medications given as boluses or scheduled doses. Each row represents ONE observation for each medication administered.
+
 This table has exactly the same schema as [`medication_admin_continuous`](#medication-admin-continuous). The consortium decided to separate the medications that are administered intermittently from the continuously administered medications. The mCIDE for `medication_category` for intermittent meds can be found [here](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/medication_admin_intermittent/clif_medication_admin_intermittent_med_categories.csv).
+
+**Notes**:
+- Continuous medications are included in this table when given as boluses 
+- Intermittent medications can be given at different rates
 
 ## medication_admin_continuous
 
-The medication admin continuous table is a long-form (one medication administration record per) longitudinal table designed for continuous infusions of common ICU medications such as vasopressors and sedation (Boluses of these drugs should be recorded in `med_admin_intermittent`). Note that it only reflects dose changes of the continuous medication and does not have a specific “end_time” variable to indicate the medication being stopped. The end of a continuous infusion should be recorded as a new row with med_dose = 0 and an appropriate mar_action_name (e.g. "stopped" or "paused").
+This table captures medications administered at a rate over time, with NO set dose to be given. Examples include vasopressors, sedation, and paralysis drips. Multiple observations capture how the medication rate varies over time.
+
+The medication admin continuous table is a long-form (one medication administration record per) longitudinal table designed for continuous infusions of common ICU medications such as vasopressors and sedation (Boluses of these drugs should be recorded in `med_admin_intermittent`). Note that it only reflects dose changes of the continuous medication and does not have a specific "end_time" variable to indicate the medication being stopped. The end of a continuous infusion should be recorded as a new row with med_dose = 0 and an appropriate mar_action_name (e.g. "stopped" or "paused").
 
 **Example**:
 
-| hospitalization_id | admin_dttm                | med_name                                                           | med_category  | med_group     | med_route_name | med_route_category | med_dose | med_dose_unit | mar_action_name |
-|-------------------|---------------------------|--------------------------------------------------------------------|---------------|---------------|----------------|-------------------|----------|---------------|----------------|
-| 792391            | 2123-11-13 12:28:00+00:00 UTC | PROPOFOL 10 MG/ML INTRAVENOUS EMULSION                            | propofol      | sedation      | Intravenous    | NA                | 75.0000  | mcg/kg/min    | New Bag        |
-| 792391            | 2123-11-13 13:49:00+00:00 UTC | REMIFENTANIL CONTINUOUS IV (ANESTHESIA)                           | remifentanil  | sedation      | NA             | NA                | 0.0500   | mcg/kg/min    | New Bag        |
-| 792391            | 2123-11-13 14:03:00+00:00 UTC | PROPOFOL 10 MG/ML INTRAVENOUS EMULSION                            | propofol      | sedation      | Intravenous    | NA                | 0.0000   | mcg/kg/min    | Stopped        |
-| 370921            | 2123-02-12 03:07:00+00:00 UTC | PHENYLEPHRINE 5 MG/50 ML (100 MCG/ML) IN 0.9 % SODIUM CHLORIDE    | phenylephrine | vasoactives   | Intravenous    | NA                | 20.0000  | mcg/min       | New Bag        |
-| 370921            | 2123-02-12 03:14:00+00:00 UTC | PHENYLEPHRINE 5 MG/50 ML (100 MCG/ML) IN 0.9 % SODIUM CHLORIDE    | phenylephrine | vasoactives   | Intravenous    | NA                | 50.0000  | mcg/min       | Rate Change    |
-| 702344            | 2123-04-27 04:30:00+00:00 UTC | HEPARIN (PORCINE) 25,000 UNIT/250 ML IN 0.45 % SODIUM CHLORIDE    | heparin       | anticoagulation| Intravenous    | NA                | 18.0000  | Units/kg/hr   | New Bag        |
+| hospitalization_id | admin_dttm                | med_name                                                           | med_category  | med_group     | med_route_name | med_route_category | med_dose | med_dose_unit | mar_action_name | mar_action_group      |
+|-------------------|---------------------------|--------------------------------------------------------------------|---------------|---------------|----------------|-------------------|----------|---------------|----------------|----------------------|
+| 792391            | 2123-11-13 12:28:00+00:00 UTC | PROPOFOL 10 MG/ML INTRAVENOUS EMULSION                            | propofol      | sedation      | Intravenous    | NA                | 75.0000  | mcg/kg/min    | New Bag        | administered         |
+| 792391            | 2123-11-13 13:49:00+00:00 UTC | REMIFENTANIL CONTINUOUS IV (ANESTHESIA)                           | remifentanil  | sedation      | NA             | NA                | 0.0500   | mcg/kg/min    | New Bag        | administered         |
+| 792391            | 2123-11-13 14:03:00+00:00 UTC | PROPOFOL 10 MG/ML INTRAVENOUS EMULSION                            | propofol      | sedation      | Intravenous    | NA                | 0.0000   | mcg/kg/min    | Stopped        | not_administered     |
+| 370921            | 2123-02-12 03:07:00+00:00 UTC | PHENYLEPHRINE 5 MG/50 ML (100 MCG/ML) IN 0.9 % SODIUM CHLORIDE    | phenylephrine | vasoactives   | Intravenous    | NA                | 20.0000  | mcg/min       | New Bag        | administered         |
+| 370921            | 2123-02-12 03:14:00+00:00 UTC | PHENYLEPHRINE 5 MG/50 ML (100 MCG/ML) IN 0.9 % SODIUM CHLORIDE    | phenylephrine | vasoactives   | Intravenous    | NA                | 50.0000  | mcg/min       | Rate Change    | administered         |
+| 702344            | 2123-04-27 04:30:00+00:00 UTC | HEPARIN (PORCINE) 25,000 UNIT/250 ML IN 0.45 % SODIUM CHLORIDE    | heparin       | anticoagulation| Intravenous    | NA                | 18.0000  | Units/kg/hr   | New Bag        | administered         |
 
+
+**Notes**:
+
+- Include combination medications when mapping medication names to respective categories. Eg. `ACETAMIN-CALCIUM-MAG-CAFFEINE ORAL` -> `acetaminophen`
+- Include trial drugs when mapping medication names to respective categories.. Eg. `ACETAMINOPHEN (IRB 140122) 325 MG ORAL TAB` -> `acetaminophen`
 
 ## microbiology_culture
 
@@ -215,8 +238,8 @@ The microbiology non-culture table is a wide longitudinal table that captures th
 | patient_id | hospitalization_id | order_dttm                | collect_dttm              | result_dttm               | fluid_name           | fluid_category      | method_name | method_category | micro_order_name                        | organism_category         | organism_group                                         | result_name                                   | result_category | reference_low | reference_high | result_units | lab_loinc_code |
 |------------|-------------------|---------------------------|---------------------------|---------------------------|----------------------|---------------------|-------------|----------------|------------------------------------------|--------------------------|--------------------------------------------------------|-----------------------------------------------|-----------------|--------------|---------------|--------------|---------------|
 | 1          | 12121             | 2025-06-15 09:05:00+00:00 | 2025-06-15 09:30:00+00:00 | 2025-06-15 13:45:00+00:00 | BLOOD                | blood/buffy coat    | PCR         | pcr            | neisseria quantitative pcr, blood        | neisseria_sp             | neisseria (gonorrhoea, meningitidis, other species)    | 100,000 copies/uL of neisseria detected       | detected        |              |               | copies/mL    | 39528-5       |
-| 2          | 32332             | 2025-06-16 11:15:00+00:00 | 2025-06-16 11:40:00+00:00 | 2025-06-16 15:25:00+00:00 | cerebrospinal fluid  | meninges and csf    | PCR         | pcr            | csf hsv pcr                             | herpes_simplex_virus      | herpes simplex (hsv1, hsv2)                           | no herspes simplex DNA measured               | not detected    |              |               | IU/mL        | 16954-2       |
-| 2          | 32332             | 2025-06-17 10:00:00+00:00 | 2025-06-17 10:20:00+00:00 | 2025-06-17 14:05:00+00:00 | feces                | feces/stool         | PCR         | pcr            | stool c. diff toxin                      | clostridioides_difficile  | clostridium difficile                                 | default in test for C. difficile toxin analysis | indeterminant   |              |               | copies/mL    | 34712-0       |
+| 2          | 32332             | 2025-06-16 11:15:00+00:00 | 2025-06-16 11:40:00+00:00 | 2025-06-16 15:25:00+00:00 | cerebrospinal fluid  | meninges and csf    | PCR         | pcr            | csf hsv pcr                             | herpes_simplex_virus      | herpes simplex (hsv1, hsv2)                           | no herspes simplex DNA measured               | not_detected    |              |               | IU/mL        | 16954-2       |
+| 2          | 32332             | 2025-06-17 10:00:00+00:00 | 2025-06-17 10:20:00+00:00 | 2025-06-17 14:05:00+00:00 | feces                | feces/stool         | PCR         | pcr            | stool c. diff toxin                      | clostridioides_difficile  | clostridium difficile                                 | default in test for C. difficile toxin analysis | indeterminate   |              |               | copies/mL    | 34712-0       |
 
 ## patient
 
@@ -247,19 +270,39 @@ The patient_assessments table captures various assessments performed on patients
 | 67890             | 2024-12-01 10:30:00+00:00 UTC | BRADEN ASSESSMENT                            | braden_total       | Nursing Risk   | 18             | NA              | NA         |
 | 67890             | 2024-12-01 10:30:00+00:00 UTC | SAT SCREEN                                   | sat_delivery_pass_fail | Sedation     | NA             | Pass            | NA         |
 
+## patient_diagnosis
+
+The `patient_diagnosis` table provides a record of all diagnoses assigned to a patient. 
+    
+
+**Example**:
+
+| patient_id | hospitalization_id | diagnosis_code | diagnosis_code_format | source_type     | start_dttm                  | end_dttm                    |
+|------------|-------------------|---------------|----------------------|-----------------|-----------------------------|-----------------------------|
+| PAT1001    | HOSP1001          | I10           | ICD10CM              | problem_list    | 2024-01-01 08:00:00+00:00   | NULL                        |
+| PAT1001    | HOSP1001          | E11.9         | ICD10CM              | encounter_dx    | 2024-01-01 08:00:00+00:00   | 2024-01-10 12:00:00+00:00   |
+| PAT1002    | HOSP1002          | J18.9         | ICD10CM              | medical_history | 2024-01-05 09:30:00+00:00   | NULL                        |
+| PAT1003    | HOSP1003          | N17.9         | ICD10CM              | encounter_dx    | 2024-01-10 07:00:00+00:00   | 2024-01-15 10:00:00+00:00   |
+
+
 ## patient_procedures
 
-A longitudinal record of each bedside ICU procedure performed on the patient (e.g. central line placement, chest tube placement). Note that this table is not intended to capture the full set of procedures performed on inpatients.
+A long table of standardized procedural billing codes associated with the hospitalization, using the [Healthcare Common Procedure Coding System (HCPCS)](https://www.cms.gov/medicare/regulations-guidance/physician-self-referral/list-cpt-hcpcs-codes). In CLIF version 2.1, the `patient_procedures` table includes only procedures that were actually performed or completed (not cancelled), and only contains professional billing codes—specifically, **CPT codes billed by clinicians (HCPCS Level 1)**.
+\
+Hospital billing i.e., **Products, supplies, and services that do not have CPT codes (HCPCS Level 2)** are not included in this table.
+\
+Additionally, this table contains [ICD-10-PCS](https://www.cms.gov/medicare/coding-billing/icd-10-codes) procedure codes which are not used for clinician billing but can contribute to the calculation of DRGs for hospital reimbursement and can also appear in the `hospital_diagnosis` table.
 
 
 **Example**:
-| patient_id | procedure_code | procedure_code_format | recorded_dttm           |
-|------------|----------------|----------------------|-------------------------|
-| 101001     | 36556          | CPT                  | 2024-01-01 08:00:00+00:00 UTC |
-| 101001     | 32551          | CPT                  | 2024-01-01 10:00:00+00:00 UTC |
-| 101002     | 0BH17EZ        | ICD-10-PCS           | 2024-01-05 09:30:00+00:00 UTC |
-| 101002     | 4700000        | SNOMED               | 2024-01-05 11:00:00+00:00 UTC |
-| 101003     | 36620          | CPT                  | 2024-01-10 07:00:00+00:00 UTC |
+
+| hospitalization_id | billing_provider_id | performing_provider_id | procedure_code | procedure_code_format | procedure_billed_dttm           |
+|--------------------|--------------------|-----------------------|----------------|----------------------|----------------------------------|
+| HOSP1001           | BP123              | PP456                 | 36556          | CPT                  | 2024-01-01 08:00:00+00:00 UTC    |
+| HOSP1001           | BP123              | PP789                 | 32551          | CPT                  | 2024-01-01 10:00:00+00:00 UTC    |
+| HOSP1002           | BP234              | PP890                 | G0009          | HCPCS                | 2024-01-05 09:30:00+00:00 UTC    |
+| HOSP1002           | BP234              | PP890                 | G0008          | HCPCS                | 2024-01-05 11:00:00+00:00 UTC    |
+| HOSP1003           | BP345              | PP901                 | 36620          | CPT                  | 2024-01-10 07:00:00+00:00 UTC    |
 
 
 
@@ -465,12 +508,12 @@ This table is used to store the susceptibility results of the organisms identifi
 | organism_id | antimicrobial_name                 | antimicrobial_category      | sensitivity_name      | susceptibility_name             | susceptibility_category |
 |-------------|------------------------------------|----------------------------|----------------------|-------------------------------|------------------------|
 | 1           | avycex (ceftazidime/avibactam)     | ceftazidime_avibactam      | 8 MIC                | susceptible                   | susceptible            |
-| 1           | amoxicillin clavulanic acid        | amoxicillin_clavulanate    | < 0.1 ug/mL          | susceptible                   | non-susceptible        |
-| 1           | meropenem                         | meropenem                  | intermediate         | intermediate                  | intermediate           |
+| 1           | amoxicillin clavulanic acid        | amoxicillin_clavulanate    | < 0.1 ug/mL          | susceptible                   | susceptible        |
+| 1           | meropenem                         | meropenem                  | indeterminate        | indeterminate                  | indeterminate         |
 | 1           | ampicillin 500mg                   | ampicillin                 | > 0.5 ug/mL          | resistant                     | NA                     |
 | 2           | unasyn                            | ampicillin_sulbactam       | susceptible dose dependent | susceptible             | susceptible            |
 | 2           | Ertapenem                         | ertapenem                  | not reported         | NA                            | NA                     |
-| 2           | Vancomycin (non-Cdiff)            | vancomycin                 | > 0.25 ug/mL         | non susceptible, caution       | non-susceptible        |
+| 2           | Vancomycin (non-Cdiff)            | vancomycin                 | > 0.25 ug/mL         | non susceptible, caution       | non_susceptible        |
 
 
 
@@ -510,6 +553,18 @@ This table provides detailed information about transfusion events linked to spec
 ## clinical_trial
 
 This table captures whether a patient was enrolled in any clinical trial during their hospitalization. It enables longitudinal tracking of trial participation, including trial identifiers, arm assignment, and key consent, randomization, and withdrawal timestamps. This structure supports research into the effects of experimental therapies and interventions on patient outcomes.
+
+## clinical_trial
+
+This table captures whether a patient was enrolled in any clinical trial during their hospitalization. It enables longitudinal tracking of trial participation, including trial identifiers, arm assignment, and key consent, randomization, and withdrawal timestamps. This structure supports research into the effects of experimental therapies and interventions on patient outcomes.
+
+**Example**:
+
+| participant_id | patient_id | hospitalization_id | trial_id | trial_name                                    | arm_id     | consent_dttm                  | enrollment_dttm                | randomized_dttm                | withdrawal_dttm                |
+|----------------|-----------|--------------------|----------|-----------------------------------------------|------------|-------------------------------|-------------------------------|-------------------------------|-------------------------------|
+| PT1234         | 567890    | 234567             | T-001    | Early Vasopressor in Septic Shock (EVSS)      | Arm A      | 2024-06-01 10:15:00+00:00 UTC | 2024-06-01 14:00:00+00:00 UTC | 2024-06-01 15:00:00+00:00 UTC |                               |
+| PT2345         | 678901    | 345678             | NCT04321 | Lung Protective Ventilation                   | Standard   | 2024-06-11 12:00:00+00:00 UTC | 2024-06-11 13:15:00+00:00 UTC |                               |                               |
+| PT3456         | 789012    | 456789             | T-017    | Multi-center COVID-19 Anticoagulation Trial   | High Dose  | 2024-07-15 09:10:00+00:00 UTC | 2024-07-15 09:45:00+00:00 UTC | 2024-07-15 10:00:00+00:00 UTC | 2024-07-20 08:30:00+00:00 UTC |
 
 
 ## Future Proposed Tables

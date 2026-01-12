@@ -17,90 +17,433 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       </p>
 
       <!-- Version 2.1.0 -->
-      <section class="mb-12 bg-gray-50 p-6 rounded-lg">
-        <h2 class="text-2xl font-bold text-clif-burgundy mb-4">
-          Version 2.1.0 <span class="text-lg font-normal text-gray-600">(September 2025)</span>
-        </h2>
-
-        <h3 class="text-xl font-semibold mt-4 mb-2">Data Structure Updates</h3>
-        <ul class="list-disc list-inside space-y-2 ml-4">
-          <li>
-            Move Code Status, CRRT therapy, ECMO MCS, Hospital Diagnosis, Medication Administered Intermittent, Microbiology Culture, Micro non-culture, and Patient Procedures to Beta status
-          </li>
-          <li>
-            Finalize patient language category mCIDE –
-            <a
-              href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/13"
-              class="text-clif-burgundy hover:underline"
-              >Issue#13</a
-            >
-          </li>
-          <li>
-            Finalize hospitalization admission_type_category mCIDE –
-            <a
-              href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/16"
-              class="text-clif-burgundy hover:underline"
-              >Issue#16</a
-            >
-          </li>
-          <li>
-            Add LTACH to hospital_type mCIDE –
-            <a
-              href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/78"
-              class="text-clif-burgundy hover:underline"
-              >Issue#78</a
-            >
-          </li>
-          <li>
-            Revision to Micro culture mCIDE for LOINC compatibility –
-            <a
-              href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/25"
-              class="text-clif-burgundy hover:underline"
-              >Issue#25</a
-            >
-          </li>
-          <li>
-            Finalize patient language category mCIDE –
-            <a
-              href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/13"
-              class="text-clif-burgundy hover:underline"
-              >Issue#13</a
-            >
-          </li>
-          <li>
-            Add ADT location type field with finalized mCIDE –
-            <a
-              href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/39"
-              class="text-clif-burgundy hover:underline"
-              >Issue#39</a
-            >,
-            <a
-              href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/64"
-              class="text-clif-burgundy hover:underline"
-              >Issue#64</a
-            >
-          </li>
-          <li>
-            Addition of device_id to respiratory_support
-            <a
-              href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/67"
-              class="text-clif-burgundy hover:underline"
-              >Issue#67</a
-            >
-          </li>
-        </ul>
-      </section>
-
-      <!-- Version 2.0.0 -->
       <section
         class="mb-12 bg-clif-burgundy-light/10 p-6 rounded-lg border-2 border-clif-burgundy/20"
       >
         <h2 class="text-2xl font-bold text-clif-burgundy mb-4">
-          Version 2.0.0
-          <span class="text-lg font-normal text-gray-600">(February 2025)</span>
+          Version 2.1.0
+          <span class="text-lg font-normal text-gray-600">(November 2025)</span>
           <span class="ml-2 bg-clif-burgundy text-white text-sm px-3 py-1 rounded-full"
             >Current Version</span
           >
+        </h2>
+
+        <!-- New Tables -->
+        <details class="mb-4 bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <summary
+            class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
+          >
+            New Tables (7 tables moved to Beta)
+          </summary>
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >Table Name</th
+                  >
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >Status</th
+                  >
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">code_status</td>
+                  <td class="px-4 py-3 text-sm"><span class="text-gray-500"></span></td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">crrt_therapy</td>
+                  <td class="px-4 py-3 text-sm"><span class="text-gray-500"></span></td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">hospital_diagnosis</td>
+                  <td class="px-4 py-3 text-sm">
+                    <a
+                      href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/57"
+                      class="text-clif-burgundy hover:underline"
+                      >Issue #57</a
+                    >
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">medication_admin_intermittent</td>
+                  <td class="px-4 py-3 text-sm"><span class="text-gray-500"></span></td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">microbiology_culture</td>
+                  <td class="px-4 py-3 text-sm"><span class="text-gray-500"></span></td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">microbiology_susceptibility</td>
+                  <td class="px-4 py-3 text-sm"><span class="text-gray-500"></span></td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">patient_procedures</td>
+                  <td class="px-4 py-3 text-sm"><span class="text-green-600">
+                    <a
+                      href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/83"
+                      class="text-clif-burgundy hover:underline"
+                      >Issue #83</a
+                    >
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </details>
+
+        <!-- New Fields -->
+        <details class="mb-4 bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <summary
+            class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
+          >
+            New Fields (10 fields added)
+          </summary>
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >Field Name</th
+                  >
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >Table</th
+                  >
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >Status</th
+                  >
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">language_category</td>
+                  <td class="px-4 py-3 text-sm">patient</td>
+                  <td class="px-4 py-3 text-sm"><span class="text-gray-500"></span></td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">hospital_type</td>
+                  <td class="px-4 py-3 text-sm">adt</td>
+                  <td class="px-4 py-3 text-sm"><span class="text-green-600">
+                    <a
+                      href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/78"
+                      class="text-clif-burgundy hover:underline"
+                      >Issue #78</a
+                    >
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">loinc_code</td>
+                  <td class="px-4 py-3 text-sm">microbiology</td>
+                  <td class="px-4 py-3 text-sm"><span class="text-green-600">
+                    <a
+                      href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/25"
+                      class="text-clif-burgundy hover:underline"
+                      >Issue #25</a
+                    >
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">location_type</td>
+                  <td class="px-4 py-3 text-sm">adt</td>
+                  <td class="px-4 py-3 text-sm"><span class="text-green-600">
+                    <a
+                      href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/39"
+                      class="text-clif-burgundy hover:underline"
+                      >Issue #39</a
+                    >
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">admission_type_category</td>
+                  <td class="px-4 py-3 text-sm">hospitalization</td>
+                  <td class="px-4 py-3 text-sm"><span class="text-green-600">
+                    <a
+                      href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/16"
+                      class="text-clif-burgundy hover:underline"
+                      >Issue #16</a
+                    >
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">device_id</td>
+                  <td class="px-4 py-3 text-sm">respiratory_support</td>
+                  <td class="px-4 py-3 text-sm"><span class="text-green-600">
+                    <a
+                      href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/67"
+                      class="text-clif-burgundy hover:underline"
+                      >Issue #67</a
+                    >
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">code_status_category</td>
+                  <td class="px-4 py-3 text-sm">code_status</td>
+                  <td class="px-4 py-3 text-sm"><span class="text-green-600"></span></td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">geographic_indicators</td>
+                  <td class="px-4 py-3 text-sm">hospitalization</td>
+                  <td class="px-4 py-3 text-sm"><span class="text-gray-500"></span></td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">mar_action_group</td>
+                  <td class="px-4 py-3 text-sm">medication_admin_intermittent</td>
+                  <td class="px-4 py-3 text-sm"><span class="text-gray-500">
+                    <a
+                      href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/112"
+                      class="text-clif-burgundy hover:underline"
+                      >Issue #112</a
+                    >
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">mar_action_group</td>
+                  <td class="px-4 py-3 text-sm">medication_admin_continuous</td>
+                  <td class="px-4 py-3 text-sm"><span class="text-gray-500">
+                    <a
+                      href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/112"
+                      class="text-clif-burgundy hover:underline"
+                      >Issue #112</a
+                    >
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </details>
+
+        <!-- New mCIDE Values -->
+        <details class="mb-4 bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <summary
+            class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
+          >
+            New mCIDE Values (7 updates)
+          </summary>
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >Category</th
+                  >
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >Description</th
+                  >
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >Status</th
+                  >
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <tr>
+                  <td class="px-4 py-3 text-sm">Medication categories</td>
+                  <td class="px-4 py-3 text-sm"
+                    >Additional med_category and med_group for intermittent medications: steroids,
+                    vasopressors, CAR-T therapies, analgesics, paralytics, antipsychotics</td
+                  >
+                  <td class="px-4 py-3 text-sm"><span class="text-green-600">
+                    <a
+                      href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/105"
+                      class="text-clif-burgundy hover:underline"
+                      >Issue #105</a
+                    >
+                </tr>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm">Inhaled medications</td>
+                  <td class="px-4 py-3 text-sm"
+                    >Continuous medications: epoprostenol, nitric oxide</td
+                  >
+                  <td class="px-4 py-3 text-sm"><span class="text-gray-500"></span></td>
+                </tr>
+                                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">med_route_category</td>
+                  <td class="px-4 py-3 text-sm">Finalized med route values for medication intermittent and continuous</td>
+                  <td class="px-4 py-3 text-sm"><span class="text-green-600">
+                    <a
+                      href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/6"
+                      class="text-clif-burgundy hover:underline"
+                      >Issue #6</a
+                    >
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">mar_action_category</td>
+                  <td class="px-4 py-3 text-sm">Finalized mar action values for medication intermittent and continuous</td>
+                  <td class="px-4 py-3 text-sm"><span class="text-green-600">
+                    <a
+                      href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/112"
+                      class="text-clif-burgundy hover:underline"
+                      >Issue #112</a
+                    >
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm">Non-culture microbiology</td>
+                  <td class="px-4 py-3 text-sm"
+                    >Staphylococcus aureus (nasopharynx), C. difficile (stool), RSV (nasopharynx)</td
+                  >
+                  <td class="px-4 py-3 text-sm"><span class="text-gray-500"></span></td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm">ASE CMS antibiotics</td>
+                  <td class="px-4 py-3 text-sm">Included all qualifying antibiotics added to intermittent meds</td>
+                  <td class="px-4 py-3 text-sm"><span class="text-green-600">
+                    <a
+                      href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/103"
+                      class="text-clif-burgundy hover:underline"
+                      >Issue #103</a
+                    >
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm">Organism categories</td>
+                  <td class="px-4 py-3 text-sm"
+                    >~24 new organism categories with typo corrections and duplicate removal</td
+                  >
+                  <td class="px-4 py-3 text-sm"><span class="text-green-600"></span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </details>
+
+        <!-- Revisions -->
+        <details class="mb-4 bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <summary
+            class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
+          >
+            Revisions (11 updates) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Jan 2, 2026</span>
+          </summary>
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >Area</th
+                  >
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >Description</th
+                  >
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >Status</th
+                  >
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >Date</th
+                  >
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <tr>
+                  <td class="px-4 py-3 text-sm">Medication standardization</td>
+                  <td class="px-4 py-3 text-sm"
+                    >Ensure lower and snake-cased med_category values for intermittent medications</td
+                  >
+                  <td class="px-4 py-3 text-sm"><span class="text-green-600"></span></td>
+                  <td class="px-4 py-3 text-sm text-gray-500"></td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm">Organism group values</td>
+                  <td class="px-4 py-3 text-sm">Updated to cleaner and shortened values</td>
+                  <td class="px-4 py-3 text-sm"><span class="text-gray-500"></span></td>
+                  <td class="px-4 py-3 text-sm text-gray-500"></td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm">Fluid category values</td>
+                  <td class="px-4 py-3 text-sm">Updated to cleaner and shortened values</td>
+                  <td class="px-4 py-3 text-sm"><span class="text-gray-500"></span></td>
+                  <td class="px-4 py-3 text-sm text-gray-500"></td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm">Lab order categories</td>
+                  <td class="px-4 py-3 text-sm"
+                    >Lower and snake-cased; merged ABG/VBG into "blood_gas"; moved lactate to "misc"</td
+                  >
+                  <td class="px-4 py-3 text-sm"><span class="text-green-600">
+                    <a
+                      href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/101"
+                      class="text-clif-burgundy hover:underline"
+                      >Issue #101</a
+                    >
+                  <td class="px-4 py-3 text-sm text-gray-500">–</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm">Microbiology organism groups</td>
+                  <td class="px-4 py-3 text-sm">Removed mycobacterium_tuberculosis from organism_group</td>
+                  <td class="px-4 py-3 text-sm"><span class="text-green-600"></span></td>
+                  <td class="px-4 py-3 text-sm text-gray-500"></td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm">Combination medications</td>
+                  <td class="px-4 py-3 text-sm"
+                    >Removed hydrocodone_acetaminophen and oxycodone_acetaminophen from mCIDE (see ETL
+                    notes)</td
+                  >
+                  <td class="px-4 py-3 text-sm"><span class="text-green-600"></span></td>
+                  <td class="px-4 py-3 text-sm text-gray-500"></td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm">Patient assessments</td>
+                  <td class="px-4 py-3 text-sm"
+                    >SAT/SBT categories: sbt_screen_performed, sat_screen_performed,
+                    sbt_delivery_performed, sat_delivery_performed</td
+                  >
+                  <td class="px-4 py-3 text-sm"><span class="text-green-600">
+                    <a
+                      href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/107"
+                      class="text-clif-burgundy hover:underline"
+                      >Issue #107</a
+                    >
+                  <td class="px-4 py-3 text-sm text-gray-500">–</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm">Trial drug mapping</td>
+                  <td class="px-4 py-3 text-sm"
+                    >Map trial drugs to 'trial_drug' as med_category, leave med_group empty if placebo</td
+                  >
+                  <td class="px-4 py-3 text-sm"><span class="text-green-600"></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">–</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm">Continuous medication mapping</td>
+                  <td class="px-4 py-3 text-sm"
+                    >Removed vague categories (repletion, tocolytics); dropped intermittent categories</td
+                  >
+                  <td class="px-4 py-3 text-sm"><span class="text-green-600">
+                    <a
+                      href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/120"
+                      class="text-clif-burgundy hover:underline"
+                      >Issue #120</a
+                    >
+                  <td class="px-4 py-3 text-sm text-gray-500">Nov 12, 2025</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm">ECMO MCS</td>
+                  <td class="px-4 py-3 text-sm"
+                    >Concept table ECMO_MCS data dictionary revised</td
+                  >
+                  <td class="px-4 py-3 text-sm"><span class="text-green-600">
+                    <a
+                      href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/72"
+                      class="text-clif-burgundy hover:underline"
+                      >Issue #72</a
+                    >
+                  <td class="px-4 py-3 text-sm text-gray-500">Nov 21, 2025</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm">Microbiology organism categories</td>
+                  <td class="px-4 py-3 text-sm"
+                    >Consolidated duplicate clostridium_difficile into clostridioides_difficile; added description and expanded organism_name_examples to support both naming conventions</td
+                  >
+                  <td class="px-4 py-3 text-sm"><span class="text-green-600">
+                    <a
+                      href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/133"
+                      class="text-clif-burgundy hover:underline"
+                      >Issue #133</a
+                    >
+                  <td class="px-4 py-3 text-sm text-gray-500">Jan 2, 2026</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </details>
+      </section>
+
+      <!-- Version 2.0.0 -->
+      <section class="mb-12 bg-gray-50 p-6 rounded-lg">
+        <h2 class="text-2xl font-bold text-clif-burgundy mb-4">
+          Version 2.0.0 <span class="text-lg font-normal text-gray-600">(February 2025)</span>
         </h2>
 
         <h3 class="text-xl font-semibold mt-4 mb-2">Major ERD Upgrade</h3>
@@ -153,16 +496,16 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         <h2 class="text-xl font-semibold mb-4">Related Resources</h2>
         <div class="space-y-2">
           <p>
-            <a href="/data-dictionary" class="text-clif-burgundy hover:underline font-medium">
-              → View Current Data Dictionary (v2.0.0)
+            <a href="/data-dictionary/data-dictionary-2.1.0" class="text-clif-burgundy hover:underline font-medium">
+              → View Current Data Dictionary (v2.1)
             </a>
           </p>
           <p>
             <a
-              href="/data-dictionary/data-dictionary-2.1.0"
+              href="/data-dictionary/data-dictionary-2.2.0"
               class="text-clif-burgundy hover:underline font-medium"
             >
-              → View Data Dictionary v2.1.0 (Coming Soon)
+              → View Data Dictionary v2.2 (Coming Soon)
             </a>
           </p>
           <p>

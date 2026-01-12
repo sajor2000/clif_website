@@ -1,13 +1,32 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import CohortDashboardReal from '../components/cohort/CohortDashboardReal.astro';
+import CohortSummaryFromCSV from '../components/cohort/CohortSummaryFromCSV.astro';
+import InteractiveDashboard from '../components/cohort/InteractiveDashboard.astro';
+import HourlyTrends from '../components/cohort/HourlyTrends.astro';
+import DataDistributions from '../components/cohort/DataDistributions.astro';
+import MapExplorer from '../components/cohort/MapExplorer.astro';
 import CTAButton from '../components/shared/CTAButton.astro';
 ---
 
 <BaseLayout
   title="CLIF Consortium - Cohort Dashboard"
-  description="Explore aggregated ICU patient data from the CLIF Consortium - 680,158 unique patients, 862,400 ICU encounters across 46 hospitals in 11 participating institutions."
+  description="Explore aggregated Critically Ill patient data from the CLIF Consortium - 808,749 unique patients, 933,058 ICU encounters across 62 hospitals in 12 participating institutions."
 >
+  <!-- Chart.js CDN -->
+  <script is:inline src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <!-- Chart.js Datalabels Plugin -->
+  <script is:inline src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+  <!-- Register Datalabels Plugin -->
+  <script is:inline>
+    if (typeof Chart !== 'undefined' && typeof ChartDataLabels !== 'undefined') {
+      Chart.register(ChartDataLabels);
+    }
+  </script>
+
+  <!-- Leaflet CSS and JS for Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script is:inline src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
   <div class="min-h-screen bg-gradient-to-b from-gray-50 to-white">
     <div class="container mx-auto px-4 py-8 max-w-7xl">
       <!-- Enhanced Hero Section -->
@@ -16,68 +35,133 @@ import CTAButton from '../components/shared/CTAButton.astro';
           CLIF Cohort Dashboard
         </h1>
         <p class="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto mb-6">
-          Real-time insights from <span class="font-semibold text-clif-burgundy">680,158</span> unique ICU patients 
-          across <span class="font-semibold text-clif-burgundy">46</span> hospitals in 
-          <span class="font-semibold text-clif-burgundy">11</span> participating institutions
+          Insights from <span class="font-semibold text-clif-burgundy">808,749</span> unique critically ill patients
+          across <span class="font-semibold text-clif-burgundy">62</span> hospitals in
+          <span class="font-semibold text-clif-burgundy">12</span> participating institutions
         </p>
         <div class="inline-flex items-center gap-6 text-sm text-gray-600 bg-white px-6 py-3 rounded-full shadow-sm">
-          <span class="flex items-center gap-2">
-            <svg class="w-4 h-4 text-clif-burgundy" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zM4 8h12v8H4V8z" clip-rule="evenodd"/>
-            </svg>
-            Data span: 2011-2024
-          </span>
           <span class="flex items-center gap-2">
             <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
               <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
             </svg>
-            Last updated: January 2025
+            Last updated: November 2025
           </span>
         </div>
       </div>
 
-      <!-- Interactive Dashboard CTA -->
+      <!-- Tabbed Dashboard Section -->
       <section class="mb-16">
-        <div class="relative bg-gradient-to-r from-clif-burgundy to-clif-burgundy-dark rounded-2xl shadow-xl overflow-hidden text-white p-8 md:p-12 text-center">
-          <div class="absolute inset-0 bg-grid-pattern opacity-10"></div>
-          <div class="relative">
-            <h2 class="text-3xl md:text-4xl font-bold mb-4">
-              Explore the Interactive Dashboard
-            </h2>
-            <p class="text-lg md:text-xl max-w-3xl mx-auto mb-6 opacity-90">
-              Dive into the CLIF cohort data with our live, interactive dashboard. Filter, analyze, and visualize data from over 680,000 ICU patients in real-time.
-            </p>
-            <p class="text-sm opacity-75 mb-8">
-              <svg class="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"/>
-                <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z"/>
-              </svg>
-              Opens in a new window - Powered by R Shiny
-            </p>
-            <CTAButton
-              href="https://clif-consortium.shinyapps.io/clif-cohort-dashboard/"
-              ariaLabel="Launch the interactive CLIF Cohort Dashboard"
-              class="bg-clif-burgundy text-white hover:bg-clif-burgundy-dark transform hover:scale-105 transition-all duration-200 shadow-lg"
-              size="large"
-              external={true}
+        <!-- Tab Navigation -->
+        <div class="flex justify-center mb-8">
+          <div class="inline-flex bg-gray-100 rounded-lg p-1 shadow-sm overflow-x-auto">
+            <button
+              id="tab-summary"
+              class="px-4 py-3 text-xs md:text-base font-semibold rounded-md transition-all duration-200 bg-clif-burgundy text-white shadow-md whitespace-nowrap"
             >
-              Launch Interactive Dashboard
-            </CTAButton>
+              Summary Statistics
+            </button>
+            <button
+              id="tab-explorer"
+              class="px-4 py-3 text-xs md:text-base font-semibold rounded-md transition-all duration-200 text-gray-700 hover:text-gray-900 whitespace-nowrap"
+            >
+              Data Explorer
+            </button>
+            <button
+              id="tab-hourly"
+              class="px-4 py-3 text-xs md:text-base font-semibold rounded-md transition-all duration-200 text-gray-700 hover:text-gray-900 whitespace-nowrap"
+            >
+              Hourly Trends
+            </button>
+            <button
+              id="tab-distributions"
+              class="px-4 py-3 text-xs md:text-base font-semibold rounded-md transition-all duration-200 text-gray-700 hover:text-gray-900 whitespace-nowrap"
+            >
+              Data Distributions
+            </button>
+            <button
+              id="tab-map"
+              class="px-4 py-3 text-xs md:text-base font-semibold rounded-md transition-all duration-200 text-gray-700 hover:text-gray-900 whitespace-nowrap"
+            >
+              Map Explorer
+            </button>
+          </div>
+        </div>
 
+        <!-- Tab Content: Summary Statistics -->
+        <div id="content-summary" class="tab-content">
+          <div class="text-center mb-8">
+            <h2 class="text-3xl font-bold text-gray-800 mb-3">Summary Statistics</h2>
+            <p class="text-lg text-gray-600">
+              Quick overview of the CLIF consortium
+              <button
+                id="critically-ill-trigger"
+                class="text-blue-600 hover:text-blue-800 underline decoration-dotted underline-offset-2 cursor-help inline-flex items-center gap-0.5"
+              >
+                critically ill
+                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                </svg>
+              </button>
+              patient cohort characteristics
+            </p>
+          </div>
+
+          <CohortSummaryFromCSV />
+        </div>
+
+        <!-- Tab Content: Interactive Data Explorer -->
+        <div id="content-explorer" class="tab-content hidden">
+          <InteractiveDashboard />
+        </div>
+
+        <!-- Tab Content: Hourly Trends -->
+        <div id="content-hourly" class="tab-content hidden">
+          <HourlyTrends />
+        </div>
+
+        <!-- Tab Content: Data Distributions -->
+        <div id="content-distributions" class="tab-content hidden">
+          <DataDistributions />
+        </div>
+
+        <!-- Tab Content: Map Explorer -->
+        <div id="content-map" class="tab-content hidden">
+          <MapExplorer />
+        </div>
+      </section>
+
+      <!-- Data Source & Methodology Section -->
+      <section class="mb-16">
+        <div class="max-w-4xl mx-auto space-y-4">
+          <!-- Data Source Info Box -->
+          <div class="bg-gray-50 border-l-4 border-gray-400 rounded-lg p-6 shadow-sm">
+            <div class="flex items-start gap-3">
+              <svg class="w-6 h-6 text-gray-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
+                <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/>
+              </svg>
+              <div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-3">Data Source</h3>
+                <p class="text-gray-700 text-sm">
+                  This dashboard presents aggregated, de-identified data from the CLIF Consortium spanning 2011-2025. All data has been standardized according to CLIF data format specifications and undergoes rigorous quality assurance processes. <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF-MIMIC" target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:underline font-medium">MIMIC IV data</a> is included for benchmarking purposes.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Methodology Note -->
+          <div class="bg-amber-50 border-l-4 border-amber-400 rounded-lg p-4 shadow-sm">
+            <div class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+              </svg>
+              <p class="text-amber-800 text-sm">
+                <strong>Methodology:</strong> Median values shown are weighted medians calculated using site-specific sample sizes. Interquartile ranges (IQR) represent the minimum Q1 to maximum Q3 observed across sites as an approximation for aggregated data.
+              </p>
+            </div>
           </div>
         </div>
       </section>
-
-      <!-- Static Summary Dashboard -->
-      <section class="mb-16">
-        <div class="text-center mb-8">
-          <h2 class="text-3xl font-bold text-gray-800 mb-3">Summary Statistics</h2>
-          <p class="text-lg text-gray-600">Overview of the CLIF consortium cohort characteristics</p>
-        </div>
-        <CohortDashboardReal />
-      </section>
-      
-
 
       <!-- Enhanced Call to Action -->
       <section class="relative overflow-hidden rounded-3xl">
@@ -110,4 +194,225 @@ import CTAButton from '../components/shared/CTAButton.astro';
       </section>
     </div>
   </div>
+
+  <!-- Critically Ill Modal -->
+  <div id="critically-ill-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <!-- Backdrop -->
+    <div id="modal-backdrop" class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+    <!-- Modal Card -->
+    <div class="relative bg-white rounded-xl shadow-2xl max-w-md w-full p-6 transform transition-all">
+      <button id="modal-close" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+          <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+          </svg>
+        </div>
+        <h3 class="text-xl font-semibold text-gray-900">What are Critically Ill Patients?</h3>
+      </div>
+      <p class="text-gray-600 mb-4">Our cohort includes patients meeting any of the following criteria:</p>
+      <ul class="space-y-3">
+        <li class="flex items-start gap-3">
+          <svg class="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+          </svg>
+          <span class="text-gray-700"><strong class="text-gray-900">ICU encounters:</strong> Patients admitted to an ICU</span>
+        </li>
+        <li class="flex items-start gap-3">
+          <svg class="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+          </svg>
+          <span class="text-gray-700"><strong class="text-gray-900">Advanced respiratory support:</strong> Mechanical ventilation or similar interventions</span>
+        </li>
+        <li class="flex items-start gap-3">
+          <svg class="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+          </svg>
+          <span class="text-gray-700"><strong class="text-gray-900">Vasoactive support:</strong> Vasopressor medications to maintain blood pressure</span>
+        </li>
+        <li class="flex items-start gap-3">
+          <svg class="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+          </svg>
+          <span class="text-gray-700"><strong class="text-gray-900">Other critically ill:</strong> ED & Ward deaths without ICU stay</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Tab Switching Script -->
+  <script is:inline>
+    document.addEventListener('DOMContentLoaded', () => {
+      const tabSummary = document.getElementById('tab-summary');
+      const tabExplorer = document.getElementById('tab-explorer');
+      const tabHourly = document.getElementById('tab-hourly');
+      const tabDistributions = document.getElementById('tab-distributions');
+      const tabMap = document.getElementById('tab-map');
+      const contentSummary = document.getElementById('content-summary');
+      const contentExplorer = document.getElementById('content-explorer');
+      const contentHourly = document.getElementById('content-hourly');
+      const contentDistributions = document.getElementById('content-distributions');
+      const contentMap = document.getElementById('content-map');
+
+      function switchToSummary() {
+        // Update button styles
+        tabSummary?.classList.add('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabSummary?.classList.remove('text-gray-700', 'hover:text-gray-900');
+        tabExplorer?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabExplorer?.classList.add('text-gray-700', 'hover:text-gray-900');
+        tabHourly?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabHourly?.classList.add('text-gray-700', 'hover:text-gray-900');
+        tabDistributions?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabDistributions?.classList.add('text-gray-700', 'hover:text-gray-900');
+        tabMap?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabMap?.classList.add('text-gray-700', 'hover:text-gray-900');
+
+        // Show/hide content
+        contentSummary?.classList.remove('hidden');
+        contentExplorer?.classList.add('hidden');
+        contentHourly?.classList.add('hidden');
+        contentDistributions?.classList.add('hidden');
+        contentMap?.classList.add('hidden');
+      }
+
+      function switchToExplorer() {
+        // Update button styles
+        tabExplorer?.classList.add('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabExplorer?.classList.remove('text-gray-700', 'hover:text-gray-900');
+        tabSummary?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabSummary?.classList.add('text-gray-700', 'hover:text-gray-900');
+        tabHourly?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabHourly?.classList.add('text-gray-700', 'hover:text-gray-900');
+        tabDistributions?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabDistributions?.classList.add('text-gray-700', 'hover:text-gray-900');
+        tabMap?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabMap?.classList.add('text-gray-700', 'hover:text-gray-900');
+
+        // Show/hide content
+        contentExplorer?.classList.remove('hidden');
+        contentSummary?.classList.add('hidden');
+        contentHourly?.classList.add('hidden');
+        contentDistributions?.classList.add('hidden');
+        contentMap?.classList.add('hidden');
+      }
+
+      function switchToHourly() {
+        // Update button styles
+        tabHourly?.classList.add('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabHourly?.classList.remove('text-gray-700', 'hover:text-gray-900');
+        tabSummary?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabSummary?.classList.add('text-gray-700', 'hover:text-gray-900');
+        tabExplorer?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabExplorer?.classList.add('text-gray-700', 'hover:text-gray-900');
+        tabDistributions?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabDistributions?.classList.add('text-gray-700', 'hover:text-gray-900');
+        tabMap?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabMap?.classList.add('text-gray-700', 'hover:text-gray-900');
+
+        // Show/hide content
+        contentHourly?.classList.remove('hidden');
+        contentSummary?.classList.add('hidden');
+        contentExplorer?.classList.add('hidden');
+        contentDistributions?.classList.add('hidden');
+        contentMap?.classList.add('hidden');
+      }
+
+      function switchToDistributions() {
+        // Update button styles
+        tabDistributions?.classList.add('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabDistributions?.classList.remove('text-gray-700', 'hover:text-gray-900');
+        tabSummary?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabSummary?.classList.add('text-gray-700', 'hover:text-gray-900');
+        tabExplorer?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabExplorer?.classList.add('text-gray-700', 'hover:text-gray-900');
+        tabHourly?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabHourly?.classList.add('text-gray-700', 'hover:text-gray-900');
+        tabMap?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabMap?.classList.add('text-gray-700', 'hover:text-gray-900');
+
+        // Show/hide content
+        contentDistributions?.classList.remove('hidden');
+        contentSummary?.classList.add('hidden');
+        contentExplorer?.classList.add('hidden');
+        contentHourly?.classList.add('hidden');
+        contentMap?.classList.add('hidden');
+      }
+
+      function switchToMap() {
+        // Update button styles
+        tabMap?.classList.add('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabMap?.classList.remove('text-gray-700', 'hover:text-gray-900');
+        tabSummary?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabSummary?.classList.add('text-gray-700', 'hover:text-gray-900');
+        tabExplorer?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabExplorer?.classList.add('text-gray-700', 'hover:text-gray-900');
+        tabHourly?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabHourly?.classList.add('text-gray-700', 'hover:text-gray-900');
+        tabDistributions?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
+        tabDistributions?.classList.add('text-gray-700', 'hover:text-gray-900');
+
+        // Show/hide content
+        contentMap?.classList.remove('hidden');
+        contentSummary?.classList.add('hidden');
+        contentExplorer?.classList.add('hidden');
+        contentHourly?.classList.add('hidden');
+        contentDistributions?.classList.add('hidden');
+
+        // Trigger map resize after showing (fixes Leaflet display issues)
+        setTimeout(() => {
+          if (window.L && window.L.map) {
+            const maps = document.querySelectorAll('#map');
+            maps.forEach(mapElement => {
+              if (mapElement._leaflet_id) {
+                const mapInstance = mapElement._leaflet_map || L.map(mapElement);
+                mapInstance.invalidateSize();
+              }
+            });
+          }
+        }, 100);
+      }
+
+      tabSummary?.addEventListener('click', switchToSummary);
+      tabExplorer?.addEventListener('click', switchToExplorer);
+      tabHourly?.addEventListener('click', switchToHourly);
+      tabDistributions?.addEventListener('click', switchToDistributions);
+      tabMap?.addEventListener('click', switchToMap);
+
+      // Critically ill modal
+      const criticallyIllTrigger = document.getElementById('critically-ill-trigger');
+      const criticallyIllModal = document.getElementById('critically-ill-modal');
+      const modalBackdrop = document.getElementById('modal-backdrop');
+      const modalClose = document.getElementById('modal-close');
+
+      function openModal() {
+        criticallyIllModal?.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeModal() {
+        criticallyIllModal?.classList.add('hidden');
+        document.body.style.overflow = '';
+      }
+
+      criticallyIllTrigger?.addEventListener('click', openModal);
+      modalBackdrop?.addEventListener('click', closeModal);
+      modalClose?.addEventListener('click', closeModal);
+
+      // Close on Escape key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeModal();
+      });
+    });
+  </script>
+
+  <style>
+    /* Hide default summary marker in webkit browsers */
+    summary::-webkit-details-marker {
+      display: none;
+    }
+  </style>
 </BaseLayout>

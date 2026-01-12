@@ -53,10 +53,10 @@ import FeatureCard from '../components/shared/FeatureCard.astro';
             <span class="text-4xl">🧾</span>
             <div class="flex-1">
               <h3 class="text-xl font-bold mb-2 text-gray-900">Open Source Data Dictionary and ETL Tools</h3>
-              <p class="text-gray-600 mb-4">CLIF 2.0.0 is the results of years of refinement, shaped by large-scale ICU data spanning multiple institutions and patient populations. Our open-source data dictionary and ETL tools make it easy for any institution to transform their ICU data into the CLIF format, joining our federated research network.</p>
-              <a href="/data-dictionary" 
+              <p class="text-gray-600 mb-4">CLIF 2.1.0 is the results of years of refinement, shaped by large-scale ICU data spanning multiple institutions and patient populations. Our open-source data dictionary and ETL tools make it easy for any institution to transform their ICU data into the CLIF format, joining our federated research network.</p>
+              <a href="/data-dictionary/data-dictionary-2.1.0" 
                  class="text-clif-burgundy hover:text-clif-burgundy-dark font-semibold inline-flex items-center gap-1">
-                View CLIF-2.0.0 Data Dictionary
+                View CLIF-2.1.0 Data Dictionary
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                 </svg>
@@ -71,8 +71,8 @@ import FeatureCard from '../components/shared/FeatureCard.astro';
             <span class="text-4xl">🧬</span>
             <div class="flex-1">
               <h3 class="text-xl font-bold mb-2 text-gray-900">Large Distributed Cohort in the Consortium</h3>
-              <p class="text-gray-600 mb-4">With 680,158 unique ICU patients and 862,400 encounters across 10 active sites, CLIF provides the statistical power needed for robust research. Our interactive dashboard makes cohort characteristics and demographics readily accessible, supporting the data needs of your studies.</p>
-              <a href="https://clif-consortium.shinyapps.io/clif-cohort-dashboard/" 
+              <p class="text-gray-600 mb-4">With 808,749 unique critically ill patients and 1.03mn hospitalizations across 12 active sites, CLIF provides the statistical power needed for robust research. Our interactive dashboard makes cohort characteristics and demographics readily accessible, supporting the data needs of your studies.</p>
+              <a href="https://clif-icu.com/cohort" 
                  class="text-clif-burgundy hover:text-clif-burgundy-dark font-semibold inline-flex items-center gap-1"
                  target="_blank"
                  rel="noopener noreferrer">
@@ -118,27 +118,27 @@ import FeatureCard from '../components/shared/FeatureCard.astro';
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
         <StatsCounter
-          value="17"
+          value="12"
           suffix=""
           label="Participating Institutions"
           icon='<svg class="w-12 h-12 mx-auto" fill="currentColor" viewBox="0 0 20 20"><path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z"/></svg>'
         />
         <StatsCounter
-          value="680158"
+          value="808749"
           prefix=""
           suffix=""
-          label="Unique ICU Patients"
+          label="Unique Critically Ill Patients"
           icon='<svg class="w-12 h-12 mx-auto" fill="currentColor" viewBox="0 0 20 20"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/></svg>'
         />
         <StatsCounter
-          value="862400"
+          value="1029400"
           prefix=""
           suffix=""
-          label="ICU Encounters"
+          label="Total Hospitalizations"
           icon='<svg class="w-12 h-12 mx-auto" fill="currentColor" viewBox="0 0 20 20"><path d="M3 12v3c0 1.657 3.134 3 7 3s7-1.343 7-3v-3c0 1.657-3.134 3-7 3s-7-1.343-7-3z"/><path d="M3 7v3c0 1.657 3.134 3 7 3s7-1.343 7-3V7c0 1.657-3.134 3-7 3S3 8.657 3 7z"/><path d="M17 5c0 1.657-3.134 3-7 3S3 6.657 3 5s3.134-3 7-3 7 1.343 7 3z"/></svg>'
         />
         <StatsCounter
-          value="46"
+          value="62"
           prefix=""
           suffix=""
           label="Hospitals"
@@ -155,19 +155,9 @@ import FeatureCard from '../components/shared/FeatureCard.astro';
         </div>
         <!-- Legend Info Box -->
         <div class="mt-6 bg-gray-50 rounded-lg p-4">
-          <div class="flex items-center justify-between flex-wrap gap-4">
-            <div class="flex items-center space-x-6">
-              <div class="flex items-center space-x-2">
-                <div class="w-4 h-4 bg-red-600 rounded-full"></div>
-                <span class="text-sm font-medium text-gray-700">Sites with CLIF data already (10)</span>
-              </div>
-              <div class="flex items-center space-x-2">
-                <div class="w-4 h-4 bg-gray-400 rounded-full"></div>
-                <span class="text-sm font-medium text-gray-700">Sites planning to contribute (8)</span>
-              </div>
-            </div>
+          <div class="flex items-center justify-center">
             <div class="text-sm text-gray-600">
-              <span class="font-semibold">17 institutions</span> • <span class="font-semibold">46 hospitals</span> • <span class="font-semibold">10 sites with data</span>
+              <span class="font-semibold">17 institutions</span> • <span class="font-semibold">62 hospitals</span> • <span class="font-semibold">12 sites with data</span>
             </div>
           </div>
         </div>

@@ -1,5 +1,8 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import publicationsData from '../data/publications.json';
+
+const publications = publicationsData.publications;
 ---
 
 <BaseLayout title="CLIF Consortium - RESEARCH">
@@ -57,20 +60,31 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           <h2 class="text-4xl font-bold text-gray-900">Publications</h2>
         </div>
         
-        <div class="bg-white rounded-2xl shadow-lg p-8 border border-gray-200">
-          <h3 class="text-2xl font-semibold text-gray-900 mb-4 leading-tight">
-            A common longitudinal intensive care unit data format (CLIF) for critical illness research
-          </h3>
-          <div class="flex items-center space-x-4 text-gray-600">
-            <span class="bg-clif-burgundy-light text-clif-white px-3 py-1 rounded-full text-sm font-medium">2025</span>
-            <a
-              href="https://link.springer.com/article/10.1007/s00134-025-07848-7"
-              class="text-clif-burgundy hover:text-clif-burgundy-dark transition-colors duration-200 font-medium"
-            >
-              Intensive Care Medicine →
-            </a>
+        {publications.map((pub, index) => (
+          <div class={`bg-white rounded-2xl shadow-lg p-8 border border-gray-200 ${index < publications.length - 1 ? 'mb-8' : ''}`}>
+            <h3 class="text-2xl font-semibold text-gray-900 mb-4 leading-tight">
+              {pub.title}
+            </h3>
+            <div class="flex items-center flex-wrap gap-3 text-gray-600">
+              <span class="bg-clif-burgundy-light text-clif-white px-3 py-1 rounded-full text-sm font-medium">{pub.year}</span>
+              <button
+                class="cite-btn inline-flex items-center gap-1.5 px-3 py-1 text-sm font-medium text-gray-600 hover:text-clif-burgundy border border-gray-300 rounded-full hover:border-clif-burgundy transition-colors"
+                data-citation={pub.citation}
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                </svg>
+                Cite
+              </button>
+              <a
+                href={pub.url}
+                class="text-clif-burgundy hover:text-clif-burgundy-dark transition-colors duration-200 font-medium"
+              >
+                {pub.journalFull} →
+              </a>
+            </div>
           </div>
-        </div>
+        ))}
       </section>
 
       <section id="conferences" class="mb-20">
@@ -154,7 +168,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                 </h5>
                 <p class="text-gray-600 text-sm mb-4">Novel method for analyzing ventilator mode patterns in critical care</p>
                 <a
-                  href="https://www.atsjournals.org/doi/abs/10.1164/ajrccm-conference.2025.211.1_MeetingAbstracts.A7159"
+                  href="https://www.atsjournals.org/doi/abs/10.1164/ajrccm.2025.211.Abstracts.A7159"
                   class="text-clif-burgundy hover:text-clif-burgundy-dark transition-colors font-medium"
                 >
                   View Abstract →
@@ -435,4 +449,35 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       </section>
     </div>
   </div>
+
+  <!-- Cite button functionality -->
+  <script is:inline>
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('.cite-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var citation = this.getAttribute('data-citation');
+          var button = this;
+
+          navigator.clipboard.writeText(citation).then(function() {
+            // Store original content
+            var originalHTML = button.innerHTML;
+
+            // Show success state
+            button.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg> Copied!';
+            button.classList.add('text-green-600', 'border-green-600');
+            button.classList.remove('text-gray-600', 'border-gray-300');
+
+            // Reset after 2 seconds
+            setTimeout(function() {
+              button.innerHTML = originalHTML;
+              button.classList.remove('text-green-600', 'border-green-600');
+              button.classList.add('text-gray-600', 'border-gray-300');
+            }, 2000);
+          }).catch(function(err) {
+            console.error('Failed to copy citation:', err);
+          });
+        });
+      });
+    });
+  </script>
 </BaseLayout>

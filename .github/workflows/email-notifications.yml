@@ -1,0 +1,49 @@
+name: Send Email Notifications on Data Dictionary Updates
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      # Data dictionary pages
+      - 'src/pages/data-dictionary/**'
+      - 'src/content/clif-data-dictionary-*.md'
+      - 'src/content/*.sql'
+      # Change log
+      - 'src/pages/data-dictionary/change-log.astro'
+
+  # Allow manual trigger
+  workflow_dispatch:
+
+jobs:
+  send-notification:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # Need previous commit to detect changes
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Get commit info
+        id: commit-info
+        run: |
+          # Get full commit message (subject + body)
+          echo "message<<EOF" >> $GITHUB_OUTPUT
+          git log -1 --pretty=%B >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          echo "date=$(git log -1 --pretty=%cd --date=format:'%B %d, %Y')" >> $GITHUB_OUTPUT
+
+      - name: Send email notifications
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          SUBSCRIBERS: ${{ secrets.EMAIL_SUBSCRIBERS }}
+          COMMIT_MESSAGE: ${{ steps.commit-info.outputs.message }}
+          COMMIT_DATE: ${{ steps.commit-info.outputs.date }}
+        run: |
+          node .github/scripts/send-notification-email.js

@@ -66,13 +66,13 @@ const allTables = parseAllTables(ddlContent);
 
 // For sidebar: split into Beta and Concept tables by name (as before)
 const betaTableNames = [
-  'adt', 'code_status', 'crrt_therapy', 'ecmo_mcs', 'hospitalization',
+  'adt', 'code_status', 'crrt_therapy', 'hospitalization',
   'hospital_diagnosis', 'labs', 'medication_admin_continuous', 'medication_admin_intermittent',
-  'microbiology_culture', 'microbiology_nonculture', 'microbiology_susceptibility', 'patient',
+  'microbiology_culture', 'microbiology_susceptibility', 'patient',
   'patient_assessments', 'patient_procedures', 'position', 'respiratory_support', 'vitals'
 ];
 const conceptTableNames = [
-  'clinical_trial', 'intake_output', 'invasive_hemodynamics', 'key_icu_orders', 'medication_orders', 'place_based_index',
+  'clinical_trial', 'ecmo_mcs', 'intake_output', 'invasive_hemodynamics', 'key_icu_orders', 'medication_orders', 'microbiology_nonculture', 'patient_diagnosis', 'place_based_index',
   'provider', 'therapy_details', 'transfusion'
 ];
 const betaTables = allTables
@@ -136,7 +136,7 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
 ---
 
 <BaseLayout
-  title="CLIF-2.1.0 Data Dictionary (Future Release)"
+  title="CLIF-2.1.0 Data Dictionary (Current Release)"
   description="Upcoming version of the Common Longitudinal ICU data Format"
 >
   <div class="container mx-auto px-6 py-12">
@@ -145,24 +145,16 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
       {markdownIntro && (
         <div class="prose mb-8" set:html={md.render(markdownIntro)} />
       )}
-      <!-- Future Release Notice -->
-      <div class="bg-clif-burgundy-light/10 border-2 border-clif-burgundy/20 p-4 rounded-lg mb-8 shadow-sm">
-        <p class="text-lg font-semibold text-blue-800 m-0">
-          📅 This version is scheduled for release in September 2025. For current implementation, use <a
-            href="/data-dictionary"
-            class="text-clif-burgundy hover:underline">CLIF v2.0.0</a
-          >.
-        </p>
-      </div>
       <!-- Header -->
       <header class="mb-8 bg-gradient-to-r from-blue-50 to-clif-burgundy/10 rounded-xl p-6 shadow-sm">
         <h1 class="text-4xl font-bold mb-4 text-clif-burgundy">CLIF Data Dictionary 2.1.0</h1>
-        <div class="flex items-center gap-4 mb-4">
-          <Badge type="future" size="large" />
-          <span class="text-gray-600 font-medium">Future Release</span>
-        </div>
         <p class="text-gray-700 leading-relaxed">
-          The next evolution of CLIF featuring promoted tables, new mCIDE categories, 
+          <div class="bg-clif-burgundy-light/10 border-2 border-clif-burgundy/20 p-4 rounded-lg mb-8 shadow-sm">
+          <p class="text-lg font-semibold text-blue-800 m-0">
+            Version <span class="text-clif-burgundy">CLIF v2.1.0</span> is the current implementation. 
+          </p>
+          </div>
+          The latest evolution of CLIF featuring promoted tables, new mCIDE categories, 
           and enhanced support for advanced ICU therapies and monitoring.
         </p>
       </header>
@@ -262,7 +254,6 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
                   <div class="prose mb-4" set:html={md.render(intro)} />
                 )}
                 <div class="table-wrapper relative overflow-visible rounded-lg shadow-sm border border-gray-200 my-6">
-                  <img src="/images/icons/unstable.png" alt="Unstable" class="absolute -top-10 -right-10 w-32 rotate-[25deg] pointer-events-none select-none z-40" />
                   <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50 sticky top-0 z-10">
                       <tr>
@@ -316,7 +307,7 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
                   <div class="prose mb-4" set:html={md.render(intro)} />
                 )}
                 <div class="table-wrapper relative overflow-visible rounded-lg shadow-sm border border-gray-200 my-6">
-                  <img src="/images/icons/unstable.png" alt="Unstable" class="absolute -top-10 -right-10 w-32 rotate-[25deg] pointer-events-none select-none z-40" />
+                  <img src="/images/icons/unstable.png" alt="Unstable" class="absolute -top-8 -right-8 w-32 rotate-[15deg] pointer-events-none select-none z-40" />
                   <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50 sticky top-0 z-10">
                       <tr>

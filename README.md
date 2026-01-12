@@ -21,12 +21,12 @@ The CLIF Consortium website is a modern, performant web application showcasing t
 - 🔍 **Advanced Search** - Searchable sidebar navigation and data tables
 - 📱 **Fully Responsive** - Optimized for all device sizes
 - ⚡ **Lightning Fast** - Static site generation with Astro
-- 🏥 **17 Member Institutions** - Collaborative healthcare data standardization
+- 🏥 **18 Member Institutions** - Collaborative healthcare data standardization
 
 ### Quick Statistics
 
-- **17 participating institutions** with 46 hospitals
-- **680,158+ unique ICU patients** across the network
+- **18 participating institutions** with 62 hospitals
+- **808,749+ unique ICU patients** across the network
 - **46+ consortium members** contributing to the standard
 - **3 CLIF versions** documented with comprehensive field definitions
 

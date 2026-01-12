@@ -1,0 +1,1114 @@
+---
+import { readFile, readdir } from 'fs/promises';
+import { join } from 'path';
+
+// Read ECDF data from all categories
+const ecdfBasePath = join(process.cwd(), 'src', 'data', 'ecdf');
+
+// Read stats file for metadata
+const statsPath = join(ecdfBasePath, 'collection_stats_by_site.csv');
+const statsContent = await readFile(statsPath, 'utf-8');
+
+// Parse stats CSV to get observation counts and units
+function parseStatsCSV(content: string) {
+  const lines = content.trim().split('\n');
+  const headers = lines[0].split(',');
+  const stats: Record<string, { unit: string; sites: Record<string, number> }> = {};
+
+  // Find site columns (looking for __total_observations pattern)
+  const siteColumns: { site: string; obsIndex: number }[] = [];
+  headers.forEach((h, i) => {
+    const match = h.match(/^(\w+)__total_observations$/);
+    if (match) {
+      siteColumns.push({ site: match[1], obsIndex: i });
+    }
+  });
+
+  for (let i = 1; i < lines.length; i++) {
+    const values = lines[i].split(',');
+    const dataType = values[0];
+    const category = values[1];
+    const unit = values[2] || '';
+    const key = `${dataType}/${category}`;
+
+    const siteCounts: Record<string, number> = {};
+    siteColumns.forEach(({ site, obsIndex }) => {
+      const count = parseInt(values[obsIndex]) || 0;
+      if (count > 0) {
+        siteCounts[site] = count;
+      }
+    });
+
+    stats[key] = { unit, sites: siteCounts };
+  }
+
+  return stats;
+}
+
+const statsData = parseStatsCSV(statsContent);
+
+// Helper function to format parameter name cleanly
+function formatParameterName(baseName: string, category: string): { displayName: string; unit: string } {
+  // Common abbreviations that should be uppercase
+  const abbreviations = ['alt', 'ast', 'bun', 'crp', 'esr', 'wbc', 'rbc', 'mcv', 'mch', 'mchc', 'rdw', 'mpv', 'inr', 'ptt', 'aptt', 'gfr', 'egfr', 'ldh', 'ggt', 'hdl', 'ldl', 'tsh', 'bnp', 'ck', 'pco2', 'po2', 'fio2', 'peep', 'pip', 'map', 'sbp', 'dbp', 'spo2', 'etco2', 'ph'];
+
+  // Manual unit mappings for vitals and respiratory parameters that don't have units in stats file
+  const manualUnits: Record<string, string> = {
+    // Vitals
+    'heart_rate': 'bpm',
+    'respiratory_rate': 'breaths/min',
+    'sbp': 'mmHg',
+    'dbp': 'mmHg',
+    'map': 'mmHg',
+    'spo2': '%',
+    'temp_c': '°C',
+    'temp': '°C',
+    'weight_kg': 'kg',
+    'weight': 'kg',
+    'height_cm': 'cm',
+    'height': 'cm',
+    // Respiratory support
+    'fio2_set': 'fraction',
+    'peep_set': 'cmH2O',
+    'peep_obs': 'cmH2O',
+    'pip_set': 'cmH2O',
+    'pip_obs': 'cmH2O',
+    'tidal_volume_set': 'mL',
+    'tidal_volume_obs': 'mL',
+    'minute_vent_set': 'L/min',
+    'minute_vent_obs': 'L/min',
+    'resp_rate_set': 'breaths/min',
+    'resp_rate_obs': 'breaths/min',
+    'flow_rate_set': 'L/min',
+    'mean_airway_pressure_obs': 'cmH2O',
+    'peak_inspiratory_pressure_set': 'cmH2O',
+    'peak_inspiratory_pressure_obs': 'cmH2O',
+    'plateau_pressure_obs': 'cmH2O',
+    'inspiratory_time_set': 'sec',
+    'lpm_set': 'L/min',
+  };
+
+  // Try to find matching stats entry by category name (without unit suffix)
+  // Remove common unit patterns from filename to match stats category
+  const unitPatterns = [
+    /_g_dL$/, /_mg_dL$/, /_mmol_L$/, /_U_L$/, /_ng_mL$/, /_mL$/, /_L$/,
+    /_10_3_µL$/, /_percent$/, /_cm$/, /_kg$/, /_c$/, /_mm_hour$/,
+    /_mEq_L$/, /_µg_dL$/, /_pg$/, /_fL$/, /_seconds$/, /_ratio$/
+  ];
+
+  let categoryName = baseName;
+  for (const pattern of unitPatterns) {
+    categoryName = categoryName.replace(pattern, '');
+  }
+
+  // Look up in stats data
+  const statsKey = `${category}/${categoryName}`;
+  const statsEntry = statsData[statsKey];
+  // Strip quotes from unit (some entries have "" as empty value)
+  const rawUnit = statsEntry?.unit || '';
+  let unit = rawUnit.replace(/^"+|"+$/g, '').trim();
+
+  // If no unit from stats, check manual mappings
+  if (!unit) {
+    unit = manualUnits[baseName] || manualUnits[categoryName] || '';
+  }
+
+  // Format the category name for display
+  const nameParts = categoryName.split('_');
+  const formattedParts = nameParts.map(part => {
+    const lowerPart = part.toLowerCase();
+    if (abbreviations.includes(lowerPart)) {
+      return part.toUpperCase();
+    }
+    return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
+  });
+
+  let displayName = formattedParts.join(' ');
+
+  // Add unit in parentheses if available and not empty
+  if (unit && unit.trim() !== '') {
+    displayName = `${displayName} (${unit})`;
+  }
+
+  return { displayName, unit };
+}
+
+// Read ECDF files from each category
+async function readECDFFiles(category: string) {
+  const categoryPath = join(ecdfBasePath, category);
+  const files = await readdir(categoryPath);
+  const ecdfFiles: { name: string; displayName: string; unit: string }[] = [];
+
+  for (const file of files) {
+    if (file.endsWith('.csv')) {
+      const baseName = file.replace('.csv', '');
+      const { displayName, unit } = formatParameterName(baseName, category);
+      ecdfFiles.push({ name: baseName, displayName, unit });
+    }
+  }
+
+  return ecdfFiles.sort((a, b) => a.displayName.localeCompare(b.displayName));
+}
+
+const labFiles = await readECDFFiles('labs');
+const respiratoryFiles = await readECDFFiles('respiratory_support');
+const vitalFiles = await readECDFFiles('vitals');
+
+// Get all available sites by scanning all ECDF files
+async function getAllSites() {
+  const allSites = new Set<string>();
+  const categories = ['labs', 'respiratory_support', 'vitals'];
+
+  for (const category of categories) {
+    const categoryPath = join(ecdfBasePath, category);
+    const files = await readdir(categoryPath);
+
+    for (const file of files) {
+      if (file.endsWith('.csv')) {
+        const filePath = join(categoryPath, file);
+        const content = await readFile(filePath, 'utf-8');
+        const headers = content.split('\n')[0].split(',');
+        headers
+          .filter(h => h.endsWith('_probability'))
+          .map(h => h.replace('_probability', ''))
+          .forEach(site => allSites.add(site));
+      }
+    }
+  }
+
+  return Array.from(allSites).sort();
+}
+
+const availableSites = await getAllSites();
+
+// Prepare data for client-side
+const categoriesData = {
+  labs: labFiles,
+  respiratory_support: respiratoryFiles,
+  vitals: vitalFiles
+};
+
+const categoriesJson = JSON.stringify(categoriesData);
+const sitesJson = JSON.stringify(availableSites);
+---
+
+<div class="data-distributions bg-white rounded-2xl shadow-xl p-6 md:p-8">
+  <!-- Header -->
+  <div class="mb-8">
+    <h2 class="text-3xl font-bold text-gray-800 mb-2">Data Distributions</h2>
+    <p class="text-gray-600 mb-3">
+      Compare lab values, vital signs, and respiratory parameters across institutions using histograms and empirical cumulative distribution functions (ECDF).
+    </p>
+    <div class="bg-gray-50 border-l-4 border-gray-400 p-4 rounded mb-3">
+      <p class="font-semibold text-gray-700 mb-2">How to interpret the chart:</p>
+      <div class="text-sm text-gray-600 space-y-2">
+        <p><strong>Histogram bars</strong> show frequency - what percentage of measurements fall in each value range.</p>
+        <p><strong>ECDF lines</strong> show cumulative probability - what percentage of ALL measurements are at or below that value.</p>
+        <div class="mt-3 p-3 bg-white rounded border border-gray-200">
+          <p class="font-medium text-gray-700 mb-1">Example: If you hover at Albumin = 3.0 g/dL and see:</p>
+          <ul class="list-disc list-inside text-gray-600 space-y-1 ml-2">
+            <li><strong>Site A: 25%</strong> → 25% of Site A's albumin values are in the bin around 3.0</li>
+            <li><strong>Site A ECDF: 60%</strong> → 60% of Site A's albumin values are ≤ 3.0 g/dL</li>
+          </ul>
+          <p class="mt-2 text-gray-500 italic">The ECDF tells you "how many patients have values this low or lower" while the histogram shows "how common is this specific value range."</p>
+        </div>
+      </div>
+    </div>
+    <div class="bg-blue-50 border-l-4 border-blue-400 p-3 rounded">
+      <p class="text-sm text-blue-800">
+        <strong>Tip:</strong> First select a parameter from the sidebar, then choose which sites to compare. We recommend selecting 2-3 sites at a time for cleaner visualizations.
+      </p>
+    </div>
+  </div>
+
+  <!-- Site Selection (dynamic based on selected variable) -->
+  <div class="mb-6">
+    <label class="block text-sm font-semibold text-gray-700 mb-2">
+      Select Sites to Compare
+    </label>
+    <div id="site-selection-container">
+      <p id="site-selection-placeholder" class="text-sm text-gray-500 italic">
+        Select a parameter from the sidebar to see available sites
+      </p>
+      <div class="flex flex-wrap gap-2 hidden" id="site-selection">
+        <!-- Sites will be dynamically populated -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content Area -->
+  <div class="flex gap-6">
+    <!-- Left Sidebar - Categories -->
+    <div class="w-72 flex-shrink-0">
+      <div class="bg-white border-2 border-gray-200 rounded-lg overflow-hidden sticky top-4">
+        <!-- Search Box -->
+        <div class="p-4 border-b border-gray-200">
+          <input
+            type="text"
+            id="distribution-search"
+            placeholder="Search parameters..."
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:border-clif-burgundy focus:ring-2 focus:ring-clif-burgundy focus:ring-opacity-50"
+          />
+        </div>
+
+        <!-- Categories List -->
+        <div id="distribution-categories" class="max-h-[500px] overflow-y-auto">
+          <!-- Labs Category -->
+          <div class="category-section border-b border-gray-200">
+            <button class="category-header w-full flex items-center justify-between p-3 hover:bg-gray-50 transition-colors text-left" data-category="labs">
+              <span class="font-semibold text-gray-800 text-sm">Labs ({labFiles.length})</span>
+              <svg class="chevron w-4 h-4 text-gray-500 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+              </svg>
+            </button>
+            <div class="parameter-list hidden" data-category="labs">
+              {labFiles.map(file => (
+                <button
+                  class="parameter-item w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-clif-burgundy hover:bg-opacity-10 hover:text-clif-burgundy transition-colors"
+                  data-category="labs"
+                  data-parameter={file.name}
+                >
+                  {file.displayName}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <!-- Respiratory Support Category -->
+          <div class="category-section border-b border-gray-200">
+            <button class="category-header w-full flex items-center justify-between p-3 hover:bg-gray-50 transition-colors text-left" data-category="respiratory_support">
+              <span class="font-semibold text-gray-800 text-sm">Respiratory Support ({respiratoryFiles.length})</span>
+              <svg class="chevron w-4 h-4 text-gray-500 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+              </svg>
+            </button>
+            <div class="parameter-list hidden" data-category="respiratory_support">
+              {respiratoryFiles.map(file => (
+                <button
+                  class="parameter-item w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-clif-burgundy hover:bg-opacity-10 hover:text-clif-burgundy transition-colors"
+                  data-category="respiratory_support"
+                  data-parameter={file.name}
+                >
+                  {file.displayName}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <!-- Vitals Category -->
+          <div class="category-section">
+            <button class="category-header w-full flex items-center justify-between p-3 hover:bg-gray-50 transition-colors text-left" data-category="vitals">
+              <span class="font-semibold text-gray-800 text-sm">Vitals ({vitalFiles.length})</span>
+              <svg class="chevron w-4 h-4 text-gray-500 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+              </svg>
+            </button>
+            <div class="parameter-list hidden" data-category="vitals">
+              {vitalFiles.map(file => (
+                <button
+                  class="parameter-item w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-clif-burgundy hover:bg-opacity-10 hover:text-clif-burgundy transition-colors"
+                  data-category="vitals"
+                  data-parameter={file.name}
+                >
+                  {file.displayName}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Content Area - Chart -->
+    <div class="flex-1">
+      <!-- Chart Container -->
+      <div id="distribution-chart-container" class="bg-white rounded-lg p-6 border-2 border-gray-200 hidden">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 id="distribution-chart-title" class="text-lg font-bold text-gray-800"></h3>
+            <p id="distribution-chart-subtitle" class="text-sm text-gray-600 mt-1"></p>
+          </div>
+          <button
+            id="clear-distribution-btn"
+            class="px-3 py-1 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300 transition-colors"
+          >
+            Clear
+          </button>
+        </div>
+        <div class="relative" style="height: 450px;">
+          <canvas id="distribution-chart"></canvas>
+        </div>
+        <div id="distribution-legend" class="mt-4 flex flex-wrap justify-center gap-4"></div>
+
+        <!-- Summary Stats Panel -->
+        <div id="distribution-summary" class="mt-6 hidden">
+          <h4 class="text-sm font-semibold text-gray-700 mb-3">Distribution Summary (Percentiles)</h4>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm border-collapse">
+              <thead>
+                <tr class="bg-gray-100">
+                  <th class="px-4 py-2 text-left font-semibold text-gray-700 border border-gray-200">Site</th>
+                  <th class="px-4 py-2 text-right font-semibold text-gray-700 border border-gray-200">Min</th>
+                  <th class="px-4 py-2 text-right font-semibold text-gray-700 border border-gray-200">P25</th>
+                  <th class="px-4 py-2 text-right font-semibold text-gray-700 border border-gray-200">Median</th>
+                  <th class="px-4 py-2 text-right font-semibold text-gray-700 border border-gray-200">P75</th>
+                  <th class="px-4 py-2 text-right font-semibold text-gray-700 border border-gray-200">Max</th>
+                </tr>
+              </thead>
+              <tbody id="distribution-summary-body">
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Instructions (shown when no chart) -->
+      <div id="distribution-instructions" class="bg-gray-50 rounded-lg p-8 text-center">
+        <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+        </svg>
+        <h3 class="text-xl font-bold text-gray-700 mb-2">Compare Data Distributions</h3>
+        <p class="text-gray-600 mb-4">
+          1. Choose a parameter from the sidebar<br>
+          2. Select which sites to compare<br>
+          3. View histogram and ECDF comparison
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- JSON Data -->
+<script type="application/json" id="categories-data" set:html={categoriesJson}></script>
+<script type="application/json" id="sites-data" set:html={sitesJson}></script>
+
+<script>
+  // State
+  let selectedSites: string[] = [];
+  let selectedParameter: { category: string; name: string } | null = null;
+  let distributionChart: any = null;
+  let ecdfCache: Record<string, any> = {};
+  let availableSitesForParameter: string[] = [];
+
+  // Site-specific colors for consistent visualization across all charts
+  // These colors are unique to sites and NOT used by any other chart elements
+  const SITE_COLORS: Record<string, { bg: string; border: string; line: string }> = {
+    'emory':    { bg: 'rgba(165, 42, 42, 0.35)', border: 'rgba(165, 42, 42, 1)', line: 'rgba(165, 42, 42, 1)' },     // brown
+    'jhu':      { bg: 'rgba(0, 114, 178, 0.35)', border: 'rgba(0, 114, 178, 1)', line: 'rgba(0, 114, 178, 1)' },     // blue
+    'nu':       { bg: 'rgba(0, 158, 115, 0.35)', border: 'rgba(0, 158, 115, 1)', line: 'rgba(0, 158, 115, 1)' },     // teal-green
+    'ohsu':     { bg: 'rgba(230, 159, 0, 0.35)', border: 'rgba(230, 159, 0, 1)', line: 'rgba(230, 159, 0, 1)' },     // golden yellow
+    'rush':     { bg: 'rgba(128, 0, 128, 0.35)', border: 'rgba(128, 0, 128, 1)', line: 'rgba(128, 0, 128, 1)' },     // purple
+    'ucmc':     { bg: 'rgba(86, 180, 233, 0.35)', border: 'rgba(86, 180, 233, 1)', line: 'rgba(86, 180, 233, 1)' },  // sky blue
+    'ucsf':     { bg: 'rgba(240, 128, 128, 0.35)', border: 'rgba(240, 128, 128, 1)', line: 'rgba(240, 128, 128, 1)' }, // light coral/pink
+    'umich':    { bg: 'rgba(105, 105, 105, 0.35)', border: 'rgba(105, 105, 105, 1)', line: 'rgba(105, 105, 105, 1)' }, // dim gray
+    'umn':      { bg: 'rgba(0, 128, 0, 0.35)', border: 'rgba(0, 128, 0, 1)', line: 'rgba(0, 128, 0, 1)' },           // green
+    'upenn':    { bg: 'rgba(255, 127, 14, 0.35)', border: 'rgba(255, 127, 14, 1)', line: 'rgba(255, 127, 14, 1)' },  // orange
+    'utoronto': { bg: 'rgba(139, 0, 0, 0.35)', border: 'rgba(139, 0, 0, 1)', line: 'rgba(139, 0, 0, 1)' },           // dark red
+  };
+
+  // Fallback colors for unknown sites
+  const fallbackColors = [
+    { bg: 'rgba(139, 0, 0, 0.35)', border: 'rgba(139, 0, 0, 1)', line: 'rgba(139, 0, 0, 1)' },
+    { bg: 'rgba(59, 130, 246, 0.35)', border: 'rgba(59, 130, 246, 1)', line: 'rgba(59, 130, 246, 1)' },
+    { bg: 'rgba(16, 185, 129, 0.35)', border: 'rgba(16, 185, 129, 1)', line: 'rgba(16, 185, 129, 1)' },
+  ];
+
+  function getSiteColor(site: string, index: number) {
+    const normalizedSite = site.toLowerCase().trim();
+    if (SITE_COLORS[normalizedSite]) {
+      return SITE_COLORS[normalizedSite];
+    }
+    // Fallback for unknown sites
+    return fallbackColors[index % fallbackColors.length];
+  }
+
+  // Calculate percentile from ECDF data
+  function getPercentileFromECDF(siteEcdf: { x: number; y: number }[], percentile: number): number | null {
+    if (siteEcdf.length === 0) return null;
+    const target = percentile / 100;
+
+    // Find the first point where cumulative probability >= target
+    for (let i = 0; i < siteEcdf.length; i++) {
+      if (siteEcdf[i].y >= target) {
+        return siteEcdf[i].x;
+      }
+    }
+    return siteEcdf[siteEcdf.length - 1].x;
+  }
+
+  // Format number for display
+  function formatValue(val: number | null): string {
+    if (val === null) return '-';
+    if (Math.abs(val) >= 1000) return val.toFixed(0);
+    if (Math.abs(val) >= 100) return val.toFixed(1);
+    if (Math.abs(val) >= 1) return val.toFixed(2);
+    return val.toFixed(3);
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    initializeCategoryAccordion();
+    initializeParameterSelection();
+    initializeSearch();
+    initializeClearButton();
+  });
+
+  function initializeCategoryAccordion() {
+    const headers = document.querySelectorAll('.category-header');
+
+    headers.forEach(header => {
+      header.addEventListener('click', () => {
+        const category = header.getAttribute('data-category');
+        const list = document.querySelector(`.parameter-list[data-category="${category}"]`);
+        const chevron = header.querySelector('.chevron');
+
+        if (list?.classList.contains('hidden')) {
+          // Collapse all others
+          document.querySelectorAll('.parameter-list').forEach(l => l.classList.add('hidden'));
+          document.querySelectorAll('.chevron').forEach(c => (c as HTMLElement).style.transform = 'rotate(-90deg)');
+
+          // Expand this one
+          list.classList.remove('hidden');
+          if (chevron) (chevron as HTMLElement).style.transform = 'rotate(0deg)';
+        } else {
+          list?.classList.add('hidden');
+          if (chevron) (chevron as HTMLElement).style.transform = 'rotate(-90deg)';
+        }
+      });
+
+      // Set initial chevron state
+      const chevron = header.querySelector('.chevron');
+      if (chevron) (chevron as HTMLElement).style.transform = 'rotate(-90deg)';
+    });
+  }
+
+  function initializeParameterSelection() {
+    const items = document.querySelectorAll('.parameter-item');
+
+    items.forEach(item => {
+      item.addEventListener('click', async () => {
+        const category = item.getAttribute('data-category')!;
+        const parameter = item.getAttribute('data-parameter')!;
+
+        // Update selection state
+        document.querySelectorAll('.parameter-item').forEach(i => {
+          i.classList.remove('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
+        });
+        item.classList.add('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
+
+        selectedParameter = { category, name: parameter };
+
+        // Load the ECDF data and extract available sites
+        await loadParameterAndUpdateSites(category, parameter);
+      });
+    });
+  }
+
+  async function loadParameterAndUpdateSites(category: string, parameter: string) {
+    const cacheKey = `${category}/${parameter}`;
+
+    // Fetch ECDF data if not cached
+    if (!ecdfCache[cacheKey]) {
+      try {
+        const response = await fetch(`/api/ecdf/${category}/${parameter}.csv`);
+        if (!response.ok) throw new Error('Failed to load data');
+        const csvText = await response.text();
+        ecdfCache[cacheKey] = parseECDFCSV(csvText);
+      } catch (error) {
+        console.error('Error loading ECDF data:', error);
+        alert('Failed to load distribution data. Please try again.');
+        return;
+      }
+    }
+
+    // Extract available sites from the cached data
+    const ecdfData = ecdfCache[cacheKey];
+    const sitesInData = new Set<string>();
+    ecdfData.forEach((row: any) => {
+      Object.keys(row.sites).forEach(site => sitesInData.add(site));
+    });
+
+    availableSitesForParameter = Array.from(sitesInData).sort();
+
+    // Exclude sites with known bad data for specific parameters
+    // Note: Site names are extracted from CSV columns like "emory_probability" -> "emory"
+    const siteExclusions: Record<string, string[]> = {
+      'flow_rate_set': ['emory'],  // emory has all zeros for flow rate
+    };
+
+    if (selectedParameter) {
+      const exclusions = siteExclusions[selectedParameter.name] || [];
+      if (exclusions.length > 0) {
+        availableSitesForParameter = availableSitesForParameter.filter(
+          site => !exclusions.includes(site)
+        );
+      }
+    }
+
+    // Update site selection UI
+    updateSiteSelectionUI();
+  }
+
+  function updateSiteSelectionUI() {
+    const placeholder = document.getElementById('site-selection-placeholder');
+    const selectionContainer = document.getElementById('site-selection');
+
+    if (!selectionContainer) return;
+
+    // Hide placeholder, show selection
+    placeholder?.classList.add('hidden');
+    selectionContainer.classList.remove('hidden');
+
+    // Clear previous checkboxes
+    selectionContainer.innerHTML = '';
+
+    // Preserve previously selected sites that are still available
+    const newSelectedSites = selectedSites.filter(s => availableSitesForParameter.includes(s));
+
+    // Create checkboxes for available sites
+    availableSitesForParameter.forEach(site => {
+      const isChecked = newSelectedSites.includes(site);
+
+      const label = document.createElement('label');
+      label.className = `inline-flex items-center px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg cursor-pointer transition-colors ${isChecked ? 'bg-clif-burgundy bg-opacity-20' : ''}`;
+
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.className = 'site-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy';
+      checkbox.value = site;
+      checkbox.checked = isChecked;
+
+      checkbox.addEventListener('change', (e) => {
+        const target = e.target as HTMLInputElement;
+        if (target.checked) {
+          selectedSites.push(site);
+          label.classList.add('bg-clif-burgundy', 'bg-opacity-20');
+        } else {
+          selectedSites = selectedSites.filter(s => s !== site);
+          label.classList.remove('bg-clif-burgundy', 'bg-opacity-20');
+        }
+
+        // Regenerate chart if sites are selected
+        if (selectedParameter && selectedSites.length > 0) {
+          loadAndRenderChart();
+        }
+      });
+
+      const span = document.createElement('span');
+      span.className = 'ml-2 text-sm font-medium text-gray-700 uppercase';
+      span.textContent = site.replace('_', ' ');
+
+      label.appendChild(checkbox);
+      label.appendChild(span);
+      selectionContainer.appendChild(label);
+    });
+
+    // Update selected sites to only include available ones
+    selectedSites = newSelectedSites;
+
+    // Show count of available sites
+    const countText = document.createElement('span');
+    countText.className = 'text-xs text-gray-500 ml-2';
+    countText.textContent = `(${availableSitesForParameter.length} sites available)`;
+    selectionContainer.appendChild(countText);
+
+    // If sites are already selected, render the chart
+    if (selectedSites.length > 0 && selectedParameter) {
+      loadAndRenderChart();
+    }
+  }
+
+  function initializeSearch() {
+    const searchInput = document.getElementById('distribution-search') as HTMLInputElement;
+
+    searchInput?.addEventListener('input', () => {
+      const term = searchInput.value.toLowerCase();
+      const items = document.querySelectorAll('.parameter-item');
+      const categories = document.querySelectorAll('.category-section');
+
+      items.forEach(item => {
+        const text = item.textContent?.toLowerCase() || '';
+        (item as HTMLElement).style.display = text.includes(term) ? 'block' : 'none';
+      });
+
+      // Show categories with matching items
+      categories.forEach(category => {
+        const list = category.querySelector('.parameter-list');
+        const visibleItems = list?.querySelectorAll('.parameter-item[style="display: block"], .parameter-item:not([style])');
+        const hasVisible = visibleItems && visibleItems.length > 0;
+
+        if (term && hasVisible) {
+          list?.classList.remove('hidden');
+          const chevron = category.querySelector('.chevron');
+          if (chevron) (chevron as HTMLElement).style.transform = 'rotate(0deg)';
+        }
+      });
+    });
+  }
+
+  function initializeClearButton() {
+    const clearBtn = document.getElementById('clear-distribution-btn');
+    clearBtn?.addEventListener('click', clearChart);
+  }
+
+  async function loadAndRenderChart() {
+    if (!selectedParameter || selectedSites.length === 0) return;
+
+    const { category, name } = selectedParameter;
+    const cacheKey = `${category}/${name}`;
+
+    // Fetch ECDF data if not cached
+    if (!ecdfCache[cacheKey]) {
+      try {
+        const response = await fetch(`/api/ecdf/${category}/${name}.csv`);
+        if (!response.ok) throw new Error('Failed to load data');
+        const csvText = await response.text();
+        ecdfCache[cacheKey] = parseECDFCSV(csvText);
+      } catch (error) {
+        console.error('Error loading ECDF data:', error);
+        alert('Failed to load distribution data. Please try again.');
+        return;
+      }
+    }
+
+    const ecdfData = ecdfCache[cacheKey];
+    renderChart(ecdfData, name);
+  }
+
+  function parseECDFCSV(csvText: string) {
+    const lines = csvText.trim().split('\n');
+    const headers = lines[0].split(',');
+
+    const data: { value: number; sites: Record<string, number> }[] = [];
+    const siteIndices: Record<string, number> = {};
+
+    headers.forEach((h, i) => {
+      if (h.endsWith('_probability')) {
+        siteIndices[h.replace('_probability', '')] = i;
+      }
+    });
+
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',');
+      const value = parseFloat(values[0]);
+      if (isNaN(value)) continue;
+
+      const sites: Record<string, number> = {};
+      Object.entries(siteIndices).forEach(([site, idx]) => {
+        const prob = parseFloat(values[idx]);
+        if (!isNaN(prob)) {
+          sites[site] = prob;
+        }
+      });
+
+      if (Object.keys(sites).length > 0) {
+        data.push({ value, sites });
+      }
+    }
+
+    return data;
+  }
+
+  function renderChart(ecdfData: { value: number; sites: Record<string, number> }[], parameterName: string) {
+    // Show chart container
+    document.getElementById('distribution-chart-container')?.classList.remove('hidden');
+    document.getElementById('distribution-instructions')?.classList.add('hidden');
+
+    // Update title - use the formatted display name from the selected button
+    const selectedBtn = document.querySelector(`.parameter-item[data-parameter="${parameterName}"]`);
+    const displayName = selectedBtn?.textContent?.trim() || parameterName;
+
+    document.getElementById('distribution-chart-title')!.textContent = displayName;
+    document.getElementById('distribution-chart-subtitle')!.textContent =
+      `Comparing ${selectedSites.length} site${selectedSites.length > 1 ? 's' : ''}: ${selectedSites.map(s => s.toUpperCase().replace('_', ' ')).join(', ')}`;
+
+    // Compute histogram bins from ECDF data
+    const histogramDatasets: any[] = [];
+    const ecdfDatasets: any[] = [];
+
+    // Determine value range - cut off at where ECDF reaches 100%
+    const allValues = ecdfData.map(d => d.value);
+    const minVal = Math.min(...allValues);
+    const rawMaxVal = Math.max(...allValues);
+
+    // Find where ECDF reaches 100% for each site (the max value with data)
+    let maxValForDisplay = rawMaxVal;
+    selectedSites.forEach(site => {
+      const siteEcdf = ecdfData
+        .filter(d => d.sites[site] !== undefined)
+        .map(d => ({ x: d.value, y: d.sites[site] }))
+        .sort((a, b) => a.x - b.x);
+
+      if (siteEcdf.length > 0) {
+        // Find the first point where ECDF reaches 100% (or very close to it)
+        const max100 = siteEcdf.find(p => p.y >= 0.9999)?.x || siteEcdf[siteEcdf.length - 1].x;
+        maxValForDisplay = Math.min(maxValForDisplay, max100 * 1.02); // Add 2% padding
+      }
+    });
+
+    // Ensure we show at least some range even if all values are identical
+    if (maxValForDisplay <= minVal) {
+      maxValForDisplay = rawMaxVal;
+    }
+
+    const range = maxValForDisplay - minVal;
+    const numBins = 30;
+    const binWidth = range / numBins;
+
+    // Store ECDF data for tooltip interpolation
+    const siteEcdfMap: Record<string, { x: number; y: number }[]> = {};
+    const siteColorMap: Record<string, string> = {};
+
+    selectedSites.forEach((site, siteIndex) => {
+      const color = getSiteColor(site, siteIndex);
+
+      // Get ECDF points for this site
+      const siteEcdf = ecdfData
+        .filter(d => d.sites[site] !== undefined)
+        .map(d => ({ x: d.value, y: d.sites[site] }))
+        .sort((a, b) => a.x - b.x);
+
+      if (siteEcdf.length === 0) return;
+
+      // Store for tooltip use
+      siteEcdfMap[site] = siteEcdf;
+      siteColorMap[site] = color.border;
+
+      // Compute histogram from ECDF differences
+      const histogramBins: { x: number; y: number }[] = [];
+
+      for (let i = 0; i < numBins; i++) {
+        const binStart = minVal + i * binWidth;
+        const binEnd = binStart + binWidth;
+        const binCenter = (binStart + binEnd) / 2;
+
+        // Find probability mass in this bin (difference in ECDF)
+        const startProb = interpolateECDF(siteEcdf, binStart);
+        const endProb = interpolateECDF(siteEcdf, binEnd);
+        const probMass = Math.max(0, endProb - startProb);
+
+        histogramBins.push({ x: binCenter, y: probMass * 100 }); // Convert to percentage
+      }
+
+      // Histogram dataset
+      histogramDatasets.push({
+        type: 'bar',
+        label: `${site.toUpperCase().replace('_', ' ')}`,
+        data: histogramBins,
+        backgroundColor: color.bg,
+        borderColor: color.border,
+        borderWidth: 1,
+        barPercentage: 1.0,
+        categoryPercentage: 1.0,
+        yAxisID: 'y',
+        order: 2 + siteIndex, // Later sites render on top
+      });
+
+      // ECDF line dataset (hidden from legend via filter - bar entry is enough)
+      ecdfDatasets.push({
+        type: 'line',
+        label: `${site.toUpperCase().replace('_', ' ')} ECDF`,
+        data: siteEcdf.map(p => ({ x: p.x, y: p.y * 100 })),
+        borderColor: color.line,
+        borderWidth: 2,
+        fill: false,
+        tension: 0,
+        pointRadius: 0,
+        pointHoverRadius: 0, // Disable hover circles - we use interpolated tooltip instead
+        yAxisID: 'y2',
+        order: 1,
+        // Store reference for tooltip
+        siteKey: site,
+      });
+    });
+
+    // Destroy existing chart and tooltip
+    if (distributionChart) {
+      distributionChart.destroy();
+    }
+    const existingTooltip = document.getElementById('chartjs-tooltip');
+    if (existingTooltip) {
+      existingTooltip.style.opacity = '0';
+    }
+
+    // Create chart
+    const ctx = document.getElementById('distribution-chart') as HTMLCanvasElement;
+    distributionChart = new (window as any).Chart(ctx, {
+      data: {
+        datasets: [...histogramDatasets, ...ecdfDatasets],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        datasets: {
+          bar: {
+            grouped: false, // Overlap bars instead of side-by-side
+          },
+        },
+        interaction: {
+          mode: 'nearest',
+          axis: 'x',
+          intersect: false,
+        },
+        scales: {
+          x: {
+            type: 'linear',
+            min: minVal,
+            max: maxValForDisplay,
+            offset: false,
+            title: {
+              display: true,
+              text: displayName,
+            },
+            ticks: {
+              maxTicksLimit: 10,
+            },
+          },
+          y: {
+            type: 'linear',
+            position: 'left',
+            title: {
+              display: true,
+              text: 'Frequency (%)',
+            },
+            beginAtZero: true,
+            stacked: false,
+          },
+          y2: {
+            type: 'linear',
+            position: 'right',
+            title: {
+              display: true,
+              text: 'Cumulative %',
+            },
+            min: 0,
+            max: 100,
+            grid: {
+              drawOnChartArea: false,
+            },
+          },
+        },
+        plugins: {
+          legend: {
+            display: true,
+            position: 'bottom',
+            labels: {
+              usePointStyle: true,
+              padding: 15,
+              // Filter out ECDF line entries - just show one entry per site
+              filter: function(item: any, chart: any) {
+                return !item.text.includes('ECDF');
+              },
+            },
+          },
+          datalabels: {
+            display: false,
+          },
+          tooltip: {
+            enabled: false, // Disable default tooltip
+            external: function(context: any) {
+              // Get or create tooltip element
+              let tooltipEl = document.getElementById('chartjs-tooltip');
+              if (!tooltipEl) {
+                tooltipEl = document.createElement('div');
+                tooltipEl.id = 'chartjs-tooltip';
+                tooltipEl.style.cssText = 'background: rgba(0, 0, 0, 0.8); border-radius: 4px; color: white; padding: 8px 12px; pointer-events: none; position: absolute; font-size: 12px; transition: opacity 0.1s ease; z-index: 1000;';
+                document.body.appendChild(tooltipEl);
+              }
+
+              const tooltipModel = context.tooltip;
+
+              // Hide if no tooltip
+              if (tooltipModel.opacity === 0) {
+                tooltipEl.style.opacity = '0';
+                return;
+              }
+
+              // Get hovered x position from the chart
+              const chart = context.chart;
+              const canvasPosition = chart.canvas.getBoundingClientRect();
+              const mouseX = tooltipModel.caretX;
+
+              // Convert pixel position to data value
+              const xScale = chart.scales.x;
+              const hoveredX = xScale.getValueForPixel(mouseX);
+
+              if (hoveredX === undefined || hoveredX < minVal || hoveredX > maxValForDisplay) {
+                tooltipEl.style.opacity = '0';
+                return;
+              }
+
+              // Build tooltip content with interpolated ECDF values
+              let html = `<div style="font-weight: bold; margin-bottom: 4px;">${hoveredX.toFixed(2)}</div>`;
+
+              selectedSites.forEach(site => {
+                const siteEcdf = siteEcdfMap[site];
+                if (!siteEcdf) return;
+
+                // Interpolate ECDF value at exact hover position
+                const ecdfValue = interpolateECDF(siteEcdf, hoveredX) * 100;
+                const color = siteColorMap[site];
+
+                html += `<div style="display: flex; align-items: center; gap: 6px; margin: 2px 0;">
+                  <span style="display: inline-block; width: 10px; height: 10px; background: ${color}; border-radius: 2px;"></span>
+                  <span>${site.toUpperCase().replace('_', ' ')} ECDF: ${ecdfValue.toFixed(1)}%</span>
+                </div>`;
+              });
+
+              tooltipEl.innerHTML = html;
+              tooltipEl.style.opacity = '1';
+              tooltipEl.style.left = canvasPosition.left + window.scrollX + tooltipModel.caretX + 10 + 'px';
+              tooltipEl.style.top = canvasPosition.top + window.scrollY + tooltipModel.caretY - 10 + 'px';
+            },
+          },
+        },
+      },
+    });
+
+    // Populate summary stats table
+    const summaryBody = document.getElementById('distribution-summary-body');
+    const summaryContainer = document.getElementById('distribution-summary');
+    if (summaryBody && summaryContainer) {
+      summaryBody.innerHTML = '';
+
+      selectedSites.forEach((site, siteIndex) => {
+        const color = getSiteColor(site, siteIndex);
+
+        // Get ECDF points for this site
+        const siteEcdf = ecdfData
+          .filter(d => d.sites[site] !== undefined)
+          .map(d => ({ x: d.value, y: d.sites[site] }))
+          .sort((a, b) => a.x - b.x);
+
+        if (siteEcdf.length === 0) return;
+
+        const min = siteEcdf[0].x;
+        const max = siteEcdf[siteEcdf.length - 1].x;
+        const p25 = getPercentileFromECDF(siteEcdf, 25);
+        const median = getPercentileFromECDF(siteEcdf, 50);
+        const p75 = getPercentileFromECDF(siteEcdf, 75);
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td class="px-4 py-2 border border-gray-200">
+            <span class="inline-block w-3 h-3 rounded-full mr-2" style="background-color: ${color.border}"></span>
+            ${site.toUpperCase().replace('_', ' ')}
+          </td>
+          <td class="px-4 py-2 text-right border border-gray-200 font-mono text-xs">${formatValue(min)}</td>
+          <td class="px-4 py-2 text-right border border-gray-200 font-mono text-xs">${formatValue(p25)}</td>
+          <td class="px-4 py-2 text-right border border-gray-200 font-mono text-xs font-semibold">${formatValue(median)}</td>
+          <td class="px-4 py-2 text-right border border-gray-200 font-mono text-xs">${formatValue(p75)}</td>
+          <td class="px-4 py-2 text-right border border-gray-200 font-mono text-xs">${formatValue(max)}</td>
+        `;
+        summaryBody.appendChild(row);
+      });
+
+      summaryContainer.classList.remove('hidden');
+    }
+  }
+
+  function interpolateECDF(ecdf: { x: number; y: number }[], value: number): number {
+    if (ecdf.length === 0) return 0;
+    if (value <= ecdf[0].x) return 0;
+    if (value >= ecdf[ecdf.length - 1].x) return ecdf[ecdf.length - 1].y;
+
+    // Binary search for the right interval
+    let left = 0;
+    let right = ecdf.length - 1;
+
+    while (left < right - 1) {
+      const mid = Math.floor((left + right) / 2);
+      if (ecdf[mid].x <= value) {
+        left = mid;
+      } else {
+        right = mid;
+      }
+    }
+
+    // Linear interpolation
+    const x1 = ecdf[left].x;
+    const x2 = ecdf[right].x;
+    const y1 = ecdf[left].y;
+    const y2 = ecdf[right].y;
+
+    if (x2 === x1) return y1;
+    return y1 + (y2 - y1) * (value - x1) / (x2 - x1);
+  }
+
+  function clearChart() {
+    if (distributionChart) {
+      distributionChart.destroy();
+      distributionChart = null;
+    }
+    // Clean up tooltip
+    const tooltipEl = document.getElementById('chartjs-tooltip');
+    if (tooltipEl) {
+      tooltipEl.style.opacity = '0';
+    }
+    document.getElementById('distribution-chart-container')?.classList.add('hidden');
+    document.getElementById('distribution-instructions')?.classList.remove('hidden');
+    document.getElementById('distribution-summary')?.classList.add('hidden');
+
+    // Clear parameter selection
+    selectedParameter = null;
+    document.querySelectorAll('.parameter-item').forEach(i => {
+      i.classList.remove('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
+    });
+
+    // Reset site selection
+    selectedSites = [];
+    availableSitesForParameter = [];
+    const selectionContainer = document.getElementById('site-selection');
+    const placeholder = document.getElementById('site-selection-placeholder');
+    if (selectionContainer) {
+      selectionContainer.innerHTML = '';
+      selectionContainer.classList.add('hidden');
+    }
+    placeholder?.classList.remove('hidden');
+  }
+</script>
+
+<style>
+  .data-distributions {
+    animation: fadeIn 0.5s ease-in;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .parameter-item {
+    border-left: 3px solid transparent;
+  }
+
+  .parameter-item:hover {
+    border-left-color: rgb(136, 19, 55);
+  }
+
+  .parameter-item.bg-clif-burgundy {
+    border-left-color: rgb(136, 19, 55);
+  }
+
+  #distribution-categories::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  #distribution-categories::-webkit-scrollbar-track {
+    background: rgb(243, 244, 246);
+  }
+
+  #distribution-categories::-webkit-scrollbar-thumb {
+    background: rgb(209, 213, 219);
+    border-radius: 4px;
+  }
+
+  #distribution-categories::-webkit-scrollbar-thumb:hover {
+    background: rgb(156, 163, 175);
+  }
+</style>
