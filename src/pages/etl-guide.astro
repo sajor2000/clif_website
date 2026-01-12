@@ -1944,13 +1944,13 @@ mutate(prone = if_else(str_detect(position_name, <br/>
                     <div class="bg-white/10 p-3 rounded-lg">
                       <div class="font-mono text-xs">
 wide_resp_df = resp_df.pivot(<br/>
-&nbsp;&nbsp;index=["patient_id", "hospitalization_id", "recorded_time"],<br/>
+&nbsp;&nbsp;index=["patient_id", "hospitalization_id", "recorded_dttm"],<br/>
 &nbsp;&nbsp;columns="unique_names",<br/>
 &nbsp;&nbsp;values="meas_value"<br/>
 )
                       </div>
                     </div>
-                    <p class="text-xs text-yellow-300 mt-2">Note: Ensure no duplicate combinations of (patient_id, hospitalization_id, recorded_time, unique_names) before pivoting.</p>
+                    <p class="text-xs text-yellow-300 mt-2">Note: Ensure no duplicate combinations of (patient_id, hospitalization_id, recorded_dttm, unique_names) before pivoting.</p>
                   </div>
 
                   <!-- Step 5 -->
