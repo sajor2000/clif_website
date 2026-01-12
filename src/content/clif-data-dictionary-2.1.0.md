@@ -541,14 +541,18 @@ The `therapy_details` table is a wide longitudinal table that captures the detai
 
 This table provides detailed information about transfusion events linked to specific hospitalizations.
 
-
 **Example**:
 
 | hospitalization_id | transfusion_start_dttm           | transfusion_end_dttm             | component_name  | attribute_name    | volume_transfused | volume_units | product_code |
 |-------------------|----------------------------------|----------------------------------|----------------|-------------------|------------------|--------------|--------------|
-| 123456            | 2024-12-03 08:30:00+00:00 UTC       | 2024-12-03 10:00:00+00:00 UTC       | Red Blood Cells | Leukocyte Reduced | 300              | mL           | E0382        |
-| 789012            | 2024-12-04 14:00:00+00:00 UTC       | 2024-12-04 16:30:00+00:00 UTC       | Platelets       | Irradiated        | 250              | mL           | P0205        |
-| 456789            | 2024-12-05 12:15:00+00:00 UTC       | 2024-12-05 13:45:00+00:00 UTC       | Plasma          |                   | 200              | mL           | F0781        |
+| 123456            | 2024-12-03 08:30:00+00:00 UTC    | 2024-12-03 10:00:00+00:00 UTC    | Red Blood Cells | Leukocyte Reduced | 300              | mL           | E0382        |
+| 789012            | 2024-12-04 14:00:00+00:00 UTC    | 2024-12-04 16:30:00+00:00 UTC    | Platelets       | Irradiated        | 250              | mL           | P0205        |
+| 456789            | 2024-12-05 12:15:00+00:00 UTC    | 2024-12-05 13:45:00+00:00 UTC    | Plasma          |                   | 200              | mL           | F0781        |
+
+
+## clinical_trial
+
+This table captures whether a patient was enrolled in any clinical trial during their hospitalization. It enables longitudinal tracking of trial participation, including trial identifiers, arm assignment, and key consent, randomization, and withdrawal timestamps. This structure supports research into the effects of experimental therapies and interventions on patient outcomes.
 
 ## clinical_trial
 

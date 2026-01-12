@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Badge from '../../components/Badge.astro';
+import ERDTableNavigation from '../../components/ERDTableNavigation.astro';
 import fs from 'node:fs';
 import path from 'node:path';
 import MarkdownIt from 'markdown-it';
@@ -79,6 +80,12 @@ const betaTables = allTables.filter(t => betaTableNames.includes(t.name));
 const conceptTables = allTables
   .filter(t => conceptTableNames.includes(t.name))
   .sort((a, b) => a.name.localeCompare(b.name));
+
+// Prepare tables for navigation component
+const navigationTables = [
+  ...betaTables.map(t => ({ id: t.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'), name: t.name, maturity: 'beta' as const })),
+  ...conceptTables.map(t => ({ id: t.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'), name: t.name, maturity: 'concept' as const }))
+];
 
 
 
@@ -159,56 +166,7 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
       <div class="lg:grid lg:grid-cols-4 lg:gap-8">
         <!-- Sidebar -->
         <aside class="hidden lg:block lg:col-span-1">
-          <nav class="sticky top-20 bg-white rounded-lg border p-4 max-h-[calc(100vh-6rem)] overflow-y-auto">
-            <h2 class="text-lg font-semibold mb-4 text-gray-900">Data Tables</h2>
-            <div class="mb-4">
-              <input
-                type="search"
-                placeholder="Search tables..."
-                class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-clif-burgundy"
-                onInput={e => {
-                  // Implement filtering logic if needed
-                }}
-              />
-            </div>
-            <!-- Beta Tables -->
-            <div class="mb-4">
-              <div class="flex items-center gap-2 mb-2">
-                <span class="font-medium">Beta Tables</span>
-                <span class="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-full">{betaTables.length}</span>
-              </div>
-              <div class="pl-4 space-y-1">
-                {betaTables.map(table => (
-                  <a href={`#${table.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
-                     class="table-link block py-1 px-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded">
-                    {table.name}
-                  </a>
-                ))}
-              </div>
-            </div>
-            <!-- Concept Tables -->
-            <div class="mb-4">
-              <div class="flex items-center gap-2 mb-2">
-                <span class="font-medium">Concept Tables</span>
-                <span class="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full">{conceptTables.length}</span>
-              </div>
-              <div class="pl-4 space-y-1">
-                {conceptTables.map(table => (
-                  <a href={`#${table.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
-                     class="table-link block py-1 px-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded">
-                    {table.name}
-                  </a>
-                ))}
-              </div>
-            </div>
-            <!-- Future Proposed Tables -->
-            <div class="mb-4">
-              <div class="flex items-center gap-2 mb-2">
-                <span class="font-medium">Future Proposed Tables</span>
-              </div>
-              {/* No links under this section */}
-            </div>
-          </nav>
+          <ERDTableNavigation tables={navigationTables} />
         </aside>
         <!-- Main Content -->
         <article class="lg:col-span-3">
@@ -362,8 +320,6 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
       border-spacing: 0;
       overflow-x: auto;
     }
-    .table-link { @apply block py-1 px-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded; }
-    .table-link.active { @apply text-blue-600 bg-blue-50 font-medium; }
     .badge-beta { @apply bg-gradient-to-r from-orange-400 to-orange-500 text-orange-900 border border-orange-600 inline-flex items-center gap-1 px-3 py-1 text-sm font-bold rounded-full shadow-sm; }
     .badge-concept { @apply bg-purple-100 text-purple-800 border border-purple-300 inline-flex items-center gap-1 px-3 py-1 text-sm font-bold rounded-full shadow-sm; }
     .table-wrapper {
@@ -471,12 +427,6 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
     .prose ol{
       list-style-type: decimal !important;
       list-style: decimal inside !important;
-    }
-    .table-link {
-      text-decoration: none !important;
-    }
-    .table-link:hover {
-      text-decoration: underline !important;
     }
   </style>
 </BaseLayout>

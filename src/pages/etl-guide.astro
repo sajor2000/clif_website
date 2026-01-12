@@ -1,0 +1,2490 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ETLGuideNavigation from '../components/ETLGuideNavigation.astro';
+
+// Define navigation sections
+const navigationSections = [
+
+  // All Tables (no beta/concept division)
+  { id: 'adt', title: 'adt', type: 'table' as const, category: 'tables' as const },
+  { id: 'code-status', title: 'code_status', type: 'table' as const, category: 'tables' as const },
+  { id: 'crrt-therapy', title: 'crrt_therapy', type: 'table' as const, category: 'tables' as const },
+  { id: 'hospital-diagnosis', title: 'hospital_diagnosis', type: 'table' as const, category: 'tables' as const },
+  { id: 'hospitalization', title: 'hospitalization', type: 'table' as const, category: 'tables' as const },
+  { id: 'labs', title: 'labs', type: 'table' as const, category: 'tables' as const },
+  { id: 'medication-admin-continuous', title: 'medication_admin_continuous', type: 'table' as const, category: 'tables' as const },
+  { id: 'medication-admin-intermittent', title: 'medication_admin_intermittent', type: 'table' as const, category: 'tables' as const },
+  { id: 'patient', title: 'patient', type: 'table' as const, category: 'tables' as const },
+  { id: 'patient-assessments', title: 'patient_assessments', type: 'table' as const, category: 'tables' as const },
+  { id: 'patient-procedures', title: 'patient_procedures', type: 'table' as const, category: 'tables' as const },
+  { id: 'position', title: 'position', type: 'table' as const, category: 'tables' as const },
+  { id: 'respiratory-support', title: 'respiratory_support', type: 'table' as const, category: 'tables' as const },
+  { id: 'vitals', title: 'vitals', type: 'table' as const, category: 'tables' as const },
+
+  // Tools & Resources
+  { id: 'tools', title: 'Additional Resources', type: 'section' as const, category: 'tools' as const }
+];
+---
+
+<BaseLayout title="CLIF ETL Guide - Data Transformation Resources">
+  <div class="container mx-auto px-4 py-8">
+    <!-- Hero Section -->
+    <div class="text-center mb-12">
+      <h1 class="text-4xl font-bold mb-6 text-gray-900">CLIF ETL Guide</h1>
+      <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+        General ETL guidance for transforming EHR data into CLIF format. Implementation details may vary by site depending on your source data structure.
+      </p>
+    </div>
+
+    <!-- Main Content with Sidebar -->
+    <div class="lg:grid lg:grid-cols-4 lg:gap-8">
+      <!-- Sidebar Navigation -->
+      <aside class="hidden lg:block lg:col-span-1">
+        <ETLGuideNavigation sections={navigationSections} />
+      </aside>
+
+      <!-- Main Content -->
+      <main class="lg:col-span-3">
+
+    <!-- Section 1: General ETL Scripting Guidelines -->
+    <section id="etl-general" class="mb-16">
+      <!-- Main Content Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Data Types & Formatting -->
+        <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
+          <div class="flex items-center mb-4">
+            <svg class="w-5 h-5 text-blue-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <h3 class="text-xl font-semibold text-blue-700">Data Types & Formatting</h3>
+          </div>
+
+          <div class="space-y-4">
+            <div class="bg-blue-50 p-4 rounded-lg">
+              <h4 class="font-semibold text-blue-800 mb-2">Identifier Fields</h4>
+              <div class="text-sm text-blue-700">
+                <p class="mb-2">All <code>*_id</code> variables must be character strings:</p>
+                <div class="bg-blue-100 p-2 rounded font-mono text-xs">
+                  patient_id &lt;- as.character(patient_id)
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-green-50 p-4 rounded-lg">
+              <h4 class="font-semibold text-green-800 mb-2">DateTime Handling</h4>
+              <div class="text-sm text-green-700">
+                <p class="mb-2">Convert all timestamps to UTC:</p>
+                <div class="bg-green-100 p-2 rounded font-mono text-xs">
+                  admit_dttm &lt;- as_datetime(admit_dttm, tz = "UTC")
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-purple-50 p-4 rounded-lg">
+              <h4 class="font-semibold text-purple-800 mb-2">Numeric Values</h4>
+              <div class="text-sm text-purple-700">
+                <p class="mb-2">Clean and validate numeric data:</p>
+                <div class="bg-purple-100 p-2 rounded font-mono text-xs">
+                  value &lt;- as.numeric(parse_number(value))
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Data Quality & Validation -->
+        <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-500">
+          <div class="flex items-center mb-4">
+            <svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+            </svg>
+            <h3 class="text-xl font-semibold text-green-700">Data Quality & Validation</h3>
+          </div>
+
+          <div class="space-y-4">
+            <div>
+              <h4 class="font-semibold text-gray-800 mb-2">Essential Quality Checks</h4>
+              <ul class="text-sm text-gray-600 space-y-2">
+                <li class="flex items-start">
+                  <svg class="w-4 h-4 text-green-500 mt-0.5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                  </svg>
+                  <span>Check for duplicates using <strong>composite keys</strong></span>
+                </li>
+                <li class="flex items-start">
+                  <svg class="w-4 h-4 text-green-500 mt-0.5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                  </svg>
+                  <span>Calculate <strong>missingness percentages</strong> by field</span>
+                </li>
+                <li class="flex items-start">
+                  <svg class="w-4 h-4 text-green-500 mt-0.5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                  </svg>
+                  <span>Validate <strong>date ranges</strong> and distributions</span>
+                </li>
+                <li class="flex items-start">
+                  <svg class="w-4 h-4 text-green-500 mt-0.5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                  </svg>
+                  <span>Remove rows with <strong>missing critical identifiers</strong></span>
+                </li>
+              </ul>
+            </div>
+
+            <div class="bg-gray-50 p-4 rounded-lg">
+              <h4 class="font-semibold text-gray-800 mb-2">Validation Tools</h4>
+              <ul class="text-sm space-y-2">
+                <li class="flex items-center">
+                <li class="flex items-center">
+                  <svg class="w-4 h-4 text-clif-burgundy mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                  <a href="https://chatgpt.com/g/g-h1nk6d3eR-clif-assistant" target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:underline font-medium">CLIF Assistant</a> - AI-powered guidance
+                </li>
+                <li class="flex items-center">
+                  <svg class="w-4 h-4 text-clif-burgundy mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                  <a href="https://pypi.org/project/clifpy/" target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:underline font-medium">CLIFpy package</a> - Python package
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Terminology & Mapping -->
+        <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-clif-burgundy">
+          <div class="flex items-center mb-4">
+            <svg class="w-5 h-5 text-clif-burgundy mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"/>
+            </svg>
+            <h3 class="text-xl font-semibold text-clif-burgundy">Terminology & Mapping</h3>
+          </div>
+
+          <div class="space-y-4">
+            <div class="bg-clif-burgundy/10 p-4 rounded-lg">
+              <h4 class="font-semibold text-clif-burgundy mb-2">mCIDE Guidelines</h4>
+              <p class="text-sm text-clif-burgundy">
+                Follow mCIDE (minimum Common ICU Data Elements) mapping guidelines for consistent data transformation across all institutions.
+              </p>
+              <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/tree/main/mCIDE" target="_blank" class="text-clif-burgundy hover:underline text-xs mt-2 inline-block">
+                View mCIDE Documentation →
+              </a>
+            </div>
+            <div class="bg-clif-burgundy/5 p-4 rounded-lg">
+              <h4 class="font-semibold text-clif-burgundy mb-2">Sample Mapping</h4>
+              <p class="text-sm text-clif-burgundy">
+                Example of mapping site-specific discharge names to standardized <code>discharge_category</code> values for the <code>hospitalization</code> table.
+              </p>
+              <div class="mt-3">
+                <table class="text-xs bg-white rounded shadow border mt-2">
+                  <thead>
+                    <tr>
+                      <th class="px-2 py-1 border-b text-left">discharge_name (site)</th>
+                      <th class="px-2 py-1 border-b text-left">discharge_category (CLIF)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td class="px-2 py-1 border-b">Acute Rehab Facility</td>
+                      <td class="px-2 py-1 border-b">Acute Inpatient Rehab Facility	</td>
+                    </tr>
+                    <tr>
+                      <td class="px-2 py-1 border-b">Rehab Facility - Inpatient</td>
+                      <td class="px-2 py-1 border-b">Acute Inpatient Rehab Facility</td>
+                    </tr>
+                    <tr>
+                      <td class="px-2 py-1 border-b">Short Term Hospital</td>
+                      <td class="px-2 py-1 border-b">Acute Care Hospital</td>
+                    </tr>
+                    <tr>
+                      <td class="px-2 py-1 border-b">Mental Health Jud Commit Anoka</td>
+                      <td class="px-2 py-1 border-b">Psychiatric Hospital</td>
+                    </tr>
+                    <tr>
+                      <td class="px-2 py-1 border-b">IRTS</td>
+                      <td class="px-2 py-1 border-b">Home</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>  
+      </div>
+    </section>
+
+    <!-- Section 2: ETL Guidance by Table -->
+    <section id="etl-pipeline" class="mb-16">
+      <h2 class="text-3xl font-bold mb-8 text-gray-900">Table Specific Guidelines</h2>
+
+      <!-- All Tables in Alphabetical Order -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        <!-- ADT -->
+        <div id="adt" class="flip-card h-64 cursor-pointer">
+          <div class="flip-card-inner">
+            <div class="flip-card-front bg-white rounded-lg shadow-md p-6 border border-gray-200">
+              <h4 class="text-lg font-semibold mb-4 text-gray-800 flex items-center justify-between">
+                adt
+                <span class="text-xs text-gray-500">Click to flip</span>
+              </h4>
+              <ul class="text-sm text-gray-600 space-y-2">
+                <li>• Location category & type mapping (mCIDE)</li>
+                <li>• Fix overlapping time intervals</li>
+                <li>• Deduplication & UTC conversion</li>
+              </ul>
+              <div class="mt-3 p-3 bg-gray-50 rounded text-xs">
+                <strong>Composite Keys:</strong> hospitalization_id, in_dttm
+              </div>
+            </div>
+            <div class="flip-card-back bg-clif-burgundy rounded-lg shadow-md p-6 text-white overflow-y-auto">
+              <button class="modal-close" aria-label="Close">×</button>
+              <h4 class="text-2xl font-bold mb-6">ADT - Admissions, Discharges, Transfers</h4>
+
+              <div class="expanded-content">
+                <div class="space-y-6">
+                  <!-- Important Notes -->
+                  <div class="bg-yellow-500/20 p-4 rounded-lg border border-yellow-400/30">
+                    <h5 class="text-lg font-semibold mb-2 text-yellow-300">Important Notes</h5>
+                    <ul class="space-y-2 text-sm">
+                      <li>• ADT represents the patient's <strong>physical location</strong>, NOT the patient "status"</li>
+                      <li>• Procedural areas and operating rooms should be mapped to <code class="bg-white/20 px-1 rounded">Procedural</code></li>
+                      <li>• Pre/Intra/Post-procedural and OR EHR data (e.g., anesthesia flowsheet records from Labs, Vitals, Scores, Respiratory Support) are not currently represented in CLIF</li>
+                    </ul>
+                  </div>
+
+                  <!-- Step 1 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 1: Create ADT Mappings</h5>
+                    <p class="text-sm mb-3">Before transforming your ADT data, prepare two mapping files:</p>
+                    <div class="space-y-3 text-sm">
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p><strong class="text-blue-300">a. Location Category Mapping:</strong> Map all site-specific <code class="bg-white/20 px-1 rounded">location_name</code> values to standardized CLIF <code class="bg-white/20 px-1 rounded">location_category</code> values</p>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/adt/clif_adt_location_categories.csv" target="_blank" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_adt_location_categories.csv</a>
+                      </div>
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p><strong class="text-blue-300">b. ICU Location Type Mapping:</strong> For ICU locations, map <code class="bg-white/20 px-1 rounded">location_name</code> to the appropriate <code class="bg-white/20 px-1 rounded">location_type</code></p>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/adt/clif_adt_location_type.csv" target="_blank" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_adt_location_type.csv</a>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Step 2 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 2: Filter to Inpatient Hospitalizations</h5>
+                    <p class="text-sm">Filter your ADT data to include only inpatient hospitalizations. Exclude outpatient visits, observation stays, or other non-inpatient encounters.</p>
+                  </div>
+
+                  <!-- Step 3 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 3: Apply Mappings</h5>
+                    <p class="text-sm">Join the mapping files created in Step 1 to your ADT table to add <code class="bg-white/20 px-1 rounded">location_category</code> and <code class="bg-white/20 px-1 rounded">location_type</code> columns.</p>
+                  </div>
+                </div>
+
+                <div class="space-y-6">
+                  <!-- Step 4 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 4: Fix Time Intervals</h5>
+                    <div class="space-y-3 text-sm">
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p class="text-yellow-300 font-semibold mb-2">a. Remove zero-duration stays:</p>
+                        <p>Filter out records where <code class="bg-white/20 px-1 rounded">in_dttm == out_dttm</code></p>
+                      </div>
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p class="text-yellow-300 font-semibold mb-2">b. Fix overlapping intervals:</p>
+                        <ol class="space-y-1 text-xs">
+                          <li>1. Generate unique time points per patient</li>
+                          <li>2. Create non-overlapping intervals from consecutive time points</li>
+                          <li>3. Map original records using <code class="bg-white/20 px-1 rounded">foverlaps()</code></li>
+                          <li>4. Resolve conflicts: select most recent when multiple locations exist</li>
+                        </ol>
+                      </div>
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p class="text-yellow-300 font-semibold mb-2">c. Merge consecutive same-location stays:</p>
+                        <p class="text-xs">Use run-length encoding to group and merge consecutive identical locations</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Step 5 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 5: Create hospital_type Column</h5>
+                    <p class="text-sm">Assign the appropriate <code class="bg-white/20 px-1 rounded">hospital_type</code> value from the CLIF permissible set based on your institution's characteristics.</p>
+                  </div>
+
+                  <!-- Step 6 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 6: Final Cleanup</h5>
+                    <ul class="space-y-2 text-sm">
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <span><strong>Deduplicate:</strong> Remove duplicates by composite key <code class="bg-white/20 px-1 rounded">hospitalization_id</code>, <code class="bg-white/20 px-1 rounded">in_dttm</code></span>
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <span><strong>UTC Conversion:</strong> Convert all datetime fields to UTC timezone</span>
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <span><strong>Data Types:</strong> Ensure all variables match data dictionary specifications</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <!-- Data Quality Checks -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Data Quality Checks</h5>
+                    <ul class="space-y-2 text-sm">
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">✓</span>
+                        <span>Ensure <code class="bg-white/20 px-1 rounded">out_dttm > in_dttm</code> for all records</span>
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">✓</span>
+                        <span>Validate <code class="bg-white/20 px-1 rounded">location_category</code> mappings against mCIDE</span>
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">✓</span>
+                        <span>Flag cases where ED visits occur after ICU/Ward</span>
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">✓</span>
+                        <span>Check for remaining duplicates by composite key</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- Code Status -->
+        <div id="code-status" class="flip-card h-64 cursor-pointer">
+          <div class="flip-card-inner">
+            <div class="flip-card-front bg-white rounded-lg shadow-md p-6 border border-gray-200">
+              <h4 class="text-lg font-semibold mb-4 text-gray-800 flex items-center justify-between">
+                code_status
+                <span class="text-xs text-gray-500">Click to flip</span>
+              </h4>
+              <ul class="text-sm text-gray-600 space-y-2">
+                <li>• Code status category mapping (mCIDE)</li>
+                <li>• Deduplication & UTC conversion</li>
+              </ul>
+            </div>
+            <div class="flip-card-back bg-clif-burgundy rounded-lg shadow-md p-6 text-white overflow-y-auto">
+              <button class="modal-close" aria-label="Close">×</button>
+              <h4 class="text-2xl font-bold mb-6">Code Status</h4>
+
+              <div class="expanded-content">
+                <div class="space-y-6">
+                  <!-- Important Notes -->
+                  <div class="bg-yellow-500/20 p-4 rounded-lg border border-yellow-400/30">
+                    <h5 class="text-lg font-semibold mb-2 text-yellow-300">Important Notes</h5>
+                    <ul class="space-y-2 text-sm">
+                      <li>• This table contains only code status <strong>orders placed by clinicians</strong></li>
+                      <li>• It is <strong>NOT</strong> equivalent to the code status display name in the EMR</li>
+                    </ul>
+                  </div>
+
+                  <!-- Step 1 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 1: Create Code Status Mappings</h5>
+                    <p class="text-sm mb-3">Before transforming your code status data, prepare the mapping file:</p>
+                    <div class="space-y-3 text-sm">
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p><strong class="text-blue-300">Code Status Category Mapping:</strong> Map all site-specific <code class="bg-white/20 px-1 rounded">code_status_name</code> values to standardized CLIF <code class="bg-white/20 px-1 rounded">code_status_category</code> values</p>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/code_status/clif_code_status_categories.csv" target="_blank" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_code_status_categories.csv</a>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Step 2 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 2: Filter to Patients with Inpatient Hospitalizations</h5>
+                    <p class="text-sm">Filter your code status data to include only patients with an inpatient hospitalization. Since code status is at the patient level, include only patients whose <code class="bg-white/20 px-1 rounded">hospitalization_id</code> exists in your CLIF ADT table.</p>
+                  </div>
+                </div>
+
+                <div class="space-y-6">
+                  <!-- Step 3 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 3: Apply Mappings</h5>
+                    <p class="text-sm">Join the mapping file created in Step 1 to your code status table to add the <code class="bg-white/20 px-1 rounded">code_status_category</code> column.</p>
+                  </div>
+
+                  <!-- Step 4 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 4: Final Cleanup</h5>
+                    <ul class="space-y-2 text-sm">
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <strong>Deduplicate: </strong> Remove duplicate rows 
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <strong>UTC Conversion: </strong> Convert all datetime fields to UTC timezone
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <strong>Data Types: </strong> Ensure all variables match data dictionary specifications
+                      </li>
+                    </ul>
+                  </div>
+
+                  <!-- Data Quality Checks -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Data Quality Checks</h5>
+                    <ul class="space-y-2 text-sm">
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">✓</span>
+                        Validate <code class="bg-white/20 px-1 rounded">code_status_category</code> mappings against mCIDE
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">✓</span>
+                        Ensure all <code class="bg-white/20 px-1 rounded">hospitalization_id</code> values exist in ADT table
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CRRT Therapy -->
+        <div id="crrt-therapy" class="flip-card h-64 cursor-pointer">
+          <div class="flip-card-inner">
+            <div class="flip-card-front bg-white rounded-lg shadow-md p-6 border border-gray-200">
+              <h4 class="text-lg font-semibold mb-4 text-gray-800 flex items-center justify-between">
+                crrt_therapy
+                <span class="text-xs text-gray-500">Click to flip</span>
+              </h4>
+              <ul class="text-sm text-gray-600 space-y-2">
+                <li>• CRRT mode category mapping (mCIDE)</li>
+                <li>• Unit conversions to CLIF standards</li>
+                <li>• Verify missingness by modality</li>
+              </ul>
+            </div>
+            <div class="flip-card-back bg-clif-burgundy rounded-lg shadow-md p-6 text-white overflow-y-auto">
+              <button class="modal-close" aria-label="Close">×</button>
+              <h4 class="text-2xl font-bold mb-6">CRRT Therapy</h4>
+
+              <div class="expanded-content">
+                <div class="space-y-6">
+                  <!-- Step 1 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 1: Create CRRT Mode Mappings</h5>
+                    <p class="text-sm mb-3">Before transforming your CRRT data, prepare the mapping file:</p>
+                    <div class="space-y-3 text-sm">
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p><strong class="text-blue-300">Mode Category Mapping:</strong> Map all site-specific <code class="bg-white/20 px-1 rounded">crrt_mode_name</code> values to standardized CLIF <code class="bg-white/20 px-1 rounded">crrt_mode_category</code> values</p>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/crrt_therapy/clif_crrt_therapy_mode_categories.csv" target="_blank" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_crrt_therapy_mode_categories.csv</a>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Step 2 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 2: Filter to Inpatient Hospitalizations</h5>
+                    <p class="text-sm">Filter your CRRT data to include only inpatient hospitalizations.</p>
+                  </div>
+
+                  <!-- Step 3 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 3: Apply Mappings</h5>
+                    <p class="text-sm">Join the mapping file created in Step 1 to your CRRT table to add the <code class="bg-white/20 px-1 rounded">crrt_mode_category</code> column.</p>
+                  </div>
+
+                  <!-- Step 4 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 4: Unit Conversions</h5>
+                    <div class="bg-yellow-500/20 p-3 rounded-lg border border-yellow-400/30 text-sm mb-3">
+                      <p class="text-yellow-300 font-semibold mb-2">Critical Requirement:</p>
+                      <p class="text-sm">All CRRT parameters must be reported using CLIF units. Please refer to the data dictionary page for CRRT setting units.</p>
+                    </div>
+                    <p class="text-sm mb-3">If your source data uses different units, convert to CLIF standards. Eg:</p>
+                    <div class="bg-white/10 p-3 rounded-lg text-sm">
+                      <table class="text-xs w-full">
+                        <thead>
+                          <tr class="border-b border-white/20">
+                            <th class="text-left py-1 pr-2">Parameter</th>
+                            <th class="text-left py-1 pr-2">CLIF Unit</th>
+                            <th class="text-left py-1">Conversion Example</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr class="border-b border-white/10">
+                            <td class="py-1 pr-2"><code class="bg-white/20 px-1 rounded">blood_flow_rate</code></td>
+                            <td class="py-1 pr-2 text-green-300">mL/min</td>
+                            <td class="py-1 text-gray-300">0.2 L/min → 200 mL/min</td>
+                          </tr>
+                          <tr class="border-b border-white/10">
+                            <td class="py-1 pr-2"><code class="bg-white/20 px-1 rounded">dialysate_flow_rate</code></td>
+                            <td class="py-1 pr-2 text-green-300">mL/hr</td>
+                            <td class="py-1 text-gray-300">2 L/hr → 2000 mL/hr</td>
+                          </tr>
+                          <tr>
+                            <td class="py-1 pr-2"><code class="bg-white/20 px-1 rounded">ultrafiltration_out</code></td>
+                            <td class="py-1 pr-2 text-green-300">mL/hr</td>
+                            <td class="py-1 text-gray-300">1.5 L/hr → 1500 mL/hr</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="space-y-6">
+                  <!-- Step 5 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 5: Verify Missingness by Modality</h5>
+                    <p class="text-sm mb-3">Validate that parameter availability matches expected patterns for each CRRT modality:</p>
+                    <div class="bg-white/10 p-2 rounded-lg overflow-x-auto">
+                      <table class="text-xs w-full">
+                        <thead>
+                          <tr class="border-b border-white/20">
+                            <th class="px-2 py-1 text-left">Modality</th>
+                            <th class="px-2 py-1 text-left">Blood Flow</th>
+                            <th class="px-2 py-1 text-left">Pre-Filter</th>
+                            <th class="px-2 py-1 text-left">Post-Filter</th>
+                            <th class="px-2 py-1 text-left">Dialysate</th>
+                            <th class="px-2 py-1 text-left">UF Out</th>
+                          </tr>
+                        </thead>
+                        <tbody class="text-xs">
+                          <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">SCUF</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1"></td><td class="px-2 py-1"></td><td class="px-2 py-1"></td><td class="px-2 py-1 text-green-300">E</td></tr>
+                          <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">CVVH</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1"></td><td class="px-2 py-1 text-green-300">E</td></tr>
+                          <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">CVVHD</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1"></td><td class="px-2 py-1"></td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-green-300">E</td></tr>
+                          <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">CVVHDF</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-green-300">E</td></tr>
+                          <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">AVVH</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-yellow-300">P</td><td class="px-2 py-1 text-yellow-300">P</td><td class="px-2 py-1"></td><td class="px-2 py-1 text-green-300">E</td></tr>
+                          <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">AVVHD</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1"></td><td class="px-2 py-1"></td><td class="px-2 py-1 text-yellow-300">P</td><td class="px-2 py-1 text-green-300">E</td></tr>
+                          <tr><td class="px-2 py-1 font-semibold">AVVHF</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-yellow-300">P</td><td class="px-2 py-1 text-yellow-300">P</td><td class="px-2 py-1 text-yellow-300">P</td><td class="px-2 py-1 text-green-300">E</td></tr>
+                        </tbody>
+                      </table>
+                      <p class="text-xs mt-2 text-gray-300"><span class="text-green-300">E</span> = Expected | <span class="text-yellow-300">P</span> = Possible | Empty = Not applicable</p>
+                    </div>
+                  </div>
+
+                  <!-- Step 6 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 6: Final Cleanup</h5>
+                    <ul class="space-y-2 text-sm">
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <strong>Deduplicate:</strong> Remove duplicate rows
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <strong>UTC Conversion:</strong> Convert all datetime fields to UTC timezone
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <strong>Data Types:</strong> Ensure all variables match data dictionary specifications
+                      </li>
+                    </ul>
+                  </div>
+
+                  <!-- Data Quality Checks -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Data Quality Checks</h5>
+                    <ul class="space-y-2 text-sm">
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">✓</span>
+                        Validate <code class="bg-white/20 px-1 rounded">crrt_mode_category</code> mappings against mCIDE
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">✓</span>
+                        Verify parameter missingness aligns with modality expectations
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">✓</span>
+                        Check unit conversions are applied correctly
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hospital Diagnosis -->
+        <div id="hospital-diagnosis" class="flip-card h-64 cursor-pointer">
+          <div class="flip-card-inner">
+            <div class="flip-card-front bg-white rounded-lg shadow-md p-6 border border-gray-200">
+              <h4 class="text-lg font-semibold mb-4 text-gray-800 flex items-center justify-between">
+                hospital_diagnosis
+                <span class="text-xs text-gray-500">Click to flip</span>
+              </h4>
+              <ul class="text-sm text-gray-600 space-y-2">
+                <li>• Primary vs secondary diagnosis assignment</li>
+                <li>• Present on admission (POA) filtering</li>
+              </ul>
+            </div>
+            <div class="flip-card-back bg-clif-burgundy rounded-lg shadow-md p-6 text-white overflow-y-auto">
+              <button class="modal-close" aria-label="Close">×</button>
+              <h4 class="text-2xl font-bold mb-6">Hospital Diagnosis</h4>
+
+              <div class="expanded-content">
+                <div class="space-y-6">
+                  <!-- Important Notes -->
+                  <div class="bg-yellow-500/20 p-4 rounded-lg border border-yellow-400/30">
+                    <h5 class="text-lg font-semibold mb-2 text-yellow-300">Important Notes</h5>
+                    <ul class="space-y-2 text-sm">
+                      <li>• This table only includes <strong>finalized billing diagnosis codes</strong> for hospital reimbursement</li>
+                      <li>• All other diagnosis codes for a patient are included in the concept table <code class="bg-white/20 px-1 rounded">patient_diagnosis</code></li>
+                    </ul>
+                  </div>
+
+                  <!-- Step 1 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 1: Filter to Inpatient Hospitalizations</h5>
+                    <p class="text-sm">Filter your hospital diagnosis data to include only inpatient hospitalizations.</p>
+                  </div>
+
+                  <!-- Step 2 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 2: Create Primary Diagnosis Flag</h5>
+                    <p class="text-sm mb-3">If your source data has diagnosis ranking, create the <code class="bg-white/20 px-1 rounded">diagnosis_primary</code> column:</p>
+                    <div class="bg-white/10 p-3 rounded-lg text-sm">
+                      <ul class="space-y-2">
+                        <li><strong class="text-green-300">1</strong> = Primary diagnosis (rank = 1)</li>
+                        <li><strong class="text-yellow-300">0</strong> = Secondary diagnosis (rank ≥ 2)</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="space-y-6">
+                  <!-- Step 3 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 3: Filter and Assign POA Values</h5>
+                    <p class="text-sm mb-3">Only include rows where <code class="bg-white/20 px-1 rounded">poa_present</code> is definitively Yes or No:</p>
+                    <div class="bg-white/10 p-3 rounded-lg text-sm mb-3">
+                      <p class="text-red-300 font-semibold mb-2">Exclude rows with:</p>
+                      <p class="text-xs">Unknown, Null, Missing, Clinically Undetermined, Exempt from POA Reporting, Unspecified, etc.</p>
+                    </div>
+                    <div class="bg-white/10 p-3 rounded-lg text-sm">
+                      <p class="text-green-300 font-semibold mb-2">Assign values:</p>
+                      <ul class="space-y-1">
+                        <li><strong class="text-green-300">1</strong> = Yes (present on admission)</li>
+                        <li><strong class="text-yellow-300">0</strong> = No (not present on admission)</li>
+                      </ul>
+                      <p class="text-xs mt-2 text-gray-300">No other values are permitted.</p>
+                    </div>
+                  </div>
+
+                  <!-- Step 4 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 4: Final Cleanup</h5>
+                    <ul class="space-y-2 text-sm">
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <strong>Deduplicate:</strong> Remove duplicate rows
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <strong>UTC Conversion:</strong> Convert all datetime fields to UTC timezone
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <strong>Data Types:</strong> Ensure all variables match data dictionary specifications
+                      </li>
+                    </ul>
+                  </div>
+
+                  <!-- Data Quality Checks -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Data Quality Checks</h5>
+                    <ul class="space-y-2 text-sm">
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">✓</span>
+                        Verify <code class="bg-white/20 px-1 rounded">diagnosis_primary</code> contains only 0 or 1
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">✓</span>
+                        Verify <code class="bg-white/20 px-1 rounded">poa_present</code> contains only 0 or 1
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">✓</span>
+                        Validate diagnosis codes are in expected format (ICD-10, etc.)
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hospitalization -->
+        <div id="hospitalization" class="flip-card h-64 cursor-pointer">
+          <div class="flip-card-inner">
+            <div class="flip-card-front bg-white rounded-lg shadow-md p-6 border border-gray-200">
+              <h4 class="text-lg font-semibold mb-4 text-gray-800 flex items-center justify-between">
+                hospitalization
+                <span class="text-xs text-gray-500">Click to flip</span>
+              </h4>
+              <ul class="text-sm text-gray-600 space-y-2">
+                <li>• Admission & discharge category mapping (mCIDE)</li>
+                <li>• Age calculation & filtering</li>
+                <li>• Geographic variable cleaning (FIPS codes)</li>
+              </ul>
+              <div class="mt-3 p-3 bg-gray-50 rounded text-xs">
+                <strong>Composite Key:</strong> hospitalization_id
+              </div>
+            </div>
+            <div class="flip-card-back bg-clif-burgundy rounded-lg shadow-md p-6 text-white overflow-y-auto">
+              <button class="modal-close" aria-label="Close">×</button>
+              <h4 class="text-2xl font-bold mb-6">Hospitalization</h4>
+
+              <div class="expanded-content">
+                <div class="space-y-6">
+                  <!-- Important Notes -->
+                  <div class="bg-yellow-500/20 p-4 rounded-lg border border-yellow-400/30">
+                    <h5 class="text-lg font-semibold mb-2 text-yellow-300">Important Notes</h5>
+                    <ul class="space-y-2 text-sm">
+                      <li>• If a patient is discharged to Home/Hospice, then <code class="bg-white/20 px-1 rounded">discharge_category</code> == Hospice</li>
+                      <li>• Geographic indicators (<code class="bg-white/20 px-1 rounded">zipcode_nine_digit</code>, <code class="bg-white/20 px-1 rounded">census_block_code</code>, etc.) should be added if available. <strong>zipcode_nine_digit</strong> is preferred over zipcode_five_digit; <strong>census_block_code</strong> is ideal for census-based indicators</li>
+                      <li>• If a patient is <strong>transferred between different hospitals</strong> within a health system, create a <strong>new hospitalization_id</strong></li>
+                      <li>• If a patient is seen in ER at hospital A then admitted to inpatient at hospital B, use <strong>one hospitalization_id</strong> for both stays</li>
+                      <li>• A <code class="bg-white/20 px-1 rounded">hospitalization_joined_id</code> can be created from contiguous hospitalization_ids</li>
+                    </ul>
+                  </div>
+
+                  <!-- Step 1 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 1: Create Hospitalization Mappings</h5>
+                    <p class="text-sm mb-3">Before transforming your hospitalization data, prepare the mapping files:</p>
+                    <div class="space-y-3 text-sm">
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p><strong class="text-blue-300">a. Admission Type Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">admission_type_name</code> to <code class="bg-white/20 px-1 rounded">admission_type_category</code></p>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/hospitalization/clif_hospitalization_admission_type_categories.csv" target="_blank" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_hospitalization_admission_type_categories.csv</a>
+                      </div>
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p><strong class="text-blue-300">b. Discharge Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">discharge_name</code> to <code class="bg-white/20 px-1 rounded">discharge_category</code></p>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/hospitalization/clif_hospitalization_discharge_categories.csv" target="_blank" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_hospitalization_discharge_categories.csv</a>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Step 2 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 2: Filter to Inpatient Hospitalizations</h5>
+                    <p class="text-sm">Filter your hospitalization data to include only inpatient hospitalizations.</p>
+                  </div>
+
+                  <!-- Step 3 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 3: Apply Mappings</h5>
+                    <p class="text-sm">Join the mapping files created in Step 1 to add <code class="bg-white/20 px-1 rounded">admission_type_category</code> and <code class="bg-white/20 px-1 rounded">discharge_category</code> columns.</p>
+                  </div>
+
+                  <!-- Step 4 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 4: Age Calculation & Filtering</h5>
+                    <div class="bg-white/10 p-3 rounded-lg text-sm">
+                      <ul class="space-y-2">
+                        <li>• If <code class="bg-white/20 px-1 rounded">age_at_admission</code> is not present, calculate it using <code class="bg-white/20 px-1 rounded">birth_date</code></li>
+                        <li>• <strong class="text-red-300">Drop encounters</strong> where age &gt; 120 years or &lt; 18 years</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="space-y-6">
+                  <!-- Step 5 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 5: Clean Geographic Variables</h5>
+                    <p class="text-sm mb-3">Clean and standardize FIPS codes by removing spaces, dashes, and special characters:</p>
+                    <div class="bg-white/10 p-2 rounded-lg overflow-x-auto mb-3">
+                      <table class="text-xs w-full">
+                        <thead>
+                          <tr class="border-b border-white/20">
+                            <th class="px-2 py-1 text-left">Variable</th>
+                            <th class="px-2 py-1 text-left">Digits</th>
+                            <th class="px-2 py-1 text-left">Description</th>
+                          </tr>
+                        </thead>
+                        <tbody class="text-xs">
+                          <tr class="border-b border-white/10"><td class="px-2 py-1"><code class="bg-white/20 px-1 rounded">state_code</code></td><td class="px-2 py-1 text-green-300">2</td><td class="px-2 py-1">State FIPS</td></tr>
+                          <tr class="border-b border-white/10"><td class="px-2 py-1"><code class="bg-white/20 px-1 rounded">county_code</code></td><td class="px-2 py-1 text-green-300">5</td><td class="px-2 py-1">State + County</td></tr>
+                          <tr class="border-b border-white/10"><td class="px-2 py-1"><code class="bg-white/20 px-1 rounded">census_tract</code></td><td class="px-2 py-1 text-green-300">11</td><td class="px-2 py-1">State + County + Tract</td></tr>
+                          <tr class="border-b border-white/10"><td class="px-2 py-1"><code class="bg-white/20 px-1 rounded">census_block_group_code</code></td><td class="px-2 py-1 text-green-300">12</td><td class="px-2 py-1">Tract + Block Group</td></tr>
+                          <tr><td class="px-2 py-1"><code class="bg-white/20 px-1 rounded">census_block_code</code></td><td class="px-2 py-1 text-green-300">15</td><td class="px-2 py-1">Full Block ID</td></tr>
+                        </tbody>
+                      </table>
+                    </div>
+                    <div class="bg-white/10 p-3 rounded-lg text-xs">
+                      <p class="text-yellow-300 font-semibold mb-2">Derive from census_block_id:</p>
+                      <div class="font-mono space-y-1">
+                        <div>state_code = census_block_id[0:2]</div>
+                        <div>county_code = census_block_id[0:5]</div>
+                        <div>census_tract = census_block_id[0:11]</div>
+                        <div>census_block_group_code = census_block_id[0:12]</div>
+                      </div>
+                    </div>
+                    <div class="bg-white/10 p-3 rounded-lg text-xs mt-3">
+                      <p class="text-blue-300 font-semibold mb-1">fips_version:</p>
+                      <p>Year of Census geography definitions (2000, 2010, 2020)</p>
+                    </div>
+                  </div>
+
+                  <!-- Step 6 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 6: Final Cleanup</h5>
+                    <ul class="space-y-2 text-sm">
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <span><strong>Deduplicate:</strong> Remove duplicate rows by composite key <code class="bg-white/20 px-1 rounded">hospitalization_id</code></span>
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <span><strong>UTC Conversion:</strong> Convert all datetime fields to UTC timezone</span>
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <span><strong>Data Types:</strong> Ensure all variables match data dictionary specifications</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <!-- Data Quality Checks -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Data Quality Checks</h5>
+                    <ul class="space-y-2 text-sm">
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">✓</span>
+                        <span>Ensure <code class="bg-white/20 px-1 rounded">discharge_dttm</code> ≥ <code class="bg-white/20 px-1 rounded">admission_dttm</code></span>
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">✓</span>
+                        <span>Verify FIPS codes have correct digit lengths</span>
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">✓</span>
+                        <span>Validate category mappings against mCIDE</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Labs -->
+        <div id="labs" class="flip-card h-64 cursor-pointer">
+          <div class="flip-card-inner">
+            <div class="flip-card-front bg-white rounded-lg shadow-md p-6 border border-gray-200">
+              <h4 class="text-lg font-semibold mb-4 text-gray-800 flex items-center justify-between">
+                labs
+                <span class="text-xs text-gray-500">Click to flip</span>
+              </h4>
+              <ul class="text-sm text-gray-600 space-y-2">
+                <li>• Lab order & category mapping (mCIDE)</li>
+                <li>• Blood/plasma/serum specimens only</li>
+                <li>• Unit standardization to CLIF reference units</li>
+                <li>• Numeric value parsing</li>
+              </ul>
+            </div>
+            <div class="flip-card-back bg-clif-burgundy rounded-lg shadow-md p-6 text-white overflow-y-auto">
+              <button class="modal-close" aria-label="Close">×</button>
+              <h4 class="text-2xl font-bold mb-6">Labs</h4>
+
+              <div class="expanded-content">
+                <div class="space-y-6">
+                  <!-- Step 1 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 1: Create Lab Mappings</h5>
+                    <p class="text-sm mb-3">Before transforming your lab data, prepare the mapping files:</p>
+                    <div class="space-y-3 text-sm">
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p><strong class="text-blue-300">a. Lab Order Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">lab_order_name</code> to <code class="bg-white/20 px-1 rounded">lab_order_category</code></p>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/labs/clif_labs_order_categories.csv" target="_blank" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_labs_order_categories.csv</a>
+                      </div>
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p><strong class="text-blue-300">b. Lab Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">lab_name</code> to <code class="bg-white/20 px-1 rounded">lab_category</code></p>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/labs/clif_lab_categories.csv" target="_blank" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_lab_categories.csv</a>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Step 2 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 2: Filter to Inpatient Hospitalizations</h5>
+                    <p class="text-sm">Filter your lab data to include only inpatient hospitalizations.</p>
+                  </div>
+
+                  <!-- Step 3 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 3: Apply Mappings</h5>
+                    <p class="text-sm">Join the mapping files created in Step 1 to add <code class="bg-white/20 px-1 rounded">lab_order_category</code> and <code class="bg-white/20 px-1 rounded">lab_category</code> columns.</p>
+                  </div>
+
+                  <!-- Step 4 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 4: Filter Specimen Types</h5>
+                    <div class="bg-white/10 p-3 rounded-lg text-sm">
+                      <p class="text-green-300 font-semibold mb-2">Include only:</p>
+                      <p>Blood, Plasma, Serum samples</p>
+                      <p class="text-red-300 font-semibold mt-2 mb-1">Exclude:</p>
+                      <p>Urine and other fluid specimens</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="space-y-6">
+                  <!-- Step 5 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 5: Standardize Reference Units</h5>
+                    <div class="bg-yellow-500/20 p-3 rounded-lg border border-yellow-400/30 text-sm mb-3">
+                      <p class="text-yellow-300 font-semibold mb-2">Critical Requirement:</p>
+                      <p>All lab values must be reported using CLIF reference units. Only listed reference units are permissible for respective lab categories. Sites must convert raw values during ETL.</p>
+                    </div>
+                    <div class="bg-white/10 p-3 rounded-lg text-sm">
+                      <p>Reference units for each lab category:</p>
+                      <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/labs/clif_lab_categories.csv" target="_blank" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_lab_categories.csv (reference_unit column)</a>
+                    </div>
+                  </div>
+
+                  <!-- Step 6 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 6: Create Numeric Value Field</h5>
+                    <p class="text-sm mb-2">Create <code class="bg-white/20 px-1 rounded">lab_value_numeric</code> by parsing the character field <code class="bg-white/20 px-1 rounded">lab_value</code> to extract only the numeric part of the string.</p>
+                    <div class="bg-white/10 p-2 rounded-lg text-xs font-mono">
+                      lab_value_numeric = parse_number(lab_value)
+                    </div>
+                  </div>
+
+                  <!-- Step 7 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 7: Final Cleanup</h5>
+                    <ul class="space-y-2 text-sm">
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <strong>Deduplicate:</strong> Remove duplicate rows
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <strong>UTC Conversion:</strong> Convert all datetime fields to UTC timezone
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <strong>Data Types:</strong> Ensure all variables match data dictionary specifications
+                      </li>
+                    </ul>
+                  </div>
+
+                  <!-- Data Quality Checks -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Data Quality Checks</h5>
+                    <ul class="space-y-2 text-sm">
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">✓</span>
+                        Validate <code class="bg-white/20 px-1 rounded">lab_category</code> mappings against mCIDE
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">✓</span>
+                        Verify all units match CLIF reference units
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">✓</span>
+                        Check <code class="bg-white/20 px-1 rounded">lab_value_numeric</code> parsing accuracy
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Medication Admin Continuous -->
+        <div id="medication-admin-continuous" class="flip-card h-64 cursor-pointer">
+          <div class="flip-card-inner">
+            <div class="flip-card-front bg-white rounded-lg shadow-md p-6 border border-gray-200">
+              <h4 class="text-lg font-semibold mb-4 text-gray-800 flex items-center justify-between">
+                medication_admin_continuous
+                <span class="text-xs text-gray-500">Click to flip</span>
+              </h4>
+              <ul class="text-sm text-gray-600 space-y-2">
+                <li>• MAR action & med category mapping (mCIDE)</li>
+                <li>• Filter continuous medications</li>
+                <li>• Combination drug handling</li>
+                <li>• Trial drugs & placebos</li>
+              </ul>
+            </div>
+            <div class="flip-card-back bg-clif-burgundy rounded-lg shadow-md p-6 text-white overflow-y-auto">
+              <button class="modal-close" aria-label="Close">×</button>
+              <h4 class="text-2xl font-bold mb-6">Medication Admin Continuous</h4>
+
+              <div class="expanded-content">
+                <div class="space-y-6">
+                  <!-- Step 1 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 1: Create Medication Mappings</h5>
+                    <p class="text-sm mb-3">Before transforming your medication data, prepare the mapping files:</p>
+                    <div class="space-y-3 text-sm">
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p><strong class="text-blue-300">a. Action Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">mar_action_name</code> → <code class="bg-white/20 px-1 rounded">mar_action_category</code></p>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/medication_admin_continuous/clif_medication_admin_continuous_action_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_medication_admin_continuous_action_categories.csv</a>
+                      </div>
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p><strong class="text-blue-300">b. Med Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">med_name</code> → <code class="bg-white/20 px-1 rounded">med_category</code></p>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/medication_admin_continuous/clif_medication_admin_continuous_med_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_medication_admin_continuous_med_categories.csv</a>
+                      </div>
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p><strong class="text-blue-300">c. Route Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">med_route_name</code> → <code class="bg-white/20 px-1 rounded">med_route_category</code></p>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/medication_admin_continuous/clif_medication_admin_continuous_med_route_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_medication_admin_continuous_med_route_categories.csv</a>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Step 2 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 2: Filter to Inpatient Hospitalizations</h5>
+                    <p class="text-sm">Filter your medication data to include only inpatient hospitalizations.</p>
+                  </div>
+
+                  <!-- Step 3 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 3: Apply Mappings</h5>
+                    <p class="text-sm">Join the mapping files to add category columns.</p>
+                  </div>
+
+                  <!-- Step 4 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 4: Filter Continuous Medications</h5>
+                    <div class="bg-white/10 p-3 rounded-lg text-sm">
+                      <p class="mb-2">Include only medications with time-based dosing units:</p>
+                      <div class="font-mono text-xs bg-white/10 p-2 rounded">
+                        filter(grepl("min|hr|day", med_dose_unit, ignore.case = TRUE))
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Step 5 - Inhaled Nitric Oxide -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 5: Special Case - Inhaled Nitric Oxide</h5>
+                    <div class="bg-yellow-500/20 p-3 rounded-lg border border-yellow-400/30 text-sm">
+                      <p>If inhaled nitric oxide is not in your medication admin table, refer to <strong>flowsheets data</strong>. The order typically goes in as an RT order (not medication order) and is documented in flowsheets rather than MAR.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="space-y-6">
+                  <!-- Step 6 - Combination Drugs -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 6: Handle Combination & Trial Drugs</h5>
+                    <h5 class="text-xl font-semibold mb-3">A. Combination Drugs</h5>
+                    <div class="bg-white/10 p-3 rounded-lg text-sm mb-3">
+                      <p class="text-yellow-300 font-semibold mb-2">When to duplicate rows:</p>
+                      <p class="text-xs mb-2">Only duplicate combo meds that are <strong>not</strong> in the mCIDE as a med_category itself. Assign a duplicated row for each component med_category.</p>
+                    </div>
+                    <div class="bg-white/10 p-3 rounded-lg text-xs">
+                      <p class="text-green-300 font-semibold mb-2">Example: "MedA MedB 5-325mg Tab"</p>
+                      <p class="mb-2">If medA_medB is not a CLIF med_category, but medA and medB are separate categories:</p>
+                      <div class="space-y-1 ml-2">
+                        <p>→ Row 1: med_category = "medA", med_dose = 5mg</p>
+                        <p>→ Row 2: med_category = "medB", med_dose = 325mg</p>
+                      </div>
+                      <p class="mt-2 text-gray-300">Both rows maintain same: hospitalization_id, admin_dttm, med_name</p>
+                    </div>
+                    <div class="bg-white/10 p-3 rounded-lg text-xs mt-2">
+                      <p class="text-blue-300 font-semibold mb-2">Unit Conversion (mL → mg):</p>
+                      <p>If original unit is mL, convert to mg using concentration from med_name.</p>
+                      <p class="mt-1 text-gray-300">e.g., "MedA-MedB 7.5-325 MG/15 ML" at 30 mL → 15mg MedA, 650mg MedB</p>
+                    </div>
+                  </div>
+
+                  <!-- Trial Drugs & Placebos -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">B. Trial Drugs & Placebos</h5>
+                    <div class="bg-white/10 p-3 rounded-lg text-sm mb-3">
+                      <p class="mb-2">Map trial drugs to <code class="bg-white/20 px-1 rounded">trial_drug</code> as med_category. Leave <code class="bg-white/20 px-1 rounded">med_group</code> empty if with placebo.</p>
+                      <div class="bg-white/10 p-2 rounded text-xs mt-2">
+                        <p class="text-yellow-300 font-semibold mb-1">Example:</p>
+                        <p class="text-gray-300">"ACYCLOVIR OR PLACEBO CAPSULE (IRB 171591) 400 MG"</p>
+                        <p class="mt-1">→ med_category: <span class="text-green-300">trial_drug</span></p>
+                        <p>→ med_group: <span class="text-gray-400">None</span></p>
+                      </div>
+                    </div>
+                    <ul class="space-y-2 text-sm">
+                      <li class="flex items-start">
+                        <span class="text-blue-300 mr-2">•</span>
+                        <strong>Brand Names:</strong> Map to generic, preserve brand in notes
+                      </li>
+                    </ul>
+                  </div>
+
+                  <!-- Step 7 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 7: Final Cleanup</h5>
+                    <ul class="space-y-2 text-sm">
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <strong>Deduplicate:</strong> Remove duplicate rows
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <strong>UTC Conversion:</strong> Convert all datetime fields to UTC timezone
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <strong>Data Types:</strong> Ensure all variables match data dictionary specifications
+                      </li>
+                    </ul>
+                  </div>
+
+                  <!-- Data Quality Checks -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Data Quality Checks</h5>
+                    <ul class="space-y-2 text-sm">
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">✓</span>
+                        Validate <code class="bg-white/20 px-1 rounded">med_category</code> mappings against mCIDE
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">✓</span>
+                        Verify continuous med filter captures time-based units
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">✓</span>
+                        Check combo drug rows have correct dose splits
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Medication Admin Intermittent -->
+        <div id="medication-admin-intermittent" class="flip-card h-64 cursor-pointer">
+          <div class="flip-card-inner">
+            <div class="flip-card-front bg-white rounded-lg shadow-md p-6 border border-gray-200">
+              <h4 class="text-lg font-semibold mb-4 text-gray-800 flex items-center justify-between">
+                medication_admin_intermittent
+                <span class="text-xs text-gray-500">Click to flip</span>
+              </h4>
+              <ul class="text-sm text-gray-600 space-y-2">
+                <li>• MAR action & med category mapping (mCIDE)</li>
+                <li>• Filter intermittent medications</li>
+                <li>• Combination drug handling</li>
+                <li>• Trial drugs & placebos</li>
+              </ul>
+            </div>
+            <div class="flip-card-back bg-clif-burgundy rounded-lg shadow-md p-6 text-white overflow-y-auto">
+              <button class="modal-close" aria-label="Close">×</button>
+              <h4 class="text-2xl font-bold mb-6">Medication Admin Intermittent</h4>
+
+              <div class="expanded-content">
+                <div class="space-y-6">
+                  <!-- Step 1 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 1: Create Medication Mappings</h5>
+                    <p class="text-sm mb-3">Before transforming your medication data, prepare the mapping files:</p>
+                    <div class="space-y-3 text-sm">
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p><strong class="text-blue-300">a. Action Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">mar_action_name</code> → <code class="bg-white/20 px-1 rounded">mar_action_category</code></p>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/medication_admin_intermittent/clif_medication_admin_intermittent_action_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_medication_admin_intermittent_action_categories.csv</a>
+                      </div>
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p><strong class="text-blue-300">b. Med Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">med_name</code> → <code class="bg-white/20 px-1 rounded">med_category</code></p>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/medication_admin_intermittent/clif_medication_admin_intermittent_med_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_medication_admin_intermittent_med_categories.csv</a>
+                      </div>
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p><strong class="text-blue-300">c. Route Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">med_route_name</code> → <code class="bg-white/20 px-1 rounded">med_route_category</code></p>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/medication_admin_intermittent/clif_medication_admin_intermittent_med_route_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_medication_admin_intermittent_med_route_categories.csv</a>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Step 2 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 2: Filter to Inpatient Hospitalizations</h5>
+                    <p class="text-sm">Filter your medication data to include only inpatient hospitalizations.</p>
+                  </div>
+
+                  <!-- Step 3 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 3: Apply Mappings</h5>
+                    <p class="text-sm">Join the mapping files to add category columns.</p>
+                  </div>
+
+                  <!-- Step 4 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 4: Filter Intermittent Medications</h5>
+                    <div class="bg-white/10 p-3 rounded-lg text-sm">
+                      <p class="mb-2"><strong>Exclude</strong> medications with time-based dosing units (keep only intermittent):</p>
+                      <div class="font-mono text-xs bg-white/10 p-2 rounded">
+                        filter(!grepl("min|hr|day", med_dose_unit, ignore.case = TRUE))
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Step 5 - Inhaled Nitric Oxide -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 5: Special Case - Inhaled Nitric Oxide</h5>
+                    <div class="bg-yellow-500/20 p-3 rounded-lg border border-yellow-400/30 text-sm">
+                      <p>If inhaled nitric oxide is not in your medication admin table, refer to <strong>flowsheets data</strong>. The order typically goes in as an RT order (not medication order) and is documented in flowsheets rather than MAR.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="space-y-6">
+                  <!-- Step 6 - Combination Drugs -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 6: Handle Combination & Trial Drugs</h5>
+                    <h5 class="text-xl font-semibold mb-3">A. Combination Drugs</h5>
+                    <div class="bg-white/10 p-3 rounded-lg text-sm mb-3">
+                      <p class="text-yellow-300 font-semibold mb-2">When to duplicate rows:</p>
+                      <p class="text-xs mb-2">Only duplicate combo meds that are <strong>not</strong> in the mCIDE as a med_category itself. Assign a duplicated row for each component med_category.</p>
+                    </div>
+                    <div class="bg-white/10 p-3 rounded-lg text-xs">
+                      <p class="text-green-300 font-semibold mb-2">Example: "MedA MedB 5-325mg Tab"</p>
+                      <p class="mb-2">If medA_medB is not a CLIF med_category, but medA and medB are separate categories:</p>
+                      <div class="space-y-1 ml-2">
+                        <p>→ Row 1: med_category = "medA", med_dose = 5mg</p>
+                        <p>→ Row 2: med_category = "medB", med_dose = 325mg</p>
+                      </div>
+                      <p class="mt-2 text-gray-300">Both rows maintain same: hospitalization_id, admin_dttm, med_name</p>
+                    </div>
+                    <div class="bg-white/10 p-3 rounded-lg text-xs mt-2">
+                      <p class="text-blue-300 font-semibold mb-2">Unit Conversion (mL → mg):</p>
+                      <p>If original unit is mL, convert to mg using concentration from med_name.</p>
+                      <p class="mt-1 text-gray-300">e.g., "MedA-MedB 7.5-325 MG/15 ML" at 30 mL → 15mg MedA, 650mg MedB</p>
+                    </div>
+                  </div>
+
+                  <!-- Trial Drugs & Placebos -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">B. Trial Drugs & Placebos</h5>
+                    <div class="bg-white/10 p-3 rounded-lg text-sm mb-3">
+                      <p class="mb-2">Map trial drugs to <code class="bg-white/20 px-1 rounded">trial_drug</code> as med_category. Leave <code class="bg-white/20 px-1 rounded">med_group</code> empty if with placebo.</p>
+                      <div class="bg-white/10 p-2 rounded text-xs mt-2">
+                        <p class="text-yellow-300 font-semibold mb-1">Example:</p>
+                        <p class="text-gray-300">"ACYCLOVIR OR PLACEBO CAPSULE (IRB 171591) 400 MG"</p>
+                        <p class="mt-1">→ med_category: <span class="text-green-300">trial_drug</span></p>
+                        <p>→ med_group: <span class="text-gray-400">None</span></p>
+                      </div>
+                    </div>
+                    <ul class="space-y-2 text-sm">
+                      <li class="flex items-start">
+                        <span class="text-blue-300 mr-2">•</span>
+                        <strong>Brand Names:</strong> Map to generic, preserve brand in notes
+                      </li>
+                    </ul>
+                  </div>
+
+                  <!-- Step 7 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 7: Final Cleanup</h5>
+                    <ul class="space-y-2 text-sm">
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <strong>Deduplicate:</strong> Remove duplicate rows
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <strong>UTC Conversion:</strong> Convert all datetime fields to UTC timezone
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <strong>Data Types:</strong> Ensure all variables match data dictionary specifications
+                      </li>
+                    </ul>
+                  </div>
+
+                  <!-- Data Quality Checks -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Data Quality Checks</h5>
+                    <ul class="space-y-2 text-sm">
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">✓</span>
+                        Validate <code class="bg-white/20 px-1 rounded">med_category</code> mappings against mCIDE
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">✓</span>
+                        Verify intermittent med filter excludes time-based units
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">✓</span>
+                        Check combo drug rows have correct dose splits
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Patient -->
+        <div id="patient" class="flip-card h-64 cursor-pointer">
+          <div class="flip-card-inner">
+            <div class="flip-card-front bg-white rounded-lg shadow-md p-6 border border-gray-200">
+              <h4 class="text-lg font-semibold mb-4 text-gray-800 flex items-center justify-between">
+                patient
+                <span class="text-xs text-gray-500">Click to flip</span>
+              </h4>
+              <ul class="text-sm text-gray-600 space-y-2">
+                <li>• Demographics mapping (mCIDE)</li>
+                <li>• Handle missing category values</li>
+                <li>• One record per patient_id</li>
+              </ul>
+              <div class="mt-3 p-3 bg-gray-50 rounded text-xs">
+                <strong>Composite Key:</strong> patient_id
+              </div>
+            </div>
+            <div class="flip-card-back bg-clif-burgundy rounded-lg shadow-md p-6 text-white overflow-y-auto">
+              <button class="modal-close" aria-label="Close">×</button>
+              <h4 class="text-2xl font-bold mb-6">Patient</h4>
+
+              <div class="expanded-content">
+                <div class="space-y-6">
+                  <!-- Step 1 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 1: Create Patient Mappings</h5>
+                    <p class="text-sm mb-3">Before transforming your patient data, prepare the mapping files:</p>
+                    <div class="space-y-3 text-sm">
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p><strong class="text-blue-300">a. Race Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">race_name</code> → <code class="bg-white/20 px-1 rounded">race_category</code></p>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/patient/clif_patient_race_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_patient_race_categories.csv</a>
+                      </div>
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p><strong class="text-blue-300">b. Sex Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">sex_name</code> → <code class="bg-white/20 px-1 rounded">sex_category</code></p>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/patient/clif_patient_sex_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_patient_sex_categories.csv</a>
+                      </div>
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p><strong class="text-blue-300">c. Ethnicity Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">ethnicity_name</code> → <code class="bg-white/20 px-1 rounded">ethnicity_category</code></p>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/patient/clif_patient_ethinicity_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_patient_ethinicity_categories.csv</a>
+                      </div>
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p><strong class="text-blue-300">d. Language Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">language_name</code> → <code class="bg-white/20 px-1 rounded">language_category</code></p>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/patient/clif_patient_language_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_patient_language_categories.csv</a>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Step 2 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 2: Filter to Inpatient Patients</h5>
+                    <p class="text-sm">Filter your patient data to include only patients whose hospitalization_id exists in your CLIF ADT table.</p>
+                  </div>
+
+                  <!-- Step 3 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 3: Apply Mappings & Handle Missing Values</h5>
+                    <p class="text-sm mb-3">Join the mapping files to add category columns, then fill missing values:</p>
+                    <div class="bg-white/10 p-3 rounded-lg text-sm">
+                      <p class="text-yellow-300 font-semibold mb-2">Fill missing/null values:</p>
+                      <ul class="space-y-1 text-xs">
+                        <li>• <code class="bg-white/20 px-1 rounded">race_category</code> → <span class="text-green-300">"Unknown"</span></li>
+                        <li>• <code class="bg-white/20 px-1 rounded">sex_category</code> → <span class="text-green-300">"Unknown"</span></li>
+                        <li>• <code class="bg-white/20 px-1 rounded">ethnicity_category</code> → <span class="text-green-300">"Unknown"</span></li>
+                        <li>• <code class="bg-white/20 px-1 rounded">language_category</code> → <span class="text-green-300">"Unknown or NA"</span></li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="space-y-6">
+                  <!-- Step 4 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 4: Handle External Death Data Sources</h5>
+                    <p class="text-sm mb-3">If using an external source like a state vital records registry to extract <code class="bg-white/20 px-1 rounded">death_dttm</code> and the death records are only in date format (no timestamp):</p>
+                    <ul class="space-y-2 text-sm">
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">1.</span>
+                        <span><strong>Same day as discharge:</strong> If the external death date matches the patient's <code class="bg-white/20 px-1 rounded">discharge_dttm</code> date, use the <code class="bg-white/20 px-1 rounded">discharge_dttm</code> as the <code class="bg-white/20 px-1 rounded">death_dttm</code></span>
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">2.</span>
+                        <span><strong>After discharge:</strong> If the death date occurs after <code class="bg-white/20 px-1 rounded">discharge_dttm</code>, use the death date and add midnight as the timestamp (format: <code class="bg-white/20 px-1 rounded">YYYY-MM-DD 00:00:00+00:00</code>)</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <!-- Step 5 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 5: Final Cleanup</h5>
+                    <ul class="space-y-2 text-sm">
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <span><strong>Deduplicate:</strong> Remove duplicate rows by composite key <code class="bg-white/20 px-1 rounded">patient_id</code>. Ensure one record per patient_id</span>
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <span><strong>UTC Conversion:</strong> Convert all datetime fields to UTC timezone</span>
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <span><strong>Data Types:</strong> Ensure all variables match data dictionary specifications</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <!-- Data Quality Checks -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Data Quality Checks</h5>
+                    <ul class="space-y-2 text-sm">
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">✓</span>
+                        <span>Ensure one record per <code class="bg-white/20 px-1 rounded">patient_id</code></span>
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">✓</span>
+                        <span>Validate all category mappings against mCIDE</span>
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">✓</span>
+                        <span>Verify no null values remain in category fields</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Patient Assessments -->
+        <div id="patient-assessments" class="flip-card h-64 cursor-pointer">
+          <div class="flip-card-inner">
+            <div class="flip-card-front bg-white rounded-lg shadow-md p-6 border border-gray-200">
+              <h4 class="text-lg font-semibold mb-4 text-gray-800 flex items-center justify-between">
+                patient_assessments
+                <span class="text-xs text-gray-500">Click to flip</span>
+              </h4>
+              <ul class="text-sm text-gray-600 space-y-2">
+                <li>• Assessment category mapping (mCIDE)</li>
+                <li>• Value type casting (numeric/categorical/text)</li>
+              </ul>
+            </div>
+            <div class="flip-card-back bg-clif-burgundy rounded-lg shadow-md p-6 text-white overflow-y-auto">
+              <button class="modal-close" aria-label="Close">×</button>
+              <h4 class="text-2xl font-bold mb-6">Patient Assessments</h4>
+
+              <div class="expanded-content">
+                <div class="space-y-6">
+                  <!-- Step 1 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 1: Create Assessment Mappings</h5>
+                    <p class="text-sm mb-3">Before transforming your assessment data, prepare the mapping file:</p>
+                    <div class="space-y-3 text-sm">
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p><strong class="text-blue-300">Assessment Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">assessment_name</code> → <code class="bg-white/20 px-1 rounded">assessment_category</code></p>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/patient_assessments/clif_patient_assessment_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_patient_assessment_categories.csv</a>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Step 2 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 2: Filter to Inpatient Hospitalizations</h5>
+                    <p class="text-sm">Filter your assessment data to include only inpatient hospitalizations.</p>
+                  </div>
+
+                  <!-- Step 3 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 3: Apply Mappings</h5>
+                    <p class="text-sm">Join the mapping file to add <code class="bg-white/20 px-1 rounded">assessment_category</code> and <code class="bg-white/20 px-1 rounded">assessment_group</code> columns.</p>
+                  </div>
+                </div>
+
+                <div class="space-y-6">
+                  <!-- Step 4 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 4: Create Value Type Columns</h5>
+                    <p class="text-sm mb-3">Identify and cast the measured value for each assessment to the appropriate column:</p>
+                    <div class="bg-white/10 p-3 rounded-lg text-sm">
+                      <ul class="space-y-2 text-xs">
+                        <li>• <code class="bg-white/20 px-1 rounded">numerical_value</code> → Cast numeric assessment values</li>
+                        <li>• <code class="bg-white/20 px-1 rounded">categorical_value</code> → Cast categorical/ordinal values</li>
+                        <li>• <code class="bg-white/20 px-1 rounded">text_value</code> → Cast free-text values</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <!-- Step 5 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 5: Final Cleanup</h5>
+                    <ul class="space-y-2 text-sm">
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <strong>Deduplicate:</strong> Remove duplicate rows
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <strong>UTC Conversion:</strong> Convert all datetime fields to UTC timezone
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <strong>Data Types:</strong> Ensure all variables match data dictionary specifications
+                      </li>
+                    </ul>
+                  </div>
+
+                  <!-- Data Quality Checks -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Data Quality Checks</h5>
+                    <ul class="space-y-2 text-sm">
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">✓</span>
+                        Validate <code class="bg-white/20 px-1 rounded">assessment_category</code> mappings against mCIDE
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">✓</span>
+                        Verify value type casting is correct for each assessment
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Patient Procedures -->
+        <div id="patient-procedures" class="flip-card h-64 cursor-pointer">
+          <div class="flip-card-inner">
+            <div class="flip-card-front bg-white rounded-lg shadow-md p-6 border border-gray-200">
+              <h4 class="text-lg font-semibold mb-4 text-gray-800 flex items-center justify-between">
+                patient_procedures
+                <span class="text-xs text-gray-500">Click to flip</span>
+              </h4>
+              <ul class="text-sm text-gray-600 space-y-2">
+                <li>• CPT codes (HCPCS Level 1) only</li>
+                <li>• ICD-10-PCS procedure codes</li>
+                <li>• Filter to relevant procedure codes</li>
+              </ul>
+            </div>
+            <div class="flip-card-back bg-clif-burgundy rounded-lg shadow-md p-6 text-white overflow-y-auto">
+              <button class="modal-close" aria-label="Close">×</button>
+              <h4 class="text-2xl font-bold mb-6">Patient Procedures</h4>
+
+              <div class="expanded-content">
+                <div class="space-y-6">
+                  <!-- Important Notes -->
+                  <div class="bg-yellow-500/20 p-4 rounded-lg border border-yellow-400/30">
+                    <h5 class="text-lg font-semibold mb-2 text-yellow-300">Important Notes</h5>
+                    <ul class="space-y-2 text-sm">
+                      <li>• Contains standardized procedural billing codes (HCPCS) for hospitalizations</li>
+                      <li>• Only includes procedures that were <strong>performed/completed</strong> (not cancelled)</li>
+                      <li>• <strong>Includes:</strong> CPT codes billed by clinicians (HCPCS Level 1 - professional billing)</li>
+                      <li>• <strong>Excludes:</strong> Hospital billing codes (HCPCS Level 2 - products, supplies, services without CPT codes)</li>
+                      <li>• Also contains <strong>ICD-10-PCS</strong> procedure codes (used for DRG calculation, may appear in hospital_diagnosis)</li>
+                    </ul>
+                  </div>
+
+                  <!-- Step 1 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 1: Identify Relevant Procedure Codes</h5>
+                    <p class="text-sm mb-3">Identify the relevant procedure codes required for CLIF:</p>
+                    <div class="bg-white/10 p-3 rounded-lg text-sm">
+                      <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/patient_procedures/clif_patient_procedure_codes.csv" target="_blank" class="text-blue-300 hover:underline text-xs">→ clif_patient_procedure_codes.csv</a>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="space-y-6">
+                  <!-- Step 2 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 2: Filter Data</h5>
+                    <p class="text-sm">Filter to inpatient hospitalizations and only include the relevant procedure codes identified in Step 1.</p>
+                  </div>
+
+                  <!-- Step 3 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 3: Final Cleanup</h5>
+                    <ul class="space-y-2 text-sm">
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <strong>Deduplicate:</strong> Remove duplicate rows
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <strong>UTC Conversion:</strong> Convert all datetime fields to UTC timezone
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <strong>Data Types:</strong> Ensure all variables match data dictionary specifications
+                      </li>
+                    </ul>
+                  </div>
+
+                  <!-- Date-Only Columns Tip -->
+                  <div class="bg-blue-500/20 p-4 rounded-lg border border-blue-400/30">
+                    <h5 class="text-lg font-semibold mb-2 text-blue-300">Date-Only Columns</h5>
+                    <p class="text-sm mb-2">When your source data only contains a date (no time component):</p>
+                    <ul class="space-y-2 text-sm">
+                      <li>• Set the time to midnight (00:00:00) in your local timezone</li>
+                      <li>• Make it timezone-aware</li>
+                      <li>• Then convert to UTC</li>
+                    </ul>
+                    <p class="text-sm mt-3 text-blue-200">
+                      <strong>Example:</strong> A date of 2021-08-26 becomes 2021-08-26 00:00:00 local time,
+                      which converts to 2021-08-26 05:00:00+00:00 UTC (for US/Central timezone).
+                    </p>
+                  </div>
+
+                  <!-- Data Quality Checks -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Data Quality Checks</h5>
+                    <ul class="space-y-2 text-sm">
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">✓</span>
+                        Verify procedure codes are valid CPT or ICD-10-PCS codes
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">✓</span>
+                        Ensure only completed procedures are included
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Position -->
+        <div id="position" class="flip-card h-64 cursor-pointer">
+          <div class="flip-card-inner">
+            <div class="flip-card-front bg-white rounded-lg shadow-md p-6 border border-gray-200">
+              <h4 class="text-lg font-semibold mb-4 text-gray-800 flex items-center justify-between">
+                position
+                <span class="text-xs text-gray-500">Click to expand</span>
+              </h4>
+              <ul class="text-sm text-gray-600 space-y-2">
+                <li>• Free text position standardization</li>
+                <li>• Prone position detection</li>
+                <li>• Supine-type consolidation</li>
+                <li>• Missing label handling</li>
+              </ul>
+            </div>
+            <div class="flip-card-back bg-clif-burgundy rounded-lg shadow-md p-6 text-white overflow-y-auto">
+              <button class="modal-close" aria-label="Close">×</button>
+              <h4 class="text-2xl font-bold mb-6">Position</h4>
+
+              <div class="expanded-content">
+                <div class="space-y-6">
+                  <!-- Step 1 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 1: Identify Relevant Position Measurements</h5>
+                    <p class="text-sm mb-3">Identify relevant position measurement names from flowsheets and filter to them:</p>
+                    <div class="bg-white/10 p-3 rounded-lg text-sm">
+                      <p class="text-yellow-300 font-semibold mb-2">Example flowsheet names:</p>
+                      <div class="text-xs space-y-1">
+                        <div>• "NUR RS POSITION"</div>
+                        <div>• "NUR RS DEGREE OF HEAD OF BED ELEVATION"</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Step 2 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 2: Filter to Inpatient Hospitalizations</h5>
+                    <p class="text-sm">Filter your position data to include only inpatient hospitalizations.</p>
+                  </div>
+
+                  <!-- Step 3 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 3: Identify Prone Positions</h5>
+                    <div class="bg-white/10 p-3 rounded-lg">
+                      <div class="text-sm">
+                        <p class="mb-2 text-yellow-300 font-semibold">Prone detection using regex:</p>
+                        <div class="font-mono text-xs bg-white/10 p-2 rounded">
+mutate(prone = if_else(str_detect(position_name, <br/>
+  regex("prone", ignore_case = TRUE)), 1, 0))
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Step 4 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 4: Identify Supine-Type Positions</h5>
+                    <div class="bg-white/10 p-3 rounded-lg text-xs font-mono space-y-1">
+                      <div>supine = if_else(str_detect(position_name, regex("supin|supine", ignore_case = TRUE)), 1, NaN)</div>
+                      <div>fowlers = if_else(str_detect(position_name, regex("fowler", ignore_case = TRUE)), 1, NaN)</div>
+                      <div>sitting = if_else(str_detect(position_name, regex("sitting", ignore_case = TRUE)), 1, NaN)</div>
+                    </div>
+                  </div>
+
+                  <!-- Step 5 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 5: Consolidate Supine-Type</h5>
+                    <p class="text-sm mb-2">Group related positions (Fowlers, Trendelenburg, Sitting) as supine-type.</p>
+                  </div>
+
+                  <!-- Step 6 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 6: Handle Missing Labels</h5>
+                    <div class="bg-white/10 p-3 rounded-lg text-xs font-mono space-y-1">
+                      <div>supine = if_else(is.na(supine) & prone == 0, 1, supine)</div>
+                      <div>supine = if_else(is.na(supine) & prone == 1, 0, supine)</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="space-y-6">
+                  <!-- Position Categories -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Position Categories</h5>
+                    <div class="space-y-3 text-sm">
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p class="text-green-300 font-semibold mb-2">Prone Positions:</p>
+                        <div class="space-y-1 text-xs">
+                          <div>• "Prone" / "Proning" / "Prone positioning"</div>
+                          <div>• "Face Down"</div>
+                          <div>• "Prone Positioning for ARDS"</div>
+                          <div>• "Prone Ventilation"</div>
+                          <div>• "Swimming Position"</div>
+                        </div>
+                      </div>
+
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p class="text-blue-300 font-semibold mb-2">Supine-Type Positions:</p>
+                        <div class="space-y-1 text-xs">
+                          <div>• "Supine"</div>
+                          <div>• "Fowlers" / "Semi-Fowlers"</div>
+                          <div>• "Trendelenburg"</div>
+                          <div>• "Sitting"</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Step 7 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 7: Final Cleanup</h5>
+                    <ul class="space-y-2 text-sm">
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <strong>Deduplicate:</strong> Remove duplicate rows
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <strong>UTC Conversion:</strong> Convert all datetime fields to UTC timezone
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <strong>Data Types:</strong> Ensure all variables match data dictionary specifications
+                      </li>
+                    </ul>
+                  </div>
+
+                  <!-- Data Quality Checks -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Data Quality Checks</h5>
+                    <ul class="space-y-2 text-sm">
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">✓</span>
+                        Verify prone/supine are mutually exclusive (if prone=1, then supine=0)
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">✓</span>
+                        Check position categories are correctly classified
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Respiratory Support -->
+        <div id="respiratory-support" class="flip-card h-64 cursor-pointer">
+          <div class="flip-card-inner">
+            <div class="flip-card-front bg-white rounded-lg shadow-md p-6 border border-gray-200">
+              <h4 class="text-lg font-semibold mb-4 text-gray-800 flex items-center justify-between">
+                respiratory_support
+                <span class="text-xs text-gray-500">Click to expand</span>
+              </h4>
+              <ul class="text-sm text-gray-600 space-y-2">
+                <li>• Map device_name → device_category</li>
+                <li>• Map mode_name → mode_category</li>
+                <li>• Pivot flowsheets from long to wide</li>
+                <li>• Create tracheostomy variable</li>
+                <li>• Validate IMV vs Non-IMV settings</li>
+              </ul>
+            </div>
+            <div class="flip-card-back bg-clif-burgundy rounded-lg shadow-md p-6 text-white overflow-y-auto">
+              <button class="modal-close" aria-label="Close">×</button>
+              <h4 class="text-2xl font-bold mb-6">Respiratory Support</h4>
+
+              <div class="expanded-content">
+                <div class="space-y-6">
+                  <!-- Step 1 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 1: Create Respiratory Support Mappings</h5>
+                    <p class="text-sm mb-3">Before transforming your respiratory support data, prepare the mapping files:</p>
+                    <div class="space-y-3 text-sm">
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p><strong class="text-blue-300">a. Device Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">device_name</code> → <code class="bg-white/20 px-1 rounded">device_category</code></p>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/respiratory_support/clif_respiratory_support_device_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_respiratory_support_device_categories.csv</a>
+                      </div>
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p><strong class="text-blue-300">b. Mode Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">mode_name</code> → <code class="bg-white/20 px-1 rounded">mode_category</code></p>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/respiratory_support/clif_respiratory_support_mode_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_respiratory_support_mode_categories.csv</a>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Step 2 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 2: Filter to Inpatient Hospitalizations</h5>
+                    <p class="text-sm">Filter your respiratory support data to include only inpatient hospitalizations.</p>
+                  </div>
+
+                  <!-- Step 3 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 3: Apply Mappings</h5>
+                    <p class="text-sm">Apply the device and mode mappings to your flowsheets data.</p>
+                  </div>
+
+                  <!-- Step 4 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 4: Pivot Long to Wide</h5>
+                    <p class="text-sm mb-3">Pivot the long dataset to wide format. Data must be unique by index columns before pivoting:</p>
+                    <div class="bg-white/10 p-3 rounded-lg">
+                      <div class="font-mono text-xs">
+wide_resp_df = resp_df.pivot(<br/>
+&nbsp;&nbsp;index=["patient_id", "hospitalization_id", "recorded_time"],<br/>
+&nbsp;&nbsp;columns="unique_names",<br/>
+&nbsp;&nbsp;values="meas_value"<br/>
+)
+                      </div>
+                    </div>
+                    <p class="text-xs text-yellow-300 mt-2">Note: Ensure no duplicate combinations of (patient_id, hospitalization_id, recorded_time, unique_names) before pivoting.</p>
+                  </div>
+
+                  <!-- Step 5 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 5: Create Tracheostomy Variable</h5>
+                    <div class="bg-white/10 p-3 rounded-lg text-sm">
+                      <p class="mb-2">Create the <span class="font-mono text-yellow-300">tracheostomy</span> variable by:</p>
+                      <ul class="text-xs space-y-1">
+                        <li>• Identifying any fields capturing presence of tracheostomy</li>
+                        <li>• Checking if device_name contains "trach"</li>
+                      </ul>
+                      <div class="mt-3 p-2 bg-white/10 rounded">
+                        <p class="text-yellow-300 font-semibold text-xs mb-1">Special Case:</p>
+                        <p class="text-xs">If device_name contains "Vent" (e.g., "Trach Collar: Vent") AND other respiratory settings are observed, then device_category ≠ "Trach Collar"</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Step 6 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 6: Device Category Logic</h5>
+                    <div class="space-y-3 text-sm">
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p class="text-green-300 font-semibold mb-2">Invasive Mechanical Ventilation (IMV):</p>
+                        <div class="font-mono text-xs">
+grepl('Vent', device_name, ignore.case = TRUE) &<br/>
+&nbsp;&nbsp;!grepl('Venturi Mask', device_name, ignore.case = TRUE) ~ 'IMV'
+                        </div>
+                      </div>
+
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p class="text-blue-300 font-semibold mb-2">Other Categories:</p>
+                        <div class="font-mono text-xs space-y-1">
+                          <div>NIPPV|Bipap → 'NIPPV'</div>
+                          <div>CPAP → 'CPAP'</div>
+                          <div>High Flow NC → 'High Flow NC'</div>
+                          <div>Cannula → 'Nasal Cannula'</div>
+                          <div>Mask|Non-Rebreather → 'Face Mask'</div>
+                          <div>Room Air → 'Room Air'</div>
+                          <div>Trach Collar → 'Trach Collar'</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="space-y-6">
+                  <!-- Mode-Based Override -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Mode-Based Category Override</h5>
+                    <p class="text-sm leading-relaxed mb-3">
+                      Mode names can override device categories when conflicts exist:
+                    </p>
+                    <div class="bg-white/10 p-3 rounded-lg">
+                      <div class="font-mono text-xs space-y-1">
+                        <div>"SIMV - PC PS" → "IMV"</div>
+                        <div>"A/C Volume" → "IMV"</div>
+                        <div>"CPAP" → "CPAP"</div>
+                        <div>"NIV-PC" → "NIPPV"</div>
+                        <div>"BiPAP" → "NIPPV"</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Step 7 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 7: Unit Conversions</h5>
+                    <p class="text-sm mb-3">If your source data uses different units for device settings, convert to CLIF standards:</p>
+                    <div class="bg-white/10 p-3 rounded-lg text-xs">
+                      <p class="text-yellow-300 font-semibold mb-2">Example:</p>
+                      <p>minute_vent_obs is required to be in <strong>liters</strong>. If source data is in mL, convert accordingly (divide by 1000).</p>
+                    </div>
+                  </div>
+
+                  <!-- Step 8 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 8: Sanity Check for IMV vs Non-IMV</h5>
+                    <p class="text-sm mb-3">Verify device_category matches expected settings. If a hospitalization has respiratory settings typically used for IMV, device_category should not be a non-IMV device like Room Air, Face Mask, Nasal Cannula, etc.</p>
+
+                    <div class="bg-white/10 p-3 rounded-lg mb-3">
+                      <p class="text-green-300 font-semibold mb-2 text-sm">Non-IMV Expected Settings:</p> 
+                      <div class="overflow-x-auto">
+                        <table class="text-xs w-full">
+                          <thead>
+                            <tr class="border-b border-white/20">
+                              <th class="text-left py-1 pr-2">Device</th>
+                              <th class="text-left py-1 pr-2">Mode</th>
+                              <th class="text-left py-1 pr-2">Req Settings</th>
+                              <th class="text-left py-1">Req Obs</th>
+                            </tr>
+                          </thead>
+                          <tbody class="text-xs">
+                            <tr class="border-b border-white/10">
+                              <td class="py-1 pr-2">CPAP</td>
+                              <td class="py-1 pr-2">PS/CPAP</td>
+                              <td class="py-1 pr-2">fio2_set, peep_set</td>
+                              <td class="py-1">tidal_volume_obs, resp_rate_obs</td>
+                            </tr>
+                            <tr class="border-b border-white/10">
+                              <td class="py-1 pr-2">Face Mask</td>
+                              <td class="py-1 pr-2">-</td>
+                              <td class="py-1 pr-2">lpm_set, fio2_set (possible)</td>
+                              <td class="py-1">-</td>
+                            </tr>
+                            <tr class="border-b border-white/10">
+                              <td class="py-1 pr-2">High Flow NC</td>
+                              <td class="py-1 pr-2">-</td>
+                              <td class="py-1 pr-2">fio2_set, lpm_set</td>
+                              <td class="py-1">-</td>
+                            </tr>
+                            <tr class="border-b border-white/10">
+                              <td class="py-1 pr-2">Nasal Cannula</td>
+                              <td class="py-1 pr-2">-</td>
+                              <td class="py-1 pr-2">lpm_set</td>
+                              <td class="py-1">-</td>
+                            </tr>
+                            <tr class="border-b border-white/10">
+                              <td class="py-1 pr-2">NIPPV</td>
+                              <td class="py-1 pr-2">Vol Support</td>
+                              <td class="py-1 pr-2">fio2, peep, tv, rr, insp_time</td>
+                              <td class="py-1">-</td>
+                            </tr>
+                            <tr class="border-b border-white/10">
+                              <td class="py-1 pr-2">NIPPV</td>
+                              <td class="py-1 pr-2">PS/CPAP</td>
+                              <td class="py-1 pr-2">fio2, peep, pip, rr, insp_time</td>
+                              <td class="py-1">-</td>
+                            </tr>
+                            <tr class="border-b border-white/10">
+                              <td class="py-1 pr-2">Room Air</td>
+                              <td class="py-1 pr-2">-</td>
+                              <td class="py-1 pr-2">No settings</td>
+                              <td class="py-1">No obs</td>
+                            </tr>
+                            <tr>
+                              <td class="py-1 pr-2">Trach Collar</td>
+                              <td class="py-1 pr-2">-</td>
+                              <td class="py-1 pr-2">lpm_set, fio2_set</td>
+                              <td class="py-1">No obs</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    <div class="bg-white/10 p-3 rounded-lg">
+                      <p class="text-blue-300 font-semibold mb-2 text-sm">IMV Expected Settings by Mode (device_category == "IMV"):</p>
+                      <div class="overflow-x-auto">
+                        <table class="text-xs w-full">
+                          <thead>
+                            <tr class="border-b border-white/20">
+                              <th class="text-left py-1 pr-1">ventilator_setting</th>
+                              <th class="text-center py-1 px-1">AC-VC</th>
+                              <th class="text-center py-1 px-1">PS/CPAP</th>
+                              <th class="text-center py-1 px-1">PC</th>
+                              <th class="text-center py-1 px-1">PRVC</th>
+                              <th class="text-center py-1 px-1">SIMV</th>
+                              <th class="text-center py-1 px-1">Vol Sup</th>
+                            </tr>
+                          </thead>
+                          <tbody class="text-xs">
+                            <tr class="border-b border-white/10">
+                              <td class="py-1 pr-1">fio2_set</td>
+                              <td class="text-center py-1"><span class="text-green-300">E</span></td>
+                              <td class="text-center py-1"><span class="text-green-300">E</span></td>
+                              <td class="text-center py-1"><span class="text-green-300">E</span></td>
+                              <td class="text-center py-1"><span class="text-green-300">E</span></td>
+                              <td class="text-center py-1"><span class="text-green-300">E</span></td>
+                              <td class="text-center py-1"><span class="text-green-300">E</span></td>
+                            </tr>
+                            <tr class="border-b border-white/10">
+                              <td class="py-1 pr-1">tidal_volume_set</td>
+                              <td class="text-center py-1"><span class="text-green-300">E</span></td>
+                              <td class="text-center py-1"></td>
+                              <td class="text-center py-1"></td>
+                              <td class="text-center py-1"><span class="text-green-300">E</span></td>
+                              <td class="text-center py-1"><span class="text-yellow-300">P</span></td>
+                              <td class="text-center py-1"><span class="text-green-300">E</span></td>
+                            </tr>
+                            <tr class="border-b border-white/10">
+                              <td class="py-1 pr-1">resp_rate_set</td>
+                              <td class="text-center py-1"><span class="text-green-300">E</span></td>
+                              <td class="text-center py-1"></td>
+                              <td class="text-center py-1"><span class="text-green-300">E</span></td>
+                              <td class="text-center py-1"><span class="text-green-300">E</span></td>
+                              <td class="text-center py-1"><span class="text-green-300">E</span></td>
+                              <td class="text-center py-1"></td>
+                            </tr>
+                            <tr class="border-b border-white/10">
+                              <td class="py-1 pr-1">pressure_control_set</td>
+                              <td class="text-center py-1"></td>
+                              <td class="text-center py-1"></td>
+                              <td class="text-center py-1"><span class="text-green-300">E</span></td>
+                              <td class="text-center py-1"></td>
+                              <td class="text-center py-1"><span class="text-yellow-300">P</span></td>
+                              <td class="text-center py-1"></td>
+                            </tr>
+                            <tr class="border-b border-white/10">
+                              <td class="py-1 pr-1">pressure_support_set</td>
+                              <td class="text-center py-1"></td>
+                              <td class="text-center py-1"><span class="text-green-300">E</span></td>
+                              <td class="text-center py-1"></td>
+                              <td class="text-center py-1"></td>
+                              <td class="text-center py-1"><span class="text-green-300">E</span></td>
+                              <td class="text-center py-1"></td>
+                            </tr>
+                            <tr class="border-b border-white/10">
+                              <td class="py-1 pr-1">flow_rate_set</td>
+                              <td class="text-center py-1"><span class="text-yellow-300">P</span></td>
+                              <td class="text-center py-1"></td>
+                              <td class="text-center py-1"></td>
+                              <td class="text-center py-1"></td>
+                              <td class="text-center py-1"><span class="text-yellow-300">P</span></td>
+                              <td class="text-center py-1"></td>
+                            </tr>
+                            <tr class="border-b border-white/10">
+                              <td class="py-1 pr-1">inspiratory_time_set</td>
+                              <td class="text-center py-1"><span class="text-yellow-300">P</span></td>
+                              <td class="text-center py-1"></td>
+                              <td class="text-center py-1"><span class="text-green-300">E</span></td>
+                              <td class="text-center py-1"></td>
+                              <td class="text-center py-1"><span class="text-yellow-300">P</span></td>
+                              <td class="text-center py-1"></td>
+                            </tr>
+                            <tr>
+                              <td class="py-1 pr-1">peep_set</td>
+                              <td class="text-center py-1"><span class="text-green-300">E</span></td>
+                              <td class="text-center py-1"><span class="text-green-300">E</span></td>
+                              <td class="text-center py-1"><span class="text-green-300">E</span></td>
+                              <td class="text-center py-1"><span class="text-green-300">E</span></td>
+                              <td class="text-center py-1"><span class="text-green-300">E</span></td>
+                              <td class="text-center py-1"><span class="text-green-300">E</span></td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                      <p class="text-xs mt-2"><span class="text-green-300">E</span> = Expected | <span class="text-yellow-300">P</span> = Possible | Empty = Not applicable</p>
+                    </div>
+                  </div>
+
+                  <!-- Step 9 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 9: Final Cleanup</h5>
+                    <ul class="space-y-2 text-sm">
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <strong>Deduplicate:</strong> Remove duplicate rows
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <strong>UTC Conversion:</strong> Convert all datetime fields to UTC timezone
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <strong>Data Types:</strong> Ensure all variables match data dictionary specifications
+                      </li>
+                    </ul>
+                  </div>
+
+                  <!-- Data Quality Checks -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Data Quality Checks</h5>
+                    <ul class="space-y-2 text-sm">
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">✓</span>
+                        Verify device_category and mode_category are consistent
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">✓</span>
+                        Check IMV rows have expected observations populated
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">✓</span>
+                        Validate tracheostomy flag against device_name patterns
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Vitals -->
+        <div id="vitals" class="flip-card h-64 cursor-pointer">
+          <div class="flip-card-inner">
+            <div class="flip-card-front bg-white rounded-lg shadow-md p-6 border border-gray-200">
+              <h4 class="text-lg font-semibold mb-4 text-gray-800 flex items-center justify-between">
+                vitals
+                <span class="text-xs text-gray-500">Click to expand</span>
+              </h4>
+              <ul class="text-sm text-gray-600 space-y-2">
+                <li>• Map vital_name → vital_category</li>
+                <li>• Handle BP split (sbp/dbp extraction)</li>
+                <li>• Standardize units (temp, spo2, weight, height)</li>
+                <li>• Specify invasive vs non-invasive in meas_site_name</li>
+              </ul>
+            </div>
+            <div class="flip-card-back bg-clif-burgundy rounded-lg shadow-md p-6 text-white overflow-y-auto">
+              <button class="modal-close" aria-label="Close">×</button>
+              <h4 class="text-2xl font-bold mb-6">Vitals</h4>
+
+              <div class="expanded-content">
+                <div class="space-y-6">
+                  <!-- Step 1 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 1: Create Vitals Mappings</h5>
+                    <p class="text-sm mb-3">Before transforming your vitals data, prepare the mapping file:</p>
+                    <div class="space-y-3 text-sm">
+                      <div class="bg-white/10 p-3 rounded-lg">
+                        <p><strong class="text-blue-300">Vital Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">vital_name</code> → <code class="bg-white/20 px-1 rounded">vital_category</code></p>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/vitals/clif_vitals_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_vitals_categories.csv</a>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Step 2 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 2: Filter to Inpatient Hospitalizations</h5>
+                    <p class="text-sm">Filter your vitals data to include only inpatient hospitalizations.</p>
+                  </div>
+
+                  <!-- Step 3 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 3: Apply Mappings</h5>
+                    <p class="text-sm mb-3">Apply the vital_category mappings to your flowsheets data.</p>
+                    <div class="bg-yellow-500/20 border border-yellow-400/50 p-3 rounded-lg">
+                      <div class="text-xs space-y-2">
+                        <div><strong>sbp:</strong> Systolic blood pressure. Can include both invasive (arterial line) and non-invasive (cuff) measurements; specify in meas_site_name.</div>
+                        <div><strong>dbp:</strong> Diastolic blood pressure. Can include both invasive (arterial line) and non-invasive (cuff) measurements; specify in meas_site_name.</div>
+                        <div><strong>map:</strong> Mean arterial pressure. Can include both invasive and non-invasive. Source type should be indicated in meas_site_name.</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Step 4 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 4: Blood Pressure Split</h5>
+                    <p class="text-sm mb-3">If blood pressure is not available separately as sbp and dbp, split to create the respective vital_category:</p>
+                    <div class="bg-white/10 p-3 rounded-lg">
+                      <div class="font-mono text-xs">
+bp_df = filtered_df.filter(pl.col("vital_category") == "blood_pressure")<br/>
+bp_df_pd['bp_split'] = bp_df_pd['vital_value'].str.strip().str.split('/')<br/>
+bp_df_pd['sbp'] = bp_df_pd['bp_split'].str[0]<br/>
+bp_df_pd['dbp'] = bp_df_pd['bp_split'].str[1]
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="space-y-6">
+                  <!-- Step 5 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 5: Standardize Vitals Units</h5>
+                    <p class="text-sm mb-3">Convert to CLIF standard units:</p>
+                    <div class="bg-white/10 p-3 rounded-lg">
+                      <table class="text-xs w-full">
+                        <thead>
+                          <tr class="border-b border-white/20">
+                            <th class="text-left py-1 pr-3">Vital</th>
+                            <th class="text-left py-1">Required Unit</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr class="border-b border-white/10">
+                            <td class="py-1 pr-3">temp_c</td>
+                            <td class="py-1">Celsius (°C)</td>
+                          </tr>
+                          <tr class="border-b border-white/10">
+                            <td class="py-1 pr-3">spo2</td>
+                            <td class="py-1">Percent (%)</td>
+                          </tr>
+                          <tr class="border-b border-white/10">
+                            <td class="py-1 pr-3">map</td>
+                            <td class="py-1">mmHg</td>
+                          </tr>
+                          <tr class="border-b border-white/10">
+                            <td class="py-1 pr-3">height_cm</td>
+                            <td class="py-1">Centimeters (cm)</td>
+                          </tr>
+                          <tr>
+                            <td class="py-1 pr-3">weight_kg</td>
+                            <td class="py-1">Kilograms (kg)</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  <!-- Step 6 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 6: Final Cleanup</h5>
+                    <ul class="space-y-2 text-sm">
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <strong>Deduplicate:</strong> Remove duplicate rows
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <strong>UTC Conversion:</strong> Convert all datetime fields to UTC timezone
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">•</span>
+                        <strong>Data Types:</strong> Ensure all variables match data dictionary specifications
+                      </li>
+                    </ul>
+                  </div>
+
+                  <!-- Data Quality Checks -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Data Quality Checks</h5>
+                    <ul class="space-y-2 text-sm">
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">✓</span>
+                        Check BP split created valid sbp/dbp values
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">✓</span>
+                        Validate meas_site_name populated for invasive measurements
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Section 3: Additional Resources -->
+    <section id="tools" class="mb-16">
+      <h2 class="text-3xl font-bold mb-8 text-gray-900">Additional Resources</h2>
+
+      <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <a href="/tools#clifpy-validator" class="bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+            <h4 class="font-medium text-clif-burgundy mb-2">CLIFpy Validator</h4>
+            <p class="text-sm text-gray-600">Python package with data validation features</p>
+          </a>
+          <a href="/tools#clif-assistant" class="bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+            <h4 class="font-medium text-clif-burgundy mb-2">CLIF Assistant</h4>
+            <p class="text-sm text-gray-600">AI-powered ETL guidance</p>
+          </a>
+          <a href="/tools#clif-mimic-etl-pipeline" class="bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+            <h4 class="font-medium text-clif-burgundy mb-2">CLIF-MIMIC</h4>
+            <p class="text-sm text-gray-600">Reference implementation</p>
+          </a>
+          <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF" class="bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+            <h4 class="font-medium text-clif-burgundy mb-2">GitHub</h4>
+            <p class="text-sm text-gray-600">mCIDE and permissible ranges documentation</p>
+          </a>
+        </div>
+      </div>
+
+
+    <!-- Call to Action -->
+    <div class="bg-gradient-to-r from-clif-burgundy to-clif-burgundy-dark text-white p-8 rounded-xl text-center">
+      <h2 class="text-2xl font-bold mb-4">Ready to Start Your CLIF ETL Implementation?</h2>
+      <p class="mb-6 text-clif-white-light">
+        Get hands-on support and connect with the CLIF community for guidance throughout your ETL journey.
+      </p>
+      <div class="flex flex-wrap justify-center gap-4">
+        <a
+          href="/tools#clif-assistant"
+          class="bg-white text-clif-burgundy px-6 py-3 rounded-lg font-medium hover:bg-gray-100 transition-colors"
+        >
+          Try CLIF Assistant
+        </a>
+        <a
+          href="mailto:clif_consortium@uchicago.edu"
+          class="border border-white text-white px-6 py-3 rounded-lg font-medium hover:bg-white hover:text-clif-burgundy transition-colors"
+        >
+          Get Support
+        </a>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .flip-card {
+    background-color: transparent;
+    perspective: 1000px;
+    transition: all 0.4s ease;
+  }
+
+  .flip-card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    text-align: left;
+    transition: transform 0.6s;
+    transform-style: preserve-3d;
+  }
+
+  .flip-card.flipped .flip-card-inner {
+    transform: rotateY(180deg);
+  }
+
+  .flip-card.expanded {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+
+  .flip-card.expanded .flip-card-inner {
+    width: 90%;
+    max-width: 1200px;
+    height: 90%;
+    max-height: 800px;
+    transform: rotateY(180deg) scale(1);
+  }
+
+  .flip-card-front, .flip-card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    display: flex;
+    flex-direction: column;
+    border-radius: 0.5rem;
+  }
+
+  .flip-card-back {
+    transform: rotateY(180deg);
+  }
+
+  .flip-card.expanded .flip-card-back {
+    overflow-y: auto;
+    padding: 2rem;
+  }
+
+  .modal-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    z-index: 10;
+  }
+
+  .modal-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  .expanded-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    height: 100%;
+  }
+
+  @media (max-width: 768px) {
+    .expanded-content {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+
+    .flip-card.expanded {
+      padding: 1rem;
+    }
+
+    .flip-card.expanded .flip-card-back {
+      padding: 1rem;
+    }
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const flipCards = document.querySelectorAll('.flip-card');
+
+    flipCards.forEach(card => {
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('.modal-close')) {
+          // Close modal
+          card.classList.remove('flipped', 'expanded');
+          document.body.style.overflow = '';
+        } else if (!card.classList.contains('expanded')) {
+          // Open modal
+          card.classList.add('flipped');
+          setTimeout(() => {
+            card.classList.add('expanded');
+            document.body.style.overflow = 'hidden';
+          }, 300);
+        }
+      });
+    });
+
+    // Close on escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const expandedCard = document.querySelector('.flip-card.expanded');
+        if (expandedCard) {
+          expandedCard.classList.remove('flipped', 'expanded');
+          document.body.style.overflow = '';
+        }
+      }
+    });
+  });
+</script>
