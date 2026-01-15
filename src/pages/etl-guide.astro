@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ETLGuideNavigation from '../components/ETLGuideNavigation.astro';
+import HelpChat from '../components/HelpChat.astro';
 
 // Define navigation sections
 const navigationSections = [
@@ -2454,6 +2455,9 @@ bp_df_pd['dbp'] = bp_df_pd['bp_split'].str[1]
       </div>
     </div>
   </div>
+
+  <!-- Help Chat Widget -->
+  <HelpChat githubRepo="clif-consortium/CLIF" defaultAssignee="deetherese" searchScope="etl-guide" />
 </BaseLayout>
 
 <style>
