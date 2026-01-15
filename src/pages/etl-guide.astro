@@ -1687,7 +1687,6 @@ const navigationSections = [
                       <p class="text-yellow-300 font-semibold mb-2">Example flowsheet names:</p>
                       <div class="text-xs space-y-1">
                         <div>• "NUR RS POSITION"</div>
-                        <div>• "NUR RS DEGREE OF HEAD OF BED ELEVATION"</div>
                       </div>
                     </div>
                   </div>
@@ -1701,25 +1700,15 @@ const navigationSections = [
                   <!-- Step 3 -->
                   <div>
                     <h5 class="text-xl font-semibold mb-3">Step 3: Separate Patient Position from Bed Position</h5>
-                    <p class="text-sm mb-3">Patient position and bed position are distinct concepts and should be treated as separate categories. <strong>Patient position</strong> refers to the patient's body orientation (prone, supine, sitting, etc.), while <strong>bed position</strong> refers to bed angles and configurations (Trendelenburg, 30 degrees, etc.). Only patient position should be mapped to CLIF.</p>
+                    <p class="text-sm mb-3">Patient position and bed position are distinct concepts and should be treated as separate categories. <strong>Patient position</strong> refers to the patient's body orientation (prone, supine, sitting, etc.), while <strong>bed position</strong> refers to bed angles and configurations (Trendelenburg, 30 degrees, etc.). Only patient position should be mapped to position_category.</p>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                      <div class="bg-white/10 p-3 rounded-lg text-sm">
-                        <p class="text-green-300 font-semibold mb-2">Patient Position (keep):</p>
-                        <div class="text-xs space-y-1">
-                          <div>• Prone, Supine</div>
-                          <div>• Sitting, Standing</div>
-                          <div>• Fowlers, Semi-Fowlers</div>
-                        </div>
-                      </div>
-                      <div class="bg-white/10 p-3 rounded-lg text-sm">
+                    <div class="bg-white/10 p-3 rounded-lg text-sm mb-3">
                         <p class="text-red-300 font-semibold mb-2">Bed Position (exclude):</p>
                         <div class="text-xs space-y-1">
                           <div>• Trendelenburg, Reverse Trendelenburg</div>
                           <div>• Bed angle degrees (30°, 45°, etc.)</div>
                           <div>• Head of bed elevation</div>
                         </div>
-                      </div>
                     </div>
 
                     <div class="bg-white/10 p-3 rounded-lg text-sm mb-3">
