@@ -1667,6 +1667,7 @@ const navigationSections = [
               </h4>
               <ul class="text-sm text-gray-600 space-y-2">
                 <li>• Free text position standardization</li>
+                <li>• Bed angle/position exclusion</li>
                 <li>• Prone position detection</li>
                 <li>• Supine-type consolidation</li>
                 <li>• Missing label handling</li>
@@ -1699,7 +1700,42 @@ const navigationSections = [
 
                   <!-- Step 3 -->
                   <div>
-                    <h5 class="text-xl font-semibold mb-3">Step 3: Identify Prone Positions</h5>
+                    <h5 class="text-xl font-semibold mb-3">Step 3: Separate Patient Position from Bed Position</h5>
+                    <p class="text-sm mb-3">Patient position and bed position are distinct concepts and should be treated as separate categories. <strong>Patient position</strong> refers to the patient's body orientation (prone, supine, sitting, etc.), while <strong>bed position</strong> refers to bed angles and configurations (Trendelenburg, 30 degrees, etc.). Only patient position should be mapped to CLIF.</p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                      <div class="bg-white/10 p-3 rounded-lg text-sm">
+                        <p class="text-green-300 font-semibold mb-2">Patient Position (keep):</p>
+                        <div class="text-xs space-y-1">
+                          <div>• Prone, Supine</div>
+                          <div>• Sitting, Standing</div>
+                          <div>• Fowlers, Semi-Fowlers</div>
+                        </div>
+                      </div>
+                      <div class="bg-white/10 p-3 rounded-lg text-sm">
+                        <p class="text-red-300 font-semibold mb-2">Bed Position (exclude):</p>
+                        <div class="text-xs space-y-1">
+                          <div>• Trendelenburg, Reverse Trendelenburg</div>
+                          <div>• Bed angle degrees (30°, 45°, etc.)</div>
+                          <div>• Head of bed elevation</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="bg-white/10 p-3 rounded-lg text-sm mb-3">
+                      <p class="text-yellow-300 font-semibold mb-2">Combined Records:</p>
+                      <p class="text-xs mb-2">Sometimes both are recorded together in a single field. Extract only the patient position component:</p>
+                      <div class="text-xs space-y-1 mb-3">
+                        <div>• "prone/trendelenburg" → extract <span class="text-green-300">"prone"</span></div>
+                        <div>• "supine, HOB 30 degrees" → extract <span class="text-green-300">"supine"</span></div>
+                        <div>• "semi-fowlers/reverse trendelenburg" → extract <span class="text-green-300">"semi-fowlers"</span></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Step 4 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 4: Identify Prone Positions</h5>
                     <div class="bg-white/10 p-3 rounded-lg">
                       <div class="text-sm">
                         <p class="mb-2 text-yellow-300 font-semibold">Prone detection using regex:</p>
@@ -1711,9 +1747,9 @@ mutate(prone = if_else(str_detect(position_name, <br/>
                     </div>
                   </div>
 
-                  <!-- Step 4 -->
+                  <!-- Step 5 -->
                   <div>
-                    <h5 class="text-xl font-semibold mb-3">Step 4: Identify Supine-Type Positions</h5>
+                    <h5 class="text-xl font-semibold mb-3">Step 5: Identify Supine-Type Positions</h5>
                     <div class="bg-white/10 p-3 rounded-lg text-xs font-mono space-y-1">
                       <div>supine = if_else(str_detect(position_name, regex("supin|supine", ignore_case = TRUE)), 1, NaN)</div>
                       <div>fowlers = if_else(str_detect(position_name, regex("fowler", ignore_case = TRUE)), 1, NaN)</div>
@@ -1721,15 +1757,15 @@ mutate(prone = if_else(str_detect(position_name, <br/>
                     </div>
                   </div>
 
-                  <!-- Step 5 -->
-                  <div>
-                    <h5 class="text-xl font-semibold mb-3">Step 5: Consolidate Supine-Type</h5>
-                    <p class="text-sm mb-2">Group related positions (Fowlers, Trendelenburg, Sitting) as supine-type.</p>
-                  </div>
-
                   <!-- Step 6 -->
                   <div>
-                    <h5 class="text-xl font-semibold mb-3">Step 6: Handle Missing Labels</h5>
+                    <h5 class="text-xl font-semibold mb-3">Step 6: Consolidate Supine-Type</h5>
+                    <p class="text-sm mb-2">Group related positions (Fowlers, Sitting) as supine-type.</p>
+                  </div>
+
+                  <!-- Step 7 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 7: Handle Missing Labels</h5>
                     <div class="bg-white/10 p-3 rounded-lg text-xs font-mono space-y-1">
                       <div>supine = if_else(is.na(supine) & prone == 0, 1, supine)</div>
                       <div>supine = if_else(is.na(supine) & prone == 1, 0, supine)</div>
@@ -1758,16 +1794,15 @@ mutate(prone = if_else(str_detect(position_name, <br/>
                         <div class="space-y-1 text-xs">
                           <div>• "Supine"</div>
                           <div>• "Fowlers" / "Semi-Fowlers"</div>
-                          <div>• "Trendelenburg"</div>
                           <div>• "Sitting"</div>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <!-- Step 7 -->
+                  <!-- Step 8 -->
                   <div>
-                    <h5 class="text-xl font-semibold mb-3">Step 7: Final Cleanup</h5>
+                    <h5 class="text-xl font-semibold mb-3">Step 8: Final Cleanup</h5>
                     <ul class="space-y-2 text-sm">
                       <li class="flex items-start">
                         <span class="text-green-300 mr-2">•</span>
