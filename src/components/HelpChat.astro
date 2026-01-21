@@ -1,33 +1,34 @@
 ---
 // src/components/HelpChat.astro
-// Help chat widget with documentation search and issue reporting
+// Help widget for reporting issues and asking questions
 
 interface Props {
   githubRepo: string;
-  searchScope?: string;
   defaultAssignee?: string;
 }
 
-const { githubRepo, searchScope = 'etl-guide', defaultAssignee = 'deetherese' } = Astro.props;
+const { githubRepo, defaultAssignee = 'deetherese' } = Astro.props;
 ---
 
 <!-- Floating Help Button -->
 <button
   id="help-chat-toggle"
-  class="fixed bottom-6 right-6 w-20 h-20 bg-clif-burgundy hover:bg-clif-burgundy/90 text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-300 z-50 animate-pulse-subtle"
-  aria-label="Open help chat"
+  class="fixed bottom-6 right-6 w-16 h-16 bg-clif-burgundy hover:bg-clif-burgundy/90 text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-300 z-50"
+  aria-label="Need help? Report an issue"
+  title="Need help? Report an issue"
 >
-  <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>
-    <path d="M12 8v4"/>
-    <path d="M12 16h.01"/>
+  <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="10"/>
+    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+    <path d="M12 17h.01"/>
   </svg>
 </button>
 
-<!-- Help Chat Panel -->
+<!-- Help Panel -->
 <div
   id="help-chat-panel"
-  class="fixed bottom-6 right-6 w-[450px] max-w-[calc(100vw-3rem)] h-[600px] max-h-[calc(100vh-6rem)] bg-white rounded-xl shadow-2xl flex flex-col z-50 hidden"
+  class="fixed bottom-6 right-6 w-[400px] max-w-[calc(100vw-3rem)] bg-white rounded-xl shadow-2xl flex flex-col z-50 hidden"
+  data-pagefind-ignore
 >
   <!-- Header -->
   <div class="bg-clif-burgundy text-white p-4 rounded-t-xl flex items-center justify-between">
@@ -39,7 +40,7 @@ const { githubRepo, searchScope = 'etl-guide', defaultAssignee = 'deetherese' } 
       </svg>
       <span class="font-semibold text-lg">Need Help?</span>
     </div>
-    <button id="help-chat-close" class="hover:bg-white/20 p-1 rounded transition-colors" aria-label="Close help chat">
+    <button id="help-chat-close" class="hover:bg-white/20 p-1 rounded transition-colors" aria-label="Close">
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <line x1="18" y1="6" x2="6" y2="18"/>
         <line x1="6" y1="6" x2="18" y2="18"/>
@@ -47,337 +48,113 @@ const { githubRepo, searchScope = 'etl-guide', defaultAssignee = 'deetherese' } 
     </button>
   </div>
 
-  <!-- Content Area -->
-  <div class="flex-1 overflow-y-auto p-4" id="help-chat-content">
-    <!-- Search Section -->
-    <div id="search-section">
-      <p class="text-gray-600 mb-4">Search the documentation or report an issue if you can't find what you need.</p>
+  <!-- Content -->
+  <div class="p-4 overflow-y-auto max-h-[70vh]">
+    <p class="text-gray-600 mb-4 text-sm">Can't find what you need or have a question? Submit an issue and we'll help you out.</p>
 
-      <div class="relative mb-4">
-        <input
-          type="text"
-          id="help-search-input"
-          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-clif-burgundy focus:border-transparent text-gray-900"
-          placeholder="Search documentation..."
-        />
-        <svg class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="11" cy="11" r="8"/>
-          <path d="m21 21-4.3-4.3"/>
-        </svg>
-      </div>
+    <form id="report-issue-form" class="space-y-4">
+      <input type="hidden" id="github-repo" value={githubRepo} />
 
-      <!-- Search Results -->
-      <div id="help-search-results" class="space-y-2 mb-4 hidden">
-        <p class="text-sm text-gray-500 font-medium">Search Results:</p>
-        <div id="help-results-list" class="space-y-2"></div>
-      </div>
-
-      <!-- No Results Message -->
-      <div id="no-results-message" class="hidden bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-        <p class="text-yellow-800 font-medium mb-2">No results found</p>
-        <p class="text-yellow-700 text-sm">Can't find what you're looking for? Report an issue and we'll help you out.</p>
-      </div>
-
-      <!-- Report Issue Button -->
-      <button
-        id="show-report-form"
-        class="w-full py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors flex items-center justify-center gap-2"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 20h9"/>
-          <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
-        </svg>
-        Report an Issue
-      </button>
-    </div>
-
-    <!-- Report Issue Form -->
-    <div id="report-form-section" class="hidden">
-      <button id="back-to-search" class="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-4 transition-colors">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="m15 18-6-6 6-6"/>
-        </svg>
-        Back to search
-      </button>
-
-      <h3 class="text-lg font-semibold text-gray-800 mb-4">Report an Issue</h3>
-
-      <form id="report-issue-form" class="space-y-4">
-        <input type="hidden" id="github-repo" value={githubRepo} />
-        <input type="hidden" id="default-assignee" value={defaultAssignee} />
-        <input type="hidden" id="search-scope" value={searchScope} />
-
-        <div>
-          <label for="issue-title" class="block text-sm font-medium text-gray-700 mb-1">
-            Title <span class="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            id="issue-title"
-            required
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-clif-burgundy focus:border-transparent text-gray-900"
-            placeholder="Brief description of your issue"
-          />
-        </div>
-
-        <div>
-          <label for="issue-type" class="block text-sm font-medium text-gray-700 mb-1">
-            Issue Type
-          </label>
-          <select
-            id="issue-type"
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-clif-burgundy focus:border-transparent text-gray-900"
-          >
-            <option value="question">Question</option>
-            <option value="bug">Bug / Error in Documentation</option>
-            <option value="enhancement">Suggestion / Enhancement</option>
-            <option value="clarification">Needs Clarification</option>
-          </select>
-        </div>
-
-        <div>
-          <label for="issue-description" class="block text-sm font-medium text-gray-700 mb-1">
-            Description <span class="text-red-500">*</span>
-          </label>
-          <textarea
-            id="issue-description"
-            required
-            rows="5"
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-clif-burgundy focus:border-transparent text-gray-900 resize-none"
-            placeholder="Please describe your issue in detail. Include any specific sections or steps you're having trouble with."
-          ></textarea>
-        </div>
-
-        <div>
-          <label for="etl-table" class="block text-sm font-medium text-gray-700 mb-1">
-            Related ETL Table (optional)
-          </label>
-          <select
-            id="etl-table"
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-clif-burgundy focus:border-transparent text-gray-900"
-          >
-            <option value="">-- Select a table --</option>
-            <option value="patient">patient</option>
-            <option value="hospitalization">hospitalization</option>
-            <option value="vitals">vitals</option>
-            <option value="labs">labs</option>
-            <option value="medication_admin_continuous">medication_admin_continuous</option>
-            <option value="patient_assessments">patient_assessments</option>
-            <option value="position">position</option>
-            <option value="respiratory_support">respiratory_support</option>
-            <option value="adt">adt</option>
-            <option value="dialysis">dialysis</option>
-            <option value="intake_output">intake_output</option>
-            <option value="provider">provider</option>
-            <option value="medication_admin_intermittent">medication_admin_intermittent</option>
-            <option value="microbiology_culture">microbiology_culture</option>
-            <option value="sensitivity">sensitivity</option>
-            <option value="ecmo_mcs">ecmo_mcs</option>
-          </select>
-        </div>
-
-        <p class="text-xs text-gray-500 mb-3">You'll be redirected to GitHub to submit the issue. Please sign in to GitHub if prompted.</p>
-
-        <button
-          type="submit"
-          id="submit-issue-btn"
-          class="w-full py-3 px-4 bg-clif-burgundy hover:bg-clif-burgundy/90 text-white rounded-lg transition-colors font-medium flex items-center justify-center gap-2"
+      <div>
+        <label for="issue-type" class="block text-sm font-medium text-gray-700 mb-1">
+          Issue Type
+        </label>
+        <select
+          id="issue-type"
+          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-clif-burgundy focus:border-transparent text-gray-900 text-sm"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
-          </svg>
-          Open Issue on GitHub
-        </button>
-      </form>
-    </div>
+          <option value="question">Question</option>
+          <option value="bug">Bug / Error in Documentation</option>
+          <option value="enhancement">Suggestion / Enhancement</option>
+          <option value="clarification">Needs Clarification</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="issue-description" class="block text-sm font-medium text-gray-700 mb-1">
+          Description <span class="text-red-500">*</span>
+        </label>
+        <textarea
+          id="issue-description"
+          required
+          rows="4"
+          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-clif-burgundy focus:border-transparent text-gray-900 resize-none text-sm"
+          placeholder="Describe your question or issue..."
+        ></textarea>
+      </div>
+
+      <div>
+        <label for="etl-table" class="block text-sm font-medium text-gray-700 mb-1">
+          Related ETL Table (optional)
+        </label>
+        <select
+          id="etl-table"
+          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-clif-burgundy focus:border-transparent text-gray-900 text-sm"
+        >
+          <option value="">-- Select a table --</option>
+          <option value="adt">adt</option>
+          <option value="code_status">code_status</option>
+          <option value="crrt_therapy">crrt_therapy</option>
+          <option value="hospital_diagnosis">hospital_diagnosis</option>
+          <option value="hospitalization">hospitalization</option>
+          <option value="labs">labs</option>
+          <option value="medication_admin_continuous">medication_admin_continuous</option>
+          <option value="medication_admin_intermittent">medication_admin_intermittent</option>
+          <option value="patient">patient</option>
+          <option value="patient_assessments">patient_assessments</option>
+          <option value="patient_procedures">patient_procedures</option>
+          <option value="position">position</option>
+          <option value="respiratory_support">respiratory_support</option>
+          <option value="vitals">vitals</option>
+        </select>
+      </div>
+
+      <p class="text-xs text-gray-500">You'll be redirected to GitHub to submit. Sign in if prompted.</p>
+
+      <button
+        type="submit"
+        class="w-full py-2.5 px-4 bg-clif-burgundy hover:bg-clif-burgundy/90 text-white rounded-lg transition-colors font-medium flex items-center justify-center gap-2 text-sm"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
+        </svg>
+        Open Issue on GitHub
+      </button>
+    </form>
   </div>
 </div>
-
-<style>
-  @keyframes pulse-subtle {
-    0%, 100% {
-      transform: scale(1);
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    }
-    50% {
-      transform: scale(1.05);
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    }
-  }
-
-  .animate-pulse-subtle {
-    animation: pulse-subtle 2s ease-in-out infinite;
-  }
-
-  #help-chat-toggle:hover {
-    animation: none;
-  }
-</style>
 
 <script is:inline>
 document.addEventListener('DOMContentLoaded', function() {
   const toggleBtn = document.getElementById('help-chat-toggle');
   const chatPanel = document.getElementById('help-chat-panel');
   const closeBtn = document.getElementById('help-chat-close');
-  const searchInput = document.getElementById('help-search-input');
-  const searchResults = document.getElementById('help-search-results');
-  const resultsList = document.getElementById('help-results-list');
-  const noResultsMessage = document.getElementById('no-results-message');
-  const showReportFormBtn = document.getElementById('show-report-form');
-  const searchSection = document.getElementById('search-section');
-  const reportFormSection = document.getElementById('report-form-section');
-  const backToSearchBtn = document.getElementById('back-to-search');
   const reportForm = document.getElementById('report-issue-form');
 
-  let pagefind = null;
-  let debounceTimer = null;
-
-  // Toggle chat panel
+  // Toggle panel
   toggleBtn.addEventListener('click', function() {
     chatPanel.classList.toggle('hidden');
     toggleBtn.classList.toggle('hidden');
-    if (!chatPanel.classList.contains('hidden')) {
-      searchInput.focus();
-    }
   });
 
-  // Close chat panel
+  // Close panel
   closeBtn.addEventListener('click', function() {
     chatPanel.classList.add('hidden');
     toggleBtn.classList.remove('hidden');
   });
 
-  // Load Pagefind
-  async function loadPagefind() {
-    if (pagefind) return pagefind;
-    try {
-      pagefind = await import('/pagefind/pagefind.js');
-      await pagefind.init();
-      return pagefind;
-    } catch (e) {
-      console.warn('Pagefind not available');
-      return null;
-    }
-  }
-
-  // Perform search
-  async function performSearch(query) {
-    if (!query.trim()) {
-      searchResults.classList.add('hidden');
-      noResultsMessage.classList.add('hidden');
-      return;
-    }
-
-    const pf = await loadPagefind();
-    let results = [];
-
-    if (pf) {
-      const search = await pf.search(query);
-      if (search.results.length > 0) {
-        results = await Promise.all(
-          search.results.slice(0, 5).map(r => r.data())
-        );
-      }
-    }
-
-    // Fallback: search in-page sections if no Pagefind results
-    if (results.length === 0) {
-      results = searchInPageSections(query);
-    }
-
-    if (results.length > 0) {
-      renderResults(results);
-      searchResults.classList.remove('hidden');
-      noResultsMessage.classList.add('hidden');
-    } else {
-      searchResults.classList.add('hidden');
-      noResultsMessage.classList.remove('hidden');
-    }
-  }
-
-  // Search in-page sections (fallback)
-  function searchInPageSections(query) {
-    const results = [];
-    const sections = document.querySelectorAll('[id]');
-    const lowerQuery = query.toLowerCase();
-
-    sections.forEach(section => {
-      const text = section.textContent || '';
-      const title = section.querySelector('h1, h2, h3, h4, h5, h6');
-      const titleText = title ? title.textContent : section.id;
-
-      if (text.toLowerCase().includes(lowerQuery) || titleText.toLowerCase().includes(lowerQuery)) {
-        const excerpt = extractExcerpt(text, query);
-        results.push({
-          url: '#' + section.id,
-          meta: { title: titleText },
-          excerpt: excerpt
-        });
-      }
-    });
-
-    return results.slice(0, 5);
-  }
-
-  // Extract excerpt around search term
-  function extractExcerpt(text, query) {
-    const lowerText = text.toLowerCase();
-    const lowerQuery = query.toLowerCase();
-    const index = lowerText.indexOf(lowerQuery);
-
-    if (index === -1) return text.substring(0, 150) + '...';
-
-    const start = Math.max(0, index - 50);
-    const end = Math.min(text.length, index + query.length + 100);
-    let excerpt = text.substring(start, end);
-
-    if (start > 0) excerpt = '...' + excerpt;
-    if (end < text.length) excerpt = excerpt + '...';
-
-    return excerpt;
-  }
-
-  // Render search results
-  function renderResults(results) {
-    resultsList.innerHTML = results.map(result => `
-      <a href="${result.url}" class="block p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">
-        <div class="font-medium text-gray-900 text-sm">${result.meta?.title || 'Untitled'}</div>
-        <div class="text-xs text-gray-500 line-clamp-2 mt-1">${result.excerpt || ''}</div>
-      </a>
-    `).join('');
-  }
-
-  // Debounced search
-  searchInput.addEventListener('input', function(e) {
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(function() {
-      performSearch(e.target.value);
-    }, 300);
-  });
-
-  // Show report form
-  showReportFormBtn.addEventListener('click', function() {
-    searchSection.classList.add('hidden');
-    reportFormSection.classList.remove('hidden');
-    successMessage.classList.add('hidden');
-    errorMessage.classList.add('hidden');
-  });
-
-  // Back to search
-  backToSearchBtn.addEventListener('click', function() {
-    reportFormSection.classList.add('hidden');
-    searchSection.classList.remove('hidden');
-  });
-
-  // Submit issue form - redirect to GitHub
+  // Submit form - redirect to GitHub
   reportForm.addEventListener('submit', function(e) {
     e.preventDefault();
 
-    const title = document.getElementById('issue-title').value;
     const issueType = document.getElementById('issue-type').value;
     const description = document.getElementById('issue-description').value;
     const etlTable = document.getElementById('etl-table').value;
     const repo = document.getElementById('github-repo').value;
+
+    // Build issue title from first line or truncated description
+    const firstLine = description.split('\n')[0].substring(0, 60);
+    const title = firstLine + (description.length > 60 ? '...' : '');
 
     // Build issue body
     const issueBody = `## Issue Details
@@ -391,7 +168,7 @@ ${etlTable ? `**Related Table:** \`${etlTable}\`` : ''}
 ${description}
 
 ---
-*This issue was submitted via the ETL Guide Help Chat*`;
+*Submitted via ETL Guide Help*`;
 
     // Build GitHub new issue URL
     const labels = [issueType, 'etl-guide'];
@@ -408,10 +185,10 @@ ${description}
     // Open GitHub in new tab
     window.open(githubUrl, '_blank');
 
-    // Reset form and go back to search
+    // Reset form and close panel
     reportForm.reset();
-    reportFormSection.classList.add('hidden');
-    searchSection.classList.remove('hidden');
+    chatPanel.classList.add('hidden');
+    toggleBtn.classList.remove('hidden');
   });
 
   // Close on escape key
