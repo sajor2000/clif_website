@@ -11,18 +11,44 @@ const { githubRepo, defaultAssignee = 'deetherese' } = Astro.props;
 ---
 
 <!-- Floating Help Button -->
-<button
-  id="help-chat-toggle"
-  class="fixed bottom-6 right-6 w-16 h-16 bg-clif-burgundy hover:bg-clif-burgundy/90 text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-300 z-50"
-  aria-label="Need help? Report an issue"
-  title="Need help? Report an issue"
->
-  <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <circle cx="12" cy="12" r="10"/>
-    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-    <path d="M12 17h.01"/>
-  </svg>
-</button>
+<div class="fixed bottom-6 right-6 z-50" id="help-chat-toggle-wrapper">
+  <!-- Pulsing ring effect -->
+  <div class="absolute inset-0 rounded-full bg-clif-burgundy/30 animate-ping"></div>
+  <div class="absolute -inset-2 rounded-full bg-clif-burgundy/20 animate-pulse"></div>
+
+  <button
+    id="help-chat-toggle"
+    class="relative w-20 h-20 bg-clif-burgundy hover:bg-clif-burgundy/90 text-white rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-110 animate-bounce-subtle ring-4 ring-clif-burgundy/40 ring-offset-2 ring-offset-white"
+    aria-label="Need help? Report an issue"
+    title="Need help? Report an issue"
+  >
+    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+      <path d="M12 17h.01"/>
+    </svg>
+  </button>
+</div>
+
+<style>
+  @keyframes bounce-subtle {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-6px);
+    }
+  }
+
+  .animate-bounce-subtle {
+    animation: bounce-subtle 2s ease-in-out infinite;
+  }
+
+  #help-chat-toggle-wrapper:hover .animate-ping,
+  #help-chat-toggle-wrapper:hover .animate-pulse {
+    animation-play-state: paused;
+  }
+</style>
 
 <!-- Help Panel -->
 <div
@@ -127,6 +153,7 @@ const { githubRepo, defaultAssignee = 'deetherese' } = Astro.props;
 <script is:inline>
 document.addEventListener('DOMContentLoaded', function() {
   const toggleBtn = document.getElementById('help-chat-toggle');
+  const toggleWrapper = document.getElementById('help-chat-toggle-wrapper');
   const chatPanel = document.getElementById('help-chat-panel');
   const closeBtn = document.getElementById('help-chat-close');
   const reportForm = document.getElementById('report-issue-form');
@@ -134,13 +161,13 @@ document.addEventListener('DOMContentLoaded', function() {
   // Toggle panel
   toggleBtn.addEventListener('click', function() {
     chatPanel.classList.toggle('hidden');
-    toggleBtn.classList.toggle('hidden');
+    toggleWrapper.classList.toggle('hidden');
   });
 
   // Close panel
   closeBtn.addEventListener('click', function() {
     chatPanel.classList.add('hidden');
-    toggleBtn.classList.remove('hidden');
+    toggleWrapper.classList.remove('hidden');
   });
 
   // Submit form - redirect to GitHub
@@ -188,14 +215,14 @@ ${description}
     // Reset form and close panel
     reportForm.reset();
     chatPanel.classList.add('hidden');
-    toggleBtn.classList.remove('hidden');
+    toggleWrapper.classList.remove('hidden');
   });
 
   // Close on escape key
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape' && !chatPanel.classList.contains('hidden')) {
       chatPanel.classList.add('hidden');
-      toggleBtn.classList.remove('hidden');
+      toggleWrapper.classList.remove('hidden');
     }
   });
 });
