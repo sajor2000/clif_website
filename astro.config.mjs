@@ -3,9 +3,12 @@ import tailwind from '@astrojs/tailwind';
 import sitemap from '@astrojs/sitemap';
 import compress from 'astro-compress';
 import sentry from '@sentry/astro';
+import vercel from '@astrojs/vercel';
 
 export default defineConfig({
   site: 'https://clif-consortium.org',
+  adapter: vercel(),
+  output: 'static',
   integrations: [
     // Error monitoring
     sentry({}),
