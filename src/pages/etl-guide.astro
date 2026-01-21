@@ -2446,12 +2446,12 @@ bp_df_pd['dbp'] = bp_df_pd['bp_split'].str[1]
         >
           Try CLIF Assistant
         </a>
-        <a
-          href="mailto:clif_consortium@uchicago.edu"
+        <button
+          id="open-help-chat"
           class="border border-white text-white px-6 py-3 rounded-lg font-medium hover:bg-white hover:text-clif-burgundy transition-colors"
         >
           Get Support
-        </a>
+        </button>
       </div>
     </div>
   </div>
@@ -2597,5 +2597,17 @@ bp_df_pd['dbp'] = bp_df_pd['bp_split'].str[1]
         }
       }
     });
+
+    // "Get Support" button opens help chat
+    const openHelpChatBtn = document.getElementById('open-help-chat');
+    const helpChatToggleWrapper = document.getElementById('help-chat-toggle-wrapper');
+    const helpChatPanel = document.getElementById('help-chat-panel');
+
+    if (openHelpChatBtn && helpChatToggleWrapper && helpChatPanel) {
+      openHelpChatBtn.addEventListener('click', () => {
+        helpChatPanel.classList.remove('hidden');
+        helpChatToggleWrapper.classList.add('hidden');
+      });
+    }
   });
 </script>
