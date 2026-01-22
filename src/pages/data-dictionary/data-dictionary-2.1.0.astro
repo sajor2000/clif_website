@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Badge from '../../components/Badge.astro';
+import HelpChat from '../../components/HelpChat.astro';
 import fs from 'node:fs';
 import path from 'node:path';
 import MarkdownIt from 'markdown-it';
@@ -481,5 +482,15 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
       text-decoration: underline !important;
     }
   </style>
+
+  <!-- Help Chat Widget -->
+  <HelpChat
+    githubRepo="clif-consortium/CLIF"
+    defaultAssignee="deetherese"
+    pageName="Data Dictionary 2.1"
+    pageLabel="data-dictionary"
+    tableLabel="Related Table (optional)"
+    tables={[...betaTableNames, ...conceptTableNames].sort()}
+  />
 </BaseLayout>
 //

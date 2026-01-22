@@ -5,9 +5,27 @@
 interface Props {
   githubRepo: string;
   defaultAssignee?: string;
+  pageName?: string;
+  pageLabel?: string;
+  tableLabel?: string;
+  tables?: string[];
 }
 
-const { githubRepo, defaultAssignee = 'deetherese' } = Astro.props;
+const defaultTables = [
+  'adt', 'code_status', 'crrt_therapy', 'hospital_diagnosis', 'hospitalization',
+  'labs', 'medication_admin_continuous', 'medication_admin_intermittent',
+  'patient', 'patient_assessments', 'patient_procedures', 'position',
+  'respiratory_support', 'vitals'
+];
+
+const {
+  githubRepo,
+  defaultAssignee = 'deetherese',
+  pageName = 'ETL Guide',
+  pageLabel = 'etl-guide',
+  tableLabel = 'Related ETL Table (optional)',
+  tables = defaultTables
+} = Astro.props;
 ---
 
 <!-- Floating Help Button -->
@@ -80,6 +98,8 @@ const { githubRepo, defaultAssignee = 'deetherese' } = Astro.props;
 
     <form id="report-issue-form" class="space-y-4">
       <input type="hidden" id="github-repo" value={githubRepo} />
+      <input type="hidden" id="page-name" value={pageName} />
+      <input type="hidden" id="page-label" value={pageLabel} />
 
       <div>
         <label for="issue-type" class="block text-sm font-medium text-gray-700 mb-1">
@@ -110,28 +130,17 @@ const { githubRepo, defaultAssignee = 'deetherese' } = Astro.props;
       </div>
 
       <div>
-        <label for="etl-table" class="block text-sm font-medium text-gray-700 mb-1">
-          Related ETL Table (optional)
+        <label for="related-table" class="block text-sm font-medium text-gray-700 mb-1">
+          {tableLabel}
         </label>
         <select
-          id="etl-table"
+          id="related-table"
           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-clif-burgundy focus:border-transparent text-gray-900 text-sm"
         >
           <option value="">-- Select a table --</option>
-          <option value="adt">adt</option>
-          <option value="code_status">code_status</option>
-          <option value="crrt_therapy">crrt_therapy</option>
-          <option value="hospital_diagnosis">hospital_diagnosis</option>
-          <option value="hospitalization">hospitalization</option>
-          <option value="labs">labs</option>
-          <option value="medication_admin_continuous">medication_admin_continuous</option>
-          <option value="medication_admin_intermittent">medication_admin_intermittent</option>
-          <option value="patient">patient</option>
-          <option value="patient_assessments">patient_assessments</option>
-          <option value="patient_procedures">patient_procedures</option>
-          <option value="position">position</option>
-          <option value="respiratory_support">respiratory_support</option>
-          <option value="vitals">vitals</option>
+          {tables.map(table => (
+            <option value={table}>{table}</option>
+          ))}
         </select>
       </div>
 
@@ -176,8 +185,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const issueType = document.getElementById('issue-type').value;
     const description = document.getElementById('issue-description').value;
-    const etlTable = document.getElementById('etl-table').value;
+    const relatedTable = document.getElementById('related-table').value;
     const repo = document.getElementById('github-repo').value;
+    const pageName = document.getElementById('page-name').value;
+    const pageLabel = document.getElementById('page-label').value;
 
     // Build issue title from first line or truncated description
     const firstLine = description.split('\n')[0].substring(0, 60);
@@ -187,19 +198,19 @@ document.addEventListener('DOMContentLoaded', function() {
     const issueBody = `## Issue Details
 
 **Type:** ${issueType}
-**Page:** ETL Guide
-${etlTable ? `**Related Table:** \`${etlTable}\`` : ''}
+**Page:** ${pageName}
+${relatedTable ? `**Related Table:** \`${relatedTable}\`` : ''}
 
 ## Description
 
 ${description}
 
 ---
-*Submitted via ETL Guide Help*`;
+*Submitted via ${pageName} Help*`;
 
     // Build GitHub new issue URL
-    const labels = [issueType, 'etl-guide'];
-    if (etlTable) labels.push(etlTable);
+    const labels = [issueType, pageLabel];
+    if (relatedTable) labels.push(relatedTable);
 
     const params = new URLSearchParams({
       title: `[${issueType}] ${title}`,
