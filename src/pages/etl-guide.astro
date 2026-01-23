@@ -939,12 +939,29 @@ const navigationSections = [
                       <p>Urine and other fluid specimens</p>
                     </div>
                   </div>
+
+                  <!-- Step 5 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 5: Merge Sensitive Lab Variants</h5>
+                    <div class="bg-blue-500/20 p-3 rounded-lg border border-blue-400/30 text-sm mb-3">
+                      <p class="text-blue-300 font-semibold mb-2">Important:</p>
+                      <p>Map both regular and highly sensitive lab assays to the same <code class="bg-white/20 px-1 rounded">lab_category</code>.</p>
+                    </div>
+                    <div class="bg-white/10 p-3 rounded-lg text-sm">
+                      <p class="mb-2">Examples:</p>
+                      <ul class="space-y-1 text-xs">
+                        <li>• Troponin I (ng/mL) + hs-Troponin I (ng/L) → <code class="bg-white/20 px-1 rounded">troponin_i</code></li>
+                        <li>• CRP (mg/L) + hs-CRP (mg/L) → <code class="bg-white/20 px-1 rounded">crp</code></li>
+                      </ul>
+                      <p class="mt-2 text-xs text-gray-300">Note: Unit conversions will be handled in the next step.</p>
+                    </div>
+                  </div>
                 </div>
 
                 <div class="space-y-6">
-                  <!-- Step 5 -->
+                  <!-- Step 6 -->
                   <div>
-                    <h5 class="text-xl font-semibold mb-3">Step 5: Standardize Reference Units</h5>
+                    <h5 class="text-xl font-semibold mb-3">Step 6: Standardize Reference Units</h5>
                     <div class="bg-yellow-500/20 p-3 rounded-lg border border-yellow-400/30 text-sm mb-3">
                       <p class="text-yellow-300 font-semibold mb-2">Critical Requirement:</p>
                       <p>All lab values must be reported using CLIF reference units. Only listed reference units are permissible for respective lab categories. Sites must convert raw values during ETL.</p>
@@ -955,18 +972,18 @@ const navigationSections = [
                     </div>
                   </div>
 
-                  <!-- Step 6 -->
+                  <!-- Step 7 -->
                   <div>
-                    <h5 class="text-xl font-semibold mb-3">Step 6: Create Numeric Value Field</h5>
+                    <h5 class="text-xl font-semibold mb-3">Step 7: Create Numeric Value Field</h5>
                     <p class="text-sm mb-2">Create <code class="bg-white/20 px-1 rounded">lab_value_numeric</code> by parsing the character field <code class="bg-white/20 px-1 rounded">lab_value</code> to extract only the numeric part of the string.</p>
                     <div class="bg-white/10 p-2 rounded-lg text-xs font-mono">
                       lab_value_numeric = parse_number(lab_value)
                     </div>
                   </div>
 
-                  <!-- Step 7 -->
+                  <!-- Step 8 -->
                   <div>
-                    <h5 class="text-xl font-semibold mb-3">Step 7: Final Cleanup</h5>
+                    <h5 class="text-xl font-semibold mb-3">Step 8: Final Cleanup</h5>
                     <ul class="space-y-2 text-sm">
                       <li class="flex items-start">
                         <span class="text-green-300 mr-2">•</span>
