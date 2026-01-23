@@ -36,12 +36,38 @@ async function sendEmail(to, subject, htmlContent) {
 }
 
 function formatCommitMessage(message) {
-  // Convert newlines to HTML breaks and escape HTML
-  return message
+  // Escape HTML first
+  let formatted = message
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/\n/g, '<br>');
+    .replace(/>/g, '&gt;');
+
+  // Convert markdown-style formatting to HTML
+  // **bold** → <strong>bold</strong>
+  formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+
+  // ### Header → styled header
+  formatted = formatted.replace(/^### (.+)$/gm, '<strong style="font-size: 1.1em; color: #722F37;">$1</strong>');
+
+  // ## Header → larger styled header
+  formatted = formatted.replace(/^## (.+)$/gm, '<strong style="font-size: 1.2em; color: #722F37;">$1</strong>');
+
+  // `code` → highlighted code style
+  formatted = formatted.replace(/`([^`]+)`/g, '<code style="background-color: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.9em;">$1</code>');
+
+  // Convert markdown links [text](url) to clickable links
+  formatted = formatted.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" style="color: #722F37;">$1</a>');
+
+  // Convert remaining plain URLs to clickable links
+  formatted = formatted.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" style="color: #722F37;">$1</a>');
+
+  // Convert bullet points: - at start of line → bullet
+  formatted = formatted.replace(/^- /gm, '• ');
+
+  // Convert newlines to HTML breaks
+  formatted = formatted.replace(/\n/g, '<br>');
+
+  return formatted;
 }
 
 function getEmailContent(commitMessage, commitDate) {
