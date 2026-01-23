@@ -59,8 +59,8 @@ function getEmailContent(commitMessage, commitDate) {
 
   <!-- Header -->
   <div style="background-color: #722F37; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
-    <h1 style="color: white; margin: 0; font-size: 24px;">CLIF Consortium</h1>
-    <p style="color: #f0f0f0; margin: 5px 0 0 0; font-size: 14px;">Common Longitudinal ICU data Format</p>
+    <img src="${WEBSITE_URL}/images/logos/clif_logo_white_email.png" alt="CLIF Consortium" style="max-width: 200px; height: auto;">
+    <p style="color: #f0f0f0; margin: 10px 0 0 0; font-size: 14px;">Common Longitudinal ICU data Format</p>
   </div>
 
   <!-- Main Content -->
