@@ -94,7 +94,7 @@ function getEmailContent(commitMessage, commitDate) {
 
     <p>Hello,</p>
 
-    <p>The CLIF Data Dictionary and mCIDE have been updated on <strong>${commitDate}</strong>.</p>
+    <p>The CLIF Data format been updated on <strong>${commitDate}</strong>.</p>
 
     <div style="background-color: #fff; padding: 15px; border-left: 4px solid #722F37; margin: 20px 0;">
       <strong>What Changed:</strong><br><br>
