@@ -56,10 +56,10 @@ function formatCommitMessage(message) {
   formatted = formatted.replace(/`([^`]+)`/g, '<code style="background-color: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.9em;">$1</code>');
 
   // Convert markdown links [text](url) to clickable links
-  formatted = formatted.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" style="color: #722F37;">$1</a>');
+  formatted = formatted.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" style="color: #722F37; text-decoration: underline;">$1</a>');
 
-  // Convert remaining plain URLs to clickable links
-  formatted = formatted.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" style="color: #722F37;">$1</a>');
+  // Convert remaining plain URLs to clickable links (but not ones already in href="...")
+  formatted = formatted.replace(/(?<!href=")(https?:\/\/[^\s<"]+)/g, '<a href="$1" style="color: #722F37; text-decoration: underline;">$1</a>');
 
   // Convert bullet points: - at start of line → bullet
   formatted = formatted.replace(/^- /gm, '• ');
