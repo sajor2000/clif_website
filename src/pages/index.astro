@@ -1,198 +1,103 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import StatsCounter from '../components/home/StatsCounter.astro';
-import FeatureCard from '../components/shared/FeatureCard.astro';
+import AnimatedHero from '../components/home/AnimatedHero.astro';
 ---
 
 <BaseLayout
   title="CLIF Consortium"
   description="The Common Longitudinal ICU data Format (CLIF) - A standardized framework for organizing critical care EHR data across multiple institutions, enabling federated multicenter research."
 >
-  <div class="container mx-auto px-4 py-8">
-    <!-- Hero Section with Enhanced Messaging -->
-    <div class="text-center mb-8">
-      <h1 class="text-5xl md:text-6xl font-bold mb-4 text-clif-burgundy">
-        Common Longitudinal ICU data Format (CLIF)
-      </h1>
-      <h2 class="text-3xl md:text-4xl font-semibold mb-6 text-gray-800">
-        Advancing Critical Care Through Federated Research
-      </h2>
-      <p class="text-xl md:text-2xl text-gray-700 max-w-4xl mx-auto font-medium">
-        An open source data standard for longitudinal ICU data that enables high quality privacy-preserving multicenter research
-      </p>
-    </div>
+  <!-- Animated Hero Section -->
+  <AnimatedHero />
 
+  <div class="container mx-auto px-4 py-12">
 
-    <!-- Four Highlight Cards -->
+    <!-- Quick Links Section -->
     <section class="mb-16">
-      <h2 class="text-3xl font-bold text-center mb-8 text-gray-900">Explore the Four Dimensions of CLIF</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- High Impact Scientific Papers -->
-        <div class="bg-white rounded-2xl p-8 shadow-lg border border-gray-200 hover:shadow-xl transition-shadow">
-          <div class="flex items-start gap-4">
-            <span class="text-4xl">📄</span>
-            <div class="flex-1">
-              <h3 class="text-xl font-bold mb-2 text-gray-900">High Impact Scientific Papers</h3>
-              <p class="text-gray-600 mb-4">Our consortium has published significant research in top-tier journals, demonstrating how CLIF enables rapid, multi-center studies that were previously impossible. From COVID-19 outcomes to sepsis prediction, CLIF supports discoveries that improve patient outcomes.</p>
-              <a href="https://link.springer.com/article/10.1007/s00134-025-07848-7" 
-                 class="text-clif-burgundy hover:text-clif-burgundy-dark font-semibold inline-flex items-center gap-1"
-                 target="_blank"
-                 rel="noopener noreferrer">
-                Read Our Latest Publication
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                </svg>
-              </a>
-            </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <a href="/research" class="group bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md hover:border-clif-burgundy/20 transition-all">
+          <div class="text-clif-burgundy mb-3">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+            </svg>
           </div>
-        </div>
+          <h3 class="font-semibold text-gray-900 mb-1 group-hover:text-clif-burgundy transition-colors">Publications</h3>
+          <p class="text-sm text-gray-500">Research in top-tier journals</p>
+        </a>
 
-        <!-- Open Source Data Dictionary and ETL Tools -->
-        <div class="bg-white rounded-2xl p-8 shadow-lg border border-gray-200 hover:shadow-xl transition-shadow">
-          <div class="flex items-start gap-4">
-            <span class="text-4xl">🧾</span>
-            <div class="flex-1">
-              <h3 class="text-xl font-bold mb-2 text-gray-900">Open Source Data Dictionary and ETL Tools</h3>
-              <p class="text-gray-600 mb-4">CLIF 2.1.0 is the results of years of refinement, shaped by large-scale ICU data spanning multiple institutions and patient populations. Our open-source data dictionary and ETL tools make it easy for any institution to transform their ICU data into the CLIF format, joining our federated research network.</p>
-              <a href="/data-dictionary/data-dictionary-2.1.0" 
-                 class="text-clif-burgundy hover:text-clif-burgundy-dark font-semibold inline-flex items-center gap-1">
-                View CLIF-2.1.0 Data Dictionary
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                </svg>
-              </a>
-            </div>
+        <a href="/data-dictionary/data-dictionary-2.2.0" class="group bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md hover:border-clif-burgundy/20 transition-all">
+          <div class="text-clif-burgundy mb-3">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
+            </svg>
           </div>
-        </div>
+          <h3 class="font-semibold text-gray-900 mb-1 group-hover:text-clif-burgundy transition-colors">Data Dictionary</h3>
+          <p class="text-sm text-gray-500">CLIF 2.1.0</p>
+        </a>
 
-        <!-- Large Distributed Cohort in the Consortium -->
-        <div class="bg-white rounded-2xl p-8 shadow-lg border border-gray-200 hover:shadow-xl transition-shadow">
-          <div class="flex items-start gap-4">
-            <span class="text-4xl">🧬</span>
-            <div class="flex-1">
-              <h3 class="text-xl font-bold mb-2 text-gray-900">Large Distributed Cohort in the Consortium</h3>
-              <p class="text-gray-600 mb-4">With 808,749 unique critically ill patients and 1.03mn hospitalizations across 12 active sites, CLIF provides the statistical power needed for robust research. Our interactive dashboard makes cohort characteristics and demographics readily accessible, supporting the data needs of your studies.</p>
-              <a href="https://clif-icu.com/cohort" 
-                 class="text-clif-burgundy hover:text-clif-burgundy-dark font-semibold inline-flex items-center gap-1"
-                 target="_blank"
-                 rel="noopener noreferrer">
-                Explore Cohort Dashboard
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                </svg>
-              </a>
-            </div>
+        <a href="/cohort" class="group bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md hover:border-clif-burgundy/20 transition-all">
+          <div class="text-clif-burgundy mb-3">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+            </svg>
           </div>
-        </div>
+          <h3 class="font-semibold text-gray-900 mb-1 group-hover:text-clif-burgundy transition-colors">Cohort Dashboard</h3>
+          <p class="text-sm text-gray-500">Explore consortium data</p>
+        </a>
 
-        <!-- Open Source Products Built on Top of CLIF -->
-        <div class="bg-white rounded-2xl p-8 shadow-lg border border-gray-200 hover:shadow-xl transition-shadow">
-          <div class="flex items-start gap-4">
-            <span class="text-4xl">🛠️</span>
-            <div class="flex-1">
-              <h3 class="text-xl font-bold mb-2 text-gray-900">Open Source Products Built on Top of CLIF</h3>
-              <p class="text-gray-600 mb-4">From machine learning pipelines to quality improvement dashboards, the CLIF ecosystem includes open-source tools that accelerate research. Build on our foundation with confidence, knowing you're using proven infrastructure designed for critical care analytics.</p>
-              <a href="/tools" 
-                 class="text-clif-burgundy hover:text-clif-burgundy-dark font-semibold inline-flex items-center gap-1">
-                See What You Can Build
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                </svg>
-              </a>
-            </div>
+        <a href="/tools" class="group bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md hover:border-clif-burgundy/20 transition-all">
+          <div class="text-clif-burgundy mb-3">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+            </svg>
           </div>
-        </div>
+          <h3 class="font-semibold text-gray-900 mb-1 group-hover:text-clif-burgundy transition-colors">Open Source Tools</h3>
+          <p class="text-sm text-gray-500">ETL pipelines and more</p>
+        </a>
       </div>
     </section>
 
-    <!-- Impact Statistics -->
+    <!-- Consortium Map -->
     <section class="mb-16">
-
-      <h3 class="text-2xl font-bold mb-8 text-center text-gray-800">Building a Collaborative Foundation for Critical Care Research</h3>
-
-      <!-- Introduction -->  
-      <div class="glass rounded-2xl p-6 mb-12 max-w-4xl mx-auto">
-        <p class="text-lg text-gray-700 leading-relaxed">
-          We’ve built a geographically diverse network of clinician‑scientists, data scientists, and leading academic medical centers across North America. Together, we leverage deep expertise in EHR‑based clinical outcomes research and AI applications to advance critical care through collaborative, data‑driven research.
+      <div class="max-w-5xl mx-auto">
+        <h2 class="text-2xl font-bold text-center text-gray-900 mb-8">Our Network</h2>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+          <img
+            src="/images/misc/clif_map.png"
+            alt="Map of CLIF Consortium Sites"
+            class="w-full rounded-lg"
+            loading="lazy"
+            decoding="async"
+          />
+        </div>
+        <p class="text-center text-sm text-gray-500 mt-4">
+          17 institutions · 62 hospitals · 12 active sites
         </p>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-        <StatsCounter
-          value="12"
-          suffix=""
-          label="Participating Institutions"
-          icon='<svg class="w-12 h-12 mx-auto" fill="currentColor" viewBox="0 0 20 20"><path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z"/></svg>'
-        />
-        <StatsCounter
-          value="808749"
-          prefix=""
-          suffix=""
-          label="Unique Critically Ill Patients"
-          icon='<svg class="w-12 h-12 mx-auto" fill="currentColor" viewBox="0 0 20 20"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/></svg>'
-        />
-        <StatsCounter
-          value="1029400"
-          prefix=""
-          suffix=""
-          label="Total Hospitalizations"
-          icon='<svg class="w-12 h-12 mx-auto" fill="currentColor" viewBox="0 0 20 20"><path d="M3 12v3c0 1.657 3.134 3 7 3s7-1.343 7-3v-3c0 1.657-3.134 3-7 3s-7-1.343-7-3z"/><path d="M3 7v3c0 1.657 3.134 3 7 3s7-1.343 7-3V7c0 1.657-3.134 3-7 3S3 8.657 3 7z"/><path d="M17 5c0 1.657-3.134 3-7 3S3 6.657 3 5s3.134-3 7-3 7 1.343 7 3z"/></svg>'
-        />
-        <StatsCounter
-          value="62"
-          prefix=""
-          suffix=""
-          label="Hospitals"
-          icon='<svg class="w-12 h-12 mx-auto" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3 6a3 3 0 013-3h10a1 1 0 01.8 1.6L14.25 8l2.55 3.4A1 1 0 0116 13H6a1 1 0 00-1 1v3a1 1 0 11-2 0V6z"/></svg>'
-        />
-      </div>
     </section>
 
-      <!-- CLIF Consortium Geographic Map -->
-      <div class="mt-12">
-      <div class="max-w-6xl mx-auto">
-        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
-          <img src="/images/misc/clif_map.png" alt="Map of CLIF Consortium Sites" class="mx-auto my-8 rounded-lg shadow-xl" width="2160" height="1550" loading="lazy" decoding="async" style="aspect-ratio: 2160/1550;" />
-        </div>
-        <!-- Legend Info Box -->
-        <div class="mt-6 bg-gray-50 rounded-lg p-4">
-          <div class="flex items-center justify-center">
-            <div class="text-sm text-gray-600">
-              <span class="font-semibold">17 institutions</span> • <span class="font-semibold">62 hospitals</span> • <span class="font-semibold">12 sites with data</span>
-            </div>
+    <!-- Open Source Banner -->
+    <section class="mb-8">
+      <div class="bg-gray-50 rounded-xl p-6 flex items-center justify-between max-w-3xl mx-auto">
+        <div class="flex items-center gap-4">
+          <svg class="w-8 h-8 text-clif-burgundy flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z"/>
+          </svg>
+          <div>
+            <p class="font-medium text-gray-900">Open Source</p>
+            <p class="text-sm text-gray-500">Apache License 2.0</p>
           </div>
         </div>
+        <a href="https://github.com/clif-consortium"
+           class="text-clif-burgundy hover:text-clif-burgundy-dark font-medium text-sm inline-flex items-center gap-1"
+           target="_blank"
+           rel="noopener noreferrer">
+          View on GitHub
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+          </svg>
+        </a>
       </div>
-    </section>
-
-
-    <section>
-      <!-- Open Source License Section -->
-      <div class="mb-12">
-        <div class="bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl p-8 text-center">
-          <div class="flex items-center justify-center mb-4">
-            <svg class="w-12 h-12 text-clif-burgundy" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z"/>
-            </svg>
-          </div>
-          <h3 class="text-2xl font-semibold mb-3 text-gray-800">Open Source Innovation</h3>
-          <p class="text-lg text-gray-700 mb-4 max-w-3xl mx-auto">
-            CLIF is proudly open source software, licensed under the Apache License 2.0. 
-            This ensures our tools and standards remain freely available to the global research community, 
-            fostering collaboration and supporting critical care research globally.
-          </p>
-          <a href="https://www.apache.org/licenses/LICENSE-2.0" 
-             class="inline-flex items-center gap-2 text-clif-burgundy hover:text-clif-burgundy-dark font-semibold transition-colors"
-             target="_blank"
-             rel="noopener noreferrer">
-            View Apache 2.0 License
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-            </svg>
-          </a>
-        </div>
-      </div>
-
-
     </section>
 
   </div>

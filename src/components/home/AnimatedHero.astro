@@ -1,0 +1,393 @@
+---
+// src/components/home/AnimatedHero.astro
+// Hospital cityscape image with animated workflow overlay
+---
+
+<section class="hero-section relative bg-gradient-to-br from-[#6B1028] via-[#8B1538] to-[#A62048] overflow-hidden">
+  <div class="container mx-auto px-6">
+    <div class="grid lg:grid-cols-[1.3fr_1.5fr] gap-6 lg:gap-10 items-end pt-8 pb-0">
+
+      <!-- Left Content -->
+      <div class="pb-8">
+        <h1 class="text-3xl lg:text-4xl xl:text-5xl font-bold text-white leading-[1.1] mb-3">
+          Common Longitudinal ICU data Format (CLIF)
+        </h1>
+        <h2 class="text-lg lg:text-xl font-semibold text-white/90 mb-6">
+          Advancing Critical Care Through Federated Research
+        </h2>
+
+        <p class="text-lg text-white/80 mb-6 leading-relaxed max-w-xl">
+          An open source data standard for longitudinal ICU data that enables high quality privacy-preserving multicenter research
+        </p>
+
+        <div class="flex gap-4">
+          <div class="bg-white/15 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/20">
+            <div class="flex items-center gap-3">
+              <svg class="w-8 h-8 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+              </svg>
+              <div>
+                <div class="text-2xl font-bold text-white">808K+</div>
+                <div class="text-white/70 text-xs">patients</div>
+              </div>
+            </div>
+          </div>
+          <div class="bg-white/15 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/20">
+            <div class="flex items-center gap-3">
+              <svg class="w-8 h-8 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+              </svg>
+              <div>
+                <div class="text-2xl font-bold text-white">62</div>
+                <div class="text-white/70 text-xs">hospitals</div>
+              </div>
+            </div>
+          </div>
+          <div class="bg-white/15 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/20">
+            <div class="flex items-center gap-3">
+              <svg class="w-8 h-8 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418"/>
+              </svg>
+              <div>
+                <div class="text-2xl font-bold text-white">12</div>
+                <div class="text-white/70 text-xs">institutions</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Hospital Cityscape with Animation Overlay -->
+      <div class="animation-wrapper relative" id="animationWrapper">
+        <!-- Base Image - no box, flows naturally -->
+        <img
+          src="/images/misc/landing_image.png"
+          alt="3D Hospital Cityscape"
+          class="w-full block"
+        />
+
+        <!-- Floating tooltip -->
+        <div class="floating-tooltip absolute z-10 bg-gray-900/90 px-3 py-1.5 rounded-md shadow-lg text-xs font-mono text-green-400 opacity-0 transition-all duration-300 pointer-events-none">
+          Lead site
+        </div>
+
+        <!-- Animation Overlay SVG - positions mapped to hospital locations in image -->
+        <svg
+          viewBox="0 0 1000 667"
+          class="absolute inset-0 w-full h-full pointer-events-none"
+          preserveAspectRatio="xMidYMid slice"
+        >
+          <defs>
+            <!-- Glassmorphism filter for track background -->
+            <filter id="glass" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur"/>
+              <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.6 0" result="glass"/>
+              <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.2"/>
+            </filter>
+
+            <!-- Glow filter for progress fill -->
+            <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="2" result="blur"/>
+              <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0.1  0 1 0 0 0.1  0 0 1 0 0.1  0 0 0 1.5 0" result="brightBlur"/>
+              <feMerge>
+                <feMergeNode in="brightBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+
+            <!-- Inner shadow for glass depth -->
+            <filter id="innerGlow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="2" result="blur"/>
+              <feComposite in="blur" in2="SourceGraphic" operator="in" result="innerBlur"/>
+              <feMerge>
+                <feMergeNode in="SourceGraphic"/>
+                <feMergeNode in="innerBlur"/>
+              </feMerge>
+            </filter>
+
+            <!-- Gradient for lead site progress -->
+            <linearGradient id="whiteGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#fcd34d" stop-opacity="1"/>
+              <stop offset="50%" stop-color="#f59e0b" stop-opacity="0.95"/>
+              <stop offset="100%" stop-color="#fbbf24" stop-opacity="0.9"/>
+            </linearGradient>
+
+            <!-- Gradient for yellow/amber progress -->
+            <linearGradient id="amberGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#fcd34d" stop-opacity="1"/>
+              <stop offset="50%" stop-color="#f59e0b" stop-opacity="0.95"/>
+              <stop offset="100%" stop-color="#fbbf24" stop-opacity="0.9"/>
+            </linearGradient>
+
+            <!-- Gradient for green/success progress -->
+            <linearGradient id="greenGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#6ee7b7" stop-opacity="1"/>
+              <stop offset="50%" stop-color="#10b981" stop-opacity="0.95"/>
+              <stop offset="100%" stop-color="#34d399" stop-opacity="0.9"/>
+            </linearGradient>
+          </defs>
+
+
+          <!-- Lead hospital progress bar - bottom center-left -->
+          <g class="lead-marker" transform="translate(355, 560)" opacity="0">
+            <!-- Dark glass background track -->
+            <rect x="-32" y="-9" width="75" height="25" rx="9" ry="9" fill="rgba(0,0,0,0.6)" filter="url(#glass)"/>
+            <rect x="-32" y="-9" width="75" height="25" rx="9" ry="9" fill="none" stroke="rgba(251,191,36,0.5)" stroke-width="1.5"/>
+            <!-- Progress fill -->
+            <rect class="lead-progress" x="-30" y="-7" width="0" height="20" rx="7" ry="7" fill="url(#whiteGradient)" filter="url(#glow)"/>
+          </g>
+
+          <!-- Partner hospital 1 progress bar - top left -->
+          <g class="hospital-1" transform="translate(160, 220)" opacity="0">
+            <!-- Dark glass background track -->
+            <rect x="-27" y="-9" width="75" height="25" rx="9" ry="9" fill="rgba(0,0,0,0.6)" filter="url(#glass)"/>
+            <rect x="-27" y="-9" width="75" height="25" rx="9" ry="9" fill="none" stroke="rgba(251,191,36,0.5)" stroke-width="1.5"/>
+            <!-- Progress fill -->
+            <rect class="hospital-progress" x="-25" y="-7" width="0" height="20" rx="7" ry="7" fill="url(#amberGradient)" filter="url(#glow)"/>
+          </g>
+
+          <!-- Partner hospital 2 progress bar - top center -->
+          <g class="hospital-2" transform="translate(555, 220)" opacity="0">
+            <!-- Dark glass background track -->
+            <rect x="-27" y="-9" width="75" height="25" rx="9" ry="9" fill="rgba(0,0,0,0.6)" filter="url(#glass)"/>
+            <rect x="-27" y="-9" width="75" height="25" rx="9" ry="9" fill="none" stroke="rgba(251,191,36,0.5)" stroke-width="1.5"/>
+            <!-- Progress fill -->
+            <rect class="hospital-progress" x="-25" y="-7" width="0" height="20" rx="7" ry="7" fill="url(#amberGradient)" filter="url(#glow)"/>
+          </g>
+
+          <!-- Partner hospital 3 progress bar - right side -->
+          <g class="hospital-3" transform="translate(860, 400)" opacity="0">
+            <!-- Dark glass background track -->
+            <rect x="-27" y="-9" width="75" height="25" rx="9" ry="9" fill="rgba(0,0,0,0.6)" filter="url(#glass)"/>
+            <rect x="-27" y="-9" width="75" height="25" rx="9" ry="9" fill="none" stroke="rgba(251,191,36,0.5)" stroke-width="1.5"/>
+            <!-- Progress fill -->
+            <rect class="hospital-progress" x="-25" y="-7" width="0" height="20" rx="7" ry="7" fill="url(#amberGradient)" filter="url(#glow)"/>
+          </g>
+
+          <!-- Animated result packets - travel from hospitals to lead site -->
+          <g class="result-packet result-1" opacity="0">
+            <rect x="-12" y="-5" width="24" height="10" rx="5" ry="5" fill="url(#greenGradient)" filter="url(#glow)"/>
+          </g>
+          <g class="result-packet result-2" opacity="0">
+            <rect x="-12" y="-5" width="24" height="10" rx="5" ry="5" fill="url(#greenGradient)" filter="url(#glow)"/>
+          </g>
+          <g class="result-packet result-3" opacity="0">
+            <rect x="-12" y="-5" width="24" height="10" rx="5" ry="5" fill="url(#greenGradient)" filter="url(#glow)"/>
+          </g>
+
+          <!-- Success indicator - green completed bar at lead site -->
+          <g class="success-badge" transform="translate(355, 560)" opacity="0">
+            <!-- Dark glass background -->
+            <rect x="-32" y="-9" width="75" height="25" rx="9" ry="9" fill="rgba(0,0,0,0.5)" filter="url(#glass)"/>
+            <rect x="-32" y="-9" width="75" height="25" rx="9" ry="9" fill="none" stroke="rgba(52,211,153,0.7)" stroke-width="1.5"/>
+            <!-- Success fill -->
+            <rect x="-30" y="-7" width="75" height="25" rx="7" ry="7" fill="url(#greenGradient)" filter="url(#glow)"/>
+            <!-- Checkmark -->
+            <path d="M-2,4 L4,8 L18,-2" stroke="#ffffff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          </g>
+
+        </svg>
+
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<style>
+  /* Progress bar fill animations */
+  .lead-progress,
+  .hospital-progress {
+    transition: width 2s ease-out, opacity 0.5s ease-out;
+  }
+
+  /* Glass track hover effect */
+  .lead-marker,
+  .hospital-1,
+  .hospital-2,
+  .hospital-3 {
+    transition: opacity 0.4s ease-out;
+  }
+
+  /* Success badge entrance */
+  .success-badge {
+    transition: opacity 0.5s ease-out;
+  }
+
+  /* Success badge subtle pulse */
+  .animation-wrapper.phase-5 .success-badge {
+    animation: success-glow 2s ease-in-out infinite;
+  }
+
+  @keyframes success-glow {
+    0%, 100% {
+      opacity: 1;
+      filter: drop-shadow(0 0 8px rgba(52, 211, 153, 0.6));
+    }
+    50% {
+      opacity: 0.95;
+      filter: drop-shadow(0 0 16px rgba(52, 211, 153, 0.8));
+    }
+  }
+
+  /* Result packet animations - from hospitals to lead site */
+  .result-packet {
+    transition: opacity 0.3s ease-out;
+  }
+
+  @keyframes result-to-lead-1 {
+    0% { transform: translate(150px, 200px); }
+    100% { transform: translate(400px, 540px); }
+  }
+  @keyframes result-to-lead-2 {
+    0% { transform: translate(580px, 200px); }
+    100% { transform: translate(400px, 540px); }
+  }
+  @keyframes result-to-lead-3 {
+    0% { transform: translate(920px, 380px); }
+    100% { transform: translate(400px, 540px); }
+  }
+
+  .animation-wrapper.phase-4 .result-1 {
+    animation: result-to-lead-1 1.8s ease-in-out forwards;
+  }
+  .animation-wrapper.phase-4 .result-2 {
+    animation: result-to-lead-2 1.8s ease-in-out 0.2s forwards;
+  }
+  .animation-wrapper.phase-4 .result-3 {
+    animation: result-to-lead-3 1.8s ease-in-out 0.4s forwards;
+  }
+
+  /* Floating tooltip */
+  .floating-tooltip.visible {
+    opacity: 1;
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const wrapper = document.getElementById('animationWrapper');
+    const leadMarker = document.querySelector('.lead-marker');
+    const leadProgress = document.querySelector('.lead-progress');
+    const hospitals = document.querySelectorAll('.hospital-1, .hospital-2, .hospital-3');
+    const hospitalProgress = document.querySelectorAll('.hospital-progress');
+    const resultPackets = document.querySelectorAll('.result-packet');
+    const successBadge = document.querySelector('.success-badge');
+
+    // Floating tooltip
+    const tooltip = document.querySelector('.floating-tooltip');
+
+    const phases = [
+      { name: 'phase-1', tooltip: 'Research idea', tooltipPos: { left: '30%', top: '75%' }, duration: 2500 },
+      { name: 'phase-2', tooltip: 'Distributing analysis code to CLIF sites', tooltipPos: { left: '30%', top: '10%' }, duration: 2500 },
+      { name: 'phase-3', tooltip: 'Sites analyzing local CLIF data', tooltipPos: { left: '30%', top: '10%' }, duration: 2500 },
+      { name: 'phase-4', tooltip: 'Sharing aggregate results', tooltipPos: { left: '30%', top: '75%' }, duration: 2500 },
+      { name: 'phase-5', tooltip: 'Analysis complete!', tooltipPos: { left: '30%', top: '75%' }, duration: 2500 },
+    ];
+
+    let currentPhase = 0;
+
+    function resetElements() {
+      // Disable transitions so bars snap to empty instantly
+      if (leadProgress) leadProgress.style.transition = 'none';
+      hospitalProgress.forEach(p => p.style.transition = 'none');
+
+      // Hide all elements and reset progress
+      if (leadMarker) leadMarker.style.opacity = '0';
+      if (leadProgress) {
+        leadProgress.style.width = '0';
+        leadProgress.style.opacity = '1';
+        leadProgress.setAttribute('fill', 'url(#whiteGradient)');
+      }
+      hospitals.forEach(h => h.style.opacity = '0');
+      hospitalProgress.forEach(p => {
+        p.style.width = '0';
+        p.setAttribute('fill', 'url(#amberGradient)');
+      });
+      resultPackets.forEach(p => {
+        p.style.opacity = '0';
+        p.style.transform = '';
+      });
+      if (successBadge) successBadge.style.opacity = '0';
+
+      // Force browser to process the width:0 before restoring transitions
+      if (leadProgress) void leadProgress.getBoundingClientRect();
+      hospitalProgress.forEach(p => void p.getBoundingClientRect());
+
+      // Re-enable transitions
+      if (leadProgress) leadProgress.style.transition = '';
+      hospitalProgress.forEach(p => p.style.transition = '');
+    }
+
+    function runPhase() {
+      const phase = phases[currentPhase];
+
+      // Clear previous phase classes
+      phases.forEach(p => wrapper?.classList.remove(p.name));
+      wrapper?.classList.add(phase.name);
+
+      // Update floating tooltip
+      if (tooltip) {
+        tooltip.textContent = phase.tooltip;
+        tooltip.style.left = phase.tooltipPos.left;
+        tooltip.style.top = phase.tooltipPos.top;
+        tooltip.classList.add('visible');
+      }
+
+      // Lead progress bar fills incrementally: 20% per phase (71px total)
+      const leadWidth = (currentPhase + 1) * 14.2; // ~14, 28, 43, 57, 71
+
+      if (currentPhase === 0) {
+        // Phase 1: Research idea - show lead site, start progress
+        resetElements();
+        if (leadMarker) leadMarker.style.opacity = '1';
+        setTimeout(() => {
+          if (leadProgress) leadProgress.style.width = `${leadWidth}px`;
+        }, 100);
+      } else if (currentPhase === 1) {
+        // Phase 2: Distributing code - show hospital bars
+        if (leadProgress) leadProgress.style.width = `${leadWidth}px`;
+        hospitals.forEach(h => h.style.opacity = '1');
+        setTimeout(() => {
+          hospitalProgress.forEach(p => p.style.width = '35px');
+        }, 100);
+      } else if (currentPhase === 2) {
+        // Phase 3: Sites analyzing - hospital bars fill completely
+        if (leadProgress) leadProgress.style.width = `${leadWidth}px`;
+        hospitalProgress.forEach(p => p.style.width = '71px');
+      } else if (currentPhase === 3) {
+        // Phase 4: Results shared to lead site
+        // Hospital bars turn green (complete)
+        hospitalProgress.forEach(p => {
+          p.setAttribute('fill', 'url(#greenGradient)');
+        });
+        // Show result packets traveling to lead site
+        resultPackets.forEach(p => p.style.opacity = '1');
+        // Lead bar grows and turns green (receiving results)
+        if (leadProgress) {
+          leadProgress.style.width = `${leadWidth}px`;
+          leadProgress.setAttribute('fill', 'url(#greenGradient)');
+        }
+      } else if (currentPhase === 4) {
+        // Phase 5: Complete - show success badge
+        hospitals.forEach(h => h.style.opacity = '0');
+        resultPackets.forEach(p => p.style.opacity = '0');
+        if (leadMarker) leadMarker.style.opacity = '0';
+        if (leadProgress) {
+          leadProgress.style.width = `${leadWidth}px`;
+        }
+        if (successBadge) successBadge.style.opacity = '1';
+      }
+
+      // Schedule next phase
+      setTimeout(() => {
+        currentPhase = (currentPhase + 1) % phases.length;
+        if (currentPhase === 0) resetElements();
+        runPhase();
+      }, phase.duration);
+    }
+
+    // Start animation
+    runPhase();
+  });
+</script>
