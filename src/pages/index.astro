@@ -57,10 +57,73 @@ import AnimatedHero from '../components/home/AnimatedHero.astro';
       </div>
     </section>
 
+    <!-- Why CLIF -->
+    <section class="mb-16 max-w-5xl mx-auto">
+      <div class="flex flex-col md:flex-row gap-8 items-start">
+        <div class="md:w-1/2">
+          <h2 class="text-2xl font-bold text-gray-900 mb-4">Built for Critical Care Research</h2>
+          <p class="text-gray-600 leading-relaxed mb-4">
+            We've built a geographically diverse network of clinician-scientists, data scientists, and leading academic medical centers across North America. Together, we leverage deep expertise in EHR-based clinical outcomes research and AI applications to advance critical care through collaborative, data-driven research.
+          </p>
+          <a href="/about" class="text-clif-burgundy font-medium text-sm inline-flex items-center gap-1 hover:underline">
+            Read more about CLIF
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+          </a>
+        </div>
+        <div class="md:w-1/2 space-y-4">
+          <div class="flex items-start gap-3">
+            <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-clif-burgundy/10 text-clif-burgundy flex items-center justify-center mt-0.5">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
+              </svg>
+            </div>
+            <div>
+              <p class="font-semibold text-gray-900 text-sm">Standardized Format</p>
+              <p class="text-sm text-gray-500">Purpose-built for longitudinal ICU data, eliminating months of ad-hoc harmonization.</p>
+            </div>
+          </div>
+          <div class="flex items-start gap-3">
+            <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-clif-burgundy/10 text-clif-burgundy flex items-center justify-center mt-0.5">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+              </svg>
+            </div>
+            <div>
+              <p class="font-semibold text-gray-900 text-sm">Privacy-Preserving</p>
+              <p class="text-sm text-gray-500">Federated analytics — only aggregate results are shared, no patient data leaves the institution.</p>
+            </div>
+          </div>
+          <div class="flex items-start gap-3">
+            <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-clif-burgundy/10 text-clif-burgundy flex items-center justify-center mt-0.5">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+              </svg>
+            </div>
+            <div>
+              <p class="font-semibold text-gray-900 text-sm">Rapid Multicenter Research</p>
+              <p class="text-sm text-gray-500">Write once, run across 12+ sites. Hypothesis to multicenter results in weeks, not years.</p>
+            </div>
+          </div>
+          <div class="flex items-start gap-3">
+            <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-clif-burgundy/10 text-clif-burgundy flex items-center justify-center mt-0.5">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+              </svg>
+            </div>
+            <div>
+              <p class="font-semibold text-gray-900 text-sm">Open Source</p>
+              <p class="text-sm text-gray-500">Apache License 2.0 — all tools, ETL pipelines, and specifications are openly available on <a href="https://github.com/clif-consortium" target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:underline">GitHub</a>.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- Consortium Map -->
     <section class="mb-16">
       <div class="max-w-5xl mx-auto">
-        <h2 class="text-2xl font-bold text-center text-gray-900 mb-8">Our Network</h2>
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
           <img
             src="/images/misc/clif_map.png"
@@ -76,29 +139,6 @@ import AnimatedHero from '../components/home/AnimatedHero.astro';
       </div>
     </section>
 
-    <!-- Open Source Banner -->
-    <section class="mb-8">
-      <div class="bg-gray-50 rounded-xl p-6 flex items-center justify-between max-w-3xl mx-auto">
-        <div class="flex items-center gap-4">
-          <svg class="w-8 h-8 text-clif-burgundy flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z"/>
-          </svg>
-          <div>
-            <p class="font-medium text-gray-900">Open Source</p>
-            <p class="text-sm text-gray-500">Apache License 2.0</p>
-          </div>
-        </div>
-        <a href="https://github.com/clif-consortium"
-           class="text-clif-burgundy hover:text-clif-burgundy-dark font-medium text-sm inline-flex items-center gap-1"
-           target="_blank"
-           rel="noopener noreferrer">
-          View on GitHub
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-          </svg>
-        </a>
-      </div>
-    </section>
 
   </div>
 </BaseLayout>
