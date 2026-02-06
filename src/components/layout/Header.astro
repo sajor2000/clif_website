@@ -3,15 +3,21 @@ import Navigation from './Navigation.astro';
 ---
 
 <header class="bg-white shadow-sm sticky top-0 z-50">
-  <div class="container mx-auto px-6 py-3">
+  <div class="max-w-full mx-auto px-6 py-3">
     <div class="flex items-center justify-between">
       <!-- Logo -->
       <a href="/" class="flex items-center gap-3 transition-opacity duration-200 hover:opacity-80">
         <img
           src="/images/logos/clif_logo_transparent_FINAL_cropped.png"
           alt="CLIF Logo"
-          class="h-12 block"
-          style="display: block;"
+          class="h-12 block dark:hidden"
+          loading="eager"
+          decoding="async"
+        />
+        <img
+          src="/images/logos/clif_logo_white_email.png"
+          alt="CLIF Logo"
+          class="h-12 hidden dark:block"
           loading="eager"
           decoding="async"
         />

@@ -368,3 +368,556 @@
     }
   }
 }
+
+/* ============================================
+   DARK MODE OVERRIDES
+   Using .dark class on <html> (Tailwind class strategy)
+   Color palette: black/neutral grey (NOT blue-slate)
+   ============================================ */
+
+/* --- Page & Component Backgrounds --- */
+.dark body {
+  background-color: #121212 !important;
+  color: #e5e5e5 !important;
+}
+
+.dark .bg-white {
+  background-color: #1c1c1c !important;
+}
+
+.dark .bg-gray-50,
+.dark .bg-clif-gray-50 {
+  background-color: #121212 !important;
+}
+
+.dark .bg-gray-100,
+.dark .bg-clif-gray-100 {
+  background-color: #1c1c1c !important;
+}
+
+/* Gradient stops */
+.dark .from-gray-50 {
+  --tw-gradient-from: #121212 !important;
+}
+
+.dark .to-white {
+  --tw-gradient-to: #1c1c1c !important;
+}
+
+.dark .from-white {
+  --tw-gradient-from: #1c1c1c !important;
+}
+
+.dark .to-gray-50 {
+  --tw-gradient-to: #121212 !important;
+}
+
+.dark .from-gray-100 {
+  --tw-gradient-from: #1c1c1c !important;
+}
+
+.dark .to-gray-100 {
+  --tw-gradient-to: #1c1c1c !important;
+}
+
+.dark .bg-gradient-to-b.from-gray-50.to-white {
+  background: linear-gradient(to bottom, #121212, #1c1c1c) !important;
+}
+
+.dark .bg-gray-200,
+.dark .bg-clif-gray-200 {
+  background-color: #262626 !important;
+}
+
+.dark .bg-gray-300 {
+  background-color: #333333 !important;
+}
+
+/* Colored accent backgrounds → semi-transparent dark versions */
+.dark .bg-blue-50 {
+  background-color: rgba(59, 130, 246, 0.1) !important;
+}
+
+.dark .bg-green-50 {
+  background-color: rgba(34, 197, 94, 0.1) !important;
+}
+
+.dark .bg-yellow-50 {
+  background-color: rgba(234, 179, 8, 0.1) !important;
+}
+
+.dark .bg-red-50 {
+  background-color: rgba(239, 68, 68, 0.1) !important;
+}
+
+.dark .bg-orange-50 {
+  background-color: rgba(249, 115, 22, 0.1) !important;
+}
+
+.dark .bg-purple-50 {
+  background-color: rgba(168, 85, 247, 0.1) !important;
+}
+
+.dark .bg-indigo-50 {
+  background-color: rgba(99, 102, 241, 0.1) !important;
+}
+
+.dark .bg-emerald-50 {
+  background-color: rgba(16, 185, 129, 0.1) !important;
+}
+
+.dark .bg-teal-50 {
+  background-color: rgba(20, 184, 166, 0.1) !important;
+}
+
+.dark .bg-pink-50 {
+  background-color: rgba(236, 72, 153, 0.1) !important;
+}
+
+/* --- Text Colors --- */
+.dark .text-gray-900,
+.dark .text-clif-gray-900 {
+  color: #e5e5e5 !important;
+}
+
+.dark .text-gray-800,
+.dark .text-clif-gray-800 {
+  color: #d4d4d4 !important;
+}
+
+.dark .text-gray-700 {
+  color: #a3a3a3 !important;
+}
+
+.dark .text-gray-600,
+.dark .text-clif-gray-600 {
+  color: #a3a3a3 !important;
+}
+
+.dark .text-gray-500 {
+  color: #737373 !important;
+}
+
+.dark .text-gray-400 {
+  color: #737373 !important;
+}
+
+/* --- Border Colors --- */
+.dark .border-gray-200,
+.dark .border-clif-gray-200 {
+  border-color: #333333 !important;
+}
+
+.dark .border-gray-300,
+.dark .border-clif-gray-300 {
+  border-color: #404040 !important;
+}
+
+.dark .border-gray-100 {
+  border-color: #262626 !important;
+}
+
+/* --- Shadows --- */
+.dark .shadow-sm {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+}
+
+.dark .shadow-md {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4) !important;
+}
+
+.dark .shadow-lg {
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.4) !important;
+}
+
+.dark .shadow-xl {
+  box-shadow: 0 20px 25px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* --- Custom Classes --- */
+.dark .glass {
+  background: rgba(28, 28, 28, 1) !important;
+  border: 1px solid #333333 !important;
+}
+
+.dark .card-modern {
+  background: rgba(28, 28, 28, 1) !important;
+  border: 1px solid #333333 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+}
+
+.dark .glow {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+}
+
+.dark .hover-lift:hover {
+  box-shadow: 0 20px 25px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* --- Badges --- */
+.dark .badge-beta {
+  background-color: rgba(249, 115, 22, 0.15) !important;
+  color: #fb923c !important;
+  border-color: rgba(249, 115, 22, 0.3) !important;
+}
+
+.dark .badge-concept {
+  background-color: rgba(163, 163, 163, 0.15) !important;
+  color: #a3a3a3 !important;
+  border-color: rgba(163, 163, 163, 0.3) !important;
+}
+
+.dark .badge-deprecated {
+  background-color: rgba(115, 115, 115, 0.15) !important;
+  color: #737373 !important;
+  border-color: rgba(115, 115, 115, 0.3) !important;
+}
+
+.dark .bg-orange-100 {
+  background-color: rgba(249, 115, 22, 0.15) !important;
+}
+
+.dark .text-orange-800 {
+  color: #fb923c !important;
+}
+
+.dark .border-orange-200 {
+  border-color: rgba(249, 115, 22, 0.3) !important;
+}
+
+/* --- Tables (prose / data dictionary) --- */
+.dark .prose table {
+  background: #1c1c1c !important;
+  border-color: #333333 !important;
+}
+
+.dark .prose th,
+.dark .prose td {
+  border-color: #333333 !important;
+}
+
+.dark .prose th {
+  background-color: #262626 !important;
+  color: #d4d4d4 !important;
+}
+
+.dark .prose tr:nth-child(even) {
+  background-color: #1c1c1c !important;
+}
+
+.dark .prose tr:nth-child(odd) {
+  background-color: #171717 !important;
+}
+
+.dark .prose thead {
+  background-color: #262626 !important;
+}
+
+/* Generic table styling */
+.dark table {
+  border-color: #333333;
+}
+
+.dark th {
+  background-color: #262626;
+  color: #d4d4d4;
+}
+
+.dark td {
+  border-color: #333333;
+}
+
+.dark thead {
+  background-color: #262626;
+}
+
+.dark tbody tr:nth-child(even) {
+  background-color: rgba(38, 38, 38, 0.5);
+}
+
+/* --- Skeleton Loading --- */
+.dark .skeleton {
+  background: linear-gradient(
+    90deg,
+    #262626 25%,
+    #333333 50%,
+    #262626 75%
+  ) !important;
+  background-size: 200% 100% !important;
+}
+
+/* --- Hero Section (burgundy gradient → dark grey gradient) --- */
+.dark .hero-section {
+  background: linear-gradient(135deg, #121212, #1c1c1c, #262626) !important;
+}
+
+/* Burgundy gradient sections → dark grey in dark mode */
+.dark .bg-gradient-to-r.from-\[\#6B1028\],
+.dark .bg-gradient-to-br.from-\[\#6B1028\] {
+  background: linear-gradient(135deg, #121212, #1c1c1c, #262626) !important;
+}
+
+/* --- Footer --- */
+.dark footer.bg-clif-burgundy {
+  background-color: #0a0a0a !important;
+  border-top: 1px solid #333333;
+}
+
+.dark footer .border-clif-burgundy-dark {
+  border-color: #262626 !important;
+}
+
+/* --- Header --- */
+.dark header.bg-white {
+  background-color: #1c1c1c !important;
+  border-bottom: 1px solid #262626;
+}
+
+.dark header .shadow-sm {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* --- Navigation Dropdowns --- */
+.dark .group-hover\:block {
+  background-color: #1c1c1c;
+  border: 1px solid #333333;
+}
+
+.dark nav .bg-white,
+.dark #search-results,
+.dark #mobile-search-results {
+  background-color: #1c1c1c !important;
+  border-color: #333333 !important;
+}
+
+.dark .hover\:bg-gray-50:hover {
+  background-color: #262626 !important;
+}
+
+.dark .hover\:bg-gray-100:hover {
+  background-color: #262626 !important;
+}
+
+/* --- Mobile Menu --- */
+.dark #mobile-menu {
+  background-color: #121212 !important;
+}
+
+/* --- Forms & Inputs --- */
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: #1c1c1c;
+  color: #e5e5e5;
+  border-color: #404040;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #737373;
+}
+
+.dark .focus-within\:border-clif-burgundy:focus-within {
+  border-color: #8B1538 !important;
+}
+
+/* --- Dividers --- */
+.dark .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #333333 !important;
+}
+
+.dark hr {
+  border-color: #333333;
+}
+
+/* --- Ring Colors --- */
+.dark .ring-gray-200 {
+  --tw-ring-color: #333333 !important;
+}
+
+/* --- Colored text adjustments for readability --- */
+.dark .text-blue-600 {
+  color: #60a5fa !important;
+}
+
+.dark .text-blue-700 {
+  color: #60a5fa !important;
+}
+
+.dark .text-green-600 {
+  color: #4ade80 !important;
+}
+
+.dark .text-green-700 {
+  color: #4ade80 !important;
+}
+
+.dark .text-red-600 {
+  color: #f87171 !important;
+}
+
+.dark .text-red-700 {
+  color: #f87171 !important;
+}
+
+.dark .text-yellow-600 {
+  color: #facc15 !important;
+}
+
+.dark .text-orange-600 {
+  color: #fb923c !important;
+}
+
+.dark .text-purple-600 {
+  color: #c084fc !important;
+}
+
+.dark .text-purple-700 {
+  color: #c084fc !important;
+}
+
+.dark .text-indigo-600 {
+  color: #818cf8 !important;
+}
+
+/* --- Burgundy gradient sections used across pages --- */
+.dark .from-clif-burgundy.to-clif-burgundy-dark {
+  --tw-gradient-from: #1c1c1c !important;
+  --tw-gradient-to: #262626 !important;
+}
+
+.dark .bg-gradient-to-r.from-clif-burgundy\/5 {
+  background: rgba(28, 28, 28, 0.5) !important;
+}
+
+.dark .bg-gradient-to-br.from-clif-burgundy\/5 {
+  background: rgba(28, 28, 28, 0.5) !important;
+}
+
+.dark .bg-gradient-to-br.from-clif-burgundy\/20 {
+  background: rgba(28, 28, 28, 0.7) !important;
+}
+
+/* Keep burgundy for accent elements */
+.dark .bg-clif-burgundy:not(footer) {
+  /* Keep burgundy — it works on dark backgrounds */
+}
+
+/* --- Scrollbar --- */
+.dark ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #1c1c1c;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #404040;
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #525252;
+}
+
+/* --- Selection Colors (keep burgundy) --- */
+.dark ::selection {
+  background-color: #8B1538;
+  color: white;
+}
+
+/* --- Cohort/chart card backgrounds --- */
+.dark .bg-gradient-to-br.from-blue-50,
+.dark .bg-gradient-to-br.from-green-50,
+.dark .bg-gradient-to-br.from-purple-50,
+.dark .bg-gradient-to-br.from-orange-50 {
+  background: #1c1c1c !important;
+}
+
+/* --- Code blocks --- */
+.dark pre {
+  background-color: #0a0a0a !important;
+  color: #d4d4d4;
+  border-color: #333333;
+}
+
+.dark code {
+  background-color: #262626;
+  color: #d4d4d4;
+}
+
+.dark pre code {
+  background-color: transparent;
+}
+
+/* --- Breadcrumbs --- */
+.dark .text-clif-gray-600 {
+  color: #a3a3a3 !important;
+}
+
+/* --- Burgundy text → white for dark mode readability --- */
+.dark h1.text-clif-burgundy,
+.dark h2.text-clif-burgundy,
+.dark h3.text-clif-burgundy,
+.dark h4.text-clif-burgundy {
+  color: #ffffff !important;
+}
+
+.dark .text-clif-burgundy {
+  color: #8B1538 !important;
+}
+
+/* Gradient text (bg-clip-text text-transparent) → white in dark mode */
+.dark .bg-clip-text.text-transparent {
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  background-image: none !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+/* --- Data dictionary header gradient banners --- */
+.dark .from-blue-50 {
+  --tw-gradient-from: #1c1c1c !important;
+}
+
+.dark .to-clif-burgundy\/10 {
+  --tw-gradient-to: rgba(139, 21, 56, 0.15) !important;
+}
+
+.dark .bg-gradient-to-r.from-blue-50 {
+  background: #1c1c1c !important;
+}
+
+.dark .bg-clif-burgundy-light\/10 {
+  background-color: rgba(139, 21, 56, 0.15) !important;
+}
+
+.dark .border-clif-burgundy\/20 {
+  border-color: rgba(139, 21, 56, 0.4) !important;
+}
+
+.dark .text-blue-800 {
+  color: #93c5fd !important;
+}
+
+.dark .text-blue-900 {
+  color: #93c5fd !important;
+}
+
+/* --- Map image: darken background, preserve logo colors --- */
+.dark img[src*="clif_map"] {
+  filter: invert(0.15) brightness(0.7) contrast(1.2);
+  border-radius: 0.75rem;
+}
+
+/* --- Focus visible --- */
+.dark a:focus-visible,
+.dark button:focus-visible,
+.dark input:focus-visible,
+.dark select:focus-visible,
+.dark textarea:focus-visible {
+  outline-color: #8B1538;
+}
