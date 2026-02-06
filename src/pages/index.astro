@@ -124,11 +124,18 @@ import AnimatedHero from '../components/home/AnimatedHero.astro';
     <!-- Consortium Map -->
     <section class="mb-16">
       <div class="max-w-5xl mx-auto">
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+        <div class="bg-white dark:!bg-transparent rounded-xl shadow-sm border border-gray-100 p-4">
           <img
             src="/images/misc/clif_map.png"
             alt="Map of CLIF Consortium Sites"
-            class="w-full rounded-lg"
+            class="w-full rounded-lg dark:hidden"
+            loading="lazy"
+            decoding="async"
+          />
+          <img
+            src="/images/misc/clif_map_dark.png"
+            alt="Map of CLIF Consortium Sites"
+            class="w-full rounded-lg hidden dark:block"
             loading="lazy"
             decoding="async"
           />
