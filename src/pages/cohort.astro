@@ -21,6 +21,36 @@ import CTAButton from '../components/shared/CTAButton.astro';
     if (typeof Chart !== 'undefined' && typeof ChartDataLabels !== 'undefined') {
       Chart.register(ChartDataLabels);
     }
+
+    // Set Chart.js colors based on current theme
+    function applyChartTheme() {
+      if (typeof Chart === 'undefined') return;
+      var isDark = document.documentElement.classList.contains('dark');
+      Chart.defaults.color = isDark ? '#a3a3a3' : '#666666';
+      Chart.defaults.borderColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+      // Update all existing chart instances
+      Object.values(Chart.instances || {}).forEach(function(chart) {
+        chart.options.scales && Object.values(chart.options.scales).forEach(function(scale) {
+          if (scale.title) scale.title.color = isDark ? '#d4d4d4' : '#666666';
+          if (scale.ticks) scale.ticks.color = isDark ? '#a3a3a3' : '#666666';
+          if (scale.grid) scale.grid.color = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.1)';
+        });
+        if (chart.options.plugins && chart.options.plugins.legend && chart.options.plugins.legend.labels) {
+          chart.options.plugins.legend.labels.color = isDark ? '#d4d4d4' : '#666666';
+        }
+        chart.update('none');
+      });
+    }
+
+    applyChartTheme();
+
+    // Listen for theme toggles
+    var observer = new MutationObserver(function(mutations) {
+      mutations.forEach(function(m) {
+        if (m.attributeName === 'class') applyChartTheme();
+      });
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
   </script>
 
   <!-- Leaflet CSS and JS for Map -->
