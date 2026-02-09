@@ -42,16 +42,16 @@ CREATE TABLE crrt_therapy (
   ultrafiltration_out FLOAT COMMENT '{"description": "Net ultrafiltration output (mL/hr)", "permissible": "[0-500](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/outlier-handling/outlier_thresholds_crrt_modes.csv)"}'
 );
 
--- -----------------------------------------------------#
+-- -----------------------------------------------------
 -- Table: ecmo_mcs
--- -----------------------------------------------------#
+-- -----------------------------------------------------
 CREATE TABLE ecmo_mcs (
   hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
   recorded_dttm DATETIME COMMENT '{"description": "Date and time when the device settings and/or measurement was recorded", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   device_name VARCHAR COMMENT '{"description": "Name of the ECMO/MCS device used including brand information, e.g. Centrimag", "permissible": "No restriction"}',
   device_category VARCHAR COMMENT '{"description": "Maps device_name to a standardized mCIDE", "permissible": "[List of device categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/v2_2/mCIDE/ecmo_mcs/clif_ecmo_mcs_device_category.csv) and [outlier thresholds by device category](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/outlier-handling/outlier_thresholds_ecmo_mcs.csv)"}',
   mcs_group VARCHAR COMMENT '{"description": "Maps device_category to a standardized mCIDE of MCS types", "permissible": "[List of MCS groups in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/v2_2/mCIDE/ecmo_mcs/clif_ecmo_mcs_mcs_group.csv)"}',
-  ecmo_configuration_category VARCHAR COMMENT '{"description": "Categorical variable designating the ECMO configuration type as defined by the cannulation strategy", "permissible": "vv, va, va_v, vv_a, etc."}',
+  ecmo_configuration_category VARCHAR COMMENT '{"description": "Categorical variable designating the ECMO configuration type as defined by the cannulation strategy", "permissible": "[List of configuration categories](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/v2_2/mCIDE/ecmo_mcs/clif_ecmo_mcs_device_category.csv)"}',
   control_parameter_name VARCHAR COMMENT '{"description": "String that captures the measure of work rate of the device, e.g., RPMs, Impella Power, etc.", "permissible": "No restriction"}',
   control_parameter_category VARCHAR COMMENT '{"description": "Maps control_parameter_name to a standardized list of control parameter categories", "permissible": "[List of control parameter categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/v2_2/mCIDE/ecmo_mcs/clif_ecmo_mcs_control_param_category.csv)"}',
   control_parameter_value FLOAT COMMENT '{"description": "The value of the control parameter (numeric).", "permissible": "Numeric values"}',
