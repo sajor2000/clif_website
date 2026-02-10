@@ -83,6 +83,31 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     <!-- Graph canvas -->
     <div id="graph-container"></div>
 
+    <!-- Info button (top-left of graph area) -->
+    <button id="info-btn" aria-label="How nodes are arranged">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <path d="M12 16v-4"></path>
+        <path d="M12 8h.01"></path>
+      </svg>
+    </button>
+
+    <!-- Info popup -->
+    <div id="info-popup" style="display:none">
+      <div class="info-popup-header">
+        <span>How is this graph arranged?</span>
+        <button id="close-info" aria-label="Close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <p>Each node is an mCIDE concept. Positions were computed by collecting <strong>465,000+ real-world term mappings</strong> from 9 hospital sites (Emory, JHU, MIMIC, Northwestern, OHSU, Rush, UChicago, UMN, UPenn), where each site mapped their local EHR variable names to standardized mCIDE concepts.</p>
+      <p>These synonym relationships were then reduced to 2D coordinates using <strong>t-SNE</strong>. Concepts that share more synonyms across hospital sites are placed <strong>closer together</strong> — so clusters reflect groups of clinically related variables.</p>
+      <p>Colors represent the CLIF table each concept belongs to (e.g. labs, vitals, respiratory support).</p>
+    </div>
+
     <!-- Legend overlay (top-right) -->
     <div id="legend">
       <h3>Table Colors</h3>
@@ -159,7 +184,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     min-width: 384px;
     height: 100%;
     background: rgba(30, 30, 40, 0.8);
-    backdrop-filter: blur(12px);
+    backdrop-filter: blur(20px);
     border-right: 1px solid rgba(255,255,255,0.1);
     display: flex;
     flex-direction: column;
@@ -261,7 +286,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     transition: opacity 0.2s, transform 0.1s;
   }
 
-  .gradient-btn:hover:not(:disabled) { opacity: 0.9; }
+  .gradient-btn:hover:not(:disabled) {
+    opacity: 0.9;
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+  }
   .gradient-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
   .gradient-btn .mcide-spinner {
@@ -307,6 +335,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     margin-bottom: 0.75rem;
   }
 
+  @keyframes mcide-fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
   .result-card {
     padding: 1rem;
     background: rgba(30, 30, 40, 0.3);
@@ -314,10 +347,15 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     border: 1px solid rgba(255,255,255,0.05);
     margin-bottom: 0.75rem;
     cursor: pointer;
-    transition: border-color 0.2s;
+    transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+    animation: mcide-fadeUp 0.3s ease-out both;
   }
 
-  .result-card:hover { border-color: rgba(255,255,255,0.1); }
+  .result-card:hover {
+    border-color: rgba(255,255,255,0.15);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
   .result-card:hover .result-name { color: #3b82f6; }
 
   .result-top {
@@ -384,6 +422,78 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     min-height: 400px;
   }
 
+  /* ===== Info button & popup ===== */
+  #info-btn {
+    position: absolute;
+    top: 1.5rem;
+    left: calc(384px + 1.5rem);
+    z-index: 10;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(30, 30, 40, 0.8);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 50%;
+    color: #9ca3af;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+  }
+
+  #info-btn:hover {
+    color: #ffffff;
+    border-color: rgba(255,255,255,0.25);
+  }
+
+  #info-popup {
+    position: absolute;
+    top: 1.5rem;
+    left: calc(384px + 1.5rem);
+    z-index: 15;
+    width: 340px;
+    padding: 1.25rem;
+    background: rgba(30, 30, 40, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 0.75rem;
+    animation: mcide-fadeUp 0.2s ease-out;
+  }
+
+  .info-popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #ffffff;
+  }
+
+  .info-popup-header button {
+    background: none;
+    border: none;
+    color: #9ca3af;
+    cursor: pointer;
+    padding: 0;
+    line-height: 0;
+    transition: color 0.2s;
+  }
+
+  .info-popup-header button:hover { color: #ffffff; }
+
+  #info-popup p {
+    font-size: 0.8rem;
+    color: #d1d5db;
+    line-height: 1.5;
+    margin-bottom: 0.625rem;
+  }
+
+  #info-popup p:last-child { margin-bottom: 0; }
+
+  #info-popup strong { color: #ffffff; }
+
   /* ===== Legend ===== */
   #legend {
     position: absolute;
@@ -397,7 +507,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     border: 1px solid rgba(255,255,255,0.1);
     max-height: calc(100% - 3rem);
     overflow-y: auto;
+    opacity: 0.7;
+    transition: opacity 0.3s;
   }
+
+  #legend:hover { opacity: 1; }
 
   #legend h3 {
     font-size: 0.75rem;
@@ -409,7 +523,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   #legend-items {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 0.5rem;
+    gap: 0.375rem;
     font-size: 0.75rem;
   }
 
@@ -420,10 +534,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   }
 
   .legend-dot {
-    width: 12px !important;
-    height: 12px !important;
-    min-width: 12px !important;
-    min-height: 12px !important;
+    width: 10px !important;
+    height: 10px !important;
+    min-width: 10px !important;
+    min-height: 10px !important;
     border-radius: 50% !important;
     display: inline-block !important;
     flex-shrink: 0 !important;
@@ -544,6 +658,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     #legend { top: 0.5rem; right: 0.5rem; padding: 0.5rem; }
     #legend-items { grid-template-columns: 1fr; }
     #node-detail { bottom: 0.5rem; right: 0.5rem; left: 0.5rem; min-width: auto; max-width: none; }
+    #info-btn { left: 1rem; top: 0.5rem; }
+    #info-popup { left: 0.5rem; right: 0.5rem; top: 3rem; width: auto; }
   }
 </style>
 
@@ -582,9 +698,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   var allNodes = [];
   var originalNodes = []; // preserve original node objects for reset
   var graphInstance = null;
+  window.graphInstance = null; // expose for debugging
   var synonymMap = null;
   var conceptsMap = {};
   var searchActive = false;
+  var hoveredNode = null;
 
   // ===== Show error visually =====
   function showError(msg) {
@@ -743,11 +861,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         .linkWidth(function(link) { return Math.sqrt(link.value || 1) * 2; })
         .backgroundColor('#0a0a0f')
         .onNodeClick(handleNodeClick)
+        .onNodeHover(function(node) { hoveredNode = node; })
         .nodeCanvasObject(function(node, ctx, globalScale) {
           drawNode(node, ctx, globalScale);
         })
-        .nodePointerAreaPaint(function(node, color, ctx) {
-          var r = Math.max(node.val || 16, 18);
+        .nodePointerAreaPaint(function(node, color, ctx, globalScale) {
+          // Minimum 12 screen-px hit target, scaled to data-space
+          var r = Math.max(12 / globalScale, node.val || 16);
           ctx.beginPath();
           ctx.arc(node.x, node.y, r, 0, 2 * Math.PI);
           ctx.fillStyle = color;
@@ -762,27 +882,36 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           var gd = graphInstance.graphData();
           var nodeMap = {};
           allNodes.forEach(function(n) { nodeMap[n.id] = n; });
+          var sumX = 0, sumY = 0, count = 0;
           gd.nodes.forEach(function(node) {
             var orig = nodeMap[node.id];
             if (orig) {
               orig.x = node.x;
               orig.y = node.y;
             }
+            sumX += node.x;
+            sumY += node.y;
+            count++;
           });
           console.log('[mCIDE] Simulation settled — positions saved');
-          graphInstance.zoomToFit(400, 50);
+          // Center on the globe and zoom to show globe with readable labels
+          if (count > 0) {
+            graphInstance.centerAt(sumX / count, sumY / count, 0);
+            graphInstance.zoom(0.08, 0);
+          }
         })
         .width(w)
         .height(h);
 
       // Strong charge repulsion so nodes spread out with room for labels
-      graphInstance.d3Force('charge').strength(-120);
+      graphInstance.d3Force('charge').strength(-150);
 
-      // Fit view immediately (no zoom animation)
+      // Set a readable initial zoom (simulation will re-center on settle)
       setTimeout(function() {
-        if (graphInstance) graphInstance.zoomToFit(0, 50);
+        if (graphInstance) graphInstance.zoom(0.08, 0);
       }, 100);
 
+      window.graphInstance = graphInstance; // expose for debugging
       console.log('[mCIDE] Graph created, simulation running...');
     } catch (err) {
       showError('Graph creation failed: ' + err.message);
@@ -817,31 +946,67 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     return false;
   }
 
-  // ===== Draw node with label (screen-pixel sizes, smart deconfliction) =====
+  // ===== Draw node with label (constellation effect, zoom-responsive) =====
   function drawNode(node, ctx, globalScale) {
     if (node.x === undefined || node.y === undefined) return;
 
     var label = node.label || node.id;
     var isHighlighted = node.highlighted || node.id === 'search-origin';
+    var isHovered = node === hoveredNode;
 
     // Fixed screen-pixel sizes converted to data-space
-    var nodePx = isHighlighted ? 8 : 5;      // node radius in screen pixels
-    var fontPx = isHighlighted ? 13 : 11;     // font size in screen pixels
+    var nodePx = isHighlighted ? 12 : (isHovered ? 6 : 4);
+    var fontPx = isHighlighted ? 15 : 13;
     var nodeRadius = nodePx / globalScale;
     var fontSize = fontPx / globalScale;
 
-    // Draw circle (always)
+    var nodeColor = node.color || '#64748b';
+
+    // Cheap fake glow for regular nodes (larger semi-transparent circle behind)
+    // Only use expensive shadowBlur for the few highlighted/hovered nodes
+    if (isHighlighted || isHovered) {
+      ctx.shadowBlur = isHighlighted ? 25 : 15;
+      ctx.shadowColor = nodeColor;
+    } else {
+      // Fake ambient glow: draw a larger, dim circle behind the node
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, nodeRadius * 2.5, 0, 2 * Math.PI, false);
+      ctx.fillStyle = nodeColor.length === 7
+        ? nodeColor + '18'   // hex color → ~9% opacity
+        : 'rgba(100,116,139,0.09)';
+      ctx.fill();
+    }
+
+    // Draw main circle
     ctx.beginPath();
     ctx.arc(node.x, node.y, nodeRadius, 0, 2 * Math.PI, false);
-    ctx.fillStyle = node.color || '#64748b';
+    ctx.fillStyle = nodeColor;
     ctx.fill();
 
-    // Glow for highlighted nodes
-    if (isHighlighted) {
-      ctx.shadowBlur = 25;
-      ctx.shadowColor = node.color || '#ffffff';
-      ctx.fill();
+    // Subtle outline ring
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+    ctx.lineWidth = 0.5 / globalScale;
+    ctx.stroke();
+
+    // Reset shadow (only needed when it was set)
+    if (isHighlighted || isHovered) {
       ctx.shadowBlur = 0;
+    }
+
+    // 3-tier zoom-responsive label opacity
+    var labelColor;
+    if (isHighlighted) {
+      labelColor = null; // handled separately below
+    } else if (isHovered) {
+      labelColor = 'rgba(220, 220, 230, 0.95)';
+    } else if (globalScale < 0.06) {
+      return; // too zoomed out — just glowing dots
+    } else if (globalScale < 0.15) {
+      labelColor = 'rgba(180, 190, 200, 0.35)';
+    } else if (globalScale < 0.5) {
+      labelColor = 'rgba(200, 200, 210, 0.75)';
+    } else {
+      labelColor = 'rgba(220, 220, 230, 0.95)';
     }
 
     // Measure label
@@ -858,8 +1023,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       h: fontSize + pad * 2
     };
 
-    // Highlighted/search nodes always get labels
-    if (!isHighlighted && labelOverlaps(rect)) {
+    // Highlighted/hovered nodes always get labels
+    if (!isHighlighted && !isHovered && labelOverlaps(rect)) {
       return; // skip — another label already occupies this space
     }
 
@@ -875,7 +1040,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
       ctx.fillStyle = '#ffffff';
     } else {
-      ctx.fillStyle = 'rgba(200, 200, 210, 0.85)';
+      ctx.fillStyle = labelColor;
     }
 
     ctx.fillText(label, node.x, textY);
@@ -961,6 +1126,49 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     var seen = {};
     var qNorm = norm(query);
 
+    // 0. Domain match — if query (or any word in it) matches a domain name
+    var domainKeys = Object.keys(TABLE_COLORS);
+    var matchedDomain = null;
+    // Split query into individual words for flexible matching
+    var qWords = qNorm.split('_').filter(function(w) { return w.length > 0; });
+
+    for (var d = 0; d < domainKeys.length && !matchedDomain; d++) {
+      var dNorm = norm(domainKeys[d]);
+      // Exact full match
+      if (dNorm === qNorm) { matchedDomain = domainKeys[d]; break; }
+      // Domain contains full query or vice versa
+      if (dNorm.indexOf(qNorm) !== -1 || qNorm.indexOf(dNorm) !== -1) {
+        matchedDomain = domainKeys[d]; break;
+      }
+      // Any query word (3+ chars) matches start of domain key
+      for (var w = 0; w < qWords.length; w++) {
+        if (qWords[w].length >= 3 && dNorm.indexOf(qWords[w]) !== -1) {
+          matchedDomain = domainKeys[d]; break;
+        }
+      }
+    }
+
+    if (matchedDomain) {
+      allNodes.forEach(function(node) {
+        if (node.domain === matchedDomain) {
+          results.push({
+            concept_id: node.id,
+            table_name: node.table,
+            field_name: node.field,
+            value: node.value,
+            score: 1.0,
+            isDomainMatch: true
+          });
+        }
+      });
+      results.sort(function(a, b) {
+        var aLabel = (a.value || a.field_name || '').toLowerCase();
+        var bLabel = (b.value || b.field_name || '').toLowerCase();
+        return aLabel < bLabel ? -1 : aLabel > bLabel ? 1 : 0;
+      });
+      return results; // no cap for domain matches
+    }
+
     // Helper to add concept IDs as results
     function addMatch(conceptIds, score) {
       conceptIds.forEach(function(cid) {
@@ -1036,10 +1244,14 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
     if (emptyEl) emptyEl.style.display = 'none';
 
-    var html = '<h3>Matches (' + results.length + ')</h3>';
-    results.forEach(function(result) {
+    var isDomain = results.length > 0 && results[0].isDomainMatch;
+    var maxCards = isDomain ? 15 : results.length;
+    var displayResults = results.slice(0, maxCards);
+
+    var html = '<h3>' + (isDomain ? 'Domain' : 'Matches') + ' (' + results.length + ' concepts)</h3>';
+    displayResults.forEach(function(result, idx) {
       var color = TABLE_COLORS[result.table_name] || TABLE_COLORS.other;
-      html += '<div class="result-card" data-cid="' + result.concept_id + '">'
+      html += '<div class="result-card" data-cid="' + result.concept_id + '" style="animation-delay:' + (idx * 0.05) + 's">'
         + '<div class="result-top"><div>'
         + '<div class="result-name">' + (result.value || '').replace(/_/g, ' ') + '</div>'
         + '<div class="result-field">' + (result.field_name || '').replace(/_/g, ' ') + '</div>'
@@ -1049,6 +1261,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         + '<div class="result-path"><strong>mCIDE:</strong> ' + result.concept_id + '</div>'
         + '</div>';
     });
+    if (results.length > maxCards) {
+      html += '<p style="color:#9ca3af;text-align:center;font-size:0.8rem;margin-top:0.5rem;">+ ' + (results.length - maxCards) + ' more highlighted on graph</p>';
+    }
 
     listEl.innerHTML = html;
 
@@ -1092,8 +1307,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         fx: node.x,
         fy: node.y,
         highlighted: isMatch,
-        val: isMatch ? 24 : 12,
-        color: isMatch ? domainColor : (domainColor + '60')
+        val: isMatch ? 30 : 6,
+        color: isMatch ? domainColor : (domainColor + '20')
       };
     });
 
@@ -1154,8 +1369,14 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       });
       graphInstance.graphData({ nodes: freshNodes, links: [] });
 
+      // Restore overview zoom centered on the globe
       setTimeout(function() {
-        if (graphInstance) graphInstance.zoomToFit(400, 50);
+        if (graphInstance) {
+          var sumX = 0, sumY = 0, cnt = 0;
+          freshNodes.forEach(function(n) { sumX += n.x; sumY += n.y; cnt++; });
+          if (cnt > 0) graphInstance.centerAt(sumX / cnt, sumY / cnt, 400);
+          graphInstance.zoom(0.08, 400);
+        }
       }, 200);
     }
   }
@@ -1203,6 +1424,22 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       closeBtn.addEventListener('click', function() {
         var panel = document.getElementById('node-detail');
         if (panel) panel.style.display = 'none';
+      });
+    }
+
+    // Info popup toggle
+    var infoBtn = document.getElementById('info-btn');
+    var infoPopup = document.getElementById('info-popup');
+    var closeInfo = document.getElementById('close-info');
+
+    if (infoBtn && infoPopup) {
+      infoBtn.addEventListener('click', function() {
+        infoPopup.style.display = infoPopup.style.display === 'none' ? '' : 'none';
+      });
+    }
+    if (closeInfo && infoPopup) {
+      closeInfo.addEventListener('click', function() {
+        infoPopup.style.display = 'none';
       });
     }
 
