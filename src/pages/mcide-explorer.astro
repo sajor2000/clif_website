@@ -1208,13 +1208,16 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       }
     }
 
-    // 3. Direct label/value matches
+    // 3. Direct label/value/field/id matches
     allNodes.forEach(function(node) {
       if (seen[node.id]) return;
       var labelNorm = norm(node.label || '');
       var valueNorm = norm(node.value || '');
-      if (labelNorm.indexOf(qNorm) !== -1 || valueNorm.indexOf(qNorm) !== -1) {
-        var len = Math.max(labelNorm.length, valueNorm.length, 1);
+      var fieldNorm = norm(node.field || '');
+      var idNorm = norm(node.id || '');
+      if (labelNorm.indexOf(qNorm) !== -1 || valueNorm.indexOf(qNorm) !== -1 ||
+          fieldNorm.indexOf(qNorm) !== -1 || idNorm.indexOf(qNorm) !== -1) {
+        var len = Math.max(labelNorm.length, valueNorm.length, fieldNorm.length, 1);
         results.push({
           concept_id: node.id,
           table_name: node.table,
