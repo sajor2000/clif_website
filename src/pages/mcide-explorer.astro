@@ -17,7 +17,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
           </svg>
           <h1>mCIDE Explorer</h1>
-          <span class="beta-badge">BETA</span>
         </div>
 
         <!-- Search bar -->
@@ -66,8 +65,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <path d="M12 16v-4"></path>
             <path d="M12 8h.01"></path>
           </svg>
-          <p>Enter a CLIF <span class="hl-term">term</span> or <span class="hl-field">field</span> to search for concepts</p>
-          <p class="hint">Try "<span class="hl-term">heart rate</span>" or "<span class="hl-field">vitals</span>"</p>
+          <p>Enter a term to search for CLIF concepts</p>
+          <p class="hint">Try "heart rate" or "glucose"</p>
           <div class="tips">
             <p class="tips-title">Tips:</p>
             <ul>
@@ -83,14 +82,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
     <!-- Graph canvas -->
     <div id="graph-container"></div>
-
-    <!-- Mobile sidebar toggle (search) -->
-    <button id="mobile-sidebar-toggle" aria-label="Open search">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="11" cy="11" r="8"></circle>
-        <path d="m21 21-4.3-4.3"></path>
-      </svg>
-    </button>
 
     <!-- Info button (top-left of graph area) -->
     <button id="info-btn" aria-label="How nodes are arranged">
@@ -224,19 +215,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-  }
-
-  .beta-badge {
-    font-size: 0.625rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    padding: 0.15rem 0.45rem;
-    border-radius: 0.25rem;
-    background: rgba(251, 191, 36, 0.15);
-    color: #fbbf24;
-    border: 1px solid rgba(251, 191, 36, 0.4);
-    line-height: 1;
-    align-self: center;
   }
 
   .search-wrapper { position: relative; }
@@ -419,12 +397,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     margin-top: 3rem;
   }
 
-  #empty-state svg { margin: 0 auto; display: block; }
   #empty-state p { margin-top: 0.75rem; font-size: 0.875rem; }
   #empty-state .hint { font-size: 0.8rem; margin-top: 0.5rem; }
-
-  .hl-term { color: #60a5fa; font-weight: 600; }
-  .hl-field { color: #a78bfa; font-weight: 600; }
 
   .tips {
     margin-top: 1.5rem;
@@ -446,11 +420,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     position: relative;
     z-index: 1;
     min-height: 400px;
-  }
-
-  /* ===== Mobile sidebar toggle ===== */
-  #mobile-sidebar-toggle {
-    display: none;
   }
 
   /* ===== Info button & popup ===== */
@@ -686,25 +655,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       transition: transform 0.3s ease;
     }
     #sidebar.open { transform: translateX(0); }
-    #mobile-sidebar-toggle {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: absolute;
-      top: 0.5rem;
-      left: 3.5rem;
-      z-index: 10;
-      width: 36px;
-      height: 36px;
-      background: rgba(30, 30, 40, 0.8);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 50%;
-      color: #9ca3af;
-      cursor: pointer;
-    }
-    #legend { display: none; }
-    #legend.open { display: block; top: 0.5rem; right: 0.5rem; padding: 0.5rem; }
+    #legend { top: 0.5rem; right: 0.5rem; padding: 0.5rem; }
     #legend-items { grid-template-columns: 1fr; }
     #node-detail { bottom: 0.5rem; right: 0.5rem; left: 0.5rem; min-width: auto; max-width: none; }
     #info-btn { left: 1rem; top: 0.5rem; }
@@ -796,16 +747,14 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           })
           .map(function(node) {
             var parts = node.id.split('.');
-            // Scale down t-SNE coords so the initial globe is compact
-            var COORD_SCALE = 0.15;
             return {
               id: node.id,
               label: (node.label || node.id).replace(/_/g, ' '),
               color: TABLE_COLORS[node.domain] || TABLE_COLORS.other,
               domain: node.domain,
               val: node.size || 16,
-              x: (node.x || 0) * COORD_SCALE,
-              y: (node.y || 0) * COORD_SCALE,
+              x: node.x,
+              y: node.y,
               table: parts[0] || node.domain,
               field: parts[1] || '',
               value: parts.slice(2).join('.') || parts[parts.length - 1] || ''
@@ -899,12 +848,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     var h = container.offsetHeight || (window.innerHeight - 80);
     console.log('[mCIDE] Graph container:', w, 'x', h);
 
-    // Clone nodes and pin them so the simulation preserves t-SNE layout
+    // Clone nodes to avoid mutation issues
     originalNodes = allNodes.map(function(n) { return Object.assign({}, n); });
 
     try {
       graphInstance = ForceGraph()(container)
-        .graphData({ nodes: originalNodes.map(function(n) { var c = Object.assign({}, n); c.fx = c.x; c.fy = c.y; return c; }), links: [] })
+        .graphData({ nodes: originalNodes.map(function(n) { return Object.assign({}, n); }), links: [] })
         .nodeLabel(buildTooltip)
         .nodeColor('color')
         .nodeVal('val')
@@ -924,9 +873,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           ctx.fillStyle = color;
           ctx.fill();
         })
-        .d3AlphaDecay(0.05)
-        .d3VelocityDecay(0.4)
-        .cooldownTime(500)
+        .d3AlphaDecay(0.02)
+        .d3VelocityDecay(0.3)
+        .cooldownTime(3000)
         .onRenderFramePre(resetLabelCache)
         .onEngineStop(function() {
           // Save settled positions so search/clear preserves the globe layout
@@ -945,23 +894,22 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             count++;
           });
           console.log('[mCIDE] Simulation settled — positions saved');
-          // Fit all nodes into view with padding
-          var pad = window.innerWidth <= 768 ? 40 : 80;
-          graphInstance.zoomToFit(0, pad);
+          // Center on the globe and zoom to show globe with readable labels
+          if (count > 0) {
+            graphInstance.centerAt(sumX / count, sumY / count, 0);
+            graphInstance.zoom(0.08, 0);
+          }
         })
         .width(w)
         .height(h);
 
-      // Gentle charge so clusters stay compact
-      graphInstance.d3Force('charge').strength(-15);
+      // Strong charge repulsion so nodes spread out with room for labels
+      graphInstance.d3Force('charge').strength(-150);
 
-      // Initial fit — onEngineStop will do the final fit once settled
+      // Set a readable initial zoom (simulation will re-center on settle)
       setTimeout(function() {
-        if (graphInstance) {
-          var pad = window.innerWidth <= 768 ? 40 : 80;
-          graphInstance.zoomToFit(0, pad);
-        }
-      }, 200);
+        if (graphInstance) graphInstance.zoom(0.08, 0);
+      }, 100);
 
       window.graphInstance = graphInstance; // expose for debugging
       console.log('[mCIDE] Graph created, simulation running...');
@@ -1051,11 +999,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       labelColor = null; // handled separately below
     } else if (isHovered) {
       labelColor = 'rgba(220, 220, 230, 0.95)';
-    } else if (globalScale < 0.2) {
+    } else if (globalScale < 0.06) {
       return; // too zoomed out — just glowing dots
-    } else if (globalScale < 0.4) {
+    } else if (globalScale < 0.15) {
       labelColor = 'rgba(180, 190, 200, 0.35)';
-    } else if (globalScale < 0.8) {
+    } else if (globalScale < 0.5) {
       labelColor = 'rgba(200, 200, 210, 0.75)';
     } else {
       labelColor = 'rgba(220, 220, 230, 0.95)';
@@ -1495,19 +1443,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     if (closeInfo && infoPopup) {
       closeInfo.addEventListener('click', function() {
         infoPopup.style.display = 'none';
-      });
-    }
-
-    // Mobile sidebar toggle
-    var mobileSidebarToggle = document.getElementById('mobile-sidebar-toggle');
-    var sidebar = document.getElementById('sidebar');
-    if (mobileSidebarToggle && sidebar) {
-      mobileSidebarToggle.addEventListener('click', function() {
-        sidebar.classList.toggle('open');
-      });
-      // Close sidebar when clicking outside on mobile
-      document.getElementById('graph-container').addEventListener('click', function() {
-        sidebar.classList.remove('open');
       });
     }
 

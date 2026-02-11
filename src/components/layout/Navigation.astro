@@ -21,7 +21,7 @@ const navItems = [
     active: pathname === '/tools' || pathname === '/mcide-explorer',
     submenu: [
       { label: 'All Tools', href: '/tools', active: pathname === '/tools' },
-      { label: 'mCIDE Explorer', href: '/mcide-explorer', active: pathname === '/mcide-explorer', beta: true },
+      { label: 'mCIDE Explorer', href: '/mcide-explorer', active: pathname === '/mcide-explorer' },
     ],
   },
   {
@@ -59,7 +59,6 @@ const navItems = [
                   class={`block px-4 py-2 text-sm hover:bg-gray-50 ${sub.active ? 'text-clif-burgundy font-semibold' : 'text-gray-700'}`}
                 >
                   {sub.label}
-                  {sub.beta && <span class="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-800 border border-amber-300 leading-none">BETA</span>}
                 </a>
               ))
             }
@@ -271,7 +270,6 @@ const navItems = [
                     class={`block pl-6 py-2 text-base ${sub.active ? 'text-clif-burgundy font-semibold' : 'text-gray-700'}`}
                   >
                     {sub.label}
-                    {sub.beta && <span class="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-800 border border-amber-300 leading-none">BETA</span>}
                   </a>
                 ))
               }
