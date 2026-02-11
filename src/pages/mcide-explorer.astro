@@ -1,0 +1,1455 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="mCIDE Explorer"
+  description="Interactively explore the minimum Common ICU Data Elements (mCIDE) concept graph — search, filter, and visualize 1,400+ standardized clinical variables."
+  showBreadcrumbs={false}
+>
+  <div id="mcide-explorer">
+    <!-- Left sidebar (glassmorphism) -->
+    <div id="sidebar">
+      <!-- Header -->
+      <div id="sidebar-header">
+        <div class="sidebar-title">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+          </svg>
+          <h1>mCIDE Explorer</h1>
+        </div>
+
+        <!-- Search bar -->
+        <div class="search-wrapper">
+          <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.3-4.3"></path>
+          </svg>
+          <input
+            type="text"
+            id="mcide-search"
+            placeholder="Search for medical concepts..."
+            autocomplete="off"
+          />
+          <button id="clear-search" class="clear-btn" style="display:none" aria-label="Clear search">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Buttons -->
+        <div class="button-row">
+          <button id="search-btn" class="gradient-btn" disabled>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"></path>
+            </svg>
+            Search
+          </button>
+        </div>
+      </div>
+
+      <!-- Stats bar -->
+      <div id="stats-bar">
+        <span class="stats-label">All mCIDE concepts:</span>
+        <span id="stats-count" class="stats-value">—</span>
+      </div>
+
+      <!-- Search results -->
+      <div id="results-container">
+        <div id="results-list"></div>
+        <div id="empty-state">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.5">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M12 16v-4"></path>
+            <path d="M12 8h.01"></path>
+          </svg>
+          <p>Enter a term to search for CLIF concepts</p>
+          <p class="hint">Try "heart rate" or "glucose"</p>
+          <div class="tips">
+            <p class="tips-title">Tips:</p>
+            <ul>
+              <li>Each node is a CLIF concept</li>
+              <li>Colors represent clinical domains</li>
+              <li>Search to highlight matches</li>
+              <li>Click nodes for details</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Graph canvas -->
+    <div id="graph-container"></div>
+
+    <!-- Info button (top-left of graph area) -->
+    <button id="info-btn" aria-label="How nodes are arranged">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <path d="M12 16v-4"></path>
+        <path d="M12 8h.01"></path>
+      </svg>
+    </button>
+
+    <!-- Info popup -->
+    <div id="info-popup" style="display:none">
+      <div class="info-popup-header">
+        <span>How is this graph arranged?</span>
+        <button id="close-info" aria-label="Close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <p>Each node is an mCIDE concept. Positions were computed by collecting <strong>465,000+ real-world term mappings</strong> from 9 hospital sites (Emory, JHU, MIMIC, Northwestern, OHSU, Rush, UChicago, UMN, UPenn), where each site mapped their local EHR variable names to standardized mCIDE concepts.</p>
+      <p>These synonym relationships were then reduced to 2D coordinates using <strong>t-SNE</strong>. Concepts that share more synonyms across hospital sites are placed <strong>closer together</strong> — so clusters reflect groups of clinically related variables.</p>
+      <p>Colors represent the CLIF table each concept belongs to (e.g. labs, vitals, respiratory support).</p>
+    </div>
+
+    <!-- Legend overlay (top-right) -->
+    <div id="legend">
+      <h3>Table Colors</h3>
+      <div id="legend-items"></div>
+    </div>
+
+    <!-- Node detail panel (bottom-right) -->
+    <div id="node-detail" style="display:none">
+      <div class="detail-header">
+        <h3 id="detail-title"></h3>
+        <button id="close-detail" aria-label="Close detail panel">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="detail-body">
+        <div class="detail-row">
+          <span class="detail-label">Table:</span>
+          <span id="detail-table" class="detail-badge"></span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Field:</span>
+          <span id="detail-field" class="detail-value"></span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Value:</span>
+          <span id="detail-value" class="detail-value-mono"></span>
+        </div>
+        <div id="detail-synonyms-section" class="detail-section" style="display:none">
+          <span class="detail-label">Synonyms:</span>
+          <div id="detail-synonyms" class="detail-synonyms-list"></div>
+        </div>
+        <div class="detail-section">
+          <span class="detail-label-small">Full Path:</span>
+          <code id="detail-path" class="detail-path"></code>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error display (hidden by default) -->
+    <div id="mcide-error" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:100;background:#1e1e28;color:#ef4444;padding:2rem;border-radius:0.5rem;border:1px solid #ef4444;max-width:500px;font-family:monospace;font-size:0.8rem;white-space:pre-wrap;"></div>
+  </div>
+</BaseLayout>
+
+<style is:global>
+  /* ===== Main container ===== */
+  #mcide-explorer {
+    position: relative;
+    display: flex;
+    width: 100%;
+    height: calc(100vh - 80px);
+    background: #0a0a0f;
+    overflow: hidden;
+    color: #ffffff;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  #mcide-explorer::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(59,130,246,0.05), #0a0a0f, rgba(139,92,246,0.05));
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ===== Sidebar ===== */
+  #sidebar {
+    position: relative;
+    z-index: 20;
+    width: 384px;
+    min-width: 384px;
+    height: 100%;
+    background: rgba(30, 30, 40, 0.8);
+    backdrop-filter: blur(20px);
+    border-right: 1px solid rgba(255,255,255,0.1);
+    display: flex;
+    flex-direction: column;
+    animation: mcide-slideIn 0.5s ease-out;
+  }
+
+  @keyframes mcide-slideIn {
+    from { transform: translateX(-100%); opacity: 0; }
+    to   { transform: translateX(0); opacity: 1; }
+  }
+
+  #sidebar-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+
+  .sidebar-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .sidebar-title h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    background: linear-gradient(to right, #3b82f6, #8b5cf6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .search-wrapper { position: relative; }
+
+  .search-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9ca3af;
+    pointer-events: none;
+  }
+
+  #mcide-search {
+    width: 100%;
+    padding: 0.75rem 2.5rem 0.75rem 3rem;
+    background: rgba(30, 30, 40, 0.5);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 0.5rem;
+    color: #ffffff;
+    font-size: 0.875rem;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  #mcide-search::placeholder { color: #9ca3af; }
+
+  #mcide-search:focus {
+    border-color: rgba(59, 130, 246, 0.5);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+  }
+
+  .clear-btn {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #9ca3af;
+    cursor: pointer;
+    padding: 0;
+    line-height: 0;
+    transition: color 0.2s;
+  }
+
+  .clear-btn:hover { color: #ffffff; }
+
+  .button-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+  }
+
+  .gradient-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: linear-gradient(to right, #3b82f6, #8b5cf6);
+    border: none;
+    border-radius: 0.5rem;
+    color: white;
+    font-weight: 500;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+  }
+
+  .gradient-btn:hover:not(:disabled) {
+    opacity: 0.9;
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+  }
+  .gradient-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .gradient-btn .mcide-spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: mcide-spin 0.6s linear infinite;
+  }
+
+  @keyframes mcide-spin { to { transform: rotate(360deg); } }
+
+  /* Stats bar */
+  #stats-bar {
+    padding: 0.75rem 1.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    background: rgba(10, 10, 15, 0.3);
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.875rem;
+  }
+
+  .stats-label { color: #9ca3af; }
+  .stats-value { font-weight: 500; }
+
+  /* Results container */
+  #results-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+  }
+
+  #results-container::-webkit-scrollbar { width: 6px; }
+  #results-container::-webkit-scrollbar-track { background: transparent; }
+  #results-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+
+  #results-list h3 {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #9ca3af;
+    margin-bottom: 0.75rem;
+  }
+
+  @keyframes mcide-fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .result-card {
+    padding: 1rem;
+    background: rgba(30, 30, 40, 0.3);
+    border-radius: 0.5rem;
+    border: 1px solid rgba(255,255,255,0.05);
+    margin-bottom: 0.75rem;
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+    animation: mcide-fadeUp 0.3s ease-out both;
+  }
+
+  .result-card:hover {
+    border-color: rgba(255,255,255,0.15);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+  .result-card:hover .result-name { color: #3b82f6; }
+
+  .result-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+  }
+
+  .result-name {
+    font-weight: 500;
+    color: #ffffff;
+    font-size: 0.875rem;
+    transition: color 0.2s;
+  }
+
+  .result-field {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    margin-top: 0.25rem;
+  }
+
+  .result-badge {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.675rem;
+    border-radius: 9999px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-left: 0.5rem;
+  }
+
+  .result-path { font-size: 0.75rem; color: #9ca3af; margin-top: 0.375rem; }
+  .result-path strong { font-weight: 500; }
+
+  /* Empty state */
+  #empty-state {
+    text-align: center;
+    color: #9ca3af;
+    margin-top: 3rem;
+  }
+
+  #empty-state p { margin-top: 0.75rem; font-size: 0.875rem; }
+  #empty-state .hint { font-size: 0.8rem; margin-top: 0.5rem; }
+
+  .tips {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background: rgba(30, 30, 40, 0.2);
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    text-align: left;
+  }
+
+  .tips-title { font-weight: 500; margin-bottom: 0.5rem; }
+  .tips ul { list-style: none; padding: 0; }
+  .tips li { padding: 0.125rem 0; }
+  .tips li::before { content: '\2022\00a0'; }
+
+  /* ===== Graph canvas ===== */
+  #graph-container {
+    flex: 1;
+    position: relative;
+    z-index: 1;
+    min-height: 400px;
+  }
+
+  /* ===== Info button & popup ===== */
+  #info-btn {
+    position: absolute;
+    top: 1.5rem;
+    left: calc(384px + 1.5rem);
+    z-index: 10;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(30, 30, 40, 0.8);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 50%;
+    color: #9ca3af;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+  }
+
+  #info-btn:hover {
+    color: #ffffff;
+    border-color: rgba(255,255,255,0.25);
+  }
+
+  #info-popup {
+    position: absolute;
+    top: 1.5rem;
+    left: calc(384px + 1.5rem);
+    z-index: 15;
+    width: 340px;
+    padding: 1.25rem;
+    background: rgba(30, 30, 40, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 0.75rem;
+    animation: mcide-fadeUp 0.2s ease-out;
+  }
+
+  .info-popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #ffffff;
+  }
+
+  .info-popup-header button {
+    background: none;
+    border: none;
+    color: #9ca3af;
+    cursor: pointer;
+    padding: 0;
+    line-height: 0;
+    transition: color 0.2s;
+  }
+
+  .info-popup-header button:hover { color: #ffffff; }
+
+  #info-popup p {
+    font-size: 0.8rem;
+    color: #d1d5db;
+    line-height: 1.5;
+    margin-bottom: 0.625rem;
+  }
+
+  #info-popup p:last-child { margin-bottom: 0; }
+
+  #info-popup strong { color: #ffffff; }
+
+  /* ===== Legend ===== */
+  #legend {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    z-index: 10;
+    padding: 1rem;
+    background: rgba(30, 30, 40, 0.8);
+    backdrop-filter: blur(12px);
+    border-radius: 0.5rem;
+    border: 1px solid rgba(255,255,255,0.1);
+    max-height: calc(100% - 3rem);
+    overflow-y: auto;
+    opacity: 0.7;
+    transition: opacity 0.3s;
+  }
+
+  #legend:hover { opacity: 1; }
+
+  #legend h3 {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #9ca3af;
+    margin-bottom: 0.75rem;
+  }
+
+  #legend-items {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.375rem;
+    font-size: 0.75rem;
+  }
+
+  .legend-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+  }
+
+  .legend-dot {
+    width: 10px !important;
+    height: 10px !important;
+    min-width: 10px !important;
+    min-height: 10px !important;
+    border-radius: 50% !important;
+    display: inline-block !important;
+    flex-shrink: 0 !important;
+  }
+
+  .legend-label {
+    color: #d1d5db;
+    text-transform: capitalize;
+  }
+
+  /* ===== Node Detail Panel ===== */
+  #node-detail {
+    position: absolute;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 10;
+    padding: 1.5rem;
+    background: rgba(30, 30, 40, 0.9);
+    backdrop-filter: blur(16px);
+    border-radius: 0.5rem;
+    border: 1px solid rgba(255,255,255,0.1);
+    max-width: 24rem;
+    min-width: 20rem;
+  }
+
+  .detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+  }
+
+  .detail-header h3 { font-size: 1.125rem; font-weight: 500; color: #ffffff; }
+
+  .detail-header button {
+    background: none;
+    border: none;
+    color: #9ca3af;
+    cursor: pointer;
+    padding: 0;
+    line-height: 0;
+    transition: color 0.2s;
+  }
+
+  .detail-header button:hover { color: #ffffff; }
+
+  .detail-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  .detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .detail-label { color: #9ca3af; }
+  .detail-label-small { color: #9ca3af; font-size: 0.75rem; }
+
+  .detail-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+  }
+
+  .detail-value { color: #ffffff; font-size: 0.75rem; }
+
+  .detail-value-mono {
+    color: #ffffff;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.75rem;
+  }
+
+  .detail-section {
+    padding-top: 0.5rem;
+    border-top: 1px solid rgba(255,255,255,0.1);
+  }
+
+  .detail-synonyms-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    margin-top: 0.375rem;
+  }
+
+  .synonym-tag {
+    padding: 0.125rem 0.5rem;
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: 0.25rem;
+    font-size: 0.675rem;
+    color: #3b82f6;
+  }
+
+  .detail-path {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.75rem;
+    color: #6b7280;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    word-break: break-all;
+  }
+
+  /* ===== Mobile ===== */
+  @media (max-width: 768px) {
+    #sidebar {
+      position: absolute;
+      left: 0; top: 0;
+      height: 100%;
+      z-index: 30;
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
+    }
+    #sidebar.open { transform: translateX(0); }
+    #legend { top: 0.5rem; right: 0.5rem; padding: 0.5rem; }
+    #legend-items { grid-template-columns: 1fr; }
+    #node-detail { bottom: 0.5rem; right: 0.5rem; left: 0.5rem; min-width: auto; max-width: none; }
+    #info-btn { left: 1rem; top: 0.5rem; }
+    #info-popup { left: 0.5rem; right: 0.5rem; top: 3rem; width: auto; }
+  }
+</style>
+
+<!-- Load force-graph from CDN (synchronous, must load before our script) -->
+<script is:inline src="https://unpkg.com/force-graph@1.47.2/dist/force-graph.min.js"></script>
+
+<!-- Client-side explorer logic -->
+<script is:inline>
+(function() {
+  'use strict';
+
+  // ===== Table colors (same as CLIF-Match) =====
+  var TABLE_COLORS = {
+    labs: '#3b82f6',
+    vitals: '#ef4444',
+    respiratory_support: '#22c55e',
+    medication_admin_continuous: '#a855f7',
+    medication_admin_intermittent: '#9333ea',
+    microbiology_culture: '#ec4899',
+    microbiology_nonculture: '#db2777',
+    microbiology_susceptibility: '#be185d',
+    patient_assessments: '#06b6d4',
+    position: '#eab308',
+    ecmo_mcs: '#f97316',
+    crrt_therapy: '#84cc16',
+    hospitalization: '#14b8a6',
+    adt: '#fbbf24',
+    code_status: '#dc2626',
+    patient: '#64748b',
+    patient_procedures: '#8b5cf6',
+    hospital_diagnosis: '#6366f1',
+    other: '#64748b'
+  };
+
+  // ===== State =====
+  var allNodes = [];
+  var originalNodes = []; // preserve original node objects for reset
+  var graphInstance = null;
+  window.graphInstance = null; // expose for debugging
+  var synonymMap = null;
+  var conceptsMap = {};
+  var searchActive = false;
+  var hoveredNode = null;
+
+  // ===== Show error visually =====
+  function showError(msg) {
+    console.error('[mCIDE Explorer]', msg);
+    var el = document.getElementById('mcide-error');
+    if (el) {
+      el.textContent = 'Error: ' + msg;
+      el.style.display = 'block';
+    }
+  }
+
+  // ===== Initialize (called on window load to ensure CSS is applied) =====
+  function init() {
+    try {
+      console.log('[mCIDE] init starting...');
+
+      if (typeof ForceGraph === 'undefined') {
+        showError('ForceGraph library not loaded. Check CDN availability.');
+        return;
+      }
+
+      // Fetch data then set up
+      Promise.all([
+        fetch('/data/mcide/mcide_graph.json').then(function(r) { return r.json(); }),
+        fetch('/data/mcide/mcide_concepts.json').then(function(r) { return r.json(); })
+      ]).then(function(results) {
+        var graphData = results[0];
+        var conceptsData = results[1];
+
+        console.log('[mCIDE] Graph nodes:', graphData.nodes.length, 'Concepts:', conceptsData.length);
+
+        // Build concepts map
+        conceptsData.forEach(function(c) {
+          conceptsMap[c.concept_id] = c;
+        });
+
+        // Process nodes
+        allNodes = graphData.nodes
+          .filter(function(node) {
+            var label = node.label || node.id;
+            return isNaN(label) && label.length > 1;
+          })
+          .map(function(node) {
+            var parts = node.id.split('.');
+            return {
+              id: node.id,
+              label: (node.label || node.id).replace(/_/g, ' '),
+              color: TABLE_COLORS[node.domain] || TABLE_COLORS.other,
+              domain: node.domain,
+              val: node.size || 16,
+              x: node.x,
+              y: node.y,
+              table: parts[0] || node.domain,
+              field: parts[1] || '',
+              value: parts.slice(2).join('.') || parts[parts.length - 1] || ''
+            };
+          });
+
+        console.log('[mCIDE] Processed nodes:', allNodes.length);
+
+        // Update stats
+        var statsEl = document.getElementById('stats-count');
+        if (statsEl) statsEl.textContent = allNodes.length.toLocaleString();
+
+        // Build legend
+        buildLegend();
+
+        // Bind events immediately (search must work regardless of graph)
+        bindEvents();
+
+        // Create graph (delay slightly to ensure layout is complete)
+        setTimeout(function() {
+          createGraph();
+          console.log('[mCIDE] init complete');
+        }, 100);
+
+      }).catch(function(err) {
+        showError('Failed to load data: ' + err.message);
+      });
+
+    } catch (err) {
+      showError('Init failed: ' + err.message);
+    }
+  }
+
+  // ===== Build legend =====
+  function buildLegend() {
+    var legendEl = document.getElementById('legend-items');
+    if (!legendEl) return;
+
+    // Collect domains that exist in data
+    var domains = {};
+    allNodes.forEach(function(n) { domains[n.domain] = true; });
+    var sortedDomains = Object.keys(domains).sort();
+
+    var html = '';
+    sortedDomains.forEach(function(domain) {
+      var color = TABLE_COLORS[domain] || TABLE_COLORS.other;
+      html += '<div class="legend-item">'
+        + '<span class="legend-dot" style="background-color:' + color + ';"></span>'
+        + '<span class="legend-label">' + domain.replace(/_/g, ' ') + '</span>'
+        + '</div>';
+    });
+    legendEl.innerHTML = html;
+    console.log('[mCIDE] Legend built with', sortedDomains.length, 'domains');
+  }
+
+  // ===== Rich hover tooltip (table, domain, field, value) =====
+  function buildTooltip(node) {
+    if (!node || node.id === 'search-origin') return 'Search Origin';
+    var table = (node.table || '').replace(/_/g, ' ');
+    var field = (node.field || '').replace(/_/g, ' ');
+    var value = (node.value || '').replace(/_/g, ' ');
+    var color = TABLE_COLORS[node.domain] || TABLE_COLORS.other;
+    var s = '<div style="background:rgba(30,30,40,0.95);padding:10px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);font-family:Inter,sans-serif;max-width:280px;pointer-events:none;">';
+    s += '<div style="font-size:14px;font-weight:600;color:#fff;margin-bottom:6px;">' + (node.label || node.id) + '</div>';
+    s += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">';
+    s += '<span style="color:#9ca3af;font-size:12px;">Table:</span>';
+    s += '<span style="background:' + color + '20;color:' + color + ';padding:2px 8px;border-radius:9999px;font-size:11px;">' + table + '</span>';
+    s += '</div>';
+    if (field) {
+      s += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">';
+      s += '<span style="color:#9ca3af;font-size:12px;">Field:</span>';
+      s += '<span style="color:#fff;font-size:12px;">' + field + '</span></div>';
+    }
+    if (value) {
+      s += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">';
+      s += '<span style="color:#9ca3af;font-size:12px;">Value:</span>';
+      s += '<span style="color:#fff;font-size:12px;font-family:monospace;">' + value + '</span></div>';
+    }
+    s += '<div style="border-top:1px solid rgba(255,255,255,0.1);padding-top:4px;margin-top:4px;">';
+    s += '<code style="color:#6b7280;font-size:10px;word-break:break-all;">' + node.id + '</code></div></div>';
+    return s;
+  }
+
+  // ===== Create force-graph =====
+  function createGraph() {
+    var container = document.getElementById('graph-container');
+    if (!container) { showError('graph-container not found'); return; }
+
+    // Ensure container has dimensions, fall back to window size
+    var w = container.offsetWidth || (window.innerWidth - 384);
+    var h = container.offsetHeight || (window.innerHeight - 80);
+    console.log('[mCIDE] Graph container:', w, 'x', h);
+
+    // Clone nodes to avoid mutation issues
+    originalNodes = allNodes.map(function(n) { return Object.assign({}, n); });
+
+    try {
+      graphInstance = ForceGraph()(container)
+        .graphData({ nodes: originalNodes.map(function(n) { return Object.assign({}, n); }), links: [] })
+        .nodeLabel(buildTooltip)
+        .nodeColor('color')
+        .nodeVal('val')
+        .linkColor('color')
+        .linkWidth(function(link) { return Math.sqrt(link.value || 1) * 2; })
+        .backgroundColor('#0a0a0f')
+        .onNodeClick(handleNodeClick)
+        .onNodeHover(function(node) { hoveredNode = node; })
+        .nodeCanvasObject(function(node, ctx, globalScale) {
+          drawNode(node, ctx, globalScale);
+        })
+        .nodePointerAreaPaint(function(node, color, ctx, globalScale) {
+          // Minimum 12 screen-px hit target, scaled to data-space
+          var r = Math.max(12 / globalScale, node.val || 16);
+          ctx.beginPath();
+          ctx.arc(node.x, node.y, r, 0, 2 * Math.PI);
+          ctx.fillStyle = color;
+          ctx.fill();
+        })
+        .d3AlphaDecay(0.02)
+        .d3VelocityDecay(0.3)
+        .cooldownTime(3000)
+        .onRenderFramePre(resetLabelCache)
+        .onEngineStop(function() {
+          // Save settled positions so search/clear preserves the globe layout
+          var gd = graphInstance.graphData();
+          var nodeMap = {};
+          allNodes.forEach(function(n) { nodeMap[n.id] = n; });
+          var sumX = 0, sumY = 0, count = 0;
+          gd.nodes.forEach(function(node) {
+            var orig = nodeMap[node.id];
+            if (orig) {
+              orig.x = node.x;
+              orig.y = node.y;
+            }
+            sumX += node.x;
+            sumY += node.y;
+            count++;
+          });
+          console.log('[mCIDE] Simulation settled — positions saved');
+          // Center on the globe and zoom to show globe with readable labels
+          if (count > 0) {
+            graphInstance.centerAt(sumX / count, sumY / count, 0);
+            graphInstance.zoom(0.08, 0);
+          }
+        })
+        .width(w)
+        .height(h);
+
+      // Strong charge repulsion so nodes spread out with room for labels
+      graphInstance.d3Force('charge').strength(-150);
+
+      // Set a readable initial zoom (simulation will re-center on settle)
+      setTimeout(function() {
+        if (graphInstance) graphInstance.zoom(0.08, 0);
+      }, 100);
+
+      window.graphInstance = graphInstance; // expose for debugging
+      console.log('[mCIDE] Graph created, simulation running...');
+    } catch (err) {
+      showError('Graph creation failed: ' + err.message);
+      console.error('[mCIDE] Graph error:', err);
+    }
+
+    // Handle window resize
+    window.addEventListener('resize', function() {
+      if (graphInstance && container) {
+        graphInstance
+          .width(container.offsetWidth || window.innerWidth - 384)
+          .height(container.offsetHeight || window.innerHeight - 80);
+      }
+    });
+  }
+
+  // ===== Label deconfliction cache (reset each frame) =====
+  var _drawnLabels = [];
+
+  function resetLabelCache() {
+    _drawnLabels = [];
+  }
+
+  function labelOverlaps(rect) {
+    for (var i = 0; i < _drawnLabels.length; i++) {
+      var r = _drawnLabels[i];
+      if (rect.x < r.x + r.w && rect.x + rect.w > r.x &&
+          rect.y < r.y + r.h && rect.y + rect.h > r.y) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // ===== Draw node with label (constellation effect, zoom-responsive) =====
+  function drawNode(node, ctx, globalScale) {
+    if (node.x === undefined || node.y === undefined) return;
+
+    var label = node.label || node.id;
+    var isHighlighted = node.highlighted || node.id === 'search-origin';
+    var isHovered = node === hoveredNode;
+
+    // Fixed screen-pixel sizes converted to data-space
+    var nodePx = isHighlighted ? 12 : (isHovered ? 6 : 4);
+    var fontPx = isHighlighted ? 15 : 13;
+    var nodeRadius = nodePx / globalScale;
+    var fontSize = fontPx / globalScale;
+
+    var nodeColor = node.color || '#64748b';
+
+    // Cheap fake glow for regular nodes (larger semi-transparent circle behind)
+    // Only use expensive shadowBlur for the few highlighted/hovered nodes
+    if (isHighlighted || isHovered) {
+      ctx.shadowBlur = isHighlighted ? 25 : 15;
+      ctx.shadowColor = nodeColor;
+    } else {
+      // Fake ambient glow: draw a larger, dim circle behind the node
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, nodeRadius * 2.5, 0, 2 * Math.PI, false);
+      ctx.fillStyle = nodeColor.length === 7
+        ? nodeColor + '18'   // hex color → ~9% opacity
+        : 'rgba(100,116,139,0.09)';
+      ctx.fill();
+    }
+
+    // Draw main circle
+    ctx.beginPath();
+    ctx.arc(node.x, node.y, nodeRadius, 0, 2 * Math.PI, false);
+    ctx.fillStyle = nodeColor;
+    ctx.fill();
+
+    // Subtle outline ring
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+    ctx.lineWidth = 0.5 / globalScale;
+    ctx.stroke();
+
+    // Reset shadow (only needed when it was set)
+    if (isHighlighted || isHovered) {
+      ctx.shadowBlur = 0;
+    }
+
+    // 3-tier zoom-responsive label opacity
+    var labelColor;
+    if (isHighlighted) {
+      labelColor = null; // handled separately below
+    } else if (isHovered) {
+      labelColor = 'rgba(220, 220, 230, 0.95)';
+    } else if (globalScale < 0.06) {
+      return; // too zoomed out — just glowing dots
+    } else if (globalScale < 0.15) {
+      labelColor = 'rgba(180, 190, 200, 0.35)';
+    } else if (globalScale < 0.5) {
+      labelColor = 'rgba(200, 200, 210, 0.75)';
+    } else {
+      labelColor = 'rgba(220, 220, 230, 0.95)';
+    }
+
+    // Measure label
+    ctx.font = fontSize + 'px Sans-Serif';
+    var textWidth = ctx.measureText(label).width;
+    var textY = node.y + nodeRadius + fontSize * 0.7;
+    var pad = 2 / globalScale;
+
+    // Label bounding box (in data-space)
+    var rect = {
+      x: node.x - textWidth / 2 - pad,
+      y: textY - fontSize / 2 - pad,
+      w: textWidth + pad * 2,
+      h: fontSize + pad * 2
+    };
+
+    // Highlighted/hovered nodes always get labels
+    if (!isHighlighted && !isHovered && labelOverlaps(rect)) {
+      return; // skip — another label already occupies this space
+    }
+
+    // Register this label's space
+    _drawnLabels.push(rect);
+
+    // Draw label
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    if (isHighlighted) {
+      ctx.fillStyle = 'rgba(10, 10, 15, 0.8)';
+      ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+      ctx.fillStyle = '#ffffff';
+    } else {
+      ctx.fillStyle = labelColor;
+    }
+
+    ctx.fillText(label, node.x, textY);
+  }
+
+  // ===== Handle node click =====
+  function handleNodeClick(node) {
+    if (!node || node.id === 'search-origin') return;
+
+    var concept = conceptsMap[node.id];
+    var tableName = node.table || '';
+    var color = TABLE_COLORS[node.domain || tableName] || TABLE_COLORS.other;
+
+    var panel = document.getElementById('node-detail');
+    document.getElementById('detail-title').textContent = node.label || node.id;
+
+    var badge = document.getElementById('detail-table');
+    badge.textContent = tableName.replace(/_/g, ' ');
+    badge.style.backgroundColor = color + '20';
+    badge.style.color = color;
+
+    document.getElementById('detail-field').textContent = (node.field || '').replace(/_/g, ' ');
+    document.getElementById('detail-value').textContent = (node.value || '').replace(/_/g, ' ');
+    document.getElementById('detail-path').textContent = node.id;
+
+    // Synonyms
+    var synSection = document.getElementById('detail-synonyms-section');
+    var synList = document.getElementById('detail-synonyms');
+    if (concept && concept.synonyms && concept.synonyms.length > 0) {
+      synSection.style.display = '';
+      synList.innerHTML = concept.synonyms.map(function(s) {
+        return '<span class="synonym-tag">' + s + '</span>';
+      }).join('');
+    } else {
+      synSection.style.display = 'none';
+    }
+
+    panel.style.display = '';
+  }
+
+  // ===== Search =====
+  function handleSearch() {
+    var input = document.getElementById('mcide-search');
+    var query = input ? input.value.trim() : '';
+    if (!query) return;
+
+    console.log('[mCIDE] Searching for:', query);
+
+    // Load synonyms if needed, then search
+    var doSearch = function() {
+      var results = performSearch(query);
+      console.log('[mCIDE] Found', results.length, 'results');
+      renderResults(results);
+      highlightGraph(results);
+    };
+
+    if (!synonymMap) {
+      fetch('/data/mcide/mcide_synonyms.json')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          synonymMap = data;
+          console.log('[mCIDE] Loaded', Object.keys(synonymMap).length, 'synonyms');
+          doSearch();
+        })
+        .catch(function(err) {
+          showError('Failed to load synonyms: ' + err.message);
+        });
+    } else {
+      doSearch();
+    }
+  }
+
+  // ===== Normalize: spaces/underscores are equivalent =====
+  function norm(str) {
+    return str.toUpperCase().replace(/[\s_]+/g, '_');
+  }
+
+  // ===== Perform search =====
+  function performSearch(query) {
+    if (!synonymMap) return [];
+
+    var results = [];
+    var seen = {};
+    var qNorm = norm(query);
+
+    // 0. Domain match — if query (or any word in it) matches a domain name
+    var domainKeys = Object.keys(TABLE_COLORS);
+    var matchedDomain = null;
+    // Split query into individual words for flexible matching
+    var qWords = qNorm.split('_').filter(function(w) { return w.length > 0; });
+
+    for (var d = 0; d < domainKeys.length && !matchedDomain; d++) {
+      var dNorm = norm(domainKeys[d]);
+      // Exact full match
+      if (dNorm === qNorm) { matchedDomain = domainKeys[d]; break; }
+      // Domain contains full query or vice versa
+      if (dNorm.indexOf(qNorm) !== -1 || qNorm.indexOf(dNorm) !== -1) {
+        matchedDomain = domainKeys[d]; break;
+      }
+      // Any query word (3+ chars) matches start of domain key
+      for (var w = 0; w < qWords.length; w++) {
+        if (qWords[w].length >= 3 && dNorm.indexOf(qWords[w]) !== -1) {
+          matchedDomain = domainKeys[d]; break;
+        }
+      }
+    }
+
+    if (matchedDomain) {
+      allNodes.forEach(function(node) {
+        if (node.domain === matchedDomain) {
+          results.push({
+            concept_id: node.id,
+            table_name: node.table,
+            field_name: node.field,
+            value: node.value,
+            score: 1.0,
+            isDomainMatch: true
+          });
+        }
+      });
+      results.sort(function(a, b) {
+        var aLabel = (a.value || a.field_name || '').toLowerCase();
+        var bLabel = (b.value || b.field_name || '').toLowerCase();
+        return aLabel < bLabel ? -1 : aLabel > bLabel ? 1 : 0;
+      });
+      return results; // no cap for domain matches
+    }
+
+    // Helper to add concept IDs as results
+    function addMatch(conceptIds, score) {
+      conceptIds.forEach(function(cid) {
+        if (seen[cid]) return;
+        seen[cid] = true;
+        var parts = cid.split('.');
+        results.push({
+          concept_id: cid,
+          table_name: parts[0],
+          field_name: parts[1] || '',
+          value: parts.slice(2).join('.') || '',
+          score: score
+        });
+      });
+    }
+
+    // 1. Exact matches - try original, uppercase, lowercase, with underscores
+    var variants = [query, query.toUpperCase(), query.toLowerCase(),
+      query.replace(/\s+/g, '_'), query.replace(/\s+/g, '_').toUpperCase(),
+      query.replace(/\s+/g, '_').toLowerCase()];
+    var tried = {};
+    variants.forEach(function(v) {
+      if (tried[v]) return;
+      tried[v] = true;
+      if (synonymMap[v]) addMatch(synonymMap[v], 1.0);
+    });
+
+    // 2. Partial matches
+    var keys = Object.keys(synonymMap);
+    for (var i = 0; i < keys.length; i++) {
+      var synKey = keys[i];
+      var synNorm = norm(synKey);
+      if (synNorm === qNorm) continue;
+      if (synNorm.indexOf(qNorm) !== -1) {
+        var coverage = qNorm.length / synNorm.length;
+        addMatch(synonymMap[synKey], 0.5 + coverage * 0.4);
+      }
+    }
+
+    // 3. Direct label/value/field/id matches
+    allNodes.forEach(function(node) {
+      if (seen[node.id]) return;
+      var labelNorm = norm(node.label || '');
+      var valueNorm = norm(node.value || '');
+      var fieldNorm = norm(node.field || '');
+      var idNorm = norm(node.id || '');
+      if (labelNorm.indexOf(qNorm) !== -1 || valueNorm.indexOf(qNorm) !== -1 ||
+          fieldNorm.indexOf(qNorm) !== -1 || idNorm.indexOf(qNorm) !== -1) {
+        var len = Math.max(labelNorm.length, valueNorm.length, fieldNorm.length, 1);
+        results.push({
+          concept_id: node.id,
+          table_name: node.table,
+          field_name: node.field,
+          value: node.value,
+          score: 0.4 + (qNorm.length / len) * 0.3
+        });
+        seen[node.id] = true;
+      }
+    });
+
+    results.sort(function(a, b) { return b.score - a.score; });
+    return results.slice(0, 10);
+  }
+
+  // ===== Render search results =====
+  function renderResults(results) {
+    var listEl = document.getElementById('results-list');
+    var emptyEl = document.getElementById('empty-state');
+    if (!listEl) return;
+
+    if (results.length === 0) {
+      listEl.innerHTML = '<p style="color:#9ca3af;text-align:center;margin-top:2rem;">No matches found.</p>';
+      if (emptyEl) emptyEl.style.display = 'none';
+      return;
+    }
+
+    if (emptyEl) emptyEl.style.display = 'none';
+
+    var isDomain = results.length > 0 && results[0].isDomainMatch;
+    var maxCards = isDomain ? 15 : results.length;
+    var displayResults = results.slice(0, maxCards);
+
+    var html = '<h3>' + (isDomain ? 'Domain' : 'Matches') + ' (' + results.length + ' concepts)</h3>';
+    displayResults.forEach(function(result, idx) {
+      var color = TABLE_COLORS[result.table_name] || TABLE_COLORS.other;
+      html += '<div class="result-card" data-cid="' + result.concept_id + '" style="animation-delay:' + (idx * 0.05) + 's">'
+        + '<div class="result-top"><div>'
+        + '<div class="result-name">' + (result.value || '').replace(/_/g, ' ') + '</div>'
+        + '<div class="result-field">' + (result.field_name || '').replace(/_/g, ' ') + '</div>'
+        + '</div>'
+        + '<span class="result-badge" style="background-color:' + color + '20;color:' + color + '">'
+        + (result.table_name || '').replace(/_/g, ' ') + '</span></div>'
+        + '<div class="result-path"><strong>mCIDE:</strong> ' + result.concept_id + '</div>'
+        + '</div>';
+    });
+    if (results.length > maxCards) {
+      html += '<p style="color:#9ca3af;text-align:center;font-size:0.8rem;margin-top:0.5rem;">+ ' + (results.length - maxCards) + ' more highlighted on graph</p>';
+    }
+
+    listEl.innerHTML = html;
+
+    // Click handlers
+    listEl.querySelectorAll('.result-card').forEach(function(card) {
+      card.addEventListener('click', function() {
+        var cid = this.getAttribute('data-cid');
+        // Find in current graph data
+        var gd = graphInstance.graphData();
+        var node = gd.nodes.find(function(n) { return n.id === cid; });
+        if (node) {
+          handleNodeClick(node);
+          // Center on node
+          graphInstance.centerAt(node.x, node.y, 500);
+          graphInstance.zoom(2, 500);
+        }
+      });
+    });
+  }
+
+  // ===== Highlight graph =====
+  function highlightGraph(results) {
+    if (!graphInstance) return;
+
+    var matchedIds = {};
+    results.forEach(function(r) { matchedIds[r.concept_id] = true; });
+
+    // Use settled positions from allNodes, pin them so layout stays stable
+    var nodes = allNodes.map(function(node) {
+      var isMatch = matchedIds[node.id] === true;
+      var domainColor = TABLE_COLORS[node.domain] || TABLE_COLORS.other;
+      return {
+        id: node.id,
+        label: node.label,
+        domain: node.domain,
+        table: node.table,
+        field: node.field,
+        value: node.value,
+        x: node.x,
+        y: node.y,
+        fx: node.x,
+        fy: node.y,
+        highlighted: isMatch,
+        val: isMatch ? 30 : 6,
+        color: isMatch ? domainColor : (domainColor + '20')
+      };
+    });
+
+    // Search origin node at center + beam links
+    nodes.push({
+      id: 'search-origin',
+      label: 'Search',
+      x: 0, y: 0,
+      val: 20,
+      color: '#ffffff',
+      fx: 0, fy: 0,
+      highlighted: true
+    });
+
+    var links = results.map(function(r) {
+      return {
+        source: 'search-origin',
+        target: r.concept_id,
+        value: r.score,
+        color: (TABLE_COLORS[r.table_name] || TABLE_COLORS.other) + '60'
+      };
+    });
+
+    searchActive = true;
+    graphInstance.graphData({ nodes: nodes, links: links });
+
+    setTimeout(function() {
+      if (graphInstance) graphInstance.zoomToFit(400, 50);
+    }, 200);
+  }
+
+  // ===== Clear search =====
+  function clearSearch() {
+    var input = document.getElementById('mcide-search');
+    var clearBtn = document.getElementById('clear-search');
+    var emptyEl = document.getElementById('empty-state');
+    var listEl = document.getElementById('results-list');
+    var searchBtn = document.getElementById('search-btn');
+
+    if (input) input.value = '';
+    if (clearBtn) clearBtn.style.display = 'none';
+    if (searchBtn) searchBtn.disabled = true;
+    if (emptyEl) emptyEl.style.display = '';
+    if (listEl) listEl.innerHTML = '';
+
+    // Hide detail panel
+    var panel = document.getElementById('node-detail');
+    if (panel) panel.style.display = 'none';
+
+    // Reset graph using settled positions, pinned so layout stays stable
+    if (graphInstance) {
+      searchActive = false;
+      var freshNodes = allNodes.map(function(n) {
+        var clone = Object.assign({}, n);
+        clone.fx = clone.x;
+        clone.fy = clone.y;
+        return clone;
+      });
+      graphInstance.graphData({ nodes: freshNodes, links: [] });
+
+      // Restore overview zoom centered on the globe
+      setTimeout(function() {
+        if (graphInstance) {
+          var sumX = 0, sumY = 0, cnt = 0;
+          freshNodes.forEach(function(n) { sumX += n.x; sumY += n.y; cnt++; });
+          if (cnt > 0) graphInstance.centerAt(sumX / cnt, sumY / cnt, 400);
+          graphInstance.zoom(0.08, 400);
+        }
+      }, 200);
+    }
+  }
+
+  // ===== Bind events =====
+  function bindEvents() {
+    var input = document.getElementById('mcide-search');
+    var searchBtn = document.getElementById('search-btn');
+    var clearBtn = document.getElementById('clear-search');
+    var closeBtn = document.getElementById('close-detail');
+
+    console.log('[mCIDE] bindEvents — input:', !!input, 'searchBtn:', !!searchBtn, 'clearBtn:', !!clearBtn);
+
+    if (input) {
+      input.addEventListener('input', function() {
+        var hasVal = input.value.trim().length > 0;
+        if (clearBtn) clearBtn.style.display = hasVal ? '' : 'none';
+        if (searchBtn) searchBtn.disabled = !hasVal;
+      });
+      input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          console.log('[mCIDE] Enter pressed, calling handleSearch');
+          handleSearch();
+        }
+      });
+    }
+
+    if (searchBtn) {
+      searchBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        console.log('[mCIDE] Search button clicked');
+        handleSearch();
+      });
+    }
+
+    if (clearBtn) {
+      clearBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        clearSearch();
+      });
+    }
+
+    if (closeBtn) {
+      closeBtn.addEventListener('click', function() {
+        var panel = document.getElementById('node-detail');
+        if (panel) panel.style.display = 'none';
+      });
+    }
+
+    // Info popup toggle
+    var infoBtn = document.getElementById('info-btn');
+    var infoPopup = document.getElementById('info-popup');
+    var closeInfo = document.getElementById('close-info');
+
+    if (infoBtn && infoPopup) {
+      infoBtn.addEventListener('click', function() {
+        infoPopup.style.display = infoPopup.style.display === 'none' ? '' : 'none';
+      });
+    }
+    if (closeInfo && infoPopup) {
+      closeInfo.addEventListener('click', function() {
+        infoPopup.style.display = 'none';
+      });
+    }
+
+    console.log('[mCIDE] Events bound successfully');
+  }
+
+  // ===== Start on window load (ensures CSS is applied and layout is done) =====
+  window.addEventListener('load', init);
+})();
+</script>
