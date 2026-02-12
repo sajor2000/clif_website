@@ -446,6 +446,34 @@ CREATE TABLE clinical_trial (
 );
 
 -- -----------------------------------------------------
+-- Table: clinical_notes_facts
+-- -----------------------------------------------------
+CREATE TABLE clinical_notes_facts (
+  hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter.", "permissible": "No restriction"}',
+  provider_id VARCHAR COMMENT '{"description": "Unique identifier for the authoring provider.", "permissible": "No restriction"}',
+  note_id VARCHAR COMMENT '{"description": "Source note identifier from the EHR system.", "permissible": "No restriction"}',
+  note_type VARCHAR COMMENT '{"description": "Note type code from the source data (e.g., Progress Note, Discharge Summary, H&P).", "permissible": "No restriction"}',
+  note_type_category VARCHAR COMMENT '{"description": "Maps note_type to a standardized list of note type categories.", "permissible": "h_and_p_note, progress_note, consult_note, procedure_note, discharge_summary, transfer_note, therapy_note, nutrition_note, pharmacy_note, nursing_note, case_management_note"}',
+  note_status VARCHAR COMMENT '{"description": "Status of the note at the time of this revision.", "permissible": "signed, addendum, incomplete, co-signed"}',
+  cosigner_specialty VARCHAR COMMENT '{"description": "Specialty of the co-signing provider, if applicable (e.g., Attending co-signing a resident note).", "permissible": "No restriction"}',
+  note_author_specialty VARCHAR COMMENT '{"description": "Specialty of the note author (e.g., Critical Care, Infectious Diseases, Physical Therapy). Useful for distinguishing note provenance such as PT/OT notes from physician notes.", "permissible": "No restriction"}',
+  revision_id VARCHAR COMMENT '{"description": "Unique revision identifier, rank-ordered per (hospitalization_id, note_id) by revision_dttm.", "permissible": "No restriction"}',
+  creation_dttm DATETIME COMMENT '{"description": "Date and time when the note was first created. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
+  revision_dttm DATETIME COMMENT '{"description": "Timestamp of this specific revision. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
+  service_date DATE COMMENT '{"description": "Date of service associated with this note. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
+);
+
+-- -----------------------------------------------------
+-- Table: clinical_notes_text
+-- -----------------------------------------------------
+CREATE TABLE clinical_notes_text (
+  hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter.", "permissible": "No restriction"}',
+  note_id VARCHAR COMMENT '{"description": "Source note identifier. Foreign key to clinical_notes_facts.", "permissible": "No restriction"}',
+  revision_id VARCHAR COMMENT '{"description": "Matches clinical_notes_facts.revision_id for revision-level join.", "permissible": "No restriction"}',
+  note_text TEXT COMMENT '{"description": "Full concatenated note text for this revision.", "permissible": "No restriction"}'
+);
+
+-- -----------------------------------------------------
 -- Table: validated_diagnosis
 -- -----------------------------------------------------
 CREATE TABLE validated_diagnosis (

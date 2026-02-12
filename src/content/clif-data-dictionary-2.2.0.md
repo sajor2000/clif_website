@@ -582,6 +582,40 @@ The `validated_diagnosis` table captures clinician-validated diagnostic labels f
 | 54321 | Ischemic stroke | stroke | 2024-12-05 02:30:00+00:00 UTC | NULL | manual_chart_review | ruled_out | REV003 | 2024-12-18 11:45:00+00:00 UTC |
 
 
+## clinical_notes_facts
+
+The `clinical_notes_facts` table captures the metadata about clinical notes.
+
+**Notes**:
+- The `revision_id` is rank-ordered per `(hospitalization_id, note_id)` by `revision_dttm` ascending 
+- This table is designed to be joined with `clinical_notes_text` via `(hospitalization_id, note_id, revision_id)` when full note text is needed
+
+
+**Example**:
+
+| hospitalization_id | note_id | note_type | note_type_category | provider_id | note_author_specialty | revision_id | creation_dttm | revision_dttm | service_date | note_status | cosigner_specialty |
+|-------------------|---------|-----------|-------------------|-------------|----------------------|-------------|---------------|---------------|--------------|-------------|-------------------|
+| 12345 | N001 | Progress Note | progress_note | PROV001 | Critical Care | 1 | 2024-12-01 08:00:00+00:00 UTC | 2024-12-01 08:00:00+00:00 UTC | 2024-12-01 00:00:00+00:00 UTC | incomplete | |
+| 12345 | N001 | Progress Note | progress_note | PROV001 | Critical Care | 2 | 2024-12-01 08:00:00+00:00 UTC | 2024-12-01 12:45:00+00:00 UTC | 2024-12-01 00:00:00+00:00 UTC | signed | Critical Care |
+| 12345 | N002 | Discharge Summary | discharge_summary | PROV002 | Internal Medicine | 1 | 2024-12-03 14:00:00+00:00 UTC | 2024-12-03 14:00:00+00:00 UTC | 2024-12-03 00:00:00+00:00 UTC | co-signed | Pulmonology |
+| 67890 | N003 | PT Initial Evaluation | therapy_note | PROV003 | Physical Therapy | 1 | 2024-11-28 09:30:00+00:00 UTC | 2024-11-28 09:30:00+00:00 UTC | 2024-11-28 00:00:00+00:00 UTC | signed | |
+| 67890 | N004 | ID Consult | consult_note | PROV004 | Infectious Diseases | 1 | 2024-11-28 14:00:00+00:00 UTC | 2024-11-28 14:00:00+00:00 UTC | 2024-11-28 00:00:00+00:00 UTC | addendum | |
+
+## clinical_notes_text
+
+The `clinical_notes_text` table stores the raw note text. 
+
+
+**Example**:
+
+| hospitalization_id | note_id | revision_id | note_text |
+|-------------------|---------|-------------|-----------|
+| 12345 | N001 | 1 | Patient presents with fever and cough... |
+| 12345 | N001 | 2 | Patient presents with fever and cough. Updated: cultures pending... |
+| 12345 | N002 | 1 | Discharge summary: Patient admitted for pneumonia... |
+| 67890 | N003 | 1 | History and Physical: 65-year-old male with... |
+
+
 ## Future Proposed Tables
 
 These are tables without any defined structure that the consortium has not yet committed to implementing.

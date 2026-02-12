@@ -33,7 +33,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            New Tables (1 concept table added)
+            New Tables (3 concept tables added)
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -59,6 +59,18 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   <td class="px-4 py-3 text-sm">Concept table for clinician-validated diagnostic labels for research purposes. Designed for studies requiring confirmed diagnoses through chart review or consensus adjudication, enabling high-quality phenotyping for research cohorts.</td>
                   <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/121" class="text-clif-burgundy hover:underline">Issue #121</a></td>
                   <td class="px-4 py-3 text-sm text-gray-500">Dec 12, 2025</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">clinical_notes_facts</td>
+                  <td class="px-4 py-3 text-sm">Concept table capturing clinical note metadata (note type, provider, revision timestamps) for efficient filtering and time-aware revision selection without scanning raw text.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/141" class="text-clif-burgundy hover:underline">Issue #141</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Feb 12, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">clinical_notes_text</td>
+                  <td class="px-4 py-3 text-sm">Concept table storing raw note text joined to clinical_notes_facts via revision-level keys, enabling separation of metadata queries from text-heavy workloads.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/141" class="text-clif-burgundy hover:underline">Issue #141</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Feb 12, 2026</td>
                 </tr>
               </tbody>
             </table>
