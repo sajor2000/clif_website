@@ -295,6 +295,16 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
           {conceptTables.map(table => {
             const section = markdownTableSections[table.name] || '';
             const { intro, extras } = splitTableSection(section);
+            let ioNotes = '';
+            let ioExtras = extras;
+            if (table.name === 'intake_output' && extras) {
+              const notesMatch = extras.match(/\*\*Notes\*\*[:\s]*([\s\S]*?)(?=\*\*Example\*\*|$)/i);
+              const exampleMatch = extras.match(/(\*\*Example\*\*[\s\S]*)/i);
+              if (notesMatch) {
+                ioNotes = notesMatch[1].trim().replace(/^[\s]*[-*]\s+/gm, '');
+              }
+              ioExtras = exampleMatch ? exampleMatch[1].trim() : '';
+            }
             return (
               <section id={table.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}
                        class="mb-12">
@@ -304,6 +314,11 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
                                   </h2>
                 {intro && (
                   <div class="prose mb-4" set:html={md.render(intro)} />
+                )}
+                {table.name === 'intake_output' && ioNotes && (
+                  <div class="notes-callout">
+                    <div class="prose" set:html={md.render(ioNotes)} />
+                  </div>
                 )}
                 <div class="table-wrapper relative overflow-visible rounded-lg shadow-sm border border-gray-200 my-6">
                   <img src="/images/icons/unstable.png" alt="Unstable" class="absolute -top-8 -right-8 w-32 rotate-[15deg] pointer-events-none select-none z-40" />
@@ -332,8 +347,10 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
                     </tbody>
                   </table>
                 </div>
-                {extras && (
-                  <div class="prose mt-4" set:html={md.render(extras)} />
+                {table.name === 'intake_output' ? (
+                  ioExtras && <div class="prose mt-4" set:html={md.render(ioExtras)} />
+                ) : (
+                  extras && <div class="prose mt-4" set:html={md.render(extras)} />
                 )}
               </section>
             );
@@ -386,6 +403,9 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
     }
     .table-wrapper tbody tr:hover {
       @apply bg-blue-50/30;
+    }
+    .notes-callout {
+      @apply bg-amber-50 border-l-4 border-amber-400 rounded-r-lg p-4 my-4;
     }
     html { scroll-behavior: smooth; }
     /* --- Enhanced Markdown Styling --- */

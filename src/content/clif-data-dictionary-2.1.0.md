@@ -409,7 +409,8 @@ A planned future CLIF table that has yet to be used in a federated project. The 
 
 The intake_output table is long form table that captures the times intake and output events were recorded, the type of fluid administered or recorded as "out", and the amount of fluid.
 
-
+**Notes**:
+- This table is likely to be replaced by separate intake and output tables in a future version. The `output` table is already defined as a concept table in CLIF v2.2.0.
 
 **Example**:
 
