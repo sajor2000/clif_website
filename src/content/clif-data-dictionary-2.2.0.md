@@ -31,11 +31,11 @@ The admission, discharge, and transfer (adt) table is a start-stop longitudinal 
 
 ## code_status
 
-This table contains only code status orders placed by clinicians. It is NOT equivalent to the code status display name in the EMR.
+This table should represent what the clinician intends for the patients' limitations in care, not just what the EHR banner displays. It is **NOT** always equivalent to the code status display name in the EHR. 
 
-**Notes**:
+**Notes**: 
+- Sites will need to identify their code status orders. Additionally, sites may have separate orders for "comfort measures only" not found within the code status order that, if available, should be pulled to map it to `allow_natural_death`.
 
-- The `code_status_category` set of permissible values is under development
 
 \
 **Example**:
