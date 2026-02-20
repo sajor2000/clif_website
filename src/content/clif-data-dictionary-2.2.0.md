@@ -409,8 +409,10 @@ A planned future CLIF table that has yet to be used in a federated project. The 
 
 The intake_output table is long form table that captures the times intake and output events were recorded, the type of fluid administered or recorded as "out", and the amount of fluid.
 
+**Notes**:
+- This table is likely to be replaced by separate intake and output tables in a future version. The `output` table is already defined as a concept table in CLIF v2.2.0.
 
-
+\
 **Example**:
 
 | hospitalization_id | intake_dttm                  | fluid_name        | amount | in_out_flag |
@@ -422,6 +424,25 @@ The intake_output table is long form table that captures the times intake and ou
 | 1003              | 2024-01-10 07:45:00+00:00 UTC   | Lactated Ringer's| 600     | 1           |
 | 1003              | 2024-01-10 12:00:00+00:00 UTC   | Drainage        | 200     | 0           |
 
+
+## intermittent_dialysis
+
+The intermittent_dialysis table captures intermittent hemodialysis sessions during hospitalization. 
+
+**Notes**:
+- Each dialysis session will have **multiple rows** (one per recorded measurement)
+
+\
+**Example**:
+
+| hospitalization_id | device_id | recorded_dttm | blood_flow_rate | dialysate_flow_rate | net_ultrafiltration_out |
+|-------------------|-----------|---------------|-----------------|---------------------|-------------------------|
+| 30010001 | HD-A1 | 2024-03-10 08:00:00+00:00 UTC | 250.0 | 500.0 | 0.0 |
+| 30010001 | HD-A1 | 2024-03-10 08:30:00+00:00 UTC | 300.0 | 500.0 | 200.0 |
+| 30010001 | HD-A1 | 2024-03-10 09:00:00+00:00 UTC | 300.0 | 500.0 | 450.0 |
+| 30010001 | HD-A1 | 2024-03-10 11:30:00+00:00 UTC | 0.0 | 0.0 | 1500.0 |
+| 30010002 | HD-B3 | 2024-03-11 07:00:00+00:00 UTC | 200.0 | 400.0 | 0.0 |
+| 30010002 | HD-B3 | 2024-03-11 07:30:00+00:00 UTC | 250.0 | 400.0 | 150.0 |
 
 
 ## key_icu_orders
@@ -460,6 +481,27 @@ This table records the ordering (not administration) of medications. The table i
 | 12350             | 456794       | 2023-10-03 10:00:00+00:00 UTC   | 2023-10-03 18:00:00+00:00 UTC   | 2023-10-03 09:45:00+00:00 UTC   | Heparin 5,000 units SC                                             | heparin        | anticoagulant | active              | ongoing                 | Subcutaneous  | 5000.0   | units        | Every 8 hours | 0   |
 | 12351             | 456795       | 2023-10-03 14:00:00+00:00 UTC   | 2023-10-03 22:00:00+00:00 UTC   | 2023-10-03 13:30:00+00:00 UTC   | Morphine Sulfate 2 mg IV                                           | morphine       | analgesics    | active              | ongoing                 | Intravenous   | 2.0      | mg           | As Needed     | 1   |
 | 12352             | 456796       | 2023-10-03 20:00:00+00:00 UTC   | 2023-10-04 08:00:00+00:00 UTC   | 2023-10-03 19:45:00+00:00 UTC   | Dexamethasone 10 mg IV                                             | dexamethasone  | steroids      | active              | ongoing                 | Intravenous   | 10.0     | mg           | Once Daily    | 0   |
+
+
+## output
+
+The output table captures patient fluid output events during hospitalization. 
+
+**Notes**:
+- `output_volume` must be a positive number in mL
+- Ultrafiltration output from dialysis should reflect **net** ultrafiltration only (do not include removal of replacement fluid in CVVH or CVVHDF)
+
+\
+**Example**:
+
+| hospitalization_id | recorded_dttm | output_name | output_category | output_group | output_volume |
+|-------------------|---------------|-------------|-----------------|--------------|---------------|
+| 40010001 | 2024-04-01 08:00:00+00:00 UTC | Foley catheter | indwelling_urinary_catheter | urine | 350.0 |
+| 40010001 | 2024-04-01 12:00:00+00:00 UTC | Foley catheter | indwelling_urinary_catheter | urine | 275.0 |
+| 40010001 | 2024-04-01 14:30:00+00:00 UTC | JP drain | procedural_drain_other | drains | 50.0 |
+| 40010002 | 2024-04-02 06:00:00+00:00 UTC | NG tube output | orogastric_nasogastric_tube | gi | 120.0 |
+| 40010002 | 2024-04-02 10:00:00+00:00 UTC | Chest tube | chest_tube_temporary | drains | 200.0 |
+| 40010003 | 2024-04-03 09:00:00+00:00 UTC | Emesis | emesis | gi | 75.0 |
 
 
 ## place_based_index
