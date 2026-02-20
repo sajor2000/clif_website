@@ -17,6 +17,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
           </svg>
           <h1>mCIDE Explorer</h1>
+          <span class="beta-badge">Beta</span>
         </div>
 
         <!-- Search bar -->
@@ -65,8 +66,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <path d="M12 16v-4"></path>
             <path d="M12 8h.01"></path>
           </svg>
-          <p>Enter a term to search for CLIF concepts</p>
-          <p class="hint">Try "heart rate" or "glucose"</p>
+          <p>Enter a CLIF <span class="hint-field">'field'</span> or <span class="hint-term">'term'</span> to search for concepts</p>
+          <p class="hint">Try <span class="hint-field">'vitals'</span> or <span class="hint-term">'heart rate'</span></p>
           <div class="tips">
             <p class="tips-title">Tips:</p>
             <ul>
@@ -215,6 +216,19 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+  }
+
+  .beta-badge {
+    font-size: 0.625rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.15rem 0.5rem;
+    border-radius: 9999px;
+    background: rgba(234, 179, 8, 0.15);
+    color: #eab308;
+    border: 1px solid rgba(234, 179, 8, 0.3);
+    align-self: center;
   }
 
   .search-wrapper { position: relative; }
@@ -399,6 +413,16 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
   #empty-state p { margin-top: 0.75rem; font-size: 0.875rem; }
   #empty-state .hint { font-size: 0.8rem; margin-top: 0.5rem; }
+
+  .hint-field {
+    color: #3b82f6;
+    font-weight: 500;
+  }
+
+  .hint-term {
+    color: #a78bfa;
+    font-weight: 500;
+  }
 
   .tips {
     margin-top: 1.5rem;
