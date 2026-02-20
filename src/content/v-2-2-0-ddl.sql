@@ -42,6 +42,19 @@ CREATE TABLE crrt_therapy (
   ultrafiltration_out FLOAT COMMENT '{"description": "Net ultrafiltration output (mL/hr)", "permissible": "[0-500](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/outlier-handling/outlier_thresholds_crrt_modes.csv)"}'
 );
 
+-- -----------------------------------------------------
+-- Table: intermittent_dialysis
+-- -----------------------------------------------------
+CREATE TABLE intermittent_dialysis (
+  hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
+  device_id VARCHAR COMMENT '{"description": "Unique ID of the individual physical device used.", "permissible": "No restriction"}',
+  recorded_dttm DATETIME COMMENT '{"description": "Timestamp of the recorded measurement during the dialysis session. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
+  blood_flow_rate FLOAT COMMENT '{"description": "Blood flow rate in mL/min. The first recorded value can indicate session start time.", "permissible": "Numeric values in mL/min"}',
+  dialysate_flow_rate FLOAT COMMENT '{"description": "Dialysate flow rate in mL/min.", "permissible": "Numeric values in mL/min"}',
+  net_ultrafiltration_out FLOAT COMMENT '{"description": "Net ultrafiltration output in mL.", "permissible": "Numeric values in mL"}',
+  FOREIGN KEY (hospitalization_id) REFERENCES hospitalization(hospitalization_id)
+);
+
 -- -----------------------------------------------------#
 -- Table: ecmo_mcs
 -- -----------------------------------------------------#
@@ -281,6 +294,19 @@ CREATE TABLE intake_output (
   fluid_name VARCHAR COMMENT '{"description": "Name of the fluid administered.", "permissible": "No restriction"}',
   amount DOUBLE COMMENT '{"description": "Amount of fluid administered (in mL)", "permissible": "Numeric values in mL"}',
   in_out_flag INT COMMENT '{"description": "Indicator for intake or output (1 for intake, 0 for output)", "permissible": "0 = Output, 1 = Intake"}'
+);
+
+-- -----------------------------------------------------
+-- Table: output
+-- -----------------------------------------------------
+CREATE TABLE output (
+  hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
+  recorded_dttm DATETIME COMMENT '{"description": "Date and time when the output was recorded. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
+  output_name VARCHAR COMMENT '{"description": "Name of the fluid recorded as patient output.", "permissible": "Examples: urine, SPC output, emesis"}',
+  output_category VARCHAR COMMENT '{"description": "Maps output_name to a set of permissible output categories.", "permissible": "[List of output categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/output/clif_output_categories.csv)"}',
+  output_group VARCHAR COMMENT '{"description": "Maps output_category to a smaller set of source groups.", "permissible": "[urine, ultrafiltration, drains, gi, procedure, blood_loss, respiratory, other](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/output/clif_output_groups.csv)"}',
+  output_volume FLOAT COMMENT '{"description": "Volume of output fluid in mL. Must be a positive number.", "permissible": "Numeric. Should not be negative."}',
+  FOREIGN KEY (hospitalization_id) REFERENCES hospitalization(hospitalization_id)
 );
 
 -- -----------------------------------------------------

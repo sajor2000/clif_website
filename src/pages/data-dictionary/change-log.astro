@@ -22,7 +22,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       >
         <h2 class="text-2xl font-bold text-clif-burgundy mb-4">
           Version 2.2.0
-          <span class="text-lg font-normal text-gray-600">(January 2026)</span>
+          <span class="text-lg font-normal text-gray-600">(February 2026)</span>
           <span class="ml-2 bg-gray-500 text-white text-sm px-3 py-1 rounded-full"
             >Coming Soon</span
           >
@@ -33,7 +33,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            New Tables (3 concept tables added)
+            New Tables (5 concept tables added)
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -54,6 +54,18 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">intermittent_dialysis</td>
+                  <td class="px-4 py-3 text-sm">Concept table capturing intermittent hemodialysis sessions during hospitalization, with per-measurement rows tracking blood flow rate, dialysate flow rate, and net ultrafiltration.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/143" class="text-clif-burgundy hover:underline">Issue #143</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Feb 17, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">output</td>
+                  <td class="px-4 py-3 text-sm">Concept table capturing patient fluid output events during hospitalization, including output name, category, group, and volume in mL.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/142" class="text-clif-burgundy hover:underline">Issue #142</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Feb 12, 2026</td>
+                </tr>
                 <tr>
                   <td class="px-4 py-3 text-sm font-mono">validated_diagnosis</td>
                   <td class="px-4 py-3 text-sm">Concept table for clinician-validated diagnostic labels for research purposes. Designed for studies requiring confirmed diagnoses through chart review or consensus adjudication, enabling high-quality phenotyping for research cohorts.</td>
@@ -168,6 +180,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             </table>
           </div>
         </details>
+
       </section>
 
       <!-- Version 2.1.0 -->
