@@ -1,5 +1,11 @@
 ---
 // src/components/layout/Navigation.astro
+interface Props {
+  user?: { email: string } | null;
+  profile?: { full_name: string | null; role: string; is_approved: boolean } | null;
+}
+
+const { user = null, profile = null } = Astro.props;
 const pathname = Astro.url.pathname;
 
 const navItems = [
@@ -103,6 +109,41 @@ const navItems = [
     >
     </div>
   </div>
+
+  <!-- Members / User Menu -->
+  {user ? (
+    <div class="relative group">
+      <button
+        id="user-menu-btn"
+        class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-clif-burgundy dark:hover:text-clif-burgundy transition-colors px-3 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-700"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0">
+          <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+          <circle cx="12" cy="7" r="4"></circle>
+        </svg>
+        <span class="hidden lg:inline max-w-[120px] truncate">{profile?.full_name || user.email}</span>
+      </button>
+      <div class="absolute right-0 top-full mt-0 pt-1 w-48 hidden group-hover:block z-20">
+        <div class="bg-white dark:bg-neutral-800 rounded-lg shadow-lg border border-gray-200 dark:border-neutral-700 py-1">
+          {profile?.is_approved && (
+            <a href="/portal" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700">Members Portal</a>
+          )}
+          {profile?.role === 'admin' && (
+            <a href="/portal/admin" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700">Admin Panel</a>
+          )}
+          <button id="logout-btn" class="block w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-50 dark:hover:bg-neutral-700">Sign Out</button>
+        </div>
+      </div>
+    </div>
+  ) : (
+    <a
+      href="/auth/login"
+      id="nav-login-btn"
+      class="text-sm font-medium text-white bg-clif-burgundy hover:bg-clif-burgundy/90 px-4 py-2 rounded-lg transition-colors"
+    >
+      Member Login
+    </a>
+  )}
 
   <!-- Dark Mode Toggle -->
   <button
@@ -277,6 +318,27 @@ const navItems = [
           )
         ))
       }
+      <!-- Mobile Members Link -->
+      {user ? (
+        <div class="border-t border-gray-200 dark:border-neutral-700 pt-4 mt-2 space-y-3">
+          <p class="text-sm text-gray-500 dark:text-gray-400 px-1">
+            Signed in as <span class="font-medium text-gray-700 dark:text-gray-300">{profile?.full_name || user.email}</span>
+          </p>
+          {profile?.is_approved && (
+            <a href="/portal" class="block text-lg font-medium text-clif-burgundy hover:text-clif-burgundy/80">Members Portal</a>
+          )}
+          {profile?.role === 'admin' && (
+            <a href="/portal/admin" class="block text-lg font-medium text-gray-700 dark:text-gray-300 hover:text-clif-burgundy">Admin Panel</a>
+          )}
+          <button id="mobile-logout-btn" class="text-lg font-medium text-red-600 dark:text-red-400">Sign Out</button>
+        </div>
+      ) : (
+        <div class="border-t border-gray-200 dark:border-neutral-700 pt-4 mt-2">
+          <a href="/auth/login" class="inline-block text-sm font-medium text-white bg-clif-burgundy hover:bg-clif-burgundy/90 px-6 py-2.5 rounded-lg transition-colors">
+            Member Login
+          </a>
+        </div>
+      )}
     </nav>
   </div>
 </div>
@@ -410,5 +472,16 @@ const navItems = [
     if (themeToggleMobile) {
       themeToggleMobile.addEventListener('click', toggleTheme);
     }
+
+    // Logout handlers
+    async function handleLogout() {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      window.location.href = '/';
+    }
+
+    var logoutBtn = document.getElementById('logout-btn');
+    var mobileLogoutBtn = document.getElementById('mobile-logout-btn');
+    if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
+    if (mobileLogoutBtn) mobileLogoutBtn.addEventListener('click', handleLogout);
   });
 </script>

@@ -1,0 +1,50 @@
+---
+export const prerender = false;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PortalNav from '../../components/portal/PortalNav.astro';
+import PortalTable from '../../components/portal/PortalTable.astro';
+import StatusBadge from '../../components/portal/StatusBadge.astro';
+
+const profile = Astro.locals.profile;
+const supabase = Astro.locals.supabase;
+
+const { data: tasks, error } = await supabase
+  .from('status_tracker')
+  .select('*')
+  .order('site_name');
+
+const columns = [
+  { key: 'site_name', label: 'Site' },
+  { key: 'task_name', label: 'Task' },
+  { key: 'status', label: 'Status' },
+  { key: 'assigned_to', label: 'Assigned To' },
+  { key: 'due_date', label: 'Due Date', type: 'date' as const },
+  { key: 'notes', label: 'Notes' },
+];
+---
+
+<BaseLayout title="Status Tracker">
+  <div class="container mx-auto px-4 py-8">
+    <div class="flex flex-col lg:flex-row gap-8">
+      <aside class="lg:w-64 shrink-0">
+        <PortalNav currentPath={Astro.url.pathname} isAdmin={profile?.role === 'admin'} />
+      </aside>
+
+      <div class="flex-1 min-w-0">
+        <div class="mb-6">
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Status Tracker</h1>
+          <p class="text-gray-600 dark:text-gray-400 mt-1">Track tasks and progress across consortium sites</p>
+        </div>
+
+        {error ? (
+          <div class="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg p-4 text-sm">
+            Error loading data: {error.message}
+          </div>
+        ) : (
+          <PortalTable columns={columns} rows={tasks || []} tableId="status-tracker" emptyMessage="No tasks tracked yet." />
+        )}
+      </div>
+    </div>
+  </div>
+</BaseLayout>

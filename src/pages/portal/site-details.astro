@@ -1,0 +1,129 @@
+---
+export const prerender = false;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PortalNav from '../../components/portal/PortalNav.astro';
+
+const profile = Astro.locals.profile;
+const supabase = Astro.locals.supabase;
+
+const { data: sites, error } = await supabase
+  .from('site_details')
+  .select('*')
+  .order('site_name');
+---
+
+<BaseLayout title="Site Details">
+  <div class="container mx-auto px-4 py-8">
+    <div class="flex flex-col lg:flex-row gap-8">
+      <aside class="lg:w-64 shrink-0">
+        <PortalNav currentPath={Astro.url.pathname} isAdmin={profile?.role === 'admin'} />
+      </aside>
+
+      <div class="flex-1 min-w-0">
+        <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Site Details</h1>
+            <p class="text-gray-600 dark:text-gray-400 mt-1">Institution metadata and data availability across consortium sites</p>
+          </div>
+          {!error && sites && (
+            <div class="flex items-center gap-3">
+              <input
+                type="text"
+                id="site-search"
+                placeholder="Search sites..."
+                class="w-full sm:w-56 px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent"
+              />
+              <span class="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">{sites.length} sites</span>
+            </div>
+          )}
+        </div>
+
+        {error ? (
+          <div class="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg p-4 text-sm">
+            Error loading data: {error.message}
+          </div>
+        ) : !sites || sites.length === 0 ? (
+          <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-8 text-center text-gray-500 dark:text-gray-400">
+            No site details available yet.
+          </div>
+        ) : (
+          <div class="grid gap-4" id="site-cards">
+            {sites.map((site: any) => (
+              <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 overflow-hidden hover:shadow-md transition-shadow" data-site-card>
+                <div class="p-5">
+                  {/* Header row: site name + type badge */}
+                  <div class="flex flex-wrap items-start justify-between gap-2 mb-4">
+                    <div class="flex items-center gap-3">
+                      <h3 class="text-lg font-bold text-gray-900 dark:text-white">{site.site_name}</h3>
+                      {site.hospital_type && (
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-clif-burgundy/10 text-clif-burgundy dark:bg-clif-burgundy/20 dark:text-red-300">
+                          {site.hospital_type}
+                        </span>
+                      )}
+                    </div>
+                    {/* Data availability badges */}
+                    <div class="flex items-center gap-1.5">
+                      <span class={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${site.has_er_data ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-400 dark:bg-neutral-700 dark:text-gray-500'}`}>
+                        ER
+                      </span>
+                      <span class={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${site.has_icu_data ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-400 dark:bg-neutral-700 dark:text-gray-500'}`}>
+                        ICU
+                      </span>
+                      <span class={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${site.has_ward_data ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-400 dark:bg-neutral-700 dark:text-gray-500'}`}>
+                        Ward
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Stats grid */}
+                  <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div>
+                      <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Hospitals</dt>
+                      <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{site.num_hospitals ?? '—'}</dd>
+                    </div>
+                    <div>
+                      <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ICU Beds</dt>
+                      <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{site.icu_beds ?? '—'}</dd>
+                    </div>
+                    <div>
+                      <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Data Source</dt>
+                      <dd class="mt-1 text-sm text-gray-900 dark:text-white">{site.data_source ?? '—'}</dd>
+                    </div>
+                    <div>
+                      <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">CLIF Date Range</dt>
+                      <dd class="mt-1 text-sm text-gray-900 dark:text-white">{site.clifed_date_range ?? '—'}</dd>
+                    </div>
+                  </div>
+
+                  {/* Notes row (if present) */}
+                  {site.notes && (
+                    <div class="mt-3 pt-3 border-t border-gray-100 dark:border-neutral-700">
+                      <p class="text-xs text-gray-500 dark:text-gray-400"><span class="font-medium">Notes:</span> {site.notes}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+
+  <script is:inline>
+    document.addEventListener('DOMContentLoaded', function() {
+      var input = document.getElementById('site-search');
+      var cards = document.querySelectorAll('[data-site-card]');
+      if (!input || !cards.length) return;
+
+      input.addEventListener('input', function() {
+        var query = this.value.toLowerCase();
+        cards.forEach(function(card) {
+          var text = card.textContent.toLowerCase();
+          card.style.display = text.includes(query) ? '' : 'none';
+        });
+      });
+    });
+  </script>
+</BaseLayout>

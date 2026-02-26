@@ -1,0 +1,52 @@
+---
+export const prerender = false;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PortalNav from '../../components/portal/PortalNav.astro';
+
+const profile = Astro.locals.profile;
+
+const portalSections = [
+  { title: 'Site Details', description: 'Institution metadata, data sources, date ranges, and ICU bed counts', href: '/portal/site-details', icon: 'building' },
+{ title: 'Member Directory', description: 'Contact information for consortium members', href: '/portal/directory', icon: 'users' },
+  { title: 'Status Tracker', description: 'Track tasks and progress across sites', href: '/portal/status', icon: 'check' },
+  { title: 'Calendar', description: 'Upcoming meetings, events, and Zoom links', href: '/portal/calendar', icon: 'calendar-days' },
+];
+---
+
+<BaseLayout title="Members Portal">
+  <div class="container mx-auto px-4 py-8">
+    <div class="flex flex-col lg:flex-row gap-8">
+      <!-- Sidebar -->
+      <aside class="lg:w-64 shrink-0">
+        <PortalNav currentPath={Astro.url.pathname} isAdmin={profile?.role === 'admin'} />
+      </aside>
+
+      <!-- Main Content -->
+      <div class="flex-1 min-w-0">
+        <div class="mb-8">
+          <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
+            Welcome{profile?.full_name ? `, ${profile.full_name}` : ''}
+          </h1>
+          <p class="text-gray-600 dark:text-gray-400 mt-2">Access consortium data and resources</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {portalSections.map((section) => (
+            <a
+              href={section.href}
+              class="group bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6 hover:shadow-md hover:border-clif-burgundy/30 transition-all"
+            >
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-clif-burgundy transition-colors">
+                {section.title}
+              </h3>
+              <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                {section.description}
+              </p>
+            </a>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>

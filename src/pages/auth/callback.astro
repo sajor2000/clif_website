@@ -1,0 +1,21 @@
+---
+export const prerender = false;
+
+import { createClient } from '../../lib/supabase';
+
+const requestUrl = new URL(Astro.request.url);
+const code = requestUrl.searchParams.get('code');
+const next = requestUrl.searchParams.get('next') || '/portal';
+
+if (code) {
+  const supabase = createClient(Astro.request, Astro.cookies);
+  const { error } = await supabase.auth.exchangeCodeForSession(code);
+
+  if (!error) {
+    return Astro.redirect(next);
+  }
+}
+
+// If no code or error, redirect to login
+return Astro.redirect('/auth/login');
+---

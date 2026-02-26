@@ -1,3 +1,4 @@
+export const prerender = true;
 import type { APIRoute, GetStaticPaths } from 'astro';
 import { readFile, readdir } from 'fs/promises';
 import { join } from 'path';

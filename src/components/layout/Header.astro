@@ -1,5 +1,12 @@
 ---
 import Navigation from './Navigation.astro';
+
+interface Props {
+  user?: any;
+  profile?: any;
+}
+
+const { user = null, profile = null } = Astro.props;
 ---
 
 <header class="bg-white shadow-sm sticky top-0 z-50">
@@ -24,7 +31,7 @@ import Navigation from './Navigation.astro';
       </a>
 
       <!-- Navigation -->
-      <Navigation />
+      <Navigation user={user} profile={profile} />
     </div>
   </div>
 </header>

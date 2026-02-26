@@ -1,0 +1,57 @@
+---
+interface Props {
+  currentPath: string;
+  isAdmin?: boolean;
+}
+
+const { currentPath, isAdmin = false } = Astro.props;
+
+const portalItems = [
+  { label: 'Dashboard', href: '/portal', icon: 'grid' },
+  { label: 'Site Details', href: '/portal/site-details', icon: 'building' },
+{ label: 'Member Directory', href: '/portal/directory', icon: 'users' },
+  { label: 'Status Tracker', href: '/portal/status', icon: 'check-circle' },
+  { label: 'Calendar', href: '/portal/calendar', icon: 'calendar-days' },
+];
+
+function isActive(href: string): boolean {
+  if (href === '/portal') return currentPath === '/portal' || currentPath === '/portal/';
+  return currentPath.startsWith(href);
+}
+---
+
+<nav class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-4" aria-label="Portal navigation">
+  <h2 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 tracking-wider mb-3 px-3">Portal</h2>
+  <ul class="space-y-1">
+    {portalItems.map((item) => (
+      <li>
+        <a
+          href={item.href}
+          class={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+            isActive(item.href)
+              ? 'bg-clif-burgundy/10 text-clif-burgundy dark:bg-clif-burgundy/20'
+              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700'
+          }`}
+          aria-current={isActive(item.href) ? 'page' : undefined}
+        >
+          {item.label}
+        </a>
+      </li>
+    ))}
+    {isAdmin && (
+      <li class="pt-2 mt-2 border-t border-gray-200 dark:border-neutral-700">
+        <a
+          href="/portal/admin"
+          class={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+            isActive('/portal/admin')
+              ? 'bg-clif-burgundy/10 text-clif-burgundy dark:bg-clif-burgundy/20'
+              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700'
+          }`}
+          aria-current={isActive('/portal/admin') ? 'page' : undefined}
+        >
+          Admin Panel
+        </a>
+      </li>
+    )}
+  </ul>
+</nav>

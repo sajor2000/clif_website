@@ -1,0 +1,180 @@
+---
+export const prerender = false;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PortalNav from '../../components/portal/PortalNav.astro';
+
+const profile = Astro.locals.profile;
+const supabase = Astro.locals.supabase;
+
+// Fetch all profiles using the admin's session (admin RLS policies allow this)
+const { data: allProfiles, error } = await supabase
+  .from('profiles')
+  .select('*')
+  .order('created_at', { ascending: false });
+
+const pendingUsers = (allProfiles || []).filter((p: any) => !p.is_approved);
+const approvedUsers = (allProfiles || []).filter((p: any) => p.is_approved);
+---
+
+<BaseLayout title="Admin Panel">
+  <div class="container mx-auto px-4 py-8">
+    <div class="flex flex-col lg:flex-row gap-8">
+      <aside class="lg:w-64 shrink-0">
+        <PortalNav currentPath={Astro.url.pathname} isAdmin={true} />
+      </aside>
+
+      <div class="flex-1 min-w-0">
+        <div class="mb-8">
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Admin Panel</h1>
+          <p class="text-gray-600 dark:text-gray-400 mt-1">Manage user accounts and approvals</p>
+        </div>
+
+        {error && (
+          <div class="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg p-4 text-sm mb-6">
+            Error loading profiles: {error.message}
+          </div>
+        )}
+
+        <!-- Pending Approvals -->
+        <div class="mb-8">
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            Pending Approvals
+            {pendingUsers.length > 0 && (
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
+                {pendingUsers.length}
+              </span>
+            )}
+          </h2>
+
+          {pendingUsers.length === 0 ? (
+            <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6 text-center text-gray-500 dark:text-gray-400 text-sm">
+              No pending approvals.
+            </div>
+          ) : (
+            <div class="space-y-3">
+              {pendingUsers.map((u: any) => (
+                <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-yellow-200 dark:border-yellow-900/50 p-5 flex items-center justify-between gap-4" data-user-card={u.id}>
+                  <div>
+                    <p class="font-semibold text-gray-900 dark:text-white">{u.full_name || 'No name'}</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">{u.email}</p>
+                    {u.institution && <p class="text-sm text-gray-500 dark:text-gray-400">{u.institution}</p>}
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Requested {new Date(u.created_at).toLocaleDateString()}</p>
+                  </div>
+                  <div class="flex items-center gap-2 shrink-0">
+                    <button
+                      class="approve-btn px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
+                      data-user-id={u.id}
+                    >
+                      Approve
+                    </button>
+                    <button
+                      class="reject-btn px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+                      data-user-id={u.id}
+                    >
+                      Reject
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <!-- Approved Members -->
+        <div>
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            Approved Members ({approvedUsers.length})
+          </h2>
+
+          {approvedUsers.length === 0 ? (
+            <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6 text-center text-gray-500 dark:text-gray-400 text-sm">
+              No approved members yet.
+            </div>
+          ) : (
+            <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 overflow-hidden">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="bg-gray-50 dark:bg-neutral-700/50">
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase">Name</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase">Email</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase">Institution</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase">Role</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase">Joined</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 dark:divide-neutral-700">
+                  {approvedUsers.map((u: any, i: number) => (
+                    <tr class={i % 2 === 0 ? '' : 'bg-gray-50/50 dark:bg-neutral-800/50'}>
+                      <td class="px-4 py-3 text-gray-900 dark:text-gray-200">{u.full_name || '—'}</td>
+                      <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{u.email}</td>
+                      <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{u.institution || '—'}</td>
+                      <td class="px-4 py-3">
+                        <span class={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${u.role === 'admin' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' : 'bg-gray-100 text-gray-600 dark:bg-neutral-700 dark:text-gray-400'}`}>
+                          {u.role}
+                        </span>
+                      </td>
+                      <td class="px-4 py-3 text-gray-500 dark:text-gray-400 text-xs">{new Date(u.created_at).toLocaleDateString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script is:inline>
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('.approve-btn').forEach(function(btn) {
+        btn.addEventListener('click', async function() {
+          var userId = this.getAttribute('data-user-id');
+          if (!confirm('Approve this user?')) return;
+          this.disabled = true;
+          this.textContent = 'Approving...';
+
+          var res = await fetch('/api/admin/approve', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: userId }),
+          });
+
+          if (res.ok) {
+            var card = document.querySelector('[data-user-card="' + userId + '"]');
+            if (card) card.remove();
+          } else {
+            alert('Failed to approve user');
+            this.disabled = false;
+            this.textContent = 'Approve';
+          }
+        });
+      });
+
+      document.querySelectorAll('.reject-btn').forEach(function(btn) {
+        btn.addEventListener('click', async function() {
+          var userId = this.getAttribute('data-user-id');
+          if (!confirm('Reject and delete this user? This cannot be undone.')) return;
+          this.disabled = true;
+          this.textContent = 'Rejecting...';
+
+          var res = await fetch('/api/admin/reject', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: userId }),
+          });
+
+          if (res.ok) {
+            var card = document.querySelector('[data-user-card="' + userId + '"]');
+            if (card) card.remove();
+          } else {
+            alert('Failed to reject user');
+            this.disabled = false;
+            this.textContent = 'Reject';
+          }
+        });
+      });
+    });
+  </script>
+</BaseLayout>
