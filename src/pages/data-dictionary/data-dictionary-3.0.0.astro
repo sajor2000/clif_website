@@ -6,12 +6,12 @@ import path from 'node:path';
 import MarkdownIt from 'markdown-it';
 
 // Read the DDL file at build time
-const ddlPath = path.join(process.cwd(), 'src/content/v-2-2-0-ddl.sql');
+const ddlPath = path.join(process.cwd(), 'src/content/v-3-0-0-ddl.sql');
 const ddlContent = fs.readFileSync(ddlPath, 'utf-8');
 
 // Read the Markdown file for documentation (if it exists)
 let markdownContent = '';
-const markdownPath = path.join(process.cwd(), 'src/content/clif-data-dictionary-2.2.0.md');
+const markdownPath = path.join(process.cwd(), 'src/content/clif-data-dictionary-3.0.0.md');
 try {
   markdownContent = fs.readFileSync(markdownPath, 'utf-8');
 } catch (e) {
@@ -136,7 +136,7 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
 ---
 
 <BaseLayout
-  title="CLIF-2.2.0 Data Dictionary (Future Release)"
+  title="CLIF-3.0.0 Data Dictionary (Future Release)"
   description="Upcoming version of the Common Longitudinal ICU data Format"
 >
   <div class="container mx-auto px-6 py-12">
@@ -147,11 +147,11 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
       )}
       <!-- Header -->
       <header class="mb-8 bg-gradient-to-r from-blue-50 to-clif-burgundy/10 rounded-xl p-6 shadow-sm">
-        <h1 class="text-4xl font-bold mb-4 text-clif-burgundy">CLIF Data Dictionary 2.2.0</h1>
+        <h1 class="text-4xl font-bold mb-4 text-clif-burgundy">CLIF Data Dictionary 3.0.0</h1>
         <p class="text-gray-700 leading-relaxed">
           <div class="bg-clif-burgundy-light/10 border-2 border-clif-burgundy/20 p-4 rounded-lg mb-8 shadow-sm">
           <p class="text-lg font-semibold text-blue-800 m-0">
-            Version <span class="text-clif-burgundy">CLIF v2.2.0</span> is a WIP implementation. 
+            Version <span class="text-clif-burgundy">CLIF v3.0.0</span> — going multimodal. Work in progress. 
           </p>
           </div>
         </p>
