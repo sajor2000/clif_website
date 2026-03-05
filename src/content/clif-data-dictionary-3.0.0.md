@@ -404,24 +404,24 @@ The vitals table is a long-form (one vital sign per row) longitudinal table.
 
 A planned future CLIF table that has yet to be used in a federated project. The table structure and CDE elements are in draft form. Permissible values of category variables may still need to be defined. Seeking conceptual feedback. Significant changes to all aspects of the table are possible.
 
-## intake_output
+## input
 
-
-The intake_output table is long form table that captures the times intake and output events were recorded, the type of fluid administered or recorded as "out", and the amount of fluid.
+The input table captures patient fluid intake events during hospitalization. Each row represents a single recorded input event with the fluid name, a standardized category, and the volume in mL. This table replaces the intake side of the former `intake_output` table; the output side is captured in the separate `output` table.
 
 **Notes**:
-- This table is likely to be replaced by separate intake and output tables in this version. The `output` table is already defined as a concept table in CLIF v2.2.0.
+- The `input_category` field maps `input_name` to a controlled vocabulary defined in the input_category mCIDE dictionary
+- `input_category` values roll up into `input_group` for higher-level aggregation (e.g., iv_fluids, blood_products, nutrition)
 
 **Example**:
 
-| hospitalization_id | intake_dttm                  | fluid_name        | amount | in_out_flag |
-|-------------------|------------------------------|------------------|---------|-------------|
-| 1001              | 2024-01-01 08:00:00+00:00 UTC   | Normal Saline    | 500     | 1           |
-| 1001              | 2024-01-01 10:30:00+00:00 UTC   | Urine           | 300     | 0           |
-| 1002              | 2024-01-05 09:15:00+00:00 UTC   | Dextrose        | 250     | 1           |
-| 1002              | 2024-01-05 14:00:00+00:00 UTC   | Urine           | 400     | 0           |
-| 1003              | 2024-01-10 07:45:00+00:00 UTC   | Lactated Ringer's| 600     | 1           |
-| 1003              | 2024-01-10 12:00:00+00:00 UTC   | Drainage        | 200     | 0           |
+| hospitalization_id | recorded_dttm                     | input_name         | input_category       | input_group               | input_volume |
+|-------------------|-----------------------------------|--------------------|----------------------|---------------------------|--------------|
+| 1001              | 2024-01-01 08:00:00+00:00 UTC     | Normal Saline      | iv_crystalloid       | iv_fluids                 | 500          |
+| 1001              | 2024-01-01 10:30:00+00:00 UTC     | Lactated Ringer's  | iv_crystalloid       | iv_fluids                 | 1000         |
+| 1002              | 2024-01-05 09:15:00+00:00 UTC     | PRBC               | blood_products       | blood_products            | 350          |
+| 1002              | 2024-01-05 14:00:00+00:00 UTC     | TPN                | parenteral_nutrition | nutrition                 | 250          |
+| 1003              | 2024-01-10 07:45:00+00:00 UTC     | Tube Feed          | enteral_nutrition    | nutrition                 | 600          |
+| 1003              | 2024-01-10 12:00:00+00:00 UTC     | Free Water Flush   | enteral_water        | nutrition                 | 200          |
 
 
 ## intermittent_dialysis

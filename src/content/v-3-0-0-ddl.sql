@@ -286,14 +286,15 @@ CREATE TABLE vitals (
 );
 
 -- -----------------------------------------------------
--- Table: intake_output
+-- Table: input
 -- -----------------------------------------------------
-CREATE TABLE intake_output (
+CREATE TABLE input (
   hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
-  intake_dttm DATETIME COMMENT '{"description": "Date and time of intake. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
-  fluid_name VARCHAR COMMENT '{"description": "Name of the fluid administered.", "permissible": "No restriction"}',
-  amount DOUBLE COMMENT '{"description": "Amount of fluid administered (in mL)", "permissible": "Numeric values in mL"}',
-  in_out_flag INT COMMENT '{"description": "Indicator for intake or output (1 for intake, 0 for output)", "permissible": "0 = Output, 1 = Intake"}'
+  recorded_dttm DATETIME COMMENT '{"description": "Date and time when the input was recorded. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
+  input_name VARCHAR COMMENT '{"description": "Name of the fluid recorded as patient input.", "permissible": "No restriction"}',
+  input_category VARCHAR COMMENT '{"description": "Maps input_name to a set of permissible input categories.", "permissible": "[List of input categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/input/clif_input_category.csv)"}',
+  input_group VARCHAR COMMENT '{"description": "Maps input_category to a smaller set of source groups.", "permissible": "[iv_fluids, blood_products, nutrition, medication_fluids, renal_replacement_fluids, flush_irrigation, other_intake](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/input/clif_input_group.csv)"}',
+  input_volume FLOAT COMMENT '{"description": "Volume of input fluid in mL. Must be a positive number.", "permissible": "Numeric. Should not be negative."}'
 );
 
 -- -----------------------------------------------------
