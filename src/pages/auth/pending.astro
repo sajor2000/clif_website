@@ -2,22 +2,12 @@
 export const prerender = false;
 
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { createAdminClient } from '../../lib/supabase';
 
 const user = Astro.locals.user;
 
-// If logged in, check approval status using admin client (bypasses RLS)
-if (user) {
-  const adminClient = createAdminClient();
-  const { data: profile } = await adminClient
-    .from('profiles')
-    .select('is_approved')
-    .eq('id', user.id)
-    .single();
-
-  if (profile?.is_approved) {
-    return Astro.redirect('/portal');
-  }
+// If logged in and approved, redirect to portal
+if (user?.is_approved) {
+  return Astro.redirect('/portal');
 }
 ---
 

@@ -3,11 +3,10 @@ export const prerender = false;
 
 import BaseLayout from '../../layouts/BaseLayout.astro';
 
-// If already logged in, redirect to portal
+// If already logged in, redirect
 const user = Astro.locals.user;
 if (user) {
-  const profile = Astro.locals.profile;
-  if (profile?.is_approved) {
+  if (user.is_approved) {
     return Astro.redirect('/portal');
   } else {
     return Astro.redirect('/auth/pending');
@@ -61,10 +60,15 @@ if (user) {
           </button>
         </form>
 
-        <p class="text-center text-sm text-gray-600 dark:text-gray-400 mt-6">
-          Don't have an account?
-          <a href="/auth/signup" class="text-clif-burgundy hover:text-clif-burgundy/80 font-medium">Sign up</a>
-        </p>
+        <div class="text-center text-sm text-gray-600 dark:text-gray-400 mt-6 space-y-2">
+          <p>
+            <a href="/auth/reset-password" class="text-clif-burgundy hover:text-clif-burgundy/80 font-medium">Forgot password?</a>
+          </p>
+          <p>
+            Don't have an account?
+            <a href="/auth/signup" class="text-clif-burgundy hover:text-clif-burgundy/80 font-medium">Sign up</a>
+          </p>
+        </div>
       </div>
     </div>
   </div>

@@ -1,11 +1,10 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { createClient } from '../../../lib/supabase';
+import { destroySession } from '../../../lib/session';
 
-export const POST: APIRoute = async ({ request, cookies }) => {
-  const supabase = createClient(request, cookies);
-  await supabase.auth.signOut();
+export const POST: APIRoute = async ({ cookies }) => {
+  await destroySession(cookies);
 
   return new Response(JSON.stringify({ success: true }), {
     status: 200,

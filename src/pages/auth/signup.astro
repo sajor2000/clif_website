@@ -6,8 +6,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 // If already logged in, redirect
 const user = Astro.locals.user;
 if (user) {
-  const profile = Astro.locals.profile;
-  if (profile?.is_approved) {
+  if (user.is_approved) {
     return Astro.redirect('/portal');
   } else {
     return Astro.redirect('/auth/pending');
@@ -74,6 +73,35 @@ if (user) {
             />
           </div>
 
+          <div>
+            <label for="security_question" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Security Question</label>
+            <select
+              id="security_question"
+              name="security_question"
+              required
+              class="w-full px-4 py-2.5 border border-gray-300 dark:border-neutral-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent"
+            >
+              <option value="">Select a security question...</option>
+              <option value="What city were you born in?">What city were you born in?</option>
+              <option value="What was the name of your first pet?">What was the name of your first pet?</option>
+              <option value="What is your mother's maiden name?">What is your mother's maiden name?</option>
+              <option value="What was the name of your first school?">What was the name of your first school?</option>
+              <option value="What is your favorite book?">What is your favorite book?</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="security_answer" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Security Answer</label>
+            <input
+              type="text"
+              id="security_answer"
+              name="security_answer"
+              required
+              class="w-full px-4 py-2.5 border border-gray-300 dark:border-neutral-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent"
+              placeholder="Your answer (case-insensitive)"
+            />
+          </div>
+
           <div id="error-message" class="hidden text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg px-4 py-3"></div>
 
           <button
@@ -111,6 +139,8 @@ if (user) {
             institution: document.getElementById('institution').value,
             email: document.getElementById('email').value,
             password: document.getElementById('password').value,
+            security_question: document.getElementById('security_question').value,
+            security_answer: document.getElementById('security_answer').value,
           }),
         });
 

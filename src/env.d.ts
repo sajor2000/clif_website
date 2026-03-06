@@ -2,14 +2,12 @@
 
 declare namespace App {
   interface Locals {
-    supabase: import('@supabase/supabase-js').SupabaseClient;
-    user: import('@supabase/supabase-js').User | null;
-    profile: {
+    user: {
       id: string;
       email: string;
       full_name: string | null;
       institution: string | null;
-      role: string;
+      role: 'admin' | 'steering' | 'member';
       is_approved: boolean;
       created_at: string;
       updated_at: string;
@@ -18,9 +16,9 @@ declare namespace App {
 }
 
 interface ImportMetaEnv {
-  readonly PUBLIC_SUPABASE_URL: string;
-  readonly PUBLIC_SUPABASE_ANON_KEY: string;
-  readonly SUPABASE_SERVICE_ROLE_KEY: string;
+  readonly TURSO_DATABASE_URL: string;
+  readonly TURSO_AUTH_TOKEN: string;
+  readonly GITHUB_TOKEN: string;
 }
 
 interface ImportMeta {

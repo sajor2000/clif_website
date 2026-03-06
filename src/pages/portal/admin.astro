@@ -3,18 +3,26 @@ export const prerender = false;
 
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PortalNav from '../../components/portal/PortalNav.astro';
+import { getDb } from '../../lib/turso';
 
-const profile = Astro.locals.profile;
-const supabase = Astro.locals.supabase;
+const user = Astro.locals.user;
 
-// Fetch all profiles using the admin's session (admin RLS policies allow this)
-const { data: allProfiles, error } = await supabase
-  .from('profiles')
-  .select('*')
-  .order('created_at', { ascending: false });
+const db = getDb();
+let allProfiles: any[] = [];
+let error: string | null = null;
 
-const pendingUsers = (allProfiles || []).filter((p: any) => !p.is_approved);
-const approvedUsers = (allProfiles || []).filter((p: any) => p.is_approved);
+try {
+  const result = await db.execute('SELECT * FROM users ORDER BY created_at DESC');
+  allProfiles = result.rows.map((row) => ({
+    ...row,
+    is_approved: Boolean(row.is_approved),
+  }));
+} catch (e: any) {
+  error = e.message;
+}
+
+const pendingUsers = allProfiles.filter((p) => !p.is_approved);
+const approvedUsers = allProfiles.filter((p) => p.is_approved);
 ---
 
 <BaseLayout title="Admin Panel">
@@ -32,7 +40,7 @@ const approvedUsers = (allProfiles || []).filter((p: any) => p.is_approved);
 
         {error && (
           <div class="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg p-4 text-sm mb-6">
-            Error loading profiles: {error.message}
+            Error loading profiles: {error}
           </div>
         )}
 
@@ -106,13 +114,19 @@ const approvedUsers = (allProfiles || []).filter((p: any) => p.is_approved);
                 <tbody class="divide-y divide-gray-200 dark:divide-neutral-700">
                   {approvedUsers.map((u: any, i: number) => (
                     <tr class={i % 2 === 0 ? '' : 'bg-gray-50/50 dark:bg-neutral-800/50'}>
-                      <td class="px-4 py-3 text-gray-900 dark:text-gray-200">{u.full_name || '—'}</td>
+                      <td class="px-4 py-3 text-gray-900 dark:text-gray-200">{u.full_name || '\u2014'}</td>
                       <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{u.email}</td>
-                      <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{u.institution || '—'}</td>
+                      <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{u.institution || '\u2014'}</td>
                       <td class="px-4 py-3">
-                        <span class={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${u.role === 'admin' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' : 'bg-gray-100 text-gray-600 dark:bg-neutral-700 dark:text-gray-400'}`}>
-                          {u.role}
-                        </span>
+                        <select
+                          class="role-select text-xs rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-900 dark:text-white px-2 py-1"
+                          data-user-id={u.id}
+                          data-current-role={u.role}
+                        >
+                          <option value="member" selected={u.role === 'member'}>member</option>
+                          <option value="steering" selected={u.role === 'steering'}>steering</option>
+                          <option value="admin" selected={u.role === 'admin'}>admin</option>
+                        </select>
                       </td>
                       <td class="px-4 py-3 text-gray-500 dark:text-gray-400 text-xs">{new Date(u.created_at).toLocaleDateString()}</td>
                     </tr>
@@ -148,6 +162,30 @@ const approvedUsers = (allProfiles || []).filter((p: any) => p.is_approved);
             alert('Failed to approve user');
             this.disabled = false;
             this.textContent = 'Approve';
+          }
+        });
+      });
+
+      document.querySelectorAll('.role-select').forEach(function(sel) {
+        sel.addEventListener('change', async function() {
+          var userId = this.getAttribute('data-user-id');
+          var newRole = this.value;
+          var prev = this.getAttribute('data-current-role');
+          if (!confirm('Change role to ' + newRole + '?')) {
+            this.value = prev;
+            return;
+          }
+          var res = await fetch('/api/admin/set-role', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: userId, role: newRole }),
+          });
+          if (res.ok) {
+            this.setAttribute('data-current-role', newRole);
+          } else {
+            var data = await res.json();
+            alert(data.error || 'Failed to update role');
+            this.value = prev;
           }
         });
       });

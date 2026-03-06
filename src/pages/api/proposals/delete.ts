@@ -11,10 +11,10 @@ export const POST: APIRoute = async ({ locals, request }) => {
     });
   }
 
-  const { userId } = await request.json();
+  const { proposalId } = await request.json();
 
-  if (!userId) {
-    return new Response(JSON.stringify({ error: 'userId is required' }), {
+  if (!proposalId) {
+    return new Response(JSON.stringify({ error: 'proposalId is required.' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     });
@@ -22,10 +22,10 @@ export const POST: APIRoute = async ({ locals, request }) => {
 
   const db = getDb();
 
-  // Delete user (sessions cascade via FK)
+  // Votes cascade via FK
   await db.execute({
-    sql: 'DELETE FROM users WHERE id = ?',
-    args: [userId],
+    sql: 'DELETE FROM proposals WHERE id = ?',
+    args: [proposalId],
   });
 
   return new Response(JSON.stringify({ success: true }), {

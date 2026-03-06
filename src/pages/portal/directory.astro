@@ -3,22 +3,27 @@ export const prerender = false;
 
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PortalNav from '../../components/portal/PortalNav.astro';
+import { getDb } from '../../lib/turso';
 
-const profile = Astro.locals.profile;
-const supabase = Astro.locals.supabase;
+const user = Astro.locals.user;
 
-const { data: members, error } = await supabase
-  .from('profiles')
-  .select('*')
-  .eq('is_approved', true)
-  .order('full_name');
+const db = getDb();
+let members: any[] = [];
+let error: string | null = null;
+
+try {
+  const result = await db.execute('SELECT * FROM users WHERE is_approved = 1 ORDER BY full_name');
+  members = result.rows;
+} catch (e: any) {
+  error = e.message;
+}
 ---
 
 <BaseLayout title="Member Directory">
   <div class="container mx-auto px-4 py-8">
     <div class="flex flex-col lg:flex-row gap-8">
       <aside class="lg:w-64 shrink-0">
-        <PortalNav currentPath={Astro.url.pathname} isAdmin={profile?.role === 'admin'} />
+        <PortalNav currentPath={Astro.url.pathname} isAdmin={user?.role === 'admin'} />
       </aside>
 
       <div class="flex-1 min-w-0">
@@ -29,9 +34,9 @@ const { data: members, error } = await supabase
 
         {error ? (
           <div class="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg p-4 text-sm">
-            Error loading data: {error.message}
+            Error loading data: {error}
           </div>
-        ) : !members || members.length === 0 ? (
+        ) : members.length === 0 ? (
           <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-8 text-center text-gray-500 dark:text-gray-400">
             No members found.
           </div>
@@ -55,9 +60,13 @@ const { data: members, error } = await supabase
                 {member.institution && (
                   <p class="text-sm text-gray-600 dark:text-gray-400 mt-3">{member.institution}</p>
                 )}
-                {member.role === 'admin' && (
-                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400 mt-2">
-                    Admin
+                {member.role !== 'member' && (
+                  <span class={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-2 ${
+                    member.role === 'admin'
+                      ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400'
+                      : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
+                  }`}>
+                    {member.role}
                   </span>
                 )}
               </div>

@@ -1,44 +1,31 @@
 import { defineMiddleware } from 'astro:middleware';
-import { createClient, createAdminClient } from './lib/supabase';
+import { getSession } from './lib/session';
 
 const PROTECTED_ROUTES = ['/portal'];
 const ADMIN_ROUTES = ['/portal/admin'];
-const AUTH_PAGES = ['/auth/login', '/auth/signup', '/auth/callback', '/auth/pending'];
+const AUTH_PAGES = ['/auth/login', '/auth/signup', '/auth/pending', '/auth/reset-password'];
+const API_ROUTES = ['/api/'];
 
 export const onRequest = defineMiddleware(async (context, next) => {
-  const { cookies, locals, url, redirect, request } = context;
+  const { cookies, locals, url, redirect } = context;
   const pathname = url.pathname;
 
-  // Determine if this route needs auth handling
   const isProtected = PROTECTED_ROUTES.some((r) => pathname.startsWith(r));
   const isAdminRoute = ADMIN_ROUTES.some((r) => pathname.startsWith(r));
   const isAuthPage = AUTH_PAGES.some((r) => pathname === r);
+  const isApiRoute = API_ROUTES.some((r) => pathname.startsWith(r));
 
-  // Skip Supabase for routes that don't need it (static/prerendered pages)
-  if (!isProtected && !isAdminRoute && !isAuthPage) {
+  // Skip session lookup for routes that don't need it
+  if (!isProtected && !isAdminRoute && !isAuthPage && !isApiRoute) {
     locals.user = null;
-    locals.profile = null;
     return next();
   }
 
-  const supabase = createClient(request, cookies);
-
-  // Refresh session and get user
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  locals.supabase = supabase;
+  const user = await getSession(cookies);
   locals.user = user;
-  locals.profile = null;
 
-  // Auth pages (login, signup) — just attach user state and continue
-  if (isAuthPage) {
-    return next();
-  }
-
-  // Public routes pass through
-  if (!isProtected && !isAdminRoute) {
+  // Auth pages and API routes — just attach user state and continue
+  if (isAuthPage || isApiRoute) {
     return next();
   }
 
@@ -47,23 +34,13 @@ export const onRequest = defineMiddleware(async (context, next) => {
     return redirect('/auth/login?redirect=' + encodeURIComponent(pathname));
   }
 
-  // Fetch user profile using admin client (bypasses RLS)
-  const adminClient = createAdminClient();
-  const { data: profile } = await adminClient
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single();
-
-  locals.profile = profile;
-
   // Protected routes require approval
-  if (!profile?.is_approved) {
+  if (!user.is_approved) {
     return redirect('/auth/pending');
   }
 
   // Admin routes require admin role
-  if (isAdminRoute && profile?.role !== 'admin') {
+  if (isAdminRoute && user.role !== 'admin') {
     return redirect('/portal');
   }
 

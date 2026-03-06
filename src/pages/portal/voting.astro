@@ -1,0 +1,498 @@
+---
+export const prerender = false;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PortalNav from '../../components/portal/PortalNav.astro';
+import { getDb } from '../../lib/turso';
+import { hasRole } from '../../lib/roles';
+
+const user = Astro.locals.user!;
+const isAdmin = user.role === 'admin';
+const canManageProposals = hasRole(user.role, 'steering');
+
+const db = getDb();
+let openProposals: any[] = [];
+let closedProposals: any[] = [];
+let error: string | null = null;
+
+try {
+  const openResult = await db.execute({
+    sql: `SELECT p.*,
+            (SELECT COUNT(*) FROM votes v WHERE v.proposal_id = p.id AND v.vote = 'yes') as yes_count,
+            (SELECT COUNT(*) FROM votes v WHERE v.proposal_id = p.id AND v.vote = 'no') as no_count,
+            (SELECT COUNT(*) FROM votes v WHERE v.proposal_id = p.id AND v.was_present = 1) as present_count,
+            (SELECT COUNT(*) FROM votes v WHERE v.proposal_id = p.id AND v.was_present = 0) as absent_count,
+            (SELECT v.vote FROM votes v WHERE v.proposal_id = p.id AND v.user_id = ?) as my_vote,
+            (SELECT v.was_present FROM votes v WHERE v.proposal_id = p.id AND v.user_id = ?) as my_attendance,
+            u.full_name as creator_name
+          FROM proposals p
+          LEFT JOIN users u ON p.created_by = u.id
+          WHERE p.status = 'open'
+          ORDER BY p.created_at DESC`,
+    args: [user.id, user.id],
+  });
+  openProposals = openResult.rows;
+
+  const closedResult = await db.execute({
+    sql: `SELECT p.*,
+            (SELECT COUNT(*) FROM votes v WHERE v.proposal_id = p.id AND v.vote = 'yes') as yes_count,
+            (SELECT COUNT(*) FROM votes v WHERE v.proposal_id = p.id AND v.vote = 'no') as no_count,
+            (SELECT COUNT(*) FROM votes v WHERE v.proposal_id = p.id AND v.was_present = 1) as present_count,
+            (SELECT COUNT(*) FROM votes v WHERE v.proposal_id = p.id AND v.was_present = 0) as absent_count,
+            (SELECT v.vote FROM votes v WHERE v.proposal_id = p.id AND v.user_id = ?) as my_vote,
+            u.full_name as creator_name
+          FROM proposals p
+          LEFT JOIN users u ON p.created_by = u.id
+          WHERE p.status = 'closed'
+          ORDER BY p.updated_at DESC
+          LIMIT 20`,
+    args: [user.id],
+  });
+  closedProposals = closedResult.rows;
+} catch (e: any) {
+  error = e.message;
+}
+
+function isDeadlinePassed(deadline: string | null): boolean {
+  if (!deadline) return false;
+  return new Date(deadline) < new Date();
+}
+---
+
+<BaseLayout title="Voting">
+  <div class="container mx-auto px-4 py-8">
+    <div class="flex flex-col lg:flex-row gap-8">
+      <aside class="lg:w-64 shrink-0">
+        <PortalNav currentPath={Astro.url.pathname} isAdmin={isAdmin} />
+      </aside>
+
+      <div class="flex-1 min-w-0">
+        <div class="mb-8">
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Proposal Voting</h1>
+          <p class="text-gray-600 dark:text-gray-400 mt-1">Vote on consortium proposals and view results</p>
+          <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Winning proposals (yes &gt; no) automatically create a GitHub issue when closed.</p>
+        </div>
+
+        {error && (
+          <div class="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg p-4 text-sm mb-6">
+            Error: {error}
+          </div>
+        )}
+
+        {/* Create Proposal (steering+) */}
+        {canManageProposals && (
+          <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6 mb-8">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Create New Proposal</h2>
+            <form id="create-proposal-form" class="space-y-4">
+              <div>
+                <label for="proposal-title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title</label>
+                <input
+                  type="text"
+                  id="proposal-title"
+                  required
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent"
+                  placeholder="Proposal title"
+                />
+              </div>
+              <div>
+                <label for="proposal-description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+                <textarea
+                  id="proposal-description"
+                  rows="3"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent"
+                  placeholder="Describe the proposal..."
+                ></textarea>
+              </div>
+              <div>
+                <label for="proposal-deadline" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Deadline (optional)</label>
+                <input
+                  type="date"
+                  id="proposal-deadline"
+                  class="w-full sm:w-auto px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent"
+                />
+              </div>
+              <div class="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="proposal-meeting"
+                  class="w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy"
+                />
+                <label for="proposal-meeting" class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  This is part of a weekly CLIF Working Group Meeting
+                </label>
+              </div>
+              <div id="meeting-date-field" class="hidden">
+                <label for="proposal-meeting-date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Meeting Date</label>
+                <input
+                  type="date"
+                  id="proposal-meeting-date"
+                  class="w-full sm:w-auto px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent"
+                />
+              </div>
+              <div id="create-error" class="hidden text-sm text-red-600 dark:text-red-400"></div>
+              <button
+                type="submit"
+                id="create-btn"
+                class="bg-clif-burgundy hover:bg-clif-burgundy/90 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors"
+              >
+                Create Proposal
+              </button>
+            </form>
+          </div>
+        )}
+
+        {/* Open Proposals */}
+        <div class="mb-8">
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            Open Proposals
+            {openProposals.length > 0 && (
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                {openProposals.length}
+              </span>
+            )}
+          </h2>
+
+          {openProposals.length === 0 ? (
+            <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6 text-center text-gray-500 dark:text-gray-400 text-sm">
+              No open proposals.
+            </div>
+          ) : (
+            <div class="space-y-4">
+              {openProposals.map((p) => {
+                const deadlinePassed = isDeadlinePassed(p.deadline as string | null);
+                const totalVotes = (p.yes_count as number) + (p.no_count as number);
+                const isMeeting = Boolean(p.is_meeting_vote);
+                return (
+                  <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6" data-proposal={p.id} data-is-meeting={isMeeting ? '1' : '0'}>
+                    <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-3">
+                      <div>
+                        <div class="flex items-center gap-2">
+                          <h3 class="text-base font-semibold text-gray-900 dark:text-white">{p.title}</h3>
+                          {isMeeting && (
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                              Working Group Meeting
+                            </span>
+                          )}
+                        </div>
+                        {p.description && (
+                          <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">{p.description}</p>
+                        )}
+                        <div class="flex flex-wrap gap-2 mt-2 text-xs text-gray-500 dark:text-gray-400">
+                          <span>By {p.creator_name || 'Admin'}</span>
+                          <span>Proposed: {new Date(p.created_at as string).toLocaleDateString()}</span>
+                          {isMeeting && p.meeting_date && (
+                            <span>Meeting: {new Date((p.meeting_date as string) + 'T00:00:00').toLocaleDateString()}</span>
+                          )}
+                          {p.deadline && (
+                            <span class={deadlinePassed ? 'text-red-500' : ''}>
+                              Deadline: {new Date(p.deadline as string).toLocaleDateString()}
+                              {deadlinePassed && ' (passed)'}
+                            </span>
+                          )}
+                          <span>{totalVotes} vote{totalVotes !== 1 ? 's' : ''}</span>
+                          {isMeeting && totalVotes > 0 && (
+                            <span>({p.present_count} present, {p.absent_count} absent)</span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Proposal management actions */}
+                      {canManageProposals && (
+                        <div class="flex items-center gap-3 shrink-0">
+                          <button
+                            class="close-proposal-btn text-xs text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 underline"
+                            data-proposal-id={p.id}
+                          >
+                            Close voting
+                          </button>
+                          {isAdmin && (
+                            <button
+                              class="delete-proposal-btn text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 underline"
+                              data-proposal-id={p.id}
+                            >
+                              Delete
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Vote section */}
+                    {!deadlinePassed && (
+                      <div class="mt-4 pt-4 border-t border-gray-100 dark:border-neutral-700">
+                        {/* Meeting attendance question */}
+                        {isMeeting && !p.my_vote && (
+                          <div class="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg" data-attendance-section={p.id}>
+                            <p class="text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">Were you present at this Working Group Meeting?</p>
+                            <div class="flex gap-3">
+                              <label class="flex items-center gap-1.5 text-sm text-gray-700 dark:text-gray-300">
+                                <input type="radio" name={`attendance-${p.id}`} value="1" class="attendance-radio text-clif-burgundy focus:ring-clif-burgundy" data-proposal-id={p.id} />
+                                Yes, I was present
+                              </label>
+                              <label class="flex items-center gap-1.5 text-sm text-gray-700 dark:text-gray-300">
+                                <input type="radio" name={`attendance-${p.id}`} value="0" class="attendance-radio text-clif-burgundy focus:ring-clif-burgundy" data-proposal-id={p.id} />
+                                No, I was not present
+                              </label>
+                            </div>
+                          </div>
+                        )}
+                        {isMeeting && p.my_vote && (
+                          <div class="mb-4 text-xs text-gray-500 dark:text-gray-400">
+                            You indicated: {p.my_attendance !== null ? (Number(p.my_attendance) === 1 ? 'Present at meeting' : 'Not present at meeting') : ''}
+                          </div>
+                        )}
+                        <div class="flex items-center gap-2">
+                          <button
+                            class:list={[
+                              'vote-btn px-4 py-2 text-sm font-medium rounded-lg transition-colors border',
+                              p.my_vote === 'yes'
+                                ? 'bg-green-600 text-white border-green-600'
+                                : 'text-green-700 border-green-300 hover:bg-green-50 dark:text-green-400 dark:border-green-800 dark:hover:bg-green-900/20'
+                            ]}
+                            data-proposal-id={p.id}
+                            data-vote="yes"
+                          >
+                            Yes {p.my_vote === 'yes' ? '\u2713' : ''}
+                          </button>
+                          <button
+                            class:list={[
+                              'vote-btn px-4 py-2 text-sm font-medium rounded-lg transition-colors border',
+                              p.my_vote === 'no'
+                                ? 'bg-red-600 text-white border-red-600'
+                                : 'text-red-700 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-900/20'
+                            ]}
+                            data-proposal-id={p.id}
+                            data-vote="no"
+                          >
+                            No {p.my_vote === 'no' ? '\u2713' : ''}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Vote tally bar */}
+                    {totalVotes > 0 && (
+                      <div class="mt-3">
+                        <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
+                          <span>Yes: {p.yes_count}</span>
+                          <span>No: {p.no_count}</span>
+                        </div>
+                        <div class="w-full bg-gray-200 dark:bg-neutral-700 rounded-full h-2 overflow-hidden">
+                          <div
+                            class="bg-green-500 h-2 rounded-full transition-all"
+                            style={`width: ${totalVotes > 0 ? ((p.yes_count as number) / totalVotes) * 100 : 0}%`}
+                          ></div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Closed Proposals */}
+        {closedProposals.length > 0 && (
+          <div>
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Closed Proposals</h2>
+            <div class="space-y-4">
+              {closedProposals.map((p) => {
+                const totalVotes = (p.yes_count as number) + (p.no_count as number);
+                const isMeeting = Boolean(p.is_meeting_vote);
+                return (
+                  <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6 opacity-80" data-closed-proposal={p.id}>
+                    <div class="flex items-start justify-between gap-2">
+                      <div class="flex items-center gap-2">
+                        <h3 class="text-base font-semibold text-gray-900 dark:text-white">{p.title}</h3>
+                        {isMeeting && (
+                          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                            Working Group Meeting
+                          </span>
+                        )}
+                      </div>
+                      {isAdmin && (
+                        <button
+                          class="delete-proposal-btn text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 underline shrink-0"
+                          data-proposal-id={p.id}
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
+                    {p.description && (
+                      <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">{p.description}</p>
+                    )}
+                    <div class="flex flex-wrap gap-2 mt-2 text-xs text-gray-500 dark:text-gray-400">
+                      <span>Proposed: {new Date(p.created_at as string).toLocaleDateString()}</span>
+                      {isMeeting && p.meeting_date && (
+                        <span>Meeting: {new Date((p.meeting_date as string) + 'T00:00:00').toLocaleDateString()}</span>
+                      )}
+                    </div>
+                    <div class="flex flex-wrap gap-3 mt-2 text-sm">
+                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-neutral-700 dark:text-gray-400">
+                        Closed
+                      </span>
+                      <span class="text-green-600 dark:text-green-400 font-medium">Yes: {p.yes_count}</span>
+                      <span class="text-red-600 dark:text-red-400 font-medium">No: {p.no_count}</span>
+                      <span class="text-gray-500 dark:text-gray-400">Total: {totalVotes}</span>
+                      {p.my_vote && (
+                        <span class="text-gray-500 dark:text-gray-400">(You voted: {p.my_vote})</span>
+                      )}
+                    </div>
+                    {isMeeting && totalVotes > 0 && (
+                      <div class="flex gap-3 mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        <span>Present: {p.present_count}</span>
+                        <span>Not present: {p.absent_count}</span>
+                      </div>
+                    )}
+                    {totalVotes > 0 && (
+                      <div class="mt-2">
+                        <div class="w-full bg-gray-200 dark:bg-neutral-700 rounded-full h-2 overflow-hidden">
+                          <div
+                            class="bg-green-500 h-2 rounded-full"
+                            style={`width: ${((p.yes_count as number) / totalVotes) * 100}%`}
+                          ></div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+
+  <script is:inline>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Vote buttons
+      document.querySelectorAll('.vote-btn').forEach(function(btn) {
+        btn.addEventListener('click', async function() {
+          var proposalId = this.getAttribute('data-proposal-id');
+          var vote = this.getAttribute('data-vote');
+          var proposalEl = document.querySelector('[data-proposal="' + proposalId + '"]');
+          var isMeeting = proposalEl && proposalEl.getAttribute('data-is-meeting') === '1';
+
+          var body = { proposalId: proposalId, vote: vote };
+
+          // If meeting vote, require attendance selection
+          if (isMeeting) {
+            var checked = proposalEl.querySelector('input[name="attendance-' + proposalId + '"]:checked');
+            if (!checked) {
+              alert('Please indicate whether you were present at the Working Group Meeting before voting.');
+              return;
+            }
+            body.was_present = checked.value === '1';
+          }
+
+          this.disabled = true;
+
+          var res = await fetch('/api/proposals/vote', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          });
+
+          if (res.ok) {
+            window.location.reload();
+          } else {
+            var data = await res.json();
+            alert(data.error || 'Failed to vote');
+            this.disabled = false;
+          }
+        });
+      });
+
+      // Delete proposal buttons
+      document.querySelectorAll('.delete-proposal-btn').forEach(function(btn) {
+        btn.addEventListener('click', async function() {
+          var proposalId = this.getAttribute('data-proposal-id');
+          if (!confirm('Delete this proposal? This cannot be undone.')) return;
+
+          var res = await fetch('/api/proposals/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ proposalId: proposalId }),
+          });
+
+          if (res.ok) {
+            window.location.reload();
+          } else {
+            alert('Failed to delete proposal');
+          }
+        });
+      });
+
+      // Close proposal buttons
+      document.querySelectorAll('.close-proposal-btn').forEach(function(btn) {
+        btn.addEventListener('click', async function() {
+          var proposalId = this.getAttribute('data-proposal-id');
+          if (!confirm('Close voting on this proposal?')) return;
+
+          var res = await fetch('/api/proposals/close', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ proposalId: proposalId }),
+          });
+
+          if (res.ok) {
+            var data = await res.json();
+            if (data.issueUrl) {
+              alert('Proposal passed! GitHub issue created:\n' + data.issueUrl);
+            }
+            window.location.reload();
+          } else {
+            alert('Failed to close proposal');
+          }
+        });
+      });
+
+      // Toggle meeting date field when checkbox changes
+      var meetingCheckbox = document.getElementById('proposal-meeting');
+      var meetingDateField = document.getElementById('meeting-date-field');
+      if (meetingCheckbox && meetingDateField) {
+        meetingCheckbox.addEventListener('change', function() {
+          meetingDateField.classList.toggle('hidden', !this.checked);
+        });
+      }
+
+      // Create proposal form
+      var form = document.getElementById('create-proposal-form');
+      if (form) {
+        form.addEventListener('submit', async function(e) {
+          e.preventDefault();
+          var createBtn = document.getElementById('create-btn');
+          var errorEl = document.getElementById('create-error');
+          createBtn.disabled = true;
+          createBtn.textContent = 'Creating...';
+          errorEl.classList.add('hidden');
+
+          var res = await fetch('/api/proposals/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              title: document.getElementById('proposal-title').value,
+              description: document.getElementById('proposal-description').value,
+              deadline: document.getElementById('proposal-deadline').value || null,
+              is_meeting_vote: document.getElementById('proposal-meeting').checked,
+              meeting_date: document.getElementById('proposal-meeting-date').value || null,
+            }),
+          });
+
+          if (res.ok) {
+            window.location.reload();
+          } else {
+            var data = await res.json();
+            errorEl.textContent = data.error || 'Failed to create proposal';
+            errorEl.classList.remove('hidden');
+            createBtn.disabled = false;
+            createBtn.textContent = 'Create Proposal';
+          }
+        });
+      }
+    });
+  </script>
+</BaseLayout>

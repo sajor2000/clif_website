@@ -25,7 +25,6 @@ const {
 
 // Auth state from middleware (null on prerendered/static pages)
 const user = Astro.locals?.user ?? null;
-const profile = Astro.locals?.profile ?? null;
 
 // Generate absolute URLs for meta tags
 const canonicalURL = new URL(Astro.url.pathname, Astro.site || 'https://clif-consortium.org');
@@ -127,7 +126,7 @@ const shouldShowBreadcrumbs = showBreadcrumbs && !isHomepage;
       Skip to main content
     </a>
 
-    <Header user={user} profile={profile} />
+    <Header user={user} />
     <main id="main-content" class="flex-grow">
       {
         shouldShowBreadcrumbs && (

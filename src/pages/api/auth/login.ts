@@ -1,7 +1,9 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { createClient } from '../../../lib/supabase';
+import { getDb } from '../../../lib/turso';
+import { verifyPassword } from '../../../lib/auth';
+import { createSession, cleanupExpiredSessions } from '../../../lib/session';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   const { email, password } = await request.json();
@@ -13,21 +15,36 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     });
   }
 
-  const supabase = createClient(request, cookies);
+  const db = getDb();
 
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
+  const result = await db.execute({
+    sql: 'SELECT id, password_hash FROM users WHERE email = ?',
+    args: [email],
   });
 
-  if (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
+  if (result.rows.length === 0) {
+    return new Response(JSON.stringify({ error: 'Invalid email or password.' }), {
       status: 401,
       headers: { 'Content-Type': 'application/json' },
     });
   }
 
-  return new Response(JSON.stringify({ user: data.user }), {
+  const user = result.rows[0];
+  const valid = await verifyPassword(password, user.password_hash as string);
+
+  if (!valid) {
+    return new Response(JSON.stringify({ error: 'Invalid email or password.' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  await createSession(user.id as string, cookies);
+
+  // Cleanup expired sessions in background (non-blocking)
+  cleanupExpiredSessions().catch(() => {});
+
+  return new Response(JSON.stringify({ success: true }), {
     status: 200,
     headers: { 'Content-Type': 'application/json' },
   });
