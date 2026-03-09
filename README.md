@@ -225,12 +225,12 @@ ISC License - See LICENSE file for details
 
 ## 🔗 Links
 
-- [CLIF Consortium Website](https://clif-consortium.org)
+- [CLIF Consortium Website](https://clif-icu.com/)
 - [CLIF GitHub Repository](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF)
 - [Research Paper](https://link.springer.com/article/10.1007/s00134-025-07848-7)
 
 ---
 
 **Project Status**: Production Ready ✅  
-**Last Updated**: July 2025  
+**Last Updated**: Mar 2026  
 **Maintainer**: CLIF Consortium Team
