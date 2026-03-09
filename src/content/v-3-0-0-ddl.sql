@@ -62,11 +62,11 @@ CREATE TABLE ecmo_mcs (
   hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
   recorded_dttm DATETIME COMMENT '{"description": "Date and time when the device settings and/or measurement was recorded", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   device_name VARCHAR COMMENT '{"description": "Name of the ECMO/MCS device used including brand information, e.g. Centrimag", "permissible": "No restriction"}',
-  device_category VARCHAR COMMENT '{"description": "Maps device_name to a standardized mCIDE", "permissible": "[List of device categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/v2_2/mCIDE/ecmo_mcs/clif_ecmo_mcs_device_category.csv) and [outlier thresholds by device category](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/outlier-handling/outlier_thresholds_ecmo_mcs.csv)"}',
-  mcs_group VARCHAR COMMENT '{"description": "Maps device_category to a standardized mCIDE of MCS types", "permissible": "[List of MCS groups in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/v2_2/mCIDE/ecmo_mcs/clif_ecmo_mcs_mcs_group.csv)"}',
-  ecmo_configuration_category VARCHAR COMMENT '{"description": "Categorical variable designating the ECMO configuration type as defined by the cannulation strategy", "permissible": "[List of configuration categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/v2_2/mCIDE/ecmo_mcs/clif_ecmo_mcs_device_category.csv)"}',
+  device_category VARCHAR COMMENT '{"description": "Maps device_name to a standardized mCIDE", "permissible": "[List of device categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/ecmo_mcs/clif_ecmo_mcs_device_category.csv) and [outlier thresholds by device category](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/outlier-handling/outlier_thresholds_ecmo_mcs.csv)"}',
+  mcs_group VARCHAR COMMENT '{"description": "Maps device_category to a standardized mCIDE of MCS types", "permissible": "[List of MCS groups in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/ecmo_mcs/clif_ecmo_mcs_mcs_group.csv)"}',
+  ecmo_configuration_category VARCHAR COMMENT '{"description": "Categorical variable designating the ECMO configuration type as defined by the cannulation strategy", "permissible": "[List of configuration categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/ecmo_mcs/clif_ecmo_mcs_device_category.csv)"}',
   control_parameter_name VARCHAR COMMENT '{"description": "String that captures the measure of work rate of the device, e.g., RPMs, Impella Power, etc.", "permissible": "No restriction"}',
-  control_parameter_category VARCHAR COMMENT '{"description": "Maps control_parameter_name to a standardized list of control parameter categories", "permissible": "[List of control parameter categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/v2_2/mCIDE/ecmo_mcs/clif_ecmo_mcs_control_param_category.csv)"}',
+  control_parameter_category VARCHAR COMMENT '{"description": "Maps control_parameter_name to a standardized list of control parameter categories", "permissible": "[List of control parameter categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/ecmo_mcs/clif_ecmo_mcs_control_param_category.csv)"}',
   control_parameter_value FLOAT COMMENT '{"description": "The value of the control parameter (numeric).", "permissible": "Numeric values"}',
   flow FLOAT COMMENT '{"description": "Blood flow in L/min.", "permissible": "Numeric values in L/min"}',
   sweep_set FLOAT COMMENT '{"description": "Gas flow (L/min) set. Applies to ECMO only.", "permissible": "Numeric values in L/min"}',
@@ -304,8 +304,8 @@ CREATE TABLE output (
   hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
   recorded_dttm DATETIME COMMENT '{"description": "Date and time when the output was recorded. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   output_name VARCHAR COMMENT '{"description": "Name of the fluid recorded as patient output.", "permissible": "Examples: urine, SPC output, emesis"}',
-  output_category VARCHAR COMMENT '{"description": "Maps output_name to a set of permissible output categories.", "permissible": "[List of output categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/v2_2/mCIDE/output/clif_output_categories.csv)"}',
-  output_group VARCHAR COMMENT '{"description": "Maps output_category to a smaller set of source groups.", "permissible": "[urine, ultrafiltration, drains, gi, procedure, blood_loss, respiratory, other](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/v2_2/mCIDE/output/clif_output_groups.csv)"}',
+  output_category VARCHAR COMMENT '{"description": "Maps output_name to a set of permissible output categories.", "permissible": "[List of output categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/output/clif_output_categories.csv)"}',
+  output_group VARCHAR COMMENT '{"description": "Maps output_category to a smaller set of source groups.", "permissible": "[urine, ultrafiltration, drains, gi, procedure, blood_loss, respiratory, other](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/output/clif_output_groups.csv)"}',
   output_volume FLOAT COMMENT '{"description": "Volume of output fluid in mL. Must be a positive number.", "permissible": "Numeric. Should not be negative."}',
   FOREIGN KEY (hospitalization_id) REFERENCES hospitalization(hospitalization_id)
 );
@@ -317,7 +317,7 @@ CREATE TABLE invasive_hemodynamics (
   hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
   recorded_dttm DATETIME COMMENT '{"description": "The date and time when the measurement was recorded. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   measure_name VARCHAR COMMENT '{"description": "Description of the site or context of the invasive hemodynamic measurement.", "permissible": "Free text (e.g., Right Atrium)"}',
-  measure_category VARCHAR COMMENT '{"description": "Categorical variable specifying the type of invasive hemodynamic measurement.", "permissible": "[cvp, ra, rv, pa_systolic, pa_diastolic, pa_mean, pcwp, cardiac_output_thermodilution , cardiac_output_fick](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/v2_2/mCIDE/invasive_hemodynamics/clif_invasive_hemodynamics_measure_categories.csv)"}',
+  measure_category VARCHAR COMMENT '{"description": "Categorical variable specifying the type of invasive hemodynamic measurement.", "permissible": "[cvp, ra, rv, pa_systolic, pa_diastolic, pa_mean, pcwp, cardiac_output_thermodilution , cardiac_output_fick](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/invasive_hemodynamics/clif_invasive_hemodynamics_measure_categories.csv)"}',
   measure_value DOUBLE COMMENT '{"description": "The numerical value of the invasive hemodynamic measurement in mmHg.", "permissible": "Positive decimal values (e.g., 5.00, 25.65)"}'
 );
 
@@ -328,7 +328,7 @@ CREATE TABLE key_icu_orders (
   hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
   order_dttm DATETIME COMMENT '{"description": "Date and time when the order was placed. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   order_name VARCHAR COMMENT '{"description": "Name of the specific order (e.g., PT Evaluation, OT Treatment).", "permissible": "No restriction"}',
-  order_category VARCHAR COMMENT '{"description": "Category of the order.", "permissible": "Under-development. Some examples include: [pt_evaluation, pt_treat, ot_evaluation, ot_treat](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/v2_2/mCIDE/key_icu_orders/clif_key_icu_orders_categories.csv)"}',
+  order_category VARCHAR COMMENT '{"description": "Category of the order.", "permissible": "Under-development. Some examples include: [pt_evaluation, pt_treat, ot_evaluation, ot_treat](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/key_icu_orders/clif_key_icu_orders_categories.csv)"}',
   order_status_name VARCHAR COMMENT '{"description": "Status of the order.", "permissible": "sent, completed"}'
 );
 
