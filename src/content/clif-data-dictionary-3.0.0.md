@@ -220,7 +220,7 @@ The medication admin continuous table is a long-form (one medication administrat
 
 ## microbiology_culture
 
-The microbiology culture table is a wide longitudinal table that captures the order and result times of microbiology culture tests, the type of fluid collected, the component of the test, and the organism identified.
+The microbiology culture table is a longitudinal table in long format that captures the order, collection, and all result times of microbiology cultures. The result_dttm makes the table long as each time a culture is processed, updated, or finalized a new time stamp in result_dttm renders the table long. This means there are multiple result time stamps for a single test, whereas a single test will have the same non-time varying order_dttm and collect_dttm. If you wish to look at finalized cultures only, use the maximum value of order_dttm to identify the last row where the culture has been finalized.
 
 **Example**:
 
