@@ -240,12 +240,54 @@ import tablePocData from '../data/table-poc.json';
           </div>
         </section>
 
+        <!-- Versioning Policy -->
+        <section class="mb-8">
+          <div class="bg-white border border-gray-200 rounded-xl p-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Versioning Policy</h2>
+            <p class="text-gray-600 text-sm mb-4">
+              CLIF follows semantic versioning (Major.Minor.Patch) to communicate the nature and impact of changes.
+            </p>
+            <div class="overflow-x-auto mb-4">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="border-b-2 border-gray-200">
+                    <th class="py-2 pr-4 text-left font-semibold text-gray-800">Component</th>
+                    <th class="py-2 text-left font-semibold text-gray-800">When It Changes</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                  <tr>
+                    <td class="py-2 pr-4 font-semibold text-red-700">Major</td>
+                    <td class="py-2 text-gray-700">Breaking changes to existing table schemas (requires unanimous Steering Committee consensus)</td>
+                  </tr>
+                  <tr>
+                    <td class="py-2 pr-4 font-semibold text-orange-700">Minor</td>
+                    <td class="py-2 text-gray-700">New tables added, concept tables promoted to beta, new optional fields</td>
+                  </tr>
+                  <tr>
+                    <td class="py-2 pr-4 font-semibold text-green-700">Patch</td>
+                    <td class="py-2 text-gray-700">Bug fixes, documentation updates, mCIDE value additions (can be made independently by table POC)</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="text-gray-500 text-xs">
+              Concept tables can be workshopped without triggering a version change.
+              <a href="/governance#versioning" class="text-clif-burgundy underline hover:text-clif-burgundy-dark ml-1">View full versioning policy &rarr;</a>
+            </p>
+          </div>
+        </section>
+
         <!-- Table Points of Contact -->
         <section id="table-poc" class="mb-8 scroll-mt-24">
           <div class="bg-white border border-gray-200 rounded-xl p-6">
             <h2 class="text-xl font-semibold text-gray-800 mb-2">Table Points of Contact</h2>
-            <p class="text-gray-600 text-sm mb-6">
+            <p class="text-gray-600 text-sm mb-3">
               Each CLIF table has an assigned clinician who serves as the primary point of contact for any inquiries related to the schema or common data elements specific to that table.
+            </p>
+            <p class="text-gray-600 text-sm mb-6">
+              POC responsibilities include reviewing and approving schema changes, resolving GitHub issues, communicating changes for software development, and documenting progress.
+              <a href="/governance#steering-committee" class="text-clif-burgundy underline hover:text-clif-burgundy-dark ml-1">Learn more about POC responsibilities &rarr;</a>
             </p>
             <div class="overflow-x-auto">
               <table class="w-full text-sm">

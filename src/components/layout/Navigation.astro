@@ -7,10 +7,11 @@ const navItems = [
   {
     label: 'About',
     href: '/about',
-    active: ['/about', '/mission', '/team'].includes(pathname),
+    active: ['/about', '/mission', '/team', '/governance'].includes(pathname),
     submenu: [
       { label: 'Mission', href: '/mission', active: pathname === '/mission' },
       { label: 'Team', href: '/team', active: pathname === '/team' },
+      { label: 'Governance', href: '/governance', active: pathname === '/governance' },
     ],
   },
   { label: 'Cohort', href: '/cohort', active: pathname === '/cohort' },

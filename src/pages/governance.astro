@@ -1,0 +1,496 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SectionHeading from '../components/shared/SectionHeading.astro';
+import CTAButton from '../components/shared/CTAButton.astro';
+---
+
+<BaseLayout
+  title="CLIF Consortium - Governance & Policies"
+  description="Governance structure, authorship guidelines, versioning policies, project proposals, and membership information for the CLIF Consortium."
+>
+  <!-- Work in Progress Banner -->
+  <div class="bg-yellow-400 text-yellow-900 text-center py-3 font-bold text-lg tracking-wide uppercase border-b-2 border-yellow-500">
+    This page is a work in progress — content is subject to change
+  </div>
+
+  <!-- Work in Progress Watermark -->
+  <div class="fixed inset-0 pointer-events-none z-50 overflow-hidden select-none" aria-hidden="true">
+    <div class="absolute inset-0 flex flex-wrap items-center justify-center gap-y-48 gap-x-24 -rotate-[25deg] scale-150 opacity-[0.12]">
+      <span class="text-8xl font-black text-red-600 tracking-widest whitespace-nowrap uppercase">DRAFT</span>
+      <span class="text-8xl font-black text-red-600 tracking-widest whitespace-nowrap uppercase">DRAFT</span>
+      <span class="text-8xl font-black text-red-600 tracking-widest whitespace-nowrap uppercase">DRAFT</span>
+      <span class="text-8xl font-black text-red-600 tracking-widest whitespace-nowrap uppercase">DRAFT</span>
+      <span class="text-8xl font-black text-red-600 tracking-widest whitespace-nowrap uppercase">DRAFT</span>
+      <span class="text-8xl font-black text-red-600 tracking-widest whitespace-nowrap uppercase">DRAFT</span>
+      <span class="text-8xl font-black text-red-600 tracking-widest whitespace-nowrap uppercase">DRAFT</span>
+      <span class="text-8xl font-black text-red-600 tracking-widest whitespace-nowrap uppercase">DRAFT</span>
+      <span class="text-8xl font-black text-red-600 tracking-widest whitespace-nowrap uppercase">DRAFT</span>
+    </div>
+  </div>
+
+  <div class="container mx-auto px-4 py-8">
+    <!-- Page Header -->
+    <div class="text-center mb-16">
+      <div class="inline-flex items-center justify-center w-20 h-20 bg-clif-burgundy/10 rounded-full mb-6">
+        <svg class="w-10 h-10 text-clif-burgundy" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+        </svg>
+      </div>
+      <SectionHeading
+        title="Governance & Policies"
+        subtitle="How the CLIF Consortium is organized, how decisions are made, and how to participate"
+        align="center"
+      />
+    </div>
+
+    <div class="flex flex-col lg:flex-row gap-8 max-w-7xl mx-auto">
+      <!-- Sidebar Navigation -->
+      <aside class="hidden lg:block lg:w-64">
+        <div class="sticky top-24">
+          <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4">On This Page</h3>
+          <nav class="space-y-2">
+            <a href="#steering-committee" class="flex items-center gap-2 text-gray-600 hover:text-clif-burgundy transition-colors p-2 rounded-lg hover:bg-gray-50">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+              </svg>
+              <span class="text-sm">Steering Committee</span>
+            </a>
+            <a href="#table-poc" class="flex items-center gap-2 text-gray-600 hover:text-clif-burgundy transition-colors p-2 rounded-lg hover:bg-gray-50">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+              </svg>
+              <span class="text-sm">Table POC Responsibilities</span>
+            </a>
+            <a href="#versioning" class="flex items-center gap-2 text-gray-600 hover:text-clif-burgundy transition-colors p-2 rounded-lg hover:bg-gray-50">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+              </svg>
+              <span class="text-sm">Versioning & Updates</span>
+            </a>
+            <a href="#authorship" class="flex items-center gap-2 text-gray-600 hover:text-clif-burgundy transition-colors p-2 rounded-lg hover:bg-gray-50">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+              </svg>
+              <span class="text-sm">Authorship Guidelines</span>
+            </a>
+            <a href="#joining" class="flex items-center gap-2 text-gray-600 hover:text-clif-burgundy transition-colors p-2 rounded-lg hover:bg-gray-50">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+              </svg>
+              <span class="text-sm">Joining the Consortium</span>
+            </a>
+            <a href="#funding" class="flex items-center gap-2 text-gray-600 hover:text-clif-burgundy transition-colors p-2 rounded-lg hover:bg-gray-50">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <span class="text-sm">Funding & Grants</span>
+            </a>
+          </nav>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <div class="flex-1 space-y-12">
+
+        <!-- 1. Steering Committee -->
+        <section id="steering-committee" class="scroll-mt-24">
+          <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-2 flex items-center gap-3">
+              <span class="text-clif-burgundy">01</span>
+              Steering Committee
+            </h2>
+            <p class="text-gray-600 mb-6">The governing body responsible for strategic decisions and consortium operations.</p>
+
+            <!-- Purpose -->
+            <div class="mb-6">
+              <h3 class="text-lg font-semibold text-gray-800 mb-3">Purpose</h3>
+              <p class="text-gray-700 leading-relaxed">
+                The CLIF Steering Committee provides strategic direction, oversees the development and maintenance of the CLIF data format, and ensures the consortium operates transparently and effectively. The committee makes decisions on versioning, new table adoption, project approvals, and membership.
+              </p>
+            </div>
+
+            <!-- Membership Requirements -->
+            <div class="mb-6">
+              <h3 class="text-lg font-semibold text-gray-800 mb-3">Membership Requirements</h3>
+              <p class="text-gray-700 leading-relaxed mb-3">Steering Committee membership is open to individuals who meet <strong>either</strong> of the following criteria:</p>
+              <ul class="space-y-2 text-gray-700">
+                <li class="flex items-start gap-2">
+                  <svg class="w-5 h-5 text-clif-burgundy mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                  <span>A <strong>Principal Investigator (PI)</strong> actively contributing data to the consortium and securing independent funding for their site</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <svg class="w-5 h-5 text-clif-burgundy mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                  <span>An <strong>active data scientist</strong> contributing to consortium projects and infrastructure</span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Membership Responsibilities -->
+            <div class="mb-6">
+              <h3 class="text-lg font-semibold text-gray-800 mb-3">Membership Responsibilities</h3>
+              <ul class="space-y-2 text-gray-700">
+                <li class="flex items-start gap-2">
+                  <svg class="w-5 h-5 text-clif-burgundy mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                  <span>Attend weekly consortium meetings</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <svg class="w-5 h-5 text-clif-burgundy mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                  <span>Serve as Point of Contact (POC) for at least one CLIF table</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <svg class="w-5 h-5 text-clif-burgundy mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                  <span>Vote on project proposals and schema changes</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <svg class="w-5 h-5 text-clif-burgundy mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                  <span>Review and provide feedback on consortium policies</span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Leadership Roles -->
+            <div class="mb-6">
+              <h3 class="text-lg font-semibold text-gray-800 mb-3">Leadership Roles</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-clif-burgundy/5 rounded-lg p-4 border border-clif-burgundy/10">
+                  <h4 class="font-semibold text-clif-burgundy mb-1">Co-Chairs</h4>
+                  <p class="text-sm text-gray-600">Set the strategic vision, lead weekly meetings, and serve as the public-facing representatives of the consortium.</p>
+                </div>
+                <div class="bg-clif-burgundy/5 rounded-lg p-4 border border-clif-burgundy/10">
+                  <h4 class="font-semibold text-clif-burgundy mb-1">Vice-Chairs</h4>
+                  <p class="text-sm text-gray-600">Oversee day-to-day operations, review membership applications, coordinate software development, and manage the data dictionary.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Rules -->
+            <details class="border border-gray-200 rounded-lg">
+              <summary class="cursor-pointer p-4 text-gray-800 font-semibold hover:bg-gray-50 transition-colors">
+                Operating Rules
+              </summary>
+              <div class="p-4 pt-0 space-y-3 text-gray-700 text-sm">
+                <div class="flex items-start gap-2">
+                  <span class="font-semibold text-clif-burgundy min-w-[80px]">Agenda</span>
+                  <span>Meeting agenda circulated at least 24 hours before each weekly meeting.</span>
+                </div>
+                <div class="flex items-start gap-2">
+                  <span class="font-semibold text-clif-burgundy min-w-[80px]">Voting</span>
+                  <span>Decisions are made by majority vote of attending members unless otherwise specified.</span>
+                </div>
+                <div class="flex items-start gap-2">
+                  <span class="font-semibold text-clif-burgundy min-w-[80px]">Quorum</span>
+                  <span>A quorum of at least 50% of Steering Committee members is required for votes.</span>
+                </div>
+                <div class="flex items-start gap-2">
+                  <span class="font-semibold text-clif-burgundy min-w-[80px]">Terms</span>
+                  <span>Leadership positions are reviewed annually. Members may serve multiple terms.</span>
+                </div>
+                <div class="flex items-start gap-2">
+                  <span class="font-semibold text-clif-burgundy min-w-[80px]">Amendments</span>
+                  <span>Charter amendments require a two-thirds majority vote of all Steering Committee members.</span>
+                </div>
+              </div>
+            </details>
+
+          </div>
+        </section>
+
+        <!-- 2. Table POC Responsibilities -->
+        <section id="table-poc" class="scroll-mt-24">
+          <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-2 flex items-center gap-3">
+              <span class="text-clif-burgundy">02</span>
+              Table Point of Contact (POC) Responsibilities
+            </h2>
+            <p class="text-gray-600 mb-6">Each CLIF table is assigned a POC from the Steering Committee who oversees its development and maintenance.</p>
+
+            <ul class="space-y-3 text-gray-700">
+              <li class="flex items-start gap-2">
+                <svg class="w-5 h-5 text-clif-burgundy mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                <span>Reviewing and approving table schema changes</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <svg class="w-5 h-5 text-clif-burgundy mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                <span>Addressing and resolving GitHub issues related to their table</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <svg class="w-5 h-5 text-clif-burgundy mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                <span>Communicating changes to the Vice-Chairs for software development coordination</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <svg class="w-5 h-5 text-clif-burgundy mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                <span>Documenting progress in the internal project tracker</span>
+              </li>
+            </ul>
+            <p class="text-sm text-gray-600 mt-4">
+              See the full list of table POCs on the <a href="/data-dictionary#table-poc" class="text-clif-burgundy underline hover:text-clif-burgundy-dark">Data Dictionary</a> page.
+            </p>
+          </div>
+        </section>
+
+        <!-- 3. Versioning & Update Process -->
+        <section id="versioning" class="scroll-mt-24">
+          <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-2 flex items-center gap-3">
+              <span class="text-clif-burgundy">03</span>
+              Versioning & Update Process
+            </h2>
+            <p class="text-gray-600 mb-6">How CLIF versions are numbered, proposed, and released.</p>
+
+            <!-- Semantic Versioning -->
+            <div class="mb-6">
+              <h3 class="text-lg font-semibold text-gray-800 mb-3">Semantic Versioning</h3>
+              <p class="text-gray-700 leading-relaxed mb-4">
+                CLIF follows <strong>semantic versioning</strong> (Major.Minor.Patch) to communicate the nature and impact of changes clearly.
+              </p>
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
+                  <thead>
+                    <tr class="bg-gray-50">
+                      <th class="py-3 px-4 text-left font-semibold text-gray-800 border-b">Component</th>
+                      <th class="py-3 px-4 text-left font-semibold text-gray-800 border-b">When It Changes</th>
+                      <th class="py-3 px-4 text-left font-semibold text-gray-800 border-b">Example</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-100">
+                    <tr>
+                      <td class="py-3 px-4 font-semibold text-red-700">Major</td>
+                      <td class="py-3 px-4 text-gray-700">Breaking changes to existing table schemas (renaming fields, removing tables, changing data types)</td>
+                      <td class="py-3 px-4 text-gray-500 font-mono">2.x.x → 3.0.0</td>
+                    </tr>
+                    <tr>
+                      <td class="py-3 px-4 font-semibold text-orange-700">Minor</td>
+                      <td class="py-3 px-4 text-gray-700">New tables added, concept tables promoted to beta, new optional fields</td>
+                      <td class="py-3 px-4 text-gray-500 font-mono">3.0.x → 3.1.0</td>
+                    </tr>
+                    <tr>
+                      <td class="py-3 px-4 font-semibold text-green-700">Patch</td>
+                      <td class="py-3 px-4 text-gray-700">Bug fixes, documentation updates, mCIDE value additions, description clarifications</td>
+                      <td class="py-3 px-4 text-gray-500 font-mono">3.0.0 → 3.0.1</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 4. Authorship Guidelines -->
+        <section id="authorship" class="scroll-mt-24">
+          <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-2 flex items-center gap-3">
+              <span class="text-clif-burgundy">04</span>
+              Authorship Guidelines
+            </h2>
+            <p class="text-gray-600 mb-6">Standards for attribution and credit on CLIF consortium publications.</p>
+
+            <!-- ICMJE Criteria -->
+            <div class="mb-6">
+              <h3 class="text-lg font-semibold text-gray-800 mb-3">ICMJE Criteria</h3>
+              <p class="text-gray-700 leading-relaxed mb-3">
+                Authorship follows the <strong>International Committee of Medical Journal Editors (ICMJE)</strong> guidelines. All <strong>four</strong> conditions must be met:
+              </p>
+              <details class="border border-gray-200 rounded-lg">
+                <summary class="cursor-pointer p-4 text-gray-800 font-semibold hover:bg-gray-50 transition-colors">
+                  View All Four ICMJE Conditions
+                </summary>
+                <div class="p-4 pt-0">
+                  <ol class="space-y-3 text-gray-700 text-sm list-decimal list-inside">
+                    <li><strong>Substantial contributions</strong> to the conception or design of the work; or the acquisition, analysis, or interpretation of data for the work</li>
+                    <li><strong>Drafting the work</strong> or revising it critically for important intellectual content</li>
+                    <li><strong>Final approval</strong> of the version to be published</li>
+                    <li><strong>Agreement to be accountable</strong> for all aspects of the work in ensuring that questions related to the accuracy or integrity of any part of the work are appropriately investigated and resolved</li>
+                  </ol>
+                </div>
+              </details>
+            </div>
+
+            <!-- Named vs Group Authorship -->
+            <div class="mb-6">
+              <h3 class="text-lg font-semibold text-gray-800 mb-3">Named Authors vs. Group Authorship</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <h4 class="font-semibold text-gray-800 mb-2">Named Authors</h4>
+                  <p class="text-sm text-gray-600">Individuals who meet all four ICMJE criteria are listed as named authors on the publication.</p>
+                </div>
+                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <h4 class="font-semibold text-gray-800 mb-2">Group Authorship</h4>
+                  <p class="text-sm text-gray-600">Contributors who support the work (e.g., running code at their site) but do not meet all ICMJE criteria are credited under the <strong>"CLIF Consortium"</strong> group authorship.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Key Author Roles -->
+            <div class="mb-6">
+              <h3 class="text-lg font-semibold text-gray-800 mb-3">Key Author Roles</h3>
+              <div class="space-y-3 text-gray-700 text-sm">
+                <div class="flex items-start gap-3 bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <span class="font-semibold text-clif-burgundy min-w-[100px]">First Author</span>
+                  <span>Reserved for the PI(s) who released the code repository and led the data science effort.</span>
+                </div>
+                <div class="flex items-start gap-3 bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <span class="font-semibold text-clif-burgundy min-w-[100px]">Last Author</span>
+                  <span>Reserved for the PI(s) who synthesized the multi-site results and supervised the overall project.</span>
+                </div>
+                <div class="flex items-start gap-3 bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <span class="font-semibold text-clif-burgundy min-w-[100px]">Middle Authors</span>
+                  <span>Ordering is <strong>randomized per manuscript</strong> to ensure equity among contributing investigators.</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Authorship Timing -->
+            <div class="mb-6">
+              <h3 class="text-lg font-semibold text-gray-800 mb-3">Authorship Timing</h3>
+              <p class="text-gray-700 text-sm">
+                The authorship list should be <strong>established when sites begin running the analytic code</strong>, not at the time of manuscript submission. This ensures that all contributors are recognized from the outset.
+              </p>
+            </div>
+
+            <!-- Review & Disputes -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <h4 class="font-semibold text-gray-800 mb-2">Manuscript Review</h4>
+                <p class="text-sm text-gray-600">All named authors must review and approve the final manuscript before submission. The corresponding author is responsible for coordinating the review process and ensuring all authors provide sign-off.</p>
+              </div>
+              <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <h4 class="font-semibold text-gray-800 mb-2">Dispute Resolution</h4>
+                <p class="text-sm text-gray-600">Authorship disputes are mediated by the Steering Committee. Parties are heard confidentially and the committee issues a binding recommendation.</p>
+              </div>
+            </div>
+
+            <!-- Amendments -->
+            <p class="text-gray-600 text-sm italic">
+              Amendments to the authorship guidelines require a <strong>two-thirds majority</strong> vote of the Steering Committee.
+            </p>
+          </div>
+        </section>
+
+        <!-- 5. Joining the Consortium -->
+        <section id="joining" class="scroll-mt-24">
+          <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-2 flex items-center gap-3">
+              <span class="text-clif-burgundy">05</span>
+              Joining the Consortium
+            </h2>
+            <p class="text-gray-600 mb-6">How new sites and investigators can become part of the CLIF Consortium.</p>
+
+            <!-- Site Requirements -->
+            <div class="mb-6">
+              <h3 class="text-lg font-semibold text-gray-800 mb-3">Site Requirements</h3>
+              <p class="text-gray-700 leading-relaxed mb-3">To participate as a data-contributing site, your institution must:</p>
+              <ul class="space-y-3 text-gray-700">
+                <li class="flex items-start gap-2">
+                  <svg class="w-5 h-5 text-clif-burgundy mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                  <span><strong>Maintain independent IRB approval</strong> and retain full responsibility for your own IRB processes for each CLIF project run at your site</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <svg class="w-5 h-5 text-clif-burgundy mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                  <span><strong>Complete the ETL of your local EHR data</strong> to create a local CLIF database at your site</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <svg class="w-5 h-5 text-clif-burgundy mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                  <span><strong>Participate in weekly working group meetings</strong> to stay aligned on schema updates, project coordination, and consortium decisions</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <!-- 6. Funding & Grants -->
+        <section id="funding" class="scroll-mt-24">
+          <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-2 flex items-center gap-3">
+              <span class="text-clif-burgundy">06</span>
+              Funding & Grants
+            </h2>
+            <p class="text-gray-600 mb-6">How consortium activities are funded and how sites can support each other.</p>
+
+            <div class="space-y-4">
+              <div class="flex items-start gap-3 bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <svg class="w-5 h-5 text-clif-burgundy mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <div>
+                  <p class="font-semibold text-gray-800">Independent Funding</p>
+                  <p class="text-sm text-gray-600">Each PI is responsible for securing their own funding to support CLIF implementation and participation at their site. The consortium does not provide centralized funding for individual sites.</p>
+                </div>
+              </div>
+              <div class="flex items-start gap-3 bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <svg class="w-5 h-5 text-clif-burgundy mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <div>
+                  <p class="font-semibold text-gray-800">Letters of Support</p>
+                  <p class="text-sm text-gray-600">The consortium provides letters of support for members pursuing grants related to CLIF activities. Contact the Co-Chairs to request a letter.</p>
+                </div>
+              </div>
+              <div class="flex items-start gap-3 bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <svg class="w-5 h-5 text-clif-burgundy mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                <div>
+                  <p class="font-semibold text-gray-800">Sub-Awards & Data Use Agreements</p>
+                  <p class="text-sm text-gray-600">Sub-awards and DUAs between specific sites are permitted but not required. These are arranged between individual sites as needed for specific funded projects.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Back to Top Button -->
+  <button
+    id="back-to-top"
+    class="fixed bottom-8 right-8 w-12 h-12 bg-clif-burgundy text-white rounded-full shadow-lg hover:bg-clif-burgundy-dark transition-all duration-300 opacity-0 invisible"
+    aria-label="Back to top"
+  >
+    <svg class="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
+    </svg>
+  </button>
+</BaseLayout>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // Back to top button
+    const backToTopButton = document.getElementById('back-to-top');
+
+    window.addEventListener('scroll', () => {
+      if (window.pageYOffset > 300) {
+        backToTopButton?.classList.remove('opacity-0', 'invisible');
+        backToTopButton?.classList.add('opacity-100', 'visible');
+      } else {
+        backToTopButton?.classList.remove('opacity-100', 'visible');
+        backToTopButton?.classList.add('opacity-0', 'invisible');
+      }
+    });
+
+    backToTopButton?.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // Active section highlighting
+    const sections = document.querySelectorAll('section[id]');
+    const navLinks = document.querySelectorAll('aside nav a');
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const id = entry.target.getAttribute('id');
+          navLinks.forEach(link => {
+            if (link.getAttribute('href') === `#${id}`) {
+              link.classList.add('text-clif-burgundy', 'bg-clif-burgundy/5');
+              link.classList.remove('text-gray-600');
+            } else {
+              link.classList.remove('text-clif-burgundy', 'bg-clif-burgundy/5');
+              link.classList.add('text-gray-600');
+            }
+          });
+        }
+      });
+    }, {
+      rootMargin: '-100px 0px -66%',
+      threshold: 0
+    });
+
+    sections.forEach(section => observer.observe(section));
+  });
+</script>
