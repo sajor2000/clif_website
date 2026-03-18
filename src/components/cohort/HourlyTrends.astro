@@ -65,7 +65,7 @@ const tidalVolumeData = parseRespiratoryCSV(tidalVolumeContent);
 const medicationCategories = {
   'Vasopressors': ['norepinephrine', 'epinephrine', 'phenylephrine', 'vasopressin', 'dopamine'],
   'Sedatives & Analgesics': ['propofol', 'midazolam', 'lorazepam', 'dexmedetomidine', 'fentanyl'],
-  'Neuromuscular Blockers': ['vecuronium', 'rocuronium', 'cisatracurium', 'pancuronium']
+  'Neuromuscular Blockers': ['vecuronium', 'rocuronium', 'cisatracurium']
 };
 
 // IMV encounter weights by site (from overall CSV - "Invasive mechanical ventilation, n (%)" row)
@@ -253,7 +253,7 @@ const dataJson = JSON.stringify({
     },
     'neuromuscular': {
       name: 'Neuromuscular Blockers',
-      medications: ['vecuronium', 'rocuronium', 'cisatracurium', 'pancuronium']
+      medications: ['vecuronium', 'rocuronium', 'cisatracurium']
     }
   };
 
