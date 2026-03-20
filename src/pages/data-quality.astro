@@ -1,0 +1,1273 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import CTAButton from '../components/shared/CTAButton.astro';
+---
+
+<BaseLayout
+  title="CLIF Consortium - Data Quality Assurance"
+  description="Learn about CLIF's three-pillar data quality assurance framework: Conformance, Completeness, and Plausibility checks that ensure reliable critical care research data."
+>
+  <!-- Hero Section -->
+  <section class="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white overflow-hidden">
+    <div class="absolute inset-0 opacity-10">
+      <div class="absolute top-0 left-1/4 w-96 h-96 bg-emerald-500 rounded-full blur-3xl"></div>
+      <div class="absolute bottom-0 right-1/4 w-96 h-96 bg-violet-500 rounded-full blur-3xl"></div>
+      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-500 rounded-full blur-3xl"></div>
+    </div>
+    <div class="relative container mx-auto px-4 py-20 md:py-28 text-center">
+      <div class="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-1.5 text-sm font-medium mb-6">
+        <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        Quality Framework
+      </div>
+      <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">Data Quality Assurance</h1>
+      <p class="text-lg md:text-xl text-gray-300 max-w-3xl mx-auto mb-10">
+        The CLIF Consortium validates every dataset through a rigorous three-pillar framework — <span class="text-emerald-400 font-semibold">Conformance</span>, <span class="text-blue-400 font-semibold">Completeness</span>, and <span class="text-violet-400 font-semibold">Plausibility</span> — catching data issues before they reach your analysis.
+      </p>
+      <div class="flex flex-wrap justify-center gap-4">
+        <div class="bg-white/10 backdrop-blur-sm rounded-full px-5 py-2.5 text-sm font-medium border border-emerald-400/30">
+          <span class="text-emerald-400 font-bold">7</span> Conformance Checks
+        </div>
+        <div class="bg-white/10 backdrop-blur-sm rounded-full px-5 py-2.5 text-sm font-medium border border-blue-400/30">
+          <span class="text-blue-400 font-bold">3</span> Completeness Checks
+        </div>
+        <div class="bg-white/10 backdrop-blur-sm rounded-full px-5 py-2.5 text-sm font-medium border border-violet-400/30">
+          <span class="text-violet-400 font-bold">7</span> Plausibility Checks
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pillar Overview Cards (overlapping hero) -->
+  <section class="container mx-auto px-4 -mt-12 relative z-10 mb-20">
+    <div class="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+      <!-- Conformance Card -->
+      <button type="button" data-pillar-card="conformance" class="group bg-white dark:bg-neutral-800 rounded-2xl shadow-xl p-6 border-t-4 border-emerald-500 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 text-left">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center flex-shrink-0">
+            <svg class="w-6 h-6 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+            </svg>
+          </div>
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">Step 1</span>
+        </div>
+        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-1">Conformance</h3>
+        <p class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mb-2">Schema & Structure</p>
+        <p class="text-gray-600 dark:text-gray-300 text-sm mb-3">Does the data have the right <strong>structure</strong>? Validates tables, columns, data types, and allowed values against the CLIF schema.</p>
+        <span class="text-emerald-600 dark:text-emerald-400 text-sm font-semibold group-hover:underline">7 checks &rarr;</span>
+      </button>
+
+      <!-- Completeness Card -->
+      <button type="button" data-pillar-card="completeness" class="group bg-white dark:bg-neutral-800 rounded-2xl shadow-xl p-6 border-t-4 border-blue-500 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 text-left">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center flex-shrink-0">
+            <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7"/>
+            </svg>
+          </div>
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">Step 2</span>
+        </div>
+        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-1">Completeness</h3>
+        <p class="text-xs font-semibold text-blue-600 dark:text-blue-400 mb-2">Data Coverage</p>
+        <p class="text-gray-600 dark:text-gray-300 text-sm mb-3">Is the data <strong>filled in</strong>? Flags missing values, empty fields, and gaps in expected coverage.</p>
+        <span class="text-blue-600 dark:text-blue-400 text-sm font-semibold group-hover:underline">3 checks &rarr;</span>
+      </button>
+
+      <!-- Plausibility Card -->
+      <button type="button" data-pillar-card="plausibility" class="group bg-white dark:bg-neutral-800 rounded-2xl shadow-xl p-6 border-t-4 border-violet-500 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 text-left">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-12 h-12 bg-violet-100 dark:bg-violet-900/30 rounded-xl flex items-center justify-center flex-shrink-0">
+            <svg class="w-6 h-6 text-violet-600 dark:text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+            </svg>
+          </div>
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400">Step 3</span>
+        </div>
+        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-1">Plausibility</h3>
+        <p class="text-xs font-semibold text-violet-600 dark:text-violet-400 mb-2">Clinical Sense</p>
+        <p class="text-gray-600 dark:text-gray-300 text-sm mb-3">Does the data <strong>make sense</strong>? Catches clinically impossible values and temporal contradictions.</p>
+        <span class="text-violet-600 dark:text-violet-400 text-sm font-semibold group-hover:underline">7 checks &rarr;</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- Sticky Tab Navigation -->
+  <nav class="sticky top-16 z-30 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md border-b border-gray-200 dark:border-neutral-700" id="pillar-nav" role="tablist" aria-label="Quality pillars">
+    <div class="container mx-auto px-4">
+      <div class="flex justify-center gap-2 md:gap-8 py-3">
+        <button role="tab" aria-selected="true" aria-controls="panel-conformance" data-pillar="conformance" class="pillar-tab text-sm font-semibold transition-colors flex items-center gap-2 px-3 py-1.5 rounded-lg text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20">
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+          <span class="hidden sm:inline">Conformance</span>
+          <span class="sm:hidden">1</span>
+        </button>
+        <button role="tab" aria-selected="false" aria-controls="panel-completeness" data-pillar="completeness" class="pillar-tab text-sm font-semibold transition-colors flex items-center gap-2 px-3 py-1.5 rounded-lg text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400">
+          <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+          <span class="hidden sm:inline">Completeness</span>
+          <span class="sm:hidden">2</span>
+        </button>
+        <button role="tab" aria-selected="false" aria-controls="panel-plausibility" data-pillar="plausibility" class="pillar-tab text-sm font-semibold transition-colors flex items-center gap-2 px-3 py-1.5 rounded-lg text-gray-500 dark:text-gray-400 hover:text-violet-600 dark:hover:text-violet-400">
+          <span class="w-2 h-2 rounded-full bg-violet-500"></span>
+          <span class="hidden sm:inline">Plausibility</span>
+          <span class="sm:hidden">3</span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- CONFORMANCE DEEP DIVE                      -->
+  <!-- ═══════════════════════════════════════════ -->
+  <section id="panel-conformance" role="tabpanel" data-pillar="conformance" class="tabpanel tabpanel-active py-16 bg-gradient-to-b from-white to-emerald-50/30 dark:from-neutral-900 dark:to-emerald-950/10">
+    <div class="container mx-auto px-4 max-w-5xl">
+      <!-- Section Header -->
+      <div class="flex items-center gap-4 mb-4">
+        <div class="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center">
+          <svg class="w-6 h-6 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="text-3xl font-bold text-gray-900 dark:text-white">Conformance</h2>
+          <p class="text-emerald-600 dark:text-emerald-400 font-semibold text-sm">Schema & Structure</p>
+        </div>
+      </div>
+      <p class="text-gray-700 dark:text-gray-300 mb-10 max-w-3xl">
+        Conformance checks verify <strong>structure and schema</strong> — do the right tables exist, are the required columns present, are data types valid, and do categorical values belong to the allowed vocabulary? These are the first line of defense: if the skeleton is wrong, nothing downstream matters.
+      </p>
+
+      <div class="space-y-4">
+        <!-- A.1 Table Presence -->
+        <div class="check-card bg-white dark:bg-neutral-800 rounded-2xl shadow-md border border-gray-100 dark:border-neutral-700 overflow-hidden">
+          <button type="button" class="check-trigger w-full p-6 flex items-start justify-between gap-3" aria-expanded="false">
+            <div class="flex items-center gap-3">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 mt-1 flex-shrink-0"></span>
+              <div class="text-left">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white">A.1 Table Presence</h3>
+                <p class="text-gray-600 dark:text-gray-400 text-sm mt-1">Checks that all required CLIF tables exist and contain at least one row of data.</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 flex-shrink-0">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">ERROR</span>
+              <svg class="check-chevron w-5 h-5 text-gray-400 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </div>
+          </button>
+          <div class="check-content">
+            <div class="px-6 pb-6">
+              <div class="grid md:grid-cols-2 gap-4">
+                <div class="rounded-xl border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20 p-4">
+                  <div class="flex items-center gap-2 mb-3">
+                    <svg class="w-4 h-4 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                    <span class="text-sm font-semibold text-emerald-700 dark:text-emerald-400">PASS</span>
+                  </div>
+                  <div class="font-mono text-xs space-y-1 text-gray-700 dark:text-gray-300">
+                    <div class="flex justify-between"><span>patient.parquet</span><span class="text-emerald-600">12,847 rows</span></div>
+                    <div class="flex justify-between"><span>hospitalization.parquet</span><span class="text-emerald-600">15,203 rows</span></div>
+                    <div class="flex justify-between"><span>vitals.parquet</span><span class="text-emerald-600">1,204,881 rows</span></div>
+                    <div class="flex justify-between"><span>labs.parquet</span><span class="text-emerald-600">892,456 rows</span></div>
+                  </div>
+                </div>
+                <div class="rounded-xl border-2 border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20 p-4">
+                  <div class="flex items-center gap-2 mb-3">
+                    <svg class="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
+                    <span class="text-sm font-semibold text-red-700 dark:text-red-400">FAIL</span>
+                  </div>
+                  <div class="font-mono text-xs space-y-1 text-gray-700 dark:text-gray-300">
+                    <div class="flex justify-between"><span>patient.parquet</span><span class="text-emerald-600">12,847 rows</span></div>
+                    <div class="flex justify-between"><span>hospitalization.parquet</span><span class="text-emerald-600">15,203 rows</span></div>
+                    <div class="flex justify-between"><span class="text-red-600 dark:text-red-400 font-semibold">vitals.parquet</span><span class="text-red-600 dark:text-red-400 font-semibold">MISSING</span></div>
+                    <div class="flex justify-between"><span>labs.parquet</span><span class="text-emerald-600">892,456 rows</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- A.2 Required Columns -->
+        <div class="check-card bg-white dark:bg-neutral-800 rounded-2xl shadow-md border border-gray-100 dark:border-neutral-700 overflow-hidden">
+          <button type="button" class="check-trigger w-full p-6 flex items-start justify-between gap-3" aria-expanded="false">
+            <div class="flex items-center gap-3">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 mt-1 flex-shrink-0"></span>
+              <div class="text-left">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white">A.2 Required Columns</h3>
+                <p class="text-gray-600 dark:text-gray-400 text-sm mt-1">Checks that all schema-defined columns are present in each data file.</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 flex-shrink-0">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">ERROR</span>
+              <svg class="check-chevron w-5 h-5 text-gray-400 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </div>
+          </button>
+          <div class="check-content">
+            <div class="px-6 pb-6">
+              <div class="grid md:grid-cols-2 gap-4">
+                <div class="rounded-xl border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20 p-4">
+                  <div class="flex items-center gap-2 mb-3">
+                    <svg class="w-4 h-4 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                    <span class="text-sm font-semibold text-emerald-700 dark:text-emerald-400">PASS — hospitalization</span>
+                  </div>
+                  <div class="font-mono text-xs space-y-1 text-gray-700 dark:text-gray-300">
+                    <div>hospitalization_id <span class="text-emerald-600">&check;</span></div>
+                    <div>patient_id <span class="text-emerald-600">&check;</span></div>
+                    <div>admission_dttm <span class="text-emerald-600">&check;</span></div>
+                    <div>discharge_dttm <span class="text-emerald-600">&check;</span></div>
+                    <div>hospital_id <span class="text-emerald-600">&check;</span></div>
+                  </div>
+                </div>
+                <div class="rounded-xl border-2 border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20 p-4">
+                  <div class="flex items-center gap-2 mb-3">
+                    <svg class="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
+                    <span class="text-sm font-semibold text-red-700 dark:text-red-400">FAIL — hospitalization</span>
+                  </div>
+                  <div class="font-mono text-xs space-y-1 text-gray-700 dark:text-gray-300">
+                    <div>hospitalization_id <span class="text-emerald-600">&check;</span></div>
+                    <div>patient_id <span class="text-emerald-600">&check;</span></div>
+                    <div>admission_dttm <span class="text-emerald-600">&check;</span></div>
+                    <div class="text-red-600 dark:text-red-400 font-semibold">discharge_dttm &cross; missing</div>
+                    <div>hospital_id <span class="text-emerald-600">&check;</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- B.1 Data Types -->
+        <div class="check-card bg-white dark:bg-neutral-800 rounded-2xl shadow-md border border-gray-100 dark:border-neutral-700 overflow-hidden">
+          <button type="button" class="check-trigger w-full p-6 flex items-start justify-between gap-3" aria-expanded="false">
+            <div class="flex items-center gap-3">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 mt-1 flex-shrink-0"></span>
+              <div class="text-left">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white">B.1 Data Types</h3>
+                <p class="text-gray-600 dark:text-gray-400 text-sm mt-1">Validates that each column uses the expected data type (numeric, string, datetime, etc.).</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 flex-shrink-0">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">ERROR</span>
+              <svg class="check-chevron w-5 h-5 text-gray-400 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </div>
+          </button>
+          <div class="check-content">
+            <div class="px-6 pb-6">
+              <div class="grid md:grid-cols-2 gap-4">
+                <div class="rounded-xl border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20 p-4">
+                  <div class="flex items-center gap-2 mb-3">
+                    <svg class="w-4 h-4 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                    <span class="text-sm font-semibold text-emerald-700 dark:text-emerald-400">PASS</span>
+                  </div>
+                  <table class="w-full font-mono text-xs">
+                    <thead><tr class="text-gray-500 dark:text-gray-400"><th class="text-left pb-1">Column</th><th class="text-left pb-1">Type</th></tr></thead>
+                    <tbody class="text-gray-700 dark:text-gray-300">
+                      <tr><td>weight</td><td class="text-emerald-600">float64</td></tr>
+                      <tr><td>height</td><td class="text-emerald-600">float64</td></tr>
+                      <tr><td>age</td><td class="text-emerald-600">int64</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="rounded-xl border-2 border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20 p-4">
+                  <div class="flex items-center gap-2 mb-3">
+                    <svg class="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
+                    <span class="text-sm font-semibold text-red-700 dark:text-red-400">FAIL</span>
+                  </div>
+                  <table class="w-full font-mono text-xs">
+                    <thead><tr class="text-gray-500 dark:text-gray-400"><th class="text-left pb-1">Column</th><th class="text-left pb-1">Type</th></tr></thead>
+                    <tbody class="text-gray-700 dark:text-gray-300">
+                      <tr><td class="text-red-600 dark:text-red-400 font-semibold">weight</td><td class="text-red-600 dark:text-red-400">object ("abc")</td></tr>
+                      <tr><td>height</td><td class="text-emerald-600">float64</td></tr>
+                      <tr><td>age</td><td class="text-emerald-600">int64</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- B.2 Datetime Format -->
+        <div class="check-card bg-white dark:bg-neutral-800 rounded-2xl shadow-md border border-gray-100 dark:border-neutral-700 overflow-hidden">
+          <button type="button" class="check-trigger w-full p-6 flex items-start justify-between gap-3" aria-expanded="false">
+            <div class="flex items-center gap-3">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 mt-1 flex-shrink-0"></span>
+              <div class="text-left">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white">B.2 Datetime Format</h3>
+                <p class="text-gray-600 dark:text-gray-400 text-sm mt-1">Ensures datetime columns are actual timestamps, not plain strings.</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 flex-shrink-0">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">ERROR</span>
+              <svg class="check-chevron w-5 h-5 text-gray-400 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </div>
+          </button>
+          <div class="check-content">
+            <div class="px-6 pb-6">
+              <div class="grid md:grid-cols-2 gap-4">
+                <div class="rounded-xl border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20 p-4">
+                  <div class="flex items-center gap-2 mb-3">
+                    <svg class="w-4 h-4 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                    <span class="text-sm font-semibold text-emerald-700 dark:text-emerald-400">PASS</span>
+                  </div>
+                  <div class="font-mono text-xs space-y-1.5 text-gray-700 dark:text-gray-300">
+                    <div>admission_dttm</div>
+                    <div class="bg-emerald-100 dark:bg-emerald-900/40 rounded px-2 py-1 text-emerald-700 dark:text-emerald-300">datetime64[ns] &rarr; 2024-01-15 08:32:00</div>
+                  </div>
+                </div>
+                <div class="rounded-xl border-2 border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20 p-4">
+                  <div class="flex items-center gap-2 mb-3">
+                    <svg class="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
+                    <span class="text-sm font-semibold text-red-700 dark:text-red-400">FAIL</span>
+                  </div>
+                  <div class="font-mono text-xs space-y-1.5 text-gray-700 dark:text-gray-300">
+                    <div>admission_dttm</div>
+                    <div class="bg-red-100 dark:bg-red-900/40 rounded px-2 py-1 text-red-700 dark:text-red-300">object (string) &rarr; "2024-01-15"</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- B.3 Lab Units -->
+        <div class="check-card bg-white dark:bg-neutral-800 rounded-2xl shadow-md border border-gray-100 dark:border-neutral-700 overflow-hidden">
+          <button type="button" class="check-trigger w-full p-6 flex items-start justify-between gap-3" aria-expanded="false">
+            <div class="flex items-center gap-3">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 mt-1 flex-shrink-0"></span>
+              <div class="text-left">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white">B.3 Lab Units</h3>
+                <p class="text-gray-600 dark:text-gray-400 text-sm mt-1">Validates that lab values use the CLIF-specified measurement units for each test.</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 flex-shrink-0">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">WARNING</span>
+              <svg class="check-chevron w-5 h-5 text-gray-400 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </div>
+          </button>
+          <div class="check-content">
+            <div class="px-6 pb-6">
+              <div class="grid md:grid-cols-2 gap-4">
+                <div class="rounded-xl border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20 p-4">
+                  <div class="flex items-center gap-2 mb-3">
+                    <svg class="w-4 h-4 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                    <span class="text-sm font-semibold text-emerald-700 dark:text-emerald-400">PASS</span>
+                  </div>
+                  <div class="font-mono text-xs space-y-1 text-gray-700 dark:text-gray-300">
+                    <div class="flex justify-between"><span>potassium</span><span class="text-emerald-600">mmol/L</span></div>
+                    <div class="flex justify-between"><span>creatinine</span><span class="text-emerald-600">mg/dL</span></div>
+                    <div class="flex justify-between"><span>hemoglobin</span><span class="text-emerald-600">g/dL</span></div>
+                  </div>
+                </div>
+                <div class="rounded-xl border-2 border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20 p-4">
+                  <div class="flex items-center gap-2 mb-3">
+                    <svg class="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
+                    <span class="text-sm font-semibold text-red-700 dark:text-red-400">FAIL</span>
+                  </div>
+                  <div class="font-mono text-xs space-y-1 text-gray-700 dark:text-gray-300">
+                    <div class="flex justify-between"><span class="text-red-600 dark:text-red-400 font-semibold">potassium</span><span class="text-red-600 dark:text-red-400">mEq/L (expected mmol/L)</span></div>
+                    <div class="flex justify-between"><span>creatinine</span><span class="text-emerald-600">mg/dL</span></div>
+                    <div class="flex justify-between"><span>hemoglobin</span><span class="text-emerald-600">g/dL</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- B.4 Categorical Values -->
+        <div class="check-card bg-white dark:bg-neutral-800 rounded-2xl shadow-md border border-gray-100 dark:border-neutral-700 overflow-hidden">
+          <button type="button" class="check-trigger w-full p-6 flex items-start justify-between gap-3" aria-expanded="false">
+            <div class="flex items-center gap-3">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 mt-1 flex-shrink-0"></span>
+              <div class="text-left">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white">B.4 Categorical Values</h3>
+                <p class="text-gray-600 dark:text-gray-400 text-sm mt-1">Ensures categorical columns only contain values from the allowed vocabulary (mCIDE).</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 flex-shrink-0">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">ERROR</span>
+              <svg class="check-chevron w-5 h-5 text-gray-400 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </div>
+          </button>
+          <div class="check-content">
+            <div class="px-6 pb-6">
+              <div class="grid md:grid-cols-2 gap-4">
+                <div class="rounded-xl border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20 p-4">
+                  <div class="flex items-center gap-2 mb-3">
+                    <svg class="w-4 h-4 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                    <span class="text-sm font-semibold text-emerald-700 dark:text-emerald-400">PASS — vital_category</span>
+                  </div>
+                  <div class="font-mono text-xs space-y-1 text-gray-700 dark:text-gray-300">
+                    <div class="text-emerald-600">"heart_rate"</div>
+                    <div class="text-emerald-600">"sbp"</div>
+                    <div class="text-emerald-600">"dbp"</div>
+                    <div class="text-emerald-600">"spo2"</div>
+                  </div>
+                </div>
+                <div class="rounded-xl border-2 border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20 p-4">
+                  <div class="flex items-center gap-2 mb-3">
+                    <svg class="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
+                    <span class="text-sm font-semibold text-red-700 dark:text-red-400">FAIL — vital_category</span>
+                  </div>
+                  <div class="font-mono text-xs space-y-1 text-gray-700 dark:text-gray-300">
+                    <div class="text-emerald-600">"heart_rate"</div>
+                    <div class="text-emerald-600">"sbp"</div>
+                    <div class="text-red-600 dark:text-red-400 font-semibold">"heart_rate_bpm" &cross; not in vocabulary</div>
+                    <div class="text-emerald-600">"spo2"</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- B.5 Category-Group Mapping -->
+        <div class="check-card bg-white dark:bg-neutral-800 rounded-2xl shadow-md border border-gray-100 dark:border-neutral-700 overflow-hidden">
+          <button type="button" class="check-trigger w-full p-6 flex items-start justify-between gap-3" aria-expanded="false">
+            <div class="flex items-center gap-3">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 mt-1 flex-shrink-0"></span>
+              <div class="text-left">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white">B.5 Category–Group Mapping</h3>
+                <p class="text-gray-600 dark:text-gray-400 text-sm mt-1">Verifies that each category value maps to exactly one group, preventing ambiguous classification.</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 flex-shrink-0">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">WARNING</span>
+              <svg class="check-chevron w-5 h-5 text-gray-400 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </div>
+          </button>
+          <div class="check-content">
+            <div class="px-6 pb-6">
+              <div class="grid md:grid-cols-2 gap-4">
+                <div class="rounded-xl border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20 p-4">
+                  <div class="flex items-center gap-2 mb-3">
+                    <svg class="w-4 h-4 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                    <span class="text-sm font-semibold text-emerald-700 dark:text-emerald-400">PASS</span>
+                  </div>
+                  <div class="font-mono text-xs space-y-1 text-gray-700 dark:text-gray-300">
+                    <div>acetaminophen &rarr; <span class="text-emerald-600">analgesic_antipyretic</span></div>
+                    <div>norepinephrine &rarr; <span class="text-emerald-600">vasopressor</span></div>
+                    <div>fentanyl &rarr; <span class="text-emerald-600">opioid</span></div>
+                  </div>
+                </div>
+                <div class="rounded-xl border-2 border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20 p-4">
+                  <div class="flex items-center gap-2 mb-3">
+                    <svg class="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
+                    <span class="text-sm font-semibold text-red-700 dark:text-red-400">FAIL</span>
+                  </div>
+                  <div class="font-mono text-xs space-y-1 text-gray-700 dark:text-gray-300">
+                    <div class="text-red-600 dark:text-red-400 font-semibold">acetaminophen &rarr; analgesic_antipyretic</div>
+                    <div class="text-red-600 dark:text-red-400 font-semibold">acetaminophen &rarr; pain_reliever <span class="text-red-500">&cross; dual mapping</span></div>
+                    <div>fentanyl &rarr; <span class="text-emerald-600">opioid</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- COMPLETENESS DEEP DIVE                     -->
+  <!-- ═══════════════════════════════════════════ -->
+  <section id="panel-completeness" role="tabpanel" data-pillar="completeness" class="tabpanel py-16 bg-gradient-to-b from-white to-blue-50/30 dark:from-neutral-900 dark:to-blue-950/10" hidden>
+    <div class="container mx-auto px-4 max-w-5xl">
+      <!-- Section Header -->
+      <div class="flex items-center gap-4 mb-4">
+        <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
+          <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="text-3xl font-bold text-gray-900 dark:text-white">Completeness</h2>
+          <p class="text-blue-600 dark:text-blue-400 font-semibold text-sm">Data Coverage</p>
+        </div>
+      </div>
+      <p class="text-gray-700 dark:text-gray-300 mb-10 max-w-3xl">
+        A dataset can be perfectly conformant yet still unusable if half the values are NULL. Completeness checks look beyond structure to ask: <strong>is the data filled in?</strong> They flag excessive missing values, verify that conditional fields are populated when they should be, and ensure that expected categorical coverage is met.
+      </p>
+
+      <div class="space-y-4">
+        <!-- K.1 Missingness -->
+        <div class="check-card bg-white dark:bg-neutral-800 rounded-2xl shadow-md border border-gray-100 dark:border-neutral-700 overflow-hidden">
+          <button type="button" class="check-trigger w-full p-6 flex items-start justify-between gap-3" aria-expanded="false">
+            <div class="flex items-center gap-3">
+              <span class="w-2.5 h-2.5 rounded-full bg-blue-500 mt-1 flex-shrink-0"></span>
+              <div class="text-left">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white">K.1 Missingness</h3>
+                <p class="text-gray-600 dark:text-gray-400 text-sm mt-1">Flags columns where the percentage of NULL values exceeds the configured threshold.</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 flex-shrink-0">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">ERROR</span>
+              <svg class="check-chevron w-5 h-5 text-gray-400 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </div>
+          </button>
+          <div class="check-content">
+            <div class="px-6 pb-6">
+              <div class="grid md:grid-cols-2 gap-4">
+                <div class="rounded-xl border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20 p-4">
+                  <div class="flex items-center gap-2 mb-3">
+                    <svg class="w-4 h-4 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                    <span class="text-sm font-semibold text-emerald-700 dark:text-emerald-400">PASS — labs</span>
+                  </div>
+                  <div class="space-y-2">
+                    <div class="flex items-center gap-2">
+                      <span class="font-mono text-xs text-gray-700 dark:text-gray-300 w-28">lab_value</span>
+                      <div class="flex-1 bg-gray-200 dark:bg-neutral-700 rounded-full h-3">
+                        <div class="bg-emerald-500 h-3 rounded-full" style="width: 92%"></div>
+                      </div>
+                      <span class="font-mono text-xs text-emerald-600 w-12 text-right">8% null</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <span class="font-mono text-xs text-gray-700 dark:text-gray-300 w-28">lab_category</span>
+                      <div class="flex-1 bg-gray-200 dark:bg-neutral-700 rounded-full h-3">
+                        <div class="bg-emerald-500 h-3 rounded-full" style="width: 99%"></div>
+                      </div>
+                      <span class="font-mono text-xs text-emerald-600 w-12 text-right">1% null</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="rounded-xl border-2 border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20 p-4">
+                  <div class="flex items-center gap-2 mb-3">
+                    <svg class="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
+                    <span class="text-sm font-semibold text-red-700 dark:text-red-400">FAIL — labs</span>
+                  </div>
+                  <div class="space-y-2">
+                    <div class="flex items-center gap-2">
+                      <span class="font-mono text-xs text-red-600 dark:text-red-400 font-semibold w-28">lab_value</span>
+                      <div class="flex-1 bg-gray-200 dark:bg-neutral-700 rounded-full h-3">
+                        <div class="bg-red-500 h-3 rounded-full" style="width: 45%"></div>
+                      </div>
+                      <span class="font-mono text-xs text-red-600 w-12 text-right">55% null</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <span class="font-mono text-xs text-gray-700 dark:text-gray-300 w-28">lab_category</span>
+                      <div class="flex-1 bg-gray-200 dark:bg-neutral-700 rounded-full h-3">
+                        <div class="bg-emerald-500 h-3 rounded-full" style="width: 99%"></div>
+                      </div>
+                      <span class="font-mono text-xs text-emerald-600 w-12 text-right">1% null</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- K.2 Conditional Requirements -->
+        <div class="check-card bg-white dark:bg-neutral-800 rounded-2xl shadow-md border border-gray-100 dark:border-neutral-700 overflow-hidden">
+          <button type="button" class="check-trigger w-full p-6 flex items-start justify-between gap-3" aria-expanded="false">
+            <div class="flex items-center gap-3">
+              <span class="w-2.5 h-2.5 rounded-full bg-blue-500 mt-1 flex-shrink-0"></span>
+              <div class="text-left">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white">K.2 Conditional Requirements</h3>
+                <p class="text-gray-600 dark:text-gray-400 text-sm mt-1">When a condition is met (e.g., device type = IMV), checks that dependent fields are populated.</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 flex-shrink-0">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">WARNING</span>
+              <svg class="check-chevron w-5 h-5 text-gray-400 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </div>
+          </button>
+          <div class="check-content">
+            <div class="px-6 pb-6">
+              <div class="grid md:grid-cols-2 gap-4">
+                <div class="rounded-xl border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20 p-4">
+                  <div class="flex items-center gap-2 mb-3">
+                    <svg class="w-4 h-4 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                    <span class="text-sm font-semibold text-emerald-700 dark:text-emerald-400">PASS</span>
+                  </div>
+                  <table class="w-full font-mono text-xs">
+                    <thead><tr class="text-gray-500 dark:text-gray-400"><th class="text-left pb-1">device_category</th><th class="text-left pb-1">fio2_set</th><th class="text-left pb-1">peep</th></tr></thead>
+                    <tbody class="text-gray-700 dark:text-gray-300">
+                      <tr><td>IMV</td><td class="text-emerald-600">0.6</td><td class="text-emerald-600">10</td></tr>
+                      <tr><td>IMV</td><td class="text-emerald-600">0.5</td><td class="text-emerald-600">8</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="rounded-xl border-2 border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20 p-4">
+                  <div class="flex items-center gap-2 mb-3">
+                    <svg class="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
+                    <span class="text-sm font-semibold text-red-700 dark:text-red-400">FAIL</span>
+                  </div>
+                  <table class="w-full font-mono text-xs">
+                    <thead><tr class="text-gray-500 dark:text-gray-400"><th class="text-left pb-1">device_category</th><th class="text-left pb-1">fio2_set</th><th class="text-left pb-1">peep</th></tr></thead>
+                    <tbody class="text-gray-700 dark:text-gray-300">
+                      <tr><td>IMV</td><td class="text-red-600 dark:text-red-400 font-semibold">NULL</td><td class="text-emerald-600">10</td></tr>
+                      <tr><td>IMV</td><td class="text-emerald-600">0.5</td><td class="text-red-600 dark:text-red-400 font-semibold">NULL</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- B. mCIDE Value Coverage -->
+        <div class="check-card bg-white dark:bg-neutral-800 rounded-2xl shadow-md border border-gray-100 dark:border-neutral-700 overflow-hidden">
+          <button type="button" class="check-trigger w-full p-6 flex items-start justify-between gap-3" aria-expanded="false">
+            <div class="flex items-center gap-3">
+              <span class="w-2.5 h-2.5 rounded-full bg-blue-500 mt-1 flex-shrink-0"></span>
+              <div class="text-left">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white">B. mCIDE Value Coverage</h3>
+                <p class="text-gray-600 dark:text-gray-400 text-sm mt-1">Checks that categorical columns contain a sufficient proportion of expected mCIDE values.</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 flex-shrink-0">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">WARNING</span>
+              <svg class="check-chevron w-5 h-5 text-gray-400 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </div>
+          </button>
+          <div class="check-content">
+            <div class="px-6 pb-6">
+              <div class="grid md:grid-cols-2 gap-4">
+                <div class="rounded-xl border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20 p-4">
+                  <div class="flex items-center gap-2 mb-3">
+                    <svg class="w-4 h-4 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                    <span class="text-sm font-semibold text-emerald-700 dark:text-emerald-400">PASS — vital_category (8/9)</span>
+                  </div>
+                  <div class="flex flex-wrap gap-1.5 font-mono text-xs">
+                    <span class="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded">heart_rate</span>
+                    <span class="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded">sbp</span>
+                    <span class="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded">dbp</span>
+                    <span class="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded">map</span>
+                    <span class="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded">spo2</span>
+                    <span class="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded">resp_rate</span>
+                    <span class="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded">temp</span>
+                    <span class="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded">weight</span>
+                  </div>
+                </div>
+                <div class="rounded-xl border-2 border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20 p-4">
+                  <div class="flex items-center gap-2 mb-3">
+                    <svg class="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
+                    <span class="text-sm font-semibold text-red-700 dark:text-red-400">FAIL — vital_category (3/9)</span>
+                  </div>
+                  <div class="flex flex-wrap gap-1.5 font-mono text-xs">
+                    <span class="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded">heart_rate</span>
+                    <span class="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded">sbp</span>
+                    <span class="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded">spo2</span>
+                    <span class="bg-gray-200 dark:bg-neutral-700 text-gray-400 dark:text-gray-500 px-2 py-0.5 rounded line-through">dbp</span>
+                    <span class="bg-gray-200 dark:bg-neutral-700 text-gray-400 dark:text-gray-500 px-2 py-0.5 rounded line-through">map</span>
+                    <span class="bg-gray-200 dark:bg-neutral-700 text-gray-400 dark:text-gray-500 px-2 py-0.5 rounded line-through">resp_rate</span>
+                    <span class="bg-gray-200 dark:bg-neutral-700 text-gray-400 dark:text-gray-500 px-2 py-0.5 rounded line-through">temp</span>
+                    <span class="bg-gray-200 dark:bg-neutral-700 text-gray-400 dark:text-gray-500 px-2 py-0.5 rounded line-through">weight</span>
+                    <span class="bg-gray-200 dark:bg-neutral-700 text-gray-400 dark:text-gray-500 px-2 py-0.5 rounded line-through">height</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- PLAUSIBILITY DEEP DIVE                     -->
+  <!-- ═══════════════════════════════════════════ -->
+  <section id="panel-plausibility" role="tabpanel" data-pillar="plausibility" class="tabpanel py-16 bg-gradient-to-b from-white to-violet-50/30 dark:from-neutral-900 dark:to-violet-950/10" hidden>
+    <div class="container mx-auto px-4 max-w-5xl">
+      <!-- Section Header -->
+      <div class="flex items-center gap-4 mb-4">
+        <div class="w-12 h-12 bg-violet-100 dark:bg-violet-900/30 rounded-xl flex items-center justify-center">
+          <svg class="w-6 h-6 text-violet-600 dark:text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="text-3xl font-bold text-gray-900 dark:text-white">Plausibility</h2>
+          <p class="text-violet-600 dark:text-violet-400 font-semibold text-sm">Clinical Sense</p>
+        </div>
+      </div>
+      <p class="text-gray-700 dark:text-gray-300 mb-10 max-w-3xl">
+        Plausibility checks go beyond structure — they verify that data values are clinically reasonable. A heart rate of 450 is technically numeric but clinically impossible. These checks catch subtle ETL bugs that conformance alone would miss.
+      </p>
+
+      <div class="space-y-4">
+        <!-- A.1 Temporal Ordering -->
+        <div class="check-card bg-white dark:bg-neutral-800 rounded-2xl shadow-md border border-gray-100 dark:border-neutral-700 overflow-hidden">
+          <button type="button" class="check-trigger w-full p-6 flex items-start justify-between gap-3" aria-expanded="false">
+            <div class="flex items-center gap-3">
+              <span class="w-2.5 h-2.5 rounded-full bg-violet-500 mt-1 flex-shrink-0"></span>
+              <div class="text-left">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white">A.1 Temporal Ordering</h3>
+                <p class="text-gray-600 dark:text-gray-400 text-sm mt-1">Verifies that datetime fields within a table follow the expected temporal sequence.</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 flex-shrink-0">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">ERROR</span>
+              <svg class="check-chevron w-5 h-5 text-gray-400 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </div>
+          </button>
+          <div class="check-content">
+            <div class="px-6 pb-6">
+              <div class="grid md:grid-cols-2 gap-4">
+                <div class="rounded-xl border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20 p-4">
+                  <div class="flex items-center gap-2 mb-3">
+                    <svg class="w-4 h-4 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                    <span class="text-sm font-semibold text-emerald-700 dark:text-emerald-400">PASS — labs</span>
+                  </div>
+                  <div class="font-mono text-xs space-y-1 text-gray-700 dark:text-gray-300">
+                    <div>collect_dttm: <span class="text-emerald-600">2024-01-15 08:00</span></div>
+                    <div>result_dttm: &nbsp;<span class="text-emerald-600">2024-01-15 09:30</span></div>
+                    <div class="text-emerald-600 text-[10px] mt-1">collect &le; result &check;</div>
+                  </div>
+                </div>
+                <div class="rounded-xl border-2 border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20 p-4">
+                  <div class="flex items-center gap-2 mb-3">
+                    <svg class="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
+                    <span class="text-sm font-semibold text-red-700 dark:text-red-400">FAIL — labs</span>
+                  </div>
+                  <div class="font-mono text-xs space-y-1 text-gray-700 dark:text-gray-300">
+                    <div>collect_dttm: <span class="text-gray-600 dark:text-gray-400">2024-01-15 09:30</span></div>
+                    <div>result_dttm: &nbsp;<span class="text-red-600 dark:text-red-400 font-semibold">2024-01-15 08:00</span></div>
+                    <div class="text-red-600 dark:text-red-400 text-[10px] mt-1">result before collect? &cross;</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- A.2 Numeric Range -->
+        <div class="check-card bg-white dark:bg-neutral-800 rounded-2xl shadow-md border border-gray-100 dark:border-neutral-700 overflow-hidden">
+          <button type="button" class="check-trigger w-full p-6 flex items-start justify-between gap-3" aria-expanded="false">
+            <div class="flex items-center gap-3">
+              <span class="w-2.5 h-2.5 rounded-full bg-violet-500 mt-1 flex-shrink-0"></span>
+              <div class="text-left">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white">A.2 Numeric Range</h3>
+                <p class="text-gray-600 dark:text-gray-400 text-sm mt-1">Checks that numeric values fall within clinically plausible minimum/maximum bounds.</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 flex-shrink-0">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">ERROR</span>
+              <svg class="check-chevron w-5 h-5 text-gray-400 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </div>
+          </button>
+          <div class="check-content">
+            <div class="px-6 pb-6">
+              <div class="grid md:grid-cols-2 gap-4">
+                <div class="rounded-xl border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20 p-4">
+                  <div class="flex items-center gap-2 mb-3">
+                    <svg class="w-4 h-4 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                    <span class="text-sm font-semibold text-emerald-700 dark:text-emerald-400">PASS — vitals</span>
+                  </div>
+                  <table class="w-full font-mono text-xs">
+                    <thead><tr class="text-gray-500 dark:text-gray-400"><th class="text-left pb-1">Vital</th><th class="text-left pb-1">Value</th><th class="text-left pb-1">Range</th></tr></thead>
+                    <tbody class="text-gray-700 dark:text-gray-300">
+                      <tr><td>heart_rate</td><td class="text-emerald-600">88</td><td>0–300</td></tr>
+                      <tr><td>sbp</td><td class="text-emerald-600">125</td><td>0–400</td></tr>
+                      <tr><td>spo2</td><td class="text-emerald-600">96</td><td>0–100</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="rounded-xl border-2 border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20 p-4">
+                  <div class="flex items-center gap-2 mb-3">
+                    <svg class="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
+                    <span class="text-sm font-semibold text-red-700 dark:text-red-400">FAIL — vitals</span>
+                  </div>
+                  <table class="w-full font-mono text-xs">
+                    <thead><tr class="text-gray-500 dark:text-gray-400"><th class="text-left pb-1">Vital</th><th class="text-left pb-1">Value</th><th class="text-left pb-1">Range</th></tr></thead>
+                    <tbody class="text-gray-700 dark:text-gray-300">
+                      <tr><td class="text-red-600 dark:text-red-400 font-semibold">heart_rate</td><td class="text-red-600 dark:text-red-400 font-semibold">450</td><td>0–300 &cross;</td></tr>
+                      <tr><td>sbp</td><td class="text-emerald-600">125</td><td>0–400</td></tr>
+                      <tr><td>spo2</td><td class="text-emerald-600">96</td><td>0–100</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- A.3 Field Plausibility -->
+        <div class="check-card bg-white dark:bg-neutral-800 rounded-2xl shadow-md border border-gray-100 dark:border-neutral-700 overflow-hidden">
+          <button type="button" class="check-trigger w-full p-6 flex items-start justify-between gap-3" aria-expanded="false">
+            <div class="flex items-center gap-3">
+              <span class="w-2.5 h-2.5 rounded-full bg-violet-500 mt-1 flex-shrink-0"></span>
+              <div class="text-left">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white">A.3 Field Plausibility</h3>
+                <p class="text-gray-600 dark:text-gray-400 text-sm mt-1">Checks that related fields within a row are logically consistent with each other.</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 flex-shrink-0">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">WARNING</span>
+              <svg class="check-chevron w-5 h-5 text-gray-400 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </div>
+          </button>
+          <div class="check-content">
+            <div class="px-6 pb-6">
+              <div class="grid md:grid-cols-2 gap-4">
+                <div class="rounded-xl border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20 p-4">
+                  <div class="flex items-center gap-2 mb-3">
+                    <svg class="w-4 h-4 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                    <span class="text-sm font-semibold text-emerald-700 dark:text-emerald-400">PASS</span>
+                  </div>
+                  <div class="font-mono text-xs space-y-1 text-gray-700 dark:text-gray-300">
+                    <div>location_category: <span class="text-emerald-600">"icu"</span></div>
+                    <div>location_type: &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-emerald-600">"MICU"</span></div>
+                    <div class="text-emerald-600 text-[10px] mt-1">ICU type matches ICU category &check;</div>
+                  </div>
+                </div>
+                <div class="rounded-xl border-2 border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20 p-4">
+                  <div class="flex items-center gap-2 mb-3">
+                    <svg class="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
+                    <span class="text-sm font-semibold text-red-700 dark:text-red-400">FAIL</span>
+                  </div>
+                  <div class="font-mono text-xs space-y-1 text-gray-700 dark:text-gray-300">
+                    <div>location_category: <span class="text-red-600 dark:text-red-400 font-semibold">"ward"</span></div>
+                    <div>location_type: &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-red-600 dark:text-red-400 font-semibold">"MICU"</span></div>
+                    <div class="text-red-600 dark:text-red-400 text-[10px] mt-1">ICU type but ward category? &cross;</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- A.4 Med Dose Units -->
+        <div class="check-card bg-white dark:bg-neutral-800 rounded-2xl shadow-md border border-gray-100 dark:border-neutral-700 overflow-hidden">
+          <button type="button" class="check-trigger w-full p-6 flex items-start justify-between gap-3" aria-expanded="false">
+            <div class="flex items-center gap-3">
+              <span class="w-2.5 h-2.5 rounded-full bg-violet-500 mt-1 flex-shrink-0"></span>
+              <div class="text-left">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white">A.4 Medication Dose Units</h3>
+                <p class="text-gray-600 dark:text-gray-400 text-sm mt-1">Validates that continuous medications use rate-based units, not single-dose units.</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 flex-shrink-0">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">WARNING</span>
+              <svg class="check-chevron w-5 h-5 text-gray-400 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </div>
+          </button>
+          <div class="check-content">
+            <div class="px-6 pb-6">
+              <div class="grid md:grid-cols-2 gap-4">
+                <div class="rounded-xl border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20 p-4">
+                  <div class="flex items-center gap-2 mb-3">
+                    <svg class="w-4 h-4 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                    <span class="text-sm font-semibold text-emerald-700 dark:text-emerald-400">PASS</span>
+                  </div>
+                  <div class="font-mono text-xs space-y-1 text-gray-700 dark:text-gray-300">
+                    <div>norepinephrine (continuous)</div>
+                    <div>dose: 0.15 &nbsp;unit: <span class="text-emerald-600">mcg/kg/min</span></div>
+                  </div>
+                </div>
+                <div class="rounded-xl border-2 border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20 p-4">
+                  <div class="flex items-center gap-2 mb-3">
+                    <svg class="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
+                    <span class="text-sm font-semibold text-red-700 dark:text-red-400">FAIL</span>
+                  </div>
+                  <div class="font-mono text-xs space-y-1 text-gray-700 dark:text-gray-300">
+                    <div>norepinephrine (continuous)</div>
+                    <div>dose: 500 &nbsp;unit: <span class="text-red-600 dark:text-red-400 font-semibold">mg</span> <span class="text-red-500 text-[10px]">(should be rate)</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- B.1 Cross-Table Temporal -->
+        <div class="check-card bg-white dark:bg-neutral-800 rounded-2xl shadow-md border border-gray-100 dark:border-neutral-700 overflow-hidden">
+          <button type="button" class="check-trigger w-full p-6 flex items-start justify-between gap-3" aria-expanded="false">
+            <div class="flex items-center gap-3">
+              <span class="w-2.5 h-2.5 rounded-full bg-violet-500 mt-1 flex-shrink-0"></span>
+              <div class="text-left">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white">B.1 Cross-Table Temporal</h3>
+                <p class="text-gray-600 dark:text-gray-400 text-sm mt-1">Checks that events in child tables fall within the hospitalization's admission–discharge window.</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 flex-shrink-0">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">ERROR</span>
+              <svg class="check-chevron w-5 h-5 text-gray-400 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </div>
+          </button>
+          <div class="check-content">
+            <div class="px-6 pb-6">
+              <div class="grid md:grid-cols-2 gap-4">
+                <div class="rounded-xl border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20 p-4">
+                  <div class="flex items-center gap-2 mb-3">
+                    <svg class="w-4 h-4 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                    <span class="text-sm font-semibold text-emerald-700 dark:text-emerald-400">PASS</span>
+                  </div>
+                  <div class="font-mono text-xs space-y-1 text-gray-700 dark:text-gray-300">
+                    <div class="text-gray-500 dark:text-gray-400">hospitalization:</div>
+                    <div>&nbsp;&nbsp;admit: Jan 15 &nbsp;discharge: Jan 20</div>
+                    <div class="text-gray-500 dark:text-gray-400 mt-1">lab collected:</div>
+                    <div>&nbsp;&nbsp;<span class="text-emerald-600">Jan 17</span> (within stay)</div>
+                  </div>
+                </div>
+                <div class="rounded-xl border-2 border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20 p-4">
+                  <div class="flex items-center gap-2 mb-3">
+                    <svg class="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
+                    <span class="text-sm font-semibold text-red-700 dark:text-red-400">FAIL</span>
+                  </div>
+                  <div class="font-mono text-xs space-y-1 text-gray-700 dark:text-gray-300">
+                    <div class="text-gray-500 dark:text-gray-400">hospitalization:</div>
+                    <div>&nbsp;&nbsp;admit: Jan 15 &nbsp;discharge: Jan 20</div>
+                    <div class="text-gray-500 dark:text-gray-400 mt-1">lab collected:</div>
+                    <div>&nbsp;&nbsp;<span class="text-red-600 dark:text-red-400 font-semibold">Jan 23</span> (3 days after discharge) &cross;</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- C.1 Overlapping Periods -->
+        <div class="check-card bg-white dark:bg-neutral-800 rounded-2xl shadow-md border border-gray-100 dark:border-neutral-700 overflow-hidden">
+          <button type="button" class="check-trigger w-full p-6 flex items-start justify-between gap-3" aria-expanded="false">
+            <div class="flex items-center gap-3">
+              <span class="w-2.5 h-2.5 rounded-full bg-violet-500 mt-1 flex-shrink-0"></span>
+              <div class="text-left">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white">C.1 Overlapping Periods</h3>
+                <p class="text-gray-600 dark:text-gray-400 text-sm mt-1">Detects when a patient is recorded in two locations or on two devices simultaneously.</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 flex-shrink-0">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">ERROR</span>
+              <svg class="check-chevron w-5 h-5 text-gray-400 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </div>
+          </button>
+          <div class="check-content">
+            <div class="px-6 pb-6">
+              <div class="grid md:grid-cols-2 gap-4">
+                <div class="rounded-xl border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20 p-4">
+                  <div class="flex items-center gap-2 mb-3">
+                    <svg class="w-4 h-4 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                    <span class="text-sm font-semibold text-emerald-700 dark:text-emerald-400">PASS — ADT</span>
+                  </div>
+                  <div class="font-mono text-xs space-y-1.5 text-gray-700 dark:text-gray-300">
+                    <div class="flex items-center gap-2">
+                      <span class="bg-emerald-200 dark:bg-emerald-900/40 rounded px-1.5 py-0.5 text-[10px]">MICU</span>
+                      <span>Jan 15 08:00 – Jan 18 14:00</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <span class="bg-blue-200 dark:bg-blue-900/40 rounded px-1.5 py-0.5 text-[10px]">Ward</span>
+                      <span>Jan 18 14:00 – Jan 20 10:00</span>
+                    </div>
+                    <div class="text-emerald-600 text-[10px]">Sequential, no overlap &check;</div>
+                  </div>
+                </div>
+                <div class="rounded-xl border-2 border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20 p-4">
+                  <div class="flex items-center gap-2 mb-3">
+                    <svg class="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
+                    <span class="text-sm font-semibold text-red-700 dark:text-red-400">FAIL — ADT</span>
+                  </div>
+                  <div class="font-mono text-xs space-y-1.5 text-gray-700 dark:text-gray-300">
+                    <div class="flex items-center gap-2">
+                      <span class="bg-emerald-200 dark:bg-emerald-900/40 rounded px-1.5 py-0.5 text-[10px]">MICU</span>
+                      <span>Jan 15 08:00 – <span class="text-red-600 dark:text-red-400 font-semibold">Jan 18 14:00</span></span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <span class="bg-blue-200 dark:bg-blue-900/40 rounded px-1.5 py-0.5 text-[10px]">Ward</span>
+                      <span><span class="text-red-600 dark:text-red-400 font-semibold">Jan 17 10:00</span> – Jan 20 10:00</span>
+                    </div>
+                    <div class="text-red-600 dark:text-red-400 text-[10px]">Overlap: Jan 17–18 patient in 2 locations &cross;</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- D.1 Duplicate Keys -->
+        <div class="check-card bg-white dark:bg-neutral-800 rounded-2xl shadow-md border border-gray-100 dark:border-neutral-700 overflow-hidden">
+          <button type="button" class="check-trigger w-full p-6 flex items-start justify-between gap-3" aria-expanded="false">
+            <div class="flex items-center gap-3">
+              <span class="w-2.5 h-2.5 rounded-full bg-violet-500 mt-1 flex-shrink-0"></span>
+              <div class="text-left">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white">D.1 Duplicate Keys</h3>
+                <p class="text-gray-600 dark:text-gray-400 text-sm mt-1">Detects duplicate rows based on the table's composite primary key.</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 flex-shrink-0">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">ERROR</span>
+              <svg class="check-chevron w-5 h-5 text-gray-400 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </div>
+          </button>
+          <div class="check-content">
+            <div class="px-6 pb-6">
+              <div class="grid md:grid-cols-2 gap-4">
+                <div class="rounded-xl border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20 p-4">
+                  <div class="flex items-center gap-2 mb-3">
+                    <svg class="w-4 h-4 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                    <span class="text-sm font-semibold text-emerald-700 dark:text-emerald-400">PASS — labs</span>
+                  </div>
+                  <table class="w-full font-mono text-xs">
+                    <thead><tr class="text-gray-500 dark:text-gray-400"><th class="text-left pb-1">hosp_id</th><th class="text-left pb-1">lab_cat</th><th class="text-left pb-1">collect_dttm</th></tr></thead>
+                    <tbody class="text-gray-700 dark:text-gray-300">
+                      <tr><td>H001</td><td>potassium</td><td>Jan 15 08:00</td></tr>
+                      <tr><td>H001</td><td>creatinine</td><td>Jan 15 08:00</td></tr>
+                      <tr><td>H001</td><td>potassium</td><td>Jan 16 08:00</td></tr>
+                    </tbody>
+                  </table>
+                  <div class="text-emerald-600 text-[10px] mt-2">All composite keys unique &check;</div>
+                </div>
+                <div class="rounded-xl border-2 border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20 p-4">
+                  <div class="flex items-center gap-2 mb-3">
+                    <svg class="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
+                    <span class="text-sm font-semibold text-red-700 dark:text-red-400">FAIL — labs</span>
+                  </div>
+                  <table class="w-full font-mono text-xs">
+                    <thead><tr class="text-gray-500 dark:text-gray-400"><th class="text-left pb-1">hosp_id</th><th class="text-left pb-1">lab_cat</th><th class="text-left pb-1">collect_dttm</th></tr></thead>
+                    <tbody class="text-gray-700 dark:text-gray-300">
+                      <tr class="text-red-600 dark:text-red-400 font-semibold"><td>H001</td><td>potassium</td><td>Jan 15 08:00</td></tr>
+                      <tr class="text-red-600 dark:text-red-400 font-semibold"><td>H001</td><td>potassium</td><td>Jan 15 08:00</td></tr>
+                      <tr><td>H001</td><td>potassium</td><td>Jan 16 08:00</td></tr>
+                    </tbody>
+                  </table>
+                  <div class="text-red-600 dark:text-red-400 text-[10px] mt-2">Duplicate key detected &cross;</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- RUN IT YOURSELF CTA                        -->
+  <!-- ═══════════════════════════════════════════ -->
+  <section class="py-20 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
+    <div class="container mx-auto px-4 max-w-5xl">
+      <div class="text-center mb-12">
+        <h2 class="text-3xl md:text-4xl font-bold mb-4">Run It Yourself</h2>
+        <p class="text-lg text-gray-300 max-w-2xl mx-auto">
+          CLIF provides open-source tools to run these quality checks on your own data. Get started with a single command.
+        </p>
+      </div>
+
+      <div class="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-6 md:p-8 mb-12">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="w-3 h-3 rounded-full bg-red-500"></div>
+          <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+          <div class="w-3 h-3 rounded-full bg-green-500"></div>
+          <span class="text-gray-400 text-xs ml-2 font-mono">terminal</span>
+        </div>
+        <pre class="font-mono text-sm text-gray-300 overflow-x-auto"><code><span class="text-gray-500"># Install clifpy</span>
+<span class="text-emerald-400">pip</span> install clifpy
+
+<span class="text-gray-500"># Run all DQA checks on your CLIF data</span>
+<span class="text-emerald-400">from</span> clifpy <span class="text-emerald-400">import</span> dqa
+results = dqa.run_checks(<span class="text-amber-400">"/path/to/clif/data"</span>)
+results.summary()
+
+<span class="text-gray-500"># Or run a specific pillar</span>
+conformance = dqa.run_checks(<span class="text-amber-400">"/path/to/clif/data"</span>, pillar=<span class="text-amber-400">"conformance"</span>)</code></pre>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-6">
+        <a href="/tools" class="group bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-6 hover:bg-white/10 transition-all">
+          <div class="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center mb-4">
+            <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+            </svg>
+          </div>
+          <h3 class="font-semibold text-white mb-1">clifpy</h3>
+          <p class="text-gray-400 text-sm">Python library for CLIF data validation, scoring, and analysis.</p>
+        </a>
+        <a href="/tools" class="group bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-6 hover:bg-white/10 transition-all">
+          <div class="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center mb-4">
+            <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+          </div>
+          <h3 class="font-semibold text-white mb-1">CLIF-TableOne</h3>
+          <p class="text-gray-400 text-sm">Generate standardized summary statistics across your CLIF dataset.</p>
+        </a>
+        <a href="/tools" class="group bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-6 hover:bg-white/10 transition-all">
+          <div class="w-10 h-10 bg-violet-500/20 rounded-lg flex items-center justify-center mb-4">
+            <svg class="w-5 h-5 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+          </div>
+          <h3 class="font-semibold text-white mb-1">Lighthouse</h3>
+          <p class="text-gray-400 text-sm">Interactive DQA dashboard for visualizing and tracking data quality.</p>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Back to Top Button -->
+  <button
+    id="back-to-top"
+    class="fixed bottom-8 right-8 w-12 h-12 bg-clif-burgundy text-white rounded-full shadow-lg hover:bg-clif-burgundy-dark transition-all duration-300 opacity-0 invisible z-40"
+    aria-label="Back to top"
+  >
+    <svg class="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
+    </svg>
+  </button>
+</BaseLayout>
+
+<style>
+  /* Accordion: collapsed by default */
+  .check-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+  }
+  .check-card.active .check-content {
+    max-height: 800px;
+  }
+  /* Chevron rotation */
+  .check-chevron {
+    transition: transform 0.3s ease;
+  }
+  .check-card.active .check-chevron {
+    transform: rotate(180deg);
+  }
+  /* Tab panel fade-in */
+  .tabpanel-active {
+    animation: tabFadeIn 0.25s ease-out;
+  }
+  @keyframes tabFadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const tabs = document.querySelectorAll<HTMLButtonElement>('.pillar-tab');
+    const panels = document.querySelectorAll<HTMLElement>('.tabpanel');
+    const pillarCards = document.querySelectorAll<HTMLButtonElement>('[data-pillar-card]');
+    const pillars = ['conformance', 'completeness', 'plausibility'] as const;
+
+    const tabColors: Record<string, { active: string; bg: string; inactive: string }> = {
+      conformance: {
+        active: 'text-emerald-600 dark:text-emerald-400',
+        bg: 'bg-emerald-50 dark:bg-emerald-900/20',
+        inactive: 'text-gray-500 dark:text-gray-400',
+      },
+      completeness: {
+        active: 'text-blue-600 dark:text-blue-400',
+        bg: 'bg-blue-50 dark:bg-blue-900/20',
+        inactive: 'text-gray-500 dark:text-gray-400',
+      },
+      plausibility: {
+        active: 'text-violet-600 dark:text-violet-400',
+        bg: 'bg-violet-50 dark:bg-violet-900/20',
+        inactive: 'text-gray-500 dark:text-gray-400',
+      },
+    };
+
+    function activatePillar(pillar: string) {
+      // Update tabs
+      tabs.forEach(tab => {
+        const p = tab.dataset.pillar!;
+        const colors = tabColors[p];
+        const isActive = p === pillar;
+        tab.setAttribute('aria-selected', String(isActive));
+        // Reset classes
+        colors.active.split(' ').forEach(c => tab.classList.toggle(c, isActive));
+        colors.bg.split(' ').forEach(c => tab.classList.toggle(c, isActive));
+        colors.inactive.split(' ').forEach(c => tab.classList.toggle(c, !isActive));
+      });
+
+      // Update panels
+      panels.forEach(panel => {
+        const isTarget = panel.dataset.pillar === pillar;
+        if (isTarget) {
+          panel.removeAttribute('hidden');
+          panel.classList.add('tabpanel-active');
+        } else {
+          panel.setAttribute('hidden', '');
+          panel.classList.remove('tabpanel-active');
+        }
+      });
+
+      // Update URL hash without scrolling
+      history.replaceState(null, '', `#${pillar}`);
+    }
+
+    // Tab clicks
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        activatePillar(tab.dataset.pillar!);
+      });
+    });
+
+    // Overview card clicks
+    pillarCards.forEach(card => {
+      card.addEventListener('click', (e) => {
+        e.preventDefault();
+        const pillar = card.dataset.pillarCard!;
+        activatePillar(pillar);
+        // Scroll to the nav so the panel is visible
+        document.getElementById('pillar-nav')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+
+    // Keyboard navigation between tabs
+    const tabList = document.getElementById('pillar-nav');
+    tabList?.addEventListener('keydown', (e) => {
+      const focused = document.activeElement as HTMLButtonElement;
+      if (!focused?.classList.contains('pillar-tab')) return;
+
+      const idx = pillars.indexOf(focused.dataset.pillar as typeof pillars[number]);
+      let newIdx = idx;
+
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        newIdx = (idx + 1) % pillars.length;
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        newIdx = (idx - 1 + pillars.length) % pillars.length;
+      } else if (e.key === 'Home') {
+        e.preventDefault();
+        newIdx = 0;
+      } else if (e.key === 'End') {
+        e.preventDefault();
+        newIdx = pillars.length - 1;
+      } else {
+        return;
+      }
+
+      const newTab = tabs[newIdx];
+      newTab.focus();
+      activatePillar(pillars[newIdx]);
+    });
+
+    // Accordion toggle
+    document.querySelectorAll<HTMLButtonElement>('.check-trigger').forEach(trigger => {
+      trigger.addEventListener('click', () => {
+        const card = trigger.closest('.check-card')!;
+        const isActive = card.classList.toggle('active');
+        trigger.setAttribute('aria-expanded', String(isActive));
+      });
+    });
+
+    // Hash-based deep linking on load and hash change
+    function handleHash() {
+      const hash = location.hash.replace('#', '');
+      // Support both old (#conformance) and new (#panel-conformance) formats
+      const pillar = hash.replace('panel-', '');
+      if (pillars.includes(pillar as typeof pillars[number])) {
+        activatePillar(pillar);
+      }
+    }
+    handleHash();
+    window.addEventListener('hashchange', handleHash);
+
+    // Back to top
+    const backToTopButton = document.getElementById('back-to-top');
+    window.addEventListener('scroll', () => {
+      if (window.pageYOffset > 300) {
+        backToTopButton?.classList.remove('opacity-0', 'invisible');
+        backToTopButton?.classList.add('opacity-100', 'visible');
+      } else {
+        backToTopButton?.classList.remove('opacity-100', 'visible');
+        backToTopButton?.classList.add('opacity-0', 'invisible');
+      }
+    });
+    backToTopButton?.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+</script>

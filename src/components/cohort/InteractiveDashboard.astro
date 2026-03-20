@@ -4780,7 +4780,8 @@ const categories = Array.from(groupedChars.keys());
 
         let html = `<td class="px-4 py-3 text-sm text-gray-700 font-medium sticky left-0 bg-white">${characteristic}</td>`;
         headers.forEach(header => {
-          const value = row.values[header] || '-';
+          const rawValue = row.values[header] || '-';
+          const value = hasSmallN(rawValue) ? '-' : rawValue;
           html += `<td class="px-4 py-3 text-sm text-gray-700">${value}</td>`;
         });
 
@@ -4800,7 +4801,10 @@ const categories = Array.from(groupedChars.keys());
     // Build CSV rows
     data.forEach(row => {
       const characteristic = `"${row.characteristic}"`;
-      const values = headers.map(header => `"${row.values[header] || '-'}"`).join(',');
+      const values = headers.map(header => {
+        const rawValue = row.values[header] || '-';
+        return `"${hasSmallN(rawValue) ? '-' : rawValue}"`;
+      }).join(',');
       csv += `${characteristic},${values}\n`;
     });
 
