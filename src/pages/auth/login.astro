@@ -19,7 +19,8 @@ const errorMessages: Record<string, string> = {
   no_email: 'Could not retrieve your email from Google. Please try again.',
   oauth_failed: 'Google sign-in failed. Please try again.',
 };
-const errorMessage = error ? errorMessages[error] || 'An error occurred. Please try again.' : null;
+const detail = Astro.url.searchParams.get('detail');
+const errorMessage = error ? (errorMessages[error] || 'An error occurred. Please try again.') + (detail ? ` (${detail})` : '') : null;
 ---
 
 <BaseLayout title="Sign In">

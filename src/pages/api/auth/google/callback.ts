@@ -90,6 +90,7 @@ export const GET: APIRoute = async ({ url, cookies, redirect }) => {
     return redirect(isApproved ? '/portal' : '/auth/pending');
   } catch (error) {
     console.error('Google OAuth error:', error);
-    return redirect('/auth/login?error=oauth_failed');
+    const msg = error instanceof Error ? error.message : 'unknown';
+    return redirect('/auth/login?error=oauth_failed&detail=' + encodeURIComponent(msg));
   }
 };
