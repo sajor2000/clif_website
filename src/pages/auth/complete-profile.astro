@@ -32,14 +32,30 @@ if (user.institution) {
         <form id="profile-form" class="space-y-5">
           <div>
             <label for="institution" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Institution</label>
-            <input
-              type="text"
+            <select
               id="institution"
               name="institution"
               required
               class="w-full px-4 py-2.5 border border-gray-300 dark:border-neutral-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent"
-              placeholder="e.g., University of Chicago"
-            />
+            >
+              <option value="" disabled selected>Select your institution</option>
+              <option value="Cornell University">Cornell University</option>
+              <option value="Emory Healthcare">Emory Healthcare</option>
+              <option value="Harvard University">Harvard University</option>
+              <option value="M Health Fairview University of Minnesota Medical Center">M Health Fairview University of Minnesota Medical Center</option>
+              <option value="Michigan Medicine">Michigan Medicine</option>
+              <option value="Northwestern Medicine">Northwestern Medicine</option>
+              <option value="Oregon Health & Science University">Oregon Health & Science University</option>
+              <option value="Rush University">Rush University</option>
+              <option value="The Johns Hopkins Hospital">The Johns Hopkins Hospital</option>
+              <option value="Tufts University">Tufts University</option>
+              <option value="UChicago Medicine">UChicago Medicine</option>
+              <option value="UCSF Health">UCSF Health</option>
+              <option value="University of Colorado">University of Colorado</option>
+              <option value="University of Pennsylvania">University of Pennsylvania</option>
+              <option value="University of Toronto">University of Toronto</option>
+              <option value="Yale University">Yale University</option>
+            </select>
           </div>
 
           <div id="error-message" class="hidden text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg px-4 py-3"></div>
