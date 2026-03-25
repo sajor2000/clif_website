@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS proposals (
   deadline TEXT,
   is_meeting_vote INTEGER NOT NULL DEFAULT 0,
   is_anonymous INTEGER NOT NULL DEFAULT 1,
+  steering_only INTEGER NOT NULL DEFAULT 0,
   meeting_date TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))

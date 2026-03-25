@@ -2,6 +2,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { getDb } from '../../../lib/turso';
+import { hasRole } from '../../../lib/roles';
 
 export const POST: APIRoute = async ({ locals, request }) => {
   if (!locals.user?.is_approved) {
@@ -24,7 +25,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
 
   // Check proposal is open and deadline hasn't passed
   const proposal = await db.execute({
-    sql: 'SELECT status, deadline FROM proposals WHERE id = ?',
+    sql: 'SELECT status, deadline, steering_only FROM proposals WHERE id = ?',
     args: [proposalId],
   });
 
@@ -46,6 +47,14 @@ export const POST: APIRoute = async ({ locals, request }) => {
   if (p.deadline && new Date((p.deadline as string) + 'T23:59:59') < new Date()) {
     return new Response(JSON.stringify({ error: 'Voting deadline has passed.' }), {
       status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  // Check if steering-only vote
+  if (Boolean(p.steering_only) && !hasRole(locals.user.role, 'steering')) {
+    return new Response(JSON.stringify({ error: 'This vote is restricted to steering committee members.' }), {
+      status: 403,
       headers: { 'Content-Type': 'application/json' },
     });
   }
