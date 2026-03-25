@@ -28,9 +28,9 @@ export const GET: APIRoute = async ({ url, cookies, redirect }) => {
   cookies.delete('google_oauth_code_verifier', { path: '/' });
 
   const google = new Google(
-    import.meta.env.GOOGLE_CLIENT_ID,
-    import.meta.env.GOOGLE_CLIENT_SECRET,
-    import.meta.env.GOOGLE_REDIRECT_URI
+    process.env.GOOGLE_CLIENT_ID || import.meta.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET || import.meta.env.GOOGLE_CLIENT_SECRET,
+    process.env.GOOGLE_REDIRECT_URI || import.meta.env.GOOGLE_REDIRECT_URI
   );
 
   try {
