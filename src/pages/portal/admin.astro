@@ -23,6 +23,9 @@ try {
 
 const pendingUsers = allProfiles.filter((p) => !p.is_approved);
 const approvedUsers = allProfiles.filter((p) => p.is_approved);
+
+const roleCounts: Record<string, number> = { all: approvedUsers.length, member: 0, steering: 0, admin: 0 };
+approvedUsers.forEach((u: any) => { if (u.role in roleCounts) roleCounts[u.role]++; });
 ---
 
 <BaseLayout title="Admin Panel">
@@ -91,9 +94,20 @@ const approvedUsers = allProfiles.filter((p) => p.is_approved);
 
         <!-- Approved Members -->
         <div>
-          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Approved Members ({approvedUsers.length})
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4" id="approved-heading">
+            Approved Members (<span id="approved-count">{approvedUsers.length}</span>)
           </h2>
+
+          <div class="flex flex-wrap gap-2 mb-4" id="role-filters">
+            {['all', 'member', 'steering', 'admin'].map((role) => (
+              <button
+                class={`role-filter-btn px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${role === 'all' ? 'bg-clif-burgundy text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-neutral-700 dark:text-gray-300 dark:hover:bg-neutral-600'}`}
+                data-filter-role={role}
+              >
+                {role.charAt(0).toUpperCase() + role.slice(1)} ({roleCounts[role]})
+              </button>
+            ))}
+          </div>
 
           {approvedUsers.length === 0 ? (
             <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6 text-center text-gray-500 dark:text-gray-400 text-sm">
@@ -114,7 +128,7 @@ const approvedUsers = allProfiles.filter((p) => p.is_approved);
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-neutral-700">
                   {approvedUsers.map((u: any, i: number) => (
-                    <tr class={i % 2 === 0 ? '' : 'bg-gray-50/50 dark:bg-neutral-800/50'}>
+                    <tr class={i % 2 === 0 ? '' : 'bg-gray-50/50 dark:bg-neutral-800/50'} data-role={u.role}>
                       <td class="px-4 py-3 text-gray-900 dark:text-gray-200">
                         <span class="user-display-name" data-user-id={u.id}>{u.full_name || '\u2014'}</span>
                         <input type="text" class="user-edit-name hidden w-full text-xs px-2 py-1 border border-gray-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" data-user-id={u.id} value={u.full_name || ''} placeholder="Full name" />
@@ -298,6 +312,32 @@ const approvedUsers = allProfiles.filter((p) => p.is_approved);
             this.disabled = false;
             this.textContent = 'Remove';
           }
+        });
+      });
+
+      // Role filter
+      document.querySelectorAll('.role-filter-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var role = this.getAttribute('data-filter-role');
+          // Update active button styles
+          document.querySelectorAll('.role-filter-btn').forEach(function(b) {
+            b.classList.remove('bg-clif-burgundy', 'text-white');
+            b.classList.add('bg-gray-100', 'text-gray-600', 'hover:bg-gray-200', 'dark:bg-neutral-700', 'dark:text-gray-300', 'dark:hover:bg-neutral-600');
+          });
+          this.classList.add('bg-clif-burgundy', 'text-white');
+          this.classList.remove('bg-gray-100', 'text-gray-600', 'hover:bg-gray-200', 'dark:bg-neutral-700', 'dark:text-gray-300', 'dark:hover:bg-neutral-600');
+          // Filter rows
+          var rows = document.querySelectorAll('tbody tr[data-role]');
+          var visibleCount = 0;
+          rows.forEach(function(row) {
+            if (role === 'all' || row.getAttribute('data-role') === role) {
+              row.classList.remove('hidden');
+              visibleCount++;
+            } else {
+              row.classList.add('hidden');
+            }
+          });
+          document.getElementById('approved-count').textContent = visibleCount;
         });
       });
 
