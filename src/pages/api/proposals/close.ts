@@ -14,7 +14,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
     });
   }
 
-  const { proposalId } = await request.json();
+  const { proposalId, createIssue } = await request.json();
 
   if (!proposalId) {
     return new Response(JSON.stringify({ error: 'proposalId is required.' }), {
@@ -53,7 +53,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
     const noCount = Number(row.no_count) || 0;
     const abstainCount = Number(row.abstain_count) || 0;
 
-    if (yesCount > noCount && proposal.rows.length > 0) {
+    if (createIssue && yesCount > noCount && proposal.rows.length > 0) {
       const p = proposal.rows[0];
       const token = import.meta.env.GITHUB_TOKEN;
 

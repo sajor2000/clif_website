@@ -78,7 +78,7 @@ function formatDate(dateStr: string): string {
         <div class="mb-8">
           <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Proposal Voting</h1>
           <p class="text-gray-600 dark:text-gray-400 mt-1">Vote on consortium proposals and view results</p>
-          <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Winning proposals (yes &gt; no) automatically create a GitHub issue when closed.</p>
+          <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Approved proposals can optionally create a GitHub issue when closed.</p>
         </div>
 
         {error && (
@@ -207,6 +207,10 @@ function formatDate(dateStr: string): string {
                       {/* Proposal management actions */}
                       {canManageProposals && (
                         <div class="flex items-center gap-3 shrink-0">
+                          <label class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                            <input type="checkbox" class="create-issue-checkbox w-3.5 h-3.5 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy" data-proposal-id={p.id} />
+                            Create GitHub issue
+                          </label>
                           <button
                             class="close-proposal-btn text-xs text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 underline"
                             data-proposal-id={p.id}
@@ -460,12 +464,14 @@ function formatDate(dateStr: string): string {
       document.querySelectorAll('.close-proposal-btn').forEach(function(btn) {
         btn.addEventListener('click', async function() {
           var proposalId = this.getAttribute('data-proposal-id');
+          var checkbox = document.querySelector('.create-issue-checkbox[data-proposal-id="' + proposalId + '"]');
+          var createIssue = checkbox ? checkbox.checked : false;
           if (!confirm('Close voting on this proposal?')) return;
 
           var res = await fetch('/api/proposals/close', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ proposalId: proposalId }),
+            body: JSON.stringify({ proposalId: proposalId, createIssue: createIssue }),
           });
 
           if (res.ok) {
