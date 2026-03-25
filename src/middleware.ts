@@ -3,7 +3,7 @@ import { getSession } from './lib/session';
 
 const PROTECTED_ROUTES = ['/portal'];
 const ADMIN_ROUTES = ['/portal/admin'];
-const AUTH_PAGES = ['/auth/login', '/auth/signup', '/auth/pending', '/auth/reset-password'];
+const AUTH_PAGES = ['/auth/login', '/auth/pending'];
 const API_ROUTES = ['/api/'];
 
 export const onRequest = defineMiddleware(async (context, next) => {

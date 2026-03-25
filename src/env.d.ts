@@ -7,6 +7,7 @@ declare namespace App {
       email: string;
       full_name: string | null;
       institution: string | null;
+      avatar_url: string | null;
       role: 'admin' | 'steering' | 'member';
       is_approved: boolean;
       created_at: string;
@@ -19,6 +20,9 @@ interface ImportMetaEnv {
   readonly TURSO_DATABASE_URL: string;
   readonly TURSO_AUTH_TOKEN: string;
   readonly GITHUB_TOKEN: string;
+  readonly GOOGLE_CLIENT_ID: string;
+  readonly GOOGLE_CLIENT_SECRET: string;
+  readonly GOOGLE_REDIRECT_URI: string;
 }
 
 interface ImportMeta {

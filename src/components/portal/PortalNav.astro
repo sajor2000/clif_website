@@ -7,12 +7,12 @@ interface Props {
 const { currentPath, isAdmin = false } = Astro.props;
 
 const portalItems = [
-  { label: 'Dashboard', href: '/portal', icon: 'grid' },
-  { label: 'Site Details', href: '/portal/site-details', icon: 'building' },
-{ label: 'Member Directory', href: '/portal/directory', icon: 'users' },
-  { label: 'Status Tracker', href: '/portal/status', icon: 'check-circle' },
-  { label: 'Calendar', href: '/portal/calendar', icon: 'calendar-days' },
-  { label: 'Voting', href: '/portal/voting', icon: 'vote' },
+  { label: 'Dashboard', href: '/portal', icon: 'grid', wip: true },
+  { label: 'Site Details', href: '/portal/site-details', icon: 'building', wip: true },
+  { label: 'Member Directory', href: '/portal/directory', icon: 'users', wip: true },
+  { label: 'Status Tracker', href: '/portal/status', icon: 'check-circle', wip: true },
+  { label: 'Calendar', href: '/portal/calendar', icon: 'calendar-days', wip: true },
+  { label: 'Voting', href: '/portal/voting', icon: 'vote', wip: false },
 ];
 
 function isActive(href: string): boolean {
@@ -36,6 +36,9 @@ function isActive(href: string): boolean {
           aria-current={isActive(item.href) ? 'page' : undefined}
         >
           {item.label}
+          {item.wip && (
+            <span class="ml-auto text-[10px] font-semibold uppercase tracking-wide bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-1.5 py-0.5 rounded">WIP</span>
+          )}
         </a>
       </li>
     ))}

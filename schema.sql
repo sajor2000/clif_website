@@ -4,13 +4,12 @@
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
   email TEXT NOT NULL UNIQUE,
-  password_hash TEXT NOT NULL,
+  google_id TEXT UNIQUE,
   full_name TEXT,
   institution TEXT,
-  role TEXT NOT NULL DEFAULT 'user',
+  avatar_url TEXT,
+  role TEXT NOT NULL DEFAULT 'member',
   is_approved INTEGER NOT NULL DEFAULT 0,
-  security_question TEXT,
-  security_answer_hash TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -39,7 +38,7 @@ CREATE TABLE IF NOT EXISTS votes (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
   proposal_id TEXT NOT NULL REFERENCES proposals(id) ON DELETE CASCADE,
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  vote TEXT NOT NULL CHECK (vote IN ('yes', 'no')),
+  vote TEXT NOT NULL CHECK (vote IN ('yes', 'no', 'abstain')),
   was_present INTEGER,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   UNIQUE(proposal_id, user_id)
@@ -86,3 +85,4 @@ CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at);
 CREATE INDEX IF NOT EXISTS idx_votes_proposal ON votes(proposal_id);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id);

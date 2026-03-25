@@ -12,6 +12,14 @@ if (user) {
     return Astro.redirect('/auth/pending');
   }
 }
+
+const error = Astro.url.searchParams.get('error');
+const errorMessages: Record<string, string> = {
+  invalid_state: 'Authentication failed. Please try again.',
+  no_email: 'Could not retrieve your email from Google. Please try again.',
+  oauth_failed: 'Google sign-in failed. Please try again.',
+};
+const errorMessage = error ? errorMessages[error] || 'An error occurred. Please try again.' : null;
 ---
 
 <BaseLayout title="Sign In">
@@ -19,94 +27,34 @@ if (user) {
     <div class="w-full max-w-md">
       <div class="bg-white dark:bg-neutral-800 rounded-2xl shadow-lg p-8">
         <div class="text-center mb-8">
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Welcome Back</h1>
-          <p class="text-gray-600 dark:text-gray-400 mt-2">Sign in to access the Members Portal</p>
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Welcome to CLIF Consortium</h1>
+          <p class="text-gray-600 dark:text-gray-400 mt-2">Sign in with your Google account to access the Members Portal</p>
         </div>
 
-        <form id="login-form" class="space-y-5">
-          <div>
-            <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              required
-              class="w-full px-4 py-2.5 border border-gray-300 dark:border-neutral-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent"
-              placeholder="you@institution.edu"
-            />
+        {errorMessage && (
+          <div class="mb-6 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg px-4 py-3">
+            {errorMessage}
           </div>
+        )}
 
-          <div>
-            <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Password</label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              required
-              minlength="6"
-              class="w-full px-4 py-2.5 border border-gray-300 dark:border-neutral-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent"
-              placeholder="Your password"
-            />
-          </div>
+        <a
+          href="/api/auth/google"
+          class="w-full flex items-center justify-center gap-3 bg-white dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 hover:bg-gray-50 dark:hover:bg-neutral-600 text-gray-700 dark:text-gray-200 font-medium py-3 px-4 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:ring-offset-2"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 48 48">
+            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+            <path fill="none" d="M0 0h48v48H0z"/>
+          </svg>
+          Sign in with Google
+        </a>
 
-          <div id="error-message" class="hidden text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg px-4 py-3"></div>
-
-          <button
-            type="submit"
-            id="submit-btn"
-            class="w-full bg-clif-burgundy hover:bg-clif-burgundy/90 text-white font-medium py-2.5 px-4 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:ring-offset-2"
-          >
-            Sign In
-          </button>
-        </form>
-
-        <div class="text-center text-sm text-gray-600 dark:text-gray-400 mt-6 space-y-2">
-          <p>
-            <a href="/auth/reset-password" class="text-clif-burgundy hover:text-clif-burgundy/80 font-medium">Forgot password?</a>
-          </p>
-          <p>
-            Don't have an account?
-            <a href="/auth/signup" class="text-clif-burgundy hover:text-clif-burgundy/80 font-medium">Sign up</a>
-          </p>
-        </div>
+        <p class="text-center text-xs text-gray-500 dark:text-gray-400 mt-6">
+          New members will be reviewed by a CLIF administrator before gaining access to the Members Portal.
+        </p>
       </div>
     </div>
   </div>
-
-  <script is:inline>
-    document.getElementById('login-form').addEventListener('submit', async function(e) {
-      e.preventDefault();
-      var errorEl = document.getElementById('error-message');
-      var submitBtn = document.getElementById('submit-btn');
-      errorEl.classList.add('hidden');
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Signing in...';
-
-      try {
-        var res = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: document.getElementById('email').value,
-            password: document.getElementById('password').value,
-          }),
-        });
-
-        if (res.ok) {
-          var params = new URLSearchParams(window.location.search);
-          window.location.href = params.get('redirect') || '/portal';
-        } else {
-          var data = await res.json();
-          errorEl.textContent = data.error || 'Sign in failed. Please try again.';
-          errorEl.classList.remove('hidden');
-        }
-      } catch (err) {
-        errorEl.textContent = 'Network error. Please try again.';
-        errorEl.classList.remove('hidden');
-      }
-
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Sign In';
-    });
-  </script>
 </BaseLayout>

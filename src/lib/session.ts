@@ -18,6 +18,7 @@ export interface SessionUser {
   email: string;
   full_name: string | null;
   institution: string | null;
+  avatar_url: string | null;
   role: string;
   is_approved: boolean;
   created_at: string;
@@ -51,7 +52,7 @@ export async function getSession(cookies: AstroCookies): Promise<SessionUser | n
 
   const db = getDb();
   const result = await db.execute({
-    sql: `SELECT u.id, u.email, u.full_name, u.institution, u.role, u.is_approved, u.created_at, u.updated_at, s.expires_at
+    sql: `SELECT u.id, u.email, u.full_name, u.institution, u.avatar_url, u.role, u.is_approved, u.created_at, u.updated_at, s.expires_at
           FROM sessions s
           JOIN users u ON s.user_id = u.id
           WHERE s.id = ? AND s.expires_at > ?`,
@@ -88,6 +89,7 @@ export async function getSession(cookies: AstroCookies): Promise<SessionUser | n
     email: row.email as string,
     full_name: row.full_name as string | null,
     institution: row.institution as string | null,
+    avatar_url: row.avatar_url as string | null,
     role: row.role as string,
     is_approved: Boolean(row.is_approved),
     created_at: row.created_at as string,

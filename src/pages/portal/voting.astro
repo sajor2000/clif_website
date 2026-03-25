@@ -20,6 +20,7 @@ try {
     sql: `SELECT p.*,
             (SELECT COUNT(*) FROM votes v WHERE v.proposal_id = p.id AND v.vote = 'yes') as yes_count,
             (SELECT COUNT(*) FROM votes v WHERE v.proposal_id = p.id AND v.vote = 'no') as no_count,
+            (SELECT COUNT(*) FROM votes v WHERE v.proposal_id = p.id AND v.vote = 'abstain') as abstain_count,
             (SELECT COUNT(*) FROM votes v WHERE v.proposal_id = p.id AND v.was_present = 1) as present_count,
             (SELECT COUNT(*) FROM votes v WHERE v.proposal_id = p.id AND v.was_present = 0) as absent_count,
             (SELECT v.vote FROM votes v WHERE v.proposal_id = p.id AND v.user_id = ?) as my_vote,
@@ -37,6 +38,7 @@ try {
     sql: `SELECT p.*,
             (SELECT COUNT(*) FROM votes v WHERE v.proposal_id = p.id AND v.vote = 'yes') as yes_count,
             (SELECT COUNT(*) FROM votes v WHERE v.proposal_id = p.id AND v.vote = 'no') as no_count,
+            (SELECT COUNT(*) FROM votes v WHERE v.proposal_id = p.id AND v.vote = 'abstain') as abstain_count,
             (SELECT COUNT(*) FROM votes v WHERE v.proposal_id = p.id AND v.was_present = 1) as present_count,
             (SELECT COUNT(*) FROM votes v WHERE v.proposal_id = p.id AND v.was_present = 0) as absent_count,
             (SELECT v.vote FROM votes v WHERE v.proposal_id = p.id AND v.user_id = ?) as my_vote,
@@ -55,7 +57,13 @@ try {
 
 function isDeadlinePassed(deadline: string | null): boolean {
   if (!deadline) return false;
-  return new Date(deadline) < new Date();
+  // Treat deadline as end of day in local timezone
+  return new Date(deadline + 'T23:59:59') < new Date();
+}
+
+function formatDate(dateStr: string): string {
+  // Parse as local timezone to avoid off-by-one from UTC
+  return new Date(dateStr + 'T00:00:00').toLocaleDateString();
 }
 ---
 
@@ -160,7 +168,7 @@ function isDeadlinePassed(deadline: string | null): boolean {
             <div class="space-y-4">
               {openProposals.map((p) => {
                 const deadlinePassed = isDeadlinePassed(p.deadline as string | null);
-                const totalVotes = (p.yes_count as number) + (p.no_count as number);
+                const totalVotes = (p.yes_count as number) + (p.no_count as number) + (p.abstain_count as number);
                 const isMeeting = Boolean(p.is_meeting_vote);
                 return (
                   <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6" data-proposal={p.id} data-is-meeting={isMeeting ? '1' : '0'}>
@@ -185,7 +193,7 @@ function isDeadlinePassed(deadline: string | null): boolean {
                           )}
                           {p.deadline && (
                             <span class={deadlinePassed ? 'text-red-500' : ''}>
-                              Deadline: {new Date(p.deadline as string).toLocaleDateString()}
+                              Deadline: {formatDate(p.deadline as string)}
                               {deadlinePassed && ' (passed)'}
                             </span>
                           )}
@@ -266,6 +274,18 @@ function isDeadlinePassed(deadline: string | null): boolean {
                           >
                             No {p.my_vote === 'no' ? '\u2713' : ''}
                           </button>
+                          <button
+                            class:list={[
+                              'vote-btn px-4 py-2 text-sm font-medium rounded-lg transition-colors border',
+                              p.my_vote === 'abstain'
+                                ? 'bg-gray-500 text-white border-gray-500'
+                                : 'text-gray-600 border-gray-300 hover:bg-gray-50 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-800'
+                            ]}
+                            data-proposal-id={p.id}
+                            data-vote="abstain"
+                          >
+                            Abstain {p.my_vote === 'abstain' ? '\u2713' : ''}
+                          </button>
                         </div>
                       </div>
                     )}
@@ -275,12 +295,17 @@ function isDeadlinePassed(deadline: string | null): boolean {
                       <div class="mt-3">
                         <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
                           <span>Yes: {p.yes_count}</span>
+                          {(p.abstain_count as number) > 0 && <span>Abstain: {p.abstain_count}</span>}
                           <span>No: {p.no_count}</span>
                         </div>
-                        <div class="w-full bg-gray-200 dark:bg-neutral-700 rounded-full h-2 overflow-hidden">
+                        <div class="w-full bg-gray-200 dark:bg-neutral-700 rounded-full h-2 overflow-hidden flex">
                           <div
-                            class="bg-green-500 h-2 rounded-full transition-all"
-                            style={`width: ${totalVotes > 0 ? ((p.yes_count as number) / totalVotes) * 100 : 0}%`}
+                            class="bg-green-500 h-2 transition-all"
+                            style={`width: ${((p.yes_count as number) / totalVotes) * 100}%`}
+                          ></div>
+                          <div
+                            class="bg-gray-400 h-2 transition-all"
+                            style={`width: ${((p.abstain_count as number) / totalVotes) * 100}%`}
                           ></div>
                         </div>
                       </div>
@@ -298,7 +323,7 @@ function isDeadlinePassed(deadline: string | null): boolean {
             <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Closed Proposals</h2>
             <div class="space-y-4">
               {closedProposals.map((p) => {
-                const totalVotes = (p.yes_count as number) + (p.no_count as number);
+                const totalVotes = (p.yes_count as number) + (p.no_count as number) + (p.abstain_count as number);
                 const isMeeting = Boolean(p.is_meeting_vote);
                 return (
                   <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6 opacity-80" data-closed-proposal={p.id}>
@@ -335,6 +360,7 @@ function isDeadlinePassed(deadline: string | null): boolean {
                       </span>
                       <span class="text-green-600 dark:text-green-400 font-medium">Yes: {p.yes_count}</span>
                       <span class="text-red-600 dark:text-red-400 font-medium">No: {p.no_count}</span>
+                      {(p.abstain_count as number) > 0 && <span class="text-gray-500 dark:text-gray-400 font-medium">Abstain: {p.abstain_count}</span>}
                       <span class="text-gray-500 dark:text-gray-400">Total: {totalVotes}</span>
                       {p.my_vote && (
                         <span class="text-gray-500 dark:text-gray-400">(You voted: {p.my_vote})</span>
@@ -348,10 +374,14 @@ function isDeadlinePassed(deadline: string | null): boolean {
                     )}
                     {totalVotes > 0 && (
                       <div class="mt-2">
-                        <div class="w-full bg-gray-200 dark:bg-neutral-700 rounded-full h-2 overflow-hidden">
+                        <div class="w-full bg-gray-200 dark:bg-neutral-700 rounded-full h-2 overflow-hidden flex">
                           <div
-                            class="bg-green-500 h-2 rounded-full"
+                            class="bg-green-500 h-2"
                             style={`width: ${((p.yes_count as number) / totalVotes) * 100}%`}
+                          ></div>
+                          <div
+                            class="bg-gray-400 h-2"
+                            style={`width: ${((p.abstain_count as number) / totalVotes) * 100}%`}
                           ></div>
                         </div>
                       </div>

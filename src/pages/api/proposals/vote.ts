@@ -13,8 +13,8 @@ export const POST: APIRoute = async ({ locals, request }) => {
 
   const { proposalId, vote, was_present } = await request.json();
 
-  if (!proposalId || !vote || !['yes', 'no'].includes(vote)) {
-    return new Response(JSON.stringify({ error: 'proposalId and vote (yes/no) are required.' }), {
+  if (!proposalId || !vote || !['yes', 'no', 'abstain'].includes(vote)) {
+    return new Response(JSON.stringify({ error: 'proposalId and vote (yes/no/abstain) are required.' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     });
@@ -43,7 +43,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
     });
   }
 
-  if (p.deadline && new Date(p.deadline as string) < new Date()) {
+  if (p.deadline && new Date((p.deadline as string) + 'T23:59:59') < new Date()) {
     return new Response(JSON.stringify({ error: 'Voting deadline has passed.' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },

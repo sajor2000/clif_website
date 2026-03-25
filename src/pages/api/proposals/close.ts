@@ -42,7 +42,8 @@ export const POST: APIRoute = async ({ locals, request }) => {
     const votes = await db.execute({
       sql: `SELECT
               SUM(CASE WHEN vote = 'yes' THEN 1 ELSE 0 END) as yes_count,
-              SUM(CASE WHEN vote = 'no' THEN 1 ELSE 0 END) as no_count
+              SUM(CASE WHEN vote = 'no' THEN 1 ELSE 0 END) as no_count,
+              SUM(CASE WHEN vote = 'abstain' THEN 1 ELSE 0 END) as abstain_count
             FROM votes WHERE proposal_id = ?`,
       args: [proposalId],
     });
@@ -50,6 +51,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
     const row = votes.rows[0];
     const yesCount = Number(row.yes_count) || 0;
     const noCount = Number(row.no_count) || 0;
+    const abstainCount = Number(row.abstain_count) || 0;
 
     if (yesCount > noCount && proposal.rows.length > 0) {
       const p = proposal.rows[0];
@@ -60,7 +62,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
           p.description || '',
           '',
           '---',
-          `Approved by consortium vote (${yesCount} yes / ${noCount} no)`,
+          `Approved by consortium vote (${yesCount} yes / ${noCount} no / ${abstainCount} abstain)`,
           `Closed on: ${now}`,
         ].join('\n');
 
