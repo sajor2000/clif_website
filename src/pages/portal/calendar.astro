@@ -1,0 +1,176 @@
+---
+export const prerender = false;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PortalNav from '../../components/portal/PortalNav.astro';
+import { getDb } from '../../lib/turso';
+
+const user = Astro.locals.user;
+
+const db = getDb();
+const now = new Date();
+const today = now.toISOString().split('T')[0];
+let error: string | null = null;
+let allEvents: any[] = [];
+
+try {
+  const [oneTimeResult, recurringResult] = await Promise.all([
+    db.execute({
+      sql: "SELECT * FROM calendar_events WHERE is_recurring = 0 AND event_date >= ? ORDER BY event_date ASC",
+      args: [today],
+    }),
+    db.execute("SELECT * FROM calendar_events WHERE is_recurring = 1"),
+  ]);
+
+  const oneTimeEvents = oneTimeResult.rows;
+  const recurringEvents = recurringResult.rows;
+
+  // For recurring events, compute the next 4 occurrences based on the original weekday
+  function getNextOccurrences(event: any, count: number): any[] {
+    const originalDate = new Date(event.event_date + 'T00:00:00');
+    const targetDay = originalDate.getDay();
+    const todayDate = new Date(today + 'T00:00:00');
+
+    const occurrences: any[] = [];
+    const current = new Date(todayDate);
+
+    const daysUntil = (targetDay - current.getDay() + 7) % 7;
+    current.setDate(current.getDate() + daysUntil);
+
+    for (let i = 0; i < count; i++) {
+      const dateStr = current.toISOString().split('T')[0];
+      occurrences.push({
+        ...event,
+        event_date: dateStr,
+        _isRecurring: true,
+      });
+      current.setDate(current.getDate() + 7);
+    }
+    return occurrences;
+  }
+
+  const expandedRecurring = recurringEvents.flatMap((e) => getNextOccurrences(e, 4));
+  allEvents = [...oneTimeEvents, ...expandedRecurring].sort((a, b) =>
+    (a.event_date as string).localeCompare(b.event_date as string)
+  );
+} catch (e: any) {
+  error = e.message;
+}
+
+function formatDate(dateStr: string): string {
+  const date = new Date(dateStr + 'T00:00:00');
+  return date.toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
+function getEventTypeColor(type: string): string {
+  const colors: Record<string, string> = {
+    meeting: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+    conference: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
+    deadline: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+    workshop: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
+    social: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+    other: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300',
+  };
+  return colors[type] || colors.other;
+}
+---
+
+<BaseLayout title="Calendar">
+  <div class="container mx-auto px-4 py-8">
+    <div class="flex flex-col lg:flex-row gap-8">
+      <aside class="lg:w-64 shrink-0">
+        <PortalNav currentPath={Astro.url.pathname} isAdmin={user?.role === 'admin'} />
+      </aside>
+
+      <div class="flex-1 min-w-0">
+        <div class="mb-6">
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Calendar</h1>
+          <p class="text-gray-600 dark:text-gray-400 mt-1">Upcoming meetings, events, and Zoom links</p>
+        </div>
+
+        {error ? (
+          <div class="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg p-4 text-sm">
+            Error loading events: {error}
+          </div>
+        ) : allEvents.length === 0 ? (
+          <div class="bg-gray-50 dark:bg-neutral-800 rounded-lg p-8 text-center text-gray-500 dark:text-gray-400">
+            No upcoming events scheduled.
+          </div>
+        ) : (
+          <div class="space-y-3">
+            {allEvents.map((event) => (
+              <div class="bg-white dark:bg-neutral-800 rounded-xl border border-gray-200 dark:border-neutral-700 p-5 hover:shadow-sm transition-shadow">
+                <div class="flex flex-col sm:flex-row sm:items-start gap-4">
+                  <div class="flex-shrink-0 text-center sm:w-20">
+                    <div class="text-sm font-medium text-clif-burgundy">
+                      {formatDate(event.event_date as string).split(', ')[0]}
+                    </div>
+                    <div class="text-lg font-bold text-gray-900 dark:text-white">
+                      {new Date((event.event_date as string) + 'T00:00:00').getDate()}
+                    </div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">
+                      {new Date((event.event_date as string) + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                    </div>
+                  </div>
+
+                  <div class="flex-1 min-w-0">
+                    <div class="flex flex-wrap items-center gap-2 mb-1">
+                      <h3 class="text-base font-semibold text-gray-900 dark:text-white">
+                        {event.title}
+                      </h3>
+                      {event.event_type && (
+                        <span class={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getEventTypeColor(event.event_type as string)}`}>
+                          {event.event_type}
+                        </span>
+                      )}
+                      {event._isRecurring && (
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-neutral-700 dark:text-gray-300">
+                          Weekly
+                        </span>
+                      )}
+                    </div>
+
+                    {event.event_time && (
+                      <p class="text-sm text-gray-600 dark:text-gray-400">{event.event_time}</p>
+                    )}
+
+                    {event.description && (
+                      <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">{event.description}</p>
+                    )}
+
+                    {event.location && (
+                      <p class="text-sm text-gray-500 dark:text-gray-500 mt-1">
+                        {event.location}
+                      </p>
+                    )}
+                  </div>
+
+                  {event.meeting_link && (
+                    <div class="flex-shrink-0">
+                      <a
+                        href={event.meeting_link as string}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="inline-flex items-center gap-2 px-4 py-2 bg-clif-burgundy text-white text-sm font-medium rounded-lg hover:bg-clif-burgundy/90 transition-colors"
+                      >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        Join
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+</BaseLayout>
