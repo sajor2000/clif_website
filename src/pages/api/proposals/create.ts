@@ -12,10 +12,17 @@ export const POST: APIRoute = async ({ locals, request }) => {
     });
   }
 
-  const { title, description, deadline, is_meeting_vote, meeting_date } = await request.json();
+  const { title, description, deadline, is_meeting_vote, meeting_date, is_anonymous } = await request.json();
 
   if (!title) {
     return new Response(JSON.stringify({ error: 'Title is required.' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  if (!deadline) {
+    return new Response(JSON.stringify({ error: 'Deadline is required.' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     });
@@ -25,9 +32,9 @@ export const POST: APIRoute = async ({ locals, request }) => {
   const now = new Date().toISOString();
 
   await db.execute({
-    sql: `INSERT INTO proposals (id, title, description, created_by, status, deadline, is_meeting_vote, meeting_date, created_at, updated_at)
-          VALUES (lower(hex(randomblob(16))), ?, ?, ?, 'open', ?, ?, ?, ?, ?)`,
-    args: [title, description || null, locals.user.id, deadline || null, is_meeting_vote ? 1 : 0, meeting_date || null, now, now],
+    sql: `INSERT INTO proposals (id, title, description, created_by, status, deadline, is_meeting_vote, meeting_date, is_anonymous, created_at, updated_at)
+          VALUES (lower(hex(randomblob(16))), ?, ?, ?, 'open', ?, ?, ?, ?, ?, ?)`,
+    args: [title, description || null, locals.user.id, deadline, is_meeting_vote ? 1 : 0, meeting_date || null, is_anonymous !== false ? 1 : 0, now, now],
   });
 
   return new Response(JSON.stringify({ success: true }), {

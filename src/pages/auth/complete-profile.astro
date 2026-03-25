@@ -1,0 +1,94 @@
+---
+export const prerender = false;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const user = Astro.locals.user;
+
+// Must be logged in
+if (!user) {
+  return Astro.redirect('/auth/login');
+}
+
+// If institution already set, skip
+if (user.institution) {
+  if (user.is_approved) {
+    return Astro.redirect('/portal');
+  } else {
+    return Astro.redirect('/auth/pending');
+  }
+}
+---
+
+<BaseLayout title="Complete Your Profile">
+  <div class="min-h-[60vh] flex items-center justify-center px-4 py-16">
+    <div class="w-full max-w-md">
+      <div class="bg-white dark:bg-neutral-800 rounded-2xl shadow-lg p-8">
+        <div class="text-center mb-8">
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Complete Your Profile</h1>
+          <p class="text-gray-600 dark:text-gray-400 mt-2">Welcome, {user.full_name || user.email}! Please tell us your institution.</p>
+        </div>
+
+        <form id="profile-form" class="space-y-5">
+          <div>
+            <label for="institution" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Institution</label>
+            <input
+              type="text"
+              id="institution"
+              name="institution"
+              required
+              class="w-full px-4 py-2.5 border border-gray-300 dark:border-neutral-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent"
+              placeholder="e.g., University of Chicago"
+            />
+          </div>
+
+          <div id="error-message" class="hidden text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg px-4 py-3"></div>
+
+          <button
+            type="submit"
+            id="submit-btn"
+            class="w-full bg-clif-burgundy hover:bg-clif-burgundy/90 text-white font-medium py-2.5 px-4 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:ring-offset-2"
+          >
+            Continue
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script is:inline>
+    document.getElementById('profile-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      var errorEl = document.getElementById('error-message');
+      var submitBtn = document.getElementById('submit-btn');
+      errorEl.classList.add('hidden');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Saving...';
+
+      try {
+        var res = await fetch('/api/auth/update-profile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            institution: document.getElementById('institution').value.trim(),
+          }),
+        });
+
+        if (res.ok) {
+          var data = await res.json();
+          window.location.href = data.redirect || '/auth/pending';
+        } else {
+          var data = await res.json();
+          errorEl.textContent = data.error || 'Failed to save. Please try again.';
+          errorEl.classList.remove('hidden');
+        }
+      } catch (err) {
+        errorEl.textContent = 'Network error. Please try again.';
+        errorEl.classList.remove('hidden');
+      }
+
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Continue';
+    });
+  </script>
+</BaseLayout>

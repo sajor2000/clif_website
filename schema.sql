@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS proposals (
   status TEXT NOT NULL DEFAULT 'open',
   deadline TEXT,
   is_meeting_vote INTEGER NOT NULL DEFAULT 0,
+  is_anonymous INTEGER NOT NULL DEFAULT 1,
   meeting_date TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))

@@ -3,7 +3,7 @@ import { getSession } from './lib/session';
 
 const PROTECTED_ROUTES = ['/portal'];
 const ADMIN_ROUTES = ['/portal/admin'];
-const AUTH_PAGES = ['/auth/login', '/auth/pending'];
+const AUTH_PAGES = ['/auth/login', '/auth/pending', '/auth/complete-profile'];
 const API_ROUTES = ['/api/'];
 
 export const onRequest = defineMiddleware(async (context, next) => {
@@ -32,6 +32,11 @@ export const onRequest = defineMiddleware(async (context, next) => {
   // Redirect unauthenticated users to login
   if (!user) {
     return redirect('/auth/login?redirect=' + encodeURIComponent(pathname));
+  }
+
+  // Redirect users without institution to complete profile
+  if (!user.institution) {
+    return redirect('/auth/complete-profile');
   }
 
   // Protected routes require approval

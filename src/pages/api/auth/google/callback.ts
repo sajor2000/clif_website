@@ -80,13 +80,19 @@ export const GET: APIRoute = async ({ url, cookies, redirect }) => {
     // Background cleanup
     cleanupExpiredSessions().catch(() => {});
 
-    // Check if user is approved
+    // Check user status
     const userResult = await db.execute({
-      sql: 'SELECT is_approved FROM users WHERE id = ?',
+      sql: 'SELECT is_approved, institution FROM users WHERE id = ?',
       args: [userId],
     });
 
-    const isApproved = Boolean(userResult.rows[0]?.is_approved);
+    const row = userResult.rows[0];
+    const isApproved = Boolean(row?.is_approved);
+    const hasInstitution = Boolean(row?.institution);
+
+    if (!hasInstitution) {
+      return redirect('/auth/complete-profile');
+    }
     return redirect(isApproved ? '/portal' : '/auth/pending');
   } catch (error) {
     console.error('Google OAuth error:', error);
