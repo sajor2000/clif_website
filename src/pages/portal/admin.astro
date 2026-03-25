@@ -115,9 +115,15 @@ const approvedUsers = allProfiles.filter((p) => p.is_approved);
                 <tbody class="divide-y divide-gray-200 dark:divide-neutral-700">
                   {approvedUsers.map((u: any, i: number) => (
                     <tr class={i % 2 === 0 ? '' : 'bg-gray-50/50 dark:bg-neutral-800/50'}>
-                      <td class="px-4 py-3 text-gray-900 dark:text-gray-200">{u.full_name || '\u2014'}</td>
+                      <td class="px-4 py-3 text-gray-900 dark:text-gray-200">
+                        <span class="user-display-name" data-user-id={u.id}>{u.full_name || '\u2014'}</span>
+                        <input type="text" class="user-edit-name hidden w-full text-xs px-2 py-1 border border-gray-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" data-user-id={u.id} value={u.full_name || ''} placeholder="Full name" />
+                      </td>
                       <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{u.email}</td>
-                      <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{u.institution || '\u2014'}</td>
+                      <td class="px-4 py-3 text-gray-600 dark:text-gray-400">
+                        <span class="user-display-institution" data-user-id={u.id}>{u.institution || '\u2014'}</span>
+                        <input type="text" class="user-edit-institution hidden w-full text-xs px-2 py-1 border border-gray-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" data-user-id={u.id} value={u.institution || ''} placeholder="Institution" />
+                      </td>
                       <td class="px-4 py-3">
                         <select
                           class="role-select text-xs rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-900 dark:text-white px-2 py-1"
@@ -130,7 +136,25 @@ const approvedUsers = allProfiles.filter((p) => p.is_approved);
                         </select>
                       </td>
                       <td class="px-4 py-3 text-gray-500 dark:text-gray-400 text-xs">{new Date(u.created_at).toLocaleDateString()}</td>
-                      <td class="px-4 py-3">
+                      <td class="px-4 py-3 space-x-2 whitespace-nowrap">
+                        <button
+                          class="edit-member-btn text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline"
+                          data-user-id={u.id}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          class="save-member-btn hidden text-xs text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 underline"
+                          data-user-id={u.id}
+                        >
+                          Save
+                        </button>
+                        <button
+                          class="cancel-edit-btn hidden text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 underline"
+                          data-user-id={u.id}
+                        >
+                          Cancel
+                        </button>
                         {u.id !== user!.id && (
                           <button
                             class="remove-member-btn text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 underline"
@@ -198,6 +222,57 @@ const approvedUsers = allProfiles.filter((p) => p.is_approved);
             var data = await res.json();
             alert(data.error || 'Failed to update role');
             this.value = prev;
+          }
+        });
+      });
+
+      // Edit member inline
+      document.querySelectorAll('.edit-member-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var uid = this.getAttribute('data-user-id');
+          this.classList.add('hidden');
+          document.querySelector('.save-member-btn[data-user-id="' + uid + '"]').classList.remove('hidden');
+          document.querySelector('.cancel-edit-btn[data-user-id="' + uid + '"]').classList.remove('hidden');
+          document.querySelector('.user-display-name[data-user-id="' + uid + '"]').classList.add('hidden');
+          document.querySelector('.user-edit-name[data-user-id="' + uid + '"]').classList.remove('hidden');
+          document.querySelector('.user-display-institution[data-user-id="' + uid + '"]').classList.add('hidden');
+          document.querySelector('.user-edit-institution[data-user-id="' + uid + '"]').classList.remove('hidden');
+        });
+      });
+
+      document.querySelectorAll('.cancel-edit-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var uid = this.getAttribute('data-user-id');
+          this.classList.add('hidden');
+          document.querySelector('.save-member-btn[data-user-id="' + uid + '"]').classList.add('hidden');
+          document.querySelector('.edit-member-btn[data-user-id="' + uid + '"]').classList.remove('hidden');
+          document.querySelector('.user-display-name[data-user-id="' + uid + '"]').classList.remove('hidden');
+          document.querySelector('.user-edit-name[data-user-id="' + uid + '"]').classList.add('hidden');
+          document.querySelector('.user-display-institution[data-user-id="' + uid + '"]').classList.remove('hidden');
+          document.querySelector('.user-edit-institution[data-user-id="' + uid + '"]').classList.add('hidden');
+        });
+      });
+
+      document.querySelectorAll('.save-member-btn').forEach(function(btn) {
+        btn.addEventListener('click', async function() {
+          var uid = this.getAttribute('data-user-id');
+          var nameInput = document.querySelector('.user-edit-name[data-user-id="' + uid + '"]');
+          var instInput = document.querySelector('.user-edit-institution[data-user-id="' + uid + '"]');
+          this.disabled = true;
+          this.textContent = 'Saving...';
+
+          var res = await fetch('/api/admin/update-user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: uid, full_name: nameInput.value.trim(), institution: instInput.value.trim() }),
+          });
+
+          if (res.ok) {
+            window.location.reload();
+          } else {
+            alert('Failed to update user');
+            this.disabled = false;
+            this.textContent = 'Save';
           }
         });
       });
