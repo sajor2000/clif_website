@@ -12,7 +12,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
     });
   }
 
-  const { proposalId, title, description } = await request.json();
+  const { proposalId, title, description, deadline } = await request.json();
 
   if (!proposalId || !title?.trim()) {
     return new Response(JSON.stringify({ error: 'proposalId and title are required.' }), {
@@ -21,10 +21,17 @@ export const POST: APIRoute = async ({ locals, request }) => {
     });
   }
 
+  if (!deadline) {
+    return new Response(JSON.stringify({ error: 'Deadline is required.' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
   const db = getDb();
   await db.execute({
-    sql: 'UPDATE proposals SET title = ?, description = ?, updated_at = ? WHERE id = ?',
-    args: [title.trim(), description?.trim() || null, new Date().toISOString(), proposalId],
+    sql: 'UPDATE proposals SET title = ?, description = ?, deadline = ?, updated_at = ? WHERE id = ?',
+    args: [title.trim(), description?.trim() || null, deadline, new Date().toISOString(), proposalId],
   });
 
   return new Response(JSON.stringify({ success: true }), {

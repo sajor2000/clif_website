@@ -228,6 +228,10 @@ function formatDate(dateStr: string): string {
                         </div>
                         <p class="proposal-desc text-sm text-gray-600 dark:text-gray-400 mt-1" data-proposal-id={p.id}>{p.description || ''}</p>
                         <textarea class="proposal-desc-input hidden w-full text-sm px-2 py-1 border border-gray-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-gray-900 dark:text-white mt-1" data-proposal-id={p.id} rows="2">{p.description || ''}</textarea>
+                        <div class="proposal-deadline-edit hidden mt-2 flex items-center gap-2" data-proposal-id={p.id}>
+                          <label class="text-xs text-gray-500 dark:text-gray-400">Deadline:</label>
+                          <input type="date" class="proposal-deadline-input text-xs px-2 py-1 border border-gray-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" data-proposal-id={p.id} value={p.deadline || ''} />
+                        </div>
                         <div class="proposal-edit-actions hidden mt-2 flex gap-2" data-proposal-id={p.id}>
                           <button class="save-proposal-btn text-xs text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 underline font-medium" data-proposal-id={p.id}>Save</button>
                           <button class="cancel-proposal-edit-btn text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 underline" data-proposal-id={p.id}>Cancel</button>
@@ -507,6 +511,7 @@ function formatDate(dateStr: string): string {
           document.querySelector('.proposal-title-input[data-proposal-id="' + pid + '"]').classList.remove('hidden');
           document.querySelector('.proposal-desc[data-proposal-id="' + pid + '"]').classList.add('hidden');
           document.querySelector('.proposal-desc-input[data-proposal-id="' + pid + '"]').classList.remove('hidden');
+          document.querySelector('.proposal-deadline-edit[data-proposal-id="' + pid + '"]').classList.remove('hidden');
           document.querySelector('.proposal-edit-actions[data-proposal-id="' + pid + '"]').classList.remove('hidden');
           this.classList.add('hidden');
         });
@@ -519,6 +524,7 @@ function formatDate(dateStr: string): string {
           document.querySelector('.proposal-title-input[data-proposal-id="' + pid + '"]').classList.add('hidden');
           document.querySelector('.proposal-desc[data-proposal-id="' + pid + '"]').classList.remove('hidden');
           document.querySelector('.proposal-desc-input[data-proposal-id="' + pid + '"]').classList.add('hidden');
+          document.querySelector('.proposal-deadline-edit[data-proposal-id="' + pid + '"]').classList.add('hidden');
           document.querySelector('.proposal-edit-actions[data-proposal-id="' + pid + '"]').classList.add('hidden');
           document.querySelector('.edit-proposal-btn[data-proposal-id="' + pid + '"]').classList.remove('hidden');
         });
@@ -535,7 +541,7 @@ function formatDate(dateStr: string): string {
           var res = await fetch('/api/proposals/update', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ proposalId: pid, title: title, description: description }),
+            body: JSON.stringify({ proposalId: pid, title: title, description: description, deadline: document.querySelector('.proposal-deadline-input[data-proposal-id="' + pid + '"]').value }),
           });
 
           if (res.ok) {
