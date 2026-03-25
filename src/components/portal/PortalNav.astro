@@ -1,10 +1,21 @@
 ---
+import { getDb } from '../../lib/turso';
+
 interface Props {
   currentPath: string;
   isAdmin?: boolean;
 }
 
 const { currentPath, isAdmin = false } = Astro.props;
+
+let pendingCount = 0;
+if (isAdmin) {
+  try {
+    const db = getDb();
+    const result = await db.execute('SELECT COUNT(*) as cnt FROM users WHERE is_approved = 0');
+    pendingCount = Number(result.rows[0]?.cnt) || 0;
+  } catch {}
+}
 
 const portalItems = [
   { label: 'Dashboard', href: '/portal', icon: 'grid', wip: true },
@@ -54,6 +65,9 @@ function isActive(href: string): boolean {
           aria-current={isActive('/portal/admin') ? 'page' : undefined}
         >
           Admin Panel
+          {pendingCount > 0 && (
+            <span class="ml-auto inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold text-white bg-red-500 rounded-full">{pendingCount}</span>
+          )}
         </a>
       </li>
     )}
