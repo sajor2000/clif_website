@@ -1,0 +1,498 @@
+---
+// Interactive Consortium Map - Shows CLIF sites with institution logos
+import { readFile } from 'fs/promises';
+import { join } from 'path';
+
+// Read and parse the CSV file at build time
+const csvPath = join(process.cwd(), 'src', 'data', 'site_details.csv');
+const csvContent = await readFile(csvPath, 'utf-8');
+const lines = csvContent.trim().split('\n');
+
+// Parse CSV helper
+function parseCSVLine(line: string): string[] {
+  const result: string[] = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) {
+      result.push(current);
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  result.push(current);
+  return result;
+}
+
+interface SiteData {
+  name: string;
+  location: string;
+  latitude: number;
+  longitude: number;
+  dataReady: boolean;
+  hospitals: number;
+  encounters: number;
+  patients: number;
+  logoFile: string | null;
+}
+
+// Logo mapping: site name substring → logo filename
+const logoMap: Record<string, string> = {
+  'Emory': 'emory.png',
+  'Johns Hopkins': 'jhu.png',
+  'Northwestern': 'nw.png',
+  'Oregon Health': 'ohsu.png',
+  'Rush': 'rush.png',
+  'San Francisco': 'ucsf.png',
+  'University of Chicago': 'ucmc.png',
+  'University of Michigan': 'umich.png',
+  'University of Minnesota': 'umn.png',
+  'University of Pennsylvania': 'upenn.png',
+  'University of Toronto': 'utor.png',
+  'Cornell': 'cornell.png',
+  'Harvard': 'harvard.png',
+  'University of Colorado': 'cu.png',
+};
+
+function findLogo(siteName: string): string | null {
+  for (const [key, file] of Object.entries(logoMap)) {
+    if (siteName.includes(key)) return file;
+  }
+  return null;
+}
+
+const sites: SiteData[] = [];
+for (let i = 1; i < lines.length; i++) {
+  const values = parseCSVLine(lines[i]);
+  if (values.length >= 8) {
+    const latStr = values[2].trim().replace(/−/g, '-');
+    const lonStr = values[3].trim().replace(/−/g, '-');
+    const name = values[0].trim();
+    sites.push({
+      name,
+      location: values[1].trim(),
+      latitude: parseFloat(latStr),
+      longitude: parseFloat(lonStr),
+      dataReady: values[4].trim().toLowerCase() === 'yes',
+      hospitals: values[5].trim() ? parseInt(values[5].trim().replace(/,/g, '')) : 0,
+      encounters: values[6].trim() ? parseInt(values[6].trim().replace(/,/g, '')) : 0,
+      patients: values[7].trim() ? parseInt(values[7].trim().replace(/,/g, '')) : 0,
+      logoFile: findLogo(name),
+    });
+  }
+}
+
+const totalInstitutions = sites.length;
+const activeSites = sites.filter(s => s.dataReady).length;
+const totalHospitals = sites.reduce((sum, s) => sum + s.hospitals, 0);
+const totalPatients = sites.reduce((sum, s) => sum + s.patients, 0);
+
+const sitesJSON = JSON.stringify(sites);
+---
+
+<section class="mb-16 px-4">
+  <div class="max-w-[95vw] mx-auto">
+    <!-- Map Container -->
+    <div class="relative rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+      <div id="consortium-map" class="h-[400px] sm:h-[500px] md:h-[600px] bg-gray-100 dark:bg-gray-800"></div>
+
+      <!-- Legend -->
+      <div class="absolute bottom-4 left-4 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm px-4 py-3 rounded-lg shadow-md z-[1000] border border-gray-200/50 dark:border-gray-700/50">
+        <div class="flex flex-col gap-2">
+          <div class="flex items-center gap-2.5">
+            <div class="relative flex items-center justify-center" style="width:20px;height:20px;">
+              <div class="absolute w-5 h-5 rounded-full bg-clif-burgundy/20 animate-ping-slow"></div>
+              <div class="w-3 h-3 rounded-full bg-clif-burgundy border-2 border-white shadow-sm"></div>
+            </div>
+            <span class="text-xs font-medium text-gray-700 dark:text-gray-300">CLIF Data Ready</span>
+          </div>
+          <div class="flex items-center gap-2.5">
+            <div class="flex items-center justify-center" style="width:20px;height:20px;">
+              <div class="w-3 h-3 rounded-full border-2 border-dashed border-gray-400 dark:border-gray-500"></div>
+            </div>
+            <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Coming Soon</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats Bar -->
+    <div class="flex justify-center gap-6 sm:gap-10 mt-5">
+      <div class="text-center">
+        <div class="text-2xl font-bold text-clif-burgundy">{totalInstitutions}</div>
+        <div class="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">Institutions</div>
+      </div>
+      <div class="text-center">
+        <div class="text-2xl font-bold text-clif-burgundy">{totalHospitals}</div>
+        <div class="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">Hospitals</div>
+      </div>
+      <div class="text-center">
+        <div class="text-2xl font-bold text-clif-burgundy">{activeSites}</div>
+        <div class="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">Active Sites</div>
+      </div>
+      <div class="text-center">
+        <div class="text-2xl font-bold text-clif-burgundy">{totalPatients.toLocaleString()}</div>
+        <div class="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">Patients</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  @keyframes ping-slow {
+    0% { transform: scale(1); opacity: 0.5; }
+    75%, 100% { transform: scale(2); opacity: 0; }
+  }
+  .animate-ping-slow {
+    animation: ping-slow 2.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+
+  /* Leaflet marker overrides */
+  :global(.consortium-logo-marker) {
+    background: none !important;
+    border: none !important;
+  }
+  :global(.logo-marker) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+  :global(.logo-marker.active .pulse-ring) {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: rgba(139, 21, 56, 0.15);
+    animation: marker-pulse 2.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+    z-index: 0;
+  }
+  :global(.logo-marker.upcoming .pulse-ring) {
+    display: none;
+  }
+  :global(.logo-marker .logo-box) {
+    background: none;
+    border: none;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+    transition: transform 0.2s ease;
+  }
+  :global(.logo-marker:hover .logo-box) {
+    transform: scale(1.2);
+  }
+  :global(.logo-marker .logo-box img) {
+    height: 80px;
+    width: auto;
+    min-width: 60px;
+    max-width: 160px;
+    object-fit: contain;
+    display: block;
+    opacity: 1 !important;
+  }
+  :global(.logo-marker.upcoming .logo-box) {
+    opacity: 1;
+  }
+  :global(.logo-marker .text-fallback) {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #8B1538;
+    border: 2.5px solid white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 14px;
+    font-family: 'Inter', system-ui, sans-serif;
+    position: relative;
+    z-index: 1;
+    transition: transform 0.2s ease;
+  }
+  :global(.logo-marker:hover .text-fallback) {
+    transform: scale(1.15);
+  }
+
+  @keyframes marker-pulse {
+    0% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+    100% { transform: translate(-50%, -50%) scale(2.2); opacity: 0; }
+  }
+
+  /* Dark mode marker adjustments */
+  :global(.dark .logo-marker .logo-box img) {
+    filter: brightness(1.3);
+  }
+  :global(.dark .logo-marker .pulse-ring) {
+    background: rgba(166, 32, 72, 0.2);
+  }
+
+  /* Tooltip styling */
+  :global(.consortium-tooltip) {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    padding: 8px 12px;
+    min-width: 160px;
+  }
+  :global(.consortium-tooltip .tt-name) {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 2px;
+  }
+  :global(.consortium-tooltip .tt-location) {
+    font-size: 12px;
+    color: #6b7280;
+    margin-bottom: 6px;
+  }
+  :global(.consortium-tooltip .tt-stats) {
+    font-size: 11px;
+    color: #6b7280;
+    border-top: 1px solid #e5e7eb;
+    padding-top: 6px;
+    margin-top: 4px;
+  }
+  :global(.consortium-tooltip .tt-badge) {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  :global(.consortium-tooltip .tt-badge.active) {
+    background: #d1fae5;
+    color: #065f46;
+  }
+  :global(.consortium-tooltip .tt-badge.upcoming) {
+    background: #e5e7eb;
+    color: #374151;
+  }
+
+  :global(.leaflet-tooltip) {
+    border-radius: 10px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    padding: 0 !important;
+  }
+
+  :global(.leaflet-container) {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  /* Hide default leaflet attribution styling clutter */
+  :global(.leaflet-control-attribution) {
+    font-size: 10px !important;
+    background: rgba(255,255,255,0.7) !important;
+    padding: 2px 6px !important;
+  }
+  :global(.dark .leaflet-control-attribution) {
+    background: rgba(17,24,39,0.7) !important;
+    color: #9ca3af !important;
+  }
+  :global(.dark .leaflet-control-attribution a) {
+    color: #9ca3af !important;
+  }
+</style>
+
+<script define:vars={{ sitesJSON }}>
+  const sites = JSON.parse(sitesJSON);
+
+  const LIGHT_TILES = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+  const DARK_TILES = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+  const ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
+
+  let map = null;
+  let tileLayer = null;
+
+  function isDarkMode() {
+    return document.documentElement.classList.contains('dark');
+  }
+
+  function createTooltipContent(site) {
+    let html = `<div class="consortium-tooltip">
+      <div class="tt-name">${site.name}</div>
+      <div class="tt-location">${site.location}</div>`;
+
+    if (site.dataReady) {
+      html += `<div class="tt-stats">
+        ${site.hospitals} hospital${site.hospitals !== 1 ? 's' : ''} &middot; ${site.patients.toLocaleString()} patients
+      </div>`;
+      html += `<div style="margin-top:6px"><span class="tt-badge active">Active</span></div>`;
+    } else {
+      html += `<div style="margin-top:4px"><span class="tt-badge upcoming">Coming Soon</span></div>`;
+    }
+
+    html += `</div>`;
+    return html;
+  }
+
+  function initMap() {
+    if (typeof L === 'undefined') return;
+
+    const mapEl = document.getElementById('consortium-map');
+    if (!mapEl || map) return;
+
+    const isMobile = window.innerWidth < 640;
+
+    map = L.map('consortium-map', {
+      center: [45, -98],
+      zoom: 4.5,
+      minZoom: 4,
+      maxZoom: 6,
+      zoomControl: false,
+      scrollWheelZoom: false,
+      dragging: false,
+      doubleClickZoom: false,
+      touchZoom: false,
+      attributionControl: true,
+      maxBounds: L.latLngBounds(L.latLng(30, -250), L.latLng(48, -20)),
+      maxBoundsViscosity: 1.0,
+    });
+
+    tileLayer = L.tileLayer(isDarkMode() ? DARK_TILES : LIGHT_TILES, {
+      attribution: ATTRIBUTION,
+      maxZoom: 18,
+      subdomains: 'abcd',
+    }).addTo(map);
+
+    // Offset overlapping sites (Chicago cluster, Boston cluster)
+    const offsets = {
+      'Rush University': [0.2, -1.5],
+      'Northwestern University': [-0.8, -2.5],
+      'University of Chicago': [-1.7, -1.5],
+      'University of Toronto': [1.7, -1.3],
+      'University of Pennsylvania': [0.5, -0.5],
+      'Johns Hopkins University': [-0.5, -0.5],
+    };
+
+    // Custom logo sizes: [height, maxWidth] in px
+    // Adjust these to make individual logos bigger or smaller
+    const logoSizes = {
+      'Emory University':                          [100, 140],
+      'Johns Hopkins University':                  [70, 140],
+      'Northwestern University':                   [100, 100],
+      'Oregon Health & Science University':         [90, 100],
+      'Rush University':                           [90, 120],
+      'University of California, San Francisco (UCSF)': [50, 100],
+      'University of Chicago':                     [90, 160],
+      'University of Michigan':                    [70, 100],
+      'University of Minnesota':                   [90, 160],
+      'University of Pennsylvania':                [80, 140],
+      'University of Toronto':                     [100, 120],
+      'Cornell University':                        [60, 120],
+      'Harvard University / MIMIC-IV':             [70, 100],
+      'University of Colorado':                    [60, 100],
+    };
+
+    // Add markers
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+    sites.forEach(site => {
+      const [latOff, lngOff] = offsets[site.name] || [0, 0];
+      const [logoH, logoW] = logoSizes[site.name] || [70, 140];
+      let markerHtml;
+      const statusClass = site.dataReady ? 'active' : 'upcoming';
+
+      if (site.logoFile) {
+        const pulseRing = site.dataReady ? '<div class="pulse-ring"></div>' : '';
+        markerHtml = `
+          <div class="logo-marker ${statusClass}">
+            ${pulseRing}
+            <div class="logo-box">
+              <img src="/images/logos/sites/${site.logoFile}" alt="${site.name}" style="height:${logoH}px;max-width:${logoW}px;" />
+            </div>
+          </div>`;
+      } else {
+        // Text fallback (e.g., MIMIC-IV)
+        const initial = site.name.charAt(0);
+        const pulseRing = site.dataReady ? '<div class="pulse-ring"></div>' : '';
+        markerHtml = `
+          <div class="logo-marker ${statusClass}">
+            ${pulseRing}
+            <div class="text-fallback">${initial}</div>
+          </div>`;
+      }
+
+      const icon = L.divIcon({
+        className: 'consortium-logo-marker',
+        html: markerHtml,
+        iconSize: [logoW, logoH],
+        iconAnchor: [logoW / 2, logoH / 2],
+      });
+
+      const marker = L.marker([site.latitude + latOff, site.longitude + lngOff], { icon });
+      marker.addTo(map);
+
+      const tooltipContent = createTooltipContent(site);
+
+      if (isTouchDevice) {
+        marker.bindPopup(tooltipContent, {
+          className: 'consortium-popup',
+          maxWidth: 250,
+        });
+      } else {
+        marker.bindTooltip(tooltipContent, {
+          direction: 'top',
+          offset: [0, -20],
+          opacity: 1,
+        });
+      }
+    });
+
+    // NOTE: To adjust the map view, change these two values:
+    //   center: [lat, lng]  — where the map is centered
+    //   zoom: number        — higher = more zoomed in (try 4.0 to 5.0)
+
+    // Watch for dark mode toggle
+    const observer = new MutationObserver(() => {
+      if (!map || !tileLayer) return;
+      const dark = isDarkMode();
+      map.removeLayer(tileLayer);
+      tileLayer = L.tileLayer(dark ? DARK_TILES : LIGHT_TILES, {
+        attribution: ATTRIBUTION,
+        maxZoom: 18,
+        subdomains: 'abcd',
+      }).addTo(map);
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+  }
+
+  // Load Leaflet dynamically
+  function loadLeaflet() {
+    if (typeof L !== 'undefined') {
+      initMap();
+      return;
+    }
+
+    // Load CSS
+    if (!document.querySelector('link[href*="leaflet"]')) {
+      const css = document.createElement('link');
+      css.rel = 'stylesheet';
+      css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      document.head.appendChild(css);
+    }
+
+    // Load JS
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    script.onload = () => initMap();
+    document.head.appendChild(script);
+  }
+
+  // Initialize when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadLeaflet);
+  } else {
+    loadLeaflet();
+  }
+</script>
