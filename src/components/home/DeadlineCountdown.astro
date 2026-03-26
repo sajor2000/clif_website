@@ -1,0 +1,255 @@
+---
+import CTAButton from '../shared/CTAButton.astro';
+---
+
+<section class="mb-16">
+  <div class="max-w-5xl mx-auto relative overflow-hidden bg-gradient-to-r from-clif-burgundy to-clif-burgundy-dark rounded-xl shadow-lg" id="news-carousel">
+    <!-- Decorative background pattern -->
+    <div class="absolute inset-0 opacity-10 pointer-events-none">
+      <div class="absolute -right-8 -top-8 w-40 h-40 border-2 border-white rounded-full"></div>
+      <div class="absolute -right-4 -top-4 w-28 h-28 border-2 border-white rounded-full"></div>
+      <div class="absolute -left-8 -bottom-8 w-40 h-40 border-2 border-white rounded-full"></div>
+      <div class="absolute -left-4 -bottom-4 w-28 h-28 border-2 border-white rounded-full"></div>
+    </div>
+
+    <!-- Slides container — grid stacks children so tallest sets height -->
+    <div class="carousel-stack relative">
+
+      <!-- Slide 1: mCIDE v3.0 Countdown -->
+      <div class="carousel-slide p-6 md:p-8 transition-opacity duration-700 ease-in-out opacity-100" data-slide="0">
+        <div id="countdown-active" class="relative">
+          <div class="flex flex-col lg:flex-row gap-6 lg:gap-8 items-center">
+            <div class="flex-1">
+              <h3 class="text-2xl md:text-3xl font-bold text-white mb-3 flex items-start gap-3">
+                <span class="relative flex h-3 w-3 shrink-0 mt-[0.55em]">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-300 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-3 w-3 bg-yellow-400"></span>
+                </span>
+                mCIDE v3.0 — Submit Expansion Requests
+              </h3>
+              <p class="text-white/80 leading-relaxed mb-5">
+                The mCIDE v3.0 expansion request period is open. Browse categories, propose new permissible values, and endorse others' proposals before the deadline.
+              </p>
+              <CTAButton
+                href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/177"
+                variant="outline"
+                size="medium"
+                external={true}
+                class="!border-white !text-white hover:!bg-white hover:!text-clif-burgundy"
+              >
+                View Expansion Tracker
+              </CTAButton>
+            </div>
+            <div class="shrink-0 opacity-0 transition-opacity duration-500" id="countdown-digits">
+              <p class="text-white/60 text-xs uppercase tracking-wider text-center mb-3 font-medium">Time Remaining</p>
+              <div class="grid grid-cols-4 gap-2 md:gap-3">
+                <div class="bg-white/15 backdrop-blur-sm rounded-xl border border-white/20 px-3 py-3 md:px-4 md:py-4 text-center min-w-[60px] md:min-w-[72px]">
+                  <span class="block text-2xl md:text-4xl font-bold text-white tabular-nums" data-countdown="days">--</span>
+                  <span class="block text-white/60 text-[10px] md:text-xs uppercase tracking-wider mt-1">Days</span>
+                </div>
+                <div class="bg-white/15 backdrop-blur-sm rounded-xl border border-white/20 px-3 py-3 md:px-4 md:py-4 text-center min-w-[60px] md:min-w-[72px]">
+                  <span class="block text-2xl md:text-4xl font-bold text-white tabular-nums" data-countdown="hours">--</span>
+                  <span class="block text-white/60 text-[10px] md:text-xs uppercase tracking-wider mt-1">Hours</span>
+                </div>
+                <div class="bg-white/15 backdrop-blur-sm rounded-xl border border-white/20 px-3 py-3 md:px-4 md:py-4 text-center min-w-[60px] md:min-w-[72px]">
+                  <span class="block text-2xl md:text-4xl font-bold text-white tabular-nums" data-countdown="mins">--</span>
+                  <span class="block text-white/60 text-[10px] md:text-xs uppercase tracking-wider mt-1">Mins</span>
+                </div>
+                <div class="bg-white/15 backdrop-blur-sm rounded-xl border border-white/20 px-3 py-3 md:px-4 md:py-4 text-center min-w-[60px] md:min-w-[72px]">
+                  <span class="block text-2xl md:text-4xl font-bold text-white tabular-nums" data-countdown="secs">--</span>
+                  <span class="block text-white/60 text-[10px] md:text-xs uppercase tracking-wider mt-1">Secs</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Post-deadline fallback (hidden until deadline passes) -->
+        <div id="countdown-ended" class="relative hidden">
+          <div class="flex flex-col sm:flex-row gap-4 items-center">
+            <div class="flex-1">
+              <h3 class="text-2xl md:text-3xl font-bold text-white mb-3 flex items-start gap-3">
+                <span class="relative flex h-3 w-3 shrink-0 mt-[0.55em]">
+                  <span class="relative inline-flex rounded-full h-3 w-3 bg-green-400"></span>
+                </span>
+                mCIDE v3.0 — Expansion Request Period Ended
+              </h3>
+              <p class="text-white/80 leading-relaxed mb-5">
+                Thank you for your submissions. The review process is now underway.
+              </p>
+              <CTAButton
+                href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/177"
+                variant="outline"
+                size="medium"
+                external={true}
+                class="!border-white !text-white hover:!bg-white hover:!text-clif-burgundy"
+              >
+                View Expansion Tracker
+              </CTAButton>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Slide 2: MIMIC-IV on PhysioNet -->
+      <div class="carousel-slide p-6 md:p-8 transition-opacity duration-700 ease-in-out opacity-0 pointer-events-none" data-slide="1">
+        <div class="relative flex flex-col lg:flex-row gap-6 lg:gap-8 items-center">
+          <div class="flex-1">
+            <h3 class="text-2xl md:text-3xl font-bold text-white mb-3 flex items-start gap-3">
+              <span class="relative flex h-3 w-3 shrink-0 mt-[0.55em]">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-300 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-3 w-3 bg-yellow-400"></span>
+              </span>
+              MIMIC-IV in CLIF Format — Now on PhysioNet
+            </h3>
+            <p class="text-white/80 leading-relaxed mb-5">
+              MIMIC-IV is now available in CLIF format on PhysioNet — enabling researchers worldwide to develop and test analysis code using the CLIF standard without requiring institutional EHR access.
+            </p>
+            <p class="text-sm text-white/50 mb-5">Zewei Liao et al.</p>
+            <CTAButton
+              href="https://physionet.org/content/mimic-iv-ext-clif/1.1.0/"
+              variant="outline"
+              size="medium"
+              external={true}
+              class="!border-white !text-white hover:!bg-white hover:!text-clif-burgundy"
+            >
+              Access on PhysioNet
+            </CTAButton>
+          </div>
+          <div class="hidden lg:block lg:w-80 shrink-0">
+            <img
+              src="/images/misc/physionet_mimic_clif.png"
+              alt="MIMIC-IV-Ext-CLIF on PhysioNet"
+              class="rounded-lg shadow-xl border border-white/20 w-full"
+              loading="lazy"
+              decoding="async"
+            />
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Carousel indicators -->
+    <div class="relative px-6 md:px-8 pb-5">
+      <div class="flex items-center justify-center gap-3">
+        <button class="carousel-dot w-8 h-1.5 rounded-full bg-white/80 transition-all duration-300" data-dot="0" aria-label="Show slide 1"></button>
+        <button class="carousel-dot w-8 h-1.5 rounded-full bg-white/30 transition-all duration-300" data-dot="1" aria-label="Show slide 2"></button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* Grid stacking: all children occupy the same cell so the tallest defines height */
+  .carousel-stack {
+    display: grid;
+  }
+  .carousel-stack > .carousel-slide {
+    grid-area: 1 / 1;
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // --- Carousel logic ---
+    const carousel = document.getElementById('news-carousel');
+    const slides = document.querySelectorAll<HTMLElement>('.carousel-slide');
+    const dots = document.querySelectorAll<HTMLElement>('.carousel-dot');
+    const SLIDE_INTERVAL = 6000;
+    let currentSlide = 0;
+    let paused = false;
+    let autoplayId: number;
+
+    function showSlide(index: number) {
+      slides.forEach((slide, i) => {
+        if (i === index) {
+          slide.classList.remove('opacity-0', 'pointer-events-none');
+          slide.classList.add('opacity-100');
+        } else {
+          slide.classList.add('opacity-0', 'pointer-events-none');
+          slide.classList.remove('opacity-100');
+        }
+      });
+      dots.forEach((dot, i) => {
+        dot.classList.toggle('bg-white/80', i === index);
+        dot.classList.toggle('bg-white/30', i !== index);
+      });
+      currentSlide = index;
+    }
+
+    function nextSlide() {
+      if (!paused) {
+        showSlide((currentSlide + 1) % slides.length);
+      }
+    }
+
+    // Dot click handlers
+    dots.forEach((dot) => {
+      dot.addEventListener('click', () => {
+        const index = Number(dot.dataset.dot);
+        showSlide(index);
+        resetAutoplay();
+      });
+    });
+
+    // Pause on hover
+    if (carousel) {
+      carousel.addEventListener('mouseenter', () => { paused = true; });
+      carousel.addEventListener('mouseleave', () => { paused = false; });
+    }
+
+    function resetAutoplay() {
+      clearInterval(autoplayId);
+      autoplayId = window.setInterval(nextSlide, SLIDE_INTERVAL);
+    }
+
+    autoplayId = window.setInterval(nextSlide, SLIDE_INTERVAL);
+
+    // --- Countdown logic ---
+    const targetDate = new Date('2026-04-17T23:59:59Z').getTime();
+    const digitsEl = document.getElementById('countdown-digits');
+    const activeEl = document.getElementById('countdown-active');
+    const endedEl = document.getElementById('countdown-ended');
+    const daysEl = document.querySelector('[data-countdown="days"]');
+    const hoursEl = document.querySelector('[data-countdown="hours"]');
+    const minsEl = document.querySelector('[data-countdown="mins"]');
+    const secsEl = document.querySelector('[data-countdown="secs"]');
+
+    if (!digitsEl || !activeEl || !endedEl || !daysEl || !hoursEl || !minsEl || !secsEl) return;
+
+    function updateCountdown() {
+      const diff = targetDate - Date.now();
+
+      if (diff <= 0) {
+        activeEl.classList.add('hidden');
+        endedEl.classList.remove('hidden');
+        clearInterval(countdownId);
+        return;
+      }
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const secs = Math.floor((diff % (1000 * 60)) / 1000);
+
+      daysEl.textContent = String(days);
+      hoursEl.textContent = String(hours).padStart(2, '0');
+      minsEl.textContent = String(mins).padStart(2, '0');
+      secsEl.textContent = String(secs).padStart(2, '0');
+
+      if (digitsEl.classList.contains('opacity-0')) {
+        digitsEl.classList.remove('opacity-0');
+        digitsEl.classList.add('opacity-100');
+      }
+    }
+
+    updateCountdown();
+    const countdownId = setInterval(updateCountdown, 1000);
+
+    window.addEventListener('beforeunload', () => {
+      clearInterval(countdownId);
+      clearInterval(autoplayId);
+    });
+  });
+</script>
