@@ -983,6 +983,16 @@ const categories = Array.from(groupedChars.keys());
     return sorted[sorted.length - 1].value;
   }
 
+  // Check if a characteristic is metadata (not patient-level data) and should never be suppressed
+  function isMetadataCharacteristic(characteristic) {
+    if (!characteristic) return false;
+    const lower = characteristic.toLowerCase().trim();
+    return lower === 'years' ||
+           lower === 'n: hospitalizations' ||
+           lower === 'n: unique patients' ||
+           lower === 'n: hospitals';
+  }
+
   // Check if a value has n < 10 (for privacy protection)
   function hasSmallN(value) {
     if (typeof value !== 'string') return false;
@@ -2919,8 +2929,8 @@ const categories = Array.from(groupedChars.keys());
 
           processedCount++;
 
-          // Skip if has small n (privacy protection)
-          if (hasSmallN(overallValue)) {
+          // Skip if has small n (privacy protection) - but never suppress metadata rows
+          if (!isMetadataCharacteristic(characteristic) && hasSmallN(overallValue)) {
             skippedSmallN++;
             return;
           }
@@ -3033,8 +3043,8 @@ const categories = Array.from(groupedChars.keys());
 
       processedCount++;
 
-      // Skip if has small n (privacy protection)
-      if (hasSmallN(value)) {
+      // Skip if has small n (privacy protection) - but never suppress metadata rows
+      if (!isMetadataCharacteristic(characteristic) && hasSmallN(value)) {
         skippedSmallN++;
         return;
       }
@@ -3664,7 +3674,7 @@ const categories = Array.from(groupedChars.keys());
             if (!siteData) return;
 
             const overallValue = siteData['Overall'];
-            if (!overallValue || overallValue.trim() === '' || hasSmallN(overallValue)) return;
+            if (!overallValue || overallValue.trim() === '' || (!isMetadataCharacteristic(characteristic) && hasSmallN(overallValue))) return;
 
             const parsed = parseCountPercentage(overallValue);
             if (parsed) {
@@ -3684,7 +3694,7 @@ const categories = Array.from(groupedChars.keys());
             if (charKey) value = d.characteristics[charKey];
           }
 
-          if (!value || hasSmallN(value)) return;
+          if (!value || (!isMetadataCharacteristic(characteristic) && hasSmallN(value))) return;
 
           const parsed = parseCountPercentage(value);
           if (parsed) {
@@ -4018,7 +4028,7 @@ const categories = Array.from(groupedChars.keys());
             if (!siteData) return;
 
             const overallValue = siteData['Overall'];
-            if (!overallValue || overallValue.trim() === '' || hasSmallN(overallValue)) return;
+            if (!overallValue || overallValue.trim() === '' || (!isMetadataCharacteristic(characteristic) && hasSmallN(overallValue))) return;
 
             const parsed = parseCountPercentage(overallValue);
             if (parsed) {
@@ -4038,7 +4048,7 @@ const categories = Array.from(groupedChars.keys());
             if (charKey) value = d.characteristics[charKey];
           }
 
-          if (!value || hasSmallN(value)) return;
+          if (!value || (!isMetadataCharacteristic(characteristic) && hasSmallN(value))) return;
 
           const parsed = parseCountPercentage(value);
           if (parsed) {
@@ -4364,7 +4374,7 @@ const categories = Array.from(groupedChars.keys());
             if (!siteData) return;
 
             const overallValue = siteData['Overall'];
-            if (!overallValue || overallValue.trim() === '' || hasSmallN(overallValue)) return;
+            if (!overallValue || overallValue.trim() === '' || (!isMetadataCharacteristic(characteristic) && hasSmallN(overallValue))) return;
 
             const parsed = parseCountPercentage(overallValue);
             if (parsed) {
@@ -4387,7 +4397,7 @@ const categories = Array.from(groupedChars.keys());
             if (charKey) value = d.characteristics[charKey];
           }
 
-          if (!value || hasSmallN(value)) return;
+          if (!value || (!isMetadataCharacteristic(characteristic) && hasSmallN(value))) return;
 
           const parsed = parseCountPercentage(value);
           if (parsed) {
@@ -4779,7 +4789,7 @@ const categories = Array.from(groupedChars.keys());
         let html = `<td class="px-4 py-3 text-sm text-gray-700 font-medium sticky left-0 bg-white">${characteristic}</td>`;
         headers.forEach(header => {
           const rawValue = row.values[header] || '-';
-          const value = hasSmallN(rawValue) ? '-' : rawValue;
+          const value = (!isMetadataCharacteristic(row.characteristic) && hasSmallN(rawValue)) ? '-' : rawValue;
           html += `<td class="px-4 py-3 text-sm text-gray-700">${value}</td>`;
         });
 
@@ -4801,7 +4811,7 @@ const categories = Array.from(groupedChars.keys());
       const characteristic = `"${row.characteristic}"`;
       const values = headers.map(header => {
         const rawValue = row.values[header] || '-';
-        return `"${hasSmallN(rawValue) ? '-' : rawValue}"`;
+        return `"${(!isMetadataCharacteristic(row.characteristic) && hasSmallN(rawValue)) ? '-' : rawValue}"`;
       }).join(',');
       csv += `${characteristic},${values}\n`;
     });
