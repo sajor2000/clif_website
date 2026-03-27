@@ -98,7 +98,7 @@ const sitesJSON = JSON.stringify(sites);
   <div class="max-w-[95vw] mx-auto">
     <!-- Map Container -->
     <div class="relative rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700">
-      <div id="consortium-map" class="h-[400px] sm:h-[500px] md:h-[600px] bg-gray-100 dark:bg-gray-800"></div>
+      <div id="consortium-map" class="h-[300px] sm:h-[500px] md:h-[600px] bg-gray-100 dark:bg-gray-800"></div>
 
       <!-- Legend -->
       <div class="absolute bottom-4 left-4 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm px-4 py-3 rounded-lg shadow-md z-[1000] border border-gray-200/50 dark:border-gray-700/50">
@@ -199,6 +199,18 @@ const sitesJSON = JSON.stringify(sites);
     object-fit: contain;
     display: block;
     opacity: 1 !important;
+  }
+  @media (max-width: 639px) {
+    :global(.logo-marker .logo-box img) {
+      height: 22px !important;
+      min-width: 16px;
+      max-width: 50px;
+    }
+    :global(.logo-marker .text-fallback) {
+      width: 22px;
+      height: 22px;
+      font-size: 8px;
+    }
   }
   :global(.logo-marker.upcoming .logo-box) {
     opacity: 1;
@@ -343,11 +355,13 @@ const sitesJSON = JSON.stringify(sites);
     if (!mapEl || map) return;
 
     const isMobile = window.innerWidth < 640;
+    const sizeScale = isMobile ? 0.25 : 1;
+    const offsetScale = isMobile ? 0.3 : 1;
 
     map = L.map('consortium-map', {
-      center: [45, -98],
-      zoom: 4.5,
-      minZoom: 4,
+      center: isMobile ? [38, -95] : [45, -98],
+      zoom: isMobile ? 2.5 : 4.5,
+      minZoom: isMobile ? 2 : 4,
       maxZoom: 6,
       zoomControl: false,
       scrollWheelZoom: false,
@@ -398,8 +412,11 @@ const sitesJSON = JSON.stringify(sites);
     const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
     sites.forEach(site => {
-      const [latOff, lngOff] = offsets[site.name] || [0, 0];
-      const [logoH, logoW] = logoSizes[site.name] || [70, 140];
+      const rawOff = offsets[site.name] || [0, 0];
+      const [latOff, lngOff] = [rawOff[0] * offsetScale, rawOff[1] * offsetScale];
+      const [baseH, baseW] = logoSizes[site.name] || [70, 140];
+      const logoH = Math.round(baseH * sizeScale);
+      const logoW = Math.round(baseW * sizeScale);
       let markerHtml;
       const statusClass = site.dataReady ? 'active' : 'upcoming';
 
