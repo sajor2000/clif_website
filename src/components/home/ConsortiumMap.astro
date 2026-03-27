@@ -94,7 +94,7 @@ const totalPatients = sites.reduce((sum, s) => sum + s.patients, 0);
 const sitesJSON = JSON.stringify(sites);
 ---
 
-<section class="mb-16 px-4">
+<section class="mb-16 px-4 relative z-0">
   <div class="max-w-[95vw] mx-auto">
     <!-- Map Container -->
     <div class="relative rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700">
@@ -359,7 +359,7 @@ const sitesJSON = JSON.stringify(sites);
     const offsetScale = isMobile ? 0.3 : 1;
 
     map = L.map('consortium-map', {
-      center: isMobile ? [38, -95] : [45, -98],
+      center: isMobile ? [38, -92] : [45, -98],
       zoom: isMobile ? 2.5 : 4.5,
       minZoom: isMobile ? 2 : 4,
       maxZoom: 6,
