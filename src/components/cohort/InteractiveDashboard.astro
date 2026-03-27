@@ -1325,8 +1325,7 @@ const categories = Array.from(groupedChars.keys());
       'SOFA Scores',
       'Comorbidities, n (%)',
       'Encounter Types',
-      'Vasopressor encounters, n (%)',
-      'N: Hospitals' // Exclude hospitals count - it's metadata, not a patient characteristic
+      'Vasopressor encounters, n (%)'
     ];
 
     allData.forEach(d => {
@@ -1559,8 +1558,7 @@ const categories = Array.from(groupedChars.keys());
         categories['Medications'].subcategories['Vasopressors'].push(charTrimmed);
         categorized = true;
       }
-      // Population - exclude "N: Hospitals" as it's metadata, not a meaningful characteristic
-      else if (charTrimmed.startsWith('N:') && !charTrimmed.includes('Hospitals')) {
+      else if (charTrimmed.startsWith('N:')) {
         categories['Population'].items.push(charTrimmed);
         categorized = true;
       }
