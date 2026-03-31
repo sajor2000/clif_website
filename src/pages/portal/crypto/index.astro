@@ -1,0 +1,672 @@
+---
+export const prerender = false;
+
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import PortalNav from '../../../components/portal/PortalNav.astro';
+import { getDb } from '../../../lib/turso';
+import { hasRole } from '../../../lib/roles';
+
+const user = Astro.locals.user!;
+const isAdmin = user.role === 'admin';
+const canCreate = true; // any approved member can create
+
+const db = getDb();
+let projects: any[] = [];
+let approvedUsers: any[] = [];
+let error: string | null = null;
+
+try {
+  // Fetch projects visible to this user
+  if (canCreate) {
+    // Steering/admin see all projects
+    const result = await db.execute({
+      sql: `SELECT p.*, u.full_name as creator_name,
+              (SELECT COUNT(*) FROM crypto_site_keys sk WHERE sk.project_id = p.id AND sk.assigned_to IS NOT NULL) as assigned_count
+            FROM crypto_projects p
+            LEFT JOIN users u ON p.created_by = u.id
+            ORDER BY p.created_at DESC`,
+      args: [],
+    });
+    projects = result.rows as any[];
+  } else {
+    // Regular members see projects where they have an assigned key
+    const result = await db.execute({
+      sql: `SELECT DISTINCT p.*, u.full_name as creator_name,
+              (SELECT COUNT(*) FROM crypto_site_keys sk WHERE sk.project_id = p.id AND sk.assigned_to IS NOT NULL) as assigned_count
+            FROM crypto_projects p
+            LEFT JOIN users u ON p.created_by = u.id
+            JOIN crypto_site_keys sk ON sk.project_id = p.id AND sk.assigned_to = ?
+            ORDER BY p.created_at DESC`,
+      args: [user.id],
+    });
+    projects = result.rows as any[];
+  }
+
+  // Fetch approved users grouped by institution
+  if (canCreate) {
+    const usersResult = await db.execute({
+      sql: `SELECT id, full_name, email, institution FROM users WHERE is_approved = 1 ORDER BY institution, full_name`,
+      args: [],
+    });
+    approvedUsers = usersResult.rows as any[];
+  }
+} catch (e: any) {
+  error = e.message;
+}
+
+const statusColors: Record<string, { bg: string; text: string }> = {
+  draft: { bg: 'bg-gray-100 dark:bg-gray-700', text: 'text-gray-700 dark:text-gray-300' },
+  keys_generated: { bg: 'bg-blue-100 dark:bg-blue-900/30', text: 'text-blue-700 dark:text-blue-400' },
+  keys_assigned: { bg: 'bg-amber-100 dark:bg-amber-900/30', text: 'text-amber-700 dark:text-amber-400' },
+  collecting: { bg: 'bg-purple-100 dark:bg-purple-900/30', text: 'text-purple-700 dark:text-purple-400' },
+  complete: { bg: 'bg-green-100 dark:bg-green-900/30', text: 'text-green-700 dark:text-green-400' },
+  cancelled: { bg: 'bg-red-100 dark:bg-red-900/30', text: 'text-red-700 dark:text-red-400' },
+};
+
+function statusLabel(s: string): string {
+  const labels: Record<string, string> = {
+    draft: 'Draft',
+    keys_generated: 'Keys Generated',
+    keys_assigned: 'Keys Assigned',
+    collecting: 'Collecting Data',
+    complete: 'Complete',
+    cancelled: 'Cancelled',
+  };
+  return labels[s] || s;
+}
+
+function formatDate(d: string): string {
+  return new Date(d).toLocaleDateString();
+}
+
+// Group users by institution for site-based selection
+const siteGroups: Record<string, any[]> = {};
+for (const u of approvedUsers) {
+  const inst = (u.institution as string) || 'Unknown';
+  if (!siteGroups[inst]) siteGroups[inst] = [];
+  siteGroups[inst].push(u);
+}
+const siteNames = Object.keys(siteGroups).sort();
+---
+
+<BaseLayout title="Secure Masking">
+  <div class="container mx-auto px-4 py-8">
+    <div class="flex flex-col lg:flex-row gap-8">
+      <aside class="lg:w-64 shrink-0">
+        <PortalNav currentPath={Astro.url.pathname} isAdmin={isAdmin} />
+      </aside>
+
+      <div class="flex-1 min-w-0">
+        <div class="mb-8">
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Deterministic Additive Masking</h1>
+          <p class="text-gray-600 dark:text-gray-400 mt-1">
+            Secure count data aggregation across consortium sites using cryptographic masking.
+          </p>
+        </div>
+
+        {error && (
+          <div class="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg p-4 text-sm mb-6">
+            Error: {error}
+          </div>
+        )}
+
+        <!-- Tabs -->
+        <div class="mb-6">
+          <div class="flex border-b border-gray-200 dark:border-neutral-700">
+            <button id="tab-howto" class="tab-btn px-5 py-3 text-sm font-medium border-b-2 border-clif-burgundy text-clif-burgundy transition-colors">
+              How It Works
+            </button>
+            {canCreate && (
+              <button id="tab-create" class="tab-btn px-5 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
+                Create New
+              </button>
+            )}
+            <button id="tab-projects" class="tab-btn px-5 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
+              Projects
+            </button>
+          </div>
+        </div>
+
+        <!-- Tab: How It Works -->
+        <div id="panel-howto" class="tab-panel">
+          <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6 space-y-4 text-sm text-gray-600 dark:text-gray-400">
+            <div class="space-y-3">
+              <h3 class="text-base font-semibold text-gray-900 dark:text-white">Workflow</h3>
+              <p><strong>1.</strong> A project creator defines dimensions (e.g. county, year, age group, sex) and selects participating sites. The system generates a master key with random offsets for every combination of dimension values.</p>
+              <p><strong>2.</strong> The master key is split into N fragments (one per site) and randomly assigned. The master key is downloaded by the creator and never stored on the server.</p>
+              <p><strong>3.</strong> Each site downloads their unique key fragment and adds the offsets to their real counts locally (masked_count = real_count + offset).</p>
+              <p><strong>4.</strong> Sites deposit masked CSVs in Box. The project creator collects, sums them across all sites per cell.</p>
+              <p><strong>5.</strong> The creator uploads the aggregated CSV along with their master key file. The browser subtracts the master key to recover true consortium-wide counts — the server never sees the master key.</p>
+            </div>
+
+            <hr class="border-gray-200 dark:border-neutral-700" />
+
+            <div class="space-y-3">
+              <h3 class="text-base font-semibold text-gray-900 dark:text-white">Security & Data Storage</h3>
+              <div class="space-y-2 text-xs">
+                <p><strong class="text-gray-900 dark:text-white">Master key:</strong> Generated on the server, immediately downloaded to the creator's computer, then discarded from server memory. It is <strong>never stored</strong> in the database or anywhere on the server. Only the creator has it as a file.</p>
+                <p><strong class="text-gray-900 dark:text-white">Site key fragments:</strong> Stored in the database so site members can download them through the portal. Each site only sees their own fragment. The creator cannot see individual fragment data — only whether a fragment has been downloaded. <strong>Once the project is unmasked, all fragment offset data is permanently wiped from the database.</strong></p>
+                <p><strong class="text-gray-900 dark:text-white">Fragment assignment:</strong> Which site gets which fragment is randomly shuffled using cryptographically secure randomness. The creator does not control or see the mapping.</p>
+                <p><strong class="text-gray-900 dark:text-white">Unmasking:</strong> Happens entirely in the creator's browser. The master key file and aggregated CSV are read locally — neither is sent to the server. Even with full database access, unmasking is impossible without the master key file.</p>
+                <p><strong class="text-gray-900 dark:text-white">If the master key is lost:</strong> The data cannot be unmasked. There is no recovery mechanism. This is by design.</p>
+                <p><strong class="text-gray-900 dark:text-white">Dropped sites:</strong> If a site cannot participate, the creator marks them as dropped. The system provides an adjusted offset so the remaining data can still be unmasked correctly, without revealing any individual site's fragment.</p>
+              </div>
+            </div>
+
+            <hr class="border-gray-200 dark:border-neutral-700" />
+
+            <div class="space-y-4">
+              <h3 class="text-base font-semibold text-gray-900 dark:text-white">Dimension Types</h3>
+
+              <!-- Add Dimension -->
+              <div class="p-4 bg-gray-50 dark:bg-neutral-900 rounded-lg">
+                <p class="text-xs font-semibold text-clif-burgundy mb-1">+ Add Dimension</p>
+                <p class="text-xs text-gray-700 dark:text-gray-300 mb-2">For categorical or text values. You type comma-separated labels that are used exactly as entered.</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Examples: age groups, sex, race, location types, ICD codes</p>
+                <div class="flex flex-wrap gap-2 mb-2">
+                  <span class="inline-flex items-center gap-1 text-xs bg-white dark:bg-neutral-800 text-gray-700 dark:text-gray-300 px-2 py-1 rounded border border-gray-200 dark:border-neutral-600">
+                    <strong>age_group:</strong> 18-44, 45-64, 65-74, 75+
+                  </span>
+                  <span class="inline-flex items-center gap-1 text-xs bg-white dark:bg-neutral-800 text-gray-700 dark:text-gray-300 px-2 py-1 rounded border border-gray-200 dark:border-neutral-600">
+                    <strong>sex:</strong> M, F
+                  </span>
+                </div>
+                <p class="text-xs text-gray-600 dark:text-gray-400 mb-1">Key CSV (4 age groups x 2 sex = <strong>8 rows</strong>):</p>
+                <div class="overflow-x-auto">
+                  <table class="text-xs border-collapse">
+                    <thead><tr class="bg-white dark:bg-neutral-800">
+                      <th class="border border-gray-200 dark:border-neutral-600 px-3 py-1.5 text-left font-semibold text-gray-700 dark:text-gray-300">age_group</th>
+                      <th class="border border-gray-200 dark:border-neutral-600 px-3 py-1.5 text-left font-semibold text-gray-700 dark:text-gray-300">sex</th>
+                      <th class="border border-gray-200 dark:border-neutral-600 px-3 py-1.5 text-left font-semibold text-gray-700 dark:text-gray-300">offset</th>
+                    </tr></thead>
+                    <tbody class="text-gray-600 dark:text-gray-400">
+                      <tr><td class="border border-gray-200 dark:border-neutral-600 px-3 py-1">18-44</td><td class="border border-gray-200 dark:border-neutral-600 px-3 py-1">M</td><td class="border border-gray-200 dark:border-neutral-600 px-3 py-1">-159</td></tr>
+                      <tr><td class="border border-gray-200 dark:border-neutral-600 px-3 py-1">18-44</td><td class="border border-gray-200 dark:border-neutral-600 px-3 py-1">F</td><td class="border border-gray-200 dark:border-neutral-600 px-3 py-1">-105</td></tr>
+                      <tr><td class="border border-gray-200 dark:border-neutral-600 px-3 py-1 text-gray-400">...</td><td class="border border-gray-200 dark:border-neutral-600 px-3 py-1 text-gray-400">...</td><td class="border border-gray-200 dark:border-neutral-600 px-3 py-1 text-gray-400">...</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Add Range Dimension -->
+              <div class="p-4 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-200 dark:border-blue-800/30">
+                <p class="text-xs font-semibold text-clif-burgundy mb-1">+ Add Range Dimension</p>
+                <p class="text-xs text-gray-700 dark:text-gray-300 mb-2">For sequential numeric values. You enter a start and end number, and the system generates every integer in between. Leading zeros are preserved.</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Examples: FIPS codes (01001 to 56045), years (2010 to 2024), ZIP codes</p>
+                <div class="flex flex-wrap gap-2 mb-2">
+                  <span class="inline-flex items-center gap-1 text-xs bg-white dark:bg-neutral-800 text-gray-700 dark:text-gray-300 px-2 py-1 rounded border border-gray-200 dark:border-neutral-600">
+                    <strong>county_fips:</strong> 01001 to 01005
+                  </span>
+                  <span class="inline-flex items-center gap-1 text-xs bg-white dark:bg-neutral-800 text-gray-700 dark:text-gray-300 px-2 py-1 rounded border border-gray-200 dark:border-neutral-600">
+                    <strong>year:</strong> 2020 to 2022
+                  </span>
+                </div>
+                <p class="text-xs text-gray-600 dark:text-gray-400 mb-1">Key CSV (5 counties x 3 years = <strong>15 rows</strong>):</p>
+                <div class="overflow-x-auto">
+                  <table class="text-xs border-collapse">
+                    <thead><tr class="bg-white dark:bg-neutral-800">
+                      <th class="border border-gray-200 dark:border-neutral-600 px-3 py-1.5 text-left font-semibold text-gray-700 dark:text-gray-300">county_fips</th>
+                      <th class="border border-gray-200 dark:border-neutral-600 px-3 py-1.5 text-left font-semibold text-gray-700 dark:text-gray-300">year</th>
+                      <th class="border border-gray-200 dark:border-neutral-600 px-3 py-1.5 text-left font-semibold text-gray-700 dark:text-gray-300">offset</th>
+                    </tr></thead>
+                    <tbody class="text-gray-600 dark:text-gray-400">
+                      <tr><td class="border border-gray-200 dark:border-neutral-600 px-3 py-1">01001</td><td class="border border-gray-200 dark:border-neutral-600 px-3 py-1">2020</td><td class="border border-gray-200 dark:border-neutral-600 px-3 py-1">234</td></tr>
+                      <tr><td class="border border-gray-200 dark:border-neutral-600 px-3 py-1">01001</td><td class="border border-gray-200 dark:border-neutral-600 px-3 py-1">2021</td><td class="border border-gray-200 dark:border-neutral-600 px-3 py-1">-88</td></tr>
+                      <tr><td class="border border-gray-200 dark:border-neutral-600 px-3 py-1">01002</td><td class="border border-gray-200 dark:border-neutral-600 px-3 py-1">2020</td><td class="border border-gray-200 dark:border-neutral-600 px-3 py-1">-301</td></tr>
+                      <tr><td class="border border-gray-200 dark:border-neutral-600 px-3 py-1 text-gray-400">...</td><td class="border border-gray-200 dark:border-neutral-600 px-3 py-1 text-gray-400">...</td><td class="border border-gray-200 dark:border-neutral-600 px-3 py-1 text-gray-400">...</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                You can mix both types in the same project. Each row in the key CSV is a unique combination of all dimension values. The <strong>offset</strong> column contains a random integer unique to each site. Sites add their real count to the offset: <code class="bg-gray-50 dark:bg-neutral-900 px-1 py-0.5 rounded text-[11px]">masked_count = real_count + offset</code>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab: Create New Project -->
+        {canCreate && (
+          <div id="panel-create" class="tab-panel hidden">
+            <form id="create-form" class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Project Name *</label>
+                <input type="text" name="name" required
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-clif-burgundy/50 focus:border-clif-burgundy" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+                <textarea name="description" rows="2"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-clif-burgundy/50 focus:border-clif-burgundy"></textarea>
+              </div>
+
+              <!-- Sites & Participants -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Sites * <span id="site-count" class="text-xs font-normal text-gray-500">({siteNames.length} sites selected)</span>
+                </label>
+                <div id="sites-list" class="max-h-64 overflow-y-auto border border-gray-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-700 divide-y divide-gray-200 dark:divide-neutral-600">
+                  {siteNames.map((siteName) => (
+                    <div class="site-group" data-site-name={siteName}>
+                      <div class="flex items-center gap-2 px-3 py-2.5">
+                        <input type="checkbox" class="site-cb rounded border-gray-300 text-clif-burgundy focus:ring-clif-burgundy/50" data-site={siteName} checked />
+                        <button type="button" class="site-toggle flex items-center gap-1.5 hover:text-clif-burgundy transition-colors">
+                          <span class="toggle-arrow text-xs text-gray-400">&#9654;</span>
+                          <span class="text-sm font-medium text-gray-900 dark:text-white">{siteName}</span>
+                          <span class="text-xs text-gray-500 dark:text-gray-400">({siteGroups[siteName].length} members)</span>
+                        </button>
+                      </div>
+                      <div class="site-users hidden pl-8 pb-2 space-y-1">
+                        {siteGroups[siteName].map((u) => (
+                          <label class="flex items-center gap-2 px-2 py-1 rounded hover:bg-gray-50 dark:hover:bg-neutral-600 cursor-pointer">
+                            <input type="checkbox" class="user-cb rounded border-gray-300 text-clif-burgundy/70 focus:ring-clif-burgundy/50"
+                              data-site={siteName} data-user-id={u.id} data-user-name={u.full_name} checked />
+                            <span class="text-xs text-gray-700 dark:text-gray-300">{u.full_name}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Select sites to include. Each site gets one key fragment. Check which members at each site can download it.</p>
+                <p class="text-xs text-amber-600 dark:text-amber-400 mt-1">Tip: Include all potential sites upfront. If a site cannot contribute data, the project creator can drop them before unmasking — the system automatically adjusts. This is much easier than regenerating keys.</p>
+              </div>
+
+              <!-- Strata Dimensions -->
+              <div>
+                <label class="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Strata Dimensions
+                  <button type="button" id="strata-info-btn" class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-gray-300 dark:bg-neutral-600 text-[10px] font-bold text-white hover:bg-clif-burgundy transition-colors" title="See examples">i</button>
+                </label>
+                <div id="strata-container" class="space-y-3">
+                  <!-- Default dimensions populated by JS -->
+                </div>
+                <div class="mt-3 flex gap-4">
+                  <button type="button" id="add-dimension-btn"
+                    class="text-sm text-clif-burgundy hover:text-clif-burgundy-dark font-medium transition-colors">
+                    + Add Dimension
+                  </button>
+                  <button type="button" id="add-range-btn"
+                    class="text-sm text-clif-burgundy hover:text-clif-burgundy-dark font-medium transition-colors">
+                    + Add Range Dimension
+                  </button>
+                </div>
+
+              </div>
+
+              <div id="cell-preview" class="text-xs text-gray-500 dark:text-gray-400 p-3 bg-gray-50 dark:bg-neutral-900 rounded-lg hidden">
+                Estimated total cells: <span id="cell-count" class="font-semibold">0</span>
+              </div>
+
+              <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30 rounded-lg p-3 text-xs text-amber-800 dark:text-amber-300">
+                <strong>Important:</strong> When you click "Create Project", a <strong>master_key.csv</strong> file will automatically download. This is the only copy — it is never stored on the server and <strong>cannot be re-downloaded</strong>. Keep it safe. If you lose it, the project data cannot be unmasked.
+              </div>
+
+              <div class="flex items-center gap-3">
+                <button type="submit" id="create-btn"
+                  class="bg-clif-burgundy hover:bg-clif-burgundy-dark text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                  Create Project
+                </button>
+                <span id="create-status" class="text-sm"></span>
+              </div>
+            </form>
+          </div>
+        )}
+
+        <!-- Tab: Projects -->
+        <div id="panel-projects" class="tab-panel hidden">
+        <div class="space-y-4">
+          {projects.length === 0 && (
+            <p class="text-sm text-gray-500 dark:text-gray-400">No projects yet.</p>
+          )}
+          {projects.map((p) => {
+            const colors = statusColors[p.status as string] || statusColors.draft;
+            const canDelete = p.created_by === user.id || isAdmin;
+            return (
+              <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-5 hover:shadow-md hover:border-clif-burgundy/30 transition-all">
+                <div class="flex items-start justify-between gap-4">
+                  <a href={`/portal/crypto/${p.id}`} class="min-w-0 flex-1">
+                    <h3 class="text-base font-semibold text-gray-900 dark:text-white truncate">{p.name}</h3>
+                    {p.description && (
+                      <p class="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">{p.description}</p>
+                    )}
+                    <div class="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-gray-500 dark:text-gray-400">
+                      <span>{p.num_sites} sites</span>
+                      <span>Created by {p.creator_name}</span>
+                      <span>{formatDate(p.created_at as string)}</span>
+                      {Number(p.assigned_count) > 0 && (
+                        <span>{p.assigned_count}/{p.num_sites} keys assigned</span>
+                      )}
+                    </div>
+                  </a>
+                  <div class="flex items-center gap-2 shrink-0">
+                    <span class={`text-xs font-semibold uppercase tracking-wide px-2 py-1 rounded ${colors.bg} ${colors.text}`}>
+                      {statusLabel(p.status as string)}
+                    </span>
+                    {canDelete && (
+                      <button class="delete-project-btn text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors p-1" data-project-id={p.id} data-project-name={p.name} title="Delete project">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<script is:inline>
+(function() {
+  // === Tab switching ===
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tabId = btn.id.replace('tab-', '');
+      // Deactivate all tabs
+      document.querySelectorAll('.tab-btn').forEach(b => {
+        b.classList.remove('border-clif-burgundy', 'text-clif-burgundy');
+        b.classList.add('border-transparent', 'text-gray-500', 'dark:text-gray-400');
+      });
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+      // Activate clicked tab
+      btn.classList.add('border-clif-burgundy', 'text-clif-burgundy');
+      btn.classList.remove('border-transparent', 'text-gray-500', 'dark:text-gray-400');
+      const panel = document.getElementById('panel-' + tabId);
+      if (panel) panel.classList.remove('hidden');
+    });
+  });
+
+  // Info button → switch to How It Works tab
+  const strataInfoBtn = document.getElementById('strata-info-btn');
+  if (strataInfoBtn) {
+    strataInfoBtn.addEventListener('click', () => {
+      const howtoTab = document.getElementById('tab-howto');
+      if (howtoTab) howtoTab.click();
+    });
+  }
+
+  const container = document.getElementById('strata-container');
+  const addBtn = document.getElementById('add-dimension-btn');
+  const addRangeBtn = document.getElementById('add-range-btn');
+  const form = document.getElementById('create-form');
+  const cellPreview = document.getElementById('cell-preview');
+  const cellCount = document.getElementById('cell-count');
+  const createBtn = document.getElementById('create-btn');
+  const createStatus = document.getElementById('create-status');
+
+  if (!container || !form) return;
+
+  let dimensionId = 0;
+
+  function addLabelDimension(name, categories) {
+    const id = dimensionId++;
+    const row = document.createElement('div');
+    row.className = 'flex items-start gap-3 p-3 bg-gray-50 dark:bg-neutral-900 rounded-lg';
+    row.dataset.dimId = id;
+    row.dataset.dimType = 'labels';
+    row.innerHTML = `
+      <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <input type="text" placeholder="Dimension name" value="${name || ''}"
+          class="dim-name px-3 py-1.5 border border-gray-300 dark:border-neutral-600 rounded text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" />
+        <input type="text" placeholder="Values (comma-separated, e.g. 18-44, 45-64)" value="${categories || ''}"
+          class="dim-cats px-3 py-1.5 border border-gray-300 dark:border-neutral-600 rounded text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" />
+      </div>
+      <button type="button" class="remove-dim text-red-500 hover:text-red-700 text-sm font-medium mt-1">&times;</button>
+    `;
+    container.appendChild(row);
+    row.querySelector('.remove-dim').addEventListener('click', () => { row.remove(); updateCellPreview(); });
+    row.querySelector('.dim-name').addEventListener('input', updateCellPreview);
+    row.querySelector('.dim-cats').addEventListener('input', updateCellPreview);
+    updateCellPreview();
+  }
+
+  function addRangeDimension(name) {
+    const id = dimensionId++;
+    const row = document.createElement('div');
+    row.className = 'flex items-start gap-3 p-3 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-200 dark:border-blue-800/30';
+    row.dataset.dimId = id;
+    row.dataset.dimType = 'range';
+    row.innerHTML = `
+      <div class="flex-1 space-y-2">
+        <input type="text" placeholder="Dimension name (e.g. county_fips, year)" value="${name || ''}"
+          class="dim-name w-full px-3 py-1.5 border border-gray-300 dark:border-neutral-600 rounded text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" />
+        <div class="flex items-center gap-2">
+          <input type="text" placeholder="Start (e.g. 01001)" class="dim-range-start flex-1 px-3 py-1.5 border border-gray-300 dark:border-neutral-600 rounded text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" />
+          <span class="text-gray-400 text-sm">to</span>
+          <input type="text" placeholder="End (e.g. 56045)" class="dim-range-end flex-1 px-3 py-1.5 border border-gray-300 dark:border-neutral-600 rounded text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" />
+          <span class="dim-range-count text-xs text-gray-500 shrink-0 w-20"></span>
+        </div>
+      </div>
+      <button type="button" class="remove-dim text-red-500 hover:text-red-700 text-sm font-medium mt-1">&times;</button>
+    `;
+    container.appendChild(row);
+    row.querySelector('.remove-dim').addEventListener('click', () => { row.remove(); updateCellPreview(); });
+    row.querySelector('.dim-name').addEventListener('input', updateCellPreview);
+    const rangeStart = row.querySelector('.dim-range-start');
+    const rangeEnd = row.querySelector('.dim-range-end');
+    const rangeCount = row.querySelector('.dim-range-count');
+    function updateRangeCount() {
+      const s = parseInt(rangeStart.value, 10);
+      const e = parseInt(rangeEnd.value, 10);
+      if (!isNaN(s) && !isNaN(e) && e >= s) {
+        rangeCount.textContent = (e - s + 1).toLocaleString() + ' values';
+      } else {
+        rangeCount.textContent = '';
+      }
+      updateCellPreview();
+    }
+    rangeStart.addEventListener('input', updateRangeCount);
+    rangeEnd.addEventListener('input', updateRangeCount);
+    updateCellPreview();
+  }
+
+  function getStrata() {
+    const dims = [];
+    container.querySelectorAll('[data-dim-id]').forEach(row => {
+      const name = row.querySelector('.dim-name').value.trim();
+      const type = row.dataset.dimType;
+
+      if (type === 'range') {
+        const startStr = row.querySelector('.dim-range-start').value.trim();
+        const endStr = row.querySelector('.dim-range-end').value.trim();
+        const start = parseInt(startStr, 10);
+        const end = parseInt(endStr, 10);
+        if (name && !isNaN(start) && !isNaN(end) && end >= start) {
+          const padLen = Math.max(startStr.length, endStr.length);
+          const cats = [];
+          for (let i = start; i <= end; i++) {
+            cats.push(String(i).padStart(padLen, '0'));
+          }
+          dims.push({ name, categories: cats });
+        }
+      } else {
+        const cats = row.querySelector('.dim-cats').value.split(',').map(c => c.trim()).filter(Boolean);
+        if (name && cats.length > 0) dims.push({ name, categories: cats });
+      }
+    });
+    return dims;
+  }
+
+  function updateCellPreview() {
+    const strata = getStrata();
+    const total = strata.reduce((acc, d) => acc * d.categories.length, 1);
+    const breakdown = strata.map(d => `${d.categories.length} ${d.name}`).join(' x ');
+
+    if (total > 0 && strata.length > 0) {
+      cellPreview.classList.remove('hidden');
+      cellCount.textContent = total.toLocaleString() + ` cells (${breakdown})`;
+    } else {
+      cellPreview.classList.add('hidden');
+    }
+  }
+
+  // Default dimensions
+  addLabelDimension('age_group', '18-44, 45-64, 65-74, 75+');
+  addLabelDimension('sex', 'M, F');
+
+  addBtn.addEventListener('click', () => addLabelDimension('', ''));
+  if (addRangeBtn) addRangeBtn.addEventListener('click', () => addRangeDimension(''));
+
+  // Site selection logic
+  const siteCountEl = document.getElementById('site-count');
+
+  // Checkbox: select/deselect site + users
+  document.querySelectorAll('.site-cb').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const group = cb.closest('.site-group');
+      const userCbs = group.querySelectorAll('.user-cb');
+      if (cb.checked) {
+        userCbs.forEach(u => u.checked = true);
+      } else {
+        userCbs.forEach(u => u.checked = false);
+      }
+      updateSiteCount();
+    });
+  });
+
+  // User checkbox: sync site checkbox (checked if any user is checked)
+  document.querySelectorAll('.user-cb').forEach(ucb => {
+    ucb.addEventListener('change', () => {
+      const group = ucb.closest('.site-group');
+      const siteCb = group.querySelector('.site-cb');
+      const anyChecked = group.querySelectorAll('.user-cb:checked').length > 0;
+      siteCb.checked = anyChecked;
+      updateSiteCount();
+    });
+  });
+
+  // Arrow/label: expand/collapse member list
+  document.querySelectorAll('.site-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const group = btn.closest('.site-group');
+      const usersDiv = group.querySelector('.site-users');
+      const arrow = btn.querySelector('.toggle-arrow');
+      usersDiv.classList.toggle('hidden');
+      arrow.textContent = usersDiv.classList.contains('hidden') ? '\u25B6' : '\u25BC';
+    });
+  });
+
+  function updateSiteCount() {
+    const count = document.querySelectorAll('.site-cb:checked').length;
+    if (siteCountEl) siteCountEl.textContent = `(${count} site${count !== 1 ? 's' : ''} selected)`;
+  }
+
+  function getSelectedSites() {
+    const sites = [];
+    document.querySelectorAll('.site-cb:checked').forEach(cb => {
+      const siteName = cb.dataset.site;
+      const group = cb.closest('.site-group');
+      const userIds = Array.from(group.querySelectorAll('.user-cb:checked')).map(u => u.dataset.userId);
+      if (userIds.length > 0) {
+        sites.push({ name: siteName, user_ids: userIds });
+      }
+    });
+    return sites;
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const strata = getStrata();
+    if (strata.length === 0) {
+      createStatus.textContent = 'Add at least one strata dimension.';
+      createStatus.className = 'text-sm text-red-600';
+      return;
+    }
+
+    const sites = getSelectedSites();
+    if (sites.length < 2) {
+      createStatus.textContent = 'Select at least 2 sites.';
+      createStatus.className = 'text-sm text-red-600';
+      return;
+    }
+
+    const emptySites = sites.filter(s => s.user_ids.length === 0);
+    if (emptySites.length > 0) {
+      createStatus.textContent = `Select at least one member for: ${emptySites.map(s => s.name).join(', ')}`;
+      createStatus.className = 'text-sm text-red-600';
+      return;
+    }
+
+    createBtn.disabled = true;
+    createBtn.textContent = 'Creating...';
+    createStatus.textContent = '';
+
+    try {
+      const body = {
+        name: form.querySelector('[name="name"]').value,
+        description: form.querySelector('[name="description"]').value,
+        sites: sites,
+        strata_config: strata,
+      };
+
+      const res = await fetch('/api/crypto/create-project', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        // Download master key CSV — this is the ONLY copy, never stored in the database
+        if (data.masterKeyCsv) {
+          const blob = new Blob([data.masterKeyCsv], { type: 'text/csv' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'master_key_' + (form.querySelector('[name="name"]').value || 'project').replace(/\s+/g, '_') + '.csv';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+        }
+        // Brief delay so the download starts before navigating
+        setTimeout(() => { window.location.href = '/portal/crypto/' + data.projectId; }, 500);
+      } else {
+        createStatus.textContent = data.error || 'Failed to create project.';
+        createStatus.className = 'text-sm text-red-600';
+      }
+    } catch (err) {
+      createStatus.textContent = 'Network error. Please try again.';
+      createStatus.className = 'text-sm text-red-600';
+    } finally {
+      createBtn.disabled = false;
+      createBtn.textContent = 'Create Project';
+    }
+  });
+
+  // Delete project
+  document.querySelectorAll('.delete-project-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const name = btn.dataset.projectName || 'this project';
+      if (!confirm(`Permanently delete "${name}" and all its keys? This cannot be undone.`)) return;
+      btn.disabled = true;
+      try {
+        const res = await fetch('/api/crypto/delete-project', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ projectId: btn.dataset.projectId, action: 'delete' }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          location.reload();
+        } else {
+          alert(data.error || 'Failed to delete.');
+          btn.disabled = false;
+        }
+      } catch (err) {
+        alert('Network error.');
+        btn.disabled = false;
+      }
+    });
+  });
+})();
+</script>

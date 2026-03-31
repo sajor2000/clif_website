@@ -1,0 +1,574 @@
+---
+export const prerender = false;
+
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import PortalNav from '../../../components/portal/PortalNav.astro';
+import { getDb } from '../../../lib/turso';
+import { hasRole } from '../../../lib/roles';
+
+const user = Astro.locals.user!;
+const isAdmin = user.role === 'admin';
+const projectId = Astro.params.id;
+
+const db = getDb();
+let project: any = null;
+let siteKeys: any[] = [];
+let submission: any = null;
+let myKey: any = null;
+let error: string | null = null;
+
+try {
+  const projectResult = await db.execute({
+    sql: `SELECT p.*, u.full_name as creator_name
+          FROM crypto_projects p
+          LEFT JOIN users u ON p.created_by = u.id
+          WHERE p.id = ?`,
+    args: [projectId],
+  });
+
+  if (projectResult.rows.length === 0) {
+    return Astro.redirect('/portal/crypto');
+  }
+
+  project = projectResult.rows[0];
+
+  // Fetch site keys (without key_data for non-participants)
+  const keysResult = await db.execute({
+    sql: `SELECT sk.id, sk.key_index, sk.label, sk.site_name, sk.authorized_users, sk.assigned_at, sk.downloaded_at, sk.is_dropped
+          FROM crypto_site_keys sk
+          WHERE sk.project_id = ?
+          ORDER BY sk.key_index`,
+    args: [projectId],
+  });
+  siteKeys = keysResult.rows as any[];
+
+  // Find user's key (check authorized_users JSON array)
+  for (const sk of siteKeys) {
+    const authorized: string[] = JSON.parse((sk.authorized_users as string) || '[]');
+    if (authorized.includes(user.id)) {
+      myKey = sk;
+      break;
+    }
+  }
+
+  // Fetch submission
+  const subResult = await db.execute({
+    sql: 'SELECT * FROM crypto_submissions WHERE project_id = ?',
+    args: [projectId],
+  });
+  if (subResult.rows.length > 0) submission = subResult.rows[0];
+
+} catch (e: any) {
+  error = e.message;
+}
+
+if (!project) return Astro.redirect('/portal/crypto');
+
+const isCreator = user.id === project.created_by;
+const isParticipant = myKey !== null;
+const strataConfig = JSON.parse(project.strata_config as string);
+
+const assignedCount = siteKeys.filter((k) => k.assigned_to).length;
+const downloadedCount = siteKeys.filter((k) => k.downloaded_at).length;
+const droppedCount = siteKeys.filter((k) => k.is_dropped).length;
+const activeSites = Number(project.num_sites) - droppedCount;
+
+const statusColors: Record<string, string> = {
+  draft: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
+  keys_generated: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+  keys_assigned: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+  collecting: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+  complete: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+  cancelled: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+};
+
+const statusLabels: Record<string, string> = {
+  draft: 'Draft',
+  keys_generated: 'Keys Generated',
+  keys_assigned: 'Keys Assigned',
+  collecting: 'Collecting Data',
+  complete: 'Complete',
+  cancelled: 'Cancelled',
+};
+
+function formatDate(d: string | null): string {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString();
+}
+---
+
+<BaseLayout title={`Crypto: ${project.name}`}>
+  <div class="container mx-auto px-4 py-8">
+    <div class="flex flex-col lg:flex-row gap-8">
+      <aside class="lg:w-64 shrink-0">
+        <PortalNav currentPath="/portal/crypto" isAdmin={isAdmin} />
+      </aside>
+
+      <div class="flex-1 min-w-0">
+        {/* Strata config data for client-side JS */}
+        <script type="application/json" id="strata-config-data" set:html={JSON.stringify(strataConfig)} />
+
+        {/* Header */}
+        <div class="mb-6">
+          <a href="/portal/crypto" class="text-sm text-clif-burgundy hover:underline">&larr; All Projects</a>
+          <div class="flex items-start justify-between gap-4 mt-2">
+            <div>
+              <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{project.name}</h1>
+              {project.description && (
+                <p class="text-gray-600 dark:text-gray-400 mt-1">{project.description}</p>
+              )}
+            </div>
+            <span class={`shrink-0 text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded ${statusColors[project.status as string] || ''}`}>
+              {statusLabels[project.status as string] || project.status}
+            </span>
+          </div>
+        </div>
+
+        {error && (
+          <div class="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg p-4 text-sm mb-6">
+            Error: {error}
+          </div>
+        )}
+
+        {/* Project Info */}
+        <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-5 mb-6">
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+            <div>
+              <span class="text-gray-500 dark:text-gray-400 block">Sites</span>
+              <span class="font-medium text-gray-900 dark:text-white">{project.num_sites}</span>
+            </div>
+            <div>
+              <span class="text-gray-500 dark:text-gray-400 block">Created by</span>
+              <span class="font-medium text-gray-900 dark:text-white">{project.creator_name}</span>
+            </div>
+          </div>
+          <div class="mt-4 pt-4 border-t border-gray-100 dark:border-neutral-700">
+            <span class="text-gray-500 dark:text-gray-400 text-sm block mb-2">Strata Dimensions</span>
+            <div class="flex flex-wrap gap-2">
+              {strataConfig.map((dim: any) => (
+                <span class="inline-flex items-center gap-1 text-xs bg-gray-100 dark:bg-neutral-700 text-gray-700 dark:text-gray-300 px-2.5 py-1 rounded-full">
+                  <strong>{dim.name}:</strong> {dim.categories.join(', ')}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Progress Tracker */}
+        {project.status !== 'draft' && project.status !== 'cancelled' && (
+          <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-5 mb-6">
+            <h2 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">Progress</h2>
+            <div class="space-y-3">
+              <div class="flex items-center gap-3">
+                <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-green-500 text-white">1</div>
+                <span class="text-sm text-gray-700 dark:text-gray-300">Keys generated and assigned ({assignedCount}/{project.num_sites})</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <div class={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${downloadedCount > 0 ? 'bg-green-500 text-white' : 'bg-gray-200 dark:bg-neutral-600 text-gray-500 dark:text-gray-400'}`}>2</div>
+                <span class="text-sm text-gray-700 dark:text-gray-300">
+                  Keys downloaded ({downloadedCount}/{project.num_sites})
+                </span>
+              </div>
+              <div class="flex items-center gap-3">
+                <div class={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${submission ? 'bg-green-500 text-white' : 'bg-gray-200 dark:bg-neutral-600 text-gray-500 dark:text-gray-400'}`}>3</div>
+                <span class="text-sm text-gray-700 dark:text-gray-300">
+                  Aggregated data uploaded {submission ? '(done)' : ''}
+                </span>
+              </div>
+              <div class="flex items-center gap-3">
+                <div class={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${project.status === 'complete' ? 'bg-green-500 text-white' : 'bg-gray-200 dark:bg-neutral-600 text-gray-500 dark:text-gray-400'}`}>4</div>
+                <span class="text-sm text-gray-700 dark:text-gray-300">
+                  Unmasked {project.status === 'complete' ? '(done)' : ''}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* === CREATOR ACTIONS === */}
+        {isCreator && (
+          <div class="space-y-6">
+            {/* Unmask — client-side. Master key never touches the server. */}
+            {(project.status === 'keys_assigned' || project.status === 'collecting' || project.status === 'complete') && (
+              <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-5">
+                <h2 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">Unmask Data</h2>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  Upload your <strong>master_key.csv</strong> (downloaded when the project was created) and the <strong>aggregated masked CSV</strong> (summed masked counts from all sites). Unmasking happens entirely in your browser — the master key is never sent to the server.
+                </p>
+                <div class="space-y-3">
+                  <div>
+                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Master Key CSV</label>
+                    <input type="file" id="master-key-file" accept=".csv"
+                      class="block w-full text-sm text-gray-500 file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-gray-200 file:text-gray-700 dark:file:bg-neutral-600 dark:file:text-gray-300 hover:file:bg-gray-300 file:cursor-pointer" />
+                  </div>
+                  <div>
+                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Aggregated Masked CSV</label>
+                    <input type="file" id="aggregated-file" accept=".csv"
+                      class="block w-full text-sm text-gray-500 file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-gray-200 file:text-gray-700 dark:file:bg-neutral-600 dark:file:text-gray-300 hover:file:bg-gray-300 file:cursor-pointer" />
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Expected format: <code class="bg-gray-100 dark:bg-neutral-700 px-1 py-0.5 rounded">{strataConfig.map((d: any) => d.name).join(', ')}, masked_count</code>
+                    </p>
+                  </div>
+                </div>
+                <div class="mt-4 flex items-center gap-3">
+                  <button id="unmask-btn" data-project-id={project.id} disabled
+                    class="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                    Unmask & Download Result
+                  </button>
+                  <span id="unmask-status" class="text-sm"></span>
+                </div>
+              </div>
+            )}
+
+            {/* Complete: Download saved result */}
+            {project.status === 'complete' && (
+              <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-green-200 dark:border-green-900/30 p-5">
+                <h2 class="text-sm font-semibold text-green-700 dark:text-green-400 mb-2">Previous Results</h2>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  Download the previously unmasked result, or use the form above to re-unmask with different data.
+                </p>
+                <a href={`/api/crypto/download-result?projectId=${project.id}`}
+                  class="inline-block bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                  Download Saved Result CSV
+                </a>
+              </div>
+            )}
+
+            {/* Cancel button */}
+            {project.status !== 'complete' && project.status !== 'cancelled' && (
+              <div class="pt-4 border-t border-gray-200 dark:border-neutral-700">
+                <button id="cancel-btn" data-project-id={project.id}
+                  class="text-sm text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 font-medium">
+                  Cancel Project
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* === PARTICIPANT ACTIONS === */}
+        {isParticipant && (
+          <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-5 mb-6">
+            <h2 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">Your Key Fragment</h2>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              You have been assigned <strong>{myKey.label}</strong> ({myKey.site_name}). Download it as a CSV, then add your real count data to the offsets to create masked values. Upload the masked CSV to Box.
+            </p>
+            <div class="flex items-center gap-3">
+              <button id="download-key-btn" data-project-id={project.id}
+                class="bg-clif-burgundy hover:bg-clif-burgundy-dark text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                Download Key CSV
+              </button>
+              {myKey.downloaded_at && (
+                <span class="text-xs text-gray-500 dark:text-gray-400">
+                  Previously downloaded on {formatDate(myKey.downloaded_at as string)}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Cancelled notice */}
+        {project.status === 'cancelled' && (
+          <div class="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-xl p-5 text-sm">
+            This project has been cancelled.
+          </div>
+        )}
+
+        {/* Key Fragment Table (visible to creator in limited form, to assigner in full form) */}
+        {isCreator && project.status !== 'draft' && project.status !== 'cancelled' && (
+          <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-5 mt-6">
+            <h2 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">Key Fragments</h2>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">
+              Fragments were randomly assigned to participants. Assignment details are hidden from you (blinding protocol).
+              {droppedCount > 0 && (
+                <span class="text-amber-600 dark:text-amber-400 font-medium"> {droppedCount} site(s) dropped — their offsets will be excluded during unmasking.</span>
+              )}
+            </p>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="border-b border-gray-200 dark:border-neutral-700">
+                    <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">Site</th>
+                    <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">Fragment</th>
+                    <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">Downloaded</th>
+                    <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">Status</th>
+                    {(project.status === 'keys_assigned' || project.status === 'collecting') && (
+                      <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">Action</th>
+                    )}
+                  </tr>
+                </thead>
+                <tbody>
+                  {siteKeys.map((sk) => (
+                    <tr class={`border-b border-gray-100 dark:border-neutral-700/50 ${sk.is_dropped ? 'opacity-50' : ''}`}>
+                      <td class="py-2 px-3 text-gray-900 dark:text-white">{sk.site_name || '—'}</td>
+                      <td class="py-2 px-3 text-gray-500 dark:text-gray-400">{sk.label}</td>
+                      <td class="py-2 px-3">
+                        {sk.downloaded_at
+                          ? <span class="text-green-600 dark:text-green-400">{formatDate(sk.downloaded_at as string)}</span>
+                          : <span class="text-gray-400">—</span>}
+                      </td>
+                      <td class="py-2 px-3">
+                        {sk.is_dropped
+                          ? <span class="text-red-600 dark:text-red-400 text-xs font-semibold uppercase">Dropped</span>
+                          : <span class="text-green-600 dark:text-green-400 text-xs">Active</span>}
+                      </td>
+                      {(project.status === 'keys_assigned' || project.status === 'collecting') && (
+                        <td class="py-2 px-3">
+                          <button
+                            class="drop-site-btn text-xs font-medium px-2 py-1 rounded transition-colors"
+                            data-key-id={sk.id}
+                            data-project-id={project.id}
+                            data-dropped={sk.is_dropped ? '1' : '0'}
+                            style={sk.is_dropped
+                              ? 'color: var(--clif-burgundy, #8B1538);'
+                              : 'color: #dc2626;'}
+                          >
+                            {sk.is_dropped ? 'Restore' : 'Drop Site'}
+                          </button>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<script is:inline>
+(function() {
+  // === Download Key ===
+  const dlBtn = document.getElementById('download-key-btn');
+  if (dlBtn) {
+    dlBtn.addEventListener('click', async () => {
+      dlBtn.disabled = true;
+      dlBtn.textContent = 'Downloading...';
+      try {
+        const res = await fetch('/api/crypto/download-key', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ projectId: dlBtn.dataset.projectId }),
+        });
+        if (res.ok) {
+          const blob = await res.blob();
+          const disposition = res.headers.get('Content-Disposition') || '';
+          const match = disposition.match(/filename="?([^"]+)"?/);
+          const filename = match ? match[1] : 'key_fragment.csv';
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+          setTimeout(() => location.reload(), 1000);
+        } else {
+          const data = await res.json();
+          alert(data.error || 'Download failed.');
+        }
+      } catch (err) {
+        alert('Network error.');
+      } finally {
+        dlBtn.disabled = false;
+        dlBtn.textContent = 'Download Key CSV';
+      }
+    });
+  }
+
+  // === Client-Side Unmask ===
+  const masterKeyFile = document.getElementById('master-key-file');
+  const aggregatedFile = document.getElementById('aggregated-file');
+  const unmaskBtn = document.getElementById('unmask-btn');
+  const unmaskStatus = document.getElementById('unmask-status');
+
+  function checkUnmaskReady() {
+    if (unmaskBtn) {
+      unmaskBtn.disabled = !(masterKeyFile && masterKeyFile.files.length && aggregatedFile && aggregatedFile.files.length);
+    }
+  }
+
+  if (masterKeyFile) masterKeyFile.addEventListener('change', checkUnmaskReady);
+  if (aggregatedFile) aggregatedFile.addEventListener('change', checkUnmaskReady);
+
+  if (unmaskBtn) {
+    unmaskBtn.addEventListener('click', async () => {
+      if (!masterKeyFile.files[0] || !aggregatedFile.files[0]) return;
+
+      unmaskBtn.disabled = true;
+      unmaskBtn.textContent = 'Unmasking...';
+      unmaskStatus.textContent = '';
+      unmaskStatus.className = 'text-sm';
+
+      try {
+        // Parse both CSVs client-side
+        const masterCsvText = await masterKeyFile.files[0].text();
+        const aggregatedCsvText = await aggregatedFile.files[0].text();
+
+        // Parse strata config from the page (embedded as data attribute)
+        const strataConfig = JSON.parse(document.getElementById('strata-config-data').textContent);
+
+        // Parse master key CSV → Record<cellKey, offset>
+        const masterResult = parseCsvToRecord(masterCsvText, strataConfig.length);
+        if (masterResult.errors.length > 0) {
+          unmaskStatus.textContent = 'Master key CSV errors: ' + masterResult.errors[0];
+          unmaskStatus.className = 'text-sm text-red-600';
+          return;
+        }
+
+        // Parse aggregated CSV → Record<cellKey, maskedCount>
+        const aggResult = parseCsvToRecord(aggregatedCsvText, strataConfig.length);
+        if (aggResult.errors.length > 0) {
+          unmaskStatus.textContent = 'Aggregated CSV errors: ' + aggResult.errors[0];
+          unmaskStatus.className = 'text-sm text-red-600';
+          return;
+        }
+
+        // Fetch dropped offsets from server (sum of dropped fragments — not the master key)
+        let droppedOffsets = {};
+        try {
+          const droppedRes = await fetch('/api/crypto/dropped-offsets?projectId=' + unmaskBtn.dataset.projectId);
+          const droppedData = await droppedRes.json();
+          if (droppedData.droppedCount > 0) {
+            droppedOffsets = droppedData.offsets;
+          }
+        } catch (e) { /* no dropped sites */ }
+
+        // Adjust master key for dropped sites
+        const adjustedMaster = {};
+        for (const key of Object.keys(masterResult.data)) {
+          adjustedMaster[key] = masterResult.data[key] - (droppedOffsets[key] || 0);
+        }
+
+        // Unmask: true_count = aggregated - adjusted_master
+        const result = {};
+        const warnings = [];
+        for (const key of Object.keys(adjustedMaster)) {
+          if (!(key in aggResult.data)) {
+            warnings.push('Missing cell: ' + key);
+            continue;
+          }
+          result[key] = aggResult.data[key] - adjustedMaster[key];
+        }
+
+        // Generate result CSV
+        const dimNames = strataConfig.map(d => d.name);
+        const header = [...dimNames, 'count'].join(',');
+        const rows = [header];
+        for (const [cellKey, count] of Object.entries(result)) {
+          const parts = cellKey.split('_');
+          rows.push([...parts, count].join(','));
+        }
+        const resultCsv = rows.join('\n');
+
+        // Download result
+        const blob = new Blob([resultCsv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'clif_unmasked_result.csv';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+
+        // Save result to server (just the counts, not the master key)
+        await fetch('/api/crypto/save-result', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ projectId: unmaskBtn.dataset.projectId, resultData: result }),
+        });
+
+        const warnText = warnings.length > 0 ? ` (${warnings.length} warnings)` : '';
+        unmaskStatus.textContent = `Unmasked ${Object.keys(result).length} cells${warnText}. Result downloaded.`;
+        unmaskStatus.className = 'text-sm text-green-600';
+        setTimeout(() => location.reload(), 2000);
+      } catch (err) {
+        unmaskStatus.textContent = 'Error: ' + (err.message || 'Failed to unmask.');
+        unmaskStatus.className = 'text-sm text-red-600';
+      } finally {
+        unmaskBtn.disabled = false;
+        unmaskBtn.textContent = 'Unmask & Download Result';
+      }
+    });
+  }
+
+  // Simple CSV parser for client-side use
+  function parseCsvToRecord(csvText, numDimensions) {
+    const lines = csvText.trim().split('\n');
+    const data = {};
+    const errors = [];
+    if (lines.length < 2) { errors.push('CSV must have a header and at least one data row'); return { data, errors }; }
+    for (let i = 1; i < lines.length; i++) {
+      const cols = lines[i].split(',').map(c => c.trim().replace(/^"|"$/g, ''));
+      if (cols.length !== numDimensions + 1) { errors.push(`Row ${i+1}: expected ${numDimensions+1} columns, got ${cols.length}`); continue; }
+      const dimValues = cols.slice(0, numDimensions);
+      const val = parseInt(cols[cols.length - 1], 10);
+      if (isNaN(val)) { errors.push(`Row ${i+1}: invalid number "${cols[cols.length-1]}"`); continue; }
+      data[dimValues.join('_')] = val;
+    }
+    return { data, errors };
+  }
+
+  // === Drop / Restore Site ===
+  document.querySelectorAll('.drop-site-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const isCurrentlyDropped = btn.dataset.dropped === '1';
+      const action = isCurrentlyDropped ? 'restore' : 'drop';
+      if (!confirm(`Are you sure you want to ${action} this site? ${isCurrentlyDropped ? 'Their data will be included in unmasking again.' : 'Their offset will be excluded from unmasking.'}`)) return;
+      btn.disabled = true;
+      btn.textContent = isCurrentlyDropped ? 'Restoring...' : 'Dropping...';
+      try {
+        const res = await fetch('/api/crypto/drop-site', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            projectId: btn.dataset.projectId,
+            keyId: btn.dataset.keyId,
+            dropped: !isCurrentlyDropped,
+          }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          location.reload();
+        } else {
+          alert(data.error || `Failed to ${action} site.`);
+          btn.disabled = false;
+          btn.textContent = isCurrentlyDropped ? 'Restore' : 'Drop Site';
+        }
+      } catch (err) {
+        alert('Network error.');
+        btn.disabled = false;
+        btn.textContent = isCurrentlyDropped ? 'Restore' : 'Drop Site';
+      }
+    });
+  });
+
+  // === Cancel Project ===
+  const cancelBtn = document.getElementById('cancel-btn');
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', async () => {
+      if (!confirm('Are you sure you want to cancel this project? This cannot be undone.')) return;
+      try {
+        const res = await fetch('/api/crypto/delete-project', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ projectId: cancelBtn.dataset.projectId }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          location.reload();
+        } else {
+          alert(data.error || 'Failed to cancel.');
+        }
+      } catch (err) {
+        alert('Network error.');
+      }
+    });
+  }
+})();
+</script>

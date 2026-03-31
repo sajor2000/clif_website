@@ -29,9 +29,9 @@ export const GET: APIRoute = async ({ url, cookies, redirect }) => {
 
   const env = process.env;
   const google = new Google(
-    env['GOOGLE_CLIENT_ID'] || '',
-    env['GOOGLE_CLIENT_SECRET'] || '',
-    env['GOOGLE_REDIRECT_URI'] || ''
+    env['GOOGLE_CLIENT_ID'] || import.meta.env.GOOGLE_CLIENT_ID || '',
+    env['GOOGLE_CLIENT_SECRET'] || import.meta.env.GOOGLE_CLIENT_SECRET || '',
+    env['GOOGLE_REDIRECT_URI'] || import.meta.env.GOOGLE_REDIRECT_URI || ''
   );
 
   try {
