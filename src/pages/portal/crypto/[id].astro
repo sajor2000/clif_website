@@ -68,7 +68,7 @@ const isCreator = user.id === project.created_by;
 const isParticipant = myKey !== null;
 const strataConfig = JSON.parse(project.strata_config as string);
 const masterKeyAuthorized: string[] = JSON.parse((project.master_key_authorized as string) || '[]');
-const canDownloadMasterKey = isCreator || isAdmin || masterKeyAuthorized.includes(user.id);
+const canDownloadMasterKey = isCreator || masterKeyAuthorized.includes(user.id);
 
 // Fetch same-site members for master key access management (creator only)
 let sameSiteUsers: any[] = [];

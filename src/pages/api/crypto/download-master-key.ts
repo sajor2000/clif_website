@@ -42,7 +42,6 @@ export const POST: APIRoute = async ({ locals, request }) => {
 
   const masterKeyAuthorized: string[] = JSON.parse((project.master_key_authorized as string) || '[]');
   const canDownload = project.created_by === locals.user.id
-    || locals.user.role === 'admin'
     || masterKeyAuthorized.includes(locals.user.id);
 
   if (!canDownload) {
