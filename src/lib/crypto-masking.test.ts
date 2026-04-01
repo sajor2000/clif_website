@@ -63,7 +63,16 @@ describe('generateMasterKey', () => {
     }
   });
 
-  it('offsets are within range', () => {
+  it('default offsets are within [11, 40]', () => {
+    const cellKeys = generateCellKeys(testDimensions);
+    const master = generateMasterKey(cellKeys);
+    for (const val of Object.values(master)) {
+      expect(val).toBeGreaterThanOrEqual(11);
+      expect(val).toBeLessThanOrEqual(40);
+    }
+  });
+
+  it('offsets are within custom range', () => {
     const cellKeys = generateCellKeys(testDimensions);
     const master = generateMasterKey(cellKeys, -100, 100);
     for (const val of Object.values(master)) {

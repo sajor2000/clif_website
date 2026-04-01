@@ -213,20 +213,35 @@ function formatDate(d: string | null): string {
                   </button>
                   <span id="unmask-status" class="text-sm"></span>
                 </div>
+                <div class="mt-4 pt-4 border-t border-gray-100 dark:border-neutral-700">
+                  <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                    Prefer to unmask the data yourself? Download the master key and do it locally.
+                  </p>
+                  <button id="download-master-key-btn" data-project-id={project.id}
+                    class="bg-gray-200 hover:bg-gray-300 dark:bg-neutral-700 dark:hover:bg-neutral-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                    Download Master Key
+                  </button>
+                </div>
               </div>
             )}
 
-            {/* Complete: Download saved result */}
+            {/* Complete: Download saved result and master key */}
             {project.status === 'complete' && (
               <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-green-200 dark:border-green-900/30 p-5">
                 <h2 class="text-sm font-semibold text-green-700 dark:text-green-400 mb-2">Results</h2>
                 <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
                   The project has been unmasked. Download the consortium-wide result below.
                 </p>
-                <a href={`/api/crypto/download-result?projectId=${project.id}`}
-                  class="inline-block bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                  Download Result CSV
-                </a>
+                <div class="flex flex-wrap items-center gap-3">
+                  <a href={`/api/crypto/download-result?projectId=${project.id}`}
+                    class="inline-block bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                    Download Result CSV
+                  </a>
+                  <button id="download-master-key-btn" data-project-id={project.id}
+                    class="bg-gray-200 hover:bg-gray-300 dark:bg-neutral-700 dark:hover:bg-neutral-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                    Download Master Key
+                  </button>
+                </div>
               </div>
             )}
 
@@ -452,6 +467,44 @@ function formatDate(d: string | null): string {
       } finally {
         unmaskBtn.disabled = false;
         unmaskBtn.textContent = 'Upload & Unmask';
+      }
+    });
+  }
+
+  // === Download Master Key ===
+  const masterKeyBtn = document.getElementById('download-master-key-btn');
+  if (masterKeyBtn) {
+    masterKeyBtn.addEventListener('click', async () => {
+      masterKeyBtn.disabled = true;
+      masterKeyBtn.textContent = 'Downloading...';
+      try {
+        const res = await fetch('/api/crypto/download-master-key', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ projectId: masterKeyBtn.dataset.projectId }),
+        });
+        if (res.ok) {
+          const blob = await res.blob();
+          const disposition = res.headers.get('Content-Disposition') || '';
+          const match = disposition.match(/filename="?([^"]+)"?/);
+          const filename = match ? match[1] : 'master_key.csv';
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+        } else {
+          const data = await res.json();
+          alert(data.error || 'Download failed.');
+        }
+      } catch (err) {
+        alert('Network error.');
+      } finally {
+        masterKeyBtn.disabled = false;
+        masterKeyBtn.textContent = 'Download Master Key';
       }
     });
   }

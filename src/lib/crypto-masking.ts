@@ -36,12 +36,12 @@ function cartesianProduct(arrays: string[][]): string[][] {
 
 /**
  * Generate a master key with a random integer offset for each cell.
- * Offsets are in range [minOffset, maxOffset] (default [-500, 500]).
+ * Offsets are in range [minOffset, maxOffset] (default [11, 40]).
  */
 export function generateMasterKey(
   cellKeys: string[],
-  minOffset = -500,
-  maxOffset = 500,
+  minOffset = 11,
+  maxOffset = 40,
 ): Record<string, number> {
   const range = maxOffset - minOffset + 1;
   const masterKey: Record<string, number> = {};
