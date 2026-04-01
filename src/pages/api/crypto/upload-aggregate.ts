@@ -4,6 +4,7 @@ import type { APIRoute } from 'astro';
 import { getDb } from '../../../lib/turso';
 import {
   parseMaskedCsv,
+  computeMasterKeyFromFragments,
   unmaskServerSide,
   type StrataDimension,
 } from '../../../lib/crypto-masking';
@@ -111,6 +112,18 @@ export const POST: APIRoute = async ({ locals, request }) => {
       droppedIndices.push(i);
     }
   }
+
+  // Store master key in crypto_master_keys for audit record
+  const masterKey = computeMasterKeyFromFragments(allFragments);
+  await db.execute({
+    sql: 'DELETE FROM crypto_master_keys WHERE project_id = ?',
+    args: [projectId],
+  });
+  await db.execute({
+    sql: `INSERT INTO crypto_master_keys (id, project_id, key_data, created_at)
+          VALUES (lower(hex(randomblob(16))), ?, ?, ?)`,
+    args: [projectId, JSON.stringify(masterKey), now],
+  });
 
   // Unmask using active (non-dropped) fragments only
   const unmaskResult = unmaskServerSide(data, allFragments, droppedIndices);
