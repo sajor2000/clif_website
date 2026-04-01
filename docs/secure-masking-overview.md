@@ -10,7 +10,7 @@ Lets CLIF consortium sites share count data (e.g., patient counts by age, sex, c
 2. The system generates random offsets and splits them into fragments -- one per site, randomly assigned
 3. Each site downloads their fragment and masks their data locally: `masked_count = real_count + offset`
 4. Sites deposit masked CSVs in Box. The creator collects and sums them into one aggregated CSV
-5. The creator uploads the aggregated CSV. The server unmasks it automatically and provides the result for download
+5. The creator either uploads the aggregated CSV for server-side unmasking, or finalizes the project to download the master key and unmask locally
 
 ## Key Details
 
@@ -18,8 +18,8 @@ Lets CLIF consortium sites share count data (e.g., patient counts by age, sex, c
 
 **Site access.** All members listed for a given site have access to that site's key fragment. You can control who has access by choosing which members to include when setting up sites.
 
-**Data storage.** The site-specific key fragments are stored in the backend database (which only the project administrator has access to). When the creator uploads the aggregated CSV and the server unmasks it, all key fragment data is permanently wiped from the database. The master key is computed internally during unmasking and is never stored or made available for download.
+**Data storage.** The site-specific key fragments are stored in the backend database (which only the project administrator has access to). When the project is finalized or unmasked, all fragment data is permanently wiped. The master key is stored as an audit record and can be downloaded by the project creator and any same-site members they authorize.
 
-**One-time operation.** Unmasking can only happen once per project. After it's done, all keys are destroyed and the project is final. The only thing stored permanently is the aggregated data and the unmasked result. If something needs to change, create a new project.
+**One-time operation.** Unmasking can only happen once per project. After it's done, all keys are destroyed and the project is final. The only things stored permanently are the aggregated data, the unmasked result, and the master key (for audit purposes). If something needs to change, create a new project.
 
 **Privacy with 2 sites.** The tool works with as few as 2 sites, but note that each site can compute the other's real counts by subtracting their own from the consortium total. With 3 or more sites, no single site can isolate another's data.

@@ -113,16 +113,12 @@ export const POST: APIRoute = async ({ locals, request }) => {
     }
   }
 
-  // Store master key in crypto_master_keys for audit record
+  // Store master key in crypto_master_keys for audit record (upsert)
   const masterKey = computeMasterKeyFromFragments(allFragments);
   await db.execute({
-    sql: 'DELETE FROM crypto_master_keys WHERE project_id = ?',
-    args: [projectId],
-  });
-  await db.execute({
-    sql: `INSERT INTO crypto_master_keys (id, project_id, key_data, created_at)
-          VALUES (lower(hex(randomblob(16))), ?, ?, ?)`,
-    args: [projectId, JSON.stringify(masterKey), now],
+    sql: `INSERT OR REPLACE INTO crypto_master_keys (id, project_id, key_data, created_at)
+          VALUES (COALESCE((SELECT id FROM crypto_master_keys WHERE project_id = ?), lower(hex(randomblob(16)))), ?, ?, ?)`,
+    args: [projectId, projectId, JSON.stringify(masterKey), now],
   });
 
   // Unmask using active (non-dropped) fragments only

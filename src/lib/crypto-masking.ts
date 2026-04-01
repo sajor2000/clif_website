@@ -109,26 +109,6 @@ export function splitMasterKey(
 }
 
 /**
- * Compute an adjusted master key that excludes dropped site fragments.
- */
-export function computeAdjustedMasterKey(
-  originalMasterKey: Record<string, number>,
-  droppedFragments: Record<string, number>[],
-): Record<string, number> {
-  if (droppedFragments.length === 0) return originalMasterKey;
-
-  const adjusted: Record<string, number> = {};
-  for (const key of Object.keys(originalMasterKey)) {
-    let droppedSum = 0;
-    for (const fragment of droppedFragments) {
-      droppedSum += fragment[key] || 0;
-    }
-    adjusted[key] = originalMasterKey[key] - droppedSum;
-  }
-  return adjusted;
-}
-
-/**
  * Unmask aggregated data by subtracting the master key offsets.
  */
 export function unmaskAggregated(
@@ -177,47 +157,42 @@ export function parseCellKey(
 }
 
 /**
- * Convert key data to CSV string.
- * CSV columns: [dimension names...], offset
+ * Convert cell key → number data to CSV string.
+ * CSV columns: [dimension names...], valueColumn
  */
-export function keyDataToCsv(
-  keyData: Record<string, number>,
+export function dataToCsv(
+  data: Record<string, number>,
   strataConfig: StrataDimension[],
+  valueColumn: string,
 ): string {
   const dimNames = strataConfig.map((d) => d.name);
-  const header = [...dimNames, 'offset'].join(',');
+  const header = [...dimNames, valueColumn].join(',');
   const rows: string[] = [header];
 
-  for (const [cellKey, offset] of Object.entries(keyData)) {
+  for (const [cellKey, value] of Object.entries(data)) {
     const parsed = parseCellKey(cellKey, strataConfig);
     if (!parsed) continue;
     const values = dimNames.map((name) => parsed[name] || '');
-    rows.push([...values, offset].join(','));
+    rows.push([...values, value].join(','));
   }
 
   return rows.join('\n');
 }
 
-/**
- * Convert unmasked result data to CSV.
- * CSV columns: [dimension names...], count
- */
+/** @deprecated Use dataToCsv(data, config, 'offset') */
+export function keyDataToCsv(
+  keyData: Record<string, number>,
+  strataConfig: StrataDimension[],
+): string {
+  return dataToCsv(keyData, strataConfig, 'offset');
+}
+
+/** @deprecated Use dataToCsv(data, config, 'count') */
 export function resultToCsv(
   resultData: Record<string, number>,
   strataConfig: StrataDimension[],
 ): string {
-  const dimNames = strataConfig.map((d) => d.name);
-  const header = [...dimNames, 'count'].join(',');
-  const rows: string[] = [header];
-
-  for (const [cellKey, count] of Object.entries(resultData)) {
-    const parsed = parseCellKey(cellKey, strataConfig);
-    if (!parsed) continue;
-    const values = dimNames.map((name) => parsed[name] || '');
-    rows.push([...values, count].join(','));
-  }
-
-  return rows.join('\n');
+  return dataToCsv(resultData, strataConfig, 'count');
 }
 
 /**

@@ -423,6 +423,22 @@ function formatDate(d: string | null): string {
 
 <script is:inline>
 (function() {
+  // === Shared: trigger file download from a fetch response ===
+  async function downloadFromResponse(res, fallbackFilename) {
+    const blob = await res.blob();
+    const disposition = res.headers.get('Content-Disposition') || '';
+    const match = disposition.match(/filename="?([^"]+)"?/);
+    const filename = match ? match[1] : fallbackFilename;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
   // === Download Key ===
   const dlBtn = document.getElementById('download-key-btn');
   if (dlBtn) {
@@ -436,18 +452,7 @@ function formatDate(d: string | null): string {
           body: JSON.stringify({ projectId: dlBtn.dataset.projectId }),
         });
         if (res.ok) {
-          const blob = await res.blob();
-          const disposition = res.headers.get('Content-Disposition') || '';
-          const match = disposition.match(/filename="?([^"]+)"?/);
-          const filename = match ? match[1] : 'key_fragment.csv';
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = filename;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          URL.revokeObjectURL(url);
+          await downloadFromResponse(res, 'key_fragment.csv');
           setTimeout(() => location.reload(), 1000);
         } else {
           const data = await res.json();
@@ -547,18 +552,7 @@ function formatDate(d: string | null): string {
           body: JSON.stringify({ projectId: masterKeyBtn.dataset.projectId }),
         });
         if (res.ok) {
-          const blob = await res.blob();
-          const disposition = res.headers.get('Content-Disposition') || '';
-          const match = disposition.match(/filename="?([^"]+)"?/);
-          const filename = match ? match[1] : 'master_key.csv';
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = filename;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          URL.revokeObjectURL(url);
+          await downloadFromResponse(res, 'master_key.csv');
         } else {
           const data = await res.json();
           alert(data.error || 'Download failed.');
@@ -594,18 +588,7 @@ function formatDate(d: string | null): string {
             body: JSON.stringify({ projectId: finalizeBtn.dataset.projectId }),
           });
           if (mkRes.ok) {
-            const blob = await mkRes.blob();
-            const disposition = mkRes.headers.get('Content-Disposition') || '';
-            const match = disposition.match(/filename="?([^"]+)"?/);
-            const filename = match ? match[1] : 'master_key.csv';
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            URL.revokeObjectURL(url);
+            await downloadFromResponse(mkRes, 'master_key.csv');
           }
           setTimeout(() => location.reload(), 1000);
         } else {

@@ -4,7 +4,6 @@ import {
   generateMasterKey,
   splitMasterKey,
   unmaskAggregated,
-  computeAdjustedMasterKey,
   computeMasterKeyFromFragments,
   unmaskServerSide,
   keyDataToCsv,
@@ -159,47 +158,6 @@ describe('full round-trip: generate → split → mask → aggregate → unmask'
       expect(result[key]).toBe(trueTotal);
     }
     expect(warnings.length).toBe(0);
-  });
-});
-
-describe('computeAdjustedMasterKey (dropped sites)', () => {
-  it('returns original when no sites dropped', () => {
-    const master: Record<string, number> = { a: 100, b: -50 };
-    const adjusted = computeAdjustedMasterKey(master, []);
-    expect(adjusted).toEqual(master);
-  });
-
-  it('adjusts correctly when one site drops', () => {
-    const cellKeys = generateCellKeys(testDimensions);
-    const master = generateMasterKey(cellKeys);
-    const fragments = splitMasterKey(master, 4);
-
-    const droppedFragments = [fragments[2]];
-    const adjustedMaster = computeAdjustedMasterKey(master, droppedFragments);
-
-    const activeSites = [0, 1, 3];
-    const siteCounts = fragments.map(() => {
-      const counts: Record<string, number> = {};
-      for (const key of cellKeys) {
-        counts[key] = Math.floor(Math.random() * 100) + 15;
-      }
-      return counts;
-    });
-
-    const aggregated: Record<string, number> = {};
-    for (const key of cellKeys) {
-      aggregated[key] = activeSites.reduce(
-        (sum, i) => sum + siteCounts[i][key] + fragments[i][key],
-        0,
-      );
-    }
-
-    const { result } = unmaskAggregated(aggregated, adjustedMaster);
-
-    for (const key of cellKeys) {
-      const trueTotal = activeSites.reduce((sum, i) => sum + siteCounts[i][key], 0);
-      expect(result[key]).toBe(trueTotal);
-    }
   });
 });
 

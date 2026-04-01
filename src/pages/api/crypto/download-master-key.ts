@@ -26,7 +26,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
   const db = getDb();
 
   const projectResult = await db.execute({
-    sql: 'SELECT * FROM crypto_projects WHERE id = ?',
+    sql: 'SELECT created_by, master_key_authorized, strata_config, name FROM crypto_projects WHERE id = ?',
     args: [projectId],
   });
 

@@ -23,7 +23,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
   const db = getDb();
 
   const projectResult = await db.execute({
-    sql: 'SELECT * FROM crypto_projects WHERE id = ?',
+    sql: 'SELECT created_by, status FROM crypto_projects WHERE id = ?',
     args: [projectId],
   });
 
@@ -72,27 +72,23 @@ export const POST: APIRoute = async ({ locals, request }) => {
   if (allFragments.length > 0 && Object.keys(allFragments[0]).length > 0) {
     const masterKey = computeMasterKeyFromFragments(allFragments);
     await db.execute({
-      sql: 'DELETE FROM crypto_master_keys WHERE project_id = ?',
-      args: [projectId],
-    });
-    await db.execute({
-      sql: `INSERT INTO crypto_master_keys (id, project_id, key_data, created_at)
-            VALUES (lower(hex(randomblob(16))), ?, ?, ?)`,
-      args: [projectId, JSON.stringify(masterKey), now],
+      sql: `INSERT OR REPLACE INTO crypto_master_keys (id, project_id, key_data, created_at)
+            VALUES (COALESCE((SELECT id FROM crypto_master_keys WHERE project_id = ?), lower(hex(randomblob(16)))), ?, ?, ?)`,
+      args: [projectId, projectId, JSON.stringify(masterKey), now],
     });
   }
 
-  // Wipe all fragment key data
-  await db.execute({
-    sql: `UPDATE crypto_site_keys SET key_data = '{}' WHERE project_id = ?`,
-    args: [projectId],
-  });
-
-  // Mark project as complete
-  await db.execute({
-    sql: `UPDATE crypto_projects SET status = 'complete', updated_at = ? WHERE id = ?`,
-    args: [now, projectId],
-  });
+  // Wipe fragments and mark complete in parallel
+  await Promise.all([
+    db.execute({
+      sql: `UPDATE crypto_site_keys SET key_data = '{}' WHERE project_id = ?`,
+      args: [projectId],
+    }),
+    db.execute({
+      sql: `UPDATE crypto_projects SET status = 'complete', updated_at = ? WHERE id = ?`,
+      args: [now, projectId],
+    }),
+  ]);
 
   return new Response(JSON.stringify({ success: true }), {
     status: 200,
