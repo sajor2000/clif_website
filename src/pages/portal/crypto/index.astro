@@ -150,6 +150,14 @@ const siteNames = Object.keys(siteGroups).sort();
                 <p><strong class="text-gray-900 dark:text-white">Unmasking:</strong> The creator uploads the aggregated masked CSV. The server computes the master key from stored fragments, performs the unmasking, and returns the result. <strong>Unmasking is a one-time operation</strong> — all keys are destroyed afterward. If changes are needed, create a new project.</p>
                 <p><strong class="text-gray-900 dark:text-white">Dropped sites:</strong> If a site cannot participate, the creator marks them as dropped. The server automatically excludes their fragment offsets during unmasking, so the remaining data is unmasked correctly.</p>
               </div>
+
+              <details class="mt-3">
+                <summary class="text-xs font-medium text-clif-burgundy cursor-pointer hover:underline">How is randomness generated?</summary>
+                <div class="mt-2 text-xs text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-neutral-900 rounded-lg p-3 space-y-2">
+                  <p>All random values (offsets and fragment assignments) are generated using the <strong class="text-gray-900 dark:text-white">Web Crypto API</strong> (<code class="bg-gray-100 dark:bg-neutral-700 px-1 py-0.5 rounded">crypto.getRandomValues()</code>), which pulls from the operating system's cryptographic random number generator.</p>
+                  <p>Unlike <code class="bg-gray-100 dark:bg-neutral-700 px-1 py-0.5 rounded">Math.random()</code>, which uses a predictable algorithm that can be reproduced if the seed is known, cryptographic randomness is sourced from hardware entropy and is computationally infeasible to predict or reverse-engineer. This means no one can guess which offsets were assigned to which site, even with full knowledge of the algorithm.</p>
+                </div>
+              </details>
             </div>
 
             <hr class="border-gray-200 dark:border-neutral-700" />
