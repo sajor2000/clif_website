@@ -236,10 +236,19 @@ function formatDate(d: string | null): string {
                   <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
                     Or skip server unmasking and do it yourself:
                   </p>
-                  <button id="download-master-key-btn" data-project-id={project.id}
-                    class="bg-gray-200 hover:bg-gray-300 dark:bg-neutral-700 dark:hover:bg-neutral-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                    Download Master Key
-                  </button>
+                  <div class="flex items-center gap-3">
+                    <button id="download-master-key-btn" data-project-id={project.id}
+                      class="bg-gray-200 hover:bg-gray-300 dark:bg-neutral-700 dark:hover:bg-neutral-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                      Download Master Key
+                    </button>
+                    <button id="finalize-btn" data-project-id={project.id}
+                      class="hidden bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                      Finalize Project
+                    </button>
+                  </div>
+                  <p id="finalize-hint" class="hidden text-xs text-amber-600 dark:text-amber-400 mt-2">
+                    Master key downloaded. When you're done, click <strong>Finalize Project</strong> to wipe all key data from the server. This is irreversible.
+                  </p>
                 </div>
               </div>
             )}
@@ -556,6 +565,12 @@ function formatDate(d: string | null): string {
           a.click();
           a.remove();
           URL.revokeObjectURL(url);
+
+          // Show finalize button after successful download
+          const finalizeBtn = document.getElementById('finalize-btn');
+          const finalizeHint = document.getElementById('finalize-hint');
+          if (finalizeBtn) finalizeBtn.classList.remove('hidden');
+          if (finalizeHint) finalizeHint.classList.remove('hidden');
         } else {
           const data = await res.json();
           alert(data.error || 'Download failed.');
@@ -565,6 +580,35 @@ function formatDate(d: string | null): string {
       } finally {
         masterKeyBtn.disabled = false;
         masterKeyBtn.textContent = 'Download Master Key';
+      }
+    });
+  }
+
+  // === Finalize Project ===
+  const finalizeBtn = document.getElementById('finalize-btn');
+  if (finalizeBtn) {
+    finalizeBtn.addEventListener('click', async () => {
+      if (!confirm('Are you sure you want to finalize this project? All key fragment data will be permanently wiped from the server. This cannot be undone.')) return;
+      finalizeBtn.disabled = true;
+      finalizeBtn.textContent = 'Finalizing...';
+      try {
+        const res = await fetch('/api/crypto/finalize-project', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ projectId: finalizeBtn.dataset.projectId }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          location.reload();
+        } else {
+          alert(data.error || 'Failed to finalize.');
+          finalizeBtn.disabled = false;
+          finalizeBtn.textContent = 'Finalize Project';
+        }
+      } catch (err) {
+        alert('Network error.');
+        finalizeBtn.disabled = false;
+        finalizeBtn.textContent = 'Finalize Project';
       }
     });
   }
