@@ -202,6 +202,9 @@ function formatDate(d: string | null): string {
                   <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     Expected format: <code class="bg-gray-100 dark:bg-neutral-700 px-1 py-0.5 rounded">{strataConfig.map((d: any) => d.name).join(', ')}, masked_count</code>
                   </p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Values must match the dimension categories exactly as defined (case-sensitive). Row order does not matter. If the CSV has errors, you will be notified and can fix and re-upload. <strong>Unmasking is final</strong> — once successful, all keys are destroyed and the result cannot be regenerated.
+                  </p>
                 </div>
                 <div class="mt-4 flex items-center gap-3">
                   <button id="unmask-btn" data-project-id={project.id} disabled
