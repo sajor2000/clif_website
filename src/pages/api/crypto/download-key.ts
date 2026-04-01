@@ -37,6 +37,13 @@ export const POST: APIRoute = async ({ locals, request }) => {
 
   const project = projectResult.rows[0];
 
+  if (project.status === 'complete') {
+    return new Response(
+      JSON.stringify({ error: 'This project has been unmasked and all key data has been wiped. If you lost your key, contact the project coordinator to create a new project.' }),
+      { status: 400, headers: { 'Content-Type': 'application/json' } },
+    );
+  }
+
   if (project.status !== 'keys_assigned' && project.status !== 'collecting') {
     return new Response(
       JSON.stringify({ error: 'Keys are not yet available for download.' }),

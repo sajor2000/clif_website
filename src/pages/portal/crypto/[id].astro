@@ -243,20 +243,28 @@ function formatDate(d: string | null): string {
         {isParticipant && (
           <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-5 mb-6">
             <h2 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">Your Key Fragment</h2>
-            <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              You have been assigned <strong>{myKey.label}</strong> ({myKey.site_name}). Download it as a CSV, then add your real count data to the offsets to create masked values. Upload the masked CSV to Box.
-            </p>
-            <div class="flex items-center gap-3">
-              <button id="download-key-btn" data-project-id={project.id}
-                class="bg-clif-burgundy hover:bg-clif-burgundy-dark text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                Download Key CSV
-              </button>
-              {myKey.downloaded_at && (
-                <span class="text-xs text-gray-500 dark:text-gray-400">
-                  Previously downloaded on {formatDate(myKey.downloaded_at as string)}
-                </span>
-              )}
-            </div>
+            {project.status === 'complete' ? (
+              <p class="text-sm text-gray-600 dark:text-gray-400">
+                This project has been unmasked and all key data has been wiped. Your fragment (<strong>{myKey.label}</strong>, {myKey.site_name}) was downloaded on {formatDate(myKey.downloaded_at as string)}. If you need to redo this project, contact the project coordinator.
+              </p>
+            ) : (
+              <Fragment>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  You have been assigned <strong>{myKey.label}</strong> ({myKey.site_name}). Download it as a CSV, then add your real count data to the offsets to create masked values. Upload the masked CSV to Box.
+                </p>
+                <div class="flex items-center gap-3">
+                  <button id="download-key-btn" data-project-id={project.id}
+                    class="bg-clif-burgundy hover:bg-clif-burgundy-dark text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                    Download Key CSV
+                  </button>
+                  {myKey.downloaded_at && (
+                    <span class="text-xs text-gray-500 dark:text-gray-400">
+                      Previously downloaded on {formatDate(myKey.downloaded_at as string)}
+                    </span>
+                  )}
+                </div>
+              </Fragment>
+            )}
           </div>
         )}
 
