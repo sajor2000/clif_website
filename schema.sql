@@ -105,6 +105,7 @@ CREATE TABLE IF NOT EXISTS crypto_projects (
   created_by TEXT NOT NULL REFERENCES users(id),
   key_assigner_id TEXT REFERENCES users(id),
   result_data TEXT,
+  master_key_authorized TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );

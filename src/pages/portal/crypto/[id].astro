@@ -67,6 +67,25 @@ if (!project) return Astro.redirect('/portal/crypto');
 const isCreator = user.id === project.created_by;
 const isParticipant = myKey !== null;
 const strataConfig = JSON.parse(project.strata_config as string);
+const masterKeyAuthorized: string[] = JSON.parse((project.master_key_authorized as string) || '[]');
+const canDownloadMasterKey = isCreator || isAdmin || masterKeyAuthorized.includes(user.id);
+
+// Fetch same-site members for master key access management (creator only)
+let sameSiteUsers: any[] = [];
+if (isCreator) {
+  const creatorResult = await db.execute({
+    sql: 'SELECT institution FROM users WHERE id = ?',
+    args: [user.id],
+  });
+  const creatorInstitution = creatorResult.rows[0]?.institution as string;
+  if (creatorInstitution) {
+    const sameSiteResult = await db.execute({
+      sql: `SELECT id, full_name, email FROM users WHERE institution = ? AND is_approved = 1 AND id != ? ORDER BY full_name`,
+      args: [creatorInstitution, user.id],
+    });
+    sameSiteUsers = sameSiteResult.rows as any[];
+  }
+}
 
 const assignedCount = siteKeys.filter((k) => k.assigned_to).length;
 const downloadedCount = siteKeys.filter((k) => k.downloaded_at).length;
@@ -213,35 +232,20 @@ function formatDate(d: string | null): string {
                   </button>
                   <span id="unmask-status" class="text-sm"></span>
                 </div>
-                <div class="mt-4 pt-4 border-t border-gray-100 dark:border-neutral-700">
-                  <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                    Prefer to unmask the data yourself? Download the master key and do it locally.
-                  </p>
-                  <button id="download-master-key-btn" data-project-id={project.id}
-                    class="bg-gray-200 hover:bg-gray-300 dark:bg-neutral-700 dark:hover:bg-neutral-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                    Download Master Key
-                  </button>
-                </div>
               </div>
             )}
 
-            {/* Complete: Download saved result and master key */}
+            {/* Complete: Download saved result */}
             {project.status === 'complete' && (
               <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-green-200 dark:border-green-900/30 p-5">
                 <h2 class="text-sm font-semibold text-green-700 dark:text-green-400 mb-2">Results</h2>
                 <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
                   The project has been unmasked. Download the consortium-wide result below.
                 </p>
-                <div class="flex flex-wrap items-center gap-3">
-                  <a href={`/api/crypto/download-result?projectId=${project.id}`}
-                    class="inline-block bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                    Download Result CSV
-                  </a>
-                  <button id="download-master-key-btn" data-project-id={project.id}
-                    class="bg-gray-200 hover:bg-gray-300 dark:bg-neutral-700 dark:hover:bg-neutral-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                    Download Master Key
-                  </button>
-                </div>
+                <a href={`/api/crypto/download-result?projectId=${project.id}`}
+                  class="inline-block bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                  Download Result CSV
+                </a>
               </div>
             )}
 
@@ -252,6 +256,44 @@ function formatDate(d: string | null): string {
                   class="text-sm text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 font-medium">
                   Cancel Project
                 </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* === MASTER KEY ACCESS === */}
+        {canDownloadMasterKey && project.status !== 'cancelled' && (
+          <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-5 mb-6">
+            <h2 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">Master Key</h2>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              Download the master key to unmask the aggregated data locally.
+            </p>
+            <button id="download-master-key-btn" data-project-id={project.id}
+              class="bg-gray-200 hover:bg-gray-300 dark:bg-neutral-700 dark:hover:bg-neutral-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+              Download Master Key
+            </button>
+
+            {/* Access management — creator only */}
+            {isCreator && sameSiteUsers.length > 0 && (
+              <div class="mt-4 pt-4 border-t border-gray-100 dark:border-neutral-700">
+                <h3 class="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">Share master key access with your site members</h3>
+                <div class="space-y-1 max-h-40 overflow-y-auto">
+                  {sameSiteUsers.map((u: any) => (
+                    <label class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
+                      <input type="checkbox" class="master-key-access-cb rounded" value={u.id}
+                        checked={masterKeyAuthorized.includes(u.id as string)} />
+                      <span>{u.full_name}</span>
+                      <span class="text-xs text-gray-400">({u.email})</span>
+                    </label>
+                  ))}
+                </div>
+                <div class="mt-3 flex items-center gap-3">
+                  <button id="save-master-key-access-btn" data-project-id={project.id}
+                    class="bg-clif-burgundy hover:bg-clif-burgundy-dark text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">
+                    Save Access
+                  </button>
+                  <span id="master-key-access-status" class="text-xs"></span>
+                </div>
               </div>
             )}
           </div>
@@ -505,6 +547,42 @@ function formatDate(d: string | null): string {
       } finally {
         masterKeyBtn.disabled = false;
         masterKeyBtn.textContent = 'Download Master Key';
+      }
+    });
+  }
+
+  // === Save Master Key Access ===
+  const saveAccessBtn = document.getElementById('save-master-key-access-btn');
+  if (saveAccessBtn) {
+    saveAccessBtn.addEventListener('click', async () => {
+      const checkboxes = document.querySelectorAll('.master-key-access-cb');
+      const authorizedUserIds = [];
+      checkboxes.forEach(cb => { if (cb.checked) authorizedUserIds.push(cb.value); });
+
+      saveAccessBtn.disabled = true;
+      saveAccessBtn.textContent = 'Saving...';
+      const statusEl = document.getElementById('master-key-access-status');
+
+      try {
+        const res = await fetch('/api/crypto/update-master-key-access', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ projectId: saveAccessBtn.dataset.projectId, authorizedUserIds }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          statusEl.textContent = 'Access updated.';
+          statusEl.className = 'text-xs text-green-600';
+        } else {
+          statusEl.textContent = data.error || 'Failed to update.';
+          statusEl.className = 'text-xs text-red-600';
+        }
+      } catch (err) {
+        statusEl.textContent = 'Network error.';
+        statusEl.className = 'text-xs text-red-600';
+      } finally {
+        saveAccessBtn.disabled = false;
+        saveAccessBtn.textContent = 'Save Access';
       }
     });
   }

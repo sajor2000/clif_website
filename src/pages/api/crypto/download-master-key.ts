@@ -40,8 +40,13 @@ export const POST: APIRoute = async ({ locals, request }) => {
 
   const project = projectResult.rows[0];
 
-  if (project.created_by !== locals.user.id && locals.user.role !== 'admin') {
-    return new Response(JSON.stringify({ error: 'Only the project creator can download the master key.' }), {
+  const masterKeyAuthorized: string[] = JSON.parse((project.master_key_authorized as string) || '[]');
+  const canDownload = project.created_by === locals.user.id
+    || locals.user.role === 'admin'
+    || masterKeyAuthorized.includes(locals.user.id);
+
+  if (!canDownload) {
+    return new Response(JSON.stringify({ error: 'You are not authorized to download the master key.' }), {
       status: 403,
       headers: { 'Content-Type': 'application/json' },
     });
@@ -59,24 +64,24 @@ export const POST: APIRoute = async ({ locals, request }) => {
   if (storedResult.rows.length > 0) {
     masterKey = JSON.parse(storedResult.rows[0].key_data as string);
   } else {
-    // Compute from live fragments (before unmasking)
+    // Compute from active (non-dropped) fragments (before unmasking)
     const fragmentsResult = await db.execute({
-      sql: 'SELECT key_data FROM crypto_site_keys WHERE project_id = ? ORDER BY key_index',
+      sql: 'SELECT key_data, is_dropped FROM crypto_site_keys WHERE project_id = ? ORDER BY key_index',
       args: [projectId],
     });
 
-    const fragments = fragmentsResult.rows.map(
-      (row) => JSON.parse(row.key_data as string) as Record<string, number>,
-    );
+    const activeFragments = fragmentsResult.rows
+      .filter((row) => !row.is_dropped)
+      .map((row) => JSON.parse(row.key_data as string) as Record<string, number>);
 
-    if (fragments.length === 0 || Object.keys(fragments[0]).length === 0) {
+    if (activeFragments.length === 0 || Object.keys(activeFragments[0]).length === 0) {
       return new Response(
         JSON.stringify({ error: 'Master key is not available.' }),
         { status: 400, headers: { 'Content-Type': 'application/json' } },
       );
     }
 
-    masterKey = computeMasterKeyFromFragments(fragments);
+    masterKey = computeMasterKeyFromFragments(activeFragments);
   }
 
   const csv = keyDataToCsv(masterKey, strataConfig);
