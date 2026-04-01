@@ -234,20 +234,14 @@ function formatDate(d: string | null): string {
                 </div>
                 <div class="mt-4 pt-4 border-t border-gray-100 dark:border-neutral-700">
                   <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                    Or skip server unmasking and do it yourself:
+                    Or skip server unmasking — finalize the project and download the master key to unmask locally:
                   </p>
-                  <div class="flex items-center gap-3">
-                    <button id="download-master-key-btn" data-project-id={project.id}
-                      class="bg-gray-200 hover:bg-gray-300 dark:bg-neutral-700 dark:hover:bg-neutral-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                      Download Master Key
-                    </button>
-                    <button id="finalize-btn" data-project-id={project.id}
-                      class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                      Finalize Project
-                    </button>
-                  </div>
+                  <button id="finalize-btn" data-project-id={project.id}
+                    class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                    Finalize & Download Master Key
+                  </button>
                   <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                    <strong>Finalize Project</strong> will wipe all key data from the server and mark the project as complete. This is irreversible.
+                    This will wipe all key data from the server, mark the project as complete, and download the master key. This is irreversible.
                   </p>
                 </div>
               </div>
@@ -285,8 +279,8 @@ function formatDate(d: string | null): string {
           </div>
         )}
 
-        {/* === MASTER KEY DOWNLOAD (non-creator authorized users) === */}
-        {canDownloadMasterKey && !isCreator && project.status !== 'cancelled' && (
+        {/* === MASTER KEY DOWNLOAD (non-creator authorized users, only after finalization) === */}
+        {canDownloadMasterKey && !isCreator && project.status === 'complete' && (
           <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-5 mb-6">
             <h2 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">Master Key</h2>
             <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
@@ -582,7 +576,7 @@ function formatDate(d: string | null): string {
   const finalizeBtn = document.getElementById('finalize-btn');
   if (finalizeBtn) {
     finalizeBtn.addEventListener('click', async () => {
-      if (!confirm('Are you sure you want to finalize this project? All key fragment data will be permanently wiped from the server. This cannot be undone.')) return;
+      if (!confirm('Are you sure you want to finalize this project? All key fragment data will be permanently wiped from the server and the master key will be downloaded. This cannot be undone.')) return;
       finalizeBtn.disabled = true;
       finalizeBtn.textContent = 'Finalizing...';
       try {
@@ -593,16 +587,36 @@ function formatDate(d: string | null): string {
         });
         const data = await res.json();
         if (data.success) {
-          location.reload();
+          // Download master key after successful finalization
+          const mkRes = await fetch('/api/crypto/download-master-key', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ projectId: finalizeBtn.dataset.projectId }),
+          });
+          if (mkRes.ok) {
+            const blob = await mkRes.blob();
+            const disposition = mkRes.headers.get('Content-Disposition') || '';
+            const match = disposition.match(/filename="?([^"]+)"?/);
+            const filename = match ? match[1] : 'master_key.csv';
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+          }
+          setTimeout(() => location.reload(), 1000);
         } else {
           alert(data.error || 'Failed to finalize.');
           finalizeBtn.disabled = false;
-          finalizeBtn.textContent = 'Finalize Project';
+          finalizeBtn.textContent = 'Finalize & Download Master Key';
         }
       } catch (err) {
         alert('Network error.');
         finalizeBtn.disabled = false;
-        finalizeBtn.textContent = 'Finalize Project';
+        finalizeBtn.textContent = 'Finalize & Download Master Key';
       }
     });
   }

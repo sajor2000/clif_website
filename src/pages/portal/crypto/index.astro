@@ -136,7 +136,7 @@ const siteNames = Object.keys(siteGroups).sort();
               <p><strong>2.</strong> The master key is split into N fragments (one per site) and randomly assigned. Fragments are stored so site members can download them through the portal.</p>
               <p><strong>3.</strong> Each site downloads their unique key fragment and adds the offsets to their real counts locally (masked_count = real_count + offset).</p>
               <p><strong>4.</strong> Sites deposit masked CSVs in Box. The project creator collects, sums them across all sites per cell.</p>
-              <p><strong>5.</strong> The creator uploads the aggregated CSV. The server reconstructs the master key from the stored fragments, subtracts it from the aggregated data, and provides the unmasked result for download.</p>
+              <p><strong>5.</strong> The creator either uploads the aggregated CSV for server-side unmasking, or finalizes the project to download the master key and unmask locally. Either way, all key data is wiped once the project is finalized.</p>
             </div>
 
             <hr class="border-gray-200 dark:border-neutral-700" />
@@ -147,7 +147,7 @@ const siteNames = Object.keys(siteGroups).sort();
                 <p><strong class="text-gray-900 dark:text-white">Master key:</strong> The project creator (and any same-site members they authorize) can download the master key to unmask data locally. After server-side unmasking, the master key is stored as an audit record and all individual fragment data is permanently wiped.</p>
                 <p><strong class="text-gray-900 dark:text-white">Site key fragments:</strong> Stored in the database so site members can download them through the portal. Each site only sees their own fragment. The creator cannot see individual fragment data — only whether a fragment has been downloaded. <strong>Once the project is unmasked, all fragment offset data is permanently wiped from the database.</strong></p>
                 <p><strong class="text-gray-900 dark:text-white">Fragment assignment:</strong> Which site gets which fragment is randomly shuffled using cryptographically secure randomness. The creator does not control or see the mapping.</p>
-                <p><strong class="text-gray-900 dark:text-white">Unmasking:</strong> The creator uploads the aggregated masked CSV. The server computes the master key from stored fragments, performs the unmasking, and returns the result. <strong>Unmasking is a one-time operation</strong> — all keys are destroyed afterward. If changes are needed, create a new project.</p>
+                <p><strong class="text-gray-900 dark:text-white">Unmasking:</strong> Two options: (1) Upload the aggregated CSV and the server unmasks it automatically, or (2) finalize the project to download the master key and unmask locally. <strong>Both are one-time operations</strong> — all keys are destroyed afterward. The master key is only available for download after finalization. If changes are needed, create a new project.</p>
                 <p><strong class="text-gray-900 dark:text-white">Dropped sites:</strong> If a site cannot participate, the creator marks them as dropped. The server automatically excludes their fragment offsets during unmasking, so the remaining data is unmasked correctly.</p>
               </div>
 
