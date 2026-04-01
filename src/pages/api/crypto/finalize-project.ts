@@ -65,12 +65,12 @@ export const POST: APIRoute = async ({ locals, request }) => {
     args: [projectId],
   });
 
-  const allFragments = fragmentsResult.rows.map(
-    (row) => JSON.parse(row.key_data as string) as Record<string, number>,
-  );
+  const activeFragments = fragmentsResult.rows
+    .filter((row) => !row.is_dropped)
+    .map((row) => JSON.parse(row.key_data as string) as Record<string, number>);
 
-  if (allFragments.length > 0 && Object.keys(allFragments[0]).length > 0) {
-    const masterKey = computeMasterKeyFromFragments(allFragments);
+  if (activeFragments.length > 0 && Object.keys(activeFragments[0]).length > 0) {
+    const masterKey = computeMasterKeyFromFragments(activeFragments);
     await db.execute({
       sql: `INSERT OR REPLACE INTO crypto_master_keys (id, project_id, key_data, created_at)
             VALUES (COALESCE((SELECT id FROM crypto_master_keys WHERE project_id = ?), lower(hex(randomblob(16)))), ?, ?, ?)`,

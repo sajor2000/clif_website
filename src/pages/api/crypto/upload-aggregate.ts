@@ -113,8 +113,10 @@ export const POST: APIRoute = async ({ locals, request }) => {
     }
   }
 
-  // Store master key in crypto_master_keys for audit record (upsert)
-  const masterKey = computeMasterKeyFromFragments(allFragments);
+  // Store adjusted master key (active fragments only) for audit record (upsert)
+  const droppedSet = new Set(droppedIndices);
+  const activeFragments = allFragments.filter((_, i) => !droppedSet.has(i));
+  const masterKey = computeMasterKeyFromFragments(activeFragments);
   await db.execute({
     sql: `INSERT OR REPLACE INTO crypto_master_keys (id, project_id, key_data, created_at)
           VALUES (COALESCE((SELECT id FROM crypto_master_keys WHERE project_id = ?), lower(hex(randomblob(16)))), ?, ?, ?)`,
