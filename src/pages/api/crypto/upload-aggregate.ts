@@ -2,7 +2,13 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { getDb } from '../../../lib/turso';
-import { parseMaskedCsv, type StrataDimension } from '../../../lib/crypto-masking';
+import {
+  parseMaskedCsv,
+  unmaskAggregated,
+  computeMasterKeyFromFragments,
+  unmaskServerSide,
+  type StrataDimension,
+} from '../../../lib/crypto-masking';
 
 export const POST: APIRoute = async ({ locals, request }) => {
   if (!locals.user) {
@@ -84,14 +90,85 @@ export const POST: APIRoute = async ({ locals, request }) => {
     args: [projectId, locals.user.id, JSON.stringify(data), now],
   });
 
-  // Reset status to collecting (handles initial upload and re-uploads from complete)
+  // Fetch all site key fragments
+  const siteKeysResult = await db.execute({
+    sql: 'SELECT key_index, key_data, is_dropped FROM crypto_site_keys WHERE project_id = ? ORDER BY key_index',
+    args: [projectId],
+  });
+
+  const allFragments: Record<string, number>[] = [];
+  const droppedIndices: number[] = [];
+  let fragmentsWiped = false;
+
+  for (let i = 0; i < siteKeysResult.rows.length; i++) {
+    const row = siteKeysResult.rows[i];
+    const keyData = JSON.parse(row.key_data as string);
+    allFragments.push(keyData);
+    if (row.is_dropped) {
+      droppedIndices.push(i);
+    }
+    if (Object.keys(keyData).length === 0) {
+      fragmentsWiped = true;
+    }
+  }
+
+  // If fragments were already wiped (re-unmask), use stored master key
+  let unmaskResult: { result: Record<string, number>; warnings: string[] };
+
+  if (fragmentsWiped) {
+    const masterKeyResult = await db.execute({
+      sql: 'SELECT key_data FROM crypto_master_keys WHERE project_id = ?',
+      args: [projectId],
+    });
+    if (masterKeyResult.rows.length === 0) {
+      return new Response(
+        JSON.stringify({ error: 'Fragments have been wiped and no stored master key found. Cannot re-unmask.' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } },
+      );
+    }
+    const storedMasterKey = JSON.parse(masterKeyResult.rows[0].key_data as string) as Record<string, number>;
+    // Re-unmask with stored master key (already adjusted for dropped sites at first unmask)
+    unmaskResult = unmaskAggregated(data, storedMasterKey);
+  } else {
+    // Compute adjusted master key (active fragments only) for unmasking and storage
+    const droppedSet = new Set(droppedIndices);
+    const activeFragments = allFragments.filter((_, i) => !droppedSet.has(i));
+    const adjustedMasterKey = computeMasterKeyFromFragments(activeFragments);
+
+    // Store adjusted master key for audit/download and re-unmask before wiping fragments
+    await db.execute({
+      sql: 'DELETE FROM crypto_master_keys WHERE project_id = ?',
+      args: [projectId],
+    });
+    await db.execute({
+      sql: `INSERT INTO crypto_master_keys (id, project_id, key_data, created_at)
+            VALUES (lower(hex(randomblob(16))), ?, ?, ?)`,
+      args: [projectId, JSON.stringify(adjustedMasterKey), now],
+    });
+
+    // Unmask using active fragments only
+    unmaskResult = unmaskServerSide(data, allFragments, droppedIndices);
+
+    // Wipe all fragment key data
+    await db.execute({
+      sql: `UPDATE crypto_site_keys SET key_data = '{}' WHERE project_id = ?`,
+      args: [projectId],
+    });
+  }
+
+  // Store result and mark complete
   await db.execute({
-    sql: `UPDATE crypto_projects SET status = 'collecting', result_data = NULL, updated_at = ? WHERE id = ?`,
-    args: [now, projectId],
+    sql: `UPDATE crypto_projects SET status = 'complete', result_data = ?, updated_at = ? WHERE id = ?`,
+    args: [JSON.stringify(unmaskResult.result), now, projectId],
   });
 
   return new Response(
-    JSON.stringify({ success: true, cellCount }),
+    JSON.stringify({
+      success: true,
+      cellCount,
+      result: unmaskResult.result,
+      warnings: unmaskResult.warnings,
+    }),
     { status: 200, headers: { 'Content-Type': 'application/json' } },
   );
 };

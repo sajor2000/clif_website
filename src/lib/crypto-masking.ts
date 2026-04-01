@@ -260,6 +260,39 @@ export function parseMaskedCsv(
 }
 
 /**
+ * Reconstruct the master key by summing all fragment offset records.
+ * This is the mathematical inverse of splitMasterKey:
+ *   computeMasterKeyFromFragments(splitMasterKey(master, N)) === master
+ */
+export function computeMasterKeyFromFragments(
+  fragments: Record<string, number>[],
+): Record<string, number> {
+  const masterKey: Record<string, number> = {};
+  for (const fragment of fragments) {
+    for (const [key, val] of Object.entries(fragment)) {
+      masterKey[key] = (masterKey[key] || 0) + val;
+    }
+  }
+  return masterKey;
+}
+
+/**
+ * Server-side unmasking: given aggregated masked data and all fragment records,
+ * computes the true counts by summing only active (non-dropped) fragments
+ * and subtracting from the aggregated data.
+ */
+export function unmaskServerSide(
+  aggregatedMasked: Record<string, number>,
+  allFragments: Record<string, number>[],
+  droppedIndices: number[],
+): { result: Record<string, number>; warnings: string[] } {
+  const droppedSet = new Set(droppedIndices);
+  const activeFragments = allFragments.filter((_, i) => !droppedSet.has(i));
+  const adjustedMaster = computeMasterKeyFromFragments(activeFragments);
+  return unmaskAggregated(aggregatedMasked, adjustedMaster);
+}
+
+/**
  * Generate alphabet-based labels for key fragments.
  */
 export function fragmentLabel(index: number): string {

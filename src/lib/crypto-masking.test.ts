@@ -5,6 +5,8 @@ import {
   splitMasterKey,
   unmaskAggregated,
   computeAdjustedMasterKey,
+  computeMasterKeyFromFragments,
+  unmaskServerSide,
   keyDataToCsv,
   parseMaskedCsv,
   parseCellKey,
@@ -233,6 +235,95 @@ describe('keyDataToCsv / parseMaskedCsv round-trip', () => {
 
     for (const key of cellKeys) {
       expect(data[key]).toBe(master[key]);
+    }
+  });
+});
+
+describe('computeMasterKeyFromFragments', () => {
+  it('round-trips with splitMasterKey', () => {
+    const cellKeys = generateCellKeys(testDimensions);
+    const master = generateMasterKey(cellKeys);
+    const fragments = splitMasterKey(master, 5);
+
+    const reconstructed = computeMasterKeyFromFragments(fragments);
+
+    for (const key of cellKeys) {
+      expect(reconstructed[key]).toBe(master[key]);
+    }
+  });
+
+  it('handles empty array', () => {
+    const result = computeMasterKeyFromFragments([]);
+    expect(result).toEqual({});
+  });
+
+  it('handles single fragment', () => {
+    const fragment = { a: 10, b: -20 };
+    const result = computeMasterKeyFromFragments([fragment]);
+    expect(result).toEqual({ a: 10, b: -20 });
+  });
+});
+
+describe('unmaskServerSide', () => {
+  it('recovers true counts with all sites active', () => {
+    const cellKeys = generateCellKeys(testDimensions);
+    const master = generateMasterKey(cellKeys);
+    const fragments = splitMasterKey(master, 4);
+
+    const siteCounts = fragments.map(() => {
+      const counts: Record<string, number> = {};
+      for (const key of cellKeys) {
+        counts[key] = Math.floor(Math.random() * 200) + 20;
+      }
+      return counts;
+    });
+
+    const aggregated: Record<string, number> = {};
+    for (const key of cellKeys) {
+      aggregated[key] = fragments.reduce(
+        (sum, frag, i) => sum + siteCounts[i][key] + frag[key],
+        0,
+      );
+    }
+
+    const { result, warnings } = unmaskServerSide(aggregated, fragments, []);
+
+    for (const key of cellKeys) {
+      const trueTotal = siteCounts.reduce((sum, sc) => sum + sc[key], 0);
+      expect(result[key]).toBe(trueTotal);
+    }
+    expect(warnings.length).toBe(0);
+  });
+
+  it('recovers true counts with dropped sites', () => {
+    const cellKeys = generateCellKeys(testDimensions);
+    const master = generateMasterKey(cellKeys);
+    const fragments = splitMasterKey(master, 4);
+    const droppedIndices = [1, 3]; // drop sites at index 1 and 3
+    const activeIndices = [0, 2];
+
+    const siteCounts = fragments.map(() => {
+      const counts: Record<string, number> = {};
+      for (const key of cellKeys) {
+        counts[key] = Math.floor(Math.random() * 100) + 15;
+      }
+      return counts;
+    });
+
+    // Only active sites contribute to the aggregated data
+    const aggregated: Record<string, number> = {};
+    for (const key of cellKeys) {
+      aggregated[key] = activeIndices.reduce(
+        (sum, i) => sum + siteCounts[i][key] + fragments[i][key],
+        0,
+      );
+    }
+
+    const { result } = unmaskServerSide(aggregated, fragments, droppedIndices);
+
+    for (const key of cellKeys) {
+      const trueTotal = activeIndices.reduce((sum, i) => sum + siteCounts[i][key], 0);
+      expect(result[key]).toBe(trueTotal);
     }
   });
 });

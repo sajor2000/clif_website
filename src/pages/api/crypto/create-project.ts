@@ -7,7 +7,6 @@ import {
   generateMasterKey,
   splitMasterKey,
   fragmentLabel,
-  keyDataToCsv,
   type StrataDimension,
 } from '../../../lib/crypto-masking';
 
@@ -106,10 +105,6 @@ export const POST: APIRoute = async ({ locals, request }) => {
 
   const projectId = result.rows[0]?.id as string;
 
-  // Master key is NOT stored in the database — returned to the creator as a CSV download.
-  // Convert master key to CSV for the response.
-  const masterKeyCsv = keyDataToCsv(masterKey, strataConfigParsed);
-
   // Store each fragment, assigned to a shuffled site with authorized users
   for (let i = 0; i < numSites; i++) {
     await db.execute({
@@ -124,7 +119,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
     });
   }
 
-  return new Response(JSON.stringify({ success: true, projectId, masterKeyCsv }), {
+  return new Response(JSON.stringify({ success: true, projectId }), {
     status: 200,
     headers: { 'Content-Type': 'application/json' },
   });

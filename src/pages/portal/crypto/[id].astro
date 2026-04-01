@@ -188,49 +188,48 @@ function formatDate(d: string | null): string {
         {/* === CREATOR ACTIONS === */}
         {isCreator && (
           <div class="space-y-6">
-            {/* Unmask — client-side. Master key never touches the server. */}
+            {/* Unmask — upload aggregated CSV, server computes unmasking */}
             {(project.status === 'keys_assigned' || project.status === 'collecting' || project.status === 'complete') && (
               <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-5">
                 <h2 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">Unmask Data</h2>
                 <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  Upload your <strong>master_key.csv</strong> (downloaded when the project was created) and the <strong>aggregated masked CSV</strong> (summed masked counts from all sites). Unmasking happens entirely in your browser — the master key is never sent to the server.
+                  Upload the <strong>aggregated masked CSV</strong> (summed masked counts from all active sites). The server will compute the unmasking using the stored key fragments.
                 </p>
-                <div class="space-y-3">
-                  <div>
-                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Master Key CSV</label>
-                    <input type="file" id="master-key-file" accept=".csv"
-                      class="block w-full text-sm text-gray-500 file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-gray-200 file:text-gray-700 dark:file:bg-neutral-600 dark:file:text-gray-300 hover:file:bg-gray-300 file:cursor-pointer" />
-                  </div>
-                  <div>
-                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Aggregated Masked CSV</label>
-                    <input type="file" id="aggregated-file" accept=".csv"
-                      class="block w-full text-sm text-gray-500 file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-gray-200 file:text-gray-700 dark:file:bg-neutral-600 dark:file:text-gray-300 hover:file:bg-gray-300 file:cursor-pointer" />
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      Expected format: <code class="bg-gray-100 dark:bg-neutral-700 px-1 py-0.5 rounded">{strataConfig.map((d: any) => d.name).join(', ')}, masked_count</code>
-                    </p>
-                  </div>
+                <div>
+                  <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Aggregated Masked CSV</label>
+                  <input type="file" id="aggregated-file" accept=".csv"
+                    class="block w-full text-sm text-gray-500 file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-gray-200 file:text-gray-700 dark:file:bg-neutral-600 dark:file:text-gray-300 hover:file:bg-gray-300 file:cursor-pointer" />
+                  <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Expected format: <code class="bg-gray-100 dark:bg-neutral-700 px-1 py-0.5 rounded">{strataConfig.map((d: any) => d.name).join(', ')}, masked_count</code>
+                  </p>
                 </div>
                 <div class="mt-4 flex items-center gap-3">
                   <button id="unmask-btn" data-project-id={project.id} disabled
                     class="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                    Unmask & Download Result
+                    Upload & Unmask
                   </button>
                   <span id="unmask-status" class="text-sm"></span>
                 </div>
               </div>
             )}
 
-            {/* Complete: Download saved result */}
+            {/* Complete: Download saved result and master key */}
             {project.status === 'complete' && (
               <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-green-200 dark:border-green-900/30 p-5">
-                <h2 class="text-sm font-semibold text-green-700 dark:text-green-400 mb-2">Previous Results</h2>
+                <h2 class="text-sm font-semibold text-green-700 dark:text-green-400 mb-2">Results</h2>
                 <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  Download the previously unmasked result, or use the form above to re-unmask with different data.
+                  Download the unmasked result, or use the form above to re-unmask with different data.
                 </p>
-                <a href={`/api/crypto/download-result?projectId=${project.id}`}
-                  class="inline-block bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                  Download Saved Result CSV
-                </a>
+                <div class="flex flex-wrap items-center gap-3">
+                  <a href={`/api/crypto/download-result?projectId=${project.id}`}
+                    class="inline-block bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                    Download Result CSV
+                  </a>
+                  <button id="download-master-key-btn" data-project-id={project.id}
+                    class="inline-block bg-gray-200 hover:bg-gray-300 dark:bg-neutral-700 dark:hover:bg-neutral-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                    Download Master Key (Audit)
+                  </button>
+                </div>
               </div>
             )}
 
@@ -380,92 +379,54 @@ function formatDate(d: string | null): string {
     });
   }
 
-  // === Client-Side Unmask ===
-  const masterKeyFile = document.getElementById('master-key-file');
+  // === Server-Side Unmask ===
   const aggregatedFile = document.getElementById('aggregated-file');
   const unmaskBtn = document.getElementById('unmask-btn');
   const unmaskStatus = document.getElementById('unmask-status');
 
-  function checkUnmaskReady() {
-    if (unmaskBtn) {
-      unmaskBtn.disabled = !(masterKeyFile && masterKeyFile.files.length && aggregatedFile && aggregatedFile.files.length);
-    }
+  if (aggregatedFile) {
+    aggregatedFile.addEventListener('change', () => {
+      if (unmaskBtn) unmaskBtn.disabled = !aggregatedFile.files.length;
+    });
   }
-
-  if (masterKeyFile) masterKeyFile.addEventListener('change', checkUnmaskReady);
-  if (aggregatedFile) aggregatedFile.addEventListener('change', checkUnmaskReady);
 
   if (unmaskBtn) {
     unmaskBtn.addEventListener('click', async () => {
-      if (!masterKeyFile.files[0] || !aggregatedFile.files[0]) return;
+      if (!aggregatedFile.files[0]) return;
 
       unmaskBtn.disabled = true;
-      unmaskBtn.textContent = 'Unmasking...';
+      unmaskBtn.textContent = 'Uploading & Unmasking...';
       unmaskStatus.textContent = '';
       unmaskStatus.className = 'text-sm';
 
       try {
-        // Parse both CSVs client-side
-        const masterCsvText = await masterKeyFile.files[0].text();
-        const aggregatedCsvText = await aggregatedFile.files[0].text();
+        const csvData = await aggregatedFile.files[0].text();
 
-        // Parse strata config from the page (embedded as data attribute)
+        const res = await fetch('/api/crypto/upload-aggregate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ projectId: unmaskBtn.dataset.projectId, csvData }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          unmaskStatus.textContent = data.error || 'Unmasking failed.';
+          unmaskStatus.className = 'text-sm text-red-600';
+          return;
+        }
+
+        // Build result CSV and trigger download
         const strataConfig = JSON.parse(document.getElementById('strata-config-data').textContent);
-
-        // Parse master key CSV → Record<cellKey, offset>
-        const masterResult = parseCsvToRecord(masterCsvText, strataConfig.length);
-        if (masterResult.errors.length > 0) {
-          unmaskStatus.textContent = 'Master key CSV errors: ' + masterResult.errors[0];
-          unmaskStatus.className = 'text-sm text-red-600';
-          return;
-        }
-
-        // Parse aggregated CSV → Record<cellKey, maskedCount>
-        const aggResult = parseCsvToRecord(aggregatedCsvText, strataConfig.length);
-        if (aggResult.errors.length > 0) {
-          unmaskStatus.textContent = 'Aggregated CSV errors: ' + aggResult.errors[0];
-          unmaskStatus.className = 'text-sm text-red-600';
-          return;
-        }
-
-        // Fetch dropped offsets from server (sum of dropped fragments — not the master key)
-        let droppedOffsets = {};
-        try {
-          const droppedRes = await fetch('/api/crypto/dropped-offsets?projectId=' + unmaskBtn.dataset.projectId);
-          const droppedData = await droppedRes.json();
-          if (droppedData.droppedCount > 0) {
-            droppedOffsets = droppedData.offsets;
-          }
-        } catch (e) { /* no dropped sites */ }
-
-        // Adjust master key for dropped sites
-        const adjustedMaster = {};
-        for (const key of Object.keys(masterResult.data)) {
-          adjustedMaster[key] = masterResult.data[key] - (droppedOffsets[key] || 0);
-        }
-
-        // Unmask: true_count = aggregated - adjusted_master
-        const result = {};
-        const warnings = [];
-        for (const key of Object.keys(adjustedMaster)) {
-          if (!(key in aggResult.data)) {
-            warnings.push('Missing cell: ' + key);
-            continue;
-          }
-          result[key] = aggResult.data[key] - adjustedMaster[key];
-        }
-
-        // Generate result CSV
         const dimNames = strataConfig.map(d => d.name);
         const header = [...dimNames, 'count'].join(',');
         const rows = [header];
-        for (const [cellKey, count] of Object.entries(result)) {
+        for (const [cellKey, count] of Object.entries(data.result)) {
           const parts = cellKey.split('_');
           rows.push([...parts, count].join(','));
         }
         const resultCsv = rows.join('\n');
 
-        // Download result
         const blob = new Blob([resultCsv], { type: 'text/csv' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -476,15 +437,8 @@ function formatDate(d: string | null): string {
         a.remove();
         URL.revokeObjectURL(url);
 
-        // Save result to server (just the counts, not the master key)
-        await fetch('/api/crypto/save-result', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ projectId: unmaskBtn.dataset.projectId, resultData: result }),
-        });
-
-        const warnText = warnings.length > 0 ? ` (${warnings.length} warnings)` : '';
-        unmaskStatus.textContent = `Unmasked ${Object.keys(result).length} cells${warnText}. Result downloaded.`;
+        const warnText = data.warnings && data.warnings.length > 0 ? ` (${data.warnings.length} warnings)` : '';
+        unmaskStatus.textContent = `Unmasked ${data.cellCount} cells${warnText}. Result downloaded.`;
         unmaskStatus.className = 'text-sm text-green-600';
         setTimeout(() => location.reload(), 2000);
       } catch (err) {
@@ -492,26 +446,47 @@ function formatDate(d: string | null): string {
         unmaskStatus.className = 'text-sm text-red-600';
       } finally {
         unmaskBtn.disabled = false;
-        unmaskBtn.textContent = 'Unmask & Download Result';
+        unmaskBtn.textContent = 'Upload & Unmask';
       }
     });
   }
 
-  // Simple CSV parser for client-side use
-  function parseCsvToRecord(csvText, numDimensions) {
-    const lines = csvText.trim().split('\n');
-    const data = {};
-    const errors = [];
-    if (lines.length < 2) { errors.push('CSV must have a header and at least one data row'); return { data, errors }; }
-    for (let i = 1; i < lines.length; i++) {
-      const cols = lines[i].split(',').map(c => c.trim().replace(/^"|"$/g, ''));
-      if (cols.length !== numDimensions + 1) { errors.push(`Row ${i+1}: expected ${numDimensions+1} columns, got ${cols.length}`); continue; }
-      const dimValues = cols.slice(0, numDimensions);
-      const val = parseInt(cols[cols.length - 1], 10);
-      if (isNaN(val)) { errors.push(`Row ${i+1}: invalid number "${cols[cols.length-1]}"`); continue; }
-      data[dimValues.join('_')] = val;
-    }
-    return { data, errors };
+  // === Download Master Key (Audit) ===
+  const masterKeyBtn = document.getElementById('download-master-key-btn');
+  if (masterKeyBtn) {
+    masterKeyBtn.addEventListener('click', async () => {
+      masterKeyBtn.disabled = true;
+      masterKeyBtn.textContent = 'Downloading...';
+      try {
+        const res = await fetch('/api/crypto/download-master-key', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ projectId: masterKeyBtn.dataset.projectId }),
+        });
+        if (res.ok) {
+          const blob = await res.blob();
+          const disposition = res.headers.get('Content-Disposition') || '';
+          const match = disposition.match(/filename="?([^"]+)"?/);
+          const filename = match ? match[1] : 'master_key.csv';
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+        } else {
+          const data = await res.json();
+          alert(data.error || 'Download failed.');
+        }
+      } catch (err) {
+        alert('Network error.');
+      } finally {
+        masterKeyBtn.disabled = false;
+        masterKeyBtn.textContent = 'Download Master Key (Audit)';
+      }
+    });
   }
 
   // === Drop / Restore Site ===

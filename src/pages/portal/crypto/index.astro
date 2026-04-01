@@ -133,10 +133,10 @@ const siteNames = Object.keys(siteGroups).sort();
             <div class="space-y-3">
               <h3 class="text-base font-semibold text-gray-900 dark:text-white">Workflow</h3>
               <p><strong>1.</strong> A project creator defines dimensions (e.g. county, year, age group, sex) and selects participating sites. The system generates a master key with random offsets for every combination of dimension values.</p>
-              <p><strong>2.</strong> The master key is split into N fragments (one per site) and randomly assigned. The master key is downloaded by the creator and never stored on the server.</p>
+              <p><strong>2.</strong> The master key is split into N fragments (one per site) and randomly assigned. Fragments are stored so site members can download them through the portal.</p>
               <p><strong>3.</strong> Each site downloads their unique key fragment and adds the offsets to their real counts locally (masked_count = real_count + offset).</p>
               <p><strong>4.</strong> Sites deposit masked CSVs in Box. The project creator collects, sums them across all sites per cell.</p>
-              <p><strong>5.</strong> The creator uploads the aggregated CSV along with their master key file. The browser subtracts the master key to recover true consortium-wide counts — the server never sees the master key.</p>
+              <p><strong>5.</strong> The creator uploads the aggregated CSV. The server reconstructs the master key from the stored fragments, subtracts it from the aggregated data, and provides the unmasked result for download.</p>
             </div>
 
             <hr class="border-gray-200 dark:border-neutral-700" />
@@ -144,12 +144,11 @@ const siteNames = Object.keys(siteGroups).sort();
             <div class="space-y-3">
               <h3 class="text-base font-semibold text-gray-900 dark:text-white">Security & Data Storage</h3>
               <div class="space-y-2 text-xs">
-                <p><strong class="text-gray-900 dark:text-white">Master key:</strong> Generated on the server, immediately downloaded to the creator's computer, then discarded from server memory. It is <strong>never stored</strong> in the database or anywhere on the server. Only the creator has it as a file.</p>
+                <p><strong class="text-gray-900 dark:text-white">Master key:</strong> Reconstructed from site fragments at unmasking time. After unmasking, the master key is stored as an audit record and the individual fragments are permanently wiped.</p>
                 <p><strong class="text-gray-900 dark:text-white">Site key fragments:</strong> Stored in the database so site members can download them through the portal. Each site only sees their own fragment. The creator cannot see individual fragment data — only whether a fragment has been downloaded. <strong>Once the project is unmasked, all fragment offset data is permanently wiped from the database.</strong></p>
                 <p><strong class="text-gray-900 dark:text-white">Fragment assignment:</strong> Which site gets which fragment is randomly shuffled using cryptographically secure randomness. The creator does not control or see the mapping.</p>
-                <p><strong class="text-gray-900 dark:text-white">Unmasking:</strong> Happens entirely in the creator's browser. The master key file and aggregated CSV are read locally — neither is sent to the server. Even with full database access, unmasking is impossible without the master key file.</p>
-                <p><strong class="text-gray-900 dark:text-white">If the master key is lost:</strong> The data cannot be unmasked. There is no recovery mechanism. This is by design.</p>
-                <p><strong class="text-gray-900 dark:text-white">Dropped sites:</strong> If a site cannot participate, the creator marks them as dropped. The system provides an adjusted offset so the remaining data can still be unmasked correctly, without revealing any individual site's fragment.</p>
+                <p><strong class="text-gray-900 dark:text-white">Unmasking:</strong> The creator uploads the aggregated masked CSV. The server computes the master key from stored fragments, performs the unmasking, and returns the result. Only the project creator or an admin can trigger unmasking.</p>
+                <p><strong class="text-gray-900 dark:text-white">Dropped sites:</strong> If a site cannot participate, the creator marks them as dropped. The server automatically excludes their fragment offsets during unmasking, so the remaining data is unmasked correctly.</p>
               </div>
             </div>
 
@@ -299,8 +298,8 @@ const siteNames = Object.keys(siteGroups).sort();
                 Estimated total cells: <span id="cell-count" class="font-semibold">0</span>
               </div>
 
-              <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30 rounded-lg p-3 text-xs text-amber-800 dark:text-amber-300">
-                <strong>Important:</strong> When you click "Create Project", a <strong>master_key.csv</strong> file will automatically download. This is the only copy — it is never stored on the server and <strong>cannot be re-downloaded</strong>. Keep it safe. If you lose it, the project data cannot be unmasked.
+              <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/30 rounded-lg p-3 text-xs text-blue-800 dark:text-blue-300">
+                <strong>Note:</strong> Key fragments will be generated and randomly assigned to participating sites. Sites can download their fragments from the project page. When you upload the aggregated masked CSV, the server will compute the unmasking automatically.
               </div>
 
               <div class="flex items-center gap-3">
@@ -614,20 +613,7 @@ const siteNames = Object.keys(siteGroups).sort();
 
       const data = await res.json();
       if (data.success) {
-        // Download master key CSV — this is the ONLY copy, never stored in the database
-        if (data.masterKeyCsv) {
-          const blob = new Blob([data.masterKeyCsv], { type: 'text/csv' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = 'master_key_' + (form.querySelector('[name="name"]').value || 'project').replace(/\s+/g, '_') + '.csv';
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          URL.revokeObjectURL(url);
-        }
-        // Brief delay so the download starts before navigating
-        setTimeout(() => { window.location.href = '/portal/crypto/' + data.projectId; }, 500);
+        window.location.href = '/portal/crypto/' + data.projectId;
       } else {
         createStatus.textContent = data.error || 'Failed to create project.';
         createStatus.className = 'text-sm text-red-600';
