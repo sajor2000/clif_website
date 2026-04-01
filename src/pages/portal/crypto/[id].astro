@@ -242,12 +242,12 @@ function formatDate(d: string | null): string {
                       Download Master Key
                     </button>
                     <button id="finalize-btn" data-project-id={project.id}
-                      class="hidden bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                      class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                       Finalize Project
                     </button>
                   </div>
-                  <p id="finalize-hint" class="hidden text-xs text-amber-600 dark:text-amber-400 mt-2">
-                    Master key downloaded. When you're done, click <strong>Finalize Project</strong> to wipe all key data from the server. This is irreversible.
+                  <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    <strong>Finalize Project</strong> will wipe all key data from the server and mark the project as complete. This is irreversible.
                   </p>
                 </div>
               </div>
@@ -565,12 +565,6 @@ function formatDate(d: string | null): string {
           a.click();
           a.remove();
           URL.revokeObjectURL(url);
-
-          // Show finalize button after successful download
-          const finalizeBtn = document.getElementById('finalize-btn');
-          const finalizeHint = document.getElementById('finalize-hint');
-          if (finalizeBtn) finalizeBtn.classList.remove('hidden');
-          if (finalizeHint) finalizeHint.classList.remove('hidden');
         } else {
           const data = await res.json();
           alert(data.error || 'Download failed.');
