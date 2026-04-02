@@ -26,6 +26,23 @@ const approvedUsers = allProfiles.filter((p) => p.is_approved);
 
 const roleCounts: Record<string, number> = { all: approvedUsers.length, member: 0, steering: 0, admin: 0 };
 approvedUsers.forEach((u: any) => { if (u.role in roleCounts) roleCounts[u.role]++; });
+
+// Site assignment data
+let sites: any[] = [];
+let siteEditors: any[] = [];
+try {
+  const sitesResult = await db.execute('SELECT id, site_name, institution FROM site_details ORDER BY site_name');
+  sites = sitesResult.rows as any[];
+
+  const editorsResult = await db.execute(`
+    SELECT se.site_id, se.user_id, se.assigned_at, se.notified_at,
+           u.full_name, u.email, u.institution
+    FROM site_editors se
+    JOIN users u ON se.user_id = u.id
+    ORDER BY se.assigned_at DESC
+  `);
+  siteEditors = editorsResult.rows as any[];
+} catch {}
 ---
 
 <BaseLayout title="Admin Panel">
@@ -186,11 +203,64 @@ approvedUsers.forEach((u: any) => { if (u.role in roleCounts) roleCounts[u.role]
             </div>
           )}
         </div>
+
+        {/* ============ Site Editor Assignments ============ */}
+        <div class="mt-8">
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Site Editor Assignments</h2>
+          <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Assign members to review and update their site's details. You can also send email notifications.</p>
+
+          {sites.length === 0 ? (
+            <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6 text-center text-gray-500 dark:text-gray-400 text-sm">
+              No sites available. Run the seed script first.
+            </div>
+          ) : (
+            <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-5">
+              {/* Site selector */}
+              <div class="flex flex-col sm:flex-row gap-3 mb-4">
+                <div class="flex-1">
+                  <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Select Site</label>
+                  <select id="site-selector" class="w-full text-sm px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-700 text-gray-900 dark:text-white">
+                    <option value="">Choose a site...</option>
+                    {sites.map((s: any) => (
+                      <option value={s.id} data-institution={s.institution || ''}>{s.site_name}{s.institution ? ` (${s.institution})` : ''}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Current editors for selected site */}
+              <div id="site-editors-panel" class="hidden">
+                <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Assigned Editors</h3>
+                <div id="site-editors-list" class="space-y-2 mb-4">
+                  <p class="text-sm text-gray-500 dark:text-gray-400">No editors assigned.</p>
+                </div>
+
+                {/* Assign new editor */}
+                <div class="border-t border-gray-100 dark:border-neutral-700 pt-3 mt-3">
+                  <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Assign New Editor</h3>
+                  <div class="flex gap-2">
+                    <select id="user-selector" class="flex-1 text-sm px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-700 text-gray-900 dark:text-white">
+                      <option value="">Choose a member...</option>
+                      {approvedUsers.map((u: any) => (
+                        <option value={u.id} data-institution={u.institution || ''}>{u.full_name || u.email} — {u.institution || 'No institution'}</option>
+                      ))}
+                    </select>
+                    <button id="assign-editor-btn" class="px-4 py-2 text-sm font-medium text-white bg-clif-burgundy hover:bg-clif-burgundy/90 rounded-lg transition-colors whitespace-nowrap">
+                      Assign
+                    </button>
+                  </div>
+                  <div id="assign-status" class="text-sm mt-2 hidden"></div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   </div>
 
-  <script is:inline>
+  {/* Pass site editors data to client JS */}
+  <script is:inline define:vars={{ siteEditorsJson: JSON.stringify(siteEditors) }}>
     document.addEventListener('DOMContentLoaded', function() {
       document.querySelectorAll('.approve-btn').forEach(function(btn) {
         btn.addEventListener('click', async function() {
@@ -364,6 +434,187 @@ approvedUsers.forEach((u: any) => { if (u.role in roleCounts) roleCounts[u.role]
           }
         });
       });
+
+      // ========== Site Editor Assignments ==========
+      var allEditors = JSON.parse(siteEditorsJson);
+      var siteSelector = document.getElementById('site-selector');
+      var editorsPanel = document.getElementById('site-editors-panel');
+      var editorsList = document.getElementById('site-editors-list');
+      var userSelector = document.getElementById('user-selector');
+      var assignBtn = document.getElementById('assign-editor-btn');
+      var assignStatus = document.getElementById('assign-status');
+
+      function renderEditors(siteId) {
+        if (!editorsList) return;
+        var editors = allEditors.filter(function(e) { return e.site_id === siteId; });
+        if (editors.length === 0) {
+          editorsList.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400 italic">No editors assigned yet.</p>';
+          return;
+        }
+        var html = '';
+        editors.forEach(function(e) {
+          var notifiedBadge = e.notified_at
+            ? '<span class="text-xs text-green-600 dark:text-green-400">Notified ' + new Date(e.notified_at).toLocaleDateString() + '</span>'
+            : '<button class="notify-editor-btn text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline" data-site-id="' + siteId + '" data-user-id="' + e.user_id + '">Send Notification</button>';
+
+          html += '<div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-neutral-700/50 rounded-lg">'
+            + '<div>'
+            + '<p class="text-sm font-medium text-gray-900 dark:text-white">' + (e.full_name || e.email) + '</p>'
+            + '<p class="text-xs text-gray-500 dark:text-gray-400">' + (e.email || '') + ' &middot; ' + (e.institution || '') + '</p>'
+            + '<p class="text-xs text-gray-400 dark:text-gray-500">Assigned ' + new Date(e.assigned_at).toLocaleDateString() + '</p>'
+            + '</div>'
+            + '<div class="flex items-center gap-3">'
+            + notifiedBadge
+            + ' <button class="remove-editor-btn text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 underline" data-site-id="' + siteId + '" data-user-id="' + e.user_id + '">Remove</button>'
+            + '</div>'
+            + '</div>';
+        });
+        editorsList.innerHTML = html;
+
+        // Bind remove buttons
+        editorsList.querySelectorAll('.remove-editor-btn').forEach(function(btn) {
+          btn.addEventListener('click', async function() {
+            var sid = this.getAttribute('data-site-id');
+            var uid = this.getAttribute('data-user-id');
+            if (!confirm('Remove this editor assignment?')) return;
+            this.textContent = 'Removing...';
+            var res = await fetch('/api/admin/remove-site-editor', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ siteId: sid, userId: uid }),
+            });
+            if (res.ok) {
+              allEditors = allEditors.filter(function(e) { return !(e.site_id === sid && e.user_id === uid); });
+              renderEditors(sid);
+            } else {
+              alert('Failed to remove editor');
+            }
+          });
+        });
+
+        // Bind notify buttons
+        editorsList.querySelectorAll('.notify-editor-btn').forEach(function(btn) {
+          btn.addEventListener('click', async function() {
+            var sid = this.getAttribute('data-site-id');
+            var uid = this.getAttribute('data-user-id');
+            this.textContent = 'Sending...';
+            this.disabled = true;
+            var res = await fetch('/api/admin/notify-site-editor', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ siteId: sid, userId: uid }),
+            });
+            if (res.ok) {
+              // Update local data
+              allEditors.forEach(function(e) {
+                if (e.site_id === sid && e.user_id === uid) {
+                  e.notified_at = new Date().toISOString();
+                }
+              });
+              renderEditors(sid);
+            } else {
+              var data = await res.json();
+              alert(data.error || 'Failed to send notification');
+              this.textContent = 'Send Notification';
+              this.disabled = false;
+            }
+          });
+        });
+      }
+
+      if (siteSelector) {
+        siteSelector.addEventListener('change', function() {
+          var siteId = this.value;
+          if (!siteId) {
+            if (editorsPanel) editorsPanel.classList.add('hidden');
+            return;
+          }
+          if (editorsPanel) editorsPanel.classList.remove('hidden');
+
+          // Sort user selector: institution-matched users first
+          var selectedOption = this.options[this.selectedIndex];
+          var siteInstitution = selectedOption.getAttribute('data-institution') || '';
+          if (userSelector && siteInstitution) {
+            var options = Array.from(userSelector.options).slice(1); // skip placeholder
+            options.sort(function(a, b) {
+              var aMatch = a.getAttribute('data-institution') === siteInstitution ? 0 : 1;
+              var bMatch = b.getAttribute('data-institution') === siteInstitution ? 0 : 1;
+              return aMatch - bMatch;
+            });
+            // Re-append sorted
+            options.forEach(function(opt) { userSelector.appendChild(opt); });
+          }
+
+          renderEditors(siteId);
+          if (assignStatus) assignStatus.classList.add('hidden');
+        });
+      }
+
+      if (assignBtn) {
+        assignBtn.addEventListener('click', async function() {
+          var siteId = siteSelector ? siteSelector.value : '';
+          var userId = userSelector ? userSelector.value : '';
+          if (!siteId || !userId) {
+            if (assignStatus) {
+              assignStatus.textContent = 'Please select both a site and a member.';
+              assignStatus.className = 'text-sm mt-2 text-red-600 dark:text-red-400';
+              assignStatus.classList.remove('hidden');
+            }
+            return;
+          }
+
+          this.disabled = true;
+          this.textContent = 'Assigning...';
+          if (assignStatus) assignStatus.classList.add('hidden');
+
+          var res = await fetch('/api/admin/assign-site-editor', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ siteId: siteId, userId: userId }),
+          });
+
+          if (res.ok) {
+            var data = await res.json();
+            if (data.alreadyAssigned) {
+              if (assignStatus) {
+                assignStatus.textContent = 'This member is already assigned to this site.';
+                assignStatus.className = 'text-sm mt-2 text-amber-600 dark:text-amber-400';
+                assignStatus.classList.remove('hidden');
+              }
+            } else {
+              // Add to local data
+              var userOpt = userSelector.options[userSelector.selectedIndex];
+              var parts = userOpt.textContent.split(' — ');
+              allEditors.push({
+                site_id: siteId,
+                user_id: userId,
+                full_name: parts[0],
+                email: '',
+                institution: parts[1] || '',
+                assigned_at: new Date().toISOString(),
+                notified_at: null,
+              });
+              renderEditors(siteId);
+              if (assignStatus) {
+                assignStatus.textContent = 'Editor assigned successfully.';
+                assignStatus.className = 'text-sm mt-2 text-green-600 dark:text-green-400';
+                assignStatus.classList.remove('hidden');
+              }
+            }
+          } else {
+            var errData = await res.json();
+            if (assignStatus) {
+              assignStatus.textContent = errData.error || 'Failed to assign editor';
+              assignStatus.className = 'text-sm mt-2 text-red-600 dark:text-red-400';
+              assignStatus.classList.remove('hidden');
+            }
+          }
+
+          this.disabled = false;
+          this.textContent = 'Assign';
+          if (userSelector) userSelector.value = '';
+        });
+      }
     });
   </script>
 </BaseLayout>

@@ -2,6 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Security Rules
+
+- **NEVER read, cat, or access `.env` files** — they contain secrets. Only read `.env.example`.
+- If you need to know what env vars exist, check `.env.example` instead.
+
 ## Project Overview
 
 This is the CLIF Consortium website - a healthcare consortium website built with Astro that showcases the Common Longitudinal ICU data Format standard for critical care data research. The project has been migrated from static markdown files to a modern Astro framework.

@@ -9,6 +9,7 @@ const user = Astro.locals.user;
 
 const db = getDb();
 let sites: any[] = [];
+let editableSiteIds: Set<string> = new Set();
 let error: string | null = null;
 
 try {
@@ -18,10 +19,97 @@ try {
     has_er_data: Boolean(row.has_er_data),
     has_icu_data: Boolean(row.has_icu_data),
     has_ward_data: Boolean(row.has_ward_data),
+    death_dttm_source_arr: row.death_dttm_source ? JSON.parse(row.death_dttm_source as string) : [],
   }));
+
+  // Determine which sites this user can edit
+  if (user?.role === 'admin') {
+    sites.forEach((s: any) => editableSiteIds.add(s.id as string));
+  } else if (user) {
+    const editors = await db.execute({
+      sql: 'SELECT site_id FROM site_editors WHERE user_id = ?',
+      args: [user.id],
+    });
+    editors.rows.forEach((row) => editableSiteIds.add(row.site_id as string));
+  }
 } catch (e: any) {
   error = e.message;
 }
+
+const badgeOn = 'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-400';
+const badgeOff = 'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-400 dark:bg-neutral-700 dark:text-gray-500';
+
+const irbApprovalBadge = 'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-400';
+const irbExemptionBadge = 'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-400';
+
+const deathSourceBadge = 'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-400';
+
+const deathSourceOptions = [
+  'Epic/EMRs - from encounters/death notes/check-ins/surveys',
+  'Cancer registry - from updates/surveys periodically',
+  'Social security registry - from updates periodically',
+  'State Death registry',
+];
+
+// Pre-compute all dynamic values per site to avoid ternaries in JSX
+const siteViewData = sites.map((s: any) => {
+  const canEdit = editableSiteIds.has(s.id);
+  const hasDeath = s.death_dttm_source_arr.length > 0;
+  const erBadge = s.has_er_data ? badgeOn : badgeOff;
+  const icuBadge = s.has_icu_data ? badgeOn : badgeOff;
+  const wardBadge = s.has_ward_data ? badgeOn : badgeOff;
+  const irbBadge = s.irb_approval_type === 'approval' ? irbApprovalBadge : irbExemptionBadge;
+  const irbLabel = s.irb_approval_type === 'approval' ? 'Approval' : 'Exemption';
+  const hasIrb = !!(s.irb_name || s.irb_number || s.irb_approval_date || s.irb_approval_type);
+  const erCheck = s.has_er_data ? '\u2713' : '\u2717';
+  const icuCheck = s.has_icu_data ? '\u2713' : '\u2717';
+  const wardCheck = s.has_ward_data ? '\u2713' : '\u2717';
+  const tableRowClass = 'hover:bg-gray-50 dark:hover:bg-neutral-700';
+  const deathJoined = s.death_dttm_source_arr.join(', ');
+  return {
+    ...s,
+    _canEdit: canEdit,
+    _hasDeath: hasDeath,
+    _erBadge: erBadge,
+    _icuBadge: icuBadge,
+    _wardBadge: wardBadge,
+    _irbBadge: irbBadge,
+    _irbLabel: irbLabel,
+    _hasIrb: hasIrb,
+    _erCheck: erCheck,
+    _icuCheck: icuCheck,
+    _wardCheck: wardCheck,
+    _tableRowClass: tableRowClass,
+    _deathJoined: deathJoined,
+  };
+});
+
+// Common classes to keep template clean
+const inputCls = 'edit-field w-full text-sm px-2 py-1.5 border border-gray-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-700 text-gray-900 dark:text-white';
+const labelCls = 'block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1';
+const sectionBorder = 'border-t border-gray-100 dark:border-neutral-700 pt-3 mt-3';
+const dtCls = 'text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider';
+const ddCls = 'mt-1 text-sm text-gray-900 dark:text-white';
+const ddSemibold = 'mt-1 text-sm font-semibold text-gray-900 dark:text-white';
+const thCls = 'px-3 py-2.5 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase whitespace-nowrap';
+const thCenter = 'px-3 py-2.5 text-center text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase whitespace-nowrap';
+const tdCls = 'px-3 py-2.5 text-gray-600 dark:text-gray-400 whitespace-nowrap';
+const tdCenter = 'px-3 py-2.5 text-center text-gray-900 dark:text-white';
+
+const editBtnCls = 'px-2.5 py-1 text-xs font-medium text-clif-burgundy border border-clif-burgundy/30 rounded-lg hover:bg-clif-burgundy/10 transition-colors';
+
+// Serialize site data for client-side chart
+const sitesJson = JSON.stringify(siteViewData.map((s: any) => ({
+  site_name: s.site_name,
+  hospital_type: s.hospital_type,
+  has_er_data: s.has_er_data,
+  has_icu_data: s.has_icu_data,
+  has_ward_data: s.has_ward_data,
+  irb_approval_type: s.irb_approval_type,
+  death_dttm_source_arr: s.death_dttm_source_arr,
+  pulled_notes: s.pulled_notes,
+  data_source: s.data_source,
+})));
 ---
 
 <BaseLayout title="Site Details">
@@ -32,105 +120,687 @@ try {
       </aside>
 
       <div class="flex-1 min-w-0">
+        <!-- Header -->
         <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Site Details</h1>
-            <p class="text-gray-600 dark:text-gray-400 mt-1">Institution metadata and data availability across consortium sites</p>
+            <p class="text-gray-600 dark:text-gray-400 mt-1">Institution metadata, IRB info, and data availability across consortium sites</p>
           </div>
-          {!error && sites.length > 0 && (
-            <div class="flex items-center gap-3">
+          {!error && siteViewData.length > 0 && (
+            <div class="flex items-center gap-3 flex-wrap">
               <input
                 type="text"
                 id="site-search"
                 placeholder="Search sites..."
                 class="w-full sm:w-56 px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent"
               />
-              <span class="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">{sites.length} sites</span>
+              <span class="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">{siteViewData.length} sites</span>
+              <div class="flex items-center border border-gray-300 dark:border-neutral-600 rounded-lg overflow-hidden ml-auto">
+                <button id="view-summary" class="px-3 py-1.5 text-xs font-medium bg-clif-burgundy text-white" title="Summary view">Summary</button>
+                <button id="view-table" class="px-3 py-1.5 text-xs font-medium bg-white dark:bg-neutral-700 text-gray-600 dark:text-gray-300" title="Table view">Table</button>
+              </div>
             </div>
           )}
         </div>
 
-        {error ? (
-          <div class="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg p-4 text-sm">
+
+        <!-- Error state -->
+        {error && (
+          <div class="bg-red-50 dark:bg-red-900 text-red-600 dark:text-red-400 rounded-lg p-4 text-sm">
             Error loading data: {error}
           </div>
-        ) : sites.length === 0 ? (
+        )}
+
+        <!-- Empty state -->
+        {!error && siteViewData.length === 0 && (
           <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-8 text-center text-gray-500 dark:text-gray-400">
             No site details available yet.
           </div>
-        ) : (
-          <div class="grid gap-4" id="site-cards">
-            {sites.map((site: any) => (
-              <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 overflow-hidden hover:shadow-md transition-shadow" data-site-card>
-                <div class="p-5">
-                  <div class="flex flex-wrap items-start justify-between gap-2 mb-4">
-                    <div class="flex items-center gap-3">
-                      <h3 class="text-lg font-bold text-gray-900 dark:text-white">{site.site_name}</h3>
-                      {site.hospital_type && (
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-clif-burgundy/10 text-clif-burgundy dark:bg-clif-burgundy/20 dark:text-red-300">
-                          {site.hospital_type}
-                        </span>
-                      )}
-                    </div>
-                    <div class="flex items-center gap-1.5">
-                      <span class={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${site.has_er_data ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-400 dark:bg-neutral-700 dark:text-gray-500'}`}>
-                        ER
-                      </span>
-                      <span class={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${site.has_icu_data ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-400 dark:bg-neutral-700 dark:text-gray-500'}`}>
-                        ICU
-                      </span>
-                      <span class={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${site.has_ward_data ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-400 dark:bg-neutral-700 dark:text-gray-500'}`}>
-                        Ward
-                      </span>
-                    </div>
-                  </div>
+        )}
 
-                  <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    <div>
-                      <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Hospitals</dt>
-                      <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{site.num_hospitals ?? '\u2014'}</dd>
-                    </div>
-                    <div>
-                      <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ICU Beds</dt>
-                      <dd class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{site.icu_beds ?? '\u2014'}</dd>
-                    </div>
-                    <div>
-                      <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Data Source</dt>
-                      <dd class="mt-1 text-sm text-gray-900 dark:text-white">{site.data_source ?? '\u2014'}</dd>
-                    </div>
-                    <div>
-                      <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">CLIF Date Range</dt>
-                      <dd class="mt-1 text-sm text-gray-900 dark:text-white">{site.clifed_date_range ?? '\u2014'}</dd>
-                    </div>
-                  </div>
-
-                  {site.notes && (
-                    <div class="mt-3 pt-3 border-t border-gray-100 dark:border-neutral-700">
-                      <p class="text-xs text-gray-500 dark:text-gray-400"><span class="font-medium">Notes:</span> {site.notes}</p>
-                    </div>
-                  )}
-                </div>
+        <!-- Summary view -->
+        {!error && siteViewData.length > 0 && (
+          <div id="site-summary-view">
+            <div class="mb-4 flex items-center gap-3">
+              <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Group by:</label>
+              <select id="group-by-select" class="text-sm px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-700 text-gray-900 dark:text-white">
+                <option value="hospital_type">Hospital Type</option>
+                <option value="has_er_data">ER Data</option>
+                <option value="has_icu_data">ICU Data</option>
+                <option value="has_ward_data">Ward Data</option>
+                <option value="irb_approval_type">IRB Type</option>
+                <option value="death_source">Death Source Status</option>
+                <option value="pulled_notes">Pulled Notes</option>
+                <option value="data_source">Data Source</option>
+              </select>
+            </div>
+            <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-5">
+              <div style="position: relative; height: 350px;">
+                <canvas id="site-group-chart"></canvas>
               </div>
-            ))}
+            </div>
+            <div id="grouped-lists" class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
           </div>
         )}
+
+        <!-- TABLE VIEW (hidden by default) -->
+        {!error && siteViewData.length > 0 && (
+          <div id="site-table-wrap" class="hidden overflow-x-auto">
+            <table class="w-full text-sm border-collapse">
+              <thead>
+                <tr class="bg-gray-50 dark:bg-neutral-700">
+                  <th class="px-3 py-2.5 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase whitespace-nowrap sticky left-0 bg-gray-50 dark:bg-neutral-700">Site</th>
+                  <th class={thCls}>Type</th>
+                  <th class={thCenter}># Hosp.</th>
+                  <th class={thCenter}>ICU Beds</th>
+                  <th class={thCls}>Data Source</th>
+                  <th class={thCls}>Source Range</th>
+                  <th class={thCls}>CLIF Range</th>
+                  <th class={thCenter}>ER</th>
+                  <th class={thCenter}>ICU</th>
+                  <th class={thCenter}>Ward</th>
+                  <th class={thCls}>IRB Number</th>
+                  <th class={thCls}>IRB Type</th>
+                  <th class={thCls}>Cohort Criteria</th>
+                  <th class={thCls}>Death Source</th>
+                  <th class={thCls}>Pulled Notes</th>
+                  <th class={thCls}>Notes</th>
+                  <th class={thCenter}></th>
+                </tr>
+                <tr class="bg-gray-100 dark:bg-neutral-600">
+                  <th class="px-2 py-1.5 sticky left-0 bg-gray-100 dark:bg-neutral-600"></th>
+                  <th class="px-2 py-1.5">
+                    <select class="col-filter w-full text-[11px] px-1 py-0.5 rounded border border-gray-300 dark:border-neutral-500 bg-white dark:bg-neutral-700 text-gray-700 dark:text-gray-300" data-col="1">
+                      <option value="">All</option>
+                      <option value="Academic">Academic</option>
+                      <option value="Academic & community">Acad. & Comm.</option>
+                    </select>
+                  </th>
+                  <th class="px-2 py-1.5"></th>
+                  <th class="px-2 py-1.5"></th>
+                  <th class="px-2 py-1.5">
+                    <select class="col-filter w-full text-[11px] px-1 py-0.5 rounded border border-gray-300 dark:border-neutral-500 bg-white dark:bg-neutral-700 text-gray-700 dark:text-gray-300" data-col="4">
+                      <option value="">All</option>
+                      <option value="CRDW">CRDW</option>
+                      <option value="Clarity">Clarity</option>
+                      <option value="EDW">EDW</option>
+                      <option value="Caboodle">Caboodle</option>
+                      <option value="RDW">RDW</option>
+                      <option value="Metavision">Metavision</option>
+                    </select>
+                  </th>
+                  <th class="px-2 py-1.5"></th>
+                  <th class="px-2 py-1.5"></th>
+                  <th class="px-2 py-1.5">
+                    <select class="col-filter w-full text-[11px] px-1 py-0.5 rounded border border-gray-300 dark:border-neutral-500 bg-white dark:bg-neutral-700 text-gray-700 dark:text-gray-300" data-col="7">
+                      <option value="">All</option>
+                      <option value="\u2713">Yes</option>
+                      <option value="\u2717">No</option>
+                    </select>
+                  </th>
+                  <th class="px-2 py-1.5">
+                    <select class="col-filter w-full text-[11px] px-1 py-0.5 rounded border border-gray-300 dark:border-neutral-500 bg-white dark:bg-neutral-700 text-gray-700 dark:text-gray-300" data-col="8">
+                      <option value="">All</option>
+                      <option value="\u2713">Yes</option>
+                      <option value="\u2717">No</option>
+                    </select>
+                  </th>
+                  <th class="px-2 py-1.5">
+                    <select class="col-filter w-full text-[11px] px-1 py-0.5 rounded border border-gray-300 dark:border-neutral-500 bg-white dark:bg-neutral-700 text-gray-700 dark:text-gray-300" data-col="9">
+                      <option value="">All</option>
+                      <option value="\u2713">Yes</option>
+                      <option value="\u2717">No</option>
+                    </select>
+                  </th>
+                  <th class="px-2 py-1.5"></th>
+                  <th class="px-2 py-1.5">
+                    <select class="col-filter w-full text-[11px] px-1 py-0.5 rounded border border-gray-300 dark:border-neutral-500 bg-white dark:bg-neutral-700 text-gray-700 dark:text-gray-300" data-col="11">
+                      <option value="">All</option>
+                      <option value="Approval">Approval</option>
+                      <option value="Exemption">Exempt</option>
+                    </select>
+                  </th>
+                  <th class="px-2 py-1.5"></th>
+                  <th class="px-2 py-1.5">
+                    <select class="col-filter w-full text-[11px] px-1 py-0.5 rounded border border-gray-300 dark:border-neutral-500 bg-white dark:bg-neutral-700 text-gray-700 dark:text-gray-300" data-col="13">
+                      <option value="">All</option>
+                      <option value="_provided">Provided</option>
+                      <option value="_missing">Not provided</option>
+                    </select>
+                  </th>
+                  <th class="px-2 py-1.5">
+                    <select class="col-filter w-full text-[11px] px-1 py-0.5 rounded border border-gray-300 dark:border-neutral-500 bg-white dark:bg-neutral-700 text-gray-700 dark:text-gray-300" data-col="14">
+                      <option value="">All</option>
+                      <option value="_provided">Provided</option>
+                      <option value="_missing">Not provided</option>
+                    </select>
+                  </th>
+                  <th class="px-2 py-1.5"></th>
+                  <th class="px-2 py-1.5"></th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-200 dark:divide-neutral-700">
+                {siteViewData.map((site: any) => (
+                  <tr
+                    class={site._tableRowClass}
+                    data-table-row
+                    data-hospital-type={site.hospital_type || ''}
+                    data-has-er={site.has_er_data ? '1' : '0'}
+                    data-has-irb={site.irb_number ? '1' : '0'}
+                    data-has-death={site._hasDeath ? '1' : '0'}
+                  >
+                    <td class="px-3 py-2.5 font-semibold text-gray-900 dark:text-white whitespace-nowrap sticky left-0 bg-white dark:bg-neutral-800">{site.site_name}</td>
+                    <td class={tdCls}>{site.hospital_type ?? '\u2014'}</td>
+                    <td class={tdCenter}>{site.num_hospitals ?? '\u2014'}</td>
+                    <td class={tdCenter}>{site.icu_beds ?? '\u2014'}</td>
+                    <td class={tdCls}>{site.data_source ?? '\u2014'}</td>
+                    <td class={tdCls}>{site.source_data_date_range ?? '\u2014'}</td>
+                    <td class={tdCls}>{site.clifed_date_range ?? '\u2014'}</td>
+                    <td class={tdCenter}>{site._erCheck}</td>
+                    <td class={tdCenter}>{site._icuCheck}</td>
+                    <td class={tdCenter}>{site._wardCheck}</td>
+                    <td class={tdCls}>{site.irb_number ?? '\u2014'}</td>
+                    <td class={tdCls}>
+                      {site.irb_approval_type ? (
+                        <span class={site._irbBadge}>
+                          {site._irbLabel}
+                        </span>
+                      ) : (
+                        <Fragment>&mdash;</Fragment>
+                      )}
+                    </td>
+                    <td class="px-3 py-2.5 text-gray-600 dark:text-gray-400 max-w-[200px] truncate" title={site.cohort_inclusion_criteria ?? ''}>{site.cohort_inclusion_criteria ?? '\u2014'}</td>
+                    <td class="px-3 py-2.5 text-gray-600 dark:text-gray-400 max-w-[200px]">
+                      {site._hasDeath ? (
+                        <span class="truncate block" title={site._deathJoined}>{site._deathJoined}</span>
+                      ) : (
+                        <span class="text-amber-600 dark:text-amber-400 italic text-xs">Not provided</span>
+                      )}
+                    </td>
+                    <td class={tdCls}>
+                      {site.pulled_notes ? (
+                        <Fragment>{site.pulled_notes}</Fragment>
+                      ) : (
+                        <span class="text-amber-600 dark:text-amber-400 italic text-xs">Not provided</span>
+                      )}
+                    </td>
+                    <td class={tdCls}>{site.notes ?? '\u2014'}</td>
+                    <td class="px-3 py-2.5 text-center whitespace-nowrap">
+                      {site._canEdit && (
+                        <button
+                          class={editBtnCls + ' edit-site-btn'}
+                          data-site-id={site.id}
+                        >
+                          Edit
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <!-- Edit panels (below table) -->
+        {!error && siteViewData.filter((s: any) => s._canEdit).map((site: any) => (
+          <div class="site-edit-form hidden mt-4 bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-5" data-site-id={site.id}>
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-bold text-gray-900 dark:text-white">Editing: {site.site_name}</h3>
+            </div>
+            <div class="space-y-4">
+              <!-- Row 1: Basic -->
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div>
+                  <label class={labelCls}>Hospital Type</label>
+                  <select class={inputCls} data-field="hospital_type">
+                    <option value="">--</option>
+                    <option value="Academic" selected={site.hospital_type === 'Academic'}>Academic</option>
+                    <option value="Academic & community" selected={site.hospital_type === 'Academic & community'}>Academic & community</option>
+                    <option value="Community" selected={site.hospital_type === 'Community'}>Community</option>
+                  </select>
+                </div>
+                <div>
+                  <label class={labelCls}># Hospitals</label>
+                  <input type="number" class={inputCls} data-field="num_hospitals" value={site.num_hospitals ?? ''} />
+                </div>
+                <div>
+                  <label class={labelCls}>ICU Beds</label>
+                  <input type="number" class={inputCls} data-field="icu_beds" value={site.icu_beds ?? ''} />
+                </div>
+                <div>
+                  <label class={labelCls}>Data Source</label>
+                  <input type="text" class={inputCls} data-field="data_source" value={site.data_source ?? ''} />
+                </div>
+              </div>
+
+              <!-- Row 2: Dates -->
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div>
+                  <label class={labelCls}>Source Date Range</label>
+                  <input type="text" class={inputCls} data-field="source_data_date_range" value={site.source_data_date_range ?? ''} />
+                </div>
+                <div>
+                  <label class={labelCls}>CLIFed Date Range</label>
+                  <input type="text" class={inputCls} data-field="clifed_date_range" value={site.clifed_date_range ?? ''} />
+                </div>
+                <div>
+                  <label class={labelCls}>Data Availability</label>
+                  <div class="flex items-center gap-3 mt-1.5">
+                    <label class="flex items-center gap-1 text-xs text-gray-700 dark:text-gray-300">
+                      <input type="checkbox" class="edit-field rounded" data-field="has_er_data" checked={site.has_er_data} /> ER
+                    </label>
+                    <label class="flex items-center gap-1 text-xs text-gray-700 dark:text-gray-300">
+                      <input type="checkbox" class="edit-field rounded" data-field="has_icu_data" checked={site.has_icu_data} /> ICU
+                    </label>
+                    <label class="flex items-center gap-1 text-xs text-gray-700 dark:text-gray-300">
+                      <input type="checkbox" class="edit-field rounded" data-field="has_ward_data" checked={site.has_ward_data} /> Ward
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Row 3: IRB -->
+              <div class={sectionBorder}>
+                <h4 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">IRB Information</h4>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div class="col-span-2">
+                    <label class={labelCls}>IRB Name</label>
+                    <input type="text" class={inputCls} data-field="irb_name" value={site.irb_name ?? ''} />
+                  </div>
+                  <div>
+                    <label class={labelCls}>IRB Number</label>
+                    <input type="text" class={inputCls} data-field="irb_number" value={site.irb_number ?? ''} />
+                  </div>
+                  <div>
+                    <label class={labelCls}>Approval Date</label>
+                    <input type="text" class={inputCls} data-field="irb_approval_date" value={site.irb_approval_date ?? ''} placeholder="e.g. 12/7/2020" />
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">
+                  <div>
+                    <label class={labelCls}>Approval or Exemption?</label>
+                    <select class={inputCls} data-field="irb_approval_type">
+                      <option value="">--</option>
+                      <option value="approval" selected={site.irb_approval_type === 'approval'}>Approval</option>
+                      <option value="exemption" selected={site.irb_approval_type === 'exemption'}>Exemption</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Row 4: Cohort & Pulled Notes -->
+              <div class={sectionBorder}>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label class={labelCls}>Cohort Inclusion Criteria</label>
+                    <textarea class={inputCls} data-field="cohort_inclusion_criteria" rows="3">{site.cohort_inclusion_criteria ?? ''}</textarea>
+                  </div>
+                  <div>
+                    <label class={labelCls}>Pulled Notes?</label>
+                    <select class={inputCls} data-field="pulled_notes">
+                      <option value="">--</option>
+                      <option value="Can pull" selected={site.pulled_notes === 'Can pull'}>Can pull</option>
+                      <option value="All notes" selected={site.pulled_notes === 'All notes'}>All notes</option>
+                      <option value="H&P and progress notes" selected={site.pulled_notes === 'H&P and progress notes'}>H&P and progress notes</option>
+                      <option value="No" selected={site.pulled_notes === 'No'}>No</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Row 5: Death dttm source -->
+              <div class={sectionBorder}>
+                <h4 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Death Datetime Source</h4>
+                <div class="flex flex-col gap-2">
+                  {deathSourceOptions.map((opt) => (
+                    <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                      <input
+                        type="checkbox"
+                        class="edit-field death-source-cb rounded"
+                        data-field="death_dttm_source"
+                        value={opt}
+                        checked={site.death_dttm_source_arr.includes(opt)}
+                      />
+                      {opt}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <!-- Row 6: General notes -->
+              <div class={sectionBorder}>
+                <label class={labelCls}>Notes</label>
+                <textarea class={inputCls} data-field="notes" rows="2">{site.notes ?? ''}</textarea>
+              </div>
+
+              <!-- Save / Cancel buttons -->
+              <div class="flex items-center gap-3 pt-2">
+                <button
+                  class="save-site-btn px-4 py-2 text-sm font-medium text-white bg-clif-burgundy rounded-lg transition-colors"
+                  data-site-id={site.id}
+                >
+                  Save Changes
+                </button>
+                <button
+                  class="cancel-edit-btn px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-neutral-700 rounded-lg transition-colors"
+                  data-site-id={site.id}
+                >
+                  Cancel
+                </button>
+                <span class="save-status text-sm hidden" data-site-id={site.id}></span>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   </div>
 
-  <script is:inline>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" is:inline></script>
+  <script is:inline define:vars={{ sitesJson }}>
     document.addEventListener('DOMContentLoaded', function() {
-      var input = document.getElementById('site-search');
-      var cards = document.querySelectorAll('[data-site-card]');
-      if (!input || !cards.length) return;
+      var searchInput = document.getElementById('site-search');
+      var tableRows = document.querySelectorAll('[data-table-row]');
+      var summaryContainer = document.getElementById('site-summary-view');
+      var tableContainer = document.getElementById('site-table-wrap');
+      var viewSummaryBtn = document.getElementById('view-summary');
+      var viewTableBtn = document.getElementById('view-table');
+      var currentView = 'summary';
 
-      input.addEventListener('input', function() {
-        var query = this.value.toLowerCase();
-        cards.forEach(function(card) {
-          var text = card.textContent.toLowerCase();
-          card.style.display = text.includes(query) ? '' : 'none';
+      var activeBtnCls = 'px-3 py-1.5 text-xs font-medium bg-clif-burgundy text-white';
+      var inactiveBtnCls = 'px-3 py-1.5 text-xs font-medium bg-white dark:bg-neutral-700 text-gray-600 dark:text-gray-300';
+
+      // View toggle
+      function setView(view) {
+        currentView = view;
+        // Hide all edit panels when switching views
+        document.querySelectorAll('.site-edit-form').forEach(function(el) {
+          el.classList.add('hidden');
+        });
+        if (view === 'summary') {
+          if (summaryContainer) summaryContainer.classList.remove('hidden');
+          if (tableContainer) tableContainer.classList.add('hidden');
+          if (viewSummaryBtn) { viewSummaryBtn.className = activeBtnCls; }
+          if (viewTableBtn) { viewTableBtn.className = inactiveBtnCls; }
+        } else {
+          if (summaryContainer) summaryContainer.classList.add('hidden');
+          if (tableContainer) tableContainer.classList.remove('hidden');
+          if (viewTableBtn) { viewTableBtn.className = activeBtnCls; }
+          if (viewSummaryBtn) { viewSummaryBtn.className = inactiveBtnCls; }
+        }
+      }
+      if (viewSummaryBtn) viewSummaryBtn.addEventListener('click', function() { setView('summary'); });
+      if (viewTableBtn) viewTableBtn.addEventListener('click', function() { setView('table'); });
+
+      // Column filter state
+      var colFilters = {};
+
+      function matchesSearch(el, query) {
+        if (!query) return true;
+        return el.textContent.toLowerCase().includes(query);
+      }
+
+      function matchesColFilters(row) {
+        var cells = row.querySelectorAll('td');
+        for (var col in colFilters) {
+          var val = colFilters[col];
+          if (!val) continue;
+          var cellIdx = parseInt(col);
+          var cell = cells[cellIdx];
+          if (!cell) continue;
+          var cellText = cell.textContent.trim();
+          if (val === '_provided') {
+            if (cellText === '\u2014' || cellText === 'Not provided') return false;
+          } else if (val === '_missing') {
+            if (cellText !== '\u2014' && cellText !== 'Not provided') return false;
+          } else {
+            if (cellText.indexOf(val) === -1) return false;
+          }
+        }
+        return true;
+      }
+
+      function applyFilters() {
+        var query = searchInput ? searchInput.value.toLowerCase() : '';
+        tableRows.forEach(function(row) {
+          row.style.display = (matchesColFilters(row) && matchesSearch(row, query)) ? '' : 'none';
+        });
+      }
+
+      // Search
+      if (searchInput) {
+        searchInput.addEventListener('input', applyFilters);
+      }
+
+      // Column filters
+      document.querySelectorAll('.col-filter').forEach(function(sel) {
+        sel.addEventListener('change', function() {
+          var col = this.getAttribute('data-col');
+          colFilters[col] = this.value;
+          applyFilters();
         });
       });
+
+      // Edit button: show edit panel below table
+      document.querySelectorAll('.edit-site-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var siteId = this.getAttribute('data-site-id');
+          // Hide all other edit forms first
+          document.querySelectorAll('.site-edit-form').forEach(function(el) {
+            el.classList.add('hidden');
+          });
+          var editForm = document.querySelector('.site-edit-form[data-site-id="' + siteId + '"]');
+          if (editForm) {
+            editForm.classList.remove('hidden');
+            editForm.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        });
+      });
+
+      // Cancel button: hide edit panel
+      document.querySelectorAll('.cancel-edit-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var siteId = this.getAttribute('data-site-id');
+          var editForm = document.querySelector('.site-edit-form[data-site-id="' + siteId + '"]');
+          if (editForm) editForm.classList.add('hidden');
+        });
+      });
+
+      // Save button: collect form data and POST
+      document.querySelectorAll('.save-site-btn').forEach(function(btn) {
+        btn.addEventListener('click', async function() {
+          var siteId = this.getAttribute('data-site-id');
+          var form = document.querySelector('.site-edit-form[data-site-id="' + siteId + '"]');
+          var statusEl = document.querySelector('.save-status[data-site-id="' + siteId + '"]');
+
+          var data = { siteId: siteId };
+
+          // Collect all edit-field values
+          form.querySelectorAll('.edit-field').forEach(function(field) {
+            var fieldName = field.getAttribute('data-field');
+            if (!fieldName) return;
+
+            // Skip death source checkboxes - handled separately
+            if (fieldName === 'death_dttm_source') return;
+
+            if (field.type === 'checkbox') {
+              data[fieldName] = field.checked;
+            } else if (field.type === 'number') {
+              data[fieldName] = field.value ? Number(field.value) : null;
+            } else {
+              data[fieldName] = field.value || '';
+            }
+          });
+
+          // Collect death_dttm_source checkboxes
+          var deathSources = [];
+          form.querySelectorAll('.death-source-cb:checked').forEach(function(cb) {
+            deathSources.push(cb.value);
+          });
+          data.death_dttm_source = deathSources;
+
+          this.disabled = true;
+          this.textContent = 'Saving...';
+          statusEl.classList.add('hidden');
+
+          try {
+            var res = await fetch('/api/site-details/update', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(data),
+            });
+
+            if (res.ok) {
+              statusEl.textContent = 'Saved!';
+              statusEl.className = 'save-status text-sm text-green-600 dark:text-green-400';
+              statusEl.classList.remove('hidden');
+              // Reload after short delay to show updated read view
+              setTimeout(function() { window.location.reload(); }, 800);
+            } else {
+              var errData = await res.json();
+              statusEl.textContent = errData.error || 'Failed to save';
+              statusEl.className = 'save-status text-sm text-red-600 dark:text-red-400';
+              statusEl.classList.remove('hidden');
+            }
+          } catch (err) {
+            statusEl.textContent = 'Network error';
+            statusEl.className = 'save-status text-sm text-red-600 dark:text-red-400';
+            statusEl.classList.remove('hidden');
+          }
+
+          this.disabled = false;
+          this.textContent = 'Save Changes';
+        });
+      });
+
+      // ---- Chart / Visualization logic ----
+      var chartColors = [
+        'rgba(139, 21, 56, 0.7)',
+        'rgba(59, 130, 246, 0.7)',
+        'rgba(16, 185, 129, 0.7)',
+        'rgba(245, 158, 11, 0.7)',
+        'rgba(139, 92, 246, 0.7)',
+        'rgba(236, 72, 153, 0.7)',
+        'rgba(20, 184, 166, 0.7)',
+        'rgba(249, 115, 22, 0.7)'
+      ];
+      var chartColorsBorder = chartColors.map(function(c) { return c.replace('0.7)', '1)'); });
+
+      var allSites = [];
+      try { allSites = JSON.parse(sitesJson); } catch(e) { /* ignore */ }
+      var chart = null;
+
+      function groupSites(field) {
+        var groups = {};
+        allSites.forEach(function(s) {
+          var key;
+          if (field === 'has_er_data') key = s.has_er_data ? 'Yes' : 'No';
+          else if (field === 'has_icu_data') key = s.has_icu_data ? 'Yes' : 'No';
+          else if (field === 'has_ward_data') key = s.has_ward_data ? 'Yes' : 'No';
+          else if (field === 'death_source') key = s.death_dttm_source_arr.length > 0 ? 'Provided' : 'Not provided';
+          else if (field === 'pulled_notes') key = s.pulled_notes || 'Not provided';
+          else if (field === 'irb_approval_type') key = s.irb_approval_type ? (s.irb_approval_type.charAt(0).toUpperCase() + s.irb_approval_type.slice(1)) : 'Not set';
+          else key = s[field] || 'Not set';
+          if (!groups[key]) groups[key] = [];
+          groups[key].push(s.site_name);
+        });
+        return groups;
+      }
+
+      function renderChart(groups) {
+        var ctx = document.getElementById('site-group-chart');
+        if (!ctx) return;
+        if (chart) chart.destroy();
+
+        var labels = Object.keys(groups).sort();
+        var data = labels.map(function(l) { return groups[l].length; });
+        var isDark = document.documentElement.classList.contains('dark');
+        var textColor = isDark ? '#d1d5db' : '#374151';
+        var gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+
+        chart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'Number of Sites',
+              data: data,
+              backgroundColor: labels.map(function(_, i) { return chartColors[i % chartColors.length]; }),
+              borderColor: labels.map(function(_, i) { return chartColorsBorder[i % chartColorsBorder.length]; }),
+              borderWidth: 1,
+              borderRadius: 6
+            }]
+          },
+          options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  afterBody: function(items) {
+                    var label = items[0].label;
+                    return groups[label].join(', ');
+                  }
+                }
+              }
+            },
+            scales: {
+              x: {
+                beginAtZero: true,
+                ticks: { stepSize: 1, color: textColor },
+                grid: { color: gridColor },
+                title: { display: true, text: 'Number of Sites', color: textColor }
+              },
+              y: {
+                ticks: { color: textColor },
+                grid: { display: false }
+              }
+            }
+          }
+        });
+      }
+
+      function renderGroupedLists(groups) {
+        var container = document.getElementById('grouped-lists');
+        if (!container) return;
+        var labels = Object.keys(groups).sort();
+        var html = '';
+        labels.forEach(function(label, i) {
+          var sites = groups[label];
+          var color = chartColors[i % chartColors.length];
+          html += '<div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-4">';
+          html += '<div class="flex items-center gap-2 mb-3">';
+          html += '<div style="width:12px;height:12px;border-radius:3px;background:' + color + '"></div>';
+          html += '<h3 class="text-sm font-semibold text-gray-900 dark:text-white">' + label + '</h3>';
+          html += '<span class="ml-auto text-xs font-medium text-gray-500 dark:text-gray-400">' + sites.length + '</span>';
+          html += '</div>';
+          html += '<ul class="space-y-1">';
+          sites.sort().forEach(function(name) {
+            html += '<li class="text-sm text-gray-700 dark:text-gray-300 pl-5">' + name + '</li>';
+          });
+          html += '</ul></div>';
+        });
+        container.innerHTML = html;
+      }
+
+      function updateVisualization() {
+        var sel = document.getElementById('group-by-select');
+        if (!sel) return;
+        var field = sel.value;
+        var groups = groupSites(field);
+        renderChart(groups);
+        renderGroupedLists(groups);
+      }
+
+      var groupBySelect = document.getElementById('group-by-select');
+      if (groupBySelect) {
+        groupBySelect.addEventListener('change', updateVisualization);
+        // Render default on load
+        updateVisualization();
+      }
     });
   </script>
 </BaseLayout>

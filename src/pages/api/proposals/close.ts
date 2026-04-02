@@ -4,7 +4,7 @@ import type { APIRoute } from 'astro';
 import { getDb } from '../../../lib/turso';
 import { hasRole } from '../../../lib/roles';
 
-const GITHUB_REPO = 'clif-consortium/CLIF';
+const GITHUB_REPO = 'Common-Longitudinal-ICU-data-Format/CLIF';
 
 export const POST: APIRoute = async ({ locals, request }) => {
   if (!locals.user || !hasRole(locals.user.role, 'steering')) {

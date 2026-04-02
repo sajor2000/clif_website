@@ -49,16 +49,42 @@ CREATE TABLE IF NOT EXISTS votes (
 CREATE TABLE IF NOT EXISTS site_details (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
   site_name TEXT NOT NULL,
+  institution TEXT,
   hospital_type TEXT,
   num_hospitals INTEGER,
   icu_beds INTEGER,
   data_source TEXT,
+  source_data_date_range TEXT,
   clifed_date_range TEXT,
   notes TEXT,
   has_er_data INTEGER NOT NULL DEFAULT 0,
   has_icu_data INTEGER NOT NULL DEFAULT 0,
-  has_ward_data INTEGER NOT NULL DEFAULT 0
+  has_ward_data INTEGER NOT NULL DEFAULT 0,
+  irb_name TEXT,
+  irb_number TEXT,
+  irb_approval_date TEXT,
+  irb_approval_type TEXT,
+  cohort_inclusion_criteria TEXT,
+  pulled_notes TEXT,
+  death_dttm_source TEXT,
+  updated_at TEXT,
+  updated_by TEXT REFERENCES users(id)
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_site_details_name ON site_details(site_name);
+
+CREATE TABLE IF NOT EXISTS site_editors (
+  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  site_id TEXT NOT NULL REFERENCES site_details(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  assigned_by TEXT NOT NULL REFERENCES users(id),
+  assigned_at TEXT NOT NULL DEFAULT (datetime('now')),
+  notified_at TEXT,
+  UNIQUE(site_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_site_editors_site ON site_editors(site_id);
+CREATE INDEX IF NOT EXISTS idx_site_editors_user ON site_editors(user_id);
 
 CREATE TABLE IF NOT EXISTS status_tracker (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
