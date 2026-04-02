@@ -18,7 +18,7 @@ export async function sendEmail(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'CLIF Consortium <noreply@clif-consortium.org>',
+        from: 'CLIF Consortium <noreply@clif-icu.com>',
         to: [to],
         subject,
         html,
