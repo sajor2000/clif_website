@@ -36,6 +36,42 @@ export async function sendEmail(
   }
 }
 
+export function buildNewUserNotificationEmail(
+  userName: string,
+  userEmail: string,
+  institution: string,
+  adminUrl: string,
+): string {
+  return `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+  <div style="border-bottom: 3px solid #8B1538; padding-bottom: 16px; margin-bottom: 24px;">
+    <h1 style="color: #8B1538; font-size: 20px; margin: 0;">CLIF Consortium</h1>
+  </div>
+
+  <p>A new user has signed up and is awaiting approval:</p>
+
+  <table style="margin: 16px 0; border-collapse: collapse;">
+    <tr><td style="padding: 6px 12px 6px 0; font-weight: 600; color: #666;">Name</td><td style="padding: 6px 0;">${userName}</td></tr>
+    <tr><td style="padding: 6px 12px 6px 0; font-weight: 600; color: #666;">Email</td><td style="padding: 6px 0;">${userEmail}</td></tr>
+    <tr><td style="padding: 6px 12px 6px 0; font-weight: 600; color: #666;">Institution</td><td style="padding: 6px 0;">${institution}</td></tr>
+  </table>
+
+  <div style="margin: 28px 0;">
+    <a href="${adminUrl}" style="background-color: #8B1538; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">
+      Review in Admin Panel
+    </a>
+  </div>
+
+  <div style="border-top: 1px solid #e5e7eb; margin-top: 32px; padding-top: 16px; font-size: 12px; color: #9ca3af;">
+    CLIF Consortium &middot; Common Longitudinal ICU Data Format
+  </div>
+</body>
+</html>`.trim();
+}
+
 export function buildSiteReviewEmail(
   userName: string,
   siteName: string,
