@@ -4,11 +4,12 @@ import type { APIRoute } from 'astro';
 import { getDb } from '../../../lib/turso';
 
 const VALID_APPROVAL_TYPES = ['approval', 'exemption'];
-const VALID_DEATH_SOURCES = [
-  'Epic/EMRs - from encounters/death notes/check-ins/surveys',
-  'Cancer registry - from updates/surveys periodically',
-  'Social security registry - from updates periodically',
-  'State Death registry',
+const VALID_DEATH_CATEGORIES = [
+  'Institutional',
+  'Disease-specific registries',
+  'State registries',
+  'Federal',
+  'Other',
 ];
 
 export const POST: APIRoute = async ({ locals, request }) => {
@@ -54,7 +55,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
     });
   }
 
-  // Validate death_dttm_source (JSON array)
+  // Validate death_dttm_source (JSON array of {category, detail} objects)
   let deathSource: string | null = null;
   if (body.death_dttm_source) {
     if (!Array.isArray(body.death_dttm_source)) {
@@ -63,9 +64,21 @@ export const POST: APIRoute = async ({ locals, request }) => {
         headers: { 'Content-Type': 'application/json' },
       });
     }
-    for (const src of body.death_dttm_source) {
-      if (!VALID_DEATH_SOURCES.includes(src)) {
-        return new Response(JSON.stringify({ error: `Invalid death_dttm_source: ${src}` }), {
+    for (const entry of body.death_dttm_source) {
+      if (typeof entry !== 'object' || entry === null) {
+        return new Response(JSON.stringify({ error: 'Each death_dttm_source entry must be an object' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      if (!VALID_DEATH_CATEGORIES.includes(entry.category)) {
+        return new Response(JSON.stringify({ error: `Invalid death source category: ${entry.category}` }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      if (typeof entry.detail !== 'string' || entry.detail.trim().length === 0) {
+        return new Response(JSON.stringify({ error: `Detail is required for category: ${entry.category}` }), {
           status: 400,
           headers: { 'Content-Type': 'application/json' },
         });

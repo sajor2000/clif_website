@@ -19,7 +19,7 @@ try {
     has_er_data: Boolean(row.has_er_data),
     has_icu_data: Boolean(row.has_icu_data),
     has_ward_data: Boolean(row.has_ward_data),
-    death_dttm_source_arr: row.death_dttm_source ? JSON.parse(row.death_dttm_source as string) : [],
+    death_dttm_source_arr: parseDeathSource(row.death_dttm_source as string | null),
   }));
 
   // Determine which sites this user can edit
@@ -44,11 +44,31 @@ const irbExemptionBadge = 'inline-flex items-center px-2 py-0.5 rounded text-xs 
 
 const deathSourceBadge = 'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-400';
 
-const deathSourceOptions = [
-  'Epic/EMRs - from encounters/death notes/check-ins/surveys',
-  'Cancer registry - from updates/surveys periodically',
-  'Social security registry - from updates periodically',
-  'State Death registry',
+const OLD_TO_NEW_MAP: Record<string, { category: string; detail: string }> = {
+  'Epic/EMRs - from encounters/death notes/check-ins/surveys': { category: 'Institutional', detail: 'Epic/EMRs' },
+  'Cancer registry - from updates/surveys periodically': { category: 'Disease-specific registries', detail: 'Cancer registry' },
+  'Social security registry - from updates periodically': { category: 'Federal', detail: 'Social Security Death Index' },
+  'State Death registry': { category: 'State registries', detail: 'State Death registry' },
+};
+
+function parseDeathSource(raw: string | null): Array<{ category: string; detail: string }> {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    if (parsed.length > 0 && typeof parsed[0] === 'string') {
+      return parsed.map((s: string) => OLD_TO_NEW_MAP[s] || { category: 'Other', detail: s });
+    }
+    return parsed;
+  } catch { return []; }
+}
+
+const deathSourceCategories = [
+  { key: 'Institutional', label: 'Institutional', placeholder: 'e.g. Electronic Medical Record (EMR), Epic' },
+  { key: 'Disease-specific registries', label: 'Disease-specific registries', placeholder: 'e.g. Surveillance, Epidemiology, and End Results (SEER)' },
+  { key: 'State registries', label: 'State registries', placeholder: 'e.g. California Department of Public Health (CDPH)' },
+  { key: 'Federal', label: 'Federal', placeholder: 'e.g. National Death Index (NDI), Social Security Death Index (SSDI)' },
+  { key: 'Other', label: 'Other', placeholder: 'Describe your source' },
 ];
 
 // Pre-compute all dynamic values per site to avoid ternaries in JSX
@@ -65,7 +85,9 @@ const siteViewData = sites.map((s: any) => {
   const icuCheck = s.has_icu_data ? '\u2713' : '\u2717';
   const wardCheck = s.has_ward_data ? '\u2713' : '\u2717';
   const tableRowClass = 'hover:bg-gray-50 dark:hover:bg-neutral-700';
-  const deathJoined = s.death_dttm_source_arr.join(', ');
+  const deathJoined = s.death_dttm_source_arr
+    .map((d: any) => d.detail ? `${d.category} (${d.detail})` : d.category)
+    .join(', ');
   return {
     ...s,
     _canEdit: canEdit,
@@ -109,6 +131,7 @@ const sitesJson = JSON.stringify(siteViewData.map((s: any) => ({
   death_dttm_source_arr: s.death_dttm_source_arr,
   pulled_notes: s.pulled_notes,
   data_source: s.data_source,
+  clifed_date_range: s.clifed_date_range,
 })));
 ---
 
@@ -132,7 +155,7 @@ const sitesJson = JSON.stringify(siteViewData.map((s: any) => ({
                 type="text"
                 id="site-search"
                 placeholder="Search sites..."
-                class="w-full sm:w-56 px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent"
+                class="hidden w-full sm:w-56 px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent"
               />
               <span class="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">{siteViewData.length} sites</span>
               <div class="flex items-center border border-gray-300 dark:border-neutral-600 rounded-lg overflow-hidden ml-auto">
@@ -172,6 +195,7 @@ const sitesJson = JSON.stringify(siteViewData.map((s: any) => ({
                 <option value="death_source">Death Source Status</option>
                 <option value="pulled_notes">Pulled Notes</option>
                 <option value="data_source">Data Source</option>
+                <option value="clifed_date_range">CLIFed Date Range</option>
               </select>
             </div>
             <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-5">
@@ -453,19 +477,36 @@ const sitesJson = JSON.stringify(siteViewData.map((s: any) => ({
               <!-- Row 5: Death dttm source -->
               <div class={sectionBorder}>
                 <h4 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Death Datetime Source</h4>
-                <div class="flex flex-col gap-2">
-                  {deathSourceOptions.map((opt) => (
-                    <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                      <input
-                        type="checkbox"
-                        class="edit-field death-source-cb rounded"
-                        data-field="death_dttm_source"
-                        value={opt}
-                        checked={site.death_dttm_source_arr.includes(opt)}
-                      />
-                      {opt}
-                    </label>
-                  ))}
+                <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">Check each source used and specify the exact system or registry name.</p>
+                <div class="flex flex-col gap-3">
+                  {deathSourceCategories.map((cat) => {
+                    const existing = site.death_dttm_source_arr.find((d: any) => d.category === cat.key);
+                    const isChecked = !!existing;
+                    const detailVal = existing?.detail || '';
+                    return (
+                      <div class="death-source-group" data-category={cat.key}>
+                        <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                          <input
+                            type="checkbox"
+                            class="edit-field death-source-cb rounded"
+                            data-field="death_dttm_source"
+                            data-category={cat.key}
+                            checked={isChecked}
+                          />
+                          {cat.label}
+                        </label>
+                        <div class={`death-source-detail ml-6 mt-1${isChecked ? '' : ' hidden'}`}>
+                          <input
+                            type="text"
+                            class={`death-source-detail-input w-full text-sm px-2 py-1.5 border border-gray-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-700 text-gray-900 dark:text-white`}
+                            data-category={cat.key}
+                            placeholder={cat.placeholder}
+                            value={detailVal}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -524,11 +565,13 @@ const sitesJson = JSON.stringify(siteViewData.map((s: any) => ({
           if (tableContainer) tableContainer.classList.add('hidden');
           if (viewSummaryBtn) { viewSummaryBtn.className = activeBtnCls; }
           if (viewTableBtn) { viewTableBtn.className = inactiveBtnCls; }
+          if (searchInput) searchInput.classList.add('hidden');
         } else {
           if (summaryContainer) summaryContainer.classList.add('hidden');
           if (tableContainer) tableContainer.classList.remove('hidden');
           if (viewTableBtn) { viewTableBtn.className = activeBtnCls; }
           if (viewSummaryBtn) { viewSummaryBtn.className = inactiveBtnCls; }
+          if (searchInput) searchInput.classList.remove('hidden');
         }
       }
       if (viewSummaryBtn) viewSummaryBtn.addEventListener('click', function() { setView('summary'); });
@@ -608,6 +651,21 @@ const sitesJson = JSON.stringify(siteViewData.map((s: any) => ({
         });
       });
 
+      // Toggle death source detail inputs on checkbox change
+      document.querySelectorAll('.death-source-cb').forEach(function(cb) {
+        cb.addEventListener('change', function() {
+          var group = this.closest('.death-source-group');
+          var detailDiv = group.querySelector('.death-source-detail');
+          if (this.checked) {
+            detailDiv.classList.remove('hidden');
+            detailDiv.querySelector('input').focus();
+          } else {
+            detailDiv.classList.add('hidden');
+            detailDiv.querySelector('input').value = '';
+          }
+        });
+      });
+
       // Save button: collect form data and POST
       document.querySelectorAll('.save-site-btn').forEach(function(btn) {
         btn.addEventListener('click', async function() {
@@ -634,11 +692,24 @@ const sitesJson = JSON.stringify(siteViewData.map((s: any) => ({
             }
           });
 
-          // Collect death_dttm_source checkboxes
+          // Collect death_dttm_source checkboxes with detail
           var deathSources = [];
+          var deathMissing = [];
           form.querySelectorAll('.death-source-cb:checked').forEach(function(cb) {
-            deathSources.push(cb.value);
+            var category = cb.getAttribute('data-category');
+            var group = cb.closest('.death-source-group');
+            var detailInput = group.querySelector('.death-source-detail-input');
+            var detail = detailInput ? detailInput.value.trim() : '';
+            if (!detail) {
+              deathMissing.push(category);
+            }
+            deathSources.push({ category: category, detail: detail });
           });
+          if (deathMissing.length > 0) {
+            alert('Please specify the source for: ' + deathMissing.join(', '));
+            this.disabled = false;
+            return;
+          }
           data.death_dttm_source = deathSources;
 
           this.disabled = true;
@@ -700,6 +771,7 @@ const sitesJson = JSON.stringify(siteViewData.map((s: any) => ({
           else if (field === 'has_icu_data') key = s.has_icu_data ? 'Yes' : 'No';
           else if (field === 'has_ward_data') key = s.has_ward_data ? 'Yes' : 'No';
           else if (field === 'death_source') key = s.death_dttm_source_arr.length > 0 ? 'Provided' : 'Not provided';
+          else if (field === 'clifed_date_range') key = s.clifed_date_range || 'Not set';
           else if (field === 'pulled_notes') key = s.pulled_notes || 'Not provided';
           else if (field === 'irb_approval_type') key = s.irb_approval_type ? (s.irb_approval_type.charAt(0).toUpperCase() + s.irb_approval_type.slice(1)) : 'Not set';
           else key = s[field] || 'Not set';
