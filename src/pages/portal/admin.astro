@@ -222,7 +222,7 @@ try {
                   <select id="site-selector" class="w-full text-sm px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-700 text-gray-900 dark:text-white">
                     <option value="">Choose a site...</option>
                     {sites.map((s: any) => (
-                      <option value={s.id} data-institution={s.institution || ''}>{s.site_name}{s.institution ? ` (${s.institution})` : ''}</option>
+                      <option value={s.id} data-institution={s.institution || ''}>{s.site_name}{s.institution && s.institution !== s.site_name ? ` (${s.institution})` : ''}</option>
                     ))}
                   </select>
                 </div>
@@ -531,7 +531,7 @@ try {
           }
           if (editorsPanel) editorsPanel.classList.remove('hidden');
 
-          // Sort user selector: institution-matched users first
+          // Filter user selector: show matching institution first, hide others
           var selectedOption = this.options[this.selectedIndex];
           var siteInstitution = selectedOption.getAttribute('data-institution') || '';
           if (userSelector && siteInstitution) {
@@ -539,10 +539,14 @@ try {
             options.sort(function(a, b) {
               var aMatch = a.getAttribute('data-institution') === siteInstitution ? 0 : 1;
               var bMatch = b.getAttribute('data-institution') === siteInstitution ? 0 : 1;
-              return aMatch - bMatch;
+              if (aMatch !== bMatch) return aMatch - bMatch;
+              return (a.textContent || '').localeCompare(b.textContent || '');
             });
-            // Re-append sorted
-            options.forEach(function(opt) { userSelector.appendChild(opt); });
+            options.forEach(function(opt) {
+              userSelector.appendChild(opt);
+              opt.classList.toggle('hidden', opt.getAttribute('data-institution') !== siteInstitution);
+            });
+            userSelector.value = '';
           }
 
           renderEditors(siteId);
