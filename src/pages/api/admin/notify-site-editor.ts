@@ -64,7 +64,7 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
 
   const result = await sendEmail(
     userEmail,
-    `Action Required: Please review site details for ${siteName}`,
+    `CLIF Consortium – Site details review for ${siteName}`,
     html,
   );
 
