@@ -335,10 +335,10 @@ const sitesJson = JSON.stringify(siteViewData.map((s: any) => ({
                         <Fragment>&mdash;</Fragment>
                       )}
                     </td>
-                    <td class="px-3 py-2.5 text-gray-600 dark:text-gray-400 max-w-[200px] truncate" title={site.cohort_inclusion_criteria ?? ''}>{site.cohort_inclusion_criteria ?? '\u2014'}</td>
-                    <td class="px-3 py-2.5 text-gray-600 dark:text-gray-400 max-w-[200px]">
+                    <td class="px-3 py-2.5 text-gray-600 dark:text-gray-400 max-w-[250px]" title={site.cohort_inclusion_criteria ?? ''}>{site.cohort_inclusion_criteria ?? '\u2014'}</td>
+                    <td class="px-3 py-2.5 text-gray-600 dark:text-gray-400 max-w-[250px]">
                       {site._hasDeath ? (
-                        <span class="truncate block" title={site._deathJoined}>{site._deathJoined}</span>
+                        <span title={site._deathJoined}>{site._deathJoined}</span>
                       ) : (
                         <span class="text-amber-600 dark:text-amber-400 italic text-xs">Not provided</span>
                       )}
@@ -350,7 +350,7 @@ const sitesJson = JSON.stringify(siteViewData.map((s: any) => ({
                         <span class="text-amber-600 dark:text-amber-400 italic text-xs">Not provided</span>
                       )}
                     </td>
-                    <td class={tdCls}>{site.notes ?? '\u2014'}</td>
+                    <td class="px-3 py-2.5 text-gray-600 dark:text-gray-400 max-w-[250px]" title={site.notes ?? ''}>{site.notes ?? '\u2014'}</td>
                     <td class={tdCls}>{site.updated_at ? new Date(site.updated_at + 'Z').toLocaleDateString() : '\u2014'}</td>
                     <td class="px-3 py-2.5 text-center whitespace-nowrap">
                       {site._canEdit && (
