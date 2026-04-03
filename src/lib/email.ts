@@ -96,7 +96,6 @@ export function buildSiteReviewEmail(
     <li>Data source and date ranges</li>
     <li>ICU beds and data availability (ER, ICU, Ward)</li>
     <li>IRB information (name, number, approval date, type)</li>
-    <li>CLIF ready date</li>
     <li>Cohort inclusion criteria</li>
     <li>Death datetime source</li>
     <li>Notes availability</li>

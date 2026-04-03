@@ -227,8 +227,9 @@ const sitesJson = JSON.stringify(siteViewData.map((s: any) => ({
                   <th class={thCls}>IRB Type</th>
                   <th class={thCls}>Cohort Criteria</th>
                   <th class={thCls}>Death Source</th>
-                  <th class={thCls}>Pulled Notes</th>
-                  <th class={thCls}>Notes</th>
+                  <th class={thCls}>Notes Status</th>
+                  <th class={thCls}>Additional Info</th>
+                  <th class={thCls}>Last Updated</th>
                   <th class={thCenter}></th>
                 </tr>
                 <tr class="bg-gray-100 dark:bg-neutral-600">
@@ -301,6 +302,7 @@ const sitesJson = JSON.stringify(siteViewData.map((s: any) => ({
                   </th>
                   <th class="px-2 py-1.5"></th>
                   <th class="px-2 py-1.5"></th>
+                  <th class="px-2 py-1.5"></th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-200 dark:divide-neutral-700">
@@ -349,6 +351,7 @@ const sitesJson = JSON.stringify(siteViewData.map((s: any) => ({
                       )}
                     </td>
                     <td class={tdCls}>{site.notes ?? '\u2014'}</td>
+                    <td class={tdCls}>{site.updated_at ? new Date(site.updated_at + 'Z').toLocaleDateString() : '\u2014'}</td>
                     <td class="px-3 py-2.5 text-center whitespace-nowrap">
                       {site._canEdit && (
                         <button
@@ -461,7 +464,7 @@ const sitesJson = JSON.stringify(siteViewData.map((s: any) => ({
                     <textarea class={inputCls} data-field="cohort_inclusion_criteria" rows="3">{site.cohort_inclusion_criteria ?? ''}</textarea>
                   </div>
                   <div>
-                    <label class={labelCls}>Pulled Notes?</label>
+                    <label class={labelCls}>Notes Status</label>
                     <select class={inputCls} data-field="pulled_notes">
                       <option value="">--</option>
                       <option value="Can pull" selected={site.pulled_notes === 'Can pull'}>Can pull</option>
@@ -510,10 +513,11 @@ const sitesJson = JSON.stringify(siteViewData.map((s: any) => ({
                 </div>
               </div>
 
-              <!-- Row 6: General notes -->
+              <!-- Row 6: Additional info -->
               <div class={sectionBorder}>
-                <label class={labelCls}>Notes</label>
+                <label class={labelCls}>Additional Info</label>
                 <textarea class={inputCls} data-field="notes" rows="2">{site.notes ?? ''}</textarea>
+                <p class={`partial-notes-hint text-xs text-amber-600 dark:text-amber-400 mt-1${site.pulled_notes === 'Partial' ? '' : ' hidden'}`}>Please specify which notes you have in the field above (e.g. H&P notes, progress notes, discharge summaries).</p>
               </div>
 
               <!-- Save / Cancel buttons -->
@@ -648,6 +652,21 @@ const sitesJson = JSON.stringify(siteViewData.map((s: any) => ({
           var siteId = this.getAttribute('data-site-id');
           var editForm = document.querySelector('.site-edit-form[data-site-id="' + siteId + '"]');
           if (editForm) editForm.classList.add('hidden');
+        });
+      });
+
+      // Show hint on Additional Info when Notes Status is "Partial"
+      document.querySelectorAll('select[data-field="pulled_notes"]').forEach(function(sel) {
+        sel.addEventListener('change', function() {
+          var form = this.closest('.site-edit-form');
+          var hint = form.querySelector('.partial-notes-hint');
+          if (hint) {
+            if (this.value === 'Partial') {
+              hint.classList.remove('hidden');
+            } else {
+              hint.classList.add('hidden');
+            }
+          }
         });
       });
 
