@@ -102,13 +102,21 @@ export function buildSiteReviewEmail(
     <li>Notes availability</li>
   </ul>
 
+  <p><strong>How to edit:</strong></p>
+  <ol>
+    <li>Click the button below to go to <strong>Site Details</strong></li>
+    <li>Switch to <strong>Table</strong> view using the toggle at the top right</li>
+    <li>Find your site row and click the <strong>Edit</strong> button in the last column</li>
+    <li>Fill in the fields and click <strong>Save Changes</strong></li>
+  </ol>
+
   <div style="margin: 28px 0;">
     <a href="${siteUrl}" style="background-color: #8B1538; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">
-      Review Site Details
+      Go to Site Details
     </a>
   </div>
 
-  <p style="color: #666; font-size: 14px;">If you have questions, please reach out to your consortium admin.</p>
+  <p style="color: #666; font-size: 14px;">If you have questions, please reach out to <a href="mailto:clif_consortium@uchicago.edu">clif_consortium@uchicago.edu</a>.</p>
 
   <div style="border-top: 1px solid #e5e7eb; margin-top: 32px; padding-top: 16px; font-size: 12px; color: #9ca3af;">
     CLIF Consortium &middot; Common Longitudinal ICU Data Format
