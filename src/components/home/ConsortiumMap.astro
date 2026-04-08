@@ -89,6 +89,7 @@ for (let i = 1; i < lines.length; i++) {
 
 const totalInstitutions = sites.length;
 const activeSites = sites.filter(s => s.dataReady).length;
+const upcomingSites = sites.filter(s => !s.dataReady).length;
 const totalHospitals = sites.reduce((sum, s) => sum + s.hospitals, 0);
 const totalPatients = sites.reduce((sum, s) => sum + s.patients, 0);
 
@@ -103,20 +104,38 @@ const sitesJSON = JSON.stringify(sites);
 
       <!-- Legend -->
       <div class="absolute bottom-4 left-4 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm px-4 py-3 rounded-lg shadow-md z-[1000] border border-gray-200/50 dark:border-gray-700/50">
-        <div class="flex flex-col gap-2">
-          <div class="flex items-center gap-2.5">
-            <div class="relative flex items-center justify-center" style="width:20px;height:20px;">
-              <div class="absolute w-5 h-5 rounded-full bg-clif-burgundy/20 animate-ping-slow"></div>
-              <div class="w-3 h-3 rounded-full bg-clif-burgundy border-2 border-white shadow-sm"></div>
-            </div>
-            <span class="text-xs font-medium text-gray-700 dark:text-gray-300">CLIF Data Ready</span>
-          </div>
-          <div class="flex items-center gap-2.5">
-            <div class="flex items-center justify-center" style="width:20px;height:20px;">
-              <div class="w-3 h-3 rounded-full border-2 border-dashed border-gray-400 dark:border-gray-500"></div>
-            </div>
-            <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Coming Soon</span>
-          </div>
+        <div class="flex items-center gap-2.5">
+          <svg viewBox="0 0 30 50" class="w-4 h-7 drop-shadow-sm" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <defs>
+              <radialGradient id="legendPinDome" cx="38%" cy="32%" r="70%">
+                <stop offset="0%" stop-color="#fecaca"/>
+                <stop offset="35%" stop-color="#ef4444"/>
+                <stop offset="100%" stop-color="#7f1d1d"/>
+              </radialGradient>
+              <linearGradient id="legendPinNeck" x1="0%" x2="100%">
+                <stop offset="0%" stop-color="#7f1d1d"/>
+                <stop offset="50%" stop-color="#dc2626"/>
+                <stop offset="100%" stop-color="#7f1d1d"/>
+              </linearGradient>
+              <linearGradient id="legendPinDisc" x1="0%" x2="100%">
+                <stop offset="0%" stop-color="#991b1b"/>
+                <stop offset="50%" stop-color="#dc2626"/>
+                <stop offset="100%" stop-color="#7f1d1d"/>
+              </linearGradient>
+              <linearGradient id="legendPinNeedle" x1="0%" x2="100%">
+                <stop offset="0%" stop-color="#6b7280"/>
+                <stop offset="50%" stop-color="#f3f4f6"/>
+                <stop offset="100%" stop-color="#374151"/>
+              </linearGradient>
+            </defs>
+            <path d="M13.5 22 L16.5 22 L15.5 47 L14.5 47 Z" fill="url(#legendPinNeedle)"/>
+            <ellipse cx="15" cy="22" rx="10" ry="2.5" fill="#7f1d1d"/>
+            <ellipse cx="15" cy="20.5" rx="10" ry="2.5" fill="url(#legendPinDisc)"/>
+            <rect x="11" y="11" width="8" height="9.5" fill="url(#legendPinNeck)"/>
+            <ellipse cx="15" cy="11" rx="11" ry="9" fill="url(#legendPinDome)"/>
+            <ellipse cx="11" cy="8" rx="3" ry="2" fill="rgba(255,255,255,0.55)"/>
+          </svg>
+          <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Coming Soon ({upcomingSites})</span>
         </div>
       </div>
     </div>
@@ -144,14 +163,6 @@ const sitesJSON = JSON.stringify(sites);
 </section>
 
 <style>
-  @keyframes ping-slow {
-    0% { transform: scale(1); opacity: 0.5; }
-    75%, 100% { transform: scale(2); opacity: 0; }
-  }
-  .animate-ping-slow {
-    animation: ping-slow 2.5s cubic-bezier(0, 0, 0.2, 1) infinite;
-  }
-
   /* Leaflet marker overrides */
   :global(.consortium-logo-marker) {
     background: none !important;
@@ -163,20 +174,30 @@ const sitesJSON = JSON.stringify(sites);
     justify-content: center;
     position: relative;
   }
-  :global(.logo-marker.active .pulse-ring) {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+  :global(.logo-marker.has-pin) {
+    flex-direction: column;
+    gap: 0;
+  }
+  :global(.pin-icon) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.35));
+    margin-bottom: -4px;
+    z-index: 2;
+  }
+  :global(.pin-icon svg) {
     width: 100%;
     height: 100%;
-    border-radius: 50%;
-    background: rgba(139, 21, 56, 0.15);
-    animation: marker-pulse 2.5s cubic-bezier(0, 0, 0.2, 1) infinite;
-    z-index: 0;
+    transform-origin: 50% 94%;
+    animation: pin-wobble 2.4s ease-in-out infinite;
   }
-  :global(.logo-marker.upcoming .pulse-ring) {
-    display: none;
+  :global(.logo-marker.has-pin:hover .pin-icon svg) {
+    animation-play-state: paused;
+  }
+  @keyframes pin-wobble {
+    0%, 100% { transform: rotate(-7deg); }
+    50%      { transform: rotate(7deg); }
   }
   :global(.logo-marker .logo-box) {
     background: none;
@@ -213,9 +234,6 @@ const sitesJSON = JSON.stringify(sites);
       font-size: 8px;
     }
   }
-  :global(.logo-marker.upcoming .logo-box) {
-    opacity: 1;
-  }
   :global(.logo-marker .text-fallback) {
     width: 56px;
     height: 56px;
@@ -238,17 +256,9 @@ const sitesJSON = JSON.stringify(sites);
     transform: scale(1.15);
   }
 
-  @keyframes marker-pulse {
-    0% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
-    100% { transform: translate(-50%, -50%) scale(2.2); opacity: 0; }
-  }
-
   /* Dark mode marker adjustments */
   :global(.dark .logo-marker .logo-box img) {
     filter: brightness(1.3);
-  }
-  :global(.dark .logo-marker .pulse-ring) {
-    background: rgba(166, 32, 72, 0.2);
   }
 
   /* Tooltip styling */
@@ -388,7 +398,13 @@ const sitesJSON = JSON.stringify(sites);
       'University of Toronto': [1.7, -1.3],
       'University of Pennsylvania': [0.5, -0.5],
       'Johns Hopkins University': [-0.5, -0.5],
-      'Yale University': [0, 1.8],
+      'Yale University': [0, 2.2],
+    };
+
+    // Per-site pin nudge in pixels [x, y] (negative x = west, positive y = south).
+    // Lets us shift just the pin without moving the institution logo.
+    const pinNudges = {
+      'Yale University': [-70, 0],
     };
 
     // Custom logo sizes: [height, maxWidth] in px
@@ -414,40 +430,84 @@ const sitesJSON = JSON.stringify(sites);
     // Add markers
     const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
+    // 3D-style red pushpin SVG used for Coming Soon sites
+    const pinSvg = `
+      <svg viewBox="0 0 30 50" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <radialGradient id="pinDome" cx="38%" cy="32%" r="70%">
+            <stop offset="0%" stop-color="#fecaca"/>
+            <stop offset="35%" stop-color="#ef4444"/>
+            <stop offset="100%" stop-color="#7f1d1d"/>
+          </radialGradient>
+          <linearGradient id="pinNeck" x1="0%" x2="100%">
+            <stop offset="0%" stop-color="#7f1d1d"/>
+            <stop offset="50%" stop-color="#dc2626"/>
+            <stop offset="100%" stop-color="#7f1d1d"/>
+          </linearGradient>
+          <linearGradient id="pinDisc" x1="0%" x2="100%">
+            <stop offset="0%" stop-color="#991b1b"/>
+            <stop offset="50%" stop-color="#dc2626"/>
+            <stop offset="100%" stop-color="#7f1d1d"/>
+          </linearGradient>
+          <linearGradient id="pinNeedle" x1="0%" x2="100%">
+            <stop offset="0%" stop-color="#6b7280"/>
+            <stop offset="50%" stop-color="#f3f4f6"/>
+            <stop offset="100%" stop-color="#374151"/>
+          </linearGradient>
+        </defs>
+        <!-- Needle (silver shaft) -->
+        <path d="M13.5 22 L16.5 22 L15.5 47 L14.5 47 Z" fill="url(#pinNeedle)"/>
+        <!-- Bottom disc/flange -->
+        <ellipse cx="15" cy="22" rx="10" ry="2.5" fill="#7f1d1d"/>
+        <ellipse cx="15" cy="20.5" rx="10" ry="2.5" fill="url(#pinDisc)"/>
+        <!-- Cylinder neck -->
+        <rect x="11" y="11" width="8" height="9.5" fill="url(#pinNeck)"/>
+        <!-- Dome head -->
+        <ellipse cx="15" cy="11" rx="11" ry="9" fill="url(#pinDome)"/>
+        <!-- Dome highlight -->
+        <ellipse cx="11" cy="8" rx="3" ry="2" fill="rgba(255,255,255,0.55)"/>
+      </svg>`;
+
     sites.forEach(site => {
       const rawOff = offsets[site.name] || [0, 0];
       const [latOff, lngOff] = [rawOff[0] * offsetScale, rawOff[1] * offsetScale];
+      let markerHtml, iconW, iconH, anchor;
+
       const [baseH, baseW] = logoSizes[site.name] || [70, 140];
       const logoH = Math.round(baseH * sizeScale);
       const logoW = Math.round(baseW * sizeScale);
-      let markerHtml;
-      const statusClass = site.dataReady ? 'active' : 'upcoming';
+      const inner = site.logoFile
+        ? `<div class="logo-box"><img src="/images/logos/sites/${site.logoFile}" alt="${site.name}" style="height:${logoH}px;max-width:${logoW}px;" /></div>`
+        : `<div class="text-fallback">${site.name.charAt(0)}</div>`;
 
-      if (site.logoFile) {
-        const pulseRing = site.dataReady ? '<div class="pulse-ring"></div>' : '';
+      if (!site.dataReady) {
+        // Coming Soon: institution logo with animated red pushpin floating above
+        const pinH = Math.round(34 * sizeScale);
+        const pinW = Math.round(20 * sizeScale);
+        const overlap = Math.round(4 * sizeScale);
+        iconW = Math.max(logoW, pinW);
+        iconH = pinH + logoH - overlap;
+        // Anchor at logo center so the institution sits at the actual lat/lng
+        anchor = [iconW / 2, pinH - overlap + logoH / 2];
+        const [pinDX, pinDY] = pinNudges[site.name] || [0, 0];
+        const pinTransform = (pinDX || pinDY) ? `transform:translate(${pinDX}px, ${pinDY}px);` : '';
         markerHtml = `
-          <div class="logo-marker ${statusClass}">
-            ${pulseRing}
-            <div class="logo-box">
-              <img src="/images/logos/sites/${site.logoFile}" alt="${site.name}" style="height:${logoH}px;max-width:${logoW}px;" />
-            </div>
+          <div class="logo-marker has-pin">
+            <div class="pin-icon" style="width:${pinW}px;height:${pinH}px;${pinTransform}">${pinSvg}</div>
+            ${inner}
           </div>`;
       } else {
-        // Text fallback (e.g., MIMIC-IV)
-        const initial = site.name.charAt(0);
-        const pulseRing = site.dataReady ? '<div class="pulse-ring"></div>' : '';
-        markerHtml = `
-          <div class="logo-marker ${statusClass}">
-            ${pulseRing}
-            <div class="text-fallback">${initial}</div>
-          </div>`;
+        iconW = logoW;
+        iconH = logoH;
+        anchor = [logoW / 2, logoH / 2];
+        markerHtml = `<div class="logo-marker active">${inner}</div>`;
       }
 
       const icon = L.divIcon({
         className: 'consortium-logo-marker',
         html: markerHtml,
-        iconSize: [logoW, logoH],
-        iconAnchor: [logoW / 2, logoH / 2],
+        iconSize: [iconW, iconH],
+        iconAnchor: anchor,
       });
 
       const marker = L.marker([site.latitude + latOff, site.longitude + lngOff], { icon });
