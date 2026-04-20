@@ -13,8 +13,10 @@ export const GET: APIRoute = async ({ locals, url }) => {
   }
 
   const projectId = url.searchParams.get('projectId');
-  if (!projectId) {
-    return new Response(JSON.stringify({ error: 'Project ID is required.' }), {
+  const keySetId = url.searchParams.get('keySetId');
+
+  if (!projectId || !keySetId) {
+    return new Response(JSON.stringify({ error: 'projectId and keySetId are required.' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     });
@@ -23,7 +25,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
   const db = getDb();
 
   const projectResult = await db.execute({
-    sql: 'SELECT * FROM crypto_projects WHERE id = ?',
+    sql: 'SELECT created_by, name FROM crypto_projects WHERE id = ?',
     args: [projectId],
   });
 
@@ -43,18 +45,34 @@ export const GET: APIRoute = async ({ locals, url }) => {
     });
   }
 
-  if (project.status !== 'complete' || !project.result_data) {
-    return new Response(JSON.stringify({ error: 'Results are not yet available.' }), {
+  const keySetResult = await db.execute({
+    sql: 'SELECT strata_config, status, result_data, name FROM crypto_key_sets WHERE id = ? AND project_id = ?',
+    args: [keySetId, projectId],
+  });
+
+  if (keySetResult.rows.length === 0) {
+    return new Response(JSON.stringify({ error: 'Key set not found.' }), {
+      status: 404,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  const keySet = keySetResult.rows[0];
+
+  if (keySet.status !== 'complete' || !keySet.result_data) {
+    return new Response(JSON.stringify({ error: 'Results are not yet available for this key set.' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     });
   }
 
-  const resultData: Record<string, number> = JSON.parse(project.result_data as string);
-  const strataConfig: StrataDimension[] = JSON.parse(project.strata_config as string);
+  const resultData: Record<string, number> = JSON.parse(keySet.result_data as string);
+  const strataConfig: StrataDimension[] = JSON.parse(keySet.strata_config as string);
 
   const csv = resultToCsv(resultData, strataConfig);
-  const filename = `clif_unmasked_${project.name?.toString().replace(/\s+/g, '_') || project.id}.csv`;
+  const projectName = (project.name as string || projectId).replace(/\s+/g, '_');
+  const ksName = (keySet.name as string || 'keyset').replace(/\s+/g, '_');
+  const filename = `clif_unmasked_${projectName}_${ksName}.csv`;
 
   return new Response(csv, {
     status: 200,

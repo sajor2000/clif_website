@@ -43,10 +43,12 @@ export const POST: APIRoute = async ({ locals, request }) => {
   }
 
   if (action === 'delete') {
-    // Hard delete — remove project and all related data (CASCADE handles site_keys, master_keys, submissions)
+    // Hard delete — remove project and all related data. Explicit deletes in
+    // dependency order so we don't rely on FK cascade (Turso versions vary).
     await db.execute({ sql: 'DELETE FROM crypto_submissions WHERE project_id = ?', args: [projectId] });
     await db.execute({ sql: 'DELETE FROM crypto_site_keys WHERE project_id = ?', args: [projectId] });
     await db.execute({ sql: 'DELETE FROM crypto_master_keys WHERE project_id = ?', args: [projectId] });
+    await db.execute({ sql: 'DELETE FROM crypto_key_sets WHERE project_id = ?', args: [projectId] });
     await db.execute({ sql: 'DELETE FROM crypto_projects WHERE id = ?', args: [projectId] });
 
     return new Response(JSON.stringify({ success: true, deleted: true }), {

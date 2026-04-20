@@ -1,9 +1,13 @@
 /**
  * Deterministic Additive Masking — Core Cryptographic Functions
  *
- * Implements key generation, splitting, and unmasking for federated
+ * Implements fragment generation and unmasking for federated
  * count data aggregation. Fully generic — the scaffold is defined
  * entirely by user-configured dimensions (no hardcoded geography or time).
+ *
+ * Each site's fragment is drawn uniformly from a user-configured
+ * [minOffset, maxOffset] range, and the master key is the sum of all
+ * fragments per cell (no separate master generation + split step).
  */
 
 export interface StrataDimension {
@@ -35,16 +39,24 @@ function cartesianProduct(arrays: string[][]): string[][] {
 }
 
 /**
- * Generate a master key with a random integer offset for each cell.
- * Offsets are in range [minOffset, maxOffset] (default [11, 40]).
+ * Generate N independent fragment records. For every cell key, every
+ * fragment gets a random integer drawn uniformly from [minOffset, maxOffset].
+ * The master offset for a cell is the sum of its fragment offsets — so the
+ * scheme is deterministic-additive without needing a separate master step.
  */
-export function generateMasterKey(
+export function generateFragments(
   cellKeys: string[],
-  minOffset = 11,
+  numSites: number,
+  minOffset = 0,
   maxOffset = 40,
-): Record<string, number> {
+): Record<string, number>[] {
+  if (numSites < 1) return [];
+  if (maxOffset < minOffset) {
+    throw new Error(`maxOffset (${maxOffset}) must be >= minOffset (${minOffset})`);
+  }
+
   const range = maxOffset - minOffset + 1;
-  const masterKey: Record<string, number> = {};
+  const fragments: Record<string, number>[] = Array.from({ length: numSites }, () => ({}));
 
   const batchSize = 4096;
   let randomPool = new Int32Array(0);
@@ -61,48 +73,9 @@ export function generateMasterKey(
   }
 
   for (const key of cellKeys) {
-    masterKey[key] = nextRandom();
-  }
-
-  return masterKey;
-}
-
-/**
- * Split a master key into N site key fragments.
- * For each cell, generates N random integers that sum to the master offset.
- */
-export function splitMasterKey(
-  masterKey: Record<string, number>,
-  numSites: number,
-): Record<string, number>[] {
-  const fragments: Record<string, number>[] = Array.from({ length: numSites }, () => ({}));
-  const cellKeys = Object.keys(masterKey);
-
-  const fragmentRange = 400;
-  const batchSize = 4096;
-  let randomPool = new Int32Array(0);
-  let poolIndex = 0;
-
-  function nextRandom(): number {
-    if (poolIndex >= randomPool.length) {
-      randomPool = new Int32Array(batchSize);
-      crypto.getRandomValues(randomPool);
-      poolIndex = 0;
+    for (let i = 0; i < numSites; i++) {
+      fragments[i][key] = nextRandom();
     }
-    const raw = randomPool[poolIndex++];
-    return -200 + (((raw % (fragmentRange + 1)) + (fragmentRange + 1)) % (fragmentRange + 1));
-  }
-
-  for (const key of cellKeys) {
-    const masterOffset = masterKey[key];
-    let remaining = masterOffset;
-
-    for (let i = 0; i < numSites - 1; i++) {
-      const val = nextRandom();
-      fragments[i][key] = val;
-      remaining -= val;
-    }
-    fragments[numSites - 1][key] = remaining;
   }
 
   return fragments;
@@ -236,8 +209,9 @@ export function parseMaskedCsv(
 
 /**
  * Reconstruct the master key by summing all fragment offset records.
- * This is the mathematical inverse of splitMasterKey:
- *   computeMasterKeyFromFragments(splitMasterKey(master, N)) === master
+ * This is the mathematical inverse of `generateFragments`:
+ *   computeMasterKeyFromFragments(generateFragments(keys, N, min, max))
+ *   gives the master key that unmaskAggregated needs.
  */
 export function computeMasterKeyFromFragments(
   fragments: Record<string, number>[],

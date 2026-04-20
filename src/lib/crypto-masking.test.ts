@@ -1,8 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   generateCellKeys,
-  generateMasterKey,
-  splitMasterKey,
+  generateFragments,
   unmaskAggregated,
   computeMasterKeyFromFragments,
   unmaskServerSide,
@@ -51,81 +50,57 @@ describe('generateCellKeys', () => {
   });
 });
 
-describe('generateMasterKey', () => {
-  it('produces offsets for every cell key', () => {
+describe('generateFragments', () => {
+  it('produces one fragment per site with every cell key', () => {
     const cellKeys = generateCellKeys(testDimensions);
-    const master = generateMasterKey(cellKeys);
-    expect(Object.keys(master).length).toBe(cellKeys.length);
-    for (const key of cellKeys) {
-      expect(master).toHaveProperty(key);
-      expect(typeof master[key]).toBe('number');
-    }
-  });
-
-  it('default offsets are within [11, 40]', () => {
-    const cellKeys = generateCellKeys(testDimensions);
-    const master = generateMasterKey(cellKeys);
-    for (const val of Object.values(master)) {
-      expect(val).toBeGreaterThanOrEqual(11);
-      expect(val).toBeLessThanOrEqual(40);
-    }
-  });
-
-  it('offsets are within custom range', () => {
-    const cellKeys = generateCellKeys(testDimensions);
-    const master = generateMasterKey(cellKeys, -100, 100);
-    for (const val of Object.values(master)) {
-      expect(val).toBeGreaterThanOrEqual(-100);
-      expect(val).toBeLessThanOrEqual(100);
-    }
-  });
-});
-
-describe('splitMasterKey', () => {
-  it('fragments sum to master key for every cell', () => {
-    const cellKeys = generateCellKeys(testDimensions);
-    const master = generateMasterKey(cellKeys);
-    const fragments = splitMasterKey(master, 5);
-
+    const fragments = generateFragments(cellKeys, 5, 0, 40);
     expect(fragments.length).toBe(5);
-
-    for (const key of cellKeys) {
-      const fragmentSum = fragments.reduce((sum, frag) => sum + frag[key], 0);
-      expect(fragmentSum).toBe(master[key]);
+    for (const frag of fragments) {
+      expect(Object.keys(frag).length).toBe(cellKeys.length);
+      for (const key of cellKeys) {
+        expect(frag).toHaveProperty(key);
+        expect(typeof frag[key]).toBe('number');
+      }
     }
   });
 
-  it('works with 2 sites', () => {
-    const master: Record<string, number> = { a: 100, b: -50, c: 0 };
-    const fragments = splitMasterKey(master, 2);
-
-    expect(fragments.length).toBe(2);
-    expect(fragments[0]['a'] + fragments[1]['a']).toBe(100);
-    expect(fragments[0]['b'] + fragments[1]['b']).toBe(-50);
-    expect(fragments[0]['c'] + fragments[1]['c']).toBe(0);
-  });
-
-  it('works with 10 sites', () => {
+  it('offsets stay within the configured range (default non-negative)', () => {
     const cellKeys = generateCellKeys(testDimensions);
-    const master = generateMasterKey(cellKeys);
-    const fragments = splitMasterKey(master, 10);
-
-    expect(fragments.length).toBe(10);
-
-    for (const key of cellKeys) {
-      const fragmentSum = fragments.reduce((sum, frag) => sum + frag[key], 0);
-      expect(fragmentSum).toBe(master[key]);
+    const fragments = generateFragments(cellKeys, 5, 0, 40);
+    for (const frag of fragments) {
+      for (const val of Object.values(frag)) {
+        expect(val).toBeGreaterThanOrEqual(0);
+        expect(val).toBeLessThanOrEqual(40);
+      }
     }
+  });
+
+  it('offsets stay within a custom range (negatives allowed)', () => {
+    const cellKeys = generateCellKeys(testDimensions);
+    const fragments = generateFragments(cellKeys, 3, -100, 100);
+    for (const frag of fragments) {
+      for (const val of Object.values(frag)) {
+        expect(val).toBeGreaterThanOrEqual(-100);
+        expect(val).toBeLessThanOrEqual(100);
+      }
+    }
+  });
+
+  it('throws if maxOffset < minOffset', () => {
+    expect(() => generateFragments(['a'], 2, 10, 5)).toThrow();
+  });
+
+  it('returns empty array for 0 sites', () => {
+    expect(generateFragments(['a', 'b'], 0, 0, 40)).toEqual([]);
   });
 });
 
-describe('full round-trip: generate → split → mask → aggregate → unmask', () => {
+describe('full round-trip: generate fragments → mask → aggregate → unmask', () => {
   it('recovers true counts exactly', () => {
     const cellKeys = generateCellKeys(testDimensions);
-    const master = generateMasterKey(cellKeys);
-    const fragments = splitMasterKey(master, 4);
+    const fragments = generateFragments(cellKeys, 4, 0, 40);
+    const master = computeMasterKeyFromFragments(fragments);
 
-    // Simulate real counts per site
     const siteCounts = fragments.map(() => {
       const counts: Record<string, number> = {};
       for (const key of cellKeys) {
@@ -134,7 +109,6 @@ describe('full round-trip: generate → split → mask → aggregate → unmask'
       return counts;
     });
 
-    // Each site masks: masked = real + offset
     const maskedPerSite = fragments.map((frag, i) => {
       const masked: Record<string, number> = {};
       for (const key of cellKeys) {
@@ -143,16 +117,13 @@ describe('full round-trip: generate → split → mask → aggregate → unmask'
       return masked;
     });
 
-    // Aggregate: sum all masked values per cell
     const aggregated: Record<string, number> = {};
     for (const key of cellKeys) {
       aggregated[key] = maskedPerSite.reduce((sum, m) => sum + m[key], 0);
     }
 
-    // Unmask
     const { result, warnings } = unmaskAggregated(aggregated, master);
 
-    // Verify: result should equal sum of all sites' real counts
     for (const key of cellKeys) {
       const trueTotal = siteCounts.reduce((sum, sc) => sum + sc[key], 0);
       expect(result[key]).toBe(trueTotal);
@@ -189,7 +160,8 @@ describe('keyDataToCsv / parseMaskedCsv round-trip', () => {
       { name: 'year', categories: ['2020', '2021'] },
     ];
     const cellKeys = generateCellKeys(dims);
-    const master = generateMasterKey(cellKeys, -50, 50);
+    const fragments = generateFragments(cellKeys, 1, -50, 50);
+    const master = computeMasterKeyFromFragments(fragments);
 
     const csv = keyDataToCsv(master, dims);
     const lines = csv.split('\n');
@@ -207,15 +179,15 @@ describe('keyDataToCsv / parseMaskedCsv round-trip', () => {
 });
 
 describe('computeMasterKeyFromFragments', () => {
-  it('round-trips with splitMasterKey', () => {
+  it('master equals sum of fragments per cell', () => {
     const cellKeys = generateCellKeys(testDimensions);
-    const master = generateMasterKey(cellKeys);
-    const fragments = splitMasterKey(master, 5);
+    const fragments = generateFragments(cellKeys, 5, 0, 40);
 
     const reconstructed = computeMasterKeyFromFragments(fragments);
 
     for (const key of cellKeys) {
-      expect(reconstructed[key]).toBe(master[key]);
+      const expected = fragments.reduce((sum, f) => sum + f[key], 0);
+      expect(reconstructed[key]).toBe(expected);
     }
   });
 
@@ -234,8 +206,7 @@ describe('computeMasterKeyFromFragments', () => {
 describe('unmaskServerSide', () => {
   it('recovers true counts with all sites active', () => {
     const cellKeys = generateCellKeys(testDimensions);
-    const master = generateMasterKey(cellKeys);
-    const fragments = splitMasterKey(master, 4);
+    const fragments = generateFragments(cellKeys, 4, 0, 40);
 
     const siteCounts = fragments.map(() => {
       const counts: Record<string, number> = {};
@@ -264,9 +235,8 @@ describe('unmaskServerSide', () => {
 
   it('recovers true counts with dropped sites', () => {
     const cellKeys = generateCellKeys(testDimensions);
-    const master = generateMasterKey(cellKeys);
-    const fragments = splitMasterKey(master, 4);
-    const droppedIndices = [1, 3]; // drop sites at index 1 and 3
+    const fragments = generateFragments(cellKeys, 4, 0, 40);
+    const droppedIndices = [1, 3];
     const activeIndices = [0, 2];
 
     const siteCounts = fragments.map(() => {
@@ -277,7 +247,6 @@ describe('unmaskServerSide', () => {
       return counts;
     });
 
-    // Only active sites contribute to the aggregated data
     const aggregated: Record<string, number> = {};
     for (const key of cellKeys) {
       aggregated[key] = activeIndices.reduce(

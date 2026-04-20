@@ -136,9 +136,25 @@ CREATE TABLE IF NOT EXISTS crypto_projects (
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- Multiple independent dimension configs per project.
+-- A project owns the site roster + master-key access; each key_set owns
+-- its own strata_config, offset range, fragments, and lifecycle.
+CREATE TABLE IF NOT EXISTS crypto_key_sets (
+  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  project_id TEXT NOT NULL REFERENCES crypto_projects(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  strata_config TEXT NOT NULL,
+  min_offset INTEGER NOT NULL DEFAULT 0,
+  max_offset INTEGER NOT NULL DEFAULT 40,
+  status TEXT NOT NULL DEFAULT 'keys_assigned',
+  result_data TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS crypto_master_keys (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
-  project_id TEXT NOT NULL UNIQUE REFERENCES crypto_projects(id) ON DELETE CASCADE,
+  project_id TEXT NOT NULL REFERENCES crypto_projects(id) ON DELETE CASCADE,
+  key_set_id TEXT REFERENCES crypto_key_sets(id) ON DELETE CASCADE,
   key_data TEXT NOT NULL,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -146,6 +162,7 @@ CREATE TABLE IF NOT EXISTS crypto_master_keys (
 CREATE TABLE IF NOT EXISTS crypto_site_keys (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
   project_id TEXT NOT NULL REFERENCES crypto_projects(id) ON DELETE CASCADE,
+  key_set_id TEXT REFERENCES crypto_key_sets(id) ON DELETE CASCADE,
   key_index INTEGER NOT NULL,
   label TEXT,
   assigned_to TEXT REFERENCES users(id),
@@ -160,12 +177,17 @@ CREATE TABLE IF NOT EXISTS crypto_site_keys (
 
 CREATE TABLE IF NOT EXISTS crypto_submissions (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
-  project_id TEXT NOT NULL UNIQUE REFERENCES crypto_projects(id) ON DELETE CASCADE,
+  project_id TEXT NOT NULL REFERENCES crypto_projects(id) ON DELETE CASCADE,
+  key_set_id TEXT REFERENCES crypto_key_sets(id) ON DELETE CASCADE,
   submitted_by TEXT NOT NULL REFERENCES users(id),
   submission_data TEXT NOT NULL,
   submitted_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+CREATE INDEX IF NOT EXISTS idx_crypto_key_sets_project ON crypto_key_sets(project_id);
 CREATE INDEX IF NOT EXISTS idx_crypto_site_keys_project ON crypto_site_keys(project_id);
+CREATE INDEX IF NOT EXISTS idx_crypto_site_keys_key_set ON crypto_site_keys(key_set_id);
 CREATE INDEX IF NOT EXISTS idx_crypto_site_keys_assigned ON crypto_site_keys(assigned_to);
+CREATE INDEX IF NOT EXISTS idx_crypto_master_keys_key_set ON crypto_master_keys(key_set_id);
 CREATE INDEX IF NOT EXISTS idx_crypto_submissions_project ON crypto_submissions(project_id);
+CREATE INDEX IF NOT EXISTS idx_crypto_submissions_key_set ON crypto_submissions(key_set_id);

@@ -276,38 +276,32 @@ const siteNames = Object.keys(siteGroups).sort();
                     </div>
                   ))}
                 </div>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Select sites to include. Each site gets one key fragment. Check which members at each site can download it.</p>
-                <p class="text-xs text-amber-600 dark:text-amber-400 mt-1">Tip: Include all potential sites upfront. If a site cannot contribute data, the project creator can drop them before unmasking — the system automatically adjusts. This is much easier than regenerating keys.</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Select sites to include. The same site roster applies to every key set in this project. Check which members at each site can download fragments.</p>
+                <p class="text-xs text-amber-600 dark:text-amber-400 mt-1">Tip: Include all potential sites upfront. If a site cannot contribute data, the project creator can drop them before unmasking — the system automatically adjusts.</p>
               </div>
 
-              <!-- Strata Dimensions -->
+              <!-- Key Sets -->
               <div>
                 <label class="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Strata Dimensions
+                  Key Sets
                   <button type="button" id="strata-info-btn" class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-gray-300 dark:bg-neutral-600 text-[10px] font-bold text-white hover:bg-clif-burgundy transition-colors" title="See examples">i</button>
                 </label>
-                <div id="strata-container" class="space-y-3">
-                  <!-- Default dimensions populated by JS -->
+                <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                  Each key set defines its own dimensions and offset range. Use multiple key sets when your project has several independent CSV exports with different dimensions. Every selected site gets one fragment per key set.
+                </p>
+                <div id="key-sets-container" class="space-y-4">
+                  <!-- Key-set cards populated by JS -->
                 </div>
-                <div class="mt-3 flex gap-4">
-                  <button type="button" id="add-dimension-btn"
+                <div class="mt-3">
+                  <button type="button" id="add-key-set-btn"
                     class="text-sm text-clif-burgundy hover:text-clif-burgundy-dark font-medium transition-colors">
-                    + Add Dimension
-                  </button>
-                  <button type="button" id="add-range-btn"
-                    class="text-sm text-clif-burgundy hover:text-clif-burgundy-dark font-medium transition-colors">
-                    + Add Range Dimension
+                    + Add Key Set
                   </button>
                 </div>
-
-              </div>
-
-              <div id="cell-preview" class="text-xs text-gray-500 dark:text-gray-400 p-3 bg-gray-50 dark:bg-neutral-900 rounded-lg hidden">
-                Estimated total cells: <span id="cell-count" class="font-semibold">0</span>
               </div>
 
               <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/30 rounded-lg p-3 text-xs text-blue-800 dark:text-blue-300">
-                <strong>Note:</strong> Key fragments will be generated and randomly assigned to participating sites. Sites can download their fragments from the project page. When you upload the aggregated masked CSV, the server will compute the unmasking automatically.
+                <strong>Note:</strong> Fragments will be generated and randomly assigned to participating sites per key set. Each fragment offset is drawn uniformly from the key set's configured range. When you upload the aggregated masked CSV for a key set, the server will compute the unmasking automatically.
               </div>
 
               <div class="flex items-center gap-3">
@@ -376,13 +370,11 @@ const siteNames = Object.keys(siteGroups).sort();
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const tabId = btn.id.replace('tab-', '');
-      // Deactivate all tabs
       document.querySelectorAll('.tab-btn').forEach(b => {
         b.classList.remove('border-clif-burgundy', 'text-clif-burgundy');
         b.classList.add('border-transparent', 'text-gray-500', 'dark:text-gray-400');
       });
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
-      // Activate clicked tab
       btn.classList.add('border-clif-burgundy', 'text-clif-burgundy');
       btn.classList.remove('border-transparent', 'text-gray-500', 'dark:text-gray-400');
       const panel = document.getElementById('panel-' + tabId);
@@ -390,7 +382,6 @@ const siteNames = Object.keys(siteGroups).sort();
     });
   });
 
-  // Info button → switch to How It Works tab
   const strataInfoBtn = document.getElementById('strata-info-btn');
   if (strataInfoBtn) {
     strataInfoBtn.addEventListener('click', () => {
@@ -399,50 +390,144 @@ const siteNames = Object.keys(siteGroups).sort();
     });
   }
 
-  const container = document.getElementById('strata-container');
-  const addBtn = document.getElementById('add-dimension-btn');
-  const addRangeBtn = document.getElementById('add-range-btn');
+  const keySetsContainer = document.getElementById('key-sets-container');
+  const addKeySetBtn = document.getElementById('add-key-set-btn');
   const form = document.getElementById('create-form');
-  const cellPreview = document.getElementById('cell-preview');
-  const cellCount = document.getElementById('cell-count');
   const createBtn = document.getElementById('create-btn');
   const createStatus = document.getElementById('create-status');
 
-  if (!container || !form) return;
+  if (!keySetsContainer || !form) return;
 
-  let dimensionId = 0;
+  // Unique id counter for dimension rows and key-set cards.
+  let uid = 0;
+  const nextId = () => ++uid;
 
-  function addLabelDimension(name, categories) {
-    const id = dimensionId++;
+  // ==== Key-set factory ====
+  function buildKeySetCard({ name, dimensions, minOffset, maxOffset }) {
+    const cardId = nextId();
+    const card = document.createElement('div');
+    card.className = 'ks-card border border-gray-200 dark:border-neutral-700 rounded-xl bg-white dark:bg-neutral-800 p-4 space-y-3';
+    card.dataset.ksId = cardId;
+    card.innerHTML = `
+      <div class="flex items-start justify-between gap-3">
+        <input type="text" class="ks-name flex-1 px-3 py-1.5 border border-gray-300 dark:border-neutral-600 rounded text-sm font-medium bg-white dark:bg-neutral-700 text-gray-900 dark:text-white"
+          placeholder="Key set name (e.g. Cohort A)" value="${name || ''}" />
+        <button type="button" class="ks-remove text-red-500 hover:text-red-700 text-lg font-medium leading-none" title="Remove key set">&times;</button>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2">
+        <label class="block">
+          <span class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Min offset</span>
+          <input type="number" class="ks-min w-full px-3 py-1.5 border border-gray-300 dark:border-neutral-600 rounded text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" value="${minOffset ?? 10}" />
+        </label>
+        <label class="block">
+          <span class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Max offset</span>
+          <input type="number" class="ks-max w-full px-3 py-1.5 border border-gray-300 dark:border-neutral-600 rounded text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" value="${maxOffset ?? 100}" />
+        </label>
+      </div>
+      <p class="text-xs text-gray-500 dark:text-gray-400 -mt-1">Each site's fragment offsets are drawn uniformly from this range per cell. Default is 10 to 100 so every cell always gets meaningful per-site noise (min=0 would let some fragments offset by 0 and leak those cells).</p>
+
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Dimensions</span>
+          <button type="button" class="ks-import-btn text-xs text-clif-burgundy hover:text-clif-burgundy-dark font-medium">Import from CSV</button>
+          <input type="file" class="ks-import-file hidden" accept=".csv" />
+        </div>
+        <div class="ks-dims space-y-2"></div>
+        <div class="mt-2 flex gap-4">
+          <button type="button" class="ks-add-label text-sm text-clif-burgundy hover:text-clif-burgundy-dark font-medium">+ Add Dimension</button>
+          <button type="button" class="ks-add-range text-sm text-clif-burgundy hover:text-clif-burgundy-dark font-medium">+ Add Range Dimension</button>
+        </div>
+      </div>
+
+      <div class="ks-cell-preview text-xs text-gray-500 dark:text-gray-400 p-2 bg-gray-50 dark:bg-neutral-900 rounded hidden"></div>
+
+      <details class="ks-offset-preview-wrap">
+        <summary class="text-xs font-medium text-clif-burgundy cursor-pointer hover:underline select-none">Preview fragment CSV</summary>
+        <div class="ks-offset-preview mt-2 text-xs text-gray-600 dark:text-gray-400 overflow-x-auto"></div>
+      </details>
+    `;
+    keySetsContainer.appendChild(card);
+
+    // Wire card-level listeners.
+    card.querySelector('.ks-name').addEventListener('input', () => updateAllPreviews());
+    card.querySelector('.ks-min').addEventListener('input', () => updateAllPreviews());
+    card.querySelector('.ks-max').addEventListener('input', () => updateAllPreviews());
+    card.querySelector('.ks-remove').addEventListener('click', () => {
+      if (keySetsContainer.querySelectorAll('.ks-card').length <= 1) {
+        alert('A project must have at least one key set.');
+        return;
+      }
+      card.remove();
+      updateAllPreviews();
+    });
+    card.querySelector('.ks-add-label').addEventListener('click', () => {
+      addLabelDimension(card, '', '');
+    });
+    card.querySelector('.ks-add-range').addEventListener('click', () => {
+      addRangeDimension(card, '');
+    });
+
+    // CSV import: reads the file client-side and rebuilds this card's dimensions.
+    const importBtn = card.querySelector('.ks-import-btn');
+    const importFile = card.querySelector('.ks-import-file');
+    importBtn.addEventListener('click', () => importFile.click());
+    importFile.addEventListener('change', async () => {
+      if (!importFile.files.length) return;
+      const file = importFile.files[0];
+      try {
+        const text = await file.text();
+        importDimensionsFromCsv(card, text);
+      } catch (err) {
+        alert('Failed to read CSV: ' + (err.message || 'unknown error'));
+      } finally {
+        importFile.value = '';
+      }
+    });
+
+    const dimContainer = card.querySelector('.ks-dims');
+    if (dimensions && dimensions.length) {
+      for (const dim of dimensions) addLabelDimension(card, dim.name, dim.categories);
+    } else {
+      addLabelDimension(card, 'age_group', '18-44, 45-64, 65-74, 75+');
+      addLabelDimension(card, 'sex', 'M, F');
+    }
+    // Enable drag-reorder on the dim container (via delegated drag events).
+    wireDragReorder(dimContainer);
+
+    return card;
+  }
+
+  // ==== Dimension row factories ====
+  function addLabelDimension(card, name, categories) {
+    const dimContainer = card.querySelector('.ks-dims');
     const row = document.createElement('div');
-    row.className = 'flex items-start gap-3 p-3 bg-gray-50 dark:bg-neutral-900 rounded-lg';
-    row.dataset.dimId = id;
+    row.className = 'dim-row flex items-start gap-2 p-2 bg-gray-50 dark:bg-neutral-900 rounded-lg';
     row.dataset.dimType = 'labels';
-    row.innerHTML = `
+    row.innerHTML = dragHandleHtml() + `
       <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
-        <input type="text" placeholder="Dimension name" value="${name || ''}"
+        <input type="text" placeholder="Dimension name" value="${escapeAttr(name)}"
           class="dim-name px-3 py-1.5 border border-gray-300 dark:border-neutral-600 rounded text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" />
-        <input type="text" placeholder="Values (comma-separated, e.g. 18-44, 45-64)" value="${categories || ''}"
+        <input type="text" placeholder="Values (comma-separated, e.g. 18-44, 45-64)" value="${escapeAttr(Array.isArray(categories) ? categories.join(', ') : (categories || ''))}"
           class="dim-cats px-3 py-1.5 border border-gray-300 dark:border-neutral-600 rounded text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" />
       </div>
       <button type="button" class="remove-dim text-red-500 hover:text-red-700 text-sm font-medium mt-1">&times;</button>
     `;
-    container.appendChild(row);
-    row.querySelector('.remove-dim').addEventListener('click', () => { row.remove(); updateCellPreview(); });
-    row.querySelector('.dim-name').addEventListener('input', updateCellPreview);
-    row.querySelector('.dim-cats').addEventListener('input', updateCellPreview);
-    updateCellPreview();
+    dimContainer.appendChild(row);
+    row.querySelector('.remove-dim').addEventListener('click', () => { row.remove(); updateAllPreviews(); });
+    row.querySelector('.dim-name').addEventListener('input', updateAllPreviews);
+    row.querySelector('.dim-cats').addEventListener('input', updateAllPreviews);
+    updateAllPreviews();
   }
 
-  function addRangeDimension(name) {
-    const id = dimensionId++;
+  function addRangeDimension(card, name) {
+    const dimContainer = card.querySelector('.ks-dims');
     const row = document.createElement('div');
-    row.className = 'flex items-start gap-3 p-3 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-200 dark:border-blue-800/30';
-    row.dataset.dimId = id;
+    row.className = 'dim-row flex items-start gap-2 p-2 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-200 dark:border-blue-800/30';
     row.dataset.dimType = 'range';
-    row.innerHTML = `
+    row.innerHTML = dragHandleHtml() + `
       <div class="flex-1 space-y-2">
-        <input type="text" placeholder="Dimension name (e.g. county_fips, year)" value="${name || ''}"
+        <input type="text" placeholder="Dimension name (e.g. county_fips, year)" value="${escapeAttr(name)}"
           class="dim-name w-full px-3 py-1.5 border border-gray-300 dark:border-neutral-600 rounded text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" />
         <div class="flex items-center gap-2">
           <input type="text" placeholder="Start (e.g. 01001)" class="dim-range-start flex-1 px-3 py-1.5 border border-gray-300 dark:border-neutral-600 rounded text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" />
@@ -453,9 +538,9 @@ const siteNames = Object.keys(siteGroups).sort();
       </div>
       <button type="button" class="remove-dim text-red-500 hover:text-red-700 text-sm font-medium mt-1">&times;</button>
     `;
-    container.appendChild(row);
-    row.querySelector('.remove-dim').addEventListener('click', () => { row.remove(); updateCellPreview(); });
-    row.querySelector('.dim-name').addEventListener('input', updateCellPreview);
+    dimContainer.appendChild(row);
+    row.querySelector('.remove-dim').addEventListener('click', () => { row.remove(); updateAllPreviews(); });
+    row.querySelector('.dim-name').addEventListener('input', updateAllPreviews);
     const rangeStart = row.querySelector('.dim-range-start');
     const rangeEnd = row.querySelector('.dim-range-end');
     const rangeCount = row.querySelector('.dim-range-count');
@@ -467,19 +552,113 @@ const siteNames = Object.keys(siteGroups).sort();
       } else {
         rangeCount.textContent = '';
       }
-      updateCellPreview();
+      updateAllPreviews();
     }
     rangeStart.addEventListener('input', updateRangeCount);
     rangeEnd.addEventListener('input', updateRangeCount);
-    updateCellPreview();
+    updateAllPreviews();
   }
 
-  function getStrata() {
+  function dragHandleHtml() {
+    return `<button type="button" class="drag-handle mt-1.5 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 select-none" title="Drag to reorder" draggable="true" aria-label="Reorder dimension">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path d="M7 4a1.5 1.5 0 100 3 1.5 1.5 0 000-3zM7 8.5a1.5 1.5 0 100 3 1.5 1.5 0 000-3zM7 13a1.5 1.5 0 100 3 1.5 1.5 0 000-3zM13 4a1.5 1.5 0 100 3 1.5 1.5 0 000-3zM13 8.5a1.5 1.5 0 100 3 1.5 1.5 0 000-3zM13 13a1.5 1.5 0 100 3 1.5 1.5 0 000-3z"/></svg>
+    </button>`;
+  }
+
+  function escapeAttr(s) {
+    return String(s == null ? '' : s).replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  }
+
+  // ==== Drag reorder (per ks-dims container) ====
+  function wireDragReorder(dimContainer) {
+    let draggingRow = null;
+
+    dimContainer.addEventListener('dragstart', (e) => {
+      const handle = e.target.closest && e.target.closest('.drag-handle');
+      if (!handle) return;
+      const row = handle.closest('.dim-row');
+      if (!row || !dimContainer.contains(row)) return;
+      draggingRow = row;
+      row.classList.add('opacity-40');
+      try { e.dataTransfer.setData('text/plain', 'reorder'); } catch (_) {}
+      e.dataTransfer.effectAllowed = 'move';
+    });
+
+    dimContainer.addEventListener('dragend', () => {
+      if (draggingRow) draggingRow.classList.remove('opacity-40');
+      draggingRow = null;
+    });
+
+    dimContainer.addEventListener('dragover', (e) => {
+      if (!draggingRow) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      const targetRow = e.target.closest && e.target.closest('.dim-row');
+      if (!targetRow || targetRow === draggingRow || !dimContainer.contains(targetRow)) return;
+      const rect = targetRow.getBoundingClientRect();
+      const insertBefore = (e.clientY - rect.top) < rect.height / 2;
+      dimContainer.insertBefore(draggingRow, insertBefore ? targetRow : targetRow.nextSibling);
+    });
+
+    dimContainer.addEventListener('drop', (e) => {
+      if (draggingRow) {
+        e.preventDefault();
+        draggingRow.classList.remove('opacity-40');
+        draggingRow = null;
+        updateAllPreviews();
+      }
+    });
+  }
+
+  // ==== CSV dimension import ====
+  function importDimensionsFromCsv(card, csvText) {
+    const lines = csvText.trim().split(/\r?\n/);
+    if (lines.length < 2) {
+      alert('CSV must have a header row and at least one data row.');
+      return;
+    }
+    const header = lines[0].split(',').map(s => s.trim().replace(/^"|"$/g, ''));
+    const valueColumnNames = new Set(['offset', 'count', 'masked_count', 'value']);
+    const dimColIdx = [];
+    for (let i = 0; i < header.length; i++) {
+      if (!valueColumnNames.has(header[i].toLowerCase())) dimColIdx.push(i);
+    }
+    if (dimColIdx.length === 0) {
+      alert('No dimension columns found in CSV header.');
+      return;
+    }
+
+    const seen = dimColIdx.map(() => new Set());
+    const order = dimColIdx.map(() => []);
+    for (let r = 1; r < lines.length; r++) {
+      const cols = lines[r].split(',').map(s => s.trim().replace(/^"|"$/g, ''));
+      for (let c = 0; c < dimColIdx.length; c++) {
+        const val = cols[dimColIdx[c]];
+        if (val && !seen[c].has(val)) {
+          seen[c].add(val);
+          order[c].push(val);
+        }
+      }
+    }
+
+    const existing = card.querySelectorAll('.dim-row');
+    if (existing.length > 0) {
+      if (!confirm('Replace current dimensions with the ones from this CSV?')) return;
+      existing.forEach(r => r.remove());
+    }
+
+    for (let c = 0; c < dimColIdx.length; c++) {
+      const name = header[dimColIdx[c]];
+      addLabelDimension(card, name, order[c].join(', '));
+    }
+  }
+
+  // ==== Strata extraction (per key-set) ====
+  function getStrataForCard(card) {
     const dims = [];
-    container.querySelectorAll('[data-dim-id]').forEach(row => {
+    card.querySelectorAll('.dim-row').forEach(row => {
       const name = row.querySelector('.dim-name').value.trim();
       const type = row.dataset.dimType;
-
       if (type === 'range') {
         const startStr = row.querySelector('.dim-range-start').value.trim();
         const endStr = row.querySelector('.dim-range-end').value.trim();
@@ -501,55 +680,80 @@ const siteNames = Object.keys(siteGroups).sort();
     return dims;
   }
 
-  function updateCellPreview() {
-    const strata = getStrata();
-    const total = strata.reduce((acc, d) => acc * d.categories.length, 1);
-    const breakdown = strata.map(d => `${d.categories.length} ${d.name}`).join(' x ');
-
-    if (total > 0 && strata.length > 0) {
-      cellPreview.classList.remove('hidden');
-      cellCount.textContent = total.toLocaleString() + ` cells (${breakdown})`;
-    } else {
-      cellPreview.classList.add('hidden');
-    }
+  // ==== Preview rendering ====
+  function updateAllPreviews() {
+    document.querySelectorAll('.ks-card').forEach(card => renderCardPreview(card));
   }
 
-  // Default dimensions
-  addLabelDimension('age_group', '18-44, 45-64, 65-74, 75+');
-  addLabelDimension('sex', 'M, F');
+  function renderCardPreview(card) {
+    const strata = getStrataForCard(card);
+    const cellPreview = card.querySelector('.ks-cell-preview');
+    const offsetPreview = card.querySelector('.ks-offset-preview');
 
-  addBtn.addEventListener('click', () => addLabelDimension('', ''));
-  if (addRangeBtn) addRangeBtn.addEventListener('click', () => addRangeDimension(''));
+    if (strata.length === 0) {
+      cellPreview.classList.add('hidden');
+      offsetPreview.innerHTML = '<p class="text-gray-500">Add dimensions to see a preview.</p>';
+      return;
+    }
 
-  // Site selection logic
+    const total = strata.reduce((acc, d) => acc * d.categories.length, 1);
+    const breakdown = strata.map(d => `${d.categories.length} ${d.name}`).join(' × ');
+    cellPreview.classList.remove('hidden');
+    cellPreview.innerHTML = `Total cells: <span class="font-semibold">${total.toLocaleString()}</span> (${breakdown})`;
+
+    // Build first N rows of the cartesian product without materializing everything.
+    const sampleRows = [];
+    const maxRows = 10;
+    const idx = new Array(strata.length).fill(0);
+    while (sampleRows.length < Math.min(total, maxRows)) {
+      sampleRows.push(strata.map((d, i) => d.categories[idx[i]]));
+      for (let i = strata.length - 1; i >= 0; i--) {
+        idx[i]++;
+        if (idx[i] < strata[i].categories.length) break;
+        idx[i] = 0;
+        if (i === 0) break;
+      }
+    }
+    const headers = [...strata.map(d => d.name), 'offset'];
+    const headerHtml = headers.map(h => `<th class="border border-gray-200 dark:border-neutral-600 px-2 py-1 text-left font-semibold text-gray-700 dark:text-gray-300">${escapeAttr(h)}</th>`).join('');
+    const bodyHtml = sampleRows.map(row => {
+      const cells = [...row, 'X'].map((v, i) => `<td class="border border-gray-200 dark:border-neutral-600 px-2 py-1 ${i === headers.length - 1 ? 'text-clif-burgundy font-medium' : ''}">${escapeAttr(v)}</td>`).join('');
+      return `<tr>${cells}</tr>`;
+    }).join('');
+    const moreLine = total > maxRows
+      ? `<p class="text-gray-500 mt-1">… and ${(total - maxRows).toLocaleString()} more rows. Each fragment CSV has ${total.toLocaleString()} rows; offsets are drawn per fragment from the min/max range above.</p>`
+      : '<p class="text-gray-500 mt-1">Each participating site receives one CSV like this; real offsets replace the X values.</p>';
+
+    offsetPreview.innerHTML = `
+      <table class="border-collapse text-xs">
+        <thead class="bg-white dark:bg-neutral-800"><tr>${headerHtml}</tr></thead>
+        <tbody>${bodyHtml}</tbody>
+      </table>
+      ${moreLine}
+    `;
+  }
+
+  // ==== Site selection (unchanged behavior) ====
   const siteCountEl = document.getElementById('site-count');
 
-  // Checkbox: select/deselect site + users
   document.querySelectorAll('.site-cb').forEach(cb => {
     cb.addEventListener('change', () => {
       const group = cb.closest('.site-group');
       const userCbs = group.querySelectorAll('.user-cb');
-      if (cb.checked) {
-        userCbs.forEach(u => u.checked = true);
-      } else {
-        userCbs.forEach(u => u.checked = false);
-      }
+      userCbs.forEach(u => u.checked = cb.checked);
       updateSiteCount();
     });
   });
 
-  // User checkbox: sync site checkbox (checked if any user is checked)
   document.querySelectorAll('.user-cb').forEach(ucb => {
     ucb.addEventListener('change', () => {
       const group = ucb.closest('.site-group');
       const siteCb = group.querySelector('.site-cb');
-      const anyChecked = group.querySelectorAll('.user-cb:checked').length > 0;
-      siteCb.checked = anyChecked;
+      siteCb.checked = group.querySelectorAll('.user-cb:checked').length > 0;
       updateSiteCount();
     });
   });
 
-  // Arrow/label: expand/collapse member list
   document.querySelectorAll('.site-toggle').forEach(btn => {
     btn.addEventListener('click', () => {
       const group = btn.closest('.site-group');
@@ -578,13 +782,43 @@ const siteNames = Object.keys(siteGroups).sort();
     return sites;
   }
 
+  // ==== Initial key set ====
+  buildKeySetCard({ name: 'Default', dimensions: null, minOffset: 10, maxOffset: 100 });
+
+  addKeySetBtn.addEventListener('click', () => {
+    const n = keySetsContainer.querySelectorAll('.ks-card').length + 1;
+    buildKeySetCard({ name: `Key Set ${n}`, dimensions: [], minOffset: 10, maxOffset: 100 });
+    updateAllPreviews();
+  });
+
+  // ==== Submit ====
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const strata = getStrata();
-    if (strata.length === 0) {
-      createStatus.textContent = 'Add at least one strata dimension.';
+    const cards = Array.from(keySetsContainer.querySelectorAll('.ks-card'));
+    if (cards.length === 0) {
+      createStatus.textContent = 'Add at least one key set.';
       createStatus.className = 'text-sm text-red-600';
       return;
+    }
+
+    const keySets = [];
+    for (let i = 0; i < cards.length; i++) {
+      const card = cards[i];
+      const strata = getStrataForCard(card);
+      const ksName = card.querySelector('.ks-name').value.trim() || `Key Set ${i + 1}`;
+      if (strata.length === 0) {
+        createStatus.textContent = `${ksName}: add at least one dimension.`;
+        createStatus.className = 'text-sm text-red-600';
+        return;
+      }
+      const min = parseInt(card.querySelector('.ks-min').value, 10);
+      const max = parseInt(card.querySelector('.ks-max').value, 10);
+      if (isNaN(min) || isNaN(max) || max < min) {
+        createStatus.textContent = `${ksName}: min and max offset must be integers with max >= min.`;
+        createStatus.className = 'text-sm text-red-600';
+        return;
+      }
+      keySets.push({ name: ksName, strata_config: strata, min_offset: min, max_offset: max });
     }
 
     const sites = getSelectedSites();
@@ -609,8 +843,8 @@ const siteNames = Object.keys(siteGroups).sort();
       const body = {
         name: form.querySelector('[name="name"]').value,
         description: form.querySelector('[name="description"]').value,
-        sites: sites,
-        strata_config: strata,
+        sites,
+        key_sets: keySets,
       };
 
       const res = await fetch('/api/crypto/create-project', {
@@ -635,7 +869,7 @@ const siteNames = Object.keys(siteGroups).sort();
     }
   });
 
-  // Delete project
+  // ==== Delete project (projects tab) ====
   document.querySelectorAll('.delete-project-btn').forEach(btn => {
     btn.addEventListener('click', async (e) => {
       e.preventDefault();

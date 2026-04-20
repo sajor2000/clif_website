@@ -15,9 +15,9 @@ export const POST: APIRoute = async ({ locals, request }) => {
     });
   }
 
-  const { projectId } = await request.json();
-  if (!projectId) {
-    return new Response(JSON.stringify({ error: 'Project ID is required.' }), {
+  const { projectId, keySetId } = await request.json();
+  if (!projectId || !keySetId) {
+    return new Response(JSON.stringify({ error: 'projectId and keySetId are required.' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     });
@@ -26,7 +26,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
   const db = getDb();
 
   const projectResult = await db.execute({
-    sql: 'SELECT created_by, master_key_authorized, strata_config, name FROM crypto_projects WHERE id = ?',
+    sql: 'SELECT created_by, master_key_authorized, name FROM crypto_projects WHERE id = ?',
     args: [projectId],
   });
 
@@ -50,17 +50,29 @@ export const POST: APIRoute = async ({ locals, request }) => {
     });
   }
 
-  const strataConfig: StrataDimension[] = JSON.parse(project.strata_config as string);
+  const keySetResult = await db.execute({
+    sql: 'SELECT strata_config, name FROM crypto_key_sets WHERE id = ? AND project_id = ?',
+    args: [keySetId, projectId],
+  });
 
-  // Master key is only available after finalization/unmasking (stored in crypto_master_keys)
+  if (keySetResult.rows.length === 0) {
+    return new Response(JSON.stringify({ error: 'Key set not found.' }), {
+      status: 404,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  const keySet = keySetResult.rows[0];
+  const strataConfig: StrataDimension[] = JSON.parse(keySet.strata_config as string);
+
   const storedResult = await db.execute({
-    sql: 'SELECT key_data FROM crypto_master_keys WHERE project_id = ?',
-    args: [projectId],
+    sql: 'SELECT key_data FROM crypto_master_keys WHERE key_set_id = ?',
+    args: [keySetId],
   });
 
   if (storedResult.rows.length === 0) {
     return new Response(
-      JSON.stringify({ error: 'Master key is not available yet. The project must be finalized or unmasked first.' }),
+      JSON.stringify({ error: 'Master key is not available yet. The key set must be finalized or unmasked first.' }),
       { status: 400, headers: { 'Content-Type': 'application/json' } },
     );
   }
@@ -69,12 +81,13 @@ export const POST: APIRoute = async ({ locals, request }) => {
 
   const csv = keyDataToCsv(masterKey, strataConfig);
   const projectName = (project.name as string || 'project').replace(/\s+/g, '_');
+  const ksName = (keySet.name as string || 'keyset').replace(/\s+/g, '_');
 
   return new Response(csv, {
     status: 200,
     headers: {
       'Content-Type': 'text/csv',
-      'Content-Disposition': `attachment; filename="master_key_${projectName}.csv"`,
+      'Content-Disposition': `attachment; filename="master_key_${projectName}_${ksName}.csv"`,
     },
   });
 };
