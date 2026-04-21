@@ -222,6 +222,22 @@ const navigationSections = [
     <section id="etl-pipeline" class="mb-16">
       <h2 class="text-3xl font-bold mb-8 text-gray-900">Table Specific Guidelines</h2>
 
+      <!-- Procedural / OR scope highlight - always visible -->
+      <div class="mb-8 bg-yellow-50 border-l-4 border-yellow-500 p-5 rounded-r-lg shadow-sm">
+        <div class="flex items-start">
+          <svg class="w-6 h-6 text-yellow-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+          </svg>
+          <div>
+            <h3 class="text-lg font-semibold text-yellow-800 mb-2">Procedural areas &amp; OR data — important scope note</h3>
+            <ul class="text-sm text-gray-800 space-y-1.5">
+              <li>• Procedural areas and operating rooms should be mapped to <code class="bg-yellow-100 px-1.5 py-0.5 rounded font-mono text-yellow-900">Procedural</code> in the <code class="bg-yellow-100 px-1.5 py-0.5 rounded font-mono text-yellow-900">adt</code> table's <code class="bg-yellow-100 px-1.5 py-0.5 rounded font-mono text-yellow-900">location_category</code>.</li>
+              <li>• Pre/Intra/Post-procedural and OR EHR data (such as anesthesia flowsheet records from Vitals, Scores, Respiratory Support) are <strong>not currently represented in CLIF</strong>.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
       <!-- All Tables in Alphabetical Order -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
@@ -254,7 +270,7 @@ const navigationSections = [
                     <ul class="space-y-2 text-sm">
                       <li>• ADT represents the patient's <strong>physical location</strong>, NOT the patient "status"</li>
                       <li>• Procedural areas and operating rooms should be mapped to <code class="bg-white/20 px-1 rounded">Procedural</code></li>
-                      <li>• Pre/Intra/Post-procedural and OR EHR data (e.g., anesthesia flowsheet records from Labs, Vitals, Scores, Respiratory Support) are not currently represented in CLIF</li>
+                      <li>• Pre/Intra/Post-procedural and OR EHR data (e.g., anesthesia flowsheet records from Vitals, Scores, Respiratory Support) are not currently represented in CLIF</li>
                     </ul>
                   </div>
 
