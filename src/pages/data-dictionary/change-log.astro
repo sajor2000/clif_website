@@ -34,7 +34,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            New Tables (6 concept tables added)
+            New Tables (8 concept tables added)
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -90,6 +90,18 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   <td class="px-4 py-3 text-sm">Concept table capturing patient fluid intake events during hospitalization, replacing the intake side of the former intake_output table. Includes input name, standardized category/group, and volume in mL.</td>
                   <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/179" class="text-clif-burgundy hover:underline">Issue #179</a></td>
                   <td class="px-4 py-3 text-sm text-gray-500">Mar 5, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">model_registry</td>
+                  <td class="px-4 py-3 text-sm">Concept table cataloging predictive scoring models deployed at the site (model id, name, mCIDE category, version, release date, live flag). Acts as the metadata reference for rows in the scores table; per the 2026-04-30 call, alert thresholds are documented as mCIDE remarks rather than columns.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/186" class="text-clif-burgundy hover:underline">Issue #186</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 6, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">scores</td>
+                  <td class="px-4 py-3 text-sm">Concept table storing long-form predictive score outputs emitted by models registered in model_registry, with one row per (model_id, hospitalization_id, recorded_dttm) and the numeric score_value.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/186" class="text-clif-burgundy hover:underline">Issue #186</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 6, 2026</td>
                 </tr>
               </tbody>
             </table>
