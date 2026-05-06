@@ -384,20 +384,23 @@ E = Expected ventilator setting for the mode, P = possible ventilator setting fo
 
 The vitals table is a long-form (one vital sign per row) longitudinal table.
 
+**Notes**:
+
+- `measured_dttm` is optional. It captures when the vital was actually measured at the bedside, which can differ from `recorded_dttm` (the EHR entry time) — for example, vitals written down on paper and entered later at shift change. Sites whose source data does not distinguish the two timestamps may omit this column or leave it null.
 
 **Example**:
 
-| hospitalization_id | recorded_dttm                | vital_name                   | vital_category   | vital_value | meas_site_name |
-|-------------------|----------------------------|------------------------------|-----------------|-------------|----------------|
-| 20010012          | 2024-12-01 08:00:00+00:00 UTC | HEIGHT                       | height_cm       | 170.0      | unspecified    |
-| 20010012          | 2024-12-01 08:15:00+00:00 UTC | WEIGHT                       | weight_kg       | 70.0       | unspecified    |
-| 20010012          | 2024-12-01 08:30:00+00:00 UTC | PULSE                        | heart_rate      | 72.0       | unspecified    |
-| 20010012          | 2024-12-01 08:45:00+00:00 UTC | BLOOD PRESSURE (SYSTOLIC)    | sbp             | 120.0      | unspecified    |
-| 20010012          | 2024-12-01 08:45:00+00:00 UTC | BLOOD PRESSURE (DIASTOLIC)   | dbp             | 80.0       | unspecified    |
-| 20010012          | 2024-12-01 08:50:00+00:00 UTC | RESPIRATORY RATE             | respiratory_rate| 16.0       | unspecified    |
-| 20010012          | 2024-12-01 09:00:00+00:00 UTC | TEMPERATURE                  | temp_c          | 36.8       | unspecified    |
-| 20010012          | 2024-12-01 09:15:00+00:00 UTC | SPO2                         | spo2            | 98.0       | unspecified    |
-| 20010013          | 2024-12-01 09:30:00+00:00 UTC | MEAN ARTERIAL PRESSURE (MAP) | map             | 85.0       | arterial       |
+| hospitalization_id | recorded_dttm                | measured_dttm                | vital_name                   | vital_category   | vital_value | meas_site_name |
+|-------------------|------------------------------|------------------------------|------------------------------|-----------------|-------------|----------------|
+| 20010012          | 2024-12-01 08:00:00+00:00 UTC | 2024-12-01 08:00:00+00:00 UTC | HEIGHT                       | height_cm       | 170.0      | unspecified    |
+| 20010012          | 2024-12-01 08:15:00+00:00 UTC | 2024-12-01 08:15:00+00:00 UTC | WEIGHT                       | weight_kg       | 70.0       | unspecified    |
+| 20010012          | 2024-12-01 08:30:00+00:00 UTC | 2024-12-01 08:28:00+00:00 UTC | PULSE                        | heart_rate      | 72.0       | unspecified    |
+| 20010012          | 2024-12-01 08:45:00+00:00 UTC | 2024-12-01 08:42:00+00:00 UTC | BLOOD PRESSURE (SYSTOLIC)    | sbp             | 120.0      | unspecified    |
+| 20010012          | 2024-12-01 08:45:00+00:00 UTC | 2024-12-01 08:42:00+00:00 UTC | BLOOD PRESSURE (DIASTOLIC)   | dbp             | 80.0       | unspecified    |
+| 20010012          | 2024-12-01 08:50:00+00:00 UTC |                              | RESPIRATORY RATE             | respiratory_rate| 16.0       | unspecified    |
+| 20010012          | 2024-12-01 09:00:00+00:00 UTC | 2024-12-01 08:55:00+00:00 UTC | TEMPERATURE                  | temp_c          | 36.8       | unspecified    |
+| 20010012          | 2024-12-01 09:15:00+00:00 UTC | 2024-12-01 09:15:00+00:00 UTC | SPO2                         | spo2            | 98.0       | unspecified    |
+| 20010013          | 2024-12-01 09:30:00+00:00 UTC | 2024-12-01 09:30:00+00:00 UTC | MEAN ARTERIAL PRESSURE (MAP) | map             | 85.0       | arterial       |
 
 
 ## Concept Tables

@@ -113,7 +113,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            New Fields (3 fields added)
+            New Fields (4 fields added)
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -157,6 +157,13 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   <td class="px-4 py-3 text-sm">Unit of infusion rate in the format [volume]/[time] (e.g., mL/hr, mL/min)</td>
                   <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/130" class="text-clif-burgundy hover:underline">Issue #130</a></td>
                   <td class="px-4 py-3 text-sm text-gray-500">Jan 23, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">measured_dttm</td>
+                  <td class="px-4 py-3 text-sm">vitals</td>
+                  <td class="px-4 py-3 text-sm">Optional timestamp for when a vital sign was actually measured at the bedside, which can differ from recorded_dttm (the EHR entry time) — e.g., vitals charted at end of shift. Sites without this distinction in source data may omit or leave null.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/192" class="text-clif-burgundy hover:underline">Issue #192</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 6, 2026</td>
                 </tr>
               </tbody>
             </table>
