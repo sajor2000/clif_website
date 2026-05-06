@@ -113,7 +113,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            New Fields (4 fields added)
+            New Fields (7 fields added)
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -163,6 +163,27 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   <td class="px-4 py-3 text-sm">vitals</td>
                   <td class="px-4 py-3 text-sm">Optional timestamp for when a vital sign was actually measured at the bedside, which can differ from recorded_dttm (the EHR entry time) — e.g., vitals charted at end of shift. Sites without this distinction in source data may omit or leave null.</td>
                   <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/192" class="text-clif-burgundy hover:underline">Issue #192</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 6, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">rx_norm_code</td>
+                  <td class="px-4 py-3 text-sm">medication_admin_continuous</td>
+                  <td class="px-4 py-3 text-sm">RxNorm RXCUI code identifying the specific drug formulation (active ingredient, strength, dose form, and route). Resolved from the combination of med_name, med_route_name, med_dose, and med_dose_unit.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/23" class="text-clif-burgundy hover:underline">Issue #23</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 6, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">rx_norm_code</td>
+                  <td class="px-4 py-3 text-sm">medication_admin_intermittent</td>
+                  <td class="px-4 py-3 text-sm">RxNorm RXCUI code identifying the specific drug formulation. Same definition as on medication_admin_continuous.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/23" class="text-clif-burgundy hover:underline">Issue #23</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 6, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">rx_norm_code</td>
+                  <td class="px-4 py-3 text-sm">medication_orders</td>
+                  <td class="px-4 py-3 text-sm">RxNorm RXCUI code identifying the specific drug formulation for the order. Same definition as on the admin tables.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/23" class="text-clif-burgundy hover:underline">Issue #23</a></td>
                   <td class="px-4 py-3 text-sm text-gray-500">May 6, 2026</td>
                 </tr>
               </tbody>
