@@ -501,7 +501,7 @@ CREATE TABLE clinical_notes_text (
   hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter.", "permissible": "No restriction"}',
   note_id VARCHAR COMMENT '{"description": "Source note identifier. Foreign key to clinical_notes_facts.", "permissible": "No restriction"}',
   revision_id VARCHAR COMMENT '{"description": "Matches clinical_notes_facts.revision_id for revision-level join.", "permissible": "No restriction"}',
-  note_text TEXT COMMENT '{"description": "Full concatenated note text for this revision.", "permissible": "No restriction"}'
+  note_text VARCHAR COMMENT '{"description": "Full concatenated note text for this revision.", "permissible": "No restriction"}'
 );
 
 -- -----------------------------------------------------
@@ -557,6 +557,6 @@ CREATE TABLE radiology (
   radiology_region_category VARCHAR COMMENT '{"description": "Anatomic region imaged. Maps order-name fragments to a standardized list.", "permissible": "[List of radiology region categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/radiology/clif_radiology_region_categories.csv)"}',
   iv_contrast_category VARCHAR COMMENT '{"description": "IV contrast administration status for the study.", "permissible": "[List of IV contrast categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/radiology/clif_radiology_iv_contrast_categories.csv)"}',
   radiology_location_category VARCHAR COMMENT '{"description": "Where the study was performed (department vs portable/bedside).", "permissible": "[List of radiology location categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/radiology/clif_radiology_location_categories.csv)"}',
-  radiology_report_text TEXT COMMENT '{"description": "Final radiology report narrative text.", "permissible": "No restriction"}',
+  radiology_report_text VARCHAR COMMENT '{"description": "Final radiology report narrative text.", "permissible": "No restriction"}',
   FOREIGN KEY (patient_id) REFERENCES patient(patient_id)
 );
