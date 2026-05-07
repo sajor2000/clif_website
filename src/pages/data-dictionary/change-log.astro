@@ -196,7 +196,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            New mCIDE Values (2 updates)
+            New mCIDE Values (3 updates)
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -228,6 +228,12 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   <td class="px-4 py-3 text-sm">Reclassified <code>braden_mobility</code> from <code>Nursing Risk</code> to <code>Mobility/Activity</code> in the patient_assessments mCIDE — Braden mobility is a mobility assessment, not a nursing risk score.</td>
                   <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/183" class="text-clif-burgundy hover:underline">Issue #183</a></td>
                   <td class="px-4 py-3 text-sm text-gray-500">May 6, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">med_dose_unit</td>
+                  <td class="px-4 py-3 text-sm">Standardized <code>med_dose_unit</code> per <code>med_category</code> in the <code>medication_admin_intermittent</code> mCIDE — every category now maps to one of <code>mg, g, mcg, mmol, ml, meq, cells</code>. Sites must convert raw EHR doses to the category-specific unit on ingest.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/medication_admin_intermittent/clif_medication_admin_intermittent_med_categories.csv" class="text-clif-burgundy hover:underline">3.0 mCIDE</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 7, 2026</td>
                 </tr>
               </tbody>
             </table>

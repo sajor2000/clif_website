@@ -189,11 +189,21 @@ The labs table is a long form (one lab result per row) longitudinal table.
 
 This table captures medications administered as fixed doses at discrete time points. Examples include antibiotics, steroids, and other medications given as boluses or scheduled doses. Each row represents ONE observation for each medication administered.
 
-This table has exactly the same schema as [`medication_admin_continuous`](#medication-admin-continuous). The consortium decided to separate the medications that are administered intermittently from the continuously administered medications. The mCIDE for `medication_category` for intermittent meds can be found [here](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/medication_admin_intermittent/clif_medication_admin_intermittent_med_categories.csv).
+This table has exactly the same schema as [`medication_admin_continuous`](#medication-admin-continuous). The consortium decided to separate the medications that are administered intermittently from the continuously administered medications. In 3.0, the `med_dose_unit` is **standardized per `med_category`** — every `med_category` in the [intermittent mCIDE](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/medication_admin_intermittent/clif_medication_admin_intermittent_med_categories.csv) is tied to a fixed dose unit drawn from a closed set: `mg`, `g`, `mcg`, `mmol`, `ml`, `meq`, `cells`. Raw EHR doses should be converted into the category-specific unit (e.g. an `ampicillin` row charted as `2000 mg` should be ingested as `2 g`).
+
+**Example**:
+
+| hospitalization_id | admin_dttm                    | med_name                              | med_category            | med_group                          | med_route_name | med_route_category | med_dose | med_dose_unit | mar_action_name | mar_action_category |
+|--------------------|-------------------------------|---------------------------------------|-------------------------|------------------------------------|----------------|--------------------|----------|---------------|-----------------|---------------------|
+| 792391             | 2123-11-13 12:28:00+00:00 UTC | ACETAMINOPHEN 1000 MG IV Q6H          | acetaminophen           | analgesia                          | Intravenous    | iv                 | 1000     | mg            | Given           | administered        |
+| 792391             | 2123-11-13 14:00:00+00:00 UTC | CEFEPIME 2 GM IV Q8H                  | cefepime                | cms_sepsis_qualifying_antibiotics  | Intravenous    | iv                 | 2        | g             | Given           | administered        |
+| 370921             | 2123-02-12 03:07:00+00:00 UTC | POTASSIUM CHLORIDE 40 MEQ IV PRN      | potassium_chloride      | fluids_electrolytes                | Intravenous    | iv                 | 40       | mmol          | Given           | administered        |
+| 702344             | 2123-04-27 04:30:00+00:00 UTC | BLINATUMOMAB 28 MCG IV INFUSION       | blinatumomab            | other                              | Intravenous    | iv                 | 28       | mcg           | Given           | administered        |
+| 702344             | 2123-04-27 06:00:00+00:00 UTC | AXICABTAGENE CILOLEUCEL 2X10^6 CAR+ T | axicabtagene_ciloleucel | car_t                              | Intravenous    | iv                 | 2000000  | cells         | Given           | administered        |
 
 **Notes**:
-- Continuous medications are included in this table when given as boluses 
-- Intermittent medications can be given at different rates
+- Continuous medications are included in this table when given as boluses.
+- The `med_dose_unit` constraint is per-category — sites cannot mix units within a single `med_category`.
 
 ## medication_admin_continuous
 
