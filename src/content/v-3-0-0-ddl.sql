@@ -542,3 +542,21 @@ CREATE TABLE scores (
   FOREIGN KEY (model_id) REFERENCES model_registry(model_id),
   FOREIGN KEY (hospitalization_id) REFERENCES hospitalization(hospitalization_id)
 );
+
+-- -----------------------------------------------------
+-- Table: radiology
+-- -----------------------------------------------------
+CREATE TABLE radiology (
+  patient_id VARCHAR COMMENT '{"description": "Unique identifier for each patient. Foreign key to patient.patient_id.", "permissible": "No restriction"}',
+  radiology_accession VARCHAR COMMENT '{"description": "Accession number for the radiology study. Unique per study within a site.", "permissible": "No restriction"}',
+  radiology_order_dttm DATETIME COMMENT '{"description": "Date and time the radiology study was ordered. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
+  radiology_capture_dttm DATETIME COMMENT '{"description": "Date and time the images were acquired. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
+  radiology_report_dttm DATETIME COMMENT '{"description": "Date and time the final radiology report was signed. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
+  radiology_order_name VARCHAR COMMENT '{"description": "Source-system exam name as ordered (e.g., CT CHEST W CONTRAST).", "permissible": "No restriction"}',
+  radiology_modality_category VARCHAR COMMENT '{"description": "Imaging modality. Maps source-system modality codes to a standardized list.", "permissible": "[List of radiology modality categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/radiology/clif_radiology_modality_categories.csv)"}',
+  radiology_region_category VARCHAR COMMENT '{"description": "Anatomic region imaged. Maps order-name fragments to a standardized list.", "permissible": "[List of radiology region categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/radiology/clif_radiology_region_categories.csv)"}',
+  iv_contrast_category VARCHAR COMMENT '{"description": "IV contrast administration status for the study.", "permissible": "[List of IV contrast categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/radiology/clif_radiology_iv_contrast_categories.csv)"}',
+  radiology_location_category VARCHAR COMMENT '{"description": "Where the study was performed (department vs portable/bedside).", "permissible": "[List of radiology location categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/radiology/clif_radiology_location_categories.csv)"}',
+  radiology_report_text TEXT COMMENT '{"description": "Final radiology report narrative text.", "permissible": "No restriction"}',
+  FOREIGN KEY (patient_id) REFERENCES patient(patient_id)
+);

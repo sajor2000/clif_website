@@ -711,6 +711,27 @@ The `scores` table is a long-form (one score event per row) longitudinal table t
 | SYS-003  | 55443              | 2023-07-12 06:00:00+00:00 UTC  | 0.275       |
 
 
+## radiology
+
+The `radiology` table captures one row per imaging study, including order/capture/report timestamps, the modality and anatomic region, IV contrast status, where the study was performed, and the final report narrative. This is the long-form imaging analog to the lab and microbiology tables — each row is a single completed study with a single accession.
+
+**Notes**:
+
+- One row per `radiology_accession`. The accession is the natural key within a site.
+- All four `*_category` fields are mCIDE-controlled. See the [3.0 radiology mCIDE folder](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/tree/3.0/mCIDE/radiology) for the canonical permissible values.
+- `radiology_report_text` is free text; sites that cannot share narratives may leave it null and join to a separately-governed text store via `radiology_accession`.
+- `radiology_capture_dttm` (image acquisition) and `radiology_report_dttm` (final read) typically differ — the capture time is what should be used for clinical-event timing.
+
+**Example**:
+
+| patient_id | radiology_accession | radiology_order_dttm          | radiology_capture_dttm        | radiology_report_dttm         | radiology_order_name        | radiology_modality_category | radiology_region_category | iv_contrast_category | radiology_location_category | radiology_report_text                              |
+|------------|---------------------|-------------------------------|-------------------------------|-------------------------------|-----------------------------|-----------------------------|---------------------------|----------------------|-----------------------------|----------------------------------------------------|
+| 132424     | ACC0001             | 2024-11-01 08:00:00+00:00 UTC | 2024-11-01 08:25:00+00:00 UTC | 2024-11-01 09:10:00+00:00 UTC | XR CHEST PORTABLE 1V        | xr                          | chest                     | not_applicable       | portable                    | No acute cardiopulmonary process. ETT in good position. |
+| 132424     | ACC0002             | 2024-11-02 14:00:00+00:00 UTC | 2024-11-02 14:35:00+00:00 UTC | 2024-11-02 16:00:00+00:00 UTC | CT CHEST W CONTRAST         | ct                          | chest                     | with_contrast        | radiology                   | No PE. Small bilateral pleural effusions.          |
+| 132384     | ACC0003             | 2024-11-03 09:30:00+00:00 UTC | 2024-11-03 10:05:00+00:00 UTC | 2024-11-03 12:45:00+00:00 UTC | MR BRAIN W AND WO CONTRAST  | mr                          | brain                     | with_and_without_contrast | radiology               | No acute infarct. Stable chronic microvascular disease. |
+| 542367     | ACC0004             | 2024-11-04 06:15:00+00:00 UTC | 2024-11-04 06:40:00+00:00 UTC | 2024-11-04 07:30:00+00:00 UTC | US ABDOMEN COMPLETE         | us                          | abdomen                   | not_applicable       | radiology                   | Hepatomegaly. No biliary dilation.                 |
+
+
 ## Future Proposed Tables
 
 These are tables without any defined structure that the consortium has not yet committed to implementing.
