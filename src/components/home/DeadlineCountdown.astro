@@ -70,21 +70,24 @@ import CTAButton from '../shared/CTAButton.astro';
             <div class="flex-1">
               <h3 class="text-2xl md:text-3xl font-bold text-white mb-3 flex items-start gap-3">
                 <span class="relative flex h-3 w-3 shrink-0 mt-[0.55em]">
-                  <span class="relative inline-flex rounded-full h-3 w-3 bg-green-400"></span>
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-300 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-3 w-3 bg-yellow-400"></span>
                 </span>
-                mCIDE v3.0 — Expansion Request Period Ended
+                CLIF v3.0 — Going Multimodal (Release: July 2026)
               </h3>
-              <p class="text-white/80 leading-relaxed mb-5">
-                Thank you for your submissions. The review process is now underway.
+              <p class="text-white/80 leading-relaxed mb-3">
+                CLIF goes multimodal — <span class="font-semibold text-white">imaging</span> and <span class="font-semibold text-white">clinical notes</span> join the existing structured ICU tables.
+              </p>
+              <p class="text-white/60 leading-relaxed mb-5 text-sm">
+                See the change log for the full list of new tables, fields, and mCIDE updates.
               </p>
               <CTAButton
-                href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/177"
+                href="/data-dictionary/change-log"
                 variant="outline"
                 size="medium"
-                external={true}
                 class="!border-white !text-white hover:!bg-white hover:!text-clif-burgundy"
               >
-                View Expansion Tracker
+                View 3.0 Change Log
               </CTAButton>
             </div>
           </div>
