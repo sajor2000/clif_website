@@ -1,0 +1,507 @@
+---
+export const prerender = false;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PortalNav from '../../components/portal/PortalNav.astro';
+import { getDb } from '../../lib/turso';
+
+const user = Astro.locals.user;
+
+const db = getDb();
+let members: any[] = [];
+let error: string | null = null;
+
+try {
+  const result = await db.execute(
+    `SELECT id, full_name, degrees, affiliation, institution, work_email, email
+     FROM users
+     WHERE is_approved = 1
+     ORDER BY full_name`
+  );
+  members = result.rows.map((r: any) => ({
+    id: r.id,
+    full_name: r.full_name || '',
+    degrees: r.degrees || '',
+    affiliation: r.affiliation || '',
+    institution: r.institution || '',
+    // Public-facing email, used only when this person is the corresponding author.
+    email: r.work_email || r.email || '',
+  }));
+} catch (e: any) {
+  error = e.message;
+}
+---
+
+<BaseLayout title="Byline Builder">
+  <div class="container mx-auto px-4 py-8">
+    <div class="flex flex-col lg:flex-row gap-8">
+      <aside class="lg:w-64 shrink-0">
+        <PortalNav currentPath={Astro.url.pathname} isAdmin={user?.role === 'admin'} />
+      </aside>
+
+      <div class="flex-1 min-w-0">
+        <div class="mb-6">
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Byline Builder</h1>
+          <p class="text-gray-600 dark:text-gray-400 mt-1">
+            Pick consortium members, order them, and copy a formatted author byline + numbered affiliations for your manuscript.
+            Supports two established formats: <strong>Vancouver / ICMJE</strong> and <strong>AMA / JAMA</strong>.
+          </p>
+        </div>
+
+        {error ? (
+          <div class="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg p-4 text-sm">
+            Error loading members: {error}
+          </div>
+        ) : (
+          <>
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+              {/* Picker */}
+              <section class="lg:col-span-4 bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 flex flex-col h-[70vh]">
+                <header class="p-4 border-b border-gray-200 dark:border-neutral-700">
+                  <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Members</h2>
+                  <input
+                    id="bb-search"
+                    type="search"
+                    placeholder="Search name, institution, degrees…"
+                    class="mt-2 w-full px-3 py-1.5 text-sm bg-white dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 rounded text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-clif-burgundy/40 focus:border-clif-burgundy"
+                    autocomplete="off"
+                  />
+                </header>
+                <ul id="bb-picker-list" class="flex-1 overflow-y-auto divide-y divide-gray-100 dark:divide-neutral-700">
+                  {members.map((m: any) => {
+                    const haystack = [m.full_name, m.institution, m.affiliation, m.degrees]
+                      .filter(Boolean)
+                      .join(' ')
+                      .toLowerCase();
+                    return (
+                      <li class="bb-picker-row flex items-start gap-2 p-3 hover:bg-gray-50 dark:hover:bg-neutral-700/40" data-id={m.id} data-search={haystack}>
+                        <input type="checkbox" class="bb-pick mt-0.5" data-id={m.id} />
+                        <div class="min-w-0 text-sm">
+                          <p class="font-medium text-gray-900 dark:text-white truncate">
+                            {m.full_name || 'Unknown'}
+                            {m.degrees && (
+                              <span class="font-normal text-gray-500 dark:text-gray-400">, {m.degrees}</span>
+                            )}
+                          </p>
+                          {m.institution && (
+                            <p class="text-xs text-gray-500 dark:text-gray-400 truncate">{m.institution}</p>
+                          )}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+                <footer class="p-3 border-t border-gray-200 dark:border-neutral-700 text-xs text-gray-500 dark:text-gray-400">
+                  <span id="bb-picker-count">{members.length}</span> approved members
+                </footer>
+              </section>
+
+              {/* Selected (orderable) */}
+              <section class="lg:col-span-4 bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 flex flex-col h-[70vh]">
+                <header class="p-4 border-b border-gray-200 dark:border-neutral-700 flex items-center justify-between">
+                  <h2 class="text-sm font-semibold text-gray-900 dark:text-white">
+                    Selected authors <span class="text-gray-400">(<span id="bb-selected-count">0</span>)</span>
+                  </h2>
+                  <button id="bb-clear" type="button" class="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 underline">Clear all</button>
+                </header>
+                <div id="bb-selected-list" class="flex-1 overflow-y-auto p-3 space-y-2">
+                  <p id="bb-selected-empty" class="text-sm text-gray-500 dark:text-gray-400 italic">Tick members on the left to add them here. Drag to reorder.</p>
+                </div>
+              </section>
+
+              {/* Output */}
+              <section class="lg:col-span-4 bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 flex flex-col h-[70vh]">
+                <header class="p-4 border-b border-gray-200 dark:border-neutral-700">
+                  <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Output</h2>
+                  <div class="flex items-center gap-3 mt-2 text-sm">
+                    <label class="inline-flex items-center gap-1.5">
+                      <input type="radio" name="bb-format" value="vancouver" checked />
+                      <span>Vancouver / ICMJE</span>
+                    </label>
+                    <label class="inline-flex items-center gap-1.5">
+                      <input type="radio" name="bb-format" value="ama" />
+                      <span>AMA / JAMA</span>
+                    </label>
+                  </div>
+                  <div class="flex items-center gap-2 mt-3">
+                    <button id="bb-copy" type="button" class="px-3 py-1.5 text-xs font-medium text-white bg-clif-burgundy hover:bg-clif-burgundy/90 rounded">Copy</button>
+                    <button id="bb-download" type="button" class="px-3 py-1.5 text-xs font-medium text-clif-burgundy border border-clif-burgundy/40 hover:bg-clif-burgundy/5 rounded">Download .txt</button>
+                    <span id="bb-copy-status" class="text-xs"></span>
+                  </div>
+                </header>
+                <div class="flex-1 overflow-y-auto">
+                  <p id="bb-warnings" class="hidden mx-4 mt-4 text-xs text-amber-700 bg-amber-50 dark:bg-amber-900/20 dark:text-amber-300 rounded px-3 py-2"></p>
+                  <pre id="bb-preview" class="m-4 text-xs text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-words font-mono leading-relaxed">Pick at least one author to preview the byline.</pre>
+                </div>
+              </section>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  </div>
+
+  <script is:inline type="application/json" id="bb-members-data" set:html={JSON.stringify({ members })}></script>
+
+  <script>
+    import {
+      parseAffiliations,
+      buildAffiliationRegistry,
+      format,
+      renderFull,
+      type AuthorInput,
+      type FormatId,
+    } from '../../lib/format-byline';
+
+    interface Member {
+      id: string;
+      full_name: string;
+      degrees: string;
+      affiliation: string;
+      institution: string;
+      email: string;
+    }
+
+    interface SelectionEntry {
+      id: string;
+      equalContribution: boolean;
+      corresponding: boolean;
+      affiliationsIncluded: number[]; // indices into parseAffiliations(member.affiliation)
+    }
+
+    const dataEl = document.getElementById('bb-members-data');
+    const raw: { members: Member[] } = dataEl ? JSON.parse(dataEl.textContent || '{}') : { members: [] };
+    const membersById = new Map<string, Member>(raw.members.map((m) => [m.id, m]));
+
+    const state = {
+      selected: [] as SelectionEntry[],
+      formatId: 'vancouver' as FormatId,
+    };
+
+    const pickerList = document.getElementById('bb-picker-list')!;
+    const selectedList = document.getElementById('bb-selected-list')!;
+    const selectedEmpty = document.getElementById('bb-selected-empty')!;
+    const selectedCount = document.getElementById('bb-selected-count')!;
+    const search = document.getElementById('bb-search') as HTMLInputElement;
+    const previewEl = document.getElementById('bb-preview')!;
+    const warningsEl = document.getElementById('bb-warnings')!;
+
+    function defaultAffIndices(m: Member): number[] {
+      const items = parseAffiliations(m.affiliation);
+      return items.map((_, i) => i);
+    }
+
+    function addAuthor(id: string) {
+      if (state.selected.find((s) => s.id === id)) return;
+      const m = membersById.get(id);
+      if (!m) return;
+      state.selected.push({
+        id,
+        equalContribution: false,
+        corresponding: false,
+        affiliationsIncluded: defaultAffIndices(m),
+      });
+    }
+
+    function removeAuthor(id: string) {
+      state.selected = state.selected.filter((s) => s.id !== id);
+    }
+
+    function moveAuthor(fromId: string, beforeId: string | null) {
+      const fromIdx = state.selected.findIndex((s) => s.id === fromId);
+      if (fromIdx < 0) return;
+      const [item] = state.selected.splice(fromIdx, 1);
+      if (beforeId === null) {
+        state.selected.push(item);
+        return;
+      }
+      const toIdx = state.selected.findIndex((s) => s.id === beforeId);
+      state.selected.splice(toIdx < 0 ? state.selected.length : toIdx, 0, item);
+    }
+
+    function applySearch() {
+      const q = search.value.trim().toLowerCase();
+      pickerList.querySelectorAll<HTMLElement>('.bb-picker-row').forEach((row) => {
+        const hay = row.dataset.search || '';
+        const match = q === '' || hay.indexOf(q) !== -1;
+        row.classList.toggle('hidden', !match);
+      });
+    }
+
+    function renderSelected() {
+      // Clear current rows but keep the empty hint node.
+      Array.from(selectedList.children).forEach((c) => {
+        if (c !== selectedEmpty) c.remove();
+      });
+      selectedCount.textContent = String(state.selected.length);
+      selectedEmpty.classList.toggle('hidden', state.selected.length > 0);
+
+      state.selected.forEach((entry, idx) => {
+        const m = membersById.get(entry.id);
+        if (!m) return;
+        const items = parseAffiliations(m.affiliation);
+
+        const row = document.createElement('div');
+        row.className =
+          'bb-author-row border border-gray-200 dark:border-neutral-700 rounded-lg p-3 bg-gray-50 dark:bg-neutral-900/40';
+        row.draggable = true;
+        row.dataset.id = entry.id;
+
+        const header = document.createElement('div');
+        header.className = 'flex items-start justify-between gap-2';
+        header.innerHTML = `
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="text-gray-400 cursor-grab select-none" title="Drag to reorder">⋮⋮</span>
+            <div class="min-w-0">
+              <p class="text-sm font-medium text-gray-900 dark:text-white truncate">
+                ${escapeHtml(m.full_name || 'Unknown')}${m.degrees ? `<span class="font-normal text-gray-500 dark:text-gray-400">, ${escapeHtml(m.degrees)}</span>` : ''}
+              </p>
+              <p class="text-xs text-gray-500 dark:text-gray-400 truncate">${escapeHtml(m.institution || '')}</p>
+            </div>
+          </div>
+          <button class="bb-remove text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 underline" type="button">Remove</button>
+        `;
+        row.appendChild(header);
+
+        const flags = document.createElement('div');
+        flags.className = 'flex flex-wrap gap-3 mt-2 text-xs text-gray-700 dark:text-gray-300';
+        flags.innerHTML = `
+          <label class="inline-flex items-center gap-1">
+            <input type="checkbox" class="bb-equal" ${entry.equalContribution ? 'checked' : ''} />
+            <span>Equal contribution (*)</span>
+          </label>
+          <label class="inline-flex items-center gap-1">
+            <input type="checkbox" class="bb-cor" ${entry.corresponding ? 'checked' : ''} />
+            <span>Corresponding (†)</span>
+          </label>
+          <span class="text-gray-400">#${idx + 1}</span>
+        `;
+        row.appendChild(flags);
+
+        if (items.length > 0) {
+          const affWrap = document.createElement('details');
+          affWrap.className = 'mt-2 text-xs';
+          affWrap.open = items.length > 1; // collapsed when there's only one entry
+          const summary = document.createElement('summary');
+          summary.className = 'text-gray-500 dark:text-gray-400 cursor-pointer';
+          summary.textContent = `Affiliations (${entry.affiliationsIncluded.length}/${items.length})`;
+          affWrap.appendChild(summary);
+
+          const ul = document.createElement('ul');
+          ul.className = 'mt-1 space-y-1';
+          items.forEach((aff, affIdx) => {
+            const li = document.createElement('li');
+            li.className = 'flex items-start gap-2';
+            const checked = entry.affiliationsIncluded.includes(affIdx);
+            li.innerHTML = `
+              <input type="checkbox" class="bb-aff mt-0.5" data-aff-idx="${affIdx}" ${checked ? 'checked' : ''} />
+              <span class="text-gray-700 dark:text-gray-300">${escapeHtml(aff)}</span>
+            `;
+            ul.appendChild(li);
+          });
+          affWrap.appendChild(ul);
+          row.appendChild(affWrap);
+        } else {
+          const note = document.createElement('p');
+          note.className = 'mt-2 text-xs text-amber-600 dark:text-amber-400';
+          note.textContent = 'No affiliation listed for this member.';
+          row.appendChild(note);
+        }
+
+        selectedList.appendChild(row);
+      });
+    }
+
+    function escapeHtml(s: string): string {
+      return s
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function renderPreview() {
+      if (state.selected.length === 0) {
+        previewEl.textContent = 'Pick at least one author to preview the byline.';
+        warningsEl.classList.add('hidden');
+        return;
+      }
+
+      // Enforce single corresponding-author at render time (UI also enforces).
+      const correspondingCount = state.selected.filter((s) => s.corresponding).length;
+
+      const authors: AuthorInput[] = state.selected.map((entry) => {
+        const m = membersById.get(entry.id);
+        return {
+          id: entry.id,
+          full_name: m?.full_name || '',
+          degrees: m?.degrees || '',
+          affiliation: m?.affiliation || '',
+          email: m?.email || '',
+          equalContribution: entry.equalContribution,
+          corresponding: entry.corresponding,
+          affiliationsIncluded: entry.affiliationsIncluded,
+        };
+      });
+
+      const registry = buildAffiliationRegistry(authors);
+      const formatted = format(state.formatId, authors, registry);
+      previewEl.textContent = renderFull(formatted);
+
+      const warnings: string[] = [];
+      const noAff = authors.filter((a) => (registry.byAuthor[a.id] || []).length === 0);
+      if (noAff.length > 0) {
+        warnings.push(`${noAff.length} author${noAff.length > 1 ? 's have' : ' has'} no affiliation listed.`);
+      }
+      if (correspondingCount > 1) {
+        warnings.push('Multiple corresponding authors marked — only one is supported in v1.');
+      }
+      if (warnings.length > 0) {
+        warningsEl.textContent = warnings.join(' ');
+        warningsEl.classList.remove('hidden');
+      } else {
+        warningsEl.classList.add('hidden');
+      }
+    }
+
+    function renderAll() {
+      renderSelected();
+      renderPreview();
+    }
+
+    // ---------- Events ----------
+
+    pickerList.addEventListener('change', (e) => {
+      const t = e.target as HTMLInputElement;
+      if (!t.classList.contains('bb-pick')) return;
+      const id = t.dataset.id!;
+      if (t.checked) addAuthor(id);
+      else removeAuthor(id);
+      renderAll();
+    });
+
+    selectedList.addEventListener('click', (e) => {
+      const t = e.target as HTMLElement;
+      if (t.classList.contains('bb-remove')) {
+        const row = t.closest<HTMLElement>('.bb-author-row');
+        const id = row?.dataset.id;
+        if (!id) return;
+        removeAuthor(id);
+        // Also untick the picker checkbox.
+        const cb = pickerList.querySelector<HTMLInputElement>(`.bb-pick[data-id="${CSS.escape(id)}"]`);
+        if (cb) cb.checked = false;
+        renderAll();
+      }
+    });
+
+    selectedList.addEventListener('change', (e) => {
+      const t = e.target as HTMLInputElement;
+      const row = t.closest<HTMLElement>('.bb-author-row');
+      const id = row?.dataset.id;
+      if (!id) return;
+      const entry = state.selected.find((s) => s.id === id);
+      if (!entry) return;
+
+      if (t.classList.contains('bb-equal')) {
+        entry.equalContribution = t.checked;
+      } else if (t.classList.contains('bb-cor')) {
+        if (t.checked) {
+          // Single corresponding author: clear others.
+          state.selected.forEach((s) => {
+            if (s.id !== id) s.corresponding = false;
+          });
+        }
+        entry.corresponding = t.checked;
+      } else if (t.classList.contains('bb-aff')) {
+        const idx = Number(t.dataset.affIdx);
+        if (t.checked) {
+          if (!entry.affiliationsIncluded.includes(idx)) entry.affiliationsIncluded.push(idx);
+        } else {
+          entry.affiliationsIncluded = entry.affiliationsIncluded.filter((x) => x !== idx);
+        }
+        entry.affiliationsIncluded.sort((a, b) => a - b);
+      }
+      renderAll();
+    });
+
+    // Drag-reorder
+    let dragId: string | null = null;
+    selectedList.addEventListener('dragstart', (e) => {
+      const row = (e.target as HTMLElement).closest<HTMLElement>('.bb-author-row');
+      if (!row) return;
+      dragId = row.dataset.id || null;
+      row.style.opacity = '0.5';
+      e.dataTransfer?.setData('text/plain', dragId || '');
+    });
+    selectedList.addEventListener('dragend', (e) => {
+      const row = (e.target as HTMLElement).closest<HTMLElement>('.bb-author-row');
+      if (row) row.style.opacity = '';
+      dragId = null;
+    });
+    selectedList.addEventListener('dragover', (e) => {
+      e.preventDefault();
+    });
+    selectedList.addEventListener('drop', (e) => {
+      e.preventDefault();
+      if (!dragId) return;
+      const target = (e.target as HTMLElement).closest<HTMLElement>('.bb-author-row');
+      const beforeId = target && target.dataset.id !== dragId ? target.dataset.id || null : null;
+      moveAuthor(dragId, beforeId);
+      renderAll();
+    });
+
+    // Format radio
+    document.querySelectorAll<HTMLInputElement>('input[name="bb-format"]').forEach((r) => {
+      r.addEventListener('change', () => {
+        if (r.checked) {
+          state.formatId = r.value as FormatId;
+          renderPreview();
+        }
+      });
+    });
+
+    // Search
+    search.addEventListener('input', applySearch);
+    search.addEventListener('search', applySearch);
+
+    // Clear all
+    document.getElementById('bb-clear')!.addEventListener('click', () => {
+      state.selected = [];
+      pickerList.querySelectorAll<HTMLInputElement>('.bb-pick').forEach((cb) => (cb.checked = false));
+      renderAll();
+    });
+
+    // Copy
+    document.getElementById('bb-copy')!.addEventListener('click', async () => {
+      const status = document.getElementById('bb-copy-status')!;
+      try {
+        await navigator.clipboard.writeText(previewEl.textContent || '');
+        status.textContent = 'Copied.';
+        status.className = 'text-xs text-green-600 dark:text-green-400';
+      } catch {
+        status.textContent = 'Copy failed.';
+        status.className = 'text-xs text-red-600 dark:text-red-400';
+      }
+      setTimeout(() => {
+        status.textContent = '';
+      }, 2000);
+    });
+
+    // Download
+    document.getElementById('bb-download')!.addEventListener('click', () => {
+      const blob = new Blob([previewEl.textContent || ''], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `clif-byline-${state.formatId}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    });
+
+    // Initial render
+    renderAll();
+  </script>
+</BaseLayout>

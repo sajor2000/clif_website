@@ -4,6 +4,7 @@ export const prerender = false;
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import PortalNav from '../../../components/portal/PortalNav.astro';
 import { getDb } from '../../../lib/turso';
+import { parseAffiliations } from '../../../lib/format-byline';
 
 const user = Astro.locals.user;
 const { id } = Astro.params;
@@ -50,18 +51,7 @@ const showSignupEmail =
   String(member.work_email).toLowerCase() !== String(signupEmail).toLowerCase();
 const showGmailPersonal = canSeePrivate && !!member?.gmail_personal;
 
-function splitAffiliations(raw: string | null | undefined): string[] {
-  if (!raw) return [];
-  // Split on either an existing newline or a numbered separator like
-  // " and 2.", "; 2.", or just " 2." that introduces the next item.
-  const pieces = raw
-    .split(/\r?\n+|\s*(?:and\s+|;\s*)?(?=\b\d+\.\s)/g)
-    .map((s) => s.trim())
-    .filter(Boolean);
-  return pieces.length > 0 ? pieces : [raw.trim()];
-}
-
-const affiliationPoints = splitAffiliations(member?.affiliation);
+const affiliationPoints = parseAffiliations(member?.affiliation);
 ---
 
 <BaseLayout title={`${displayName} – Member Directory`}>
