@@ -10,6 +10,15 @@ CREATE TABLE IF NOT EXISTS users (
   avatar_url TEXT,
   role TEXT NOT NULL DEFAULT 'member',
   is_approved INTEGER NOT NULL DEFAULT 0,
+  work_email TEXT,
+  degrees TEXT,
+  orcid TEXT,
+  github_username TEXT,
+  gmail_personal TEXT,
+  affiliation TEXT,
+  funding TEXT,
+  conflicts_of_interest TEXT,
+  member_status TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -191,3 +200,4 @@ CREATE INDEX IF NOT EXISTS idx_crypto_site_keys_assigned ON crypto_site_keys(ass
 CREATE INDEX IF NOT EXISTS idx_crypto_master_keys_key_set ON crypto_master_keys(key_set_id);
 CREATE INDEX IF NOT EXISTS idx_crypto_submissions_project ON crypto_submissions(project_id);
 CREATE INDEX IF NOT EXISTS idx_crypto_submissions_key_set ON crypto_submissions(key_set_id);
+

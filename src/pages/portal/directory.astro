@@ -29,7 +29,7 @@ try {
       <div class="flex-1 min-w-0">
         <div class="mb-6">
           <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Member Directory</h1>
-          <p class="text-gray-600 dark:text-gray-400 mt-1">Approved consortium members and their contact information</p>
+          <p class="text-gray-600 dark:text-gray-400 mt-1">Consortium members and their information — affiliation, ORCID, GitHub, funding, conflicts of interest, and more.</p>
         </div>
 
         {error ? (
@@ -41,37 +41,114 @@ try {
             No members found.
           </div>
         ) : (
-          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {members.map((member: any) => (
-              <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-5">
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 bg-clif-burgundy/10 dark:bg-clif-burgundy/20 rounded-full flex items-center justify-center">
-                    <span class="text-clif-burgundy font-semibold text-sm">
-                      {(member.full_name || member.email).charAt(0).toUpperCase()}
-                    </span>
-                  </div>
-                  <div>
-                    <h3 class="font-semibold text-gray-900 dark:text-white text-sm">
-                      {member.full_name || 'Unknown'}
-                    </h3>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">{member.email}</p>
-                  </div>
-                </div>
-                {member.institution && (
-                  <p class="text-sm text-gray-600 dark:text-gray-400 mt-3">{member.institution}</p>
-                )}
-                {member.role !== 'member' && (
-                  <span class={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-2 ${
-                    member.role === 'admin'
-                      ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400'
-                      : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
-                  }`}>
-                    {member.role}
-                  </span>
-                )}
+          <>
+            <div class="mb-4 flex flex-col sm:flex-row sm:items-center gap-3">
+              <div class="relative flex-1">
+                <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 103.5 10.5a7.5 7.5 0 0013.15 6.15z" />
+                </svg>
+                <input
+                  id="member-search"
+                  type="search"
+                  placeholder="Search by name, institution, status, GitHub…"
+                  class="w-full pl-9 pr-3 py-2 text-sm bg-white dark:bg-neutral-800 border border-gray-300 dark:border-neutral-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-clif-burgundy/40 focus:border-clif-burgundy"
+                  autocomplete="off"
+                />
               </div>
-            ))}
-          </div>
+              <span class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                <span id="member-count">{members.length}</span> of {members.length}
+              </span>
+            </div>
+
+            <div id="member-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {members.map((member: any) => {
+                const publicEmail = member.work_email || member.email;
+                const haystack = [
+                  member.full_name,
+                  publicEmail,
+                  member.institution,
+                  member.affiliation,
+                  member.degrees,
+                  member.member_status,
+                  member.role,
+                  member.github_username,
+                  member.orcid,
+                ]
+                  .filter(Boolean)
+                  .join(' ')
+                  .toLowerCase();
+                return (
+                  <a
+                    href={`/portal/members/${member.id}`}
+                    class="member-card block bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-5 hover:shadow-md hover:border-clif-burgundy/40 dark:hover:border-clif-burgundy/40 transition"
+                    data-search={haystack}
+                  >
+                    <div class="flex items-center gap-3">
+                      <div class="w-10 h-10 bg-clif-burgundy/10 dark:bg-clif-burgundy/20 rounded-full flex items-center justify-center shrink-0">
+                        <span class="text-clif-burgundy font-semibold text-sm">
+                          {(member.full_name || publicEmail).charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <div class="min-w-0">
+                        <h3 class="font-semibold text-gray-900 dark:text-white text-sm truncate">
+                          {member.full_name || 'Unknown'}
+                          {member.degrees && (
+                            <span class="font-normal text-gray-500 dark:text-gray-400">, {member.degrees}</span>
+                          )}
+                        </h3>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 truncate">{publicEmail}</p>
+                      </div>
+                    </div>
+                    {member.institution && (
+                      <p class="text-sm text-gray-600 dark:text-gray-400 mt-3 line-clamp-2">{member.institution}</p>
+                    )}
+                    <div class="flex flex-wrap gap-2 mt-2">
+                      {(member.role === 'steering' || member.role === 'admin') ? (
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                          steering
+                        </span>
+                      ) : (
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 dark:bg-neutral-700 dark:text-gray-300">
+                          member
+                        </span>
+                      )}
+                    </div>
+                  </a>
+                );
+              })}
+            </div>
+
+            <div id="member-empty" class="hidden mt-4 bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6 text-center text-sm text-gray-500 dark:text-gray-400">
+              No members match your search.
+            </div>
+
+            <script is:inline>
+              (function () {
+                var input = document.getElementById('member-search');
+                var grid = document.getElementById('member-grid');
+                var empty = document.getElementById('member-empty');
+                var counter = document.getElementById('member-count');
+                if (!input || !grid) return;
+                var cards = Array.prototype.slice.call(grid.querySelectorAll('.member-card'));
+
+                function applyFilter() {
+                  var q = input.value.trim().toLowerCase();
+                  var visible = 0;
+                  cards.forEach(function (card) {
+                    var hay = card.getAttribute('data-search') || '';
+                    var match = q === '' || hay.indexOf(q) !== -1;
+                    card.classList.toggle('hidden', !match);
+                    if (match) visible++;
+                  });
+                  if (counter) counter.textContent = String(visible);
+                  if (empty) empty.classList.toggle('hidden', visible !== 0);
+                }
+
+                input.addEventListener('input', applyFilter);
+                input.addEventListener('search', applyFilter);
+              })();
+            </script>
+          </>
         )}
       </div>
     </div>

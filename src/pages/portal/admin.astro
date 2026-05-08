@@ -145,58 +145,109 @@ try {
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-neutral-700">
                   {approvedUsers.map((u: any, i: number) => (
-                    <tr class={i % 2 === 0 ? '' : 'bg-gray-50/50 dark:bg-neutral-800/50'} data-role={u.role}>
-                      <td class="px-4 py-3 text-gray-900 dark:text-gray-200">
-                        <span class="user-display-name" data-user-id={u.id}>{u.full_name || '\u2014'}</span>
-                        <input type="text" class="user-edit-name hidden w-full text-xs px-2 py-1 border border-gray-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" data-user-id={u.id} value={u.full_name || ''} placeholder="Full name" />
-                      </td>
-                      <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{u.email}</td>
-                      <td class="px-4 py-3 text-gray-600 dark:text-gray-400">
-                        <span class="user-display-institution" data-user-id={u.id}>{u.institution || '\u2014'}</span>
-                        <input type="text" class="user-edit-institution hidden w-full text-xs px-2 py-1 border border-gray-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" data-user-id={u.id} value={u.institution || ''} placeholder="Institution" />
-                      </td>
-                      <td class="px-4 py-3">
-                        <select
-                          class="role-select text-xs rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-900 dark:text-white px-2 py-1"
-                          data-user-id={u.id}
-                          data-current-role={u.role}
-                        >
-                          <option value="member" selected={u.role === 'member'}>member</option>
-                          <option value="steering" selected={u.role === 'steering'}>steering</option>
-                          <option value="admin" selected={u.role === 'admin'}>admin</option>
-                        </select>
-                      </td>
-                      <td class="px-4 py-3 text-gray-500 dark:text-gray-400 text-xs">{new Date(u.created_at).toLocaleDateString()}</td>
-                      <td class="px-4 py-3 space-x-2 whitespace-nowrap">
-                        <button
-                          class="edit-member-btn text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline"
-                          data-user-id={u.id}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          class="save-member-btn hidden text-xs text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 underline"
-                          data-user-id={u.id}
-                        >
-                          Save
-                        </button>
-                        <button
-                          class="cancel-edit-btn hidden text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 underline"
-                          data-user-id={u.id}
-                        >
-                          Cancel
-                        </button>
-                        {u.id !== user!.id && (
-                          <button
-                            class="remove-member-btn text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 underline"
+                    <>
+                      <tr class={i % 2 === 0 ? '' : 'bg-gray-50/50 dark:bg-neutral-800/50'} data-role={u.role}>
+                        <td class="px-4 py-3 text-gray-900 dark:text-gray-200">
+                          <span class="user-display-name" data-user-id={u.id}>{u.full_name || '\u2014'}</span>
+                          <input type="text" class="user-edit-name hidden w-full text-xs px-2 py-1 border border-gray-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" data-user-id={u.id} value={u.full_name || ''} placeholder="Full name" />
+                        </td>
+                        <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{u.email}</td>
+                        <td class="px-4 py-3 text-gray-600 dark:text-gray-400">
+                          <span class="user-display-institution" data-user-id={u.id}>{u.institution || '\u2014'}</span>
+                          <input type="text" class="user-edit-institution hidden w-full text-xs px-2 py-1 border border-gray-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" data-user-id={u.id} value={u.institution || ''} placeholder="Institution" />
+                        </td>
+                        <td class="px-4 py-3">
+                          <select
+                            class="role-select text-xs rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-900 dark:text-white px-2 py-1"
                             data-user-id={u.id}
-                            data-user-name={u.full_name || u.email}
+                            data-current-role={u.role}
                           >
-                            Remove
+                            <option value="member" selected={u.role === 'member'}>member</option>
+                            <option value="steering" selected={u.role === 'steering'}>steering</option>
+                            <option value="admin" selected={u.role === 'admin'}>admin</option>
+                          </select>
+                        </td>
+                        <td class="px-4 py-3 text-gray-500 dark:text-gray-400 text-xs">{new Date(u.created_at).toLocaleDateString()}</td>
+                        <td class="px-4 py-3 space-x-2 whitespace-nowrap">
+                          <button
+                            class="edit-member-btn text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline"
+                            data-user-id={u.id}
+                          >
+                            Edit
                           </button>
-                        )}
-                      </td>
-                    </tr>
+                          <button
+                            class="save-member-btn hidden text-xs text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 underline"
+                            data-user-id={u.id}
+                          >
+                            Save
+                          </button>
+                          <button
+                            class="cancel-edit-btn hidden text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 underline"
+                            data-user-id={u.id}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            class="details-toggle-btn text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline"
+                            data-user-id={u.id}
+                          >
+                            Details
+                          </button>
+                          {u.id !== user!.id && (
+                            <button
+                              class="remove-member-btn text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 underline"
+                              data-user-id={u.id}
+                              data-user-name={u.full_name || u.email}
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                      <tr class="details-row hidden bg-gray-50 dark:bg-neutral-900/40" data-user-id={u.id} data-role={u.role}>
+                        <td colspan="6" class="px-4 py-4">
+                          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                            <label class="block">
+                              <span class="block text-gray-600 dark:text-gray-400 mb-1">Degrees</span>
+                              <input type="text" class="details-input w-full px-2 py-1 border border-gray-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" data-field="degrees" value={u.degrees || ''} placeholder="e.g. MD, MS" />
+                            </label>
+                            <label class="block md:col-span-2">
+                              <span class="block text-gray-600 dark:text-gray-400 mb-1">Affiliation</span>
+                              <textarea rows="2" class="details-input w-full px-2 py-1 border border-gray-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" data-field="affiliation" placeholder="Lab / department / institution (long form)">{u.affiliation || ''}</textarea>
+                            </label>
+                            <label class="block">
+                              <span class="block text-gray-600 dark:text-gray-400 mb-1">ORCID</span>
+                              <input type="text" class="details-input w-full px-2 py-1 border border-gray-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" data-field="orcid" value={u.orcid || ''} placeholder="0000-0000-0000-0000" />
+                            </label>
+                            <label class="block">
+                              <span class="block text-gray-600 dark:text-gray-400 mb-1">GitHub username</span>
+                              <input type="text" class="details-input w-full px-2 py-1 border border-gray-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" data-field="github_username" value={u.github_username || ''} placeholder="octocat" />
+                            </label>
+                            <label class="block">
+                              <span class="block text-gray-600 dark:text-gray-400 mb-1">Work email</span>
+                              <input type="email" class="details-input w-full px-2 py-1 border border-gray-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" data-field="work_email" value={u.work_email || ''} placeholder={u.email || 'name@institution.edu'} />
+                            </label>
+                            <label class="block">
+                              <span class="block text-gray-600 dark:text-gray-400 mb-1">Personal Gmail</span>
+                              <input type="email" class="details-input w-full px-2 py-1 border border-gray-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" data-field="gmail_personal" value={u.gmail_personal || ''} placeholder="name@gmail.com" />
+                            </label>
+                            <label class="block md:col-span-2">
+                              <span class="block text-gray-600 dark:text-gray-400 mb-1">Funding</span>
+                              <textarea rows="2" class="details-input w-full px-2 py-1 border border-gray-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" data-field="funding" placeholder="Grants and other funding sources">{u.funding || ''}</textarea>
+                            </label>
+                            <label class="block md:col-span-2">
+                              <span class="block text-gray-600 dark:text-gray-400 mb-1">Conflicts of Interest</span>
+                              <textarea rows="2" class="details-input w-full px-2 py-1 border border-gray-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" data-field="conflicts_of_interest" placeholder="Disclosed conflicts">{u.conflicts_of_interest || ''}</textarea>
+                            </label>
+                          </div>
+                          <div class="flex items-center gap-3 mt-3">
+                            <button class="details-save-btn px-3 py-1.5 text-xs font-medium text-white bg-clif-burgundy hover:bg-clif-burgundy/90 rounded" data-user-id={u.id}>Save details</button>
+                            <button class="details-cancel-btn text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 underline" data-user-id={u.id}>Close</button>
+                            <span class="details-status text-xs" data-user-id={u.id}></span>
+                          </div>
+                        </td>
+                      </tr>
+                    </>
                   ))}
                 </tbody>
               </table>
@@ -361,6 +412,62 @@ try {
         });
       });
 
+      // Toggle the per-user details edit row
+      document.querySelectorAll('.details-toggle-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var uid = this.getAttribute('data-user-id');
+          var row = document.querySelector('.details-row[data-user-id="' + uid + '"]');
+          if (row) row.classList.toggle('hidden');
+        });
+      });
+
+      document.querySelectorAll('.details-cancel-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var uid = this.getAttribute('data-user-id');
+          var row = document.querySelector('.details-row[data-user-id="' + uid + '"]');
+          if (row) row.classList.add('hidden');
+        });
+      });
+
+      document.querySelectorAll('.details-save-btn').forEach(function(btn) {
+        btn.addEventListener('click', async function() {
+          var uid = this.getAttribute('data-user-id');
+          var row = document.querySelector('.details-row[data-user-id="' + uid + '"]');
+          if (!row) return;
+          var status = row.querySelector('.details-status');
+          var payload = { userId: uid };
+          row.querySelectorAll('.details-input').forEach(function(el) {
+            payload[el.getAttribute('data-field')] = el.value;
+          });
+
+          this.disabled = true;
+          this.textContent = 'Saving…';
+          if (status) { status.textContent = ''; status.className = 'details-status text-xs'; }
+
+          var res = await fetch('/api/admin/update-user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+
+          this.disabled = false;
+          this.textContent = 'Save details';
+
+          if (res.ok) {
+            if (status) {
+              status.textContent = 'Saved.';
+              status.className = 'details-status text-xs text-green-600 dark:text-green-400';
+            }
+          } else {
+            var data = await res.json().catch(function() { return {}; });
+            if (status) {
+              status.textContent = data.error || 'Failed to save details';
+              status.className = 'details-status text-xs text-red-600 dark:text-red-400';
+            }
+          }
+        });
+      });
+
       document.querySelectorAll('.remove-member-btn').forEach(function(btn) {
         btn.addEventListener('click', async function() {
           var userId = this.getAttribute('data-user-id');
@@ -396,15 +503,18 @@ try {
           });
           this.classList.add('bg-clif-burgundy', 'text-white');
           this.classList.remove('bg-gray-100', 'text-gray-600', 'hover:bg-gray-200', 'dark:bg-neutral-700', 'dark:text-gray-300', 'dark:hover:bg-neutral-600');
-          // Filter rows
-          var rows = document.querySelectorAll('tbody tr[data-role]');
+          // Filter rows — only operate on the user rows; collapse any open details.
+          var userRows = document.querySelectorAll('tbody tr[data-role]:not(.details-row)');
           var visibleCount = 0;
-          rows.forEach(function(row) {
+          userRows.forEach(function(row) {
+            var uid = row.querySelector('[data-user-id]') ? row.querySelector('[data-user-id]').getAttribute('data-user-id') : null;
+            var detailsRow = uid ? document.querySelector('.details-row[data-user-id="' + uid + '"]') : null;
             if (role === 'all' || row.getAttribute('data-role') === role) {
               row.classList.remove('hidden');
               visibleCount++;
             } else {
               row.classList.add('hidden');
+              if (detailsRow) detailsRow.classList.add('hidden');
             }
           });
           document.getElementById('approved-count').textContent = visibleCount;

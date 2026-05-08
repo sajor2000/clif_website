@@ -1,0 +1,334 @@
+---
+export const prerender = false;
+
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import PortalNav from '../../../components/portal/PortalNav.astro';
+import { getDb } from '../../../lib/turso';
+
+const user = Astro.locals.user;
+const { id } = Astro.params;
+
+const db = getDb();
+let member: any = null;
+let error: string | null = null;
+
+try {
+  const result = await db.execute({
+    sql: 'SELECT * FROM users WHERE id = ? AND is_approved = 1',
+    args: [id ?? ''],
+  });
+  member = result.rows[0] ?? null;
+} catch (e: any) {
+  error = e.message;
+}
+
+if (!error && !member) {
+  return Astro.redirect('/portal/directory');
+}
+
+function initials(name: string | null | undefined, fallback: string): string {
+  const source = (name || fallback || '?').trim();
+  const parts = source.split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+}
+
+const displayName = member?.full_name || member?.email || 'Unknown member';
+const canEdit = !!user && (user.id === member?.id || user.role === 'admin');
+const canSeePrivate = canEdit; // admin or self
+const orcidUrl = member?.orcid ? `https://orcid.org/${member.orcid}` : null;
+const githubUrl = member?.github_username ? `https://github.com/${member.github_username}` : null;
+
+// Public-facing primary email — work email when present, else fall back to OAuth identity.
+const publicEmail: string | null = member?.work_email || member?.email || null;
+const signupEmail: string | null = member?.email ?? null;
+const showSignupEmail =
+  canSeePrivate &&
+  !!signupEmail &&
+  !!member?.work_email &&
+  String(member.work_email).toLowerCase() !== String(signupEmail).toLowerCase();
+const showGmailPersonal = canSeePrivate && !!member?.gmail_personal;
+
+function splitAffiliations(raw: string | null | undefined): string[] {
+  if (!raw) return [];
+  // Split on either an existing newline or a numbered separator like
+  // " and 2.", "; 2.", or just " 2." that introduces the next item.
+  const pieces = raw
+    .split(/\r?\n+|\s*(?:and\s+|;\s*)?(?=\b\d+\.\s)/g)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return pieces.length > 0 ? pieces : [raw.trim()];
+}
+
+const affiliationPoints = splitAffiliations(member?.affiliation);
+---
+
+<BaseLayout title={`${displayName} – Member Directory`}>
+  <div class="container mx-auto px-4 py-8">
+    <div class="flex flex-col lg:flex-row gap-8">
+      <aside class="lg:w-64 shrink-0">
+        <PortalNav currentPath={Astro.url.pathname} isAdmin={user?.role === 'admin'} />
+      </aside>
+
+      <div class="flex-1 min-w-0">
+        <div class="mb-4 flex items-center justify-between gap-3">
+          <a href="/portal/directory" class="text-sm text-clif-burgundy hover:underline">&larr; Back to Member Directory</a>
+          {canEdit && (
+            <button
+              id="edit-profile-toggle"
+              class="text-sm font-medium text-clif-burgundy hover:underline"
+            >
+              Edit profile
+            </button>
+          )}
+        </div>
+
+        {error ? (
+          <div class="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg p-4 text-sm">
+            Error loading member: {error}
+          </div>
+        ) : (
+          <article class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6 sm:p-8">
+            <header class="flex flex-col sm:flex-row sm:items-center gap-5 pb-6 border-b border-gray-200 dark:border-neutral-700">
+              {member.avatar_url ? (
+                <img
+                  src={member.avatar_url}
+                  alt=""
+                  class="w-20 h-20 rounded-full object-cover shrink-0"
+                  referrerpolicy="no-referrer"
+                />
+              ) : (
+                <div class="w-20 h-20 bg-clif-burgundy/10 dark:bg-clif-burgundy/20 rounded-full flex items-center justify-center shrink-0">
+                  <span class="text-clif-burgundy font-semibold text-2xl">
+                    {initials(member.full_name, member.email)}
+                  </span>
+                </div>
+              )}
+              <div class="min-w-0">
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                  {member.full_name || 'Unknown'}
+                  {member.degrees && (
+                    <span class="text-base font-medium text-gray-500 dark:text-gray-400">, {member.degrees}</span>
+                  )}
+                </h1>
+                <div class="flex flex-wrap gap-2 mt-2">
+                  {(member.role === 'steering' || member.role === 'admin') ? (
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                      steering
+                    </span>
+                  ) : (
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 dark:bg-neutral-700 dark:text-gray-300">
+                      member
+                    </span>
+                  )}
+                </div>
+                {member.institution && (
+                  <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">{member.institution}</p>
+                )}
+              </div>
+            </header>
+
+            <section class="py-5 border-b border-gray-200 dark:border-neutral-700">
+              <h2 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 tracking-wider mb-3">Contact</h2>
+              <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+                {publicEmail && (
+                  <div>
+                    <dt class="text-gray-500 dark:text-gray-400">Email</dt>
+                    <dd>
+                      <a href={`mailto:${publicEmail}`} class="text-clif-burgundy hover:underline break-all">{publicEmail}</a>
+                    </dd>
+                  </div>
+                )}
+                {showSignupEmail && (
+                  <div>
+                    <dt class="text-gray-500 dark:text-gray-400">Signup email <span class="text-[10px] uppercase tracking-wide text-gray-400 ml-1">private</span></dt>
+                    <dd>
+                      <a href={`mailto:${signupEmail}`} class="text-clif-burgundy hover:underline break-all">{signupEmail}</a>
+                    </dd>
+                  </div>
+                )}
+                {showGmailPersonal && (
+                  <div>
+                    <dt class="text-gray-500 dark:text-gray-400">Personal Gmail <span class="text-[10px] uppercase tracking-wide text-gray-400 ml-1">private</span></dt>
+                    <dd>
+                      <a href={`mailto:${member.gmail_personal}`} class="text-clif-burgundy hover:underline break-all">{member.gmail_personal}</a>
+                    </dd>
+                  </div>
+                )}
+                {githubUrl && (
+                  <div>
+                    <dt class="text-gray-500 dark:text-gray-400">GitHub</dt>
+                    <dd>
+                      <a href={githubUrl} target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:underline">@{member.github_username}</a>
+                    </dd>
+                  </div>
+                )}
+                {orcidUrl && (
+                  <div>
+                    <dt class="text-gray-500 dark:text-gray-400">ORCID</dt>
+                    <dd>
+                      <a href={orcidUrl} target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:underline">{member.orcid}</a>
+                    </dd>
+                  </div>
+                )}
+              </dl>
+            </section>
+
+            {member.affiliation && (
+              <section class="py-5 border-b border-gray-200 dark:border-neutral-700">
+                <h2 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 tracking-wider mb-2">Affiliation</h2>
+                {affiliationPoints.length > 1 ? (
+                  <ol class="text-sm text-gray-700 dark:text-gray-300 space-y-1.5">
+                    {affiliationPoints.map((point) => (
+                      <li>{point}</li>
+                    ))}
+                  </ol>
+                ) : (
+                  <p class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">{member.affiliation}</p>
+                )}
+              </section>
+            )}
+
+            {member.funding && (
+              <section class="py-5 border-b border-gray-200 dark:border-neutral-700">
+                <h2 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 tracking-wider mb-2">Funding</h2>
+                <p class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">{member.funding}</p>
+              </section>
+            )}
+
+            {member.conflicts_of_interest && (
+              <section class="py-5">
+                <h2 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 tracking-wider mb-2">Conflicts of Interest</h2>
+                <p class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">{member.conflicts_of_interest}</p>
+              </section>
+            )}
+          </article>
+        )}
+
+        {canEdit && member && (
+          <section
+            id="edit-profile-panel"
+            class="hidden mt-6 bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6 sm:p-8"
+            data-user-id={member.id}
+          >
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-1">Edit profile</h2>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-5">
+              {user?.id === member.id
+                ? 'Update your own information.'
+                : 'You are editing another member as an admin.'}
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <label class="block">
+                <span class="block text-gray-600 dark:text-gray-400 mb-1">Full name</span>
+                <input type="text" class="profile-input w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" data-field="full_name" value={member.full_name || ''} />
+              </label>
+              <label class="block">
+                <span class="block text-gray-600 dark:text-gray-400 mb-1">Degrees</span>
+                <input type="text" class="profile-input w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" data-field="degrees" value={member.degrees || ''} placeholder="e.g. MD, MS" />
+              </label>
+              <label class="block">
+                <span class="block text-gray-600 dark:text-gray-400 mb-1">Institution (short)</span>
+                <input type="text" class="profile-input w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" data-field="institution" value={member.institution || ''} />
+              </label>
+              <label class="block md:col-span-2">
+                <span class="block text-gray-600 dark:text-gray-400 mb-1">Work email <span class="text-[10px] uppercase tracking-wide text-gray-400 ml-1">public</span></span>
+                <input type="email" class="profile-input w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" data-field="work_email" value={member.work_email || ''} placeholder={member.email || 'name@institution.edu'} />
+                <span class="text-[11px] text-gray-500 dark:text-gray-400 mt-1 block">Visible to all approved members. Leave blank to display your signup email.</span>
+              </label>
+              <label class="block md:col-span-2">
+                <span class="block text-gray-600 dark:text-gray-400 mb-1">Affiliation (long form)</span>
+                <textarea rows="3" class="profile-input w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" data-field="affiliation" placeholder="Lab / department / university">{member.affiliation || ''}</textarea>
+              </label>
+              <label class="block">
+                <span class="block text-gray-600 dark:text-gray-400 mb-1">ORCID</span>
+                <input type="text" class="profile-input w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" data-field="orcid" value={member.orcid || ''} placeholder="0000-0000-0000-0000" />
+              </label>
+              <label class="block">
+                <span class="block text-gray-600 dark:text-gray-400 mb-1">GitHub username</span>
+                <input type="text" class="profile-input w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" data-field="github_username" value={member.github_username || ''} placeholder="octocat" />
+              </label>
+              <label class="block md:col-span-2">
+                <span class="block text-gray-600 dark:text-gray-400 mb-1">Personal Gmail</span>
+                <input type="email" class="profile-input w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" data-field="gmail_personal" value={member.gmail_personal || ''} placeholder="name@gmail.com" />
+              </label>
+              <label class="block md:col-span-2">
+                <span class="block text-gray-600 dark:text-gray-400 mb-1">Funding</span>
+                <textarea rows="3" class="profile-input w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" data-field="funding" placeholder="Grants and other funding sources">{member.funding || ''}</textarea>
+              </label>
+              <label class="block md:col-span-2">
+                <span class="block text-gray-600 dark:text-gray-400 mb-1">Conflicts of Interest</span>
+                <textarea rows="3" class="profile-input w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" data-field="conflicts_of_interest" placeholder="Disclosed conflicts">{member.conflicts_of_interest || ''}</textarea>
+              </label>
+            </div>
+            <div class="flex items-center gap-3 mt-5">
+              <button id="profile-save-btn" class="px-4 py-2 text-sm font-medium text-white bg-clif-burgundy hover:bg-clif-burgundy/90 rounded-lg">Save changes</button>
+              <button id="profile-cancel-btn" class="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 underline">Cancel</button>
+              <span id="profile-save-status" class="text-xs"></span>
+            </div>
+          </section>
+        )}
+      </div>
+    </div>
+  </div>
+
+  {canEdit && (
+    <script is:inline>
+      document.addEventListener('DOMContentLoaded', function () {
+        var toggle = document.getElementById('edit-profile-toggle');
+        var panel = document.getElementById('edit-profile-panel');
+        var cancel = document.getElementById('profile-cancel-btn');
+        var save = document.getElementById('profile-save-btn');
+        var status = document.getElementById('profile-save-status');
+        if (!toggle || !panel || !save) return;
+
+        toggle.addEventListener('click', function () {
+          panel.classList.toggle('hidden');
+          if (!panel.classList.contains('hidden')) {
+            panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        });
+        if (cancel) {
+          cancel.addEventListener('click', function () {
+            panel.classList.add('hidden');
+          });
+        }
+
+        save.addEventListener('click', async function () {
+          var userId = panel.getAttribute('data-user-id');
+          var payload = { userId: userId };
+          panel.querySelectorAll('.profile-input').forEach(function (el) {
+            payload[el.getAttribute('data-field')] = el.value;
+          });
+
+          save.disabled = true;
+          save.textContent = 'Saving…';
+          if (status) {
+            status.textContent = '';
+            status.className = 'text-xs';
+          }
+
+          var res = await fetch('/api/admin/update-user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+
+          if (res.ok) {
+            window.location.reload();
+          } else {
+            var data = await res.json().catch(function () {
+              return {};
+            });
+            if (status) {
+              status.textContent = data.error || 'Failed to save';
+              status.className = 'text-xs text-red-600 dark:text-red-400';
+            }
+            save.disabled = false;
+            save.textContent = 'Save changes';
+          }
+        });
+      });
+    </script>
+  )}
+</BaseLayout>
