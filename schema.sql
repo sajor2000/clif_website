@@ -114,7 +114,8 @@ CREATE TABLE IF NOT EXISTS calendar_events (
   is_recurring INTEGER NOT NULL DEFAULT 0,
   description TEXT,
   location TEXT,
-  meeting_link TEXT
+  meeting_link TEXT,
+  slides_link TEXT
 );
 
 -- Indexes
