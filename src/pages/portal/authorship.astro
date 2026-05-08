@@ -32,7 +32,7 @@ try {
 }
 ---
 
-<BaseLayout title="Byline Builder">
+<BaseLayout title="Authorship Tool">
   <div class="container mx-auto px-4 py-8">
     <div class="flex flex-col lg:flex-row gap-8">
       <aside class="lg:w-64 shrink-0">
@@ -41,9 +41,9 @@ try {
 
       <div class="flex-1 min-w-0">
         <div class="mb-6">
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Byline Builder</h1>
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Authorship Tool</h1>
           <p class="text-gray-600 dark:text-gray-400 mt-1">
-            Pick consortium members, order them, and copy a formatted author byline + numbered affiliations for your manuscript.
+            Pick consortium members, order them, and copy a formatted author block + numbered affiliations for your manuscript.
             Supports two established formats: <strong>Vancouver / ICMJE</strong> and <strong>AMA / JAMA</strong>.
           </p>
         </div>
@@ -494,7 +494,7 @@ try {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `clif-byline-${state.formatId}.txt`;
+      a.download = `clif-authors-${state.formatId}.txt`;
       document.body.appendChild(a);
       a.click();
       a.remove();
