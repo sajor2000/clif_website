@@ -82,6 +82,8 @@ The crrt_therapy table captures Continuous Renal Replacement Therapy (CRRT) data
 
 ## ecmo_mcs
 
+> **Note**: This table was reworked for 3.0 — renamed to [`mcs`](/data-dictionary/data-dictionary-3.0.0#mcs) and converted to a long-form schema (one row per setting/measurement). For new implementations, refer to the [3.0 `mcs` table](/data-dictionary/data-dictionary-3.0.0#mcs).
+
 The ECMO/MCS table is a wider longitudinal table that captures the start and stop times of ECMO/MCS support, the type of device used, and the work rate of the device.
 
 **Example**:
