@@ -153,15 +153,36 @@ The `invasive_hemodynamics` table records invasive hemodynamic measurements duri
 
 **Notes**:
 
-- All `measurement_value` entries should be recorded in mmHg.
-- The `measurement_category` field ensures standardization of invasive hemodynamic data:
-        1. `cvp` - Central Venous Pressure
-        2. `ra` - Right Atrial Pressure
-        3. `rv` - Right Ventricular Pressure
-        4. `pa_systolic` - Pulmonary Artery Systolic Pressure
-        5. `pa_diastolic` - Pulmonary Artery Diastolic Pressure
-        6. `pa_mean` - Pulmonary Artery Mean Pressure
-        7. `pcwp` - Pulmonary Capillary Wedge Pressure
+- `measurement_value` is interpreted in the units defined by `measurement_category` (mmHg for pressures, L/min for cardiac output, L/min/m² for indices, etc.).
+- The `measurement_category` field standardizes invasive hemodynamic data:
+
+| measurement_category | Maps from | Expected value |
+|----------------------|-----------|----------------|
+| `cvp` | Central Venous Pressure, Right Atrial Pressure (mmHg) | 0–50 |
+| `rv_systolic` | Right Ventricular Systolic Pressure (mmHg) | 0–200 |
+| `rv_diastolic` | Right Ventricular Diastolic Pressure (mmHg) | Less than `rv_systolic` |
+| `pa_systolic` | Pulmonary Artery Systolic Pressure (mmHg) | 0–200 |
+| `pa_diastolic` | Pulmonary Artery Diastolic Pressure (mmHg) | 0–100 |
+| `pa_mean` | Pulmonary Artery Mean Pressure (mmHg) | Less than `pa_systolic` and greater than `pa_diastolic` |
+| `pcwp` | Pulmonary Capillary Wedge Pressure (mmHg) | 0–100 |
+| `cardiac_output_thermodilution` | Continuous Cardiac Output (L/min) | 0.1–30 |
+| `cardiac_index` | Cardiac Index (L/min/m²) | 0.1–10 |
+| `cardiac_output_fick` | Cardiac Output by Fick Equation (L/min) | 0.1–30 |
+| `sv` | Stroke Volume (mL) | 0–300 |
+| `ppv` | Pulse Pressure Variation (%) | 0–100 |
+| `svv` | Stroke Volume Variation (%) | 0–200 |
+| `svr` | Systemic Vascular Resistance / Total Peripheral Resistance (dyn·s/cm⁵) | 100–10000 |
+| `svri` | Systemic Vascular Resistance Index / Total Peripheral Resistance Index (dyn·s·m²/cm⁵) | 100–10000 |
+| `evlw` | Extravascular Lung Water (mL) | 0–100 |
+| `evlwi` | Extravascular Lung Water Index (mL/kg) | 0–150 |
+| `gef` | Global Ejection Fraction (%) | 0–100 |
+| `itbi` | Intrathoracic Blood Volume Index (mL/m²) | 0–3000 |
+| `gedv` | Global End-diastolic Volume (mL) | 0–5000 |
+| `gedvi` | Global End-diastolic Volume Index (mL/m²) | 0–3000 |
+| `lcwi` | Left Ventricular Stroke Work Index (g·m/m²/beat) | 0–100 |
+| `tfc` | Thoracic Fluid Content (%) | 0–100 |
+| `tfcd0` | Thoracic Fluid Content Delta from Baseline (%) | 0–100 |
+| `do2` | Delivery of Oxygen (mL/min/m²) | 100–10000 |
 
 \
 **Example**:
