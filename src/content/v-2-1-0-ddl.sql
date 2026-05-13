@@ -285,10 +285,10 @@ CREATE TABLE intake_output (
 -- -----------------------------------------------------
 CREATE TABLE invasive_hemodynamics (
   hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
-  recorded_dttm DATETIME COMMENT '{"description": "The date and time when the measurement was recorded. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
-  measure_name VARCHAR COMMENT '{"description": "Description of the site or context of the invasive hemodynamic measurement.", "permissible": "Free text (e.g., Right Atrium)"}',
-  measure_category VARCHAR COMMENT '{"description": "Categorical variable specifying the type of invasive hemodynamic measurement.", "permissible": "[cvp, ra, rv, pa_systolic, pa_diastolic, pa_mean, pcwp, cardiac_output_thermodilution , cardiac_output_fick](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/invasive_hemodynamics/clif_invasive_hemodynamics_measure_categories.csv)"}',
-  measure_value DOUBLE COMMENT '{"description": "The numerical value of the invasive hemodynamic measurement in mmHg.", "permissible": "Positive decimal values (e.g., 5.00, 25.65)"}'
+  recorded_dttm DATETIME COMMENT '{"description": "Date and time when the device settings and/or measurement was recorded", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
+  measurement_name VARCHAR COMMENT '{"description": "Source unstandardized raw flowsheet name for invasive hemodynamic measurement", "permissible": "No restriction"}',
+  measurement_category VARCHAR COMMENT '{"description": "Individual hemodynamic parameter measurements reported by the device", "permissible": "[cvp, ra, rv, pa_systolic, pa_diastolic, pa_mean, pcwp, cardiac_output_thermodilution, cardiac_output_fick](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/invasive_hemodynamics/clif_invasive_hemodynamics_measure_categories.csv)"}',
+  measurement_value FLOAT COMMENT '{"description": "Numeric value of the measurement_category", "permissible": "Positive values"}'
 );
 
 -- -----------------------------------------------------

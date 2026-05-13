@@ -148,8 +148,8 @@ The `invasive_hemodynamics` table records invasive hemodynamic measurements duri
 
 **Notes**:
 
-- All `measure_value` entries should be recorded in mmHg.
-- The `measure_category` field ensures standardization of invasive hemodynamic data:
+- All `measurement_value` entries should be recorded in mmHg.
+- The `measurement_category` field ensures standardization of invasive hemodynamic data:
         1. `CVP` - Central Venous Pressure
         2. `RA` - Right Atrial Pressure
         3. `RV` - Right Ventricular Pressure
@@ -161,11 +161,13 @@ The `invasive_hemodynamics` table records invasive hemodynamic measurements duri
 \
 **Example**:
 
-| hospitalization_id | recorded_dttm                | measure_name         | measure_category | measure_value |
-|-------------------|----------------------------|-------------------|-----------------|--------------|
-| 12345             | 2024-12-01 08:30:00+00:00 UTC | CVP               | CVP             | 12.50        |
-| 12345             | 2024-12-01 09:00:00+00:00 UTC | Pulmonary Artery-Sys | PA_systolic     | 25.00        |
-| 12345             | 2024-12-01 09:30:00+00:00 UTC | Wedge             | PCWP            | 18.75        |
+| hospitalization_id | recorded_dttm                  | measurement_name                    | measurement_category | measurement_value |
+|--------------------|--------------------------------|-------------------------------------|----------------------|-------------------|
+| 1234               | 2026-04-08 23:30:00+00:00 UTC  | Central Venous Pressure             | cvp                  | 5                 |
+| 1234               | 2026-04-08 23:30:00+00:00 UTC  | Pulmonary Artery Pressure systolic  | pa_systolic          | 20                |
+| 1234               | 2026-04-08 23:30:00+00:00 UTC  | Pulmonary Artery Pressure diastolic | pa_diastolic         | 6                 |
+| 1234               | 2026-04-08 23:30:00+00:00 UTC  | Pulmonary Artery Pressure mean      | pa_mean              | 11                |
+| 1234               | 2026-04-08 23:30:00+00:00 UTC  | Cardiac Index                       | cardiac_index        | 2.9               |
 
 
 ## labs
