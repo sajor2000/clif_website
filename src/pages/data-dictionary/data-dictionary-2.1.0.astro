@@ -300,7 +300,8 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
             const { intro, extras } = splitTableSection(section);
             let ioNotes = '';
             let ioExtras = extras;
-            if (table.name === 'intake_output' && extras) {
+            const calloutTables = ['intake_output', 'ecmo_mcs'];
+            if (calloutTables.includes(table.name) && extras) {
               const notesMatch = extras.match(/\*\*Notes\*\*[:\s]*([\s\S]*?)(?=\*\*Example\*\*|$)/i);
               const exampleMatch = extras.match(/(\*\*Example\*\*[\s\S]*)/i);
               if (notesMatch) {
@@ -318,7 +319,7 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
                 {intro && (
                   <div class="prose mb-4" set:html={md.render(intro)} />
                 )}
-                {table.name === 'intake_output' && ioNotes && (
+                {calloutTables.includes(table.name) && ioNotes && (
                   <div class="notes-callout">
                     <div class="prose" set:html={md.render(ioNotes)} />
                   </div>
@@ -350,7 +351,7 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
                     </tbody>
                   </table>
                 </div>
-                {table.name === 'intake_output' ? (
+                {calloutTables.includes(table.name) ? (
                   ioExtras && <div class="prose mt-4" set:html={md.render(ioExtras)} />
                 ) : (
                   extras && <div class="prose mt-4" set:html={md.render(extras)} />
