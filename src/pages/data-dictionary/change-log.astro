@@ -151,16 +151,16 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   <td class="px-4 py-3 text-sm text-gray-500">Dec 12, 2025</td>
                 </tr>
                 <tr>
-                  <td class="px-4 py-3 text-sm font-mono">infusion_rate</td>
+                  <td class="px-4 py-3 text-sm font-mono">volume_infusion_rate</td>
                   <td class="px-4 py-3 text-sm">medication_admin_continuous</td>
-                  <td class="px-4 py-3 text-sm">Absolute amount of volume administered over time [volume]/[time] (e.g., mL/hr). In contrast to med_dose which measures [quantity of drug]/[time]</td>
+                  <td class="px-4 py-3 text-sm">Absolute amount of volume administered over time [volume]/[time] (e.g., mL/hr). In contrast to med_dose which measures [quantity of drug]/[time]. (Renamed from <code>infusion_rate</code> per <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/210" class="text-clif-burgundy hover:underline">Issue #210</a>.)</td>
                   <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/130" class="text-clif-burgundy hover:underline">Issue #130</a></td>
                   <td class="px-4 py-3 text-sm text-gray-500">Jan 23, 2026</td>
                 </tr>
                 <tr>
-                  <td class="px-4 py-3 text-sm font-mono">infusion_rate_units</td>
+                  <td class="px-4 py-3 text-sm font-mono">volume_infusion_rate_unit</td>
                   <td class="px-4 py-3 text-sm">medication_admin_continuous</td>
-                  <td class="px-4 py-3 text-sm">Unit of infusion rate in the format [volume]/[time] (e.g., mL/hr, mL/min)</td>
+                  <td class="px-4 py-3 text-sm">Standardized unit of volume infusion rate per <code>med_category</code> in the format [volume]/[time] (e.g., mL/hr, mL/min). (Renamed from <code>infusion_rate_units</code> per <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/210" class="text-clif-burgundy hover:underline">Issue #210</a>.)</td>
                   <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/130" class="text-clif-burgundy hover:underline">Issue #130</a></td>
                   <td class="px-4 py-3 text-sm text-gray-500">Jan 23, 2026</td>
                 </tr>
@@ -455,7 +455,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            New mCIDE Values (7 updates)
+            New mCIDE Values (12 updates)
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -538,6 +538,66 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   >
                   <td class="px-4 py-3 text-sm"><span class="text-green-600"></span></td>
                 </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">location_category</td>
+                  <td class="px-4 py-3 text-sm"
+                    >Renamed adt location category <code>l&amp;d</code> &rarr; <code>l_and_d</code> for snake_case consistency with other categories (e.g., <code>mobility_or_activity</code>, <code>ps_or_cpap</code>)</td
+                  >
+                  <td class="px-4 py-3 text-sm"><span class="text-green-600">
+                    <a
+                      href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/206"
+                      class="text-clif-burgundy hover:underline"
+                      >Issue #206</a
+                    >
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm">Continuous medication units</td>
+                  <td class="px-4 py-3 text-sm"
+                    >Finalized <code>clif_medication_admin_continuous_med_categories.csv</code> to include standardized <code>med_dose_unit</code> and <code>volume_infusion_rate_unit</code> per <code>med_category</code></td
+                  >
+                  <td class="px-4 py-3 text-sm"><span class="text-green-600">
+                    <a
+                      href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/210"
+                      class="text-clif-burgundy hover:underline"
+                      >Issue #210</a
+                    >
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">vital_category</td>
+                  <td class="px-4 py-3 text-sm"
+                    >Expanded <code>clif_vitals_categories.csv</code> with two new vital categories: <code>intracranial_pressure</code> (invasive ICP monitoring, mmHg) and <code>pulse_pressure_variation</code> (arterial PPV, % — dynamic marker of fluid responsiveness)</td
+                  >
+                  <td class="px-4 py-3 text-sm"><span class="text-green-600">
+                    <a
+                      href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/204"
+                      class="text-clif-burgundy hover:underline"
+                      >Issue #204</a
+                    >
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">lab_category</td>
+                  <td class="px-4 py-3 text-sm"
+                    >Added thyroid function tests (TSH, free T3, free T4) to the labs mCIDE</td
+                  >
+                  <td class="px-4 py-3 text-sm"><span class="text-green-600">
+                    <a
+                      href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/68"
+                      class="text-clif-burgundy hover:underline"
+                      >Issue #68</a
+                    >
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">lab_category / lab_order_category</td>
+                  <td class="px-4 py-3 text-sm"
+                    >Finalized <code>clif_lab_categories.csv</code> and <code>clif_labs_order_categories.csv</code> &mdash; incorporates expansion requests <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/157" class="text-clif-burgundy hover:underline">#157</a> (lab_categories) and <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/191" class="text-clif-burgundy hover:underline">#191</a> (BAL results)</td
+                  >
+                  <td class="px-4 py-3 text-sm"><span class="text-green-600">
+                    <a
+                      href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/203"
+                      class="text-clif-burgundy hover:underline"
+                      >Issue #203</a
+                    >
+                </tr>
               </tbody>
             </table>
           </div>
@@ -548,7 +608,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            Revisions (11 updates) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Jan 2, 2026</span>
+            Revisions (12 updates) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: May 13, 2026</span>
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -653,9 +713,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   <td class="px-4 py-3 text-sm text-gray-500">Nov 12, 2025</td>
                 </tr>
                 <tr>
-                  <td class="px-4 py-3 text-sm">ECMO MCS</td>
+                  <td class="px-4 py-3 text-sm">MCS (renamed from <code>ecmo_mcs</code>)</td>
                   <td class="px-4 py-3 text-sm"
-                    >Concept table ECMO_MCS data dictionary revised</td
+                    >Concept table renamed <code>ecmo_mcs</code> &rarr; <code>mcs</code> and revised to a long-form schema: one row per setting/measurement. New columns: <code>support_name</code>/<code>support_category</code> (<code>ecmo</code>/<code>lvad</code>/<code>rvad</code>), <code>device_name</code>/<code>device_category</code> (<code>cardiohelp</code>, <code>rotaflow</code>, <code>centrimag</code>, <code>tandemheart</code>, <code>impella</code>, <code>durable</code>), <code>config_name</code>/<code>config_category</code>, <code>setting_name</code>/<code>setting_category</code>/<code>setting_value</code>. Replaces the prior wide-format columns (<code>flow</code>, <code>sweep_set</code>, <code>fdO2_set</code>, <code>mcs_group</code>, <code>ecmo_configuration_category</code>, <code>control_parameter_*</code>).</td
                   >
                   <td class="px-4 py-3 text-sm"><span class="text-green-600">
                     <a
@@ -663,7 +723,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                       class="text-clif-burgundy hover:underline"
                       >Issue #72</a
                     >
-                  <td class="px-4 py-3 text-sm text-gray-500">Nov 21, 2025</td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 13, 2026</td>
                 </tr>
                 <tr>
                   <td class="px-4 py-3 text-sm">Microbiology organism categories</td>
@@ -677,6 +737,19 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                       >Issue #133</a
                     >
                   <td class="px-4 py-3 text-sm text-gray-500">Jan 2, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm">Unit field naming standardized</td>
+                  <td class="px-4 py-3 text-sm"
+                    >Standardized all unit columns in 3.0 to singular <code>_unit</code> for consistency with <code>med_dose_unit</code> and <code>reference_unit</code>: <code>infusion_rate_units</code> &rarr; <code>volume_infusion_rate_unit</code> (medication_admin_continuous, also renames the rate field <code>infusion_rate</code> &rarr; <code>volume_infusion_rate</code> per <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/210" class="text-clif-burgundy hover:underline">Issue #210</a>); <code>result_units</code> &rarr; <code>result_unit</code> (microbiology_nonculture); <code>volume_units</code> &rarr; <code>volume_unit</code> (transfusion).</td
+                  >
+                  <td class="px-4 py-3 text-sm"><span class="text-green-600">
+                    <a
+                      href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/210"
+                      class="text-clif-burgundy hover:underline"
+                      >Issue #210</a
+                    >
+                  <td class="px-4 py-3 text-sm text-gray-500">May 13, 2026</td>
                 </tr>
               </tbody>
             </table>

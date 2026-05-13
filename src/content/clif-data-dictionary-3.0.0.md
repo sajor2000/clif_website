@@ -78,18 +78,28 @@ The crrt_therapy table captures Continuous Renal Replacement Therapy (CRRT) data
 | 203 | J0 | 2024-02-17 11:45:00+00:00 UTC | SCUF | SCUF | NxStage by Baxter | 150.0 | NA | NA | NA | 800.0 |
 
 
-## ecmo_mcs
+## mcs
 
-The ECMO/MCS table is a wider longitudinal table that captures the start and stop times of ECMO/MCS support, the type of device used, and the work rate of the device.
+The MCS table is a long-form (one setting/measurement per row) longitudinal table that captures mechanical circulatory support (MCS) and ECMO device configuration and operational settings over time. Each row represents a single recorded setting or measurement at a point in time, identified by `setting_category` (e.g., `rpm`, `flow`, `sweep`, `fdo2`).
+
+**Notes**:
+
+- The table covers ECMO, LVAD, and RVAD support, distinguished by `support_category`.
+- The `setting_name` / `setting_category` / `setting_value` tuple replaces the prior wide-format columns (`flow`, `sweep_set`, `fdO2_set`, `control_parameter_*`). To represent multiple settings recorded at the same `recorded_dttm`, emit one row per setting.
+- `config_category` permissible values are conditional on `support_category` (e.g., `cp`, `2_5`, `5`, `5_5`, `rp`, `rp_flex` apply to `lvad` & `device_category == impella`; `heartware`, `heartmate2`, `heartmate3` apply to `lvad`; `central` applies to `lvad` or `rvad`).
 
 **Example**:
 
-| hospitalization_id | recorded_dttm                | device_name         | device_category     | mcs_group        | ecmo_configuration_category | control_parameter_name | control_parameter_category  | control_parameter_value | flow | sweep_set | fdO2_set |
-|-------------------|------------------------------|---------------------|---------------------|------------------|----------------------------|-----------------------|----------------------------|------------------------|------|-----------|----------|
-| 21002             | 2024-02-18 09:10:00+00:00 UTC| Impella 5.5         | impella_5_5         | impella_lvad     | NULL                       | P5                    | impella_performance        | 5                      | 4.8  | NULL      | NULL     |
-| 21003             | 2024-02-22 11:40:00+00:00 UTC| Abbott IABP         | iabp                | iabp             | NULL                       | IABP Ratio            | iabp_ratio                 | 3                      | NULL | NULL      | NULL     |
-| 21004             | 2024-02-23 14:30:00+00:00 UTC| Heart Mate III LVAD | heartmate_3         | durable_lvad     | NULL                       | RPMs                  | rpm                        | 4200                   | 3.5  | NULL      | NULL     |
-| 21005             | 2024-02-27 16:25:00+00:00 UTC| Centrimag ECMO VV   | centrimag_ecmo      | ecmo             | vv                         | RPMs                  | rpm                        | 3500                   | 3    | 1         | NULL     |
+| hospitalization_id | recorded_dttm                  | support_name | support_category | device_name | device_category | config_name  | config_category | setting_name | setting_category | setting_value |
+|--------------------|--------------------------------|--------------|------------------|-------------|-----------------|--------------|-----------------|--------------|------------------|---------------|
+| 123456             | 2026-01-01 12:00:00+00:00 UTC  | ECMO         | ecmo             | CARDIOHELP  | cardiohelp      | VA ECMO      | v_a             | RPM          | rpm              | 2700          |
+| 123456             | 2026-01-01 12:00:00+00:00 UTC  | ECMO         | ecmo             | CARDIOHELP  | cardiohelp      | VA ECMO      | v_a             | Flow         | flow             | 4.2           |
+| 123456             | 2026-01-01 12:00:00+00:00 UTC  | ECMO         | ecmo             | CARDIOHELP  | cardiohelp      | VA ECMO      | v_a             | Sweep        | sweep            | 4             |
+| 123456             | 2026-01-01 12:00:00+00:00 UTC  | ECMO         | ecmo             | CARDIOHELP  | cardiohelp      | VA ECMO      | v_a             | FDO2         | fdo2             | 1             |
+| 123456             | 2026-01-01 12:00:00+00:00 UTC  | LVAD         | lvad             | Impella     | impella         | Impella 5.5  | 5_5             | P            | performance      | 4             |
+| 123456             | 2026-01-01 12:00:00+00:00 UTC  | LVAD         | lvad             | Impella     | impella         | Impella 5.5  | 5_5             | Flow         | flow             | 3.2           |
+| 654321             | 2026-01-02 12:00:00+00:00 UTC  | ECMO         | ecmo             | CentriMag   | centrimag       | V-PA ECMO    | v_pa_single     | RPM          | rpm              | 2800          |
+| 555555             | 2026-01-03 12:00:00+00:00 UTC  | RVAD         | rvad             | CentriMag   | centrimag       | RVAD         | v_pa_single     | RPM          | rpm              | 2800          |
 
 
 
@@ -213,7 +223,7 @@ The medication admin continuous table is a long-form (one medication administrat
 
 **Example**:
 
-| hospitalization_id | admin_dttm                | med_name                                                           | med_category  | med_group     | med_route_name | med_route_category | med_dose | med_dose_unit | infusion_rate | infusion_rate_units | mar_action_name | mar_action_group      |
+| hospitalization_id | admin_dttm                | med_name                                                           | med_category  | med_group     | med_route_name | med_route_category | med_dose | med_dose_unit | volume_infusion_rate | volume_infusion_rate_unit | mar_action_name | mar_action_group      |
 |-------------------|---------------------------|--------------------------------------------------------------------|---------------|---------------|----------------|-------------------|----------|---------------|---------------|---------------------|----------------|----------------------|
 | 792391            | 2123-11-13 12:28:00+00:00 UTC | PROPOFOL 10 MG/ML INTRAVENOUS EMULSION                            | propofol      | sedation      | Intravenous    | NA                | 75.0000  | mcg/kg/min    | 45.0          | mL/hr               | New Bag        | administered         |
 | 792391            | 2123-11-13 13:49:00+00:00 UTC | REMIFENTANIL CONTINUOUS IV (ANESTHESIA)                           | remifentanil  | sedation      | NA             | NA                | 0.0500   | mcg/kg/min    | 12.5          | mL/hr               | New Bag        | administered         |
@@ -245,7 +255,7 @@ The microbiology culture table is a longitudinal table in long format that captu
 The microbiology non-culture table is a wide longitudinal table that captures the order and result times of non-culture microbiology tests, the type of fluid collected, the component of the test, and the result of the test.
 
 **Example**:
-| patient_id | hospitalization_id | order_dttm                | collect_dttm              | result_dttm               | fluid_name           | fluid_category      | method_name | method_category | micro_order_name                        | organism_category         | organism_group                                         | result_name                                   | result_category | reference_low | reference_high | result_units | lab_loinc_code |
+| patient_id | hospitalization_id | order_dttm                | collect_dttm              | result_dttm               | fluid_name           | fluid_category      | method_name | method_category | micro_order_name                        | organism_category         | organism_group                                         | result_name                                   | result_category | reference_low | reference_high | result_unit | lab_loinc_code |
 |------------|-------------------|---------------------------|---------------------------|---------------------------|----------------------|---------------------|-------------|----------------|------------------------------------------|--------------------------|--------------------------------------------------------|-----------------------------------------------|-----------------|--------------|---------------|--------------|---------------|
 | 1          | 12121             | 2025-06-15 09:05:00+00:00 | 2025-06-15 09:30:00+00:00 | 2025-06-15 13:45:00+00:00 | BLOOD                | blood/buffy coat    | PCR         | pcr            | neisseria quantitative pcr, blood        | neisseria_sp             | neisseria (gonorrhoea, meningitidis, other species)    | 100,000 copies/uL of neisseria detected       | detected        |              |               | copies/mL    | 39528-5       |
 | 2          | 32332             | 2025-06-16 11:15:00+00:00 | 2025-06-16 11:40:00+00:00 | 2025-06-16 15:25:00+00:00 | cerebrospinal fluid  | meninges and csf    | PCR         | pcr            | csf hsv pcr                             | herpes_simplex_virus      | herpes simplex (hsv1, hsv2)                           | no herspes simplex DNA measured               | not_detected    |              |               | IU/mL        | 16954-2       |
@@ -598,7 +608,7 @@ This table provides detailed information about transfusion events linked to spec
 
 **Example**:
 
-| hospitalization_id | transfusion_start_dttm           | transfusion_end_dttm             | component_name  | attribute_name    | volume_transfused | volume_units | product_code |
+| hospitalization_id | transfusion_start_dttm           | transfusion_end_dttm             | component_name  | attribute_name    | volume_transfused | volume_unit | product_code |
 |-------------------|----------------------------------|----------------------------------|----------------|-------------------|------------------|--------------|--------------|
 | 123456            | 2024-12-03 08:30:00+00:00 UTC       | 2024-12-03 10:00:00+00:00 UTC       | Red Blood Cells | Leukocyte Reduced | 300              | mL           | E0382        |
 | 789012            | 2024-12-04 14:00:00+00:00 UTC       | 2024-12-04 16:30:00+00:00 UTC       | Platelets       | Irradiated        | 250              | mL           | P0205        |

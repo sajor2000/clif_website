@@ -56,21 +56,20 @@ CREATE TABLE intermittent_dialysis (
 );
 
 -- -----------------------------------------------------#
--- Table: ecmo_mcs
+-- Table: mcs
 -- -----------------------------------------------------#
-CREATE TABLE ecmo_mcs (
+CREATE TABLE mcs (
   hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
   recorded_dttm DATETIME COMMENT '{"description": "Date and time when the device settings and/or measurement was recorded", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
-  device_name VARCHAR COMMENT '{"description": "Name of the ECMO/MCS device used including brand information, e.g. Centrimag", "permissible": "No restriction"}',
-  device_category VARCHAR COMMENT '{"description": "Maps device_name to a standardized mCIDE", "permissible": "[List of device categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/ecmo_mcs/clif_ecmo_mcs_device_category.csv) and [outlier thresholds by device category](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/outlier-handling/outlier_thresholds_ecmo_mcs.csv)"}',
-  mcs_group VARCHAR COMMENT '{"description": "Maps device_category to a standardized mCIDE of MCS types", "permissible": "[List of MCS groups in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/ecmo_mcs/clif_ecmo_mcs_mcs_group.csv)"}',
-  ecmo_configuration_category VARCHAR COMMENT '{"description": "Categorical variable designating the ECMO configuration type as defined by the cannulation strategy", "permissible": "[List of configuration categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/ecmo_mcs/clif_ecmo_mcs_device_category.csv)"}',
-  control_parameter_name VARCHAR COMMENT '{"description": "String that captures the measure of work rate of the device, e.g., RPMs, Impella Power, etc.", "permissible": "No restriction"}',
-  control_parameter_category VARCHAR COMMENT '{"description": "Maps control_parameter_name to a standardized list of control parameter categories", "permissible": "[List of control parameter categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/ecmo_mcs/clif_ecmo_mcs_control_param_category.csv)"}',
-  control_parameter_value FLOAT COMMENT '{"description": "The value of the control parameter (numeric).", "permissible": "Numeric values"}',
-  flow FLOAT COMMENT '{"description": "Blood flow in L/min.", "permissible": "Numeric values in L/min"}',
-  sweep_set FLOAT COMMENT '{"description": "Gas flow (L/min) set. Applies to ECMO only.", "permissible": "Numeric values in L/min"}',
-  fdO2_set FLOAT COMMENT '{"description": "Fraction of delivered oxygen set. Applies to ECMO only.", "permissible": "Numeric values (0-1)"}'
+  support_name VARCHAR COMMENT '{"description": "Unstandardized name of the mechanical support type recorded in the raw data", "permissible": "No restriction"}',
+  support_category VARCHAR COMMENT '{"description": "Standardized category of support type which reports the measurement_value", "permissible": "[List of support categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/mcs/clif_mcs_support_category.csv)"}',
+  device_name VARCHAR COMMENT '{"description": "Unstandardized name of the device recorded in the raw data", "permissible": "No restriction"}',
+  device_category VARCHAR COMMENT '{"description": "Standardized category of device brand reporting the measurement_value", "permissible": "[List of device categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/mcs/clif_mcs_device_category.csv)"}',
+  config_name VARCHAR COMMENT '{"description": "Unstandardized name of the device configuration recorded in the raw data", "permissible": "No restriction"}',
+  config_category VARCHAR COMMENT '{"description": "Standardized category of MCS configuration. Permissible values are conditional on support_category and device_category (e.g., cp/2_5/2_5_or_cp/5/5_5/rp/rp_flex apply to lvad & impella; heartware/heartmate2/heartmate3 apply to lvad; central applies to lvad or rvad).", "permissible": "[List of configuration categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/mcs/clif_mcs_configuration_category.csv)"}',
+  setting_name VARCHAR COMMENT '{"description": "Unstandardized name of the device setting or measurement recorded in the raw data", "permissible": "No restriction"}',
+  setting_category VARCHAR COMMENT '{"description": "Standardized category of reported setting or measurement", "permissible": "[List of setting categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/mcs/clif_mcs_setting_category.csv)"}',
+  setting_value FLOAT COMMENT '{"description": "Numeric value of the reported setting or measurement, interpreted in the units defined by setting_category", "permissible": "Numeric"}'
 );
 
 -- -----------------------------------------------------
@@ -145,8 +144,8 @@ CREATE TABLE medication_admin_continuous (
   med_dose FLOAT COMMENT '{"description": "Quantity of active drug delivered per unit time", "permissible": "Numeric"}',
   med_dose_unit VARCHAR COMMENT '{"description": "Unit of dose in the format [active ingredient quantity]/[time] (e.g., mcg/min, mg/hr, units/hr, mcg/kg/min). Units are not standardized across drugs, and can be weight-based (e.g., mcg/kg/min). Boluses should be mapped to med_admin_intermittent", "permissible": "No restriction"}',
   rx_norm_code VARCHAR COMMENT '{"description": "RxNorm RXCUI code identifying the specific drug formulation (active ingredient, strength, dose form, and route) for this administration. Resolved from the combination of med_name, med_route_name, med_dose, and med_dose_unit.", "permissible": "[RxNorm RXCUI](https://www.nlm.nih.gov/research/umls/rxnorm/index.html)"}',
-  infusion_rate FLOAT COMMENT '{"description": "Absolute amount of volume administered over time, measured in [volume]/[time] (e.g., mL/hr). In contrast to med_dose which measures [quantity of drug]/[time] or [quantity of drug]/([time]*[body_weight])", "permissible": "Numeric"}',
-  infusion_rate_units VARCHAR COMMENT '{"description": "Unit of infusion rate in the format [volume]/[time] (e.g., mL/hr, mL/min)", "permissible": "No restriction"}',
+  volume_infusion_rate FLOAT COMMENT '{"description": "Absolute amount of volume administered over time, measured in [volume]/[time] (e.g., mL/hr). In contrast to med_dose which measures [quantity of drug]/[time] or [quantity of drug]/([time]*[body_weight])", "permissible": "Numeric"}',
+  volume_infusion_rate_unit VARCHAR COMMENT '{"description": "Standardized unit of volume infusion rate per med_category in the format [volume]/[time] (e.g., mL/hr, mL/min).", "permissible": "[List of continuous medication categories with standardized volume_infusion_rate_unit in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/medication_admin_continuous/clif_medication_admin_continuous_med_categories.csv)"}',
   mar_action_name VARCHAR COMMENT '{"description": "MAR (medication administration record) action, e.g. stopped", "permissible": "No restriction"}',
   mar_action_category VARCHAR COMMENT '{"description": "Maps mar_action_name to a standardized list of MAR actions", "permissible": "[List of continuous action categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/medication_admin_continuous/clif_medication_admin_continuous_action_categories.csv)"}',
   mar_action_group VARCHAR COMMENT '{"description": "Maps mar_action_category to whether the action means the medication was administered or not.", "permissible": "[administered, not_administered, other](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/medication_admin_continuous/clif_medication_admin_continuous_action_categories.csv)"}'
@@ -195,7 +194,7 @@ CREATE TABLE microbiology_nonculture(
   result_category VARCHAR COMMENT '{"description": "Category of the test result.", "permissible": "[Check list of result categories](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/microbiology_nonculture/clif_microbiology_nonculture_result_category.csv)"}',
   reference_low DOUBLE COMMENT '{"description": "Reference low value.", "permissible": "No restriction"}',
   reference_high DOUBLE COMMENT '{"description": "Reference high value.", "permissible": "No restriction"}',
-  result_units VARCHAR COMMENT '{"description": "Unit of the test result.", "permissible": "No restriction"}',
+  result_unit VARCHAR COMMENT '{"description": "Unit of the test result.", "permissible": "No restriction"}',
   lab_loinc_code VARCHAR COMMENT '{"description": "LOINC code.", "permissible": "No restriction"}'
 );
 
@@ -456,7 +455,7 @@ CREATE TABLE transfusion (
   component_name VARCHAR COMMENT '{"description": "The name of the blood component transfused.", "permissible": "E.g., Red Blood Cells, Plasma, Platelets"}',
   attribute_name VARCHAR COMMENT '{"description": "Attributes describing modifications to the component.", "permissible": "E.g., Leukocyte Reduced, Irradiated"}',
   volume_transfused DOUBLE COMMENT '{"description": "The volume of the blood component transfused.", "permissible": "Numeric, e.g., 300"}',
-  volume_units VARCHAR COMMENT '{"description": "The unit of measurement for the transfused volume.", "permissible": "E.g., mL"}',
+  volume_unit VARCHAR COMMENT '{"description": "The unit of measurement for the transfused volume.", "permissible": "E.g., mL"}',
   product_code VARCHAR COMMENT '{"description": "ISBT 128 Product Description Code representing the specific blood product.", "permissible": "E.g., E0382"}'
 );
 
