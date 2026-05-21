@@ -495,17 +495,22 @@ The intermittent_dialysis table captures intermittent hemodialysis sessions duri
 
 
 
-The `key_icu_orders` table captures key orders related to physical therapy (PT) and occupational therapy (OT) during ICU stays. It includes details about the hospitalization, the timing of the order, the specific name of the order, its category, and the status of the order (completed or sent).
+The `key_icu_orders` table captures key consult and ancillary orders placed during ICU stays — including PT, OT, social work, nutrition, palliative care, and other consult services. It includes details about the hospitalization, the timing of the order, the specific name of the order, its standardized category, and the standardized status of the order.
 
+**Notes**:
+
+- `order_category` permissible values are aligned with the MIMIC-IV consult order list ([issue #196](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/196)).
+- `order_status_category` standardizes the order lifecycle to `sent`, `completed`, `resulted`, or `canceled`.
 
 **Example**:
 
-| hospitalization_id | order_dttm                | order_name                | order_category | order_status_name |
-|-------------------|---------------------------|--------------------------|---------------|-----------------|
-| 12345             | 2024-12-15 10:00:00+00:00 UTC | PT Initial Evaluation     | PT_evaluation  | completed       |
-| 67890             | 2024-12-16 14:30:00+00:00 UTC | OT Follow-up Treatment    | OT_treat       | sent            |
-| 54321             | 2024-12-16 08:00:00+00:00 UTC | PT Mobility Session       | PT_treat       | completed       |
-| 98765             | 2024-12-15 11:15:00+00:00 UTC | OT Cognitive Assessment   | OT_evaluation  | sent            |
+| hospitalization_id | order_dttm                | order_name                | order_category | order_status_category |
+|-------------------|---------------------------|--------------------------|----------------|-----------------------|
+| 12345             | 2024-12-15 10:00:00+00:00 UTC | PT Initial Evaluation     | pt             | completed             |
+| 67890             | 2024-12-16 14:30:00+00:00 UTC | OT Follow-up Treatment    | ot             | sent                  |
+| 54321             | 2024-12-16 08:00:00+00:00 UTC | Social Work Consult       | social_work    | resulted              |
+| 98765             | 2024-12-15 11:15:00+00:00 UTC | Palliative Care Consult   | palliative_care| canceled              |
+| 11223             | 2024-12-17 09:45:00+00:00 UTC | Nutrition Consult         | nutrition      | completed             |
 
 
 ## medication_orders

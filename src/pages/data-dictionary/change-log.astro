@@ -475,7 +475,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            New mCIDE Values (14 updates)
+            New mCIDE Values (15 updates)
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -604,6 +604,18 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                       href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/68"
                       class="text-clif-burgundy hover:underline"
                       >Issue #68</a
+                    >
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">order_category / order_status_category</td>
+                  <td class="px-4 py-3 text-sm"
+                    >Expanded <code>key_icu_orders.order_category</code> from PT/OT placeholders to the MIMIC-IV consult list (17 values: pt, social_work, ot, nutrition, swallowing, respiratory, interpreter, skin_care, pain_services, addiction_nurse, speech, pastoral_services, palliative_care, psych_liaison_nurse, et_nurse, eeg, other). Added <code>clif_key_icu_orders_order_status_categories.csv</code> (sent, completed, resulted, canceled) and renamed the schema column <code>order_status_name</code> &rarr; <code>order_status_category</code> to align with CLIF name/category convention.</td
+                  >
+                  <td class="px-4 py-3 text-sm"><span class="text-green-600">
+                    <a
+                      href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/196"
+                      class="text-clif-burgundy hover:underline"
+                      >Issue #196</a
                     >
                 </tr>
                 <tr>

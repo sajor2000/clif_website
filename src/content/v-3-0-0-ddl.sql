@@ -330,9 +330,9 @@ CREATE TABLE invasive_hemodynamics (
 CREATE TABLE key_icu_orders (
   hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
   order_dttm DATETIME COMMENT '{"description": "Date and time when the order was placed. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
-  order_name VARCHAR COMMENT '{"description": "Name of the specific order (e.g., PT Evaluation, OT Treatment).", "permissible": "No restriction"}',
-  order_category VARCHAR COMMENT '{"description": "Category of the order.", "permissible": "Under-development. Some examples include: [pt_evaluation, pt_treat, ot_evaluation, ot_treat](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/key_icu_orders/clif_key_icu_orders_categories.csv)"}',
-  order_status_name VARCHAR COMMENT '{"description": "Status of the order.", "permissible": "sent, completed"}'
+  order_name VARCHAR COMMENT '{"description": "Name of the specific order from source EHR data (e.g., PT Evaluation, Social Work Consult, Nutrition Consult).", "permissible": "No restriction"}',
+  order_category VARCHAR COMMENT '{"description": "Maps order_name to a standardized list of ICU consult/order categories (MIMIC-IV-aligned).", "permissible": "[pt, social_work, ot, nutrition, swallowing, respiratory, interpreter, skin_care, pain_services, addiction_nurse, speech, pastoral_services, palliative_care, psych_liaison_nurse, et_nurse, eeg, other](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/key_icu_orders/clif_key_icu_orders_categories.csv)"}',
+  order_status_category VARCHAR COMMENT '{"description": "Standardized status of the order.", "permissible": "[sent, completed, resulted, canceled](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/key_icu_orders/clif_key_icu_orders_order_status_categories.csv)"}'
 );
 
 -- -----------------------------------------------------
