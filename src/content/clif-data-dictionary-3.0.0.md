@@ -688,6 +688,7 @@ The `clinical_notes_facts` table captures the metadata about clinical notes.
 | 12345 | N002 | Discharge Summary | discharge_summary | PROV002 | Internal Medicine | 1 | 2024-12-03 14:00:00+00:00 UTC | 2024-12-03 14:00:00+00:00 UTC | 2024-12-03 00:00:00+00:00 UTC | co-signed | Pulmonology |
 | 67890 | N003 | PT Initial Evaluation | therapy_note | PROV003 | Physical Therapy | 1 | 2024-11-28 09:30:00+00:00 UTC | 2024-11-28 09:30:00+00:00 UTC | 2024-11-28 00:00:00+00:00 UTC | signed | |
 | 67890 | N004 | ID Consult | consult_note | PROV004 | Infectious Diseases | 1 | 2024-11-28 14:00:00+00:00 UTC | 2024-11-28 14:00:00+00:00 UTC | 2024-11-28 00:00:00+00:00 UTC | addendum | |
+| 67890 | N005 | Death Pronouncement | death_pronouncement | PROV005 | Critical Care | 1 | 2024-11-29 03:15:00+00:00 UTC | 2024-11-29 03:15:00+00:00 UTC | 2024-11-29 00:00:00+00:00 UTC | signed | |
 
 ## clinical_notes_text
 
