@@ -16,17 +16,18 @@ The admission, discharge, and transfer (adt) table is a start-stop longitudinal 
 
 * ADT represents the patient's physical location, NOT the patient "status".
 * Procedural areas and operating rooms should be mapped to `Procedural`. Pre/Intra/Post-procedural/OR EHR data (such as anesthesia flowsheet records from Labs, Vitals, Scores, Respiratory Support) **are not currently** represented in CLIF.
+* `room_id` and `bed_id` are optional free-text identifiers carried through from source EHR data — no standardization across sites is required.
 
 \
 **Example**:
 
-| hospitalization_id | hospital_id | hospital_type | in_dttm | out_dttm | location_name | location_category | location_type |
-|-------------------|-------------|---------------|---------|----------|---------------|-------------------|----------------|
-| 20010012 | ABC | academic | 2024-12-01 10:00:00+00:00 UTC | 2024-12-01 14:00:00+00:00 UTC | B06F | icu | general_icu |
-| 20010012 | ABC | academic | 2024-12-01 14:30:00+00:00 UTC | 2024-12-02 08:00:00+00:00 UTC | B78D | ward | |
-| 20010015 | ABC | academic | 2024-11-30 16:45:00+00:00 UTC | 2024-12-01 12:00:00+00:00 UTC | B06T | icu | general_icu |
-| 20010015 | ABC | academic | 2024-12-01 12:30:00+00:00 UTC | 2024-12-02 07:00:00+00:00 UTC | N23E | procedural | |
-| 20010020 | EFG | community | 2024-11-28 09:00:00+00:00 UTC | 2024-11-29 17:00:00+00:00 UTC | B78D | ward | |
+| hospitalization_id | hospital_id | hospital_type | in_dttm | out_dttm | location_name | location_category | location_type | room_id | bed_id |
+|-------------------|-------------|---------------|---------|----------|---------------|-------------------|----------------|---------|--------|
+| 20010012 | ABC | academic | 2024-12-01 10:00:00+00:00 UTC | 2024-12-01 14:00:00+00:00 UTC | B06F | icu | general_icu | R142 | B3 |
+| 20010012 | ABC | academic | 2024-12-01 14:30:00+00:00 UTC | 2024-12-02 08:00:00+00:00 UTC | B78D | ward | | R207 | B1 |
+| 20010015 | ABC | academic | 2024-11-30 16:45:00+00:00 UTC | 2024-12-01 12:00:00+00:00 UTC | B06T | icu | general_icu | | |
+| 20010015 | ABC | academic | 2024-12-01 12:30:00+00:00 UTC | 2024-12-02 07:00:00+00:00 UTC | N23E | procedural | | | |
+| 20010020 | EFG | community | 2024-11-28 09:00:00+00:00 UTC | 2024-11-29 17:00:00+00:00 UTC | B78D | ward | | | |
 
 
 ## code_status
