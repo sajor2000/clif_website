@@ -119,7 +119,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            New Fields (7 fields added)
+            New Fields (8 fields added)
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -192,6 +192,13 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/23" class="text-clif-burgundy hover:underline">Issue #23</a></td>
                   <td class="px-4 py-3 text-sm text-gray-500">May 6, 2026</td>
                 </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">component_category</td>
+                  <td class="px-4 py-3 text-sm">transfusion</td>
+                  <td class="px-4 py-3 text-sm">Maps <code>component_name</code> to a standardized list of blood component categories — <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/transfusion/clif_transfusion_component_categories.csv" class="text-clif-burgundy hover:underline">cryoprecipitate, plasma, platelets, prbc, whole_blood</a>.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/190" class="text-clif-burgundy hover:underline">Issue #190</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 27, 2026</td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -202,7 +209,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            New mCIDE Values (5 updates)
+            New mCIDE Values (6 updates)
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -252,6 +259,12 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   <td class="px-4 py-3 text-sm">Renamed semantic values in the <code>hospitalization.discharge_category</code> mCIDE (separate from the 3.0-wide casing change): <code>Skilled Nursing Facility (SNF)</code> → <code>snf</code>, <code>Acute Inpatient Rehab Facility</code> → <code>acute_ip_rehab</code>, <code>Long Term Care Hospital (LTACH)</code> → <code>ltach</code>, <code>Acute Care Hospital</code> → <code>acute_care_hosp</code>, <code>Against Medical Advice (AMA)</code> → <code>ama</code>, <code>Psychiatric Hospital</code> → <code>mental_health_hosp</code>. <code>discharge_name</code> (raw text) is unaffected.</td>
                   <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/202" class="text-clif-burgundy hover:underline">Issue #202</a></td>
                   <td class="px-4 py-3 text-sm text-gray-500">May 7, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">organism_category</td>
+                  <td class="px-4 py-3 text-sm">POC final review of the <code>clif_microbiology_culture_organism_categories.csv</code> additions from <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/191" class="text-clif-burgundy hover:underline">#191</a>, expanding <code>microbiology_culture.organism_category</code> with new permissible values — both species-level entries (e.g., <code>streptococcus_pneumoniae</code>, <code>streptococcus_pyogenes</code>, <code>trichophyton_rubrum</code>, <code>trichosporon_asahii</code>, <code>trueperella_bernardiae</code>) and genus-level <code>*_sp</code> catch-alls (e.g., <code>streptococcus_sp</code>, <code>streptomyces_sp</code>, <code>trichoderma_sp</code>, <code>veillonella_sp</code>) carrying a standard "identified to the genus level only" remark.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/209" class="text-clif-burgundy hover:underline">Issue #209</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 27, 2026</td>
                 </tr>
               </tbody>
             </table>
