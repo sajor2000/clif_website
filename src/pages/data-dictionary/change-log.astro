@@ -34,7 +34,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            New Tables (9 concept tables added)
+            New Tables (12 concept tables added)
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -108,6 +108,24 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   <td class="px-4 py-3 text-sm">Concept table capturing one row per imaging study — order/capture/report timestamps, the source order name, four mCIDE-controlled columns (modality, region, IV contrast, location), and the final report narrative.</td>
                   <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/140" class="text-clif-burgundy hover:underline">Issue #140</a></td>
                   <td class="px-4 py-3 text-sm text-gray-500">May 7, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">line</td>
+                  <td class="px-4 py-3 text-sm">Concept table capturing vascular line placements, one row per line with composite key <code>(hospitalization_id, line_id)</code>. Tracks <code>placed_dttm</code>/<code>removed_dttm</code>, <code>line_category</code> (cvc, art_line, picc, midline, dialysis_catheter, swan_ganz, cordis, piv), <code>line_site</code> (right/left ij/subclavian/femoral/radial/brachial, other), and <code>lumen_count</code>. Per the steering committee vote, lines/drains/airways are kept as three separate tables rather than a unified LDA table.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/208" class="text-clif-burgundy hover:underline">Issue #208</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 28, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">drain</td>
+                  <td class="px-4 py-3 text-sm">Concept table capturing drain placements, one row per drain with composite key <code>(hospitalization_id, drain_id)</code>. Tracks <code>placed_dttm</code>/<code>removed_dttm</code>, <code>drain_category</code> (chest_tube, foley, jp_drain, eud, evd, pigtail, ng_tube, og_tube, peg_tube, dobhoff), and free-text <code>anatomical_location</code>.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/208" class="text-clif-burgundy hover:underline">Issue #208</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 28, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">airway</td>
+                  <td class="px-4 py-3 text-sm">Concept table capturing airway placements, one row per airway with composite key <code>(hospitalization_id, airway_id)</code>. Tracks <code>placed_dttm</code>/<code>removed_dttm</code>, <code>airway_category</code> (ett, trach, npa, opa), <code>airway_size</code> (e.g., 6.0, 7.5), and <code>is_cuffed</code> (0/1).</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/208" class="text-clif-burgundy hover:underline">Issue #208</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 28, 2026</td>
                 </tr>
               </tbody>
             </table>
