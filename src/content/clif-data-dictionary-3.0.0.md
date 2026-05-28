@@ -772,6 +772,71 @@ The `radiology` table captures one row per imaging study, including order/captur
 | 542367     | ACC0004             | 2024-11-04 06:15:00+00:00 UTC | 2024-11-04 06:40:00+00:00 UTC | 2024-11-04 07:30:00+00:00 UTC | US ABDOMEN COMPLETE         | us                          | abdomen                   | not_applicable       | radiology                   | Hepatomegaly. No biliary dilation.                 |
 
 
+## line
+
+The `line` table captures vascular line placements during a hospitalization — one row per line. It tracks when each line was placed and removed, the standardized line type (`line_category`), the anatomic site (`line_site`), and the lumen count. Per the [steering committee vote](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/208), lines, drains, and airways are kept as three separate tables rather than a unified LDA table.
+
+**Notes**:
+
+- Composite key is `(hospitalization_id, line_id)`. `line_id` maps to the Epic LDA ID where applicable.
+- `removed_dttm` is null if the line is still in place at the time of data extraction.
+- `line_category` and `line_site` are mCIDE-controlled — see [clif_line_categories.csv](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/line/clif_line_categories.csv) and [clif_line_sites.csv](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/line/clif_line_sites.csv) for the canonical permissible values.
+- `line_site` is optional and typically null for lines that don't have a meaningful laterality (e.g., a PIV in the antecubital fossa not coded by side).
+- `lumen_count` is optional but recommended for central lines and dialysis catheters.
+
+**Example**:
+
+| hospitalization_id | line_id   | placed_dttm                   | removed_dttm                  | line_category     | line_site         | lumen_count |
+|--------------------|-----------|-------------------------------|-------------------------------|-------------------|-------------------|-------------|
+| 123456             | LDA0001   | 2024-12-03 08:30:00+00:00 UTC | 2024-12-08 14:00:00+00:00 UTC | cvc               | right_ij          | 3           |
+| 123456             | LDA0002   | 2024-12-03 09:10:00+00:00 UTC | 2024-12-06 11:30:00+00:00 UTC | art_line          | left_radial       | 1           |
+| 789012             | LDA0073   | 2024-12-04 14:00:00+00:00 UTC |                               | picc              | right_brachial    | 2           |
+| 456789             | LDA0144   | 2024-12-05 12:15:00+00:00 UTC | 2024-12-05 18:45:00+00:00 UTC | piv               |                   |             |
+
+
+## drain
+
+The `drain` table captures drain placements during a hospitalization — one row per drain. It tracks when each drain was placed and removed, the standardized drain type (`drain_category`), and a free-text `anatomical_location`.
+
+**Notes**:
+
+- Composite key is `(hospitalization_id, drain_id)`. `drain_id` maps to the Epic LDA ID where applicable.
+- `removed_dttm` is null if the drain is still in place at the time of data extraction.
+- `drain_category` is mCIDE-controlled — see [clif_drain_categories.csv](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/drain/clif_drain_categories.csv) for the canonical permissible values.
+- `anatomical_location` is unstandardized free text (e.g., "right pleural", "subhepatic") because drain placement sites are too heterogeneous to enumerate.
+
+**Example**:
+
+| hospitalization_id | drain_id  | placed_dttm                   | removed_dttm                  | drain_category | anatomical_location |
+|--------------------|-----------|-------------------------------|-------------------------------|----------------|---------------------|
+| 123456             | LDA0301   | 2024-12-03 10:00:00+00:00 UTC | 2024-12-09 09:15:00+00:00 UTC | chest_tube     | right pleural       |
+| 123456             | LDA0302   | 2024-12-03 11:30:00+00:00 UTC |                               | foley          | bladder             |
+| 789012             | LDA0410   | 2024-12-04 15:45:00+00:00 UTC | 2024-12-07 08:00:00+00:00 UTC | jp_drain       | subhepatic          |
+| 456789             | LDA0588   | 2024-12-05 06:20:00+00:00 UTC | 2024-12-05 22:10:00+00:00 UTC | ng_tube        | gastric             |
+
+
+## airway
+
+The `airway` table captures airway device placements during a hospitalization — one row per airway. It tracks when each airway was placed and removed, the standardized airway type (`airway_category`), the device size, and whether it is cuffed.
+
+**Notes**:
+
+- Composite key is `(hospitalization_id, airway_id)`. `airway_id` maps to the Epic LDA ID where applicable.
+- `removed_dttm` is null if the airway is still in place at the time of data extraction.
+- `airway_category` is mCIDE-controlled — see [clif_airway_categories.csv](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/airway/clif_airway_categories.csv) for the canonical permissible values.
+- `airway_size` is the device size as recorded (e.g., 7.5 mm internal diameter for an ETT, 8 Fr for an NPA). Unit conventions follow the source EHR.
+- `is_cuffed` is 1 if the device has an inflatable cuff (typical for ETTs and most tracheostomy tubes), 0 otherwise (typical for NPA/OPA).
+
+**Example**:
+
+| hospitalization_id | airway_id | placed_dttm                   | removed_dttm                  | airway_category | airway_size | is_cuffed |
+|--------------------|-----------|-------------------------------|-------------------------------|-----------------|-------------|-----------|
+| 123456             | LDA0701   | 2024-12-03 07:45:00+00:00 UTC | 2024-12-08 16:20:00+00:00 UTC | ett             | 7.5         | 1         |
+| 789012             | LDA0802   | 2024-12-04 13:00:00+00:00 UTC |                               | trach           | 8.0         | 1         |
+| 456789             | LDA0903   | 2024-12-05 04:30:00+00:00 UTC | 2024-12-05 06:00:00+00:00 UTC | opa             | 9           | 0         |
+| 234567             | LDA1004   | 2024-12-06 22:10:00+00:00 UTC | 2024-12-07 03:45:00+00:00 UTC | npa             | 7           | 0         |
+
+
 ## Future Proposed Tables
 
 These are tables without any defined structure that the consortium has not yet committed to implementing.
