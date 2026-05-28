@@ -128,7 +128,7 @@ CREATE TABLE labs (
   lab_specimen_name VARCHAR COMMENT '{"description": "Original fluid or tissue name the lab was collected from as given in the source data", "permissible": "No restriction"}',
   lab_specimen_category VARCHAR COMMENT '{"description": "Fluid or tissue the lab was collected from, analogous to the LOINC \"system\" component.", "permissible": "working CDE c(blood/plasma/serum, urine, csf, other)"}',
   lab_loinc_code VARCHAR COMMENT '{"description": "[LOINC](https://loinc.org/get-started/loinc-term-basics/) code for the lab", "permissible": "No restrictions"}',
-  loinc_version VARCHAR COMMENT '{"description": "Version or release of the LOINC coding system used for lab_loinc_code, e.g. 1.0 or 1.1.", "permissible": "No restriction"}'
+  loinc_version VARCHAR COMMENT '{"description": "Version or release of the LOINC coding system used for lab_loinc_code, e.g. 1.0 or 1.1.", "permissible": "[LOINC version history](https://loinc.org/history/)"}'
 );
 
 -- -----------------------------------------------------
