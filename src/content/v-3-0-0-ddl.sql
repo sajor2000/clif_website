@@ -229,7 +229,7 @@ CREATE TABLE patient (
   death_dttm DATETIME COMMENT '{"description": "Patient’s death date, including time. Can be sourced from hospital records, or external sources like state vital records registries", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   language_name VARCHAR COMMENT '{"description": "Patient’s preferred language", "permissible": "Original string from the source data"}',
   language_category VARCHAR COMMENT '{"description": "Maps language_name to a standardized list of spoken languages", "permissible": "[List of language categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/patient/clif_patient_language_categories.csv)"}',
-  language_interpreter INT COMMENT '{"description": "Binary indicator for whether the patient requires a medical interpreter (1 = yes, 0 = no). Captures the patient-level interpreter need flag from the source EHR (e.g., the Epic Interpreter Needed indicator), independent of language_category.", "permissible": "0, 1"}'
+  language_interpreter INT COMMENT '{"description": "Binary indicator for whether the patient requires a medical interpreter (1 = yes, 0 = no). Captures the patient-level interpreter need flag from the source EHR, independent of language_category.", "permissible": "0, 1"}'
 );
 
 -- -----------------------------------------------------
