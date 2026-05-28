@@ -570,7 +570,7 @@ CREATE TABLE line (
   hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter.", "permissible": "No restriction"}',
   line_id VARCHAR COMMENT '{"description": "Per-event identifier for the line placement. Together with hospitalization_id, forms the composite key. Maps to the Epic LDA ID where applicable.", "permissible": "No restriction"}',
   placed_dttm DATETIME COMMENT '{"description": "Date and time the line was placed. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
-  removed_dttm DATETIME COMMENT '{"description": "Date and time the line was removed; NULL if still in place. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
+  removed_dttm DATETIME COMMENT '{"description": "Date and time the line was removed, NULL if still in place. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   line_category VARCHAR COMMENT '{"description": "Standardized line type.", "permissible": "cvc, art_line, picc, midline, dialysis_catheter, swan_ganz, cordis, piv"}',
   line_site VARCHAR COMMENT '{"description": "Standardized anatomic site where the line was placed.", "permissible": "right_ij, left_ij, right_subclavian, left_subclavian, right_femoral, left_femoral, right_radial, left_radial, right_brachial, left_brachial, other"}',
   lumen_count INT COMMENT '{"description": "Number of lumens on the line.", "permissible": "Numeric"}'
@@ -583,7 +583,7 @@ CREATE TABLE drain (
   hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter.", "permissible": "No restriction"}',
   drain_id VARCHAR COMMENT '{"description": "Per-event identifier for the drain placement. Together with hospitalization_id, forms the composite key. Maps to the Epic LDA ID where applicable.", "permissible": "No restriction"}',
   placed_dttm DATETIME COMMENT '{"description": "Date and time the drain was placed. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
-  removed_dttm DATETIME COMMENT '{"description": "Date and time the drain was removed; NULL if still in place. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
+  removed_dttm DATETIME COMMENT '{"description": "Date and time the drain was removed, NULL if still in place. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   drain_category VARCHAR COMMENT '{"description": "Standardized drain type.", "permissible": "chest_tube, foley, jp_drain, eud, evd, pigtail, ng_tube, og_tube, peg_tube, dobhoff"}',
   anatomical_location VARCHAR COMMENT '{"description": "Anatomic location where the drain was placed.", "permissible": "No restriction"}'
 );
@@ -595,7 +595,7 @@ CREATE TABLE airway (
   hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter.", "permissible": "No restriction"}',
   airway_id VARCHAR COMMENT '{"description": "Per-event identifier for the airway placement. Together with hospitalization_id, forms the composite key. Maps to the Epic LDA ID where applicable.", "permissible": "No restriction"}',
   placed_dttm DATETIME COMMENT '{"description": "Date and time the airway was placed. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
-  removed_dttm DATETIME COMMENT '{"description": "Date and time the airway was removed; NULL if still in place. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
+  removed_dttm DATETIME COMMENT '{"description": "Date and time the airway was removed, NULL if still in place. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   airway_category VARCHAR COMMENT '{"description": "Standardized airway type.", "permissible": "ett, trach, npa, opa"}',
   airway_size FLOAT COMMENT '{"description": "Size of the airway device (e.g., 6.0, 7.5).", "permissible": "Numeric"}',
   is_cuffed INT COMMENT '{"description": "Whether the airway is cuffed.", "permissible": "0, 1"}'
