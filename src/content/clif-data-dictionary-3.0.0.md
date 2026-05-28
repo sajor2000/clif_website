@@ -291,13 +291,13 @@ This table contains demographic information about the patient that does not vary
 
 
 **Example**:
-| patient_id | race_name                  | race_category              | ethnicity_name                                    | ethnicity_category | sex_category | birth_date  | death_dttm | language_name | language_category |
-|------------|---------------------------|---------------------------|--------------------------------------------------|-------------------|--------------|-------------|------------|---------------|------------------|
-| 132424     | Black or African-American | Black or African American | Not Hispanic, Latino/a, or Spanish origin        | Non-Hispanic      | Male         | 2145-05-09  | NA         | English       | English          |
-| 132384     | White                     | White                     | Not Hispanic, Latino/a, or Spanish origin        | Non-Hispanic      | Female       | 2145-03-30  | NA         | English       | English          |
-| 542367     | Black or African-American | Black or African American | Not Hispanic, Latino/a, or Spanish origin        | Non-Hispanic      | Male         | 2145-01-29  | NA         | English       | English          |
-| 989862     | White                     | White                     | Not Hispanic, Latino/a, or Spanish origin        | Non-Hispanic      | Female       | 2145-11-06  | NA         | English       | English          |
-| 428035     | More than one Race        | Other                     | Not Hispanic, Latino/a, or Spanish origin        | Non-Hispanic      | Male         | 2145-10-13  | NA         | English       | English          |
+| patient_id | race_name                  | race_category              | ethnicity_name                                    | ethnicity_category | sex_category | birth_date  | death_dttm | language_name | language_category | language_interpreter |
+|------------|---------------------------|---------------------------|--------------------------------------------------|-------------------|--------------|-------------|------------|---------------|------------------|----------------------|
+| 132424     | Black or African-American | Black or African American | Not Hispanic, Latino/a, or Spanish origin        | Non-Hispanic      | Male         | 2145-05-09  | NA         | English       | English          | 0                    |
+| 132384     | White                     | White                     | Not Hispanic, Latino/a, or Spanish origin        | Non-Hispanic      | Female       | 2145-03-30  | NA         | English       | English          | 0                    |
+| 542367     | Black or African-American | Black or African American | Not Hispanic, Latino/a, or Spanish origin        | Non-Hispanic      | Male         | 2145-01-29  | NA         | Spanish       | Spanish          | 1                    |
+| 989862     | White                     | White                     | Not Hispanic, Latino/a, or Spanish origin        | Non-Hispanic      | Female       | 2145-11-06  | NA         | English       | English          | 0                    |
+| 428035     | More than one Race        | Other                     | Not Hispanic, Latino/a, or Spanish origin        | Non-Hispanic      | Male         | 2145-10-13  | NA         | Mandarin      | Mandarin Chinese | 1                    |
 
 
 ## patient_assessments
