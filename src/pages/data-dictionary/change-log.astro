@@ -308,6 +308,43 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           </div>
         </details>
 
+        <!-- Revisions -->
+        <details class="mb-4 bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <summary
+            class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
+          >
+            Revisions (1 update) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: May 29, 2026</span>
+          </summary>
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >Area</th
+                  >
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >Description</th
+                  >
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >Status</th
+                  >
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >Date</th
+                  >
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <tr>
+                  <td class="px-4 py-3 text-sm">Microbiology <code>result_dttm</code> row-keeping convention</td>
+                  <td class="px-4 py-3 text-sm">New ETL convention for <code>microbiology_culture.result_dttm</code> and <code>microbiology_nonculture.result_dttm</code> on negative results — no new column, just a population rule. For <strong>positive</strong> cultures, gram stains, and non-culture results, keep every interval/processing-step row as the EHR records it. For <strong>negative</strong> results, keep only one row per workup: the <strong>final</strong> no-growth row for cultures (<code>method_category = culture</code>), the <strong>first</strong> no-bacteria-seen row for gram stains (<code>method_category = gram stain</code>), and the <strong>final</strong> negative-result row for non-culture results. Per-table <code>result_dttm</code> descriptions and the ETL guide both updated; see the ETL guide microbiology callout for the canonical statement.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/180" class="text-clif-burgundy hover:underline">Issue #180</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 29, 2026</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </details>
+
       </section>
 
       <!-- Version 2.1.0 -->

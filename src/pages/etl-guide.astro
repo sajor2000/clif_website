@@ -238,6 +238,24 @@ const navigationSections = [
         </div>
       </div>
 
+      <!-- Microbiology result_dttm row-keeping convention - prominent callout -->
+      <div class="mb-8 bg-amber-50 border-l-4 border-amber-500 p-5 rounded-r-lg shadow-sm">
+        <div class="flex items-start">
+          <svg class="w-6 h-6 text-amber-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+          </svg>
+          <div>
+            <h3 class="text-lg font-semibold text-amber-800 mb-2">Microbiology — <code class="bg-amber-100 px-1.5 py-0.5 rounded font-mono text-amber-900 text-base">result_dttm</code> row-keeping convention (CLIF 3.0)</h3>
+            <p class="text-sm text-gray-800 mb-2">For <code class="bg-amber-100 px-1.5 py-0.5 rounded font-mono text-amber-900">microbiology_culture</code> and <code class="bg-amber-100 px-1.5 py-0.5 rounded font-mono text-amber-900">microbiology_nonculture</code>, EHRs frequently emit multiple interim <code class="bg-amber-100 px-1.5 py-0.5 rounded font-mono text-amber-900">result_dttm</code> rows during a single workup (e.g., "no growth at 24h / 48h / 72h", "no bacteria seen at 6h / 12h"). CLIF 3.0 collapses those interim rows on negative results:</p>
+            <ul class="text-sm text-gray-800 space-y-1.5">
+              <li>• <strong>Positives</strong> — for positive cultures, positive gram stains, and positive non-culture results, keep <strong>every</strong> interval/processing-step row as the EHR records it.</li>
+              <li>• <strong>Negatives</strong> — keep only <strong>one</strong> row per workup: the <strong>final</strong> no-growth row for cultures (<code class="bg-amber-100 px-1.5 py-0.5 rounded font-mono text-amber-900">method_category = culture</code>), the <strong>first</strong> no-bacteria-seen row for gram stains (<code class="bg-amber-100 px-1.5 py-0.5 rounded font-mono text-amber-900">method_category = gram stain</code>), and the <strong>final</strong> negative-result row for non-culture results.</li>
+            </ul>
+            <p class="text-xs text-gray-600 mt-3">See <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/180" class="underline text-amber-800 hover:text-amber-900">Issue #180</a> for the decision thread.</p>
+          </div>
+        </div>
+      </div>
+
       <!-- All Tables in Alphabetical Order -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 

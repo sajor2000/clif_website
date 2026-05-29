@@ -164,7 +164,7 @@ CREATE TABLE microbiology_culture (
   organism_id VARCHAR COMMENT '{"description": "A key that links microbiology culture table to microbiology susceptibility table", "permissible": "No restriction"}',
   order_dttm DATETIME COMMENT '{"description": "Date and time when the test is ordered.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00"}',
   collect_dttm DATETIME COMMENT '{"description": "Date and time when the specimen is collected.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00"}',
-  result_dttm DATETIME COMMENT '{"description": "Date and time when the results are available.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00"}',
+  result_dttm DATETIME COMMENT '{"description": "Date and time when the result was reported. For positive cultures and positive gram stains, keep every interval/processing-step row as the EHR records it. For negative results, keep only one row per workup — the final no-growth row for cultures (method_category = culture), and the first no-bacteria-seen row for gram stains (method_category = gram stain).", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00"}',
   fluid_name VARCHAR COMMENT '{"description": "Fluid name string from the raw data.", "permissible": "No restriction."}',
   fluid_category VARCHAR COMMENT '{"description": "Fluid categories defined according to the NIH common data elements.", "permissible": "[CDE NIH Infection Site](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/microbiology_culture/clif_microbiology_culture_fluid_category.csv)"}',
   method_name VARCHAR COMMENT '{"description": "Original method names from the source data.", "permissible": "No restriction"}',
@@ -182,7 +182,7 @@ CREATE TABLE microbiology_culture (
 CREATE TABLE microbiology_nonculture(
   patient_id VARCHAR COMMENT '{"description": "Unique identifier for each patient, presumed to be a distinct individual.", "permissible": "No restriction"}',
   hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
-  result_dttm DATETIME COMMENT '{"description": "Date and time when the non-culture result was obtained. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00"}',
+  result_dttm DATETIME COMMENT '{"description": "Date and time when the non-culture result was reported. All datetime variables must be timezone-aware and set to UTC. For positive results, keep every interval/processing-step row as the EHR records it. For negative results, keep only the final negative-result row — one row per order.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00"}',
   collect_dttm DATETIME COMMENT '{"description": "Date and time when the sample was collected. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00"}',
   order_dttm DATETIME COMMENT '{"description": "Date and time when the test was ordered. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00"}',
   fluid_name VARCHAR COMMENT '{"description": "Name of the fluid sample.", "permissible": "No restriction"}',
