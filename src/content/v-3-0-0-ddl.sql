@@ -615,3 +615,28 @@ CREATE TABLE patient_attributes (
   attribute_value_category VARCHAR COMMENT '{"description": "Standardized attribute value. Permissible values are CONDITIONAL on attribute_category — for example, smoking_status accepts current/former/never/unknown while housing_status accepts housed/unstable/undomiciled/unknown. See the patient_attributes markdown section for the full conditional mapping.", "permissible": "[List of attribute value categories in CLIF (union across all attribute_categories)](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/patient_attributes/clif_patient_attributes_attribute_value_categories.csv)"}',
   FOREIGN KEY (patient_id) REFERENCES patient(patient_id)
 );
+
+-- -----------------------------------------------------
+-- Table: ed_encounter
+-- -----------------------------------------------------
+CREATE TABLE ed_encounter (
+  hospitalization_id VARCHAR COMMENT '{"description": "Foreign key to hospitalization. Links the ED encounter to its parent hospitalization.", "permissible": "No restriction"}',
+  ed_encounter_id VARCHAR COMMENT '{"description": "Site-generated unique identifier for the ED encounter. Together with hospitalization_id, identifies the row.", "permissible": "No restriction"}',
+  ed_arrival_dttm DATETIME COMMENT '{"description": "Date and time the patient arrived in the ED. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
+  ed_departure_dttm DATETIME COMMENT '{"description": "Date and time the patient left the ED. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
+  arrival_mode_name VARCHAR COMMENT '{"description": "Unstandardized arrival mode string as recorded in the source EHR.", "permissible": "No restriction"}',
+  arrival_mode_category VARCHAR COMMENT '{"description": "Standardized arrival mode at ED presentation.", "permissible": "[List of arrival mode categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/ed_encounter/clif_ed_encounter_arrival_mode_categories.csv)"}',
+  triage_system_name VARCHAR COMMENT '{"description": "Unstandardized name or version of the triage system used at this site, as recorded in the source EHR.", "permissible": "No restriction"}',
+  triage_system_category VARCHAR COMMENT '{"description": "Standardized triage system class. esi = Emergency Severity Index, ctas = Canadian Triage and Acuity Scale.", "permissible": "[List of triage system categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/ed_encounter/clif_ed_encounter_triage_system_categories.csv)"}',
+  triage_acuity_name VARCHAR COMMENT '{"description": "Unstandardized triage score or level as recorded in the source EHR (e.g., \"2 - Emergent\").", "permissible": "No restriction"}',
+  triage_acuity_category VARCHAR COMMENT '{"description": "Standardized 5-level acuity class derived from triage_acuity_name. level_1 is highest acuity, level_5 is lowest.", "permissible": "[List of triage acuity categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/ed_encounter/clif_ed_encounter_triage_acuity_categories.csv)"}',
+  triage_dttm DATETIME COMMENT '{"description": "Date and time of initial ED triage assessment. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
+  chief_complaint_name VARCHAR COMMENT '{"description": "Unstandardized chief complaint text as recorded in the source EHR.", "permissible": "No restriction"}',
+  ed_disposition_name VARCHAR COMMENT '{"description": "Unstandardized ED disposition string or code as recorded in the source EHR.", "permissible": "No restriction"}',
+  ed_disposition_category VARCHAR COMMENT '{"description": "Standardized final ED disposition. lwbs = left without being seen, ama = against medical advice.", "permissible": "[List of ED disposition categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/ed_encounter/clif_ed_encounter_ed_disposition_categories.csv)"}',
+  ed_disposition_dttm DATETIME COMMENT '{"description": "Date and time of the final ED disposition decision. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
+  ed_destination_name VARCHAR COMMENT '{"description": "Unstandardized destination text or code recording where the patient went after the ED.", "permissible": "No restriction"}',
+  ed_destination_category VARCHAR COMMENT '{"description": "Standardized destination after the ED. Aligned with hospitalization.discharge_category permissibles so post-ED transitions and final hospital outcomes share a vocabulary.", "permissible": "[List of ED destination categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/ed_encounter/clif_ed_encounter_ed_destination_categories.csv)"}',
+  ed_observation_status INT COMMENT '{"description": "Binary indicator for whether the encounter went through an ED observation pathway (1 = yes, 0 = no). Derived metrics such as observation duration should be computed downstream from timestamps rather than stored here.", "permissible": "0, 1"}',
+  FOREIGN KEY (hospitalization_id) REFERENCES hospitalization(hospitalization_id)
+);

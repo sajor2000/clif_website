@@ -882,6 +882,30 @@ The `patient_attributes` table is the dynamic, patient-level counterpart to the 
 | 989862     | 2024-07-02 08:15:00+00:00 UTC | Organ Donor Designation  | organ_donor           | care_preferences             | Donor on license     | yes                      |
 
 
+## ed_encounter
+
+The `ed_encounter` table captures one row per emergency department encounter linked to a hospitalization. It encodes ED workflow concepts that are not reliably recoverable from `adt` alone — arrival mode, triage system and acuity, chief complaint, final ED disposition, destination after ED, and observation pathway status. Per the [feature request](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/178), `adt` remains the source of location-movement intervals and derived metrics such as boarding duration should be calculated downstream from timestamps rather than stored as core fields.
+
+**Notes**:
+
+- Grain is one row per ED encounter; together `(hospitalization_id, ed_encounter_id)` identifies a row. A hospitalization may have multiple ED encounters if the patient bounced back, but typically there is one.
+- `triage_system_category` and `triage_acuity_category` are separated so non-ESI sites (e.g., CTAS-based) can still encode acuity on the common 5-level scale.
+- `ed_disposition_category` (final ED outcome) and `ed_destination_category` (physical destination after the ED) are separated so transfers, observation admissions, and AMA / LWBS outcomes are not conflated with destination.
+- `ed_destination_category` permissibles intentionally align with `hospitalization.discharge_category` so post-ED transitions and final hospital discharges share a vocabulary.
+- `ed_observation_status` is a binary flag. Observation duration, ED length of stay, and boarding duration should be derived from `ed_arrival_dttm` / `ed_disposition_dttm` / `ed_departure_dttm` rather than persisted.
+
+**Example**:
+
+| hospitalization_id | ed_encounter_id   | ed_arrival_dttm               | ed_departure_dttm             | arrival_mode_category | triage_system_category | triage_acuity_category | triage_dttm                   | chief_complaint_name           | ed_disposition_category | ed_destination_category | ed_observation_status |
+|--------------------|-------------------|-------------------------------|-------------------------------|-----------------------|------------------------|------------------------|-------------------------------|--------------------------------|-------------------------|-------------------------|-----------------------|
+| 1001014            | ED-2026-0008721   | 2026-03-12 14:00:00+00:00 UTC | 2026-03-12 18:30:00+00:00 UTC | ems_ground            | esi                    | level_2                | 2026-03-12 14:07:00+00:00 UTC | Chest pain                     | admit                   | acute_care_hosp         | 0                     |
+| 1001014            | ED-2026-0008944   | 2026-03-18 02:25:00+00:00 UTC | 2026-03-18 09:10:00+00:00 UTC | walk_in               | esi                    | level_3                | 2026-03-18 02:33:00+00:00 UTC | Abdominal pain x 2 days        | observation             | acute_care_hosp         | 1                     |
+| 1002025            | ED-2026-0011027   | 2026-04-02 19:45:00+00:00 UTC | 2026-04-02 21:50:00+00:00 UTC | private_vehicle       | esi                    | level_4                | 2026-04-02 19:51:00+00:00 UTC | Forearm laceration             | discharge               | home                    | 0                     |
+| 1002025            | ED-2026-0011533   | 2026-04-09 08:05:00+00:00 UTC | 2026-04-09 09:20:00+00:00 UTC | ems_air               | esi                    | level_1                | 2026-04-09 08:14:00+00:00 UTC | Cardiac arrest, ROSC en route  | admit                   | acute_care_hosp         | 0                     |
+| 1003036            | ED-2026-0012890   | 2026-04-21 15:55:00+00:00 UTC | 2026-04-21 17:40:00+00:00 UTC | walk_in               | esi                    | level_4                | 2026-04-21 16:02:00+00:00 UTC | Sore throat                    | discharge               | home                    | 0                     |
+| 1003036            | ED-2026-0013774   | 2026-05-04 23:35:00+00:00 UTC | 2026-05-05 02:15:00+00:00 UTC | law_enforcement       | ctas                   | level_2                | 2026-05-04 23:41:00+00:00 UTC | Altered mental status          | transfer                | mental_health_hosp      | 0                     |
+
+
 ## Future Proposed Tables
 
 These are tables without any defined structure that the consortium has not yet committed to implementing.
