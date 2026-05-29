@@ -837,6 +837,51 @@ The `airway` table captures airway device placements during a hospitalization �
 | 234567             | LDA1004   | 2024-12-06 22:10:00+00:00 UTC | 2024-12-07 03:45:00+00:00 UTC | npa             | 7           | 0         |
 
 
+## patient_attributes
+
+The `patient_attributes` table is the dynamic, patient-level counterpart to the (static) `patient` table. It stores social, behavioral, functional, reproductive, and administrative attributes that change over a patient's lifetime, in long entity-attribute-value form — one row per patient, per `recorded_dttm`, per `attribute_category`. The design parallels `vitals`, `labs`, and `patient_assessments`, but for slow-changing attributes such as smoking status, housing status, and marital status.
+
+**Notes**:
+
+- Composite key is `(patient_id, recorded_dttm, attribute_category)`. The same attribute can be recorded multiple times over a patient's lifetime, with newer rows superseding older ones.
+- `attribute_category` and `attribute_group` form a deterministic rollup — every `attribute_category` maps to exactly one `attribute_group` (e.g., `housing_status` → `health_related_social_needs`). Sites do not need to populate `attribute_group` independently if it can be derived.
+- **`attribute_value_category` permissibles are conditional on `attribute_category`.** The column-level permissible list is the *union* of all attribute value sets. The conditional validity per category:
+
+  | attribute_category | attribute_group | permissible attribute_value_category |
+  |--------------------|-----------------|--------------------------------------|
+  | alcohol_use | substance_use_behavior | none, social, heavy, unknown |
+  | employment_status | sociodemographic | full_time, part_time, unemployed, retired, student, disabled, unknown |
+  | financial_strain | health_related_social_needs | none, present, unknown |
+  | food_insecurity | health_related_social_needs | secure, insecure, unknown |
+  | functional_status | functional | independent, partially_dependent, fully_dependent, unknown |
+  | housing_status | health_related_social_needs | housed, unstable, undomiciled, unknown |
+  | interpersonal_safety | health_related_social_needs | safe, unsafe, unknown |
+  | marital_status | sociodemographic | single, married, divorced, widowed, separated, unknown |
+  | organ_donor | care_preferences | yes, no, unknown |
+  | pregnancy_status | reproductive | pregnant, postpartum, not_pregnant, unknown |
+  | smoking_status | substance_use_behavior | current, former, never, unknown |
+  | social_isolation | health_related_social_needs | connected, isolated, unknown |
+  | substance_use | substance_use_behavior | active, history, none, unknown |
+  | transportation_barrier | health_related_social_needs | none, present, unknown |
+  | utility_insecurity | health_related_social_needs | secure, insecure, unknown |
+
+- Per the [steering committee discussion](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/211), BMI is intentionally excluded (it belongs on `vitals`), isolation status belongs on `adt`, and insurance belongs on `hospitalization`. Advance-directive content rolls up under `organ_donor` / `care_preferences`.
+
+**Example**:
+
+| patient_id | recorded_dttm                 | attribute_name           | attribute_category    | attribute_group              | attribute_value_name | attribute_value_category |
+|------------|-------------------------------|--------------------------|-----------------------|------------------------------|----------------------|--------------------------|
+| 132424     | 2024-01-15 09:00:00+00:00 UTC | Marital Status           | marital_status        | sociodemographic             | Married              | married                  |
+| 132424     | 2024-01-15 09:00:00+00:00 UTC | Smoking History          | smoking_status        | substance_use_behavior       | Former smoker        | former                   |
+| 132424     | 2024-01-15 09:00:00+00:00 UTC | Housing Status           | housing_status        | health_related_social_needs  | Stable housing       | housed                   |
+| 132424     | 2024-11-30 14:20:00+00:00 UTC | Smoking History          | smoking_status        | substance_use_behavior       | Never smoker         | never                    |
+| 542367     | 2024-03-20 11:30:00+00:00 UTC | Housing Status           | housing_status        | health_related_social_needs  | Homeless             | undomiciled              |
+| 542367     | 2024-03-20 11:30:00+00:00 UTC | Food Insecurity Screen   | food_insecurity       | health_related_social_needs  | Food insecure        | insecure                 |
+| 542367     | 2024-03-20 11:30:00+00:00 UTC | Functional Status        | functional_status     | functional                   | ADL dependent        | partially_dependent      |
+| 989862     | 2024-07-02 08:15:00+00:00 UTC | Pregnancy Status         | pregnancy_status      | reproductive                 | 32 weeks gestation   | pregnant                 |
+| 989862     | 2024-07-02 08:15:00+00:00 UTC | Organ Donor Designation  | organ_donor           | care_preferences             | Donor on license     | yes                      |
+
+
 ## Future Proposed Tables
 
 These are tables without any defined structure that the consortium has not yet committed to implementing.

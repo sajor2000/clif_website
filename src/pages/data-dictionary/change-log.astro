@@ -34,7 +34,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            New Tables (12 concept tables added)
+            New Tables (13 concept tables added)
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -126,6 +126,12 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   <td class="px-4 py-3 text-sm">Concept table capturing airway placements, one row per airway with composite key <code>(hospitalization_id, airway_id)</code>. Tracks <code>placed_dttm</code>/<code>removed_dttm</code>, <code>airway_category</code> (ett, trach, npa, opa), <code>airway_size</code> (e.g., 6.0, 7.5), and <code>is_cuffed</code> (0/1).</td>
                   <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/208" class="text-clif-burgundy hover:underline">Issue #208</a></td>
                   <td class="px-4 py-3 text-sm text-gray-500">May 28, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">patient_attributes</td>
+                  <td class="px-4 py-3 text-sm">Long EAV-style concept table for dynamic patient-level attributes — the time-varying counterpart to the static <code>patient</code> table. Composite key <code>(patient_id, recorded_dttm, attribute_category)</code>; 15 permissible <code>attribute_category</code> values covering social, behavioral, functional, reproductive, and administrative domains (housing_status, smoking_status, marital_status, employment_status, food_insecurity, functional_status, organ_donor, pregnancy_status, etc.) rolling up to 6 <code>attribute_group</code> families. Per the steering discussion, BMI is excluded (belongs on vitals), isolation belongs on adt, and insurance belongs on hospitalization.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/211" class="text-clif-burgundy hover:underline">Issue #211</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 29, 2026</td>
                 </tr>
               </tbody>
             </table>

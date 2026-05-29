@@ -601,3 +601,17 @@ CREATE TABLE airway (
   airway_size FLOAT COMMENT '{"description": "Size of the airway device (e.g., 6.0, 7.5).", "permissible": "Numeric"}',
   is_cuffed INT COMMENT '{"description": "Whether the airway is cuffed.", "permissible": "0, 1"}'
 );
+
+-- -----------------------------------------------------
+-- Table: patient_attributes
+-- -----------------------------------------------------
+CREATE TABLE patient_attributes (
+  patient_id VARCHAR COMMENT '{"description": "Unique identifier for each patient. Foreign key to patient.patient_id.", "permissible": "No restriction"}',
+  recorded_dttm DATETIME COMMENT '{"description": "Date and time the attribute value was recorded. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
+  attribute_name VARCHAR COMMENT '{"description": "Unstandardized attribute name as recorded in the source EHR, e.g., the flowsheet item name.", "permissible": "No restriction"}',
+  attribute_category VARCHAR COMMENT '{"description": "Standardized attribute category. Identifies which patient attribute this row describes, e.g., smoking_status, housing_status, marital_status.", "permissible": "[List of attribute categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/patient_attributes/clif_patient_attributes_attribute_categories.csv)"}',
+  attribute_group VARCHAR COMMENT '{"description": "Rollup family for attribute_category. One group per category, e.g., housing_status maps to health_related_social_needs.", "permissible": "[List of attribute groups in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/patient_attributes/clif_patient_attributes_attribute_groups.csv)"}',
+  attribute_value_name VARCHAR COMMENT '{"description": "Unstandardized attribute value as recorded in the source EHR.", "permissible": "No restriction"}',
+  attribute_value_category VARCHAR COMMENT '{"description": "Standardized attribute value. Permissible values are CONDITIONAL on attribute_category — for example, smoking_status accepts current/former/never/unknown while housing_status accepts housed/unstable/undomiciled/unknown. See the patient_attributes markdown section for the full conditional mapping.", "permissible": "[List of attribute value categories in CLIF (union across all attribute_categories)](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/patient_attributes/clif_patient_attributes_attribute_value_categories.csv)"}',
+  FOREIGN KEY (patient_id) REFERENCES patient(patient_id)
+);
