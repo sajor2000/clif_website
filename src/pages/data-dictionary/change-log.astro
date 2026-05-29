@@ -34,7 +34,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            New Tables (14 concept tables added)
+            New Tables (14 concept tables added) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: May 29, 2026</span>
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -149,7 +149,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            New Fields (9 fields added)
+            New Fields (9 fields added) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: May 28, 2026</span>
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -246,7 +246,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            New mCIDE Values (2 updates)
+            New mCIDE Values (10 updates · ~187 new values) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: May 27, 2026</span>
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -279,6 +279,54 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/209" class="text-clif-burgundy hover:underline">Issue #209</a></td>
                   <td class="px-4 py-3 text-sm text-gray-500">May 27, 2026</td>
                 </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">race_category</td>
+                  <td class="px-4 py-3 text-sm">Added <code>middle_eastern_or_north_african</code> as a distinct <code>patient.race_category</code> per the 2024 OMB SPD 15 revision recognising MENA as a separate race/ethnicity group.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/198" class="text-clif-burgundy hover:underline">Issue #198</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 4, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">lab_order_category</td>
+                  <td class="px-4 py-3 text-sm">Expanded <code>labs.lab_order_category</code> with 10 new categories: <code>aki_biomarkers</code>, <code>bal_panel</code>, <code>cardiac</code>, <code>inflammatory</code>, <code>mixed_venous_blood_gas</code>, <code>pleural_fluid_panel</code>, <code>poc</code>, <code>tft</code>, <code>urine_chemistry</code>, <code>urine_toxicology</code>.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/labs/clif_labs_order_categories.csv" class="text-clif-burgundy hover:underline">3.0 mCIDE</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">lab_category</td>
+                  <td class="px-4 py-3 text-sm">Expanded <code>labs.lab_category</code> with ~76 new permissible values across BAL panel (14: <code>bal_wbc_count</code>, <code>bal_neutrophils_count</code>, <code>bal_lymphocytes_count</code>, <code>bal_macrophages_count</code>, <code>bal_amylase</code>, …), pleural fluid panel (24: <code>pleural_glucose</code>, <code>pleural_protein</code>, <code>pleural_ldh</code>, <code>pleural_amylase</code>, <code>pleural_ada</code>, …), cardiac (<code>bnp</code>, <code>nt_pro_bnp</code>, <code>ckmb</code>, <code>d_dimer</code>, <code>fibrinogen</code>), thyroid (<code>tsh</code>, <code>free_t3</code>, <code>free_t4</code>), POC (<code>poc_sodium</code>, <code>poc_potassium</code>, <code>poc_lactate</code>, <code>poc_hematocrit</code>, <code>poc_creatinine</code>, <code>poc_co2</code>), urine chemistry (<code>urine_protein</code>, <code>urine_creatinine</code>, <code>urine_albumin</code>, <code>urine_albumin_to_creatinine_ratio</code>, <code>urine_protein_to_creatinine_ratio</code>), urine drug screen (<code>urine_amphetamine</code>, <code>urine_opiate</code>, <code>urine_cocaine</code>, <code>urine_benzodiazepine</code>, <code>urine_fentanyl</code>, <code>urine_methadone</code>, <code>urine_oxycodone</code>, <code>urine_barbiturate</code>, <code>urine_ethanol</code>, <code>urine_pcp</code>), AKI biomarkers (<code>ngal</code>, <code>cystatin_c</code>, <code>urine_kim_1</code>, <code>urine_ngal</code>, <code>urine_timp_2_igfbp7</code>, <code>urine_nag</code>), plus <code>interleukin_06</code>, <code>hematocrit</code>, <code>triglycerides</code>, <code>po2_mixed_venous</code>.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/labs/clif_lab_categories.csv" class="text-clif-burgundy hover:underline">3.0 mCIDE</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">med_category (intermittent)</td>
+                  <td class="px-4 py-3 text-sm">POC final review of <code>medication_admin_intermittent.med_category</code> added ~59 new values: ACE inhibitors (<code>lisinopril</code>, <code>enalapril</code>, <code>captopril</code>, <code>benazepril</code>, <code>ramipril</code>, <code>quinapril</code>, <code>perindopril</code>, <code>fosinopril</code>, <code>moexipril</code>, <code>trandolapril</code>), ARBs (<code>losartan</code>, <code>valsartan</code>, <code>irbesartan</code>, <code>candesartan</code>, <code>telmisartan</code>, <code>olmesartan</code>, <code>azilsartan</code>, <code>eprosartan</code>), T-cell engaging bispecifics (<code>blinatumomab</code>, <code>elratanamab</code>, <code>epcoritamab</code>, <code>glofitamab</code>, <code>mosunetuzumab</code>, <code>talquetamab</code>, <code>tarlatamab</code>, <code>tebentafusp</code>, <code>teclistamab</code>, <code>linvoseltamab</code>), gadolinium contrasts (7), iodinated contrasts (9: <code>iohexol</code>, <code>iopamidol</code>, …), hypertonic salines (<code>hypertonic_saline_3</code>/<code>_7</code>/<code>_75</code>/<code>_20</code>/<code>_234</code>), repletions (<code>magnesium_repletion</code>, <code>phosphate_repletion</code>, <code>potassium_repletion</code>), <code>mannitol</code>, <code>naloxone</code>, <code>baricitinib</code>, <code>remdesivir</code>, <code>siltuximab</code>, <code>epinephrine</code>.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/200" class="text-clif-burgundy hover:underline">Issue #200</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 7, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">med_category (continuous)</td>
+                  <td class="px-4 py-3 text-sm">POC final review of <code>medication_admin_continuous.med_category</code> replaced the generic <code>albumin</code> with concentration-specific <code>albumin_5</code> and <code>albumin_25</code>.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/210" class="text-clif-burgundy hover:underline">Issue #210</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 13, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">organism_category (nonculture)</td>
+                  <td class="px-4 py-3 text-sm">Expanded <code>microbiology_nonculture.organism_category</code> with 21 respiratory virus and atypical-pathogen values: <code>adenovirus</code>, <code>bordetella_parapertussis</code>, <code>bordetella_pertussis</code>, <code>chlamydia_pneumoniae</code>, four coronaviruses (<code>coronavirus_229e</code>, <code>coronavirus_hku1</code>, <code>coronavirus_nl63</code>, <code>coronavirus_oc43</code>), <code>human_metapneumovirus</code>, <code>human_rhinovirus_enterovirus</code>, five influenzas (<code>influenza_a</code>, <code>influenza_a_h1</code>, <code>influenza_a_h1_2009</code>, <code>influenza_a_h3</code>, <code>influenza_b</code>), <code>mycoplasma_pneumoniae</code>, four parainfluenzas (<code>parainfluenza_1</code>–<code>parainfluenza_4</code>), <code>pneumocystis_jirovecii</code>.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/microbiology_nonculture/clif_microbiology_nonculture_organism_category.csv" class="text-clif-burgundy hover:underline">3.0 mCIDE</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">assessment_category</td>
+                  <td class="px-4 py-3 text-sm">POC final review of <code>patient_assessments.assessment_category</code> added 7 new values for pupillometry and intubated-patient pain assessment: <code>pupil_size_l</code>, <code>pupil_size_r</code>, <code>pupil_reactive_l</code>, <code>pupil_reactive_r</code>, <code>npi_l</code>, <code>npi_r</code> (Neurological Pupil index), and <code>cpot_intubated</code> (Critical-Care Pain Observation Tool variant for intubated patients).</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/205" class="text-clif-burgundy hover:underline">Issue #205</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 12, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">mode_category</td>
+                  <td class="px-4 py-3 text-sm">POC final review of <code>respiratory_support.mode_category</code> added <code>aprv</code> (airway pressure release ventilation) and <code>t_piece</code> as net-new permissible values. The acronym renames of the existing controlled-ventilation modes (<code>acvc</code>, <code>prvc</code>, <code>ps_or_cpap</code>) are logged separately under Revisions.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/201" class="text-clif-burgundy hover:underline">Issue #201</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 21, 2026</td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -289,7 +337,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            Revisions (5 updates) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: May 29, 2026</span>
+            Revisions (7 updates) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: May 29, 2026</span>
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -339,6 +387,18 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   <td class="px-4 py-3 text-sm">Renamed semantic values in the <code>hospitalization.discharge_category</code> mCIDE (separate from the 3.0-wide casing change): <code>Skilled Nursing Facility (SNF)</code> → <code>snf</code>, <code>Acute Inpatient Rehab Facility</code> → <code>acute_ip_rehab</code>, <code>Long Term Care Hospital (LTACH)</code> → <code>ltach</code>, <code>Acute Care Hospital</code> → <code>acute_care_hosp</code>, <code>Against Medical Advice (AMA)</code> → <code>ama</code>, <code>Psychiatric Hospital</code> → <code>mental_health_hosp</code>. <code>discharge_name</code> (raw text) is unaffected.</td>
                   <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/202" class="text-clif-burgundy hover:underline">Issue #202</a></td>
                   <td class="px-4 py-3 text-sm text-gray-500">May 7, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">mode_category</td>
+                  <td class="px-4 py-3 text-sm">POC final review of <code>respiratory_support.mode_category</code> shortened three controlled-ventilation mode values to acronym form: <code>assist_control_volume_control</code> → <code>acvc</code>, <code>pressure_regulated_volume_control</code> → <code>prvc</code>, <code>pressure_supportcpap</code> → <code>ps_or_cpap</code>. <code>aprv</code> and <code>t_piece</code> additions from the same review are logged separately under New mCIDE Values.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/201" class="text-clif-burgundy hover:underline">Issue #201</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 21, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">device_category</td>
+                  <td class="px-4 py-3 text-sm">POC final review of <code>respiratory_support.device_category</code> shortened <code>high_flow_nc</code> → <code>hfnc</code>. The <code>t_piece</code> addition (logged in New mCIDE Values via <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/62" class="text-clif-burgundy hover:underline">#62</a>) is separate.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/201" class="text-clif-burgundy hover:underline">Issue #201</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 21, 2026</td>
                 </tr>
               </tbody>
             </table>
