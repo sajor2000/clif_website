@@ -315,6 +315,67 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   <td class="px-4 py-3 text-sm text-gray-500">May 4, 2026</td>
                 </tr>
                 <tr>
+                  <td class="px-4 py-3 text-sm font-mono">med_category (intermittent) (58)</td>
+                  <td class="px-4 py-3 text-sm">
+                    <code>medication_admin_intermittent.med_category</code> added 58 new values:
+                    <ul class="list-disc pl-5 my-2 space-y-1">
+                      <li><strong>ACE inhibitors</strong> (10): <code>lisinopril</code>, <code>enalapril</code>, <code>captopril</code>, <code>benazepril</code>, <code>ramipril</code>, <code>quinapril</code>, <code>perindopril</code>, <code>fosinopril</code>, <code>moexipril</code>, <code>trandolapril</code></li>
+                      <li><strong>ARBs</strong> (8): <code>losartan</code>, <code>valsartan</code>, <code>irbesartan</code>, <code>candesartan</code>, <code>telmisartan</code>, <code>olmesartan</code>, <code>azilsartan</code>, <code>eprosartan</code></li>
+                      <li><strong>T-cell engaging bispecifics</strong> (10): <code>blinatumomab</code>, <code>elratanamab</code>, <code>epcoritamab</code>, <code>glofitamab</code>, <code>mosunetuzumab</code>, <code>talquetamab</code>, <code>tarlatamab</code>, <code>tebentafusp</code>, <code>teclistamab</code>, <code>linvoseltamab</code></li>
+                      <li><strong>Gadolinium contrasts</strong> (7): <code>gadobenate</code>, <code>gadobutrol</code>, <code>gadodiamide</code>, <code>gadopentetate</code>, <code>gadoterate</code>, <code>gadoteridol</code>, <code>gadoxetate</code></li>
+                      <li><strong>Iodinated contrasts</strong> (9): <code>diatrizoate</code>, <code>iobitridol</code>, <code>iodixanol</code>, <code>iohexol</code>, <code>iomeprol</code>, <code>iopamidol</code>, <code>ioversol</code>, <code>ioxaglate</code>, <code>metrizamide</code></li>
+                      <li><strong>Hypertonic salines</strong> (5): <code>hypertonic_saline_3</code>, <code>hypertonic_saline_7</code>, <code>hypertonic_saline_75</code>, <code>hypertonic_saline_20</code>, <code>hypertonic_saline_234</code></li>
+                      <li><strong>Electrolyte repletions</strong> (3): <code>magnesium_repletion</code>, <code>phosphate_repletion</code>, <code>potassium_repletion</code></li>
+                      <li><strong>Other</strong> (6): <code>mannitol</code>, <code>naloxone</code>, <code>baricitinib</code>, <code>remdesivir</code>, <code>siltuximab</code>, <code>epinephrine</code></li>
+                    </ul>
+                  </td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/200" class="text-clif-burgundy hover:underline">Issue #200</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 7, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">assessment_category (7)</td>
+                  <td class="px-4 py-3 text-sm"><code>patient_assessments.assessment_category</code> added 7 new values for pupillometry and intubated-patient pain assessment: <code>pupil_size_l</code>, <code>pupil_size_r</code>, <code>pupil_reactive_l</code>, <code>pupil_reactive_r</code>, <code>npi_l</code>, <code>npi_r</code> (Neurological Pupil index), and <code>cpot_intubated</code> (Critical-Care Pain Observation Tool variant for intubated patients).</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/205" class="text-clif-burgundy hover:underline">Issue #205</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 12, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">med_category (continuous) (2)</td>
+                  <td class="px-4 py-3 text-sm"><code>medication_admin_continuous.med_category</code> replaced the generic <code>albumin</code> with concentration-specific <code>albumin_5</code> and <code>albumin_25</code>.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/210" class="text-clif-burgundy hover:underline">Issue #210</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 13, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">mode_category (2)</td>
+                  <td class="px-4 py-3 text-sm"><code>respiratory_support.mode_category</code> added <code>aprv</code> (airway pressure release ventilation) and <code>t_piece</code> as net-new permissible values. The acronym renames of the existing controlled-ventilation modes (<code>acvc</code>, <code>prvc</code>, <code>ps_or_cpap</code>) are logged separately under Revisions.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/201" class="text-clif-burgundy hover:underline">Issue #201</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 21, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">organism_category (nonculture) (21)</td>
+                  <td class="px-4 py-3 text-sm">
+                    Expanded <code>microbiology_nonculture.organism_category</code> with 21 respiratory-virus and atypical-pathogen values, grouped by <code>organism_group</code>:
+                    <ul class="list-disc pl-5 my-2 space-y-1">
+                      <li><strong>influenza</strong> (5): <code>influenza_a</code>, <code>influenza_a_h1</code>, <code>influenza_a_h1_2009</code>, <code>influenza_a_h3</code>, <code>influenza_b</code></li>
+                      <li><strong>viral_other</strong> (5): <code>coronavirus_229e</code>, <code>coronavirus_hku1</code>, <code>coronavirus_nl63</code>, <code>coronavirus_oc43</code>, <code>human_metapneumovirus</code></li>
+                      <li><strong>parainfluenza</strong> (4): <code>parainfluenza_1</code>, <code>parainfluenza_2</code>, <code>parainfluenza_3</code>, <code>parainfluenza_4</code></li>
+                      <li><strong>bacteria_other</strong> (2): <code>bordetella_parapertussis</code>, <code>bordetella_pertussis</code></li>
+                      <li><strong>adenovirus</strong> (1): <code>adenovirus</code></li>
+                      <li><strong>chlamydia</strong> (1): <code>chlamydia_pneumoniae</code></li>
+                      <li><strong>mycoplasma</strong> (1): <code>mycoplasma_pneumoniae</code></li>
+                      <li><strong>pneumocystis</strong> (1): <code>pneumocystis_jirovecii</code></li>
+                      <li><strong>rhinovirus</strong> (1): <code>human_rhinovirus_enterovirus</code></li>
+                    </ul>
+                  </td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/microbiology_nonculture/clif_microbiology_nonculture_organism_category.csv" class="text-clif-burgundy hover:underline">3.0 mCIDE</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">organism_group (nonculture) (8)</td>
+                  <td class="px-4 py-3 text-sm">New <code>microbiology_nonculture.organism_group</code> mCIDE grouping the non-culture organisms, with 8 new groups: <code>adenovirus</code>, <code>bacteria_other</code>, <code>chlamydia</code>, <code>influenza</code>, <code>mycoplasma</code>, <code>parainfluenza</code>, <code>pneumocystis</code>, <code>rhinovirus</code> (alongside the existing <code>clostridium_difficile</code>, <code>respiratory_syncytial_virus</code>, <code>viral_other</code>).</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/209" class="text-clif-burgundy hover:underline">Issue #209</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 2026</td>
+                </tr>
+                <tr>
                   <td class="px-4 py-3 text-sm font-mono">lab_order_category (11)</td>
                   <td class="px-4 py-3 text-sm">Expanded <code>labs.lab_order_category</code> with 11 new categories: <code>aki_biomarkers</code>, <code>bal_panel</code>, <code>cardiac</code>, <code>inflammatory</code>, <code>mixed_venous_blood_gas</code>, <code>peritoneal_fluid_panel</code>, <code>pleural_fluid_panel</code>, <code>poc</code>, <code>tft</code>, <code>urine_chemistry</code>, <code>urine_toxicology</code>.</td>
                   <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/203" class="text-clif-burgundy hover:underline">Issue #203</a></td>
@@ -346,67 +407,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   <td class="px-4 py-3 text-sm">New <code>labs.lab_specimen_category</code> mCIDE capturing the fluid a lab is run on (LOINC-aligned), with 5 permissible values: <code>plasma_blood</code> (whole blood/plasma/serum — default for systemic labs), <code>pleural</code>, <code>peritoneal</code>, <code>urine</code>, and <code>bal</code>.</td>
                   <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/203" class="text-clif-burgundy hover:underline">Issue #203</a></td>
                   <td class="px-4 py-3 text-sm text-gray-500">Jun 2, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">med_category (intermittent) (58)</td>
-                  <td class="px-4 py-3 text-sm">
-                    <code>medication_admin_intermittent.med_category</code> added 58 new values:
-                    <ul class="list-disc pl-5 my-2 space-y-1">
-                      <li><strong>ACE inhibitors</strong> (10): <code>lisinopril</code>, <code>enalapril</code>, <code>captopril</code>, <code>benazepril</code>, <code>ramipril</code>, <code>quinapril</code>, <code>perindopril</code>, <code>fosinopril</code>, <code>moexipril</code>, <code>trandolapril</code></li>
-                      <li><strong>ARBs</strong> (8): <code>losartan</code>, <code>valsartan</code>, <code>irbesartan</code>, <code>candesartan</code>, <code>telmisartan</code>, <code>olmesartan</code>, <code>azilsartan</code>, <code>eprosartan</code></li>
-                      <li><strong>T-cell engaging bispecifics</strong> (10): <code>blinatumomab</code>, <code>elratanamab</code>, <code>epcoritamab</code>, <code>glofitamab</code>, <code>mosunetuzumab</code>, <code>talquetamab</code>, <code>tarlatamab</code>, <code>tebentafusp</code>, <code>teclistamab</code>, <code>linvoseltamab</code></li>
-                      <li><strong>Gadolinium contrasts</strong> (7): <code>gadobenate</code>, <code>gadobutrol</code>, <code>gadodiamide</code>, <code>gadopentetate</code>, <code>gadoterate</code>, <code>gadoteridol</code>, <code>gadoxetate</code></li>
-                      <li><strong>Iodinated contrasts</strong> (9): <code>diatrizoate</code>, <code>iobitridol</code>, <code>iodixanol</code>, <code>iohexol</code>, <code>iomeprol</code>, <code>iopamidol</code>, <code>ioversol</code>, <code>ioxaglate</code>, <code>metrizamide</code></li>
-                      <li><strong>Hypertonic salines</strong> (5): <code>hypertonic_saline_3</code>, <code>hypertonic_saline_7</code>, <code>hypertonic_saline_75</code>, <code>hypertonic_saline_20</code>, <code>hypertonic_saline_234</code></li>
-                      <li><strong>Electrolyte repletions</strong> (3): <code>magnesium_repletion</code>, <code>phosphate_repletion</code>, <code>potassium_repletion</code></li>
-                      <li><strong>Other</strong> (6): <code>mannitol</code>, <code>naloxone</code>, <code>baricitinib</code>, <code>remdesivir</code>, <code>siltuximab</code>, <code>epinephrine</code></li>
-                    </ul>
-                  </td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/200" class="text-clif-burgundy hover:underline">Issue #200</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">May 7, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">med_category (continuous) (2)</td>
-                  <td class="px-4 py-3 text-sm"><code>medication_admin_continuous.med_category</code> replaced the generic <code>albumin</code> with concentration-specific <code>albumin_5</code> and <code>albumin_25</code>.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/210" class="text-clif-burgundy hover:underline">Issue #210</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">May 13, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">organism_category (nonculture) (21)</td>
-                  <td class="px-4 py-3 text-sm">
-                    Expanded <code>microbiology_nonculture.organism_category</code> with 21 respiratory-virus and atypical-pathogen values, grouped by <code>organism_group</code>:
-                    <ul class="list-disc pl-5 my-2 space-y-1">
-                      <li><strong>influenza</strong> (5): <code>influenza_a</code>, <code>influenza_a_h1</code>, <code>influenza_a_h1_2009</code>, <code>influenza_a_h3</code>, <code>influenza_b</code></li>
-                      <li><strong>viral_other</strong> (5): <code>coronavirus_229e</code>, <code>coronavirus_hku1</code>, <code>coronavirus_nl63</code>, <code>coronavirus_oc43</code>, <code>human_metapneumovirus</code></li>
-                      <li><strong>parainfluenza</strong> (4): <code>parainfluenza_1</code>, <code>parainfluenza_2</code>, <code>parainfluenza_3</code>, <code>parainfluenza_4</code></li>
-                      <li><strong>bacteria_other</strong> (2): <code>bordetella_parapertussis</code>, <code>bordetella_pertussis</code></li>
-                      <li><strong>adenovirus</strong> (1): <code>adenovirus</code></li>
-                      <li><strong>chlamydia</strong> (1): <code>chlamydia_pneumoniae</code></li>
-                      <li><strong>mycoplasma</strong> (1): <code>mycoplasma_pneumoniae</code></li>
-                      <li><strong>pneumocystis</strong> (1): <code>pneumocystis_jirovecii</code></li>
-                      <li><strong>rhinovirus</strong> (1): <code>human_rhinovirus_enterovirus</code></li>
-                    </ul>
-                  </td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/microbiology_nonculture/clif_microbiology_nonculture_organism_category.csv" class="text-clif-burgundy hover:underline">3.0 mCIDE</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">May 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">organism_group (nonculture) (8)</td>
-                  <td class="px-4 py-3 text-sm">New <code>microbiology_nonculture.organism_group</code> mCIDE grouping the non-culture organisms, with 8 new groups: <code>adenovirus</code>, <code>bacteria_other</code>, <code>chlamydia</code>, <code>influenza</code>, <code>mycoplasma</code>, <code>parainfluenza</code>, <code>pneumocystis</code>, <code>rhinovirus</code> (alongside the existing <code>clostridium_difficile</code>, <code>respiratory_syncytial_virus</code>, <code>viral_other</code>).</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/209" class="text-clif-burgundy hover:underline">Issue #209</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">May 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">assessment_category (7)</td>
-                  <td class="px-4 py-3 text-sm"><code>patient_assessments.assessment_category</code> added 7 new values for pupillometry and intubated-patient pain assessment: <code>pupil_size_l</code>, <code>pupil_size_r</code>, <code>pupil_reactive_l</code>, <code>pupil_reactive_r</code>, <code>npi_l</code>, <code>npi_r</code> (Neurological Pupil index), and <code>cpot_intubated</code> (Critical-Care Pain Observation Tool variant for intubated patients).</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/205" class="text-clif-burgundy hover:underline">Issue #205</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">May 12, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">mode_category (2)</td>
-                  <td class="px-4 py-3 text-sm"><code>respiratory_support.mode_category</code> added <code>aprv</code> (airway pressure release ventilation) and <code>t_piece</code> as net-new permissible values. The acronym renames of the existing controlled-ventilation modes (<code>acvc</code>, <code>prvc</code>, <code>ps_or_cpap</code>) are logged separately under Revisions.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/201" class="text-clif-burgundy hover:underline">Issue #201</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">May 21, 2026</td>
                 </tr>
               </tbody>
             </table>
