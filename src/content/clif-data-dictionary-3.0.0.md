@@ -45,9 +45,9 @@ This table should represent what the clinician intends for the patients' limitat
 
 | patient_id | start_dttm                  | code_status_name   | code_status_category |
 |------------|----------------------------|-------------------|---------------------|
-| 123451     | 2024-12-01 08:30:00+00:00 UTC | Do Not Resuscitate| DNR                 |
-| 123452     | 2024-12-02 14:00:00+00:00 UTC | Do Not Intubate   | DNR/DNI             |
-| 123451     | 2024-12-03 10:15:00+00:00 UTC | Full Code         | Full                |
+| 123451     | 2024-12-01 08:30:00+00:00 UTC | Do Not Resuscitate| dnr                 |
+| 123452     | 2024-12-02 14:00:00+00:00 UTC | Do Not Intubate   | dnr_or_dni             |
+| 123451     | 2024-12-03 10:15:00+00:00 UTC | Full Code         | full                |
 
 
 ## crrt_therapy
@@ -278,8 +278,8 @@ The microbiology culture table is a longitudinal table in long format that captu
 | 12345      | HOSP12345         | ORG002      | 2025-06-05 08:15:00+00:00 | 2025-06-05 08:45:00+00:00 | 2025-06-06 12:00:00+00:00 | AFB/FUNGAL BLOOD CULTURE | Blood/Buffy Coat   | Blood culture   | culture         | Candida albicans                | candida_albicans       | candida albicans                                               |               |
 | 67890      | HOSP67890         | ORG003      | 2025-06-10 14:10:00+00:00 | 2025-06-10 14:35:00+00:00 | 2025-06-11 09:20:00+00:00 | BRAIN BIOPSY CULTURE     | Brain              | Tissue culture  | culture         | Aspergillus fumigatus           | aspergillus_fumigatus  | asperguillus fumigatus                                         |               |
 | 24680      | HOSP24680         |             | 2025-06-12 18:00:00+00:00 | 2025-06-12 18:20:00+00:00 | 2025-06-17 18:20:00+00:00 | URINE CULTURE            | Urine              | Urine culture   | culture         | No growth                       |                        |                                                                |               |
-| 24680      | HOSP24680         | ORG005      | 2025-06-12 18:00:00+00:00 | 2025-06-12 18:20:00+00:00 | 2025-06-12 18:35:00+00:00 | SPUTUM GRAM STAIN        | Sputum             | Gram stain      | gram stain      | Gram-positive cocci in clusters | staphylococcus_sp      | staphylococcus (aureus, coag-negative, other species)          |               |
-| 13579      | HOSP13579         |             | 2025-06-14 03:10:00+00:00 | 2025-06-14 03:25:00+00:00 | 2025-06-14 03:40:00+00:00 | CSF GRAM STAIN           | Meninges and CSF   | Gram stain      | gram stain      | No bacteria seen                |                        |                                                                |               |
+| 24680      | HOSP24680         | ORG005      | 2025-06-12 18:00:00+00:00 | 2025-06-12 18:20:00+00:00 | 2025-06-12 18:35:00+00:00 | SPUTUM GRAM STAIN        | Sputum             | Gram stain      | gram_stain      | Gram-positive cocci in clusters | staphylococcus_sp      | staphylococcus (aureus, coag-negative, other species)          |               |
+| 13579      | HOSP13579         |             | 2025-06-14 03:10:00+00:00 | 2025-06-14 03:25:00+00:00 | 2025-06-14 03:40:00+00:00 | CSF GRAM STAIN           | Meninges and CSF   | Gram stain      | gram_stain      | No bacteria seen                |                        |                                                                |               |
 
 ## microbiology_nonculture
 
@@ -301,11 +301,11 @@ This table contains demographic information about the patient that does not vary
 **Example**:
 | patient_id | race_name                  | race_category              | ethnicity_name                                    | ethnicity_category | sex_category | birth_date  | death_dttm | language_name | language_category | language_interpreter |
 |------------|---------------------------|---------------------------|--------------------------------------------------|-------------------|--------------|-------------|------------|---------------|------------------|----------------------|
-| 132424     | Black or African-American | Black or African American | Not Hispanic, Latino/a, or Spanish origin        | Non-Hispanic      | Male         | 2145-05-09  | NA         | English       | English          | 0                    |
-| 132384     | White                     | White                     | Not Hispanic, Latino/a, or Spanish origin        | Non-Hispanic      | Female       | 2145-03-30  | NA         | English       | English          | 0                    |
-| 542367     | Black or African-American | Black or African American | Not Hispanic, Latino/a, or Spanish origin        | Non-Hispanic      | Male         | 2145-01-29  | NA         | Spanish       | Spanish          | 1                    |
-| 989862     | White                     | White                     | Not Hispanic, Latino/a, or Spanish origin        | Non-Hispanic      | Female       | 2145-11-06  | NA         | English       | English          | 0                    |
-| 428035     | More than one Race        | Other                     | Not Hispanic, Latino/a, or Spanish origin        | Non-Hispanic      | Male         | 2145-10-13  | NA         | Mandarin      | Mandarin Chinese | 1                    |
+| 132424     | Black or African-American | black_or_african_american | Not Hispanic, Latino/a, or Spanish origin        | non_hispanic      | male         | 2145-05-09  | NA         | English       | english          | 0                    |
+| 132384     | White                     | white                     | Not Hispanic, Latino/a, or Spanish origin        | non_hispanic      | female       | 2145-03-30  | NA         | English       | english          | 0                    |
+| 542367     | Black or African-American | black_or_african_american | Not Hispanic, Latino/a, or Spanish origin        | non_hispanic      | male         | 2145-01-29  | NA         | Spanish       | spanish          | 1                    |
+| 989862     | White                     | white                     | Not Hispanic, Latino/a, or Spanish origin        | non_hispanic      | female       | 2145-11-06  | NA         | English       | english          | 0                    |
+| 428035     | More than one Race        | other                     | Not Hispanic, Latino/a, or Spanish origin        | non_hispanic      | male         | 2145-10-13  | NA         | Mandarin      | chinese | 1                    |
 
 
 ## patient_assessments
@@ -384,9 +384,9 @@ The respiratory support table is a wider longitudinal table that captures simult
 
 **Expected setting values for each device_category and mode_category**
 
-- `device_category` == "IMV"
+- `device_category` == "imv"
 
-| ventilator_setting        | Assist Control-Volume Control | Pressure Support/CPAP | Pressure Control | Pressure-Regulated Volume Control | SIMV | Volume Support |
+| ventilator_setting        | acvc | ps_or_cpap | pressure_control | prvc | simv | volume_support |
 |--------------------------|:----------------------------:|:---------------------:|:---------------:|:-------------------------------:|:----:|:-------------:|
 | fio2_set                 | E                            | E                     | E               | E                               | E    | E             |
 | tidal_volume_set         | E                            |                       |                 | E                               | P    | E             |
@@ -399,25 +399,25 @@ The respiratory support table is a wider longitudinal table that captures simult
 
 E = Expected ventilator setting for the mode, P = possible ventilator setting for the mode.
 
-- `device_category` == "NIPPV"
+- `device_category` == "nippv"
 
-`mode_category` is `Pressure Support/CPAP` and the `fio2_set`, `peep_set`, and either `pressure_support_set` OR `peak_inspiratory_pressure_set` (IPAP) is required.
+`mode_category` is `ps_or_cpap` and the `fio2_set`, `peep_set`, and either `pressure_support_set` OR `peak_inspiratory_pressure_set` (IPAP) is required.
 
-- `device_category` == "CPAP"
+- `device_category` == "cpap"
 
-`mode_category` is `Pressure Support/CPAP` and the `fio2_set` and `peep_set` are required.
+`mode_category` is `ps_or_cpap` and the `fio2_set` and `peep_set` are required.
 
-- `device_category` == "High Flow NC"
+- `device_category` == "hfnc"
 
 `mode_category` is NA and the `fio2_set` and `lpm_set` are required.
 
-- `device_category` == "Face Mask"
+- `device_category` == "face_mask"
 
 `mode_category` is NA
 `lpm_set` is required.
 `fio2_set` is possible.
 
-- `device_category` == "Trach Collar" or "Nasal Cannula"
+- `device_category` == "trach_collar" or "nasal_cannula"
 
 `mode_category` is NA
 `lpm_set` is required
@@ -427,10 +427,10 @@ E = Expected ventilator setting for the mode, P = possible ventilator setting fo
 
 | hospitalization_id | recorded_dttm           | device_name | device_id | device_category | mode_name         | mode_category                | vent_brand_name | tracheostomy | fio2_set | lpm_set | tidal_volume_set | resp_rate_set | pressure_control_set | pressure_support_set | flow_rate_set | tidal_volume_obs | resp_rate_obs | plateau_pressure_obs | peak_inspiratory_pressure_obs | peep_obs | minute_vent_obs | mean_airway_pressure_obs |
 |-------------------|-------------------------|-------------|-----------|-----------------|-------------------|------------------------------|-----------------|--------------|----------|---------|------------------|---------------|----------------------|----------------------|---------------|------------------|---------------|----------------------|-----------------------------|----------|-----------------|-------------------------|
-| 12345             | 2024-12-01 08:00:00+00:00 UTC | Ventilator   | DEV001    | IMV             | CMV Volume Ctrl   | Assist Control-Volume Control| Vent A          | 1            | 0.50     | 40      | 500              | 18            | 15                   | 5                    | 50            | 450              | 18            | 20                   | 25                          | 5        | 9.0             | 12.0                    |
-| 12345             | 2024-12-01 09:00:00+00:00 UTC | Ventilator   | DEV001    | IMV             | SIMV              | SIMV                         | Vent A          | 1            | 0.45     | 35      | 480              | 20            | 18                   | 8                    | 55            | 470              | 20            | 21                   | 28                          | 6        | 10.5            | 14.0                    |
-| 67890             | 2024-12-01 10:30:00+00:00 UTC | HFNC         | DEV002    | High Flow NC    | N/A               | Other                        | N/A             | 0            | 0.30     | 60      | NA               | NA            | NA                   | NA                   | 60            | NA               | NA            | NA                   | NA                          | NA       | NA              | NA                      |
-| 67890             | 2024-12-01 11:00:00+00:00 UTC | CPAP         | DEV003    | CPAP            | CPAP              | Pressure Support/CPAP        | CPAP X          | 0            | 0.40     | 50      | NA               | NA            | NA                   | 10                   | NA            | NA               | NA            | NA                   | NA                          | 8        | NA              | NA                      |
+| 12345             | 2024-12-01 08:00:00+00:00 UTC | Ventilator   | DEV001    | imv             | CMV Volume Ctrl   | acvc| Vent A          | 1            | 0.50     | 40      | 500              | 18            | 15                   | 5                    | 50            | 450              | 18            | 20                   | 25                          | 5        | 9.0             | 12.0                    |
+| 12345             | 2024-12-01 09:00:00+00:00 UTC | Ventilator   | DEV001    | imv             | SIMV              | simv                         | Vent A          | 1            | 0.45     | 35      | 480              | 20            | 18                   | 8                    | 55            | 470              | 20            | 21                   | 28                          | 6        | 10.5            | 14.0                    |
+| 67890             | 2024-12-01 10:30:00+00:00 UTC | HFNC         | DEV002    | hfnc    | N/A               | other                        | N/A             | 0            | 0.30     | 60      | NA               | NA            | NA                   | NA                   | 60            | NA               | NA            | NA                   | NA                          | NA       | NA              | NA                      |
+| 67890             | 2024-12-01 11:00:00+00:00 UTC | CPAP         | DEV003    | cpap            | CPAP              | ps_or_cpap        | CPAP X          | 0            | 0.40     | 50      | NA               | NA            | NA                   | 10                   | NA            | NA               | NA            | NA                   | NA                          | 8        | NA              | NA                      |
 
 ## vitals
 
