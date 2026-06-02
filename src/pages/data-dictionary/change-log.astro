@@ -394,22 +394,29 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
                 <tr>
-                  <td class="px-4 py-3 text-sm">Microbiology <code>result_dttm</code> row-keeping convention</td>
-                  <td class="px-4 py-3 text-sm">New ETL convention for <code>microbiology_culture.result_dttm</code> and <code>microbiology_nonculture.result_dttm</code> on negative results — no new column, just a population rule. For <strong>positive</strong> cultures, gram stains, and non-culture results, keep every interval/processing-step row as the EHR records it. For <strong>negative</strong> results, keep only one row per workup: the <strong>final</strong> no-growth row for cultures (<code>method_category = culture</code>), the <strong>first</strong> no-bacteria-seen row for gram stains (<code>method_category = gram stain</code>), and the <strong>final</strong> negative-result row for non-culture results. Per-table <code>result_dttm</code> descriptions and the ETL guide both updated; see the ETL guide microbiology callout for the canonical statement.</td>
+                  <td class="px-4 py-3 text-sm"><code>result_dttm</code></td>
+                  <td class="px-4 py-3 text-sm">
+                    <strong>New ETL convention</strong> for <code>microbiology_culture.result_dttm</code> and <code>microbiology_nonculture.result_dttm</code>.
+                    <ul class="list-disc pl-5 my-2 space-y-1">
+                      <li>For <strong>positive</strong> cultures, gram stains, and non-culture results, keep every interval/processing-step row as the EHR records it.</li>
+                      <li>For <strong>negative</strong> results, keep only one row per workup: the <strong>final</strong> no-growth row for cultures (<code>method_category = culture</code>), the <strong>first</strong> no-bacteria-seen row for gram stains (<code>method_category = gram stain</code>), and the <strong>final</strong> negative-result row for non-culture results.</li>
+                    </ul>
+                    Per-table <code>result_dttm</code> descriptions and the ETL guide both updated; see the ETL guide microbiology callout for the canonical statement.
+                  </td>
                   <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/180" class="text-clif-burgundy hover:underline">Issue #180</a></td>
                   <td class="px-4 py-3 text-sm text-gray-500">May 29, 2026</td>
                 </tr>
                 <tr>
-                  <td class="px-4 py-3 text-sm font-mono">assessment_group</td>
-                  <td class="px-4 py-3 text-sm">Reclassified <code>braden_mobility</code> from <code>Nursing Risk</code> to <code>Mobility/Activity</code> in the patient_assessments mCIDE — Braden mobility is a mobility assessment, not a nursing risk score.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/183" class="text-clif-burgundy hover:underline">Issue #183</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">May 6, 2026</td>
+                  <td class="px-4 py-3 text-sm font-mono">device_category</td>
+                  <td class="px-4 py-3 text-sm"><code>respiratory_support.device_category</code> shortened <code>high_flow_nc</code> → <code>hfnc</code>.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/201" class="text-clif-burgundy hover:underline">Issue #201</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 21, 2026</td>
                 </tr>
                 <tr>
-                  <td class="px-4 py-3 text-sm font-mono">med_dose_unit</td>
-                  <td class="px-4 py-3 text-sm">Standardized <code>med_dose_unit</code> per <code>med_category</code> in the <code>medication_admin_intermittent</code> mCIDE — every category now maps to one of <code>mg, g, mcg, mmol, ml, meq, cells</code>. Sites must convert raw EHR doses to the category-specific unit on ingest.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/medication_admin_intermittent/clif_medication_admin_intermittent_med_categories.csv" class="text-clif-burgundy hover:underline">3.0 mCIDE</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">May 7, 2026</td>
+                  <td class="px-4 py-3 text-sm font-mono">mode_category</td>
+                  <td class="px-4 py-3 text-sm"><code>respiratory_support.mode_category</code> shortened three controlled-ventilation mode values to acronym form: <code>assist_control_volume_control</code> → <code>acvc</code>, <code>pressure_regulated_volume_control</code> → <code>prvc</code>, <code>pressure_supportcpap</code> → <code>ps_or_cpap</code>. <code>aprv</code> and <code>t_piece</code> additions from the same review are logged separately under New mCIDE Values.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/201" class="text-clif-burgundy hover:underline">Issue #201</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 21, 2026</td>
                 </tr>
                 <tr>
                   <td class="px-4 py-3 text-sm font-mono">All mCIDE values</td>
@@ -424,16 +431,16 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   <td class="px-4 py-3 text-sm text-gray-500">May 7, 2026</td>
                 </tr>
                 <tr>
-                  <td class="px-4 py-3 text-sm font-mono">mode_category</td>
-                  <td class="px-4 py-3 text-sm"><code>respiratory_support.mode_category</code> shortened three controlled-ventilation mode values to acronym form: <code>assist_control_volume_control</code> → <code>acvc</code>, <code>pressure_regulated_volume_control</code> → <code>prvc</code>, <code>pressure_supportcpap</code> → <code>ps_or_cpap</code>. <code>aprv</code> and <code>t_piece</code> additions from the same review are logged separately under New mCIDE Values.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/201" class="text-clif-burgundy hover:underline">Issue #201</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">May 21, 2026</td>
+                  <td class="px-4 py-3 text-sm font-mono">med_dose_unit</td>
+                  <td class="px-4 py-3 text-sm">Standardized <code>med_dose_unit</code> per <code>med_category</code> in the <code>medication_admin_intermittent</code> mCIDE — every category now maps to one of <code>mg, g, mcg, mmol, ml, meq, cells</code>. Sites must convert raw EHR doses to the category-specific unit on ingest.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/medication_admin_intermittent/clif_medication_admin_intermittent_med_categories.csv" class="text-clif-burgundy hover:underline">3.0 mCIDE</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 7, 2026</td>
                 </tr>
                 <tr>
-                  <td class="px-4 py-3 text-sm font-mono">device_category</td>
-                  <td class="px-4 py-3 text-sm"><code>respiratory_support.device_category</code> shortened <code>high_flow_nc</code> → <code>hfnc</code>.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/201" class="text-clif-burgundy hover:underline">Issue #201</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">May 21, 2026</td>
+                  <td class="px-4 py-3 text-sm font-mono">assessment_group</td>
+                  <td class="px-4 py-3 text-sm">Reclassified <code>braden_mobility</code> from <code>Nursing Risk</code> to <code>Mobility/Activity</code> in the patient_assessments mCIDE — Braden mobility is a mobility assessment, not a nursing risk score.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/183" class="text-clif-burgundy hover:underline">Issue #183</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 6, 2026</td>
                 </tr>
               </tbody>
             </table>
