@@ -309,12 +309,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   <td class="px-4 py-3 text-sm text-gray-500">Jan 23, 2026</td>
                 </tr>
                 <tr>
-                  <td class="px-4 py-3 text-sm font-mono">organism_category</td>
-                  <td class="px-4 py-3 text-sm">The <code>clif_microbiology_culture_organism_categories.csv</code> additions from <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/191" class="text-clif-burgundy hover:underline">#191</a>, expanding <code>microbiology_culture.organism_category</code> with new permissible values — both species-level entries (e.g., <code>streptococcus_pneumoniae</code>, <code>streptococcus_pyogenes</code>, <code>trichophyton_rubrum</code>, <code>trichosporon_asahii</code>, <code>trueperella_bernardiae</code>) and genus-level <code>*_sp</code> catch-alls (e.g., <code>streptococcus_sp</code>, <code>streptomyces_sp</code>, <code>trichoderma_sp</code>, <code>veillonella_sp</code>) carrying a standard "identified to the genus level only" remark.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/209" class="text-clif-burgundy hover:underline">Issue #209</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">May 27, 2026</td>
-                </tr>
-                <tr>
                   <td class="px-4 py-3 text-sm font-mono">race_category</td>
                   <td class="px-4 py-3 text-sm">Added <code>middle_eastern_or_north_african</code> as a distinct <code>patient.race_category</code> per the 2024 OMB SPD 15 revision recognising MENA as a separate race/ethnicity group.</td>
                   <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/198" class="text-clif-burgundy hover:underline">Issue #198</a></td>
@@ -354,6 +348,12 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   <td class="px-4 py-3 text-sm font-mono">organism_category (nonculture)</td>
                   <td class="px-4 py-3 text-sm">Expanded <code>microbiology_nonculture.organism_category</code> with 21 respiratory virus and atypical-pathogen values: <code>adenovirus</code>, <code>bordetella_parapertussis</code>, <code>bordetella_pertussis</code>, <code>chlamydia_pneumoniae</code>, four coronaviruses (<code>coronavirus_229e</code>, <code>coronavirus_hku1</code>, <code>coronavirus_nl63</code>, <code>coronavirus_oc43</code>), <code>human_metapneumovirus</code>, <code>human_rhinovirus_enterovirus</code>, five influenzas (<code>influenza_a</code>, <code>influenza_a_h1</code>, <code>influenza_a_h1_2009</code>, <code>influenza_a_h3</code>, <code>influenza_b</code>), <code>mycoplasma_pneumoniae</code>, four parainfluenzas (<code>parainfluenza_1</code>–<code>parainfluenza_4</code>), <code>pneumocystis_jirovecii</code>.</td>
                   <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/microbiology_nonculture/clif_microbiology_nonculture_organism_category.csv" class="text-clif-burgundy hover:underline">3.0 mCIDE</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">organism_group (nonculture)</td>
+                  <td class="px-4 py-3 text-sm">New <code>microbiology_nonculture.organism_group</code> mCIDE grouping the non-culture organisms, with 8 new groups: <code>adenovirus</code>, <code>bacteria_other</code>, <code>chlamydia</code>, <code>influenza</code>, <code>mycoplasma</code>, <code>parainfluenza</code>, <code>pneumocystis</code>, <code>rhinovirus</code> (alongside the existing <code>clostridium_difficile</code>, <code>respiratory_syncytial_virus</code>, <code>viral_other</code>).</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/209" class="text-clif-burgundy hover:underline">Issue #209</a></td>
                   <td class="px-4 py-3 text-sm text-gray-500">May 2026</td>
                 </tr>
                 <tr>
