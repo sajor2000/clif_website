@@ -1,0 +1,2312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CLIF 3.0.0 — Interactive ERD</title>
+<style>
+  :root{
+    --maroon:#841839;
+    --maroon-soft:#a83a59;
+    --slate:#566270;
+    --paper:#ffffff;
+    --ink:#241f1c;
+    --muted:#8c8378;
+    --card:#ffffff;
+    --line:#e6ded4;
+    --line-strong:#d2c6b8;
+    --edge:#c4b6a4;
+    --edge-hot:#841839;
+    --pk:#b07d12;
+    --fk:#a83a59;
+    --beta:#841839;
+    --concept:#566270;
+    --font-disp:Georgia,"Times New Roman","Iowan Old Style",serif;
+    --font-mono:ui-monospace,"SFMono-Regular",Menlo,Consolas,"Liberation Mono",monospace;
+  }
+
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;background:var(--paper);color:var(--ink);
+    font-family:var(--font-mono);font-size:13px;
+    -webkit-font-smoothing:antialiased;overflow:hidden;
+  }
+  /* ---------- top bar ---------- */
+  header.bar{
+    position:relative;z-index:30;display:flex;flex-wrap:wrap;align-items:center;gap:14px;
+    padding:12px 18px;background:#ffffff;border-bottom:1px solid var(--line-strong);
+    box-shadow:0 1px 0 rgba(0,0,0,.02);
+  }
+  .brand{display:flex;flex-direction:column;line-height:1.05;margin-right:6px}
+  .brand .t{font-family:var(--font-disp);font-weight:700;font-size:20px;letter-spacing:.2px;color:var(--maroon)}
+  .brand .s{font-size:10.5px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-top:3px}
+
+  .group{display:flex;align-items:center;gap:8px}
+  .sep{width:1px;height:26px;background:var(--line);margin:0 2px}
+
+  input.search{
+    font-family:var(--font-mono);font-size:12.5px;color:var(--ink);
+    border:1px solid var(--line-strong);background:#fff;border-radius:7px;
+    padding:7px 10px 7px 30px;width:210px;outline:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='%238c8378' stroke-width='2'><circle cx='11' cy='11' r='7'/><line x1='21' y1='21' x2='16.65' y2='16.65'/></svg>");
+    background-repeat:no-repeat;background-position:9px center;transition:border-color .15s,box-shadow .15s;
+  }
+  input.search:focus{border-color:var(--maroon);box-shadow:0 0 0 3px rgba(132,24,57,.10)}
+
+  .chip{
+    font-family:var(--font-mono);font-size:11.5px;cursor:pointer;user-select:none;
+    border:1px solid var(--line-strong);background:#fff;color:var(--ink);
+    padding:6px 11px;border-radius:999px;transition:all .14s;display:inline-flex;align-items:center;gap:6px;
+  }
+  .chip:hover{border-color:var(--maroon-soft)}
+  .chip.on{background:var(--maroon);border-color:var(--maroon);color:#fff}
+  .chip .dot{width:8px;height:8px;border-radius:50%}
+  .chip[data-mat="beta"] .dot{background:var(--beta)}
+  .chip[data-mat="concept"] .dot{background:var(--concept)}
+  .chip.on .dot{background:#fff}
+
+  button.btn{
+    font-family:var(--font-mono);font-size:11.5px;cursor:pointer;color:var(--ink);
+    border:1px solid var(--line-strong);background:#fff;border-radius:7px;padding:6px 10px;transition:all .14s;
+  }
+  button.btn:hover{border-color:var(--maroon-soft);color:var(--maroon)}
+  .zoomctl{display:flex;align-items:center;gap:0;border:1px solid var(--line-strong);border-radius:7px;overflow:hidden;background:#fff}
+  .zoomctl button{border:none;background:#fff;cursor:pointer;font-family:var(--font-mono);font-size:14px;width:30px;height:30px;color:var(--ink)}
+  .zoomctl button:hover{background:#f3ece4;color:var(--maroon)}
+  .zoomctl .zlabel{min-width:48px;text-align:center;font-size:11px;color:var(--muted)}
+  .spacer{flex:1 1 auto}
+  .count{font-size:11px;color:var(--muted);white-space:nowrap}
+  .count b{color:var(--maroon);font-weight:700}
+
+  /* ---------- viewport / canvas ---------- */
+  #viewport{position:absolute;inset:0;top:0;overflow:hidden;cursor:grab}
+  #viewport.panning{cursor:grabbing}
+  #canvas{position:absolute;top:0;left:0;transform-origin:0 0;padding:46px;z-index:1}
+  #edges{position:absolute;top:0;left:0;overflow:visible;pointer-events:none;z-index:1}
+  #cards{position:relative;display:flex;gap:42px;align-items:center;z-index:2}
+  .rcol{display:flex;flex-direction:column;gap:40px}
+  .rrow{display:flex;gap:42px;align-items:flex-start}
+
+  .domain{display:flex;flex-direction:column;gap:18px;width:248px;flex:0 0 auto}
+  .domain > .dlabel{
+    font-family:var(--font-disp);font-style:italic;font-size:13px;color:var(--maroon);
+    border-bottom:1.5px solid var(--line-strong);padding-bottom:5px;margin-bottom:2px;letter-spacing:.2px;
+  }
+
+  /* ---------- table card ---------- */
+  .tbl{
+    background:var(--card);border:1px solid var(--line);border-radius:9px;overflow:hidden;
+    box-shadow:0 1px 2px rgba(40,30,20,.04),0 6px 16px -10px rgba(40,30,20,.10);
+    transition:box-shadow .18s,opacity .18s,transform .18s,border-color .18s;
+  }
+  .thead{
+    display:flex;align-items:center;gap:8px;padding:9px 11px;cursor:pointer;user-select:none;
+    color:#fff;position:relative;
+  }
+  .tbl[data-mat="beta"] .thead{background:linear-gradient(180deg,#8d2040,#7a1233)}
+  .tbl[data-mat="concept"] .thead{background:linear-gradient(180deg,#616d7b,#4d5762)}
+  .thead .name{font-family:var(--font-disp);font-weight:600;font-size:13.5px;font-style:italic;letter-spacing:.2px;
+    flex:1 1 auto;min-width:0;white-space:normal;overflow-wrap:anywhere;line-height:1.14}
+  .thead .tag{font-size:9px;letter-spacing:.08em;text-transform:uppercase;background:rgba(255,255,255,.18);
+    padding:2px 6px;border-radius:4px;font-weight:500;flex:0 0 auto;white-space:nowrap}
+  .thead .caret{font-size:10px;opacity:.8;transition:transform .18s;flex:0 0 auto}
+  .tbl.collapsed .thead .caret{transform:rotate(-90deg)}
+
+  .tbody{border-top:0}
+  .tbl.collapsed .tbody{display:none}
+  .row{display:flex;align-items:center;gap:7px;padding:4px 11px;font-size:11.5px;border-top:1px solid #f1ebe3}
+  .row:nth-child(odd){background:#fcfaf7}
+  .row .key{width:13px;flex:0 0 13px;text-align:center;font-size:10px}
+  .row .key.pk{color:var(--pk)}
+  .row .key.fk{color:var(--fk)}
+  .row .cn{flex:1 1 auto;color:#33291f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .row .ct{color:var(--muted);font-size:10px;letter-spacing:.02em;white-space:nowrap}
+  .row.is-key .cn{font-weight:600;color:var(--maroon)}
+
+  /* states */
+  .tbl.dim{opacity:.26;filter:saturate(.6)}
+  .tbl.focus{border-color:var(--maroon);box-shadow:0 0 0 2px var(--maroon),0 10px 26px -8px rgba(132,24,57,.4);transform:translateY(-1px)}
+  .tbl.neighbor{border-color:var(--maroon-soft);box-shadow:0 0 0 1.5px var(--maroon-soft),0 8px 20px -10px rgba(132,24,57,.3)}
+  .tbl.hit{border-color:var(--pk);box-shadow:0 0 0 2px var(--pk)}
+
+  path.edge{fill:none;stroke:var(--edge);stroke-width:1.4;transition:stroke .18s,stroke-width .18s,opacity .18s}
+  path.edge.hot{stroke:var(--edge-hot);stroke-width:2}
+  path.edge.faded{opacity:.45}
+  .edge-end{fill:var(--edge)}
+  .edge-end.hot{fill:var(--edge-hot)}
+
+  /* hint / legend */
+  .hint{position:absolute;left:18px;bottom:16px;z-index:20;background:rgba(255,253,251,.92);
+    border:1px solid var(--line-strong);border-radius:9px;padding:11px 13px;backdrop-filter:blur(4px);max-width:300px}
+  .hint .hl{font-family:var(--font-disp);font-style:italic;color:var(--maroon);font-size:12.5px;margin-bottom:6px}
+  .hint .lg{display:flex;align-items:center;gap:7px;font-size:11px;color:#4a4138;margin:3px 0}
+  .hint .sw{width:13px;height:13px;border-radius:3px;flex:0 0 13px}
+  .hint .sw.beta{background:var(--beta)} .hint .sw.concept{background:var(--concept)}
+  .hint kbd{font-family:var(--font-mono);font-size:10px;background:#efe8df;border:1px solid var(--line-strong);
+    border-bottom-width:2px;border-radius:4px;padding:1px 5px;color:#5a5044}
+  .hint .x{position:absolute;top:7px;right:9px;cursor:pointer;color:var(--muted);font-size:13px}
+  .hint .x:hover{color:var(--maroon)}
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="group">
+    <input id="search" class="search" type="text" placeholder="Find a table…" autocomplete="off" spellcheck="false">
+  </div>
+
+  <div class="group" id="matFilters">
+    <span class="chip on" data-mat="all">All</span>
+    <span class="chip" data-mat="beta"><span class="dot"></span>Beta</span>
+    <span class="chip" data-mat="concept"><span class="dot"></span>Concept</span>
+  </div>
+
+  <div class="sep"></div>
+  <div class="group">
+    <button class="btn" id="toggleCols">Expand all</button>
+    <button class="btn" id="relMode" title="Cycle how relationships are shown">Links: All</button>
+  </div>
+
+  <div class="spacer"></div>
+
+  <div class="zoomctl">
+    <button id="zoomOut" title="Zoom out">−</button>
+    <span class="zlabel" id="zlabel">100%</span>
+    <button id="zoomIn" title="Zoom in">+</button>
+  </div>
+  <button class="btn" id="fit">Fit</button>
+  <button class="btn" id="fsBtn" title="Toggle full screen">⤢ Full screen</button>
+</header>
+
+<div id="viewport">
+  <div id="canvas">
+    <svg id="edges" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div id="cards"></div>
+  </div>
+</div>
+
+<script>
+/* ============================ SCHEMA DATA ============================ */
+/* m: maturity, g: domain group. cols: [name, type, key('pk'|'fk'|'')] */
+const TABLES = [
+ {
+  "n": "patient",
+  "m": "beta",
+  "g": "Patient & Encounter",
+  "cols": [
+   [
+    "patient_id",
+    "varchar",
+    "pk"
+   ],
+   [
+    "race_name",
+    "varchar"
+   ],
+   [
+    "race_category",
+    "varchar"
+   ],
+   [
+    "ethnicity_name",
+    "varchar"
+   ],
+   [
+    "ethnicity_category",
+    "varchar"
+   ],
+   [
+    "sex_name",
+    "varchar"
+   ],
+   [
+    "sex_category",
+    "varchar"
+   ],
+   [
+    "birth_date",
+    "date"
+   ],
+   [
+    "death_dttm",
+    "datetime"
+   ],
+   [
+    "language_name",
+    "varchar"
+   ],
+   [
+    "language_category",
+    "varchar"
+   ],
+   [
+    "language_interpreter",
+    "int"
+   ]
+  ]
+ },
+ {
+  "n": "hospitalization",
+  "m": "beta",
+  "g": "Patient & Encounter",
+  "cols": [
+   [
+    "patient_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "hospitalization_id",
+    "varchar",
+    "pk"
+   ],
+   [
+    "hospitalization_joined_id",
+    "varchar"
+   ],
+   [
+    "admission_dttm",
+    "datetime"
+   ],
+   [
+    "discharge_dttm",
+    "datetime"
+   ],
+   [
+    "age_at_admission",
+    "int"
+   ],
+   [
+    "admission_type_name",
+    "varchar"
+   ],
+   [
+    "admission_type_category",
+    "varchar"
+   ],
+   [
+    "discharge_name",
+    "varchar"
+   ],
+   [
+    "discharge_category",
+    "varchar"
+   ],
+   [
+    "zipcode_nine_digit",
+    "varchar"
+   ],
+   [
+    "zipcode_five_digit",
+    "varchar"
+   ],
+   [
+    "census_block_code",
+    "varchar"
+   ],
+   [
+    "census_block_group_code",
+    "varchar"
+   ],
+   [
+    "census_tract",
+    "varchar"
+   ],
+   [
+    "state_code",
+    "varchar"
+   ],
+   [
+    "county_code",
+    "varchar"
+   ],
+   [
+    "fips_version",
+    "varchar"
+   ]
+  ]
+ },
+ {
+  "n": "adt",
+  "m": "beta",
+  "g": "Patient & Encounter",
+  "cols": [
+   [
+    "hospitalization_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "hospital_id",
+    "varchar"
+   ],
+   [
+    "hospital_type",
+    "varchar"
+   ],
+   [
+    "in_dttm",
+    "datetime"
+   ],
+   [
+    "out_dttm",
+    "datetime"
+   ],
+   [
+    "location_name",
+    "varchar"
+   ],
+   [
+    "location_category",
+    "varchar"
+   ],
+   [
+    "location_type",
+    "varchar"
+   ],
+   [
+    "room_id",
+    "varchar"
+   ],
+   [
+    "bed_id",
+    "varchar"
+   ]
+  ]
+ },
+ {
+  "n": "ed_encounter",
+  "m": "concept",
+  "g": "Patient & Encounter",
+  "cols": [
+   [
+    "hospitalization_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "ed_encounter_id",
+    "varchar"
+   ],
+   [
+    "ed_arrival_dttm",
+    "datetime"
+   ],
+   [
+    "ed_departure_dttm",
+    "datetime"
+   ],
+   [
+    "arrival_mode_name",
+    "varchar"
+   ],
+   [
+    "arrival_mode_category",
+    "varchar"
+   ],
+   [
+    "triage_system_name",
+    "varchar"
+   ],
+   [
+    "triage_system_category",
+    "varchar"
+   ],
+   [
+    "triage_acuity_name",
+    "varchar"
+   ],
+   [
+    "triage_acuity_category",
+    "varchar"
+   ],
+   [
+    "triage_dttm",
+    "datetime"
+   ],
+   [
+    "chief_complaint_name",
+    "varchar"
+   ],
+   [
+    "ed_disposition_name",
+    "varchar"
+   ],
+   [
+    "ed_disposition_category",
+    "varchar"
+   ],
+   [
+    "ed_disposition_dttm",
+    "datetime"
+   ],
+   [
+    "ed_destination_name",
+    "varchar"
+   ],
+   [
+    "ed_destination_category",
+    "varchar"
+   ],
+   [
+    "ed_observation_status",
+    "int"
+   ]
+  ]
+ },
+ {
+  "n": "provider",
+  "m": "concept",
+  "g": "Patient & Encounter",
+  "cols": [
+   [
+    "hospitalization_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "provider_id",
+    "varchar"
+   ],
+   [
+    "start_dttm",
+    "datetime"
+   ],
+   [
+    "stop_dttm",
+    "datetime"
+   ],
+   [
+    "provider_role_name",
+    "varchar"
+   ],
+   [
+    "provider_role_category",
+    "varchar"
+   ]
+  ]
+ },
+ {
+  "n": "place_based_index",
+  "m": "concept",
+  "g": "Patient & Encounter",
+  "cols": [
+   [
+    "hospitalization_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "index_name",
+    "varchar"
+   ],
+   [
+    "index_value",
+    "double"
+   ],
+   [
+    "index_version",
+    "varchar"
+   ]
+  ]
+ },
+ {
+  "n": "patient_attributes",
+  "m": "concept",
+  "g": "Patient & Encounter",
+  "cols": [
+   [
+    "patient_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "recorded_dttm",
+    "datetime"
+   ],
+   [
+    "attribute_name",
+    "varchar"
+   ],
+   [
+    "attribute_category",
+    "varchar"
+   ],
+   [
+    "attribute_group",
+    "varchar"
+   ],
+   [
+    "attribute_value_name",
+    "varchar"
+   ],
+   [
+    "attribute_value_category",
+    "varchar"
+   ]
+  ]
+ },
+ {
+  "n": "hospital_diagnosis",
+  "m": "beta",
+  "g": "Diagnoses & Code Status",
+  "cols": [
+   [
+    "hospitalization_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "diagnosis_code",
+    "varchar"
+   ],
+   [
+    "diagnosis_code_format",
+    "varchar"
+   ],
+   [
+    "diagnosis_primary",
+    "int"
+   ],
+   [
+    "poa_present",
+    "int"
+   ]
+  ]
+ },
+ {
+  "n": "patient_diagnosis",
+  "m": "concept",
+  "g": "Diagnoses & Code Status",
+  "cols": [
+   [
+    "patient_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "hospitalization_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "diagnosis_code",
+    "varchar"
+   ],
+   [
+    "diagnosis_code_format",
+    "varchar"
+   ],
+   [
+    "source_type",
+    "varchar"
+   ],
+   [
+    "start_dttm",
+    "datetime"
+   ],
+   [
+    "end_dttm",
+    "datetime"
+   ]
+  ]
+ },
+ {
+  "n": "validated_diagnosis",
+  "m": "concept",
+  "g": "Diagnoses & Code Status",
+  "cols": [
+   [
+    "hospitalization_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "diagnosis_name",
+    "varchar"
+   ],
+   [
+    "diagnosis_category",
+    "varchar"
+   ],
+   [
+    "diagnosis_start_dttm",
+    "datetime"
+   ],
+   [
+    "diagnosis_end_dttm",
+    "datetime"
+   ],
+   [
+    "validation_method",
+    "varchar"
+   ],
+   [
+    "diagnosis_status",
+    "varchar"
+   ],
+   [
+    "reviewer_id",
+    "varchar"
+   ],
+   [
+    "review_timestamp",
+    "datetime"
+   ]
+  ]
+ },
+ {
+  "n": "code_status",
+  "m": "beta",
+  "g": "Diagnoses & Code Status",
+  "cols": [
+   [
+    "patient_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "start_dttm",
+    "datetime"
+   ],
+   [
+    "code_status_name",
+    "varchar"
+   ],
+   [
+    "code_status_category",
+    "varchar"
+   ]
+  ]
+ },
+ {
+  "n": "labs",
+  "m": "beta",
+  "g": "Labs & Microbiology",
+  "cols": [
+   [
+    "hospitalization_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "lab_order_dttm",
+    "datetime"
+   ],
+   [
+    "lab_collect_dttm",
+    "datetime"
+   ],
+   [
+    "lab_result_dttm",
+    "datetime"
+   ],
+   [
+    "lab_order_name",
+    "varchar"
+   ],
+   [
+    "lab_order_category",
+    "varchar"
+   ],
+   [
+    "lab_name",
+    "varchar"
+   ],
+   [
+    "lab_category",
+    "varchar"
+   ],
+   [
+    "lab_value",
+    "varchar"
+   ],
+   [
+    "lab_value_numeric",
+    "double"
+   ],
+   [
+    "reference_unit",
+    "varchar"
+   ],
+   [
+    "lab_specimen_name",
+    "varchar"
+   ],
+   [
+    "lab_specimen_category",
+    "varchar"
+   ],
+   [
+    "lab_loinc_code",
+    "varchar"
+   ],
+   [
+    "loinc_version",
+    "varchar"
+   ]
+  ]
+ },
+ {
+  "n": "microbiology_culture",
+  "m": "beta",
+  "g": "Labs & Microbiology",
+  "cols": [
+   [
+    "patient_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "hospitalization_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "organism_id",
+    "varchar",
+    "pk"
+   ],
+   [
+    "order_dttm",
+    "datetime"
+   ],
+   [
+    "collect_dttm",
+    "datetime"
+   ],
+   [
+    "result_dttm",
+    "datetime"
+   ],
+   [
+    "fluid_name",
+    "varchar"
+   ],
+   [
+    "fluid_category",
+    "varchar"
+   ],
+   [
+    "method_name",
+    "varchar"
+   ],
+   [
+    "method_category",
+    "varchar"
+   ],
+   [
+    "organism_name",
+    "varchar"
+   ],
+   [
+    "organism_category",
+    "varchar"
+   ],
+   [
+    "organism_group",
+    "varchar"
+   ],
+   [
+    "lab_loinc_code",
+    "varchar"
+   ]
+  ]
+ },
+ {
+  "n": "microbiology_susceptibility",
+  "m": "beta",
+  "g": "Labs & Microbiology",
+  "cols": [
+   [
+    "organism_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "antimicrobial_name",
+    "varchar"
+   ],
+   [
+    "antimicrobial_category",
+    "varchar"
+   ],
+   [
+    "sensitivity_name",
+    "varchar"
+   ],
+   [
+    "susceptibility_name",
+    "varchar"
+   ],
+   [
+    "susceptibility_category",
+    "varchar"
+   ]
+  ]
+ },
+ {
+  "n": "microbiology_nonculture",
+  "m": "concept",
+  "g": "Labs & Microbiology",
+  "cols": [
+   [
+    "patient_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "hospitalization_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "result_dttm",
+    "datetime"
+   ],
+   [
+    "collect_dttm",
+    "datetime"
+   ],
+   [
+    "order_dttm",
+    "datetime"
+   ],
+   [
+    "fluid_name",
+    "varchar"
+   ],
+   [
+    "fluid_category",
+    "varchar"
+   ],
+   [
+    "method_name",
+    "varchar"
+   ],
+   [
+    "method_category",
+    "varchar"
+   ],
+   [
+    "micro_order_name",
+    "varchar"
+   ],
+   [
+    "organism_category",
+    "varchar"
+   ],
+   [
+    "organism_group",
+    "varchar"
+   ],
+   [
+    "result_name",
+    "varchar"
+   ],
+   [
+    "result_category",
+    "varchar"
+   ],
+   [
+    "reference_low",
+    "double"
+   ],
+   [
+    "reference_high",
+    "double"
+   ],
+   [
+    "result_unit",
+    "varchar"
+   ],
+   [
+    "lab_loinc_code",
+    "varchar"
+   ]
+  ]
+ },
+ {
+  "n": "medication_orders",
+  "m": "concept",
+  "g": "Medications",
+  "cols": [
+   [
+    "hospitalization_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "med_order_id",
+    "varchar",
+    "pk"
+   ],
+   [
+    "order_start_dttm",
+    "datetime"
+   ],
+   [
+    "order_end_dttm",
+    "datetime"
+   ],
+   [
+    "ordered_dttm",
+    "datetime"
+   ],
+   [
+    "med_name",
+    "varchar"
+   ],
+   [
+    "med_category",
+    "varchar"
+   ],
+   [
+    "med_group",
+    "varchar"
+   ],
+   [
+    "med_order_status_name",
+    "varchar"
+   ],
+   [
+    "med_order_status_category",
+    "varchar"
+   ],
+   [
+    "med_route_name",
+    "varchar"
+   ],
+   [
+    "med_dose",
+    "double"
+   ],
+   [
+    "med_dose_unit",
+    "varchar"
+   ],
+   [
+    "rx_norm_code",
+    "varchar"
+   ],
+   [
+    "med_frequency",
+    "varchar"
+   ],
+   [
+    "prn",
+    "boolean"
+   ]
+  ]
+ },
+ {
+  "n": "medication_admin_continuous",
+  "m": "beta",
+  "g": "Medications",
+  "cols": [
+   [
+    "hospitalization_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "med_order_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "administering_provider_id",
+    "varchar"
+   ],
+   [
+    "admin_dttm",
+    "datetime"
+   ],
+   [
+    "med_name",
+    "varchar"
+   ],
+   [
+    "med_category",
+    "varchar"
+   ],
+   [
+    "med_group",
+    "varchar"
+   ],
+   [
+    "med_route_name",
+    "varchar"
+   ],
+   [
+    "med_route_category",
+    "varchar"
+   ],
+   [
+    "med_dose",
+    "float"
+   ],
+   [
+    "med_dose_unit",
+    "varchar"
+   ],
+   [
+    "rx_norm_code",
+    "varchar"
+   ],
+   [
+    "volume_infusion_rate",
+    "float"
+   ],
+   [
+    "volume_infusion_rate_unit",
+    "varchar"
+   ],
+   [
+    "mar_action_name",
+    "varchar"
+   ],
+   [
+    "mar_action_category",
+    "varchar"
+   ],
+   [
+    "mar_action_group",
+    "varchar"
+   ]
+  ]
+ },
+ {
+  "n": "medication_admin_intermittent",
+  "m": "beta",
+  "g": "Medications",
+  "cols": [
+   [
+    "hospitalization_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "med_order_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "administering_provider_id",
+    "varchar"
+   ],
+   [
+    "admin_dttm",
+    "datetime"
+   ],
+   [
+    "med_name",
+    "varchar"
+   ],
+   [
+    "med_category",
+    "varchar"
+   ],
+   [
+    "med_group",
+    "varchar"
+   ],
+   [
+    "med_route_name",
+    "varchar"
+   ],
+   [
+    "med_route_category",
+    "varchar"
+   ],
+   [
+    "med_dose",
+    "float"
+   ],
+   [
+    "med_dose_unit",
+    "varchar"
+   ],
+   [
+    "rx_norm_code",
+    "varchar"
+   ],
+   [
+    "mar_action_name",
+    "varchar"
+   ],
+   [
+    "mar_action_category",
+    "varchar"
+   ],
+   [
+    "mar_action_group",
+    "varchar"
+   ]
+  ]
+ },
+ {
+  "n": "vitals",
+  "m": "beta",
+  "g": "Respiratory & Monitoring",
+  "cols": [
+   [
+    "hospitalization_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "recorded_dttm",
+    "datetime"
+   ],
+   [
+    "measured_dttm",
+    "datetime"
+   ],
+   [
+    "vital_name",
+    "varchar"
+   ],
+   [
+    "vital_category",
+    "varchar"
+   ],
+   [
+    "vital_value",
+    "float"
+   ],
+   [
+    "meas_site_name",
+    "varchar"
+   ]
+  ]
+ },
+ {
+  "n": "respiratory_support",
+  "m": "beta",
+  "g": "Respiratory & Monitoring",
+  "cols": [
+   [
+    "hospitalization_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "recorded_dttm",
+    "datetime"
+   ],
+   [
+    "device_name",
+    "varchar"
+   ],
+   [
+    "device_id",
+    "varchar"
+   ],
+   [
+    "device_category",
+    "varchar"
+   ],
+   [
+    "vent_brand_name",
+    "varchar"
+   ],
+   [
+    "mode_name",
+    "varchar"
+   ],
+   [
+    "mode_category",
+    "varchar"
+   ],
+   [
+    "tracheostomy",
+    "int"
+   ],
+   [
+    "fio2_set",
+    "float"
+   ],
+   [
+    "lpm_set",
+    "float"
+   ],
+   [
+    "tidal_volume_set",
+    "float"
+   ],
+   [
+    "resp_rate_set",
+    "float"
+   ],
+   [
+    "pressure_control_set",
+    "float"
+   ],
+   [
+    "pressure_support_set",
+    "float"
+   ],
+   [
+    "flow_rate_set",
+    "float"
+   ],
+   [
+    "peak_inspiratory_pressure_set",
+    "float"
+   ],
+   [
+    "inspiratory_time_set",
+    "float"
+   ],
+   [
+    "peep_set",
+    "float"
+   ],
+   [
+    "tidal_volume_obs",
+    "float"
+   ],
+   [
+    "resp_rate_obs",
+    "float"
+   ],
+   [
+    "plateau_pressure_obs",
+    "float"
+   ],
+   [
+    "peak_inspiratory_pressure_obs",
+    "float"
+   ],
+   [
+    "peep_obs",
+    "float"
+   ],
+   [
+    "minute_vent_obs",
+    "float"
+   ],
+   [
+    "mean_airway_pressure_obs",
+    "float"
+   ]
+  ]
+ },
+ {
+  "n": "patient_assessments",
+  "m": "beta",
+  "g": "Respiratory & Monitoring",
+  "cols": [
+   [
+    "hospitalization_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "administering_provider_id",
+    "varchar"
+   ],
+   [
+    "recorded_dttm",
+    "datetime"
+   ],
+   [
+    "assessment_name",
+    "varchar"
+   ],
+   [
+    "assessment_category",
+    "varchar"
+   ],
+   [
+    "assessment_group",
+    "varchar"
+   ],
+   [
+    "numerical_value",
+    "double"
+   ],
+   [
+    "categorical_value",
+    "varchar"
+   ],
+   [
+    "text_value",
+    "varchar"
+   ]
+  ]
+ },
+ {
+  "n": "position",
+  "m": "beta",
+  "g": "Respiratory & Monitoring",
+  "cols": [
+   [
+    "hospitalization_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "recorded_dttm",
+    "datetime"
+   ],
+   [
+    "position_name",
+    "varchar"
+   ],
+   [
+    "position_category",
+    "varchar"
+   ]
+  ]
+ },
+ {
+  "n": "invasive_hemodynamics",
+  "m": "concept",
+  "g": "Respiratory & Monitoring",
+  "cols": [
+   [
+    "hospitalization_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "recorded_dttm",
+    "datetime"
+   ],
+   [
+    "measurement_name",
+    "varchar"
+   ],
+   [
+    "measurement_category",
+    "varchar"
+   ],
+   [
+    "measurement_value",
+    "float"
+   ]
+  ]
+ },
+ {
+  "n": "airway",
+  "m": "concept",
+  "g": "Devices & Support",
+  "cols": [
+   [
+    "hospitalization_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "airway_id",
+    "varchar",
+    "pk"
+   ],
+   [
+    "placed_dttm",
+    "datetime"
+   ],
+   [
+    "removed_dttm",
+    "datetime"
+   ],
+   [
+    "airway_category",
+    "varchar"
+   ],
+   [
+    "airway_size",
+    "float"
+   ],
+   [
+    "is_cuffed",
+    "int"
+   ]
+  ]
+ },
+ {
+  "n": "drain",
+  "m": "concept",
+  "g": "Devices & Support",
+  "cols": [
+   [
+    "hospitalization_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "drain_id",
+    "varchar",
+    "pk"
+   ],
+   [
+    "placed_dttm",
+    "datetime"
+   ],
+   [
+    "removed_dttm",
+    "datetime"
+   ],
+   [
+    "drain_category",
+    "varchar"
+   ],
+   [
+    "anatomical_location",
+    "varchar"
+   ]
+  ]
+ },
+ {
+  "n": "line",
+  "m": "concept",
+  "g": "Devices & Support",
+  "cols": [
+   [
+    "hospitalization_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "line_id",
+    "varchar",
+    "pk"
+   ],
+   [
+    "placed_dttm",
+    "datetime"
+   ],
+   [
+    "removed_dttm",
+    "datetime"
+   ],
+   [
+    "line_category",
+    "varchar"
+   ],
+   [
+    "line_site",
+    "varchar"
+   ],
+   [
+    "lumen_count",
+    "int"
+   ]
+  ]
+ },
+ {
+  "n": "mcs",
+  "m": "concept",
+  "g": "Devices & Support",
+  "cols": [
+   [
+    "hospitalization_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "recorded_dttm",
+    "datetime"
+   ],
+   [
+    "support_name",
+    "varchar"
+   ],
+   [
+    "support_category",
+    "varchar"
+   ],
+   [
+    "device_name",
+    "varchar"
+   ],
+   [
+    "device_category",
+    "varchar"
+   ],
+   [
+    "config_name",
+    "varchar"
+   ],
+   [
+    "config_category",
+    "varchar"
+   ],
+   [
+    "setting_name",
+    "varchar"
+   ],
+   [
+    "setting_category",
+    "varchar"
+   ],
+   [
+    "setting_value",
+    "float"
+   ]
+  ]
+ },
+ {
+  "n": "crrt_therapy",
+  "m": "beta",
+  "g": "Devices & Support",
+  "cols": [
+   [
+    "hospitalization_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "device_id",
+    "varchar"
+   ],
+   [
+    "recorded_dttm",
+    "datetime"
+   ],
+   [
+    "crrt_mode_name",
+    "varchar"
+   ],
+   [
+    "crrt_mode_category",
+    "varchar"
+   ],
+   [
+    "dialysis_machine_name",
+    "varchar"
+   ],
+   [
+    "blood_flow_rate",
+    "float"
+   ],
+   [
+    "pre_filter_replacement_fluid_rate",
+    "float"
+   ],
+   [
+    "post_filter_replacement_fluid_rate",
+    "float"
+   ],
+   [
+    "dialysate_flow_rate",
+    "float"
+   ],
+   [
+    "ultrafiltration_out",
+    "float"
+   ]
+  ]
+ },
+ {
+  "n": "intermittent_dialysis",
+  "m": "concept",
+  "g": "Devices & Support",
+  "cols": [
+   [
+    "hospitalization_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "device_id",
+    "varchar"
+   ],
+   [
+    "recorded_dttm",
+    "datetime"
+   ],
+   [
+    "blood_flow_rate",
+    "float"
+   ],
+   [
+    "dialysate_flow_rate",
+    "float"
+   ],
+   [
+    "net_ultrafiltration_out",
+    "float"
+   ]
+  ]
+ },
+ {
+  "n": "input",
+  "m": "concept",
+  "g": "Fluids & Blood",
+  "cols": [
+   [
+    "hospitalization_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "recorded_dttm",
+    "datetime"
+   ],
+   [
+    "input_name",
+    "varchar"
+   ],
+   [
+    "input_category",
+    "varchar"
+   ],
+   [
+    "input_group",
+    "varchar"
+   ],
+   [
+    "input_volume",
+    "float"
+   ]
+  ]
+ },
+ {
+  "n": "output",
+  "m": "concept",
+  "g": "Fluids & Blood",
+  "cols": [
+   [
+    "hospitalization_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "recorded_dttm",
+    "datetime"
+   ],
+   [
+    "output_name",
+    "varchar"
+   ],
+   [
+    "output_category",
+    "varchar"
+   ],
+   [
+    "output_group",
+    "varchar"
+   ],
+   [
+    "output_volume",
+    "float"
+   ]
+  ]
+ },
+ {
+  "n": "transfusion",
+  "m": "concept",
+  "g": "Fluids & Blood",
+  "cols": [
+   [
+    "hospitalization_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "transfusion_start_dttm",
+    "datetime"
+   ],
+   [
+    "transfusion_end_dttm",
+    "datetime"
+   ],
+   [
+    "component_name",
+    "varchar"
+   ],
+   [
+    "component_category",
+    "varchar"
+   ],
+   [
+    "attribute_name",
+    "varchar"
+   ],
+   [
+    "volume_transfused",
+    "double"
+   ],
+   [
+    "volume_unit",
+    "varchar"
+   ],
+   [
+    "product_code",
+    "varchar"
+   ]
+  ]
+ },
+ {
+  "n": "patient_procedures",
+  "m": "beta",
+  "g": "Procedures, Orders & Therapy",
+  "cols": [
+   [
+    "hospitalization_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "billing_provider_id",
+    "varchar"
+   ],
+   [
+    "performing_provider_id",
+    "varchar"
+   ],
+   [
+    "procedure_code",
+    "varchar"
+   ],
+   [
+    "procedure_code_format",
+    "varchar"
+   ],
+   [
+    "procedure_billed_dttm",
+    "datetime"
+   ]
+  ]
+ },
+ {
+  "n": "key_icu_orders",
+  "m": "concept",
+  "g": "Procedures, Orders & Therapy",
+  "cols": [
+   [
+    "hospitalization_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "order_dttm",
+    "datetime"
+   ],
+   [
+    "order_name",
+    "varchar"
+   ],
+   [
+    "order_category",
+    "varchar"
+   ],
+   [
+    "order_status_category",
+    "varchar"
+   ]
+  ]
+ },
+ {
+  "n": "therapy_details",
+  "m": "concept",
+  "g": "Procedures, Orders & Therapy",
+  "cols": [
+   [
+    "hospitalization_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "session_start_dttm",
+    "datetime"
+   ],
+   [
+    "therapy_element_name",
+    "varchar"
+   ],
+   [
+    "therapy_element_category",
+    "varchar"
+   ],
+   [
+    "therapy_element_value",
+    "varchar"
+   ]
+  ]
+ },
+ {
+  "n": "clinical_trial",
+  "m": "concept",
+  "g": "Trials, Notes, Imaging & Scores",
+  "cols": [
+   [
+    "participant_id",
+    "varchar"
+   ],
+   [
+    "patient_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "hospitalization_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "trial_id",
+    "varchar"
+   ],
+   [
+    "trial_name",
+    "varchar"
+   ],
+   [
+    "arm_id",
+    "varchar"
+   ],
+   [
+    "consent_dttm",
+    "datetime"
+   ],
+   [
+    "enrollment_dttm",
+    "datetime"
+   ],
+   [
+    "randomized_dttm",
+    "datetime"
+   ],
+   [
+    "withdrawal_dttm",
+    "datetime"
+   ]
+  ]
+ },
+ {
+  "n": "clinical_notes_facts",
+  "m": "concept",
+  "g": "Trials, Notes, Imaging & Scores",
+  "cols": [
+   [
+    "hospitalization_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "provider_id",
+    "varchar"
+   ],
+   [
+    "note_id",
+    "varchar",
+    "pk"
+   ],
+   [
+    "note_type",
+    "varchar"
+   ],
+   [
+    "note_type_category",
+    "varchar"
+   ],
+   [
+    "note_status",
+    "varchar"
+   ],
+   [
+    "cosigner_specialty",
+    "varchar"
+   ],
+   [
+    "note_author_specialty",
+    "varchar"
+   ],
+   [
+    "revision_id",
+    "varchar"
+   ],
+   [
+    "creation_dttm",
+    "datetime"
+   ],
+   [
+    "revision_dttm",
+    "datetime"
+   ],
+   [
+    "service_date",
+    "date"
+   ]
+  ]
+ },
+ {
+  "n": "clinical_notes_text",
+  "m": "concept",
+  "g": "Trials, Notes, Imaging & Scores",
+  "cols": [
+   [
+    "hospitalization_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "note_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "revision_id",
+    "varchar"
+   ],
+   [
+    "note_text",
+    "varchar"
+   ]
+  ]
+ },
+ {
+  "n": "radiology",
+  "m": "concept",
+  "g": "Trials, Notes, Imaging & Scores",
+  "cols": [
+   [
+    "patient_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "radiology_accession",
+    "varchar",
+    "pk"
+   ],
+   [
+    "radiology_order_dttm",
+    "datetime"
+   ],
+   [
+    "radiology_capture_dttm",
+    "datetime"
+   ],
+   [
+    "radiology_report_dttm",
+    "datetime"
+   ],
+   [
+    "radiology_order_name",
+    "varchar"
+   ],
+   [
+    "radiology_modality_category",
+    "varchar"
+   ],
+   [
+    "radiology_region_category",
+    "varchar"
+   ],
+   [
+    "iv_contrast_category",
+    "varchar"
+   ],
+   [
+    "radiology_location_category",
+    "varchar"
+   ],
+   [
+    "radiology_report_text",
+    "varchar"
+   ]
+  ]
+ },
+ {
+  "n": "model_registry",
+  "m": "concept",
+  "g": "Trials, Notes, Imaging & Scores",
+  "cols": [
+   [
+    "model_id",
+    "varchar",
+    "pk"
+   ],
+   [
+    "model_name",
+    "varchar"
+   ],
+   [
+    "model_category",
+    "varchar"
+   ],
+   [
+    "model_version",
+    "varchar"
+   ],
+   [
+    "release_date",
+    "date"
+   ],
+   [
+    "is_live",
+    "boolean"
+   ]
+  ]
+ },
+ {
+  "n": "scores",
+  "m": "concept",
+  "g": "Trials, Notes, Imaging & Scores",
+  "cols": [
+   [
+    "model_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "hospitalization_id",
+    "varchar",
+    "fk"
+   ],
+   [
+    "recorded_dttm",
+    "datetime"
+   ],
+   [
+    "score_value",
+    "double"
+   ]
+  ]
+ }
+];
+
+/* from-table -> to-table relationships */
+const REFS = [["hospitalization", "patient"], ["adt", "hospitalization"], ["ed_encounter", "hospitalization"], ["provider", "hospitalization"], ["place_based_index", "hospitalization"], ["patient_attributes", "patient"], ["hospital_diagnosis", "hospitalization"], ["patient_diagnosis", "patient"], ["patient_diagnosis", "hospitalization"], ["validated_diagnosis", "hospitalization"], ["code_status", "patient"], ["labs", "hospitalization"], ["microbiology_culture", "patient"], ["microbiology_culture", "hospitalization"], ["microbiology_susceptibility", "microbiology_culture"], ["microbiology_nonculture", "patient"], ["microbiology_nonculture", "hospitalization"], ["medication_orders", "hospitalization"], ["medication_admin_continuous", "hospitalization"], ["medication_admin_continuous", "medication_orders"], ["medication_admin_intermittent", "hospitalization"], ["medication_admin_intermittent", "medication_orders"], ["vitals", "hospitalization"], ["respiratory_support", "hospitalization"], ["patient_assessments", "hospitalization"], ["position", "hospitalization"], ["invasive_hemodynamics", "hospitalization"], ["airway", "hospitalization"], ["drain", "hospitalization"], ["line", "hospitalization"], ["mcs", "hospitalization"], ["crrt_therapy", "hospitalization"], ["intermittent_dialysis", "hospitalization"], ["input", "hospitalization"], ["output", "hospitalization"], ["transfusion", "hospitalization"], ["patient_procedures", "hospitalization"], ["key_icu_orders", "hospitalization"], ["therapy_details", "hospitalization"], ["clinical_trial", "patient"], ["clinical_trial", "hospitalization"], ["clinical_notes_facts", "hospitalization"], ["clinical_notes_text", "hospitalization"], ["clinical_notes_text", "clinical_notes_facts"], ["radiology", "patient"], ["scores", "hospitalization"], ["scores", "model_registry"]];
+
+const DOMAIN_ORDER = ["Patient & Encounter", "Diagnoses & Code Status", "Labs & Microbiology", "Medications", "Respiratory & Monitoring", "Devices & Support", "Fluids & Blood", "Procedures, Orders & Therapy", "Trials, Notes, Imaging & Scores"];
+
+/* ============================ BUILD DOM ============================ */
+const cardsEl=document.getElementById("cards");
+const edgesEl=document.getElementById("edges");
+const canvas=document.getElementById("canvas");
+const viewport=document.getElementById("viewport");
+const nodeEls={}; // name -> .tbl element
+
+function buildDomain(dom){
+  const col=document.createElement("div");col.className="domain";
+  const lab=document.createElement("div");lab.className="dlabel";lab.textContent=dom;col.appendChild(lab);
+  TABLES.filter(t=>t.g===dom).forEach(t=>{
+    const card=document.createElement("div");
+    card.className="tbl collapsed";card.dataset.mat=t.m;card.dataset.name=t.n;
+    const head=document.createElement("div");head.className="thead";
+    head.innerHTML=`<span class="name">${t.n}</span>`+
+      `<span class="tag">${t.m==="beta"?"Beta":"Concept"}</span>`+
+      `<span class="caret">▼</span>`;
+    const body=document.createElement("div");body.className="tbody";
+    t.cols.forEach(c=>{
+      const r=document.createElement("div");r.className="row"+(c[2]?" is-key":"");
+      const k=c[2]?`<span class="key ${c[2]}" title="${c[2]==='pk'?'primary key':'foreign key'}">${c[2]==='pk'?'◆':'◇'}</span>`:`<span class="key"></span>`;
+      r.innerHTML=`${k}<span class="cn">${c[0]}</span><span class="ct">${c[1]}</span>`;
+      body.appendChild(r);
+    });
+    card.appendChild(head);card.appendChild(body);
+    // header click: expand/collapse (not a focus trigger)
+    head.addEventListener("click",e=>{e.stopPropagation();card.classList.toggle("collapsed");scheduleEdges();});
+    // card click: focus relationships
+    card.addEventListener("click",e=>{e.stopPropagation();focusTable(t.n);});
+    col.appendChild(card);nodeEls[t.n]=card;
+  });
+  return col;
+}
+
+/* Layout: Core & Encounter is the hub on the extreme left (vertically centered);
+   the next 4 domains sit in a top-right row, the remaining domains in a bottom-right row. */
+const HUB=DOMAIN_ORDER.slice(0,1),TOP=DOMAIN_ORDER.slice(1,5),BOTTOM=DOMAIN_ORDER.slice(5);
+HUB.forEach(d=>cardsEl.appendChild(buildDomain(d)));
+const rcol=document.createElement("div");rcol.className="rcol";
+const rtop=document.createElement("div");rtop.className="rrow";
+TOP.forEach(d=>rtop.appendChild(buildDomain(d)));
+const rbot=document.createElement("div");rbot.className="rrow";
+BOTTOM.forEach(d=>rbot.appendChild(buildDomain(d)));
+rcol.appendChild(rtop);rcol.appendChild(rbot);cardsEl.appendChild(rcol);
+
+/* adjacency */
+const adj={};REFS.forEach(([a,b])=>{(adj[a]=adj[a]||new Set()).add(b);(adj[b]=adj[b]||new Set()).add(a);});
+
+/* ============================ EDGES ============================ */
+let scale=1,tx=0,ty=0,relMode="all",focused=null;
+const SVGNS="http://www.w3.org/2000/svg";
+
+function localBox(el){
+  const r=el.getBoundingClientRect(),c=canvas.getBoundingClientRect();
+  return {x:(r.left-c.left)/scale,y:(r.top-c.top)/scale,w:r.width/scale,h:r.height/scale};
+}
+function drawEdges(){
+  while(edgesEl.firstChild) edgesEl.removeChild(edgesEl.firstChild);
+  const W=canvas.offsetWidth,H=canvas.offsetHeight;
+  edgesEl.setAttribute("width",W);edgesEl.setAttribute("height",H);
+  edgesEl.setAttribute("viewBox",`0 0 ${W} ${H}`);
+  REFS.forEach(([a,b])=>{
+    const ea=nodeEls[a],eb=nodeEls[b];
+    if(!ea||!eb)return;
+    if(ea.style.display==="none"||eb.style.display==="none")return;
+    // anchor at header centers, exit on facing side
+    const ha=ea.querySelector(".thead"),hb=eb.querySelector(".thead");
+    const ba=localBox(ha),bb=localBox(hb);
+    const aMidY=ba.y+ba.h/2,bMidY=bb.y+bb.h/2;
+    let ax,ay=aMidY,bx,by=bMidY;
+    if(bb.x+bb.w/2>=ba.x+ba.w/2){ax=ba.x+ba.w;bx=bb.x;} else {ax=ba.x;bx=bb.x+bb.w;}
+    const dx=Math.max(36,Math.abs(bx-ax)*0.45);
+    const c1x=ax+(bx>=ax?dx:-dx),c2x=bx+(bx>=ax?-dx:dx);
+    const path=document.createElementNS(SVGNS,"path");
+    path.setAttribute("d",`M ${ax} ${ay} C ${c1x} ${ay}, ${c2x} ${by}, ${bx} ${by}`);
+    path.setAttribute("class","edge");
+    path.dataset.a=a;path.dataset.b=b;
+    edgesEl.appendChild(path);
+    // small endpoint dots
+    [[ax,ay],[bx,by]].forEach(([px,py])=>{
+      const dot=document.createElementNS(SVGNS,"circle");
+      dot.setAttribute("cx",px);dot.setAttribute("cy",py);dot.setAttribute("r",2.4);
+      dot.setAttribute("class","edge-end");dot.dataset.a=a;dot.dataset.b=b;
+      edgesEl.appendChild(dot);
+    });
+  });
+  applyRelStyles();
+}
+let edgeTimer=null;
+function scheduleEdges(){clearTimeout(edgeTimer);edgeTimer=setTimeout(drawEdges,30);}
+
+function applyRelStyles(){
+  const paths=edgesEl.querySelectorAll(".edge"),dots=edgesEl.querySelectorAll(".edge-end");
+  const showAll=relMode==="all",hideAll=relMode==="off";
+  paths.forEach(p=>{
+    const rel=focused&&(p.dataset.a===focused||p.dataset.b===focused);
+    p.classList.toggle("hot",!!(focused&&rel));
+    let vis;
+    if(focused) vis=rel; else vis=showAll&&!hideAll;
+    p.style.display=vis?"":"none";
+    p.classList.toggle("faded",!focused&&showAll);
+  });
+  dots.forEach(d=>{
+    const rel=focused&&(d.dataset.a===focused||d.dataset.b===focused);
+    d.classList.toggle("hot",!!(focused&&rel));
+    let vis; if(focused) vis=rel; else vis=showAll&&!hideAll;
+    d.style.display=vis?"":"none";
+  });
+}
+
+/* ============================ FOCUS / SEARCH ============================ */
+function clearFocus(){
+  focused=null;
+  Object.values(nodeEls).forEach(el=>el.classList.remove("focus","neighbor","dim","hit"));
+  applyRelStyles();
+}
+function focusTable(name){
+  if(focused===name){clearFocus();return;}
+  focused=name;
+  const nb=adj[name]||new Set();
+  Object.entries(nodeEls).forEach(([n,el])=>{
+    el.classList.remove("focus","neighbor","dim","hit");
+    if(n===name) el.classList.add("focus");
+    else if(nb.has(n)) el.classList.add("neighbor");
+    else el.classList.add("dim");
+  });
+  applyRelStyles();
+}
+
+const search=document.getElementById("search");
+search.addEventListener("input",()=>{
+  const q=search.value.trim().toLowerCase();
+  Object.entries(nodeEls).forEach(([n,el])=>el.classList.remove("hit"));
+  if(!q)return;
+  let first=null;
+  Object.entries(nodeEls).forEach(([n,el])=>{
+    if(el.style.display==="none")return;
+    if(n.includes(q)){el.classList.add("hit");if(!first)first=el;}
+  });
+  if(first){
+    const b=localBox(first);
+    centerOn(b.x+b.w/2,b.y+b.h/2);
+  }
+});
+search.addEventListener("keydown",e=>{if(e.key==="Enter"){const hit=document.querySelector(".tbl.hit");if(hit)focusTable(hit.dataset.name);}});
+
+/* ============================ FILTER ============================ */
+let matFilter="all";
+document.getElementById("matFilters").addEventListener("click",e=>{
+  const chip=e.target.closest(".chip");if(!chip)return;
+  matFilter=chip.dataset.mat;
+  document.querySelectorAll("#matFilters .chip").forEach(c=>c.classList.toggle("on",c===chip));
+  applyFilter();
+});
+function applyFilter(){
+  TABLES.forEach(t=>{
+    const show=matFilter==="all"||t.m===matFilter;
+    nodeEls[t.n].style.display=show?"":"none";
+  });
+  // hide empty domain columns + labels
+  document.querySelectorAll(".domain").forEach(col=>{
+    const any=[...col.querySelectorAll(".tbl")].some(c=>c.style.display!=="none");
+    col.style.display=any?"":"none";
+  });
+  updateCount();scheduleEdges();
+}
+function updateCount(){
+  const vis=TABLES.filter(t=>matFilter==="all"||t.m===matFilter);
+  const beta=vis.filter(t=>t.m==="beta").length,con=vis.filter(t=>t.m==="concept").length;
+  const el=document.getElementById("count");
+  if(el) el.innerHTML=`<b>${vis.length}</b> tables · ${beta} beta · ${con} concept`;
+}
+
+/* ============================ EXPAND / REL MODE ============================ */
+let allExpanded=false;
+document.getElementById("toggleCols").addEventListener("click",function(){
+  allExpanded=!allExpanded;
+  Object.values(nodeEls).forEach(el=>el.classList.toggle("collapsed",!allExpanded));
+  this.textContent=allExpanded?"Collapse all":"Expand all";
+  scheduleEdges();
+});
+const relBtn=document.getElementById("relMode");
+const REL_LABEL={focus:"Links: Focus",all:"Links: All",off:"Links: Off"};
+relBtn.addEventListener("click",()=>{
+  relMode=relMode==="focus"?"all":relMode==="all"?"off":"focus";
+  relBtn.textContent=REL_LABEL[relMode];
+  applyRelStyles();
+});
+
+/* ============================ ZOOM / PAN ============================ */
+function applyTransform(){canvas.style.transform=`translate(${tx}px,${ty}px) scale(${scale})`;document.getElementById("zlabel").textContent=Math.round(scale*100)+"%";}
+function setScale(ns,cx,cy){
+  ns=Math.min(2.2,Math.max(0.25,ns));
+  // keep point (cx,cy in viewport coords) stable
+  const wx=(cx-tx)/scale,wy=(cy-ty)/scale;
+  scale=ns;tx=cx-wx*scale;ty=cy-wy*scale;applyTransform();
+}
+document.getElementById("zoomIn").onclick=()=>setScale(scale*1.2,viewport.clientWidth/2,viewport.clientHeight/2);
+document.getElementById("zoomOut").onclick=()=>setScale(scale/1.2,viewport.clientWidth/2,viewport.clientHeight/2);
+viewport.addEventListener("wheel",e=>{e.preventDefault();const r=viewport.getBoundingClientRect();setScale(scale*(e.deltaY<0?1.12:1/1.12),e.clientX-r.left,e.clientY-r.top);},{passive:false});
+
+let panning=false,sx,sy,stx,sty,moved=false;
+viewport.addEventListener("mousedown",e=>{if(e.target.closest(".tbl"))return;panning=true;moved=false;sx=e.clientX;sy=e.clientY;stx=tx;sty=ty;viewport.classList.add("panning");});
+window.addEventListener("mousemove",e=>{if(!panning)return;tx=stx+(e.clientX-sx);ty=sty+(e.clientY-sy);if(Math.abs(e.clientX-sx)+Math.abs(e.clientY-sy)>4)moved=true;applyTransform();});
+window.addEventListener("mouseup",e=>{if(panning){panning=false;viewport.classList.remove("panning");if(!moved&&!e.target.closest(".tbl"))clearFocus();}});
+
+function centerOn(wx,wy){tx=viewport.clientWidth/2-wx*scale;ty=viewport.clientHeight/2-wy*scale;applyTransform();}
+function fit(){
+  const pad=40,W=canvas.offsetWidth+pad*2,H=canvas.offsetHeight+pad*2;
+  const s=Math.min(viewport.clientWidth/W,viewport.clientHeight/H,1.4);
+  scale=s;tx=(viewport.clientWidth-canvas.offsetWidth*s)/2;ty=(viewport.clientHeight-canvas.offsetHeight*s)/2;
+  if(ty<8)ty=8;applyTransform();
+}
+document.getElementById("fit").onclick=fit;
+
+/* ============================ FULL SCREEN ============================ */
+const fsBtn=document.getElementById("fsBtn");
+function isFs(){return document.fullscreenElement||document.webkitFullscreenElement;}
+fsBtn.onclick=()=>{
+  if(isFs()){(document.exitFullscreen||document.webkitExitFullscreen).call(document);}
+  else{const el=document.documentElement;(el.requestFullscreen||el.webkitRequestFullscreen).call(el);}
+};
+function onFsChange(){fsBtn.textContent=isFs()?"⤡ Exit full screen":"⤢ Full screen";scheduleEdges();setTimeout(fit,80);}
+document.addEventListener("fullscreenchange",onFsChange);
+document.addEventListener("webkitfullscreenchange",onFsChange);
+
+/* ============================ INIT ============================ */
+function init(){updateCount();drawEdges();fit();}
+window.addEventListener("load",()=>{requestAnimationFrame(()=>requestAnimationFrame(init));});
+window.addEventListener("resize",()=>{scheduleEdges();});
+</script>
+</body>
+</html>

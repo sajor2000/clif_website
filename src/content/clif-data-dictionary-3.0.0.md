@@ -2,7 +2,9 @@
 
 The CLIF Data Dictionary serves as a comprehensive guide to the Common Longitudinal ICU data Format, detailing the structure and purpose of each table within the framework. Designed to standardize and harmonize electronic health record data across multiple institutions, the dictionary outlines the entity-relationship model, variable definitions, and permissible values.
 
-![ERD](/images/data-dictionary/ERD-2.1.0-02042026.png) 
+<br />
+
+<iframe src="/images/data-dictionary/clif_erd_3.0.0.html" title="CLIF 3.0.0 interactive entity-relationship diagram" loading="lazy" allowfullscreen allow="fullscreen" style="width:100%;height:760px;border:1px solid #e6ded4;border-radius:10px"></iframe>
 
 ## Beta Tables
 
