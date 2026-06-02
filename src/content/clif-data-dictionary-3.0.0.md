@@ -311,14 +311,14 @@ This table contains demographic information about the patient that does not vary
 The patient_assessments table captures various assessments performed on patients across different domains, including neurological status, sedation levels, pain, and withdrawal. The table is designed to provide detailed information about the assessments, such as the name of the assessment, the category, and the recorded values.
 
 **Example**:
-| hospitalization_id | recorded_dttm                | assessment_name                                | assessment_category    | assessment_group | numerical_value | categorical_value | text_value |
-|-------------------|----------------------------|----------------------------------------------|---------------------|----------------|----------------|-----------------|------------|
-| 12345             | 2024-12-01 08:15:00+00:00 UTC | NUR RA GLASGOW ADULT EYE OPENING             | gcs_eye            | Neurological   | 4              | NA              | NA         |
-| 12345             | 2024-12-01 08:15:00+00:00 UTC | NUR RA GLASGOW ADULT VERBAL RESPONSE         | gcs_verbal         | Neurological   | 5              | NA              | NA         |
-| 12345             | 2024-12-01 08:15:00+00:00 UTC | NUR RA GLASGOW ADULT BEST MOTOR RESPONSE     | gcs_motor          | Neurological   | 6              | NA              | NA         |
-| 12345             | 2024-12-01 08:15:00+00:00 UTC | NUR RA GLASGOW ADULT SCORING                 | gcs_total          | Neurological   | 15             | NA              | NA         |
-| 67890             | 2024-12-01 10:30:00+00:00 UTC | BRADEN ASSESSMENT                            | braden_total       | Nursing Risk   | 18             | NA              | NA         |
-| 67890             | 2024-12-01 10:30:00+00:00 UTC | SAT SCREEN                                   | sat_delivery_pass_fail | Sedation     | NA             | Pass            | NA         |
+| hospitalization_id | administering_provider_id | recorded_dttm                | assessment_name                                | assessment_category    | assessment_group | numerical_value | categorical_value | text_value |
+|-------------------|--------------------------|----------------------------|----------------------------------------------|---------------------|----------------|----------------|-----------------|------------|
+| 12345             | PROV2087                 | 2024-12-01 08:15:00+00:00 UTC | NUR RA GLASGOW ADULT EYE OPENING             | gcs_eye            | Neurological   | 4              | NA              | NA         |
+| 12345             | PROV2087                 | 2024-12-01 08:15:00+00:00 UTC | NUR RA GLASGOW ADULT VERBAL RESPONSE         | gcs_verbal         | Neurological   | 5              | NA              | NA         |
+| 12345             | PROV2087                 | 2024-12-01 08:15:00+00:00 UTC | NUR RA GLASGOW ADULT BEST MOTOR RESPONSE     | gcs_motor          | Neurological   | 6              | NA              | NA         |
+| 12345             | PROV2087                 | 2024-12-01 08:15:00+00:00 UTC | NUR RA GLASGOW ADULT SCORING                 | gcs_total          | Neurological   | 15             | NA              | NA         |
+| 67890             | PROV3391                 | 2024-12-01 10:30:00+00:00 UTC | BRADEN ASSESSMENT                            | braden_total       | Nursing Risk   | 18             | NA              | NA         |
+| 67890             | PROV3391                 | 2024-12-01 10:30:00+00:00 UTC | SAT SCREEN                                   | sat_delivery_pass_fail | Sedation     | NA             | Pass            | NA         |
 
 ## patient_diagnosis
 
