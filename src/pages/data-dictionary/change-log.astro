@@ -281,7 +281,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            New mCIDE Values (12 updates · 217 new values) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Jun 2, 2026</span>
+            New mCIDE Values (18 updates · 282 new values) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Jun 2, 2026</span>
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -351,10 +351,46 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   <td class="px-4 py-3 text-sm text-gray-500">May 13, 2026</td>
                 </tr>
                 <tr>
+                  <td class="px-4 py-3 text-sm font-mono">vital_category (2)</td>
+                  <td class="px-4 py-3 text-sm"><code>vitals.vital_category</code> added 2 new values: <code>intracranial_pressure</code> and <code>pulse_pressure_variation</code>.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/204" class="text-clif-burgundy hover:underline">Issue #204</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 13, 2026</td>
+                </tr>
+                <tr>
                   <td class="px-4 py-3 text-sm font-mono">mode_category (2)</td>
                   <td class="px-4 py-3 text-sm"><code>respiratory_support.mode_category</code> added <code>aprv</code> (airway pressure release ventilation) and <code>t_piece</code> as net-new permissible values. The acronym renames of the existing controlled-ventilation modes (<code>acvc</code>, <code>prvc</code>, <code>ps_or_cpap</code>) are logged separately under Revisions.</td>
                   <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/201" class="text-clif-burgundy hover:underline">Issue #201</a></td>
                   <td class="px-4 py-3 text-sm text-gray-500">May 21, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">order_status_category (4)</td>
+                  <td class="px-4 py-3 text-sm">New <code>key_icu_orders.order_status_category</code> mCIDE standardizing order statuses: <code>sent</code>, <code>completed</code>, <code>resulted</code>, <code>canceled</code>.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/196" class="text-clif-burgundy hover:underline">Issue #196</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 21, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">order_category (1)</td>
+                  <td class="px-4 py-3 text-sm">Added <code>eeg</code> as a new permissible value to <code>key_icu_orders.order_category</code>.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/196" class="text-clif-burgundy hover:underline">Issue #196</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 21, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">attribute_category (15)</td>
+                  <td class="px-4 py-3 text-sm">New <code>patient_attributes.attribute_category</code> mCIDE — 15 social/behavioral/functional/reproductive/administrative attributes: <code>alcohol_use</code>, <code>employment_status</code>, <code>financial_strain</code>, <code>food_insecurity</code>, <code>functional_status</code>, <code>housing_status</code>, <code>interpersonal_safety</code>, <code>marital_status</code>, <code>organ_donor</code>, <code>pregnancy_status</code>, <code>smoking_status</code>, <code>social_isolation</code>, <code>substance_use</code>, <code>transportation_barrier</code>, <code>utility_insecurity</code>.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/211" class="text-clif-burgundy hover:underline">Issue #211</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 29, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">attribute_group (6)</td>
+                  <td class="px-4 py-3 text-sm">New <code>patient_attributes.attribute_group</code> mCIDE rolling the categories up to 6 families: <code>care_preferences</code>, <code>functional</code>, <code>health_related_social_needs</code>, <code>reproductive</code>, <code>sociodemographic</code>, <code>substance_use_behavior</code>.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/211" class="text-clif-burgundy hover:underline">Issue #211</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 29, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">attribute_value_category (37)</td>
+                  <td class="px-4 py-3 text-sm">New <code>patient_attributes.attribute_value_category</code> mCIDE — the union of 37 permissible values across all attributes (validity is conditional on <code>attribute_category</code>): <code>active</code>, <code>connected</code>, <code>current</code>, <code>disabled</code>, <code>divorced</code>, <code>former</code>, <code>full_time</code>, <code>fully_dependent</code>, <code>heavy</code>, <code>housed</code>, <code>independent</code>, <code>insecure</code>, <code>isolated</code>, <code>married</code>, <code>never</code>, <code>no</code>, <code>none</code>, <code>not_pregnant</code>, <code>part_time</code>, <code>partially_dependent</code>, <code>postpartum</code>, <code>pregnant</code>, <code>present</code>, <code>retired</code>, <code>safe</code>, <code>secure</code>, <code>separated</code>, <code>single</code>, <code>social</code>, <code>student</code>, <code>undomiciled</code>, <code>unemployed</code>, <code>unknown</code>, <code>unsafe</code>, <code>unstable</code>, <code>widowed</code>, <code>yes</code>.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/211" class="text-clif-burgundy hover:underline">Issue #211</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 29, 2026</td>
                 </tr>
                 <tr>
                   <td class="px-4 py-3 text-sm font-mono">organism_category (nonculture) (21)</td>
@@ -424,7 +460,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            Revisions (9 updates) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Jun 3, 2026</span>
+            Revisions (10 updates) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Jun 3, 2026</span>
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -491,6 +527,12 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   <td class="px-4 py-3 text-sm font-mono">mode_category</td>
                   <td class="px-4 py-3 text-sm"><code>respiratory_support.mode_category</code> shortened three controlled-ventilation mode values to acronym form: <code>assist_control_volume_control</code> → <code>acvc</code>, <code>pressure_regulated_volume_control</code> → <code>prvc</code>, <code>pressure_supportcpap</code> → <code>ps_or_cpap</code>.</td>
                   <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/201" class="text-clif-burgundy hover:underline">Issue #201</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 21, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">location_category</td>
+                  <td class="px-4 py-3 text-sm">Renamed adt <code>location_category</code> <code>l&amp;d</code> &rarr; <code>l_and_d</code> for snake_case consistency with other categories.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/206" class="text-clif-burgundy hover:underline">Issue #206</a></td>
                   <td class="px-4 py-3 text-sm text-gray-500">May 21, 2026</td>
                 </tr>
                 <tr>
@@ -790,18 +832,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                     >~24 new organism categories with typo corrections and duplicate removal</td
                   >
                   <td class="px-4 py-3 text-sm"><span class="text-green-600"></span></td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">location_category</td>
-                  <td class="px-4 py-3 text-sm"
-                    >Renamed adt location category <code>l&amp;d</code> &rarr; <code>l_and_d</code> for snake_case consistency with other categories (e.g., <code>mobility_or_activity</code>, <code>ps_or_cpap</code>)</td
-                  >
-                  <td class="px-4 py-3 text-sm"><span class="text-green-600">
-                    <a
-                      href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/206"
-                      class="text-clif-burgundy hover:underline"
-                      >Issue #206</a
-                    >
                 </tr>
                 <tr>
                   <td class="px-4 py-3 text-sm">Continuous medication units</td>
