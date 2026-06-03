@@ -424,7 +424,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            Revisions (7 updates) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: May 29, 2026</span>
+            Revisions (9 updates) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Jun 3, 2026</span>
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -468,6 +468,18 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   <td class="px-4 py-3 text-sm">Standardized <code>med_dose_unit</code> per <code>med_category</code> in the <code>medication_admin_intermittent</code> mCIDE — every category now maps to one of <code>mg, g, mcg, mmol, ml, meq, cells</code>. Sites must convert raw EHR doses to the category-specific unit on ingest.</td>
                   <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/184" class="text-clif-burgundy hover:underline">Issue #184</a></td>
                   <td class="px-4 py-3 text-sm text-gray-500">May 7, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">invasive_hemodynamics</td>
+                  <td class="px-4 py-3 text-sm">Revised from 2.1: <code>measurement_category</code> expanded 9 &rarr; 26 standardized parameters — split <code>ra</code>/<code>rv</code> into <code>rv_systolic</code>/<code>rv_diastolic</code> and added advanced indices <code>cco</code>, <code>cardiac_index</code>, <code>stroke_volume</code>, <code>ppv</code>, <code>svv</code>, <code>svi</code>, <code>svr</code>, <code>svri</code>, <code>evlw</code>, <code>evlwi</code>, <code>ef</code>, <code>itbi</code>, <code>gedv</code>, <code>lvswi</code>, <code>tfcd0</code>, <code>tfc</code>, <code>do2</code>.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/44" class="text-clif-burgundy hover:underline">Issue #44</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 13, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">ecmo_mcs &rarr; mcs</td>
+                  <td class="px-4 py-3 text-sm">Renamed <code>ecmo_mcs</code> &rarr; <code>mcs</code> and revised to a long-form schema (one row per setting/measurement). New standardized columns: <code>support_category</code> (<code>ecmo</code>/<code>lvad</code>/<code>rvad</code>), <code>device_category</code> (<code>cardiohelp</code>, <code>rotaflow</code>, <code>centrimag</code>, <code>tandemheart</code>, <code>impella</code>, <code>durable</code>), <code>config_category</code>, and <code>setting_category</code>/<code>setting_value</code> — replacing the prior wide-format columns (<code>flow</code>, <code>sweep_set</code>, <code>fdO2_set</code>, <code>mcs_group</code>, <code>ecmo_configuration_category</code>, <code>control_parameter_*</code>).</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/72" class="text-clif-burgundy hover:underline">Issue #72</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">May 13, 2026</td>
                 </tr>
                 <tr>
                   <td class="px-4 py-3 text-sm font-mono">device_category</td>
@@ -988,19 +1000,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                       >Issue #120</a
                     >
                   <td class="px-4 py-3 text-sm text-gray-500">Nov 12, 2025</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm">MCS (renamed from <code>ecmo_mcs</code>)</td>
-                  <td class="px-4 py-3 text-sm"
-                    >Concept table renamed <code>ecmo_mcs</code> &rarr; <code>mcs</code> and revised to a long-form schema: one row per setting/measurement. New columns: <code>support_name</code>/<code>support_category</code> (<code>ecmo</code>/<code>lvad</code>/<code>rvad</code>), <code>device_name</code>/<code>device_category</code> (<code>cardiohelp</code>, <code>rotaflow</code>, <code>centrimag</code>, <code>tandemheart</code>, <code>impella</code>, <code>durable</code>), <code>config_name</code>/<code>config_category</code>, <code>setting_name</code>/<code>setting_category</code>/<code>setting_value</code>. Replaces the prior wide-format columns (<code>flow</code>, <code>sweep_set</code>, <code>fdO2_set</code>, <code>mcs_group</code>, <code>ecmo_configuration_category</code>, <code>control_parameter_*</code>).</td
-                  >
-                  <td class="px-4 py-3 text-sm"><span class="text-green-600">
-                    <a
-                      href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/72"
-                      class="text-clif-burgundy hover:underline"
-                      >Issue #72</a
-                    >
-                  <td class="px-4 py-3 text-sm text-gray-500">May 13, 2026</td>
                 </tr>
                 <tr>
                   <td class="px-4 py-3 text-sm">Microbiology organism categories</td>
