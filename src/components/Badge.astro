@@ -1,6 +1,6 @@
 ---
 export interface Props {
-  type: 'beta' | 'concept' | 'deprecated' | 'future';
+  type: 'beta' | 'alpha' | 'concept' | 'deprecated' | 'future';
   class?: string;
   size?: 'small' | 'medium' | 'large';
 }
@@ -14,6 +14,13 @@ const badges = {
     textColor: 'text-orange-900',
     borderColor: 'border-orange-600',
     icon: '⚡',
+  },
+  alpha: {
+    text: 'ALPHA',
+    bgColor: 'bg-rose-100',
+    textColor: 'text-rose-800',
+    borderColor: 'border-rose-300',
+    icon: '🧪',
   },
   concept: {
     text: 'CONCEPT',
@@ -41,7 +48,7 @@ const badges = {
 const badge = badges[type];
 
 if (!badge) {
-  throw new Error(`Invalid badge type: ${type}. Must be one of: beta, concept, deprecated, future`);
+  throw new Error(`Invalid badge type: ${type}. Must be one of: beta, alpha, concept, deprecated, future`);
 }
 
 const sizeClasses = {

@@ -20,6 +20,7 @@
     --pk:#b07d12;
     --fk:#a83a59;
     --beta:#841839;
+    --alpha:#f9a8c4;
     --concept:#566270;
     --font-disp:Georgia,"Times New Roman","Iowan Old Style",serif;
     --font-mono:ui-monospace,"SFMono-Regular",Menlo,Consolas,"Liberation Mono",monospace;
@@ -63,6 +64,7 @@
   .chip.on{background:var(--maroon);border-color:var(--maroon);color:#fff}
   .chip .dot{width:8px;height:8px;border-radius:50%}
   .chip[data-mat="beta"] .dot{background:var(--beta)}
+  .chip[data-mat="alpha"] .dot{background:var(--alpha)}
   .chip[data-mat="concept"] .dot{background:var(--concept)}
   .chip.on .dot{background:#fff}
 
@@ -105,6 +107,8 @@
     color:#fff;position:relative;
   }
   .tbl[data-mat="beta"] .thead{background:linear-gradient(180deg,#8d2040,#7a1233)}
+  .tbl[data-mat="alpha"] .thead{background:linear-gradient(180deg,#fdeaf1,#fbd4e1);color:#9f1239}
+  .tbl[data-mat="alpha"] .thead .tag{background:rgba(159,18,57,.10);color:#9f1239}
   .tbl[data-mat="concept"] .thead{background:linear-gradient(180deg,#616d7b,#4d5762)}
   .thead .name{font-family:var(--font-disp);font-weight:600;font-size:13.5px;font-style:italic;letter-spacing:.2px;
     flex:1 1 auto;min-width:0;white-space:normal;overflow-wrap:anywhere;line-height:1.14}
@@ -142,7 +146,7 @@
   .hint .hl{font-family:var(--font-disp);font-style:italic;color:var(--maroon);font-size:12.5px;margin-bottom:6px}
   .hint .lg{display:flex;align-items:center;gap:7px;font-size:11px;color:#4a4138;margin:3px 0}
   .hint .sw{width:13px;height:13px;border-radius:3px;flex:0 0 13px}
-  .hint .sw.beta{background:var(--beta)} .hint .sw.concept{background:var(--concept)}
+  .hint .sw.beta{background:var(--beta)} .hint .sw.alpha{background:var(--alpha)} .hint .sw.concept{background:var(--concept)}
   .hint kbd{font-family:var(--font-mono);font-size:10px;background:#efe8df;border:1px solid var(--line-strong);
     border-bottom-width:2px;border-radius:4px;padding:1px 5px;color:#5a5044}
   .hint .x{position:absolute;top:7px;right:9px;cursor:pointer;color:var(--muted);font-size:13px}
@@ -159,6 +163,7 @@
   <div class="group" id="matFilters">
     <span class="chip on" data-mat="all">All</span>
     <span class="chip" data-mat="beta"><span class="dot"></span>Beta</span>
+    <span class="chip" data-mat="alpha"><span class="dot"></span>Alpha</span>
     <span class="chip" data-mat="concept"><span class="dot"></span>Concept</span>
   </div>
 
@@ -577,7 +582,7 @@ const TABLES = [
  },
  {
   "n": "patient_diagnosis",
-  "m": "concept",
+  "m": "alpha",
   "g": "Diagnoses & Code Status",
   "cols": [
    [
@@ -929,7 +934,7 @@ const TABLES = [
  },
  {
   "n": "medication_orders",
-  "m": "concept",
+  "m": "alpha",
   "g": "Medications",
   "cols": [
    [
@@ -1364,7 +1369,7 @@ const TABLES = [
  },
  {
   "n": "invasive_hemodynamics",
-  "m": "concept",
+  "m": "alpha",
   "g": "Respiratory & Monitoring",
   "cols": [
    [
@@ -1499,7 +1504,7 @@ const TABLES = [
  },
  {
   "n": "mcs",
-  "m": "concept",
+  "m": "alpha",
   "g": "Devices & Support",
   "cols": [
    [
@@ -1603,7 +1608,7 @@ const TABLES = [
  },
  {
   "n": "intermittent_dialysis",
-  "m": "concept",
+  "m": "alpha",
   "g": "Devices & Support",
   "cols": [
    [
@@ -1635,7 +1640,7 @@ const TABLES = [
  },
  {
   "n": "input",
-  "m": "concept",
+  "m": "alpha",
   "g": "Fluids & Blood",
   "cols": [
    [
@@ -1667,7 +1672,7 @@ const TABLES = [
  },
  {
   "n": "output",
-  "m": "concept",
+  "m": "alpha",
   "g": "Fluids & Blood",
   "cols": [
    [
@@ -1775,7 +1780,7 @@ const TABLES = [
  },
  {
   "n": "key_icu_orders",
-  "m": "concept",
+  "m": "alpha",
   "g": "Procedures, Orders & Therapy",
   "cols": [
    [
@@ -2015,7 +2020,7 @@ const TABLES = [
  },
  {
   "n": "model_registry",
-  "m": "concept",
+  "m": "alpha",
   "g": "Trials, Notes, Imaging & Scores",
   "cols": [
    [
@@ -2047,7 +2052,7 @@ const TABLES = [
  },
  {
   "n": "scores",
-  "m": "concept",
+  "m": "alpha",
   "g": "Trials, Notes, Imaging & Scores",
   "cols": [
    [
@@ -2092,7 +2097,7 @@ function buildDomain(dom){
     card.className="tbl collapsed";card.dataset.mat=t.m;card.dataset.name=t.n;
     const head=document.createElement("div");head.className="thead";
     head.innerHTML=`<span class="name">${t.n}</span>`+
-      `<span class="tag">${t.m==="beta"?"Beta":"Concept"}</span>`+
+      `<span class="tag">${t.m.charAt(0).toUpperCase()+t.m.slice(1)}</span>`+
       `<span class="caret">▼</span>`;
     const body=document.createElement("div");body.className="tbody";
     t.cols.forEach(c=>{
@@ -2245,9 +2250,9 @@ function applyFilter(){
 }
 function updateCount(){
   const vis=TABLES.filter(t=>matFilter==="all"||t.m===matFilter);
-  const beta=vis.filter(t=>t.m==="beta").length,con=vis.filter(t=>t.m==="concept").length;
+  const beta=vis.filter(t=>t.m==="beta").length,alpha=vis.filter(t=>t.m==="alpha").length,con=vis.filter(t=>t.m==="concept").length;
   const el=document.getElementById("count");
-  if(el) el.innerHTML=`<b>${vis.length}</b> tables · ${beta} beta · ${con} concept`;
+  if(el) el.innerHTML=`<b>${vis.length}</b> tables · ${beta} beta · ${alpha} alpha · ${con} concept`;
 }
 
 /* ============================ EXPAND / REL MODE ============================ */

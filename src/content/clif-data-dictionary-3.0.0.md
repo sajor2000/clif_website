@@ -455,6 +455,10 @@ The vitals table is a long-form (one vital sign per row) longitudinal table.
 | 20010013          | 2024-12-01 09:30:00+00:00 UTC | 2024-12-01 09:30:00+00:00 UTC | MEAN ARTERIAL PRESSURE (MAP) | map             | 85.0       | arterial       |
 
 
+## Alpha Tables
+
+Constructed at least partially at one site, but not yet used in a federated project. The table structure and mCIDE elements are taking shape based on real implementation experience, though the table has not yet been tested across sites. Changes remain likely as the design is validated against additional sites.
+
 ## Concept Tables
 
 A planned future CLIF table that has yet to be used in a federated project. The table structure and CDE elements are in draft form. Permissible values of category variables may still need to be defined. Seeking conceptual feedback. Significant changes to all aspects of the table are possible.
