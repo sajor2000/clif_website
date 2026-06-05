@@ -163,6 +163,7 @@ CREATE TABLE medication_admin_continuous (
 CREATE TABLE microbiology_culture (
   patient_id VARCHAR COMMENT '{"description": "Unique identifier for each patient, presumed to be a distinct individual.", "permissible": "No restriction"}',
   hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
+  culture_id VARCHAR COMMENT '{"description": "Unique identifier for a single microbiology culture (one specimen/order). Distinguishes separate cultures so that two simultaneous cultures growing the same organism remain distinct. A culture can yield multiple organisms — each organism is a separate row that shares this culture_id and is distinguished by organism_id.", "permissible": "No restriction"}',
   organism_id VARCHAR COMMENT '{"description": "A key that links microbiology culture table to microbiology susceptibility table", "permissible": "No restriction"}',
   order_dttm DATETIME COMMENT '{"description": "Date and time when the test is ordered.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00"}',
   collect_dttm DATETIME COMMENT '{"description": "Date and time when the specimen is collected.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00"}',

@@ -149,7 +149,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            New Fields (17 fields added) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Jun 5, 2026</span>
+            New Fields (18 fields added) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Jun 5, 2026</span>
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -290,6 +290,13 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   <td class="px-4 py-3 text-sm">medication_admin_intermittent</td>
                   <td class="px-4 py-3 text-sm">Uniquely identifies the provider who ordered the medication. Optional.</td>
                   <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/139" class="text-clif-burgundy hover:underline">Issue #139</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Jun 5, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">culture_id</td>
+                  <td class="px-4 py-3 text-sm">microbiology_culture</td>
+                  <td class="px-4 py-3 text-sm">Unique identifier for a single microbiology culture (one specimen/order). Distinguishes separate cultures so that two simultaneous cultures growing the same organism stay distinguishable. A culture can yield multiple organisms — each is a separate row sharing this <code>culture_id</code> and distinguished by <code>organism_id</code>.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/tree/3.0/mCIDE/microbiology_culture" class="text-clif-burgundy hover:underline">3.0 mCIDE</a></td>
                   <td class="px-4 py-3 text-sm text-gray-500">Jun 5, 2026</td>
                 </tr>
               </tbody>
