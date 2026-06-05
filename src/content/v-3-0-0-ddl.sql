@@ -12,7 +12,7 @@ CREATE TABLE adt (
   location_category VARCHAR COMMENT '{"description": "Maps location_name to a standardized list of ADT location categories", "permissible": "[ed, ward, stepdown, icu, procedural, l_and_d, hospice, psych, rehab, radiology, dialysis, other](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/adt/clif_adt_location_categories.csv)"}',
   location_type VARCHAR COMMENT '{"description": "Maps ICU type to a standardized list of ICU categories", "permissible": "[List of ICU categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/adt/clif_adt_location_type.csv)"}',
   room_id VARCHAR COMMENT '{"description": "Free-text identifier for the room the patient was assigned to during this ADT segment. Not standardized across sites.", "permissible": "No restriction"}',
-  bed_id VARCHAR COMMENT '{"description": "Free-text identifier for the bed the patient was assigned to during this ADT segment. Not standardized across sites.", "permissible": "No restriction"}',
+  bed_id VARCHAR COMMENT '{"description": "Free-text identifier for the bed the patient was assigned to during this ADT segment. Not standardized across sites. (Optional)", "permissible": "No restriction"}',
   FOREIGN KEY (hospitalization_id) REFERENCES hospitalization(hospitalization_id)
 );
 

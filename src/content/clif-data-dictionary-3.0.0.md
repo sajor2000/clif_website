@@ -18,7 +18,7 @@ The admission, discharge, and transfer (adt) table is a start-stop longitudinal 
 
 * ADT represents the patient's physical location, NOT the patient "status".
 * Procedural areas and operating rooms should be mapped to `Procedural`. Pre/Intra/Post-procedural/OR EHR data (such as anesthesia flowsheet records from Labs, Vitals, Scores, Respiratory Support) **are not currently** represented in CLIF.
-* `room_id` and `bed_id` are optional free-text identifiers carried through from source EHR data — no standardization across sites is required.
+* `room_id` and `bed_id` are free-text identifiers carried through from source EHR data — no standardization across sites is required. `bed_id` is optional.
 
 \
 **Example**:
