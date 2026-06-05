@@ -281,7 +281,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            New mCIDE Values (15 updates · 224 new values) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Jun 2, 2026</span>
+            New mCIDE Values (15 updates · 182 new values) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Jun 5, 2026</span>
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -406,21 +406,21 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   <td class="px-4 py-3 text-sm text-gray-500">Jun 2, 2026</td>
                 </tr>
                 <tr>
-                  <td class="px-4 py-3 text-sm font-mono">lab_category (99)</td>
+                  <td class="px-4 py-3 text-sm font-mono">lab_category (57)</td>
                   <td class="px-4 py-3 text-sm">
-                    Expanded <code>labs.lab_category</code> with 99 new permissible values across new fluid panels and systemic labs:
+                    Added 57 new <code>labs.lab_category</code> values for fluid panels, urine studies, and additional systemic labs. Fluid-panel and source-specific labs are now <strong>de-prefixed</strong> — the analyte name lives in <code>lab_category</code> and the fluid source in <code>lab_specimen_category</code> (so e.g. <code>ldh</code> covers serum, pleural, and peritoneal LDH), and the panel in <code>lab_order_category</code>:
                     <ul class="list-disc pl-5 my-2 space-y-1">
-                      <li><strong>BAL panel</strong> (14): <code>bal_amylase</code>, <code>bal_eosinophils_absolute</code>, <code>bal_eosinophils_percent</code>, <code>bal_lymphocytes_absolute</code>, <code>bal_lymphocytes_percent</code>, <code>bal_macrophages_percent</code>, <code>bal_monocytes_percent</code>, <code>bal_neutrophils_absolute</code>, <code>bal_neutrophils_percent</code>, <code>bal_other_absolute</code>, <code>bal_plasma_absolute</code>, <code>bal_rbc_absolute</code>, <code>bal_toxic_granulation</code>, <code>bal_wbc_absolute</code></li>
-                      <li><strong>Pleural fluid panel</strong> (21): <code>pleural_ada</code>, <code>pleural_albumin</code>, <code>pleural_amylase</code>, <code>pleural_bilirubin</code>, <code>pleural_cholesterol</code>, <code>pleural_creatinine</code>, <code>pleural_eosinophils_percent</code>, <code>pleural_glucose</code>, <code>pleural_hematocrit_percent</code>, <code>pleural_ldh</code>, <code>pleural_lipase</code>, <code>pleural_lymphocytes_percent</code>, <code>pleural_macrophages_percent</code>, <code>pleural_mesothelial</code>, <code>pleural_monocytes_percent</code>, <code>pleural_neutrophils_percent</code>, <code>pleural_probnp</code>, <code>pleural_protein</code>, <code>pleural_rbc</code>, <code>pleural_triglycerides</code>, <code>pleural_wbc</code></li>
-                      <li><strong>Peritoneal fluid panel</strong> (21): <code>peritoneal_ada</code>, <code>peritoneal_albumin</code>, <code>peritoneal_amylase</code>, <code>peritoneal_bilirubin</code>, <code>peritoneal_cholesterol</code>, <code>peritoneal_creatinine</code>, <code>peritoneal_eosinophils_percent</code>, <code>peritoneal_glucose</code>, <code>peritoneal_hematocrit_percent</code>, <code>peritoneal_ldh</code>, <code>peritoneal_lipase</code>, <code>peritoneal_lymphocytes_percent</code>, <code>peritoneal_macrophages_percent</code>, <code>peritoneal_mesothelial</code>, <code>peritoneal_monocytes_percent</code>, <code>peritoneal_neutrophils_percent</code>, <code>peritoneal_probnp</code>, <code>peritoneal_protein</code>, <code>peritoneal_rbc</code>, <code>peritoneal_triglycerides</code>, <code>peritoneal_wbc</code></li>
+                      <li><strong>Fluid panels — BAL / pleural / peritoneal</strong> (16): <code>ada</code>, <code>amylase</code>, <code>bilirubin</code>, <code>cholesterol</code>, <code>hematocrit_percent</code>, <code>lipase</code>, <code>macrophages_percent</code>, <code>mesothelial</code>, <code>other_absolute</code>, <code>plasma_absolute</code>, <code>probnp</code>, <code>protein</code>, <code>rbc</code>, <code>rbc_absolute</code>, <code>toxic_granulation</code>, <code>wbc_absolute</code></li>
                       <li><strong>Cardiac</strong> (3): <code>bnp</code>, <code>nt_pro_bnp</code>, <code>ckmb</code></li>
-                      <li><strong>POC / bedside</strong> (7): <code>poc_co2</code>, <code>poc_creatinine</code>, <code>poc_glucose</code>, <code>poc_hematocrit</code>, <code>poc_lactate</code>, <code>poc_potassium</code>, <code>poc_sodium</code></li>
-                      <li><strong>Urine chemistry</strong> (5): <code>urine_albumin</code>, <code>urine_albumin_to_creatinine_ratio</code>, <code>urine_creatinine</code>, <code>urine_protein</code>, <code>urine_protein_to_creatinine_ratio</code></li>
-                      <li><strong>Urine drug screen</strong> (10): <code>urine_amphetamine</code>, <code>urine_barbiturate</code>, <code>urine_benzodiazepine</code>, <code>urine_cocaine</code>, <code>urine_ethanol</code>, <code>urine_fentanyl</code>, <code>urine_methadone</code>, <code>urine_opiate</code>, <code>urine_oxycodone</code>, <code>urine_pcp</code></li>
-                      <li><strong>AKI biomarkers</strong> (8): <code>cystatin_c</code>, <code>ngal</code>, <code>urine_igfbp7</code>, <code>urine_kim_1</code>, <code>urine_nag</code>, <code>urine_ngal</code>, <code>urine_timp_2</code>, <code>urine_timp_2_igfbp7</code></li>
-                      <li><strong>Mixed-venous blood gas</strong> (2): <code>po2_mixed_venous</code>, <code>so2_mixed_venous</code></li>
+                      <li><strong>AKI biomarkers</strong> (7): <code>cystatin_c</code>, <code>ngal</code>, <code>igfbp7</code>, <code>kim_1</code>, <code>nag</code>, <code>timp_2</code>, <code>timp_2_igfbp7</code></li>
+                      <li><strong>Inflammatory cytokines</strong> (9): <code>interleukin_01</code>, <code>interleukin_02</code>, <code>interleukin_02_receptor_soluble</code>, <code>interleukin_05</code>, <code>interleukin_06</code>, <code>interleukin_08</code>, <code>interleukin_10</code>, <code>interleukin_13</code>, <code>interleukin_18</code></li>
+                      <li><strong>Urine toxicology</strong> (10): <code>amphetamine</code>, <code>barbiturate</code>, <code>benzodiazepine</code>, <code>cocaine</code>, <code>ethanol</code>, <code>fentanyl</code>, <code>methadone</code>, <code>opiate</code>, <code>oxycodone</code>, <code>pcp</code></li>
+                      <li><strong>Urine chemistry</strong> (2): <code>albumin_to_creatinine_ratio</code>, <code>protein_to_creatinine_ratio</code></li>
                       <li><strong>Thyroid</strong> (3): <code>free_t3</code>, <code>free_t4</code>, <code>tsh</code></li>
-                      <li><strong>Other systemic</strong>: <code>d_dimer</code>, <code>fibrinogen</code> (coags), <code>interleukin_06</code> (inflammatory), <code>triglycerides</code> (misc), <code>hematocrit</code> (CBC)</li>
+                      <li><strong>Coagulation</strong> (2): <code>d_dimer</code>, <code>fibrinogen</code></li>
+                      <li><strong>POC / bedside</strong> (3): <code>co2</code>, <code>glucose</code> (replaces <code>glucose_fingerstick</code>), <code>hematocrit</code></li>
+                      <li><strong>Mixed-venous blood gas</strong> (1): <code>po2_mixed_venous</code></li>
+                      <li><strong>Misc</strong> (1): <code>triglycerides</code></li>
                     </ul>
                   </td>
                   <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/203" class="text-clif-burgundy hover:underline">Issue #203</a></td>
@@ -428,7 +428,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 </tr>
                 <tr>
                   <td class="px-4 py-3 text-sm font-mono">lab_specimen_category (5)</td>
-                  <td class="px-4 py-3 text-sm">New <code>labs.lab_specimen_category</code> mCIDE capturing the fluid a lab is run on (LOINC-aligned), with 5 permissible values: <code>plasma_blood</code> (whole blood/plasma/serum — default for systemic labs), <code>pleural</code>, <code>peritoneal</code>, <code>urine</code>, and <code>bal</code>.</td>
+                  <td class="px-4 py-3 text-sm">New <code>labs.lab_specimen_category</code> mCIDE capturing the fluid a lab is run on (LOINC-aligned), with 5 permissible values: <code>plasma_blood</code> (whole blood/plasma/serum), <code>pleural</code>, <code>peritoneal</code>, <code>urine</code>, and <code>bal</code>.</td>
                   <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/203" class="text-clif-burgundy hover:underline">Issue #203</a></td>
                   <td class="px-4 py-3 text-sm text-gray-500">Jun 2, 2026</td>
                 </tr>
