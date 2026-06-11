@@ -272,20 +272,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   <td class="px-4 py-3 text-sm text-gray-500">Jun 5, 2026</td>
                 </tr>
                 <tr>
-                  <td class="px-4 py-3 text-sm font-mono">ordering_provider_id</td>
-                  <td class="px-4 py-3 text-sm">medication_admin_continuous</td>
-                  <td class="px-4 py-3 text-sm">Uniquely identifies the provider who ordered the medication. Optional.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/139" class="text-clif-burgundy hover:underline">Issue #139</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">Jun 5, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">ordering_provider_id</td>
-                  <td class="px-4 py-3 text-sm">medication_admin_intermittent</td>
-                  <td class="px-4 py-3 text-sm">Uniquely identifies the provider who ordered the medication. Optional.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/139" class="text-clif-burgundy hover:underline">Issue #139</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">Jun 5, 2026</td>
-                </tr>
-                <tr>
                   <td class="px-4 py-3 text-sm font-mono">order_id</td>
                   <td class="px-4 py-3 text-sm">microbiology_culture</td>
                   <td class="px-4 py-3 text-sm">Unique identifier for a single microbiology order/specimen, shared across all three method categories (culture, gram stain, smear). Distinguishes separate orders so that two simultaneous orders stay distinguishable. A single order can yield multiple results — each is a separate row sharing this <code>order_id</code> and distinguished by <code>organism_id</code>. For example, a gram stain reporting both GPC and GNR is two rows, just as a culture growing both staph and strep is two rows.</td>
@@ -513,7 +499,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 </tr>
                 <tr>
                   <td class="px-4 py-3 text-sm font-mono">invasive_hemodynamics</td>
-                  <td class="px-4 py-3 text-sm">Revised from 2.1: <code>measurement_category</code> expanded 9 &rarr; 26 standardized parameters — split <code>ra</code>/<code>rv</code> into <code>rv_systolic</code>/<code>rv_diastolic</code> and added advanced indices <code>cco</code>, <code>cardiac_index</code>, <code>stroke_volume</code>, <code>ppv</code>, <code>svv</code>, <code>svi</code>, <code>svr</code>, <code>svri</code>, <code>evlw</code>, <code>evlwi</code>, <code>ef</code>, <code>itbi</code>, <code>gedv</code>, <code>lvswi</code>, <code>tfcd0</code>, <code>tfc</code>, <code>do2</code>.</td>
+                  <td class="px-4 py-3 text-sm">Revised from 2.1: <code>measurement_category</code> expanded 9 &rarr; 26 standardized parameters — split <code>ra</code>/<code>rv</code> into <code>rv_systolic</code>/<code>rv_diastolic</code> and added advanced indices <code>cco</code>, <code>co_thermodilution</code>, <code>co_index</code>, <code>co_fick</code>, <code>sv</code>, <code>svv</code>, <code>sv_index</code>, <code>svr</code>, <code>svr_index</code>, <code>evlw</code>, <code>evlw_index</code>, <code>gef</code>, <code>itbv_index</code>, <code>gedv</code>, <code>gedv_index</code>, <code>lvsw_index</code>, <code>tfcd0</code>, <code>tfc</code>, <code>do2</code>.</td>
                   <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/44" class="text-clif-burgundy hover:underline">Issue #44</a></td>
                   <td class="px-4 py-3 text-sm text-gray-500">May 13, 2026</td>
                 </tr>

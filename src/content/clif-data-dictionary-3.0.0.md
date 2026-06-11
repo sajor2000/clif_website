@@ -165,26 +165,27 @@ The `invasive_hemodynamics` table records invasive hemodynamic measurements duri
 | `rv_systolic` | Right Ventricular Systolic Pressure (mmHg) | 0–200 |
 | `rv_diastolic` | Right Ventricular Diastolic Pressure (mmHg) | Less than `rv_systolic` |
 | `pa_systolic` | Pulmonary Artery Systolic Pressure (mmHg) | 0–200 |
-| `pa_diastolic` | Pulmonary Artery Diastolic Pressure (mmHg) | 0–100 |
+| `pa_diastolic` | Pulmonary Artery Diastolic Pressure (mmHg) | 0–200 |
 | `pa_mean` | Pulmonary Artery Mean Pressure (mmHg) | Less than `pa_systolic` and greater than `pa_diastolic` |
 | `pcwp` | Pulmonary Capillary Wedge Pressure (mmHg) | 0–100 |
-| `cardiac_output_thermodilution` | Continuous Cardiac Output (L/min) | 0.1–30 |
-| `cardiac_index` | Cardiac Index (L/min/m²) | 0.1–10 |
-| `cardiac_output_fick` | Cardiac Output by Fick Equation (L/min) | 0.1–30 |
-| `sv` | Stroke Volume (mL) | 0–300 |
-| `ppv` | Pulse Pressure Variation (%) | 0–100 |
-| `svv` | Stroke Volume Variation (%) | 0–200 |
-| `svr` | Systemic Vascular Resistance / Total Peripheral Resistance (dyn·s/cm⁵) | 100–10000 |
-| `svri` | Systemic Vascular Resistance Index / Total Peripheral Resistance Index (dyn·s·m²/cm⁵) | 100–10000 |
-| `evlw` | Extravascular Lung Water (mL) | 0–100 |
-| `evlwi` | Extravascular Lung Water Index (mL/kg) | 0–150 |
+| `cco` | Continuous Cardiac Output (L/min) | 0–30 |
+| `co_thermodilution` | Cardiac Output by Thermodilution (L/min) | 0–30 |
+| `co_index` | Cardiac Index (L/min/m²) | 0.1–10 |
+| `co_fick` | Cardiac Output by Fick Equation (L/min) | 0–30 |
+| `sv` | Stroke Volume (mL) | 0–200 |
+| `svv` | Stroke Volume Variance (mm/Hg) | 0–200 |
+| `sv_index` | Stroke Volume Index (mL/m²) | 0–200 |
+| `svr` | Systemic Vascular Resistance / Total Peripheral Resistance | 100–10000 |
+| `svr_index` | Systemic Vascular Resistance Index / Total Peripheral Resistance Index | 100–10000 |
+| `evlw` | Extravascular Lung Water (mL) | 0–1000 |
+| `evlw_index` | Extravascular Lung Water Index (mL/kg) | 0–1000 |
 | `gef` | Global Ejection Fraction (%) | 0–100 |
-| `itbi` | Intrathoracic Blood Volume Index (mL/m²) | 0–3000 |
+| `itbv_index` | Intrathoracic Blood Volume Index (mL/m²) | 0–5000 |
 | `gedv` | Global End-diastolic Volume (mL) | 0–5000 |
-| `gedvi` | Global End-diastolic Volume Index (mL/m²) | 0–3000 |
-| `lcwi` | Left Ventricular Stroke Work Index (g·m/m²/beat) | 0–100 |
-| `tfc` | Thoracic Fluid Content (%) | 0–100 |
-| `tfcd0` | Thoracic Fluid Content Delta from Baseline (%) | 0–100 |
+| `gedv_index` | Global End-diastolic Volume Index (mL/m²) | 0–5000 |
+| `lvsw_index` | Left Ventricular Stroke Work Index (J/m²) | 0–5000 |
+| `tfcd0` | Thoracic Fluid Content delta from baseline (%) | 0–100 |
+| `tfc` | Thoracic Fluid Content (mL) | 0–100 |
 | `do2` | Delivery of Oxygen (mL/min/m²) | 100–10000 |
 
 \
@@ -196,7 +197,7 @@ The `invasive_hemodynamics` table records invasive hemodynamic measurements duri
 | 1234               | 2026-04-08 23:30:00+00:00 UTC  | Pulmonary Artery Pressure systolic  | pa_systolic          | 20                |
 | 1234               | 2026-04-08 23:30:00+00:00 UTC  | Pulmonary Artery Pressure diastolic | pa_diastolic         | 6                 |
 | 1234               | 2026-04-08 23:30:00+00:00 UTC  | Pulmonary Artery Pressure mean      | pa_mean              | 11                |
-| 1234               | 2026-04-08 23:30:00+00:00 UTC  | Cardiac Index                       | cardiac_index        | 2.9               |
+| 1234               | 2026-04-08 23:30:00+00:00 UTC  | Cardiac Index                       | co_index             | 2.9               |
 
 
 ## labs
