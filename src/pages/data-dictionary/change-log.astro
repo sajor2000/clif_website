@@ -310,7 +310,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            New mCIDE Values (15 updates · 195 new values) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Jun 5, 2026</span>
+            New mCIDE Values (15 updates · 233 new values) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Jun 12, 2026</span>
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -344,9 +344,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   <td class="px-4 py-3 text-sm text-gray-500">May 4, 2026</td>
                 </tr>
                 <tr>
-                  <td class="px-4 py-3 text-sm font-mono">med_category (intermittent) (71)</td>
+                  <td class="px-4 py-3 text-sm font-mono">med_category (intermittent) (106)</td>
                   <td class="px-4 py-3 text-sm">
-                    <code>medication_admin_intermittent.med_category</code> added 71 new values:
+                    <code>medication_admin_intermittent.med_category</code> added 106 new values — 71 from <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/200" class="text-clif-burgundy hover:underline">#200</a> and 35 HFrEF / cardiac GDMT agents from <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/221" class="text-clif-burgundy hover:underline">#221</a>:
                     <ul class="list-disc pl-5 my-2 space-y-1">
                       <li><strong>ACE inhibitors</strong> (10): <code>lisinopril</code>, <code>enalapril</code>, <code>captopril</code>, <code>benazepril</code>, <code>ramipril</code>, <code>quinapril</code>, <code>perindopril</code>, <code>fosinopril</code>, <code>moexipril</code>, <code>trandolapril</code></li>
                       <li><strong>ACE inhibitor combinations</strong> (5): <code>benazepril_hctz</code>, <code>enalapril_hctz</code>, <code>lisinopril_hctz</code>, <code>perindopril_amlodipine</code>, <code>ramipril_amlodipine</code></li>
@@ -359,16 +359,22 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                       <li><strong>Hypertonic salines</strong> (5): <code>hypertonic_saline_3</code>, <code>hypertonic_saline_7</code>, <code>hypertonic_saline_7.5</code>, <code>hypertonic_saline_20</code>, <code>hypertonic_saline_23.4</code></li>
                       <li><strong>Electrolyte repletions</strong> (3): <code>magnesium_repletion</code>, <code>phosphate_repletion</code>, <code>potassium_repletion</code></li>
                       <li><strong>Other</strong> (6): <code>mannitol</code>, <code>naloxone</code>, <code>baricitinib</code>, <code>remdesivir</code>, <code>siltuximab</code>, <code>epinephrine</code></li>
+                      <li><strong>Beta blockers</strong> (8) — #221: <code>metoprolol_succinate</code>, <code>metoprolol_tartrate</code>, <code>carvedilol</code>, <code>carvedilol_cr</code>, <code>bisoprolol</code>, <code>metoprolol_succinate_hctz</code>, <code>metoprolol_tartrate_hctz</code>, <code>bisoprolol_hctz</code></li>
+                      <li><strong>Mineralocorticoid receptor antagonists</strong> (3) — #221: <code>spironolactone</code>, <code>eplerenone</code>, <code>spironolactone_hctz</code></li>
+                      <li><strong>SGLT inhibitors</strong> (10) — #221: <code>dapagliflozin</code>, <code>empagliflozin</code>, <code>canagliflozin</code>, <code>sotagliflozin</code>, <code>ertugliflozin</code>, <code>dapagliflozin_metformin</code>, <code>dapagliflozin_saxagliptin</code>, <code>empagliflozin_metformin</code>, <code>empagliflozin_linagliptin</code>, <code>canagliflozin_metformin</code></li>
+                      <li><strong>Vasodilators &amp; nitrates</strong> (3) — #221: <code>hydralazine</code>, <code>isosorbide_dinitrate</code>, <code>hydralazine_isosorbide</code></li>
+                      <li><strong>Other HFrEF adjuncts</strong> (3) — #221: <code>digoxin</code>, <code>ivabradine</code>, <code>vericiguat</code></li>
+                      <li><strong>Diuretics</strong> (8) — #221: <code>furosemide</code>, <code>bumetanide</code>, <code>torsemide</code>, <code>hydrochlorothiazide</code>, <code>chlorthalidone</code>, <code>metolazone</code>, <code>chlorothiazide</code>, <code>indapamide</code></li>
                     </ul>
                   </td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/200" class="text-clif-burgundy hover:underline">Issue #200</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">Jun 5, 2026</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/200" class="text-clif-burgundy hover:underline">Issue #200</a>, <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/221" class="text-clif-burgundy hover:underline">Issue #221</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Jun 12, 2026</td>
                 </tr>
                 <tr>
-                  <td class="px-4 py-3 text-sm font-mono">med_group (intermittent) (2)</td>
-                  <td class="px-4 py-3 text-sm">Added 2 new <code>medication_admin_intermittent.med_group</code> values to organize the new med_category additions: <code>anti_hypertensive</code> (ACE inhibitors and ARBs) and <code>contrast_agent</code> (gadolinium and iodinated contrasts).</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/200" class="text-clif-burgundy hover:underline">Issue #200</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">May 7, 2026</td>
+                  <td class="px-4 py-3 text-sm font-mono">med_group (intermittent) (5)</td>
+                  <td class="px-4 py-3 text-sm">Added 5 new <code>medication_admin_intermittent.med_group</code> values to organize the new med_category additions: <code>anti_hypertensive</code> (ACE inhibitors and ARBs) and <code>contrast_agent</code> (gadolinium and iodinated contrasts) from #200; plus <code>cardiac_glycoside</code> (digoxin), <code>diabetes</code> (SGLT inhibitors), and <code>diuretic</code> (loop and thiazide diuretics) from #221.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/200" class="text-clif-burgundy hover:underline">Issue #200</a>, <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/221" class="text-clif-burgundy hover:underline">Issue #221</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Jun 12, 2026</td>
                 </tr>
                 <tr>
                   <td class="px-4 py-3 text-sm font-mono">assessment_category (7)</td>
