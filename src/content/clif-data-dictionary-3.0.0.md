@@ -465,14 +465,14 @@ The input table captures patient fluid intake events during hospitalization. Eac
 
 **Example**:
 
-| hospitalization_id | recorded_dttm                     | input_name         | input_category       | input_group               | input_volume |
-|-------------------|-----------------------------------|--------------------|----------------------|---------------------------|--------------|
-| 1001              | 2024-01-01 08:00:00+00:00 UTC     | Normal Saline      | iv_crystalloid       | iv_fluids                 | 500          |
-| 1001              | 2024-01-01 10:30:00+00:00 UTC     | Lactated Ringer's  | iv_crystalloid       | iv_fluids                 | 1000         |
-| 1002              | 2024-01-05 09:15:00+00:00 UTC     | PRBC               | blood_products       | blood_products            | 350          |
-| 1002              | 2024-01-05 14:00:00+00:00 UTC     | TPN                | parenteral_nutrition | nutrition                 | 250          |
-| 1003              | 2024-01-10 07:45:00+00:00 UTC     | Tube Feed          | enteral_nutrition    | nutrition                 | 600          |
-| 1003              | 2024-01-10 12:00:00+00:00 UTC     | Free Water Flush   | enteral_water        | nutrition                 | 200          |
+| hospitalization_id | recorded_dttm                     | input_name         | input_category       | input_group               | input_volume | lda_id     |
+|-------------------|-----------------------------------|--------------------|----------------------|---------------------------|--------------|------------|
+| 1001              | 2024-01-01 08:00:00+00:00 UTC     | Normal Saline      | iv_crystalloid       | iv_fluids                 | 500          |            |
+| 1001              | 2024-01-01 10:30:00+00:00 UTC     | Lactated Ringer's  | iv_crystalloid       | iv_fluids                 | 1000         |            |
+| 1002              | 2024-01-05 09:15:00+00:00 UTC     | PRBC               | blood_products       | blood_products            | 350          |            |
+| 1002              | 2024-01-05 14:00:00+00:00 UTC     | TPN                | parenteral_nutrition | nutrition                 | 250          |            |
+| 1003              | 2024-01-10 07:45:00+00:00 UTC     | Tube Feed          | enteral_nutrition    | nutrition                 | 600          | LDA-NG01   |
+| 1003              | 2024-01-10 12:00:00+00:00 UTC     | Free Water Flush   | enteral_water        | nutrition                 | 200          | LDA-NG01   |
 
 
 ## intermittent_dialysis
@@ -535,7 +535,7 @@ This table records the ordering (not administration) of medications. The table i
 | 12349             | 456793       | PROV005              | 2023-10-03 08:00:00+00:00 UTC   | 2023-10-03 20:00:00+00:00 UTC   | 2023-10-03 07:30:00+00:00 UTC   | Acetaminophen 1 g PO                                               | acetaminophen  | analgesics    | active              | ongoing                 | Oral          | 1.0      | g            | Every 6 hours | 0   |
 | 12350             | 456794       | PROV006              | 2023-10-03 10:00:00+00:00 UTC   | 2023-10-03 18:00:00+00:00 UTC   | 2023-10-03 09:45:00+00:00 UTC   | Heparin 5,000 units SC                                             | heparin        | anticoagulant | active              | ongoing                 | Subcutaneous  | 5000.0   | units        | Every 8 hours | 0   |
 | 12351             | 456795       | PROV007              | 2023-10-03 14:00:00+00:00 UTC   | 2023-10-03 22:00:00+00:00 UTC   | 2023-10-03 13:30:00+00:00 UTC   | Morphine Sulfate 2 mg IV                                           | morphine       | analgesics    | active              | ongoing                 | Intravenous   | 2.0      | mg           | As Needed     | 1   |
-| 12352             | 456796       | 2023-10-03 20:00:00+00:00 UTC   | 2023-10-04 08:00:00+00:00 UTC   | 2023-10-03 19:45:00+00:00 UTC   | Dexamethasone 10 mg IV                                             | dexamethasone  | steroids      | active              | ongoing                 | Intravenous   | 10.0     | mg           | Once Daily    | 0   |
+| 12352             | 456796       | PROV008              | 2023-10-03 20:00:00+00:00 UTC   | 2023-10-04 08:00:00+00:00 UTC   | 2023-10-03 19:45:00+00:00 UTC   | Dexamethasone 10 mg IV                                             | dexamethasone  | steroids      | active              | ongoing                 | Intravenous   | 10.0     | mg           | Once Daily    | 0   |
 
 
 ## output
@@ -543,20 +543,21 @@ This table records the ordering (not administration) of medications. The table i
 The output table captures patient fluid output events during hospitalization. 
 
 **Notes**:
-- `output_volume` must be a positive number in mL
+- `output_value` must be a positive number. `output_unit` reports its unit: `mL` for quantitative fluid volumes, or `occurrences` for unmeasured/counted events (e.g., number of emesis episodes)
+- `lda_id` links an output to a specific line, drain, or airway (LDA) device when attributable to one (e.g., a Foley, JP drain, or chest tube)
 - Ultrafiltration output from dialysis should reflect **net** ultrafiltration only (do not include removal of replacement fluid in CVVH or CVVHDF)
 
 \
 **Example**:
 
-| hospitalization_id | recorded_dttm | output_name | output_category | output_group | output_volume |
-|-------------------|---------------|-------------|-----------------|--------------|---------------|
-| 40010001 | 2024-04-01 08:00:00+00:00 UTC | Foley catheter | indwelling_urinary_catheter | urine | 350.0 |
-| 40010001 | 2024-04-01 12:00:00+00:00 UTC | Foley catheter | indwelling_urinary_catheter | urine | 275.0 |
-| 40010001 | 2024-04-01 14:30:00+00:00 UTC | JP drain | procedural_drain_other | drains | 50.0 |
-| 40010002 | 2024-04-02 06:00:00+00:00 UTC | NG tube output | orogastric_nasogastric_tube | gi | 120.0 |
-| 40010002 | 2024-04-02 10:00:00+00:00 UTC | Chest tube | chest_tube_temporary | drains | 200.0 |
-| 40010003 | 2024-04-03 09:00:00+00:00 UTC | Emesis | emesis | gi | 75.0 |
+| hospitalization_id | recorded_dttm | output_name | output_category | output_group | output_value | output_unit | lda_id |
+|-------------------|---------------|-------------|-----------------|--------------|--------------|-------------|--------|
+| 40010001 | 2024-04-01 08:00:00+00:00 UTC | Foley catheter | indwelling_urinary_catheter | urine | 350.0 | mL | LDA-FOLEY01 |
+| 40010001 | 2024-04-01 12:00:00+00:00 UTC | Foley catheter | indwelling_urinary_catheter | urine | 275.0 | mL | LDA-FOLEY01 |
+| 40010001 | 2024-04-01 14:30:00+00:00 UTC | JP drain | procedural_drain_other | drains | 50.0 | mL | LDA-JP01 |
+| 40010002 | 2024-04-02 06:00:00+00:00 UTC | NG tube output | orogastric_nasogastric_tube | gi | 120.0 | mL | LDA-NG01 |
+| 40010002 | 2024-04-02 10:00:00+00:00 UTC | Chest tube | chest_tube_temporary | drains | 200.0 | mL | LDA-CT01 |
+| 40010003 | 2024-04-03 09:00:00+00:00 UTC | Emesis | emesis | gi | 1 | occurrences |  |
 
 
 ## place_based_index

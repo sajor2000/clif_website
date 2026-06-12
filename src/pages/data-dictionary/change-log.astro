@@ -143,7 +143,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            New Fields (16 fields added) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Jun 12, 2026</span>
+            New Fields (19 fields added) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Jun 12, 2026</span>
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -277,6 +277,27 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   <td class="px-4 py-3 text-sm">medication_orders</td>
                   <td class="px-4 py-3 text-sm">Uniquely identifies the provider who placed the medication order.</td>
                   <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/139" class="text-clif-burgundy hover:underline">Issue #139</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Jun 12, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">output_unit</td>
+                  <td class="px-4 py-3 text-sm">output</td>
+                  <td class="px-4 py-3 text-sm">Unit of <code>output_value</code>: <code>mL</code> for quantitative fluid volumes, or <code>occurrences</code> for unmeasured/counted events (e.g., number of emesis episodes). Added alongside the <code>output_volume</code> &rarr; <code>output_value</code> rename.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/142" class="text-clif-burgundy hover:underline">Issue #142</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Jun 12, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">lda_id</td>
+                  <td class="px-4 py-3 text-sm">input</td>
+                  <td class="px-4 py-3 text-sm">Identifier linking an input event to a specific line, drain, or airway (LDA) device, when attributable to one.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/179" class="text-clif-burgundy hover:underline">Issue #179</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Jun 12, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">lda_id</td>
+                  <td class="px-4 py-3 text-sm">output</td>
+                  <td class="px-4 py-3 text-sm">Identifier linking an output event to a specific line, drain, or airway (LDA) device, when attributable to one.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/142" class="text-clif-burgundy hover:underline">Issue #142</a></td>
                   <td class="px-4 py-3 text-sm text-gray-500">Jun 12, 2026</td>
                 </tr>
               </tbody>
@@ -453,7 +474,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            Revisions (10 updates) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Jun 3, 2026</span>
+            Revisions (11 updates) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Jun 12, 2026</span>
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -474,6 +495,12 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">output_volume &rarr; output_value</td>
+                  <td class="px-4 py-3 text-sm">Renamed <code>output.output_volume</code> &rarr; <code>output_value</code> and added <code>output_unit</code> so a row can report either a quantitative volume (<code>mL</code>) or an unmeasured count (<code>occurrences</code>, e.g. emesis episodes).</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/142" class="text-clif-burgundy hover:underline">Issue #142</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Jun 12, 2026</td>
+                </tr>
                 <tr>
                   <td class="px-4 py-3 text-sm font-mono">assessment_group</td>
                   <td class="px-4 py-3 text-sm">Reclassified <code>braden_mobility</code> from <code>Nursing Risk</code> to <code>Mobility/Activity</code> in the patient_assessments mCIDE — Braden mobility is a mobility assessment, not a nursing risk score.</td>
