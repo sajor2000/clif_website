@@ -172,6 +172,18 @@ change to **every** place that mirrors it, and **always recount**:
 section's rows, recount the `<tr>` rows in that section's `<tbody>` and set N to
 match — never leave a header count stale.
 
+**For the New mCIDE Values section, also recompute the "· M new values" sum**
+in the header (e.g. `New mCIDE Values (15 updates · 195 new values)`). Each row's
+Category cell carries its own per-row value count in parentheses — e.g.
+`lab_category (57)`. Whenever you add, remove, or edit an mCIDE row:
+- Keep that row's `(N)` in the Category cell in sync with the values it lists
+  (and, for rows with a `<ul>` breakdown, the sub-bullet `(n)` counts must sum
+  to the row's `N`).
+- Re-sum every row's `(N)` across the section and set `M` (the "new values"
+  total) to that sum. The "updates" count is the number of rows; the "new
+  values" count is the sum of the per-row value counts — they are different
+  numbers and both must be kept current.
+
 Finish by running `npm run build` to confirm the data dictionary still renders.
 
 ## Known Issues
