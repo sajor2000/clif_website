@@ -1894,7 +1894,7 @@ const TABLES = [
     "fk"
    ],
    [
-    "provider_id",
+    "author_id",
     "varchar"
    ],
    [
@@ -1912,6 +1912,10 @@ const TABLES = [
    ],
    [
     "note_status",
+    "varchar"
+   ],
+   [
+    "cosigner_id",
     "varchar"
    ],
    [
@@ -1937,31 +1941,6 @@ const TABLES = [
    [
     "service_date",
     "date"
-   ]
-  ]
- },
- {
-  "n": "clinical_notes_text",
-  "m": "concept",
-  "g": "Trials, Notes, Imaging & Scores",
-  "cols": [
-   [
-    "hospitalization_id",
-    "varchar",
-    "fk"
-   ],
-   [
-    "note_id",
-    "varchar",
-    "fk"
-   ],
-   [
-    "revision_id",
-    "varchar"
-   ],
-   [
-    "note_text",
-    "varchar"
    ]
   ]
  },
@@ -2078,7 +2057,7 @@ const TABLES = [
 ];
 
 /* from-table -> to-table relationships */
-const REFS = [["hospitalization", "patient"], ["adt", "hospitalization"], ["ed_encounter", "hospitalization"], ["provider", "hospitalization"], ["place_based_index", "hospitalization"], ["patient_attributes", "patient"], ["hospital_diagnosis", "hospitalization"], ["patient_diagnosis", "patient"], ["patient_diagnosis", "hospitalization"], ["validated_diagnosis", "hospitalization"], ["code_status", "patient"], ["labs", "hospitalization"], ["microbiology_culture", "patient"], ["microbiology_culture", "hospitalization"], ["microbiology_susceptibility", "microbiology_culture"], ["microbiology_nonculture", "patient"], ["microbiology_nonculture", "hospitalization"], ["medication_orders", "hospitalization"], ["medication_admin_continuous", "hospitalization"], ["medication_admin_continuous", "medication_orders"], ["medication_admin_intermittent", "hospitalization"], ["medication_admin_intermittent", "medication_orders"], ["vitals", "hospitalization"], ["respiratory_support", "hospitalization"], ["patient_assessments", "hospitalization"], ["position", "hospitalization"], ["invasive_hemodynamics", "hospitalization"], ["airway", "hospitalization"], ["drain", "hospitalization"], ["line", "hospitalization"], ["mcs", "hospitalization"], ["crrt_therapy", "hospitalization"], ["intermittent_dialysis", "hospitalization"], ["input", "hospitalization"], ["output", "hospitalization"], ["transfusion", "hospitalization"], ["patient_procedures", "hospitalization"], ["key_icu_orders", "hospitalization"], ["therapy_details", "hospitalization"], ["clinical_trial", "patient"], ["clinical_trial", "hospitalization"], ["clinical_notes_facts", "hospitalization"], ["clinical_notes_text", "hospitalization"], ["clinical_notes_text", "clinical_notes_facts"], ["radiology", "patient"], ["scores", "hospitalization"], ["scores", "model_registry"]];
+const REFS = [["hospitalization", "patient"], ["adt", "hospitalization"], ["ed_encounter", "hospitalization"], ["provider", "hospitalization"], ["place_based_index", "hospitalization"], ["patient_attributes", "patient"], ["hospital_diagnosis", "hospitalization"], ["patient_diagnosis", "patient"], ["patient_diagnosis", "hospitalization"], ["validated_diagnosis", "hospitalization"], ["code_status", "patient"], ["labs", "hospitalization"], ["microbiology_culture", "patient"], ["microbiology_culture", "hospitalization"], ["microbiology_susceptibility", "microbiology_culture"], ["microbiology_nonculture", "patient"], ["microbiology_nonculture", "hospitalization"], ["medication_orders", "hospitalization"], ["medication_admin_continuous", "hospitalization"], ["medication_admin_continuous", "medication_orders"], ["medication_admin_intermittent", "hospitalization"], ["medication_admin_intermittent", "medication_orders"], ["vitals", "hospitalization"], ["respiratory_support", "hospitalization"], ["patient_assessments", "hospitalization"], ["position", "hospitalization"], ["invasive_hemodynamics", "hospitalization"], ["airway", "hospitalization"], ["drain", "hospitalization"], ["line", "hospitalization"], ["mcs", "hospitalization"], ["crrt_therapy", "hospitalization"], ["intermittent_dialysis", "hospitalization"], ["input", "hospitalization"], ["output", "hospitalization"], ["transfusion", "hospitalization"], ["patient_procedures", "hospitalization"], ["key_icu_orders", "hospitalization"], ["therapy_details", "hospitalization"], ["clinical_trial", "patient"], ["clinical_trial", "hospitalization"], ["clinical_notes_facts", "hospitalization"], ["radiology", "patient"], ["scores", "hospitalization"], ["scores", "model_registry"]];
 
 const DOMAIN_ORDER = ["Patient & Encounter", "Diagnoses & Code Status", "Labs & Microbiology", "Medications", "Respiratory & Monitoring", "Devices & Support", "Fluids & Blood", "Procedures, Orders & Therapy", "Trials, Notes, Imaging & Scores"];
 
