@@ -148,6 +148,32 @@ src/
 2. Reference with absolute paths: `/images/filename.png`
 3. Use `download_png_images.py` to batch download from markdown files
 
+### Editing the Data Dictionary / Change Log
+
+When you add, remove, or rename anything in the data dictionary, propagate the
+change to **every** place that mirrors it, and **always recount**:
+
+1. **DDL** — `src/content/v-<version>-ddl.sql` (source of truth for columns).
+2. **Markdown doc** — `src/content/clif-data-dictionary-<version>.md` (intro text
+   AND the rendered "Example" tables; keep example column headers in sync with
+   the schema).
+3. **Page table groupings** — the `betaTableNames` / `alphaTableNames` /
+   `conceptTableNames` arrays in `src/pages/data-dictionary/data-dictionary-<version>.astro`
+   (a table's maturity status is set by which array it lives in).
+4. **ERD** — `public/images/data-dictionary/clif_erd_<version>.html` (node `cols`,
+   the node `"m"` maturity field, and the `REFS` relationship edges).
+5. **POC list** — `src/data/table-poc.json` (one entry per table).
+6. **Change log** — `src/pages/data-dictionary/change-log.astro`.
+
+**ALWAYS update the count in every collapsible section header of
+`change-log.astro` whenever you add or remove a row.** Each header reads like
+`New Tables (N tables added)`, `New Fields (N fields added)`,
+`New mCIDE Values (N updates)`, `Revisions (N updates)`. After editing a
+section's rows, recount the `<tr>` rows in that section's `<tbody>` and set N to
+match — never leave a header count stale.
+
+Finish by running `npm run build` to confirm the data dictionary still renders.
+
 ## Known Issues
 
 ### Institution Content Collection Errors
