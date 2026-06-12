@@ -69,13 +69,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 </tr>
                 <tr>
                   <td class="px-4 py-3 text-sm font-mono">clinical_notes_facts</td>
-                  <td class="px-4 py-3 text-sm">Concept table capturing clinical note metadata (note type, provider, revision timestamps) for efficient filtering and time-aware revision selection without scanning raw text.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/141" class="text-clif-burgundy hover:underline">Issue #141</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">Feb 12, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">clinical_notes_text</td>
-                  <td class="px-4 py-3 text-sm">Concept table storing raw note text joined to clinical_notes_facts via revision-level keys, enabling separation of metadata queries from text-heavy workloads.</td>
+                  <td class="px-4 py-3 text-sm">Concept table capturing clinical note metadata (note type, author, co-signer, revision timestamps) for efficient filtering and time-aware revision selection. Note text is not stored in CLIF — notes are provisioned "just in time" by querying site CDWs and extracted as plain text files named [hospitalization_id]__[note_id]_[revision_id].txt.</td>
                   <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/141" class="text-clif-burgundy hover:underline">Issue #141</a></td>
                   <td class="px-4 py-3 text-sm text-gray-500">Feb 12, 2026</td>
                 </tr>

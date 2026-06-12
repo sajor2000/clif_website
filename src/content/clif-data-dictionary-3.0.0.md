@@ -681,38 +681,35 @@ The `validated_diagnosis` table captures clinician-validated diagnostic labels f
 
 ## clinical_notes_facts
 
-The `clinical_notes_facts` table captures the metadata about clinical notes.
+The `clinical_notes_facts` table captures the metadata about clinical notes. It deliberately stores **only metadata** — the note text itself is not held in CLIF.
+
+**Just-in-time note provisioning**:
+
+Clinical note text is **not** stored in CLIF. Instead, notes are provisioned **"just in time"** — that is, **on-demand** — by directly querying each site's Clinical Data Warehouse (CDW) via SQL or API at the moment the text is needed for a given study. The `clinical_notes_facts` table provides the metadata index used to identify exactly which notes (and which revisions) to pull.
+
+To simplify downstream pipelines, provisioned notes are extracted as **plain text files** using a standardized naming convention:
+
+```
+[hospitalization_id]__[note_id]_[revision_id].txt
+```
+
+This keeps text-heavy workloads out of the core CLIF tables while preserving a deterministic, revision-aware mapping back to the metadata in `clinical_notes_facts`.
 
 **Notes**:
 - The `revision_id` is rank-ordered per `(hospitalization_id, note_id)` by `revision_dttm` ascending 
-- This table is designed to be joined with `clinical_notes_text` via `(hospitalization_id, note_id, revision_id)` when full note text is needed
+- The triplet `(hospitalization_id, note_id, revision_id)` matches the `[hospitalization_id]__[note_id]_[revision_id].txt` naming convention used for just-in-time provisioned note text
 
 
 **Example**:
 
-| hospitalization_id | note_id | note_type | note_type_category | provider_id | note_author_specialty | revision_id | creation_dttm | revision_dttm | service_date | note_status | cosigner_specialty |
-|-------------------|---------|-----------|-------------------|-------------|----------------------|-------------|---------------|---------------|--------------|-------------|-------------------|
-| 12345 | N001 | Progress Note | progress_note | PROV001 | Critical Care | 1 | 2024-12-01 08:00:00+00:00 UTC | 2024-12-01 08:00:00+00:00 UTC | 2024-12-01 00:00:00+00:00 UTC | incomplete | |
-| 12345 | N001 | Progress Note | progress_note | PROV001 | Critical Care | 2 | 2024-12-01 08:00:00+00:00 UTC | 2024-12-01 12:45:00+00:00 UTC | 2024-12-01 00:00:00+00:00 UTC | signed | Critical Care |
-| 12345 | N002 | Discharge Summary | discharge_summary | PROV002 | Internal Medicine | 1 | 2024-12-03 14:00:00+00:00 UTC | 2024-12-03 14:00:00+00:00 UTC | 2024-12-03 00:00:00+00:00 UTC | co-signed | Pulmonology |
-| 67890 | N003 | PT Initial Evaluation | therapy_note | PROV003 | Physical Therapy | 1 | 2024-11-28 09:30:00+00:00 UTC | 2024-11-28 09:30:00+00:00 UTC | 2024-11-28 00:00:00+00:00 UTC | signed | |
-| 67890 | N004 | ID Consult | consult_note | PROV004 | Infectious Diseases | 1 | 2024-11-28 14:00:00+00:00 UTC | 2024-11-28 14:00:00+00:00 UTC | 2024-11-28 00:00:00+00:00 UTC | addendum | |
-| 67890 | N005 | Death Pronouncement | death_pronouncement | PROV005 | Critical Care | 1 | 2024-11-29 03:15:00+00:00 UTC | 2024-11-29 03:15:00+00:00 UTC | 2024-11-29 00:00:00+00:00 UTC | signed | |
-
-## clinical_notes_text
-
-The `clinical_notes_text` table stores the raw note text. 
-
-
-**Example**:
-
-| hospitalization_id | note_id | revision_id | note_text |
-|-------------------|---------|-------------|-----------|
-| 12345 | N001 | 1 | Patient presents with fever and cough... |
-| 12345 | N001 | 2 | Patient presents with fever and cough. Updated: cultures pending... |
-| 12345 | N002 | 1 | Discharge summary: Patient admitted for pneumonia... |
-| 67890 | N003 | 1 | History and Physical: 65-year-old male with... |
-
+| hospitalization_id | note_id | note_type | note_type_category | author_id | note_author_specialty | revision_id | creation_dttm | revision_dttm | service_date | note_status | cosigner_id | cosigner_specialty |
+|-------------------|---------|-----------|-------------------|-----------|----------------------|-------------|---------------|---------------|--------------|-------------|-------------|-------------------|
+| 12345 | N001 | Progress Note | progress_note | PROV001 | Critical Care | 1 | 2024-12-01 08:00:00+00:00 UTC | 2024-12-01 08:00:00+00:00 UTC | 2024-12-01 00:00:00+00:00 UTC | incomplete | | |
+| 12345 | N001 | Progress Note | progress_note | PROV001 | Critical Care | 2 | 2024-12-01 08:00:00+00:00 UTC | 2024-12-01 12:45:00+00:00 UTC | 2024-12-01 00:00:00+00:00 UTC | signed | PROV010 | Critical Care |
+| 12345 | N002 | Discharge Summary | discharge_summary | PROV002 | Internal Medicine | 1 | 2024-12-03 14:00:00+00:00 UTC | 2024-12-03 14:00:00+00:00 UTC | 2024-12-03 00:00:00+00:00 UTC | co-signed | PROV011 | Pulmonology |
+| 67890 | N003 | PT Initial Evaluation | therapy_note | PROV003 | Physical Therapy | 1 | 2024-11-28 09:30:00+00:00 UTC | 2024-11-28 09:30:00+00:00 UTC | 2024-11-28 00:00:00+00:00 UTC | signed | | |
+| 67890 | N004 | ID Consult | consult_note | PROV004 | Infectious Diseases | 1 | 2024-11-28 14:00:00+00:00 UTC | 2024-11-28 14:00:00+00:00 UTC | 2024-11-28 00:00:00+00:00 UTC | addendum | | |
+| 67890 | N005 | Death Pronouncement | death_pronouncement | PROV005 | Critical Care | 1 | 2024-11-29 03:15:00+00:00 UTC | 2024-11-29 03:15:00+00:00 UTC | 2024-11-29 00:00:00+00:00 UTC | signed | | |
 
 ## microbiology_nonculture
 
