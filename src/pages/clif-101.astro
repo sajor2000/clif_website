@@ -1,0 +1,121 @@
+---
+export const prerender = true;
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const TEMPLATE_REPO = 'https://github.com/Common-Longitudinal-ICU-data-Format/CLIF-Project-Template';
+const CREATOR_GUIDE = `${TEMPLATE_REPO}/blob/main/guides/creator-guide.md`;
+const BUDDY_REPORT = `${TEMPLATE_REPO}/blob/main/guides/buddy-test-report-template.md`;
+const BUDDY_GUIDE = `${TEMPLATE_REPO}/blob/main/guides/buddy-testing-guide.md`;
+
+const ghCreate = `gh repo create my-clif-project \\
+  --template Common-Longitudinal-ICU-data-Format/CLIF-Project-Template --private`;
+
+const repoTree = `my-clif-project/
+├── README.md                     # the run-it-yourself guide each site reads
+├── config/config_template.json   # site settings (copy to config.json)
+├── code/templates/{Python,R}/    # numbered pipeline scripts
+├── output/
+│   ├── final_no_phi/             # aggregate, shareable results
+│   └── intermediate_phi/         # patient-level working data, NEVER shared (gitignored)
+├── utils/                        # config loaders for Python & R
+└── guides/                       # creator guide, primer, buddy-testing guide`;
+---
+
+<BaseLayout
+  title="CLIF 101 - Start Your CLIF Project"
+  description="Everything you need to turn your idea into a reproducible, consortium-ready CLIF project: code it from the template, buddy test it at one site, then release it for the consortium run."
+>
+  <!-- Page Header -->
+  <div class="container mx-auto px-4 pt-12 pb-8">
+    <div class="text-center">
+      <div class="inline-flex items-center justify-center w-20 h-20 bg-clif-burgundy/10 rounded-full mb-6">
+        <svg class="w-10 h-10 text-clif-burgundy" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+      </div>
+      <h1 class="text-4xl md:text-5xl font-bold text-clif-gray-900 dark:text-white mb-4">Start Your CLIF Project</h1>
+      <p class="text-lg text-clif-gray-600 dark:text-gray-300 max-w-3xl mx-auto mb-10">
+        Everything you need to turn your idea into a reproducible, consortium-ready CLIF project.
+      </p>
+      <div class="flex flex-wrap justify-center gap-4">
+        <div class="bg-clif-burgundy/10 text-clif-burgundy rounded-full px-5 py-2 text-sm font-medium">
+          <span class="font-bold">1.</span> Code
+        </div>
+        <div class="bg-clif-burgundy/10 text-clif-burgundy rounded-full px-5 py-2 text-sm font-medium">
+          <span class="font-bold">2.</span> Buddy test
+        </div>
+        <div class="bg-clif-burgundy/10 text-clif-burgundy rounded-full px-5 py-2 text-sm font-medium">
+          <span class="font-bold">3.</span> Share
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Intro -->
+  <section class="container mx-auto px-4 mb-12 max-w-4xl">
+    <p class="text-clif-gray-700 dark:text-gray-300 mb-4">A CLIF project comes together in three phases:</p>
+    <ul class="space-y-2 text-clif-gray-700 dark:text-gray-300">
+      <li><strong class="text-clif-burgundy">Code:</strong> the creator builds the analysis from the template.</li>
+      <li><strong class="text-clif-burgundy">Buddy test:</strong> one other site runs it end to end and signs off.</li>
+      <li><strong class="text-clif-burgundy">Share:</strong> the PI releases it, every site runs it and returns <strong>aggregate results only</strong>.</li>
+    </ul>
+  </section>
+
+  <!-- Phases -->
+  <section class="container mx-auto px-4 mb-16 max-w-4xl space-y-8">
+
+    <!-- 1. Code it -->
+    <div class="bg-white dark:bg-neutral-800 rounded-2xl shadow-xl p-8 border-l-4 border-clif-burgundy">
+      <div class="flex items-center gap-3 mb-4">
+        <span class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-clif-burgundy text-white font-bold flex-shrink-0">1</span>
+        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Code</h2>
+      </div>
+      <p class="text-clif-gray-700 dark:text-gray-300 mb-4">
+        <strong>Start from the template.</strong> Click <strong>"Use this template"</strong> on the
+        <a href={TEMPLATE_REPO} target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:underline">CLIF Project Template</a>, or:
+      </p>
+      <pre class="bg-clif-gray-900 dark:bg-black text-clif-gray-100 rounded-lg p-4 overflow-x-auto text-sm mb-6"><code>{ghCreate}</code></pre>
+
+      <p class="text-clif-gray-700 dark:text-gray-300 mb-4">You get a ready structure:</p>
+      <pre class="bg-clif-gray-900 dark:bg-black text-clif-gray-100 rounded-lg p-4 overflow-x-auto text-sm mb-6"><code>{repoTree}</code></pre>
+
+      <p class="text-clif-gray-700 dark:text-gray-300">
+        Full walkthrough:
+        <a href={CREATOR_GUIDE} target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:underline">Creator Guide</a>.
+      </p>
+    </div>
+
+    <!-- 2. Buddy test it -->
+    <div class="bg-white dark:bg-neutral-800 rounded-2xl shadow-xl p-8 border-l-4 border-clif-burgundy">
+      <div class="flex items-center gap-3 mb-4">
+        <span class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-clif-burgundy text-white font-bold flex-shrink-0">2</span>
+        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Buddy test</h2>
+      </div>
+      <p class="text-clif-gray-700 dark:text-gray-300">
+        Reach out on <code class="px-1.5 py-0.5 rounded bg-clif-gray-100 dark:bg-neutral-700 text-clif-burgundy dark:text-clif-burgundy text-sm font-mono">#general</code> on CLIF Slack to find a buddy site.
+        Before consortium release, <strong>one other site</strong> clones the finished repo and runs it end to end on
+        <strong>their own data</strong>, catching site-specific assumptions, setup gaps, and any data-security issues.
+        They record the outcome in the
+        <a href={BUDDY_REPORT} target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:underline">Buddy Test Report</a>.
+        See the
+        <a href={BUDDY_GUIDE} target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:underline">Buddy Testing Guide</a>
+        for what gets checked.
+      </p>
+    </div>
+
+    <!-- 3. Share it -->
+    <div class="bg-white dark:bg-neutral-800 rounded-2xl shadow-xl p-8 border-l-4 border-clif-burgundy">
+      <div class="flex items-center gap-3 mb-4">
+        <span class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-clif-burgundy text-white font-bold flex-shrink-0">3</span>
+        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Share</h2>
+      </div>
+      <p class="text-clif-gray-700 dark:text-gray-300">
+        Once buddy testing passes, the <strong>PI releases</strong> the project for the consortium run.
+        Release the project on the <code class="px-1.5 py-0.5 rounded bg-clif-gray-100 dark:bg-neutral-700 text-clif-burgundy dark:text-clif-burgundy text-sm font-mono">#run_requests</code> channel on Slack.
+        Each site clones it, points <code class="px-1.5 py-0.5 rounded bg-clif-gray-100 dark:bg-neutral-700 text-clif-burgundy dark:text-clif-burgundy text-sm font-mono">config.json</code> at their data,
+        runs it, and returns the contents of <code class="px-1.5 py-0.5 rounded bg-clif-gray-100 dark:bg-neutral-700 text-clif-burgundy dark:text-clif-burgundy text-sm font-mono">output/final_no_phi/</code>:
+        aggregate results only, never patient-level data.
+      </p>
+    </div>
+  </section>
+</BaseLayout>
