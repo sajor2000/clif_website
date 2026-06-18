@@ -226,7 +226,7 @@ function formatDate(dateStr: string): string {
                             </span>
                           )}
                         </div>
-                        <p class="proposal-desc text-sm text-gray-600 dark:text-gray-400 mt-1" data-proposal-id={p.id}>{p.description || ''}</p>
+                        <p class="proposal-desc text-sm text-gray-600 dark:text-gray-400 mt-1 whitespace-pre-line" data-proposal-id={p.id}>{p.description || ''}</p>
                         <textarea class="proposal-desc-input hidden w-full text-sm px-2 py-1 border border-gray-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-gray-900 dark:text-white mt-1" data-proposal-id={p.id} rows="2">{p.description || ''}</textarea>
                         <div class="proposal-deadline-edit hidden mt-2 flex items-center gap-2" data-proposal-id={p.id}>
                           <label class="text-xs text-gray-500 dark:text-gray-400">Deadline:</label>
@@ -443,7 +443,7 @@ function formatDate(dateStr: string): string {
                       </div>
                     </div>
                     {p.description && (
-                      <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">{p.description}</p>
+                      <p class="text-sm text-gray-600 dark:text-gray-400 mt-1 whitespace-pre-line">{p.description}</p>
                     )}
                     <div class="flex flex-wrap gap-2 mt-2 text-xs text-gray-500 dark:text-gray-400">
                       <span>Proposed: {new Date(p.created_at as string).toLocaleDateString()}</span>
