@@ -72,6 +72,100 @@ export function buildNewUserNotificationEmail(
 </html>`.trim();
 }
 
+function formatDeadline(deadline: string): string {
+  // deadline is stored as a date string (e.g. "2026-06-26"); render it readably in UTC
+  const d = new Date(deadline.length <= 10 ? deadline + 'T12:00:00Z' : deadline);
+  if (isNaN(d.getTime())) return deadline;
+  return d.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    timeZone: 'UTC',
+  });
+}
+
+export function buildProposalNotificationEmail(
+  title: string,
+  description: string | null,
+  deadline: string,
+  votingUrl: string,
+): string {
+  const descBlock = description
+    ? `<p style="white-space: pre-line; color: #444;">${escapeHtml(description)}</p>`
+    : '';
+  return `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+  <div style="border-bottom: 3px solid #8B1538; padding-bottom: 16px; margin-bottom: 24px;">
+    <h1 style="color: #8B1538; font-size: 20px; margin: 0;">CLIF Consortium</h1>
+  </div>
+
+  <p>A new proposal is open and awaiting your vote:</p>
+
+  <h2 style="font-size: 18px; color: #111; margin: 16px 0 8px;">${escapeHtml(title)}</h2>
+  ${descBlock}
+
+  <p style="margin: 16px 0;"><strong>Voting deadline:</strong> ${formatDeadline(deadline)}</p>
+
+  <div style="margin: 28px 0;">
+    <a href="${votingUrl}" style="background-color: #8B1538; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">
+      Review &amp; Vote
+    </a>
+  </div>
+
+  <p style="color: #666; font-size: 14px;">Please cast your vote before the deadline. If you have questions, reach out to <a href="mailto:clif_consortium@uchicago.edu">clif_consortium@uchicago.edu</a>.</p>
+
+  <div style="border-top: 1px solid #e5e7eb; margin-top: 32px; padding-top: 16px; font-size: 12px; color: #9ca3af;">
+    CLIF Consortium &middot; Common Longitudinal ICU Data Format
+  </div>
+</body>
+</html>`.trim();
+}
+
+export function buildProposalReminderEmail(
+  title: string,
+  deadline: string,
+  votingUrl: string,
+): string {
+  return `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+  <div style="border-bottom: 3px solid #8B1538; padding-bottom: 16px; margin-bottom: 24px;">
+    <h1 style="color: #8B1538; font-size: 20px; margin: 0;">CLIF Consortium</h1>
+  </div>
+
+  <p><strong>Reminder:</strong> a proposal is still awaiting your vote and the deadline is approaching.</p>
+
+  <h2 style="font-size: 18px; color: #111; margin: 16px 0 8px;">${escapeHtml(title)}</h2>
+
+  <p style="margin: 16px 0;"><strong>Voting deadline:</strong> ${formatDeadline(deadline)}</p>
+
+  <div style="margin: 28px 0;">
+    <a href="${votingUrl}" style="background-color: #8B1538; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">
+      Cast Your Vote
+    </a>
+  </div>
+
+  <p style="color: #666; font-size: 14px;">You are receiving this because you have not yet voted on this proposal.</p>
+
+  <div style="border-top: 1px solid #e5e7eb; margin-top: 32px; padding-top: 16px; font-size: 12px; color: #9ca3af;">
+    CLIF Consortium &middot; Common Longitudinal ICU Data Format
+  </div>
+</body>
+</html>`.trim();
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
 export function buildSiteReviewEmail(
   userName: string,
   siteName: string,

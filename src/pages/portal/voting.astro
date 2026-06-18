@@ -264,6 +264,13 @@ function formatDate(dateStr: string): string {
                           >
                             Edit
                           </button>
+                          <button
+                            class="notify-proposal-btn text-xs text-clif-burgundy hover:text-clif-burgundy/80 dark:text-clif-burgundy dark:hover:text-clif-burgundy/80 underline"
+                            data-proposal-id={p.id}
+                            title="Email steering committee + admins who haven't voted yet"
+                          >
+                            Notify members
+                          </button>
                           <label class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
                             <input type="checkbox" class="create-issue-checkbox w-3.5 h-3.5 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy" data-proposal-id={p.id} />
                             Create GitHub issue
@@ -670,6 +677,33 @@ function formatDate(dateStr: string): string {
           } else {
             alert('Failed to close proposal');
           }
+        });
+      });
+
+      document.querySelectorAll('.notify-proposal-btn').forEach(function(btn) {
+        btn.addEventListener('click', async function() {
+          var proposalId = this.getAttribute('data-proposal-id');
+          if (!confirm('Email the steering committee + admins who haven\'t voted yet about this proposal?')) return;
+
+          var button = this;
+          var original = button.textContent;
+          button.textContent = 'Sending...';
+          button.disabled = true;
+
+          var res = await fetch('/api/proposals/notify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ proposalId: proposalId }),
+          });
+
+          if (res.ok) {
+            var data = await res.json();
+            alert('Notification sent to ' + data.sent + ' member' + (data.sent === 1 ? '' : 's') + '.');
+          } else {
+            alert('Failed to send notifications.');
+          }
+          button.textContent = original;
+          button.disabled = false;
         });
       });
 

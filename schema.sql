@@ -125,6 +125,15 @@ CREATE INDEX IF NOT EXISTS idx_votes_proposal ON votes(proposal_id);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id);
 
+-- Per-user proposal deadline reminders (one row = one member reminded once
+-- for a given proposal). Written by the /api/proposals/remind cron job.
+CREATE TABLE IF NOT EXISTS proposal_reminders (
+  proposal_id TEXT NOT NULL REFERENCES proposals(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  sent_at TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (proposal_id, user_id)
+);
+
 -- ============================================================
 -- Deterministic Additive Masking (Cryptography Tool)
 -- ============================================================

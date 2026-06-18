@@ -2,5 +2,11 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": "astro",
-  "regions": ["iad1"]
+  "regions": ["iad1"],
+  "crons": [
+    {
+      "path": "/api/proposals/remind",
+      "schedule": "0 13 * * *"
+    }
+  ]
 }
