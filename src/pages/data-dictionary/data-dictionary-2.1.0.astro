@@ -168,15 +168,13 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
             <div class="mb-4">
               <input
                 type="search"
+                id="table-search"
                 placeholder="Search tables..."
                 class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-clif-burgundy"
-                onInput={e => {
-                  // Implement filtering logic if needed
-                }}
               />
             </div>
             <!-- Beta Tables -->
-            <div class="mb-4">
+            <div class="mb-4" data-table-group>
               <div class="flex items-center gap-2 mb-2">
                 <span class="font-medium">Beta Tables</span>
                 <span class="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-full">{betaTables.length}</span>
@@ -184,6 +182,7 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
               <div class="pl-4 space-y-1">
                 {betaTables.map(table => (
                   <a href={`#${table.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                     data-table-name={table.name.toLowerCase()}
                      class="table-link block py-1 px-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded">
                     {table.name}
                   </a>
@@ -191,7 +190,7 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
               </div>
             </div>
             <!-- Concept Tables -->
-            <div class="mb-4">
+            <div class="mb-4" data-table-group>
               <div class="flex items-center gap-2 mb-2">
                 <span class="font-medium">Concept Tables</span>
                 <span class="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full">{conceptTables.length}</span>
@@ -199,6 +198,7 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
               <div class="pl-4 space-y-1">
                 {conceptTables.map(table => (
                   <a href={`#${table.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                     data-table-name={table.name.toLowerCase()}
                      class="table-link block py-1 px-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded">
                     {table.name}
                   </a>
@@ -514,4 +514,29 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
     tableLabel="Related Table (optional)"
     tables={[...betaTableNames, ...conceptTableNames].sort()}
   />
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const searchInput = document.getElementById('table-search') as HTMLInputElement | null;
+      const tableLinks = document.querySelectorAll<HTMLAnchorElement>('.table-link');
+      const groups = document.querySelectorAll<HTMLElement>('[data-table-group]');
+
+      searchInput?.addEventListener('input', (e) => {
+        const term = (e.target as HTMLInputElement).value.toLowerCase().trim();
+
+        tableLinks.forEach((link) => {
+          const name = link.getAttribute('data-table-name') || '';
+          link.style.display = name.includes(term) ? 'block' : 'none';
+        });
+
+        // Hide a group header when none of its tables match.
+        groups.forEach((group) => {
+          const hasVisible = group.querySelector<HTMLAnchorElement>(
+            '.table-link:not([style*="display: none"])'
+          );
+          group.style.display = hasVisible ? 'block' : 'none';
+        });
+      });
+    });
+  </script>
 </BaseLayout>
