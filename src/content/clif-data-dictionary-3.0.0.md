@@ -495,26 +495,47 @@ The intermittent_dialysis table captures intermittent hemodialysis sessions duri
 | 30010002 | HD-B3 | 2024-03-11 07:30:00+00:00 UTC | 250.0 | 400.0 | 150.0 |
 
 
-## key_icu_orders
+## consult_orders
 
 
 
-The `key_icu_orders` table captures key consult and ancillary orders placed during ICU stays — including PT, OT, social work, nutrition, palliative care, and other consult services. It includes details about the hospitalization, the timing of the order, the specific name of the order, its standardized category, and the standardized status of the order.
+The `consult_orders` table captures consult and service orders placed during ICU stays — including PT, OT, speech, social work, nutrition, palliative care, and other consult services. It includes details about the hospitalization, the timing of the order, the specific name of the order, its standardized category, and the standardized status of the order. CLIF does not dictate which type of clinician performs the consult/service.
 
 **Notes**:
 
-- `order_category` permissible values are aligned with the MIMIC-IV consult order list ([issue #196](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/196)).
+- This table, together with `misc_icu_orders`, replaces the former `key_icu_orders` table ([issue #218](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/218)). Both tables share identical fields and differ only in the kinds of orders each contains.
 - `order_status_category` standardizes the order lifecycle to `sent`, `completed`, `resulted`, or `canceled`.
 
 **Example**:
 
-| hospitalization_id | order_dttm                | order_name                | order_category | order_status_category |
-|-------------------|---------------------------|--------------------------|----------------|-----------------------|
-| 12345             | 2024-12-15 10:00:00+00:00 UTC | PT Initial Evaluation     | pt             | completed             |
-| 67890             | 2024-12-16 14:30:00+00:00 UTC | OT Follow-up Treatment    | ot             | sent                  |
-| 54321             | 2024-12-16 08:00:00+00:00 UTC | Social Work Consult       | social_work    | resulted              |
-| 98765             | 2024-12-15 11:15:00+00:00 UTC | Palliative Care Consult   | palliative_care| canceled              |
-| 11223             | 2024-12-17 09:45:00+00:00 UTC | Nutrition Consult         | nutrition      | completed             |
+| hospitalization_id | order_dttm                | order_name                | order_category | order_status_name | order_status_category |
+|-------------------|---------------------------|--------------------------|----------------|-------------------|-----------------------|
+| 12345             | 2024-12-15 10:00:00+00:00 UTC | PT Initial Evaluation     | pt             | Completed         | completed             |
+| 67890             | 2024-12-16 14:30:00+00:00 UTC | OT Follow-up Treatment    | ot             | Sent              | sent                  |
+| 54321             | 2024-12-16 08:00:00+00:00 UTC | Social Work Consult       | social_work    | Resulted          | resulted              |
+| 98765             | 2024-12-15 11:15:00+00:00 UTC | Palliative Care Consult   | palliative_care| Canceled          | canceled              |
+| 11223             | 2024-12-17 09:45:00+00:00 UTC | Nutrition Consult         | nutrition      | Completed         | completed             |
+
+## misc_icu_orders
+
+
+
+The `misc_icu_orders` table captures miscellaneous ICU orders that are not consults/services — operational orders and procedures such as EEG, restraints, wound care, out-of-bed (OOB) activity, Foley placement, and extubation. It shares the same fields as `consult_orders` and differs only in the kinds of orders it contains.
+
+**Notes**:
+
+- This table, together with `consult_orders`, replaces the former `key_icu_orders` table ([issue #218](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/218)).
+- `order_status_category` standardizes the order lifecycle to `sent`, `completed`, `resulted`, or `canceled`.
+
+**Example**:
+
+| hospitalization_id | order_dttm                | order_name                | order_category | order_status_name | order_status_category |
+|-------------------|---------------------------|--------------------------|----------------|-------------------|-----------------------|
+| 12345             | 2024-12-15 10:00:00+00:00 UTC | Continuous EEG            | eeg            | Resulted          | resulted              |
+| 67890             | 2024-12-16 14:30:00+00:00 UTC | Restraint Order           | restraints     | Completed         | completed             |
+| 54321             | 2024-12-16 08:00:00+00:00 UTC | Foley Catheter Insertion  | foley          | Completed         | completed             |
+| 98765             | 2024-12-15 11:15:00+00:00 UTC | Out of Bed to Chair       | oob            | Sent              | sent                  |
+| 11223             | 2024-12-17 09:45:00+00:00 UTC | Extubation Order          | extubation     | Completed         | completed             |
 
 
 ## medication_orders

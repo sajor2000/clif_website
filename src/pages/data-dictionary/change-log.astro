@@ -34,7 +34,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            New Tables (13 tables added) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: May 29, 2026</span>
+            New Tables (15 tables added) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Jun 16, 2026</span>
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -133,6 +133,18 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/178" class="text-clif-burgundy hover:underline">Issue #178</a></td>
                   <td class="px-4 py-3 text-sm text-gray-500">May 29, 2026</td>
                 </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">consult_orders</td>
+                  <td class="px-4 py-3 text-sm">Alpha table capturing consult/service orders placed during ICU stays, split out from the former <code>key_icu_orders</code> table. Holds 15 <code>order_category</code> values (pt, ot, speech, swallowing, nutrition, respiratory, social_work, skin_care, ostomy_care, pain_services, addiction_sud, psychiatry, pastoral_services, palliative_care, interpreter). Shares identical fields with <code>misc_icu_orders</code> and differs only in the kinds of orders it contains; per the issue, CLIF does not dictate which type of clinician performs the consult/service.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/218" class="text-clif-burgundy hover:underline">Issue #218</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Jun 16, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">misc_icu_orders</td>
+                  <td class="px-4 py-3 text-sm">Alpha table capturing miscellaneous, non-consult ICU orders and procedures, split out from the former <code>key_icu_orders</code> table. Holds 6 <code>order_category</code> values (eeg, restraints, wound_care, oob, foley, extubation). Shares identical fields with <code>consult_orders</code>.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/218" class="text-clif-burgundy hover:underline">Issue #218</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Jun 16, 2026</td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -143,7 +155,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            New Fields (19 fields added) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Jun 12, 2026</span>
+            New Fields (21 fields added) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Jun 16, 2026</span>
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -300,6 +312,20 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/142" class="text-clif-burgundy hover:underline">Issue #142</a></td>
                   <td class="px-4 py-3 text-sm text-gray-500">Jun 12, 2026</td>
                 </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">order_status_name</td>
+                  <td class="px-4 py-3 text-sm">consult_orders</td>
+                  <td class="px-4 py-3 text-sm">Status of the order from source EHR data (e.g. sent, completed), added alongside the existing <code>order_status_category</code> per CLIF name/category convention.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/218" class="text-clif-burgundy hover:underline">Issue #218</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Jun 16, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">order_status_name</td>
+                  <td class="px-4 py-3 text-sm">misc_icu_orders</td>
+                  <td class="px-4 py-3 text-sm">Status of the order from source EHR data (e.g. sent, completed), added alongside the existing <code>order_status_category</code> per CLIF name/category convention.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/218" class="text-clif-burgundy hover:underline">Issue #218</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Jun 16, 2026</td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -310,7 +336,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            New mCIDE Values (15 updates · 233 new values) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Jun 12, 2026</span>
+            New mCIDE Values (15 updates · 238 new values) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Jun 16, 2026</span>
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -402,15 +428,15 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 </tr>
                 <tr>
                   <td class="px-4 py-3 text-sm font-mono">order_status_category (4)</td>
-                  <td class="px-4 py-3 text-sm">New <code>key_icu_orders.order_status_category</code> mCIDE standardizing order statuses: <code>sent</code>, <code>completed</code>, <code>resulted</code>, <code>canceled</code>.</td>
+                  <td class="px-4 py-3 text-sm">New <code>order_status_category</code> mCIDE standardizing order statuses on both <code>consult_orders</code> and <code>misc_icu_orders</code>: <code>sent</code>, <code>completed</code>, <code>resulted</code>, <code>canceled</code>.</td>
                   <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/196" class="text-clif-burgundy hover:underline">Issue #196</a></td>
                   <td class="px-4 py-3 text-sm text-gray-500">May 21, 2026</td>
                 </tr>
                 <tr>
-                  <td class="px-4 py-3 text-sm font-mono">order_category (1)</td>
-                  <td class="px-4 py-3 text-sm">Added <code>eeg</code> as a new permissible value to <code>key_icu_orders.order_category</code>.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/196" class="text-clif-burgundy hover:underline">Issue #196</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">May 21, 2026</td>
+                  <td class="px-4 py-3 text-sm font-mono">order_category (misc) (6)</td>
+                  <td class="px-4 py-3 text-sm"><code>misc_icu_orders.order_category</code> mCIDE for non-consult ICU orders: <code>eeg</code> (carried over from the former key_icu_orders), plus 5 new operational orders <code>restraints</code>, <code>wound_care</code>, <code>oob</code>, <code>foley</code>, <code>extubation</code>. (The consult categories live on <code>consult_orders</code>; renames are logged under Revisions.)</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/218" class="text-clif-burgundy hover:underline">Issue #218</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Jun 16, 2026</td>
                 </tr>
                 <tr>
                   <td class="px-4 py-3 text-sm font-mono">organism_category (nonculture) (21)</td>
@@ -480,7 +506,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            Revisions (11 updates) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Jun 12, 2026</span>
+            Revisions (12 updates) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Jun 16, 2026</span>
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -573,6 +599,12 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   </td>
                   <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/180" class="text-clif-burgundy hover:underline">Issue #180</a></td>
                   <td class="px-4 py-3 text-sm text-gray-500">May 29, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">key_icu_orders &rarr; consult_orders + misc_icu_orders</td>
+                  <td class="px-4 py-3 text-sm">Split the former <code>key_icu_orders</code> table into two tables with identical fields, differing only in the kinds of orders each holds: <code>consult_orders</code> (consult/service orders) and <code>misc_icu_orders</code> (non-consult operational orders and procedures). Renamed three consult categories to drop the clinician-type assumption — <code>et_nurse</code> &rarr; <code>ostomy_care</code>, <code>addiction_nurse</code> &rarr; <code>addiction_sud</code>, <code>psych_liaison_nurse</code> &rarr; <code>psychiatry</code> — moved <code>eeg</code> to <code>misc_icu_orders</code>, dropped the catch-all <code>other</code>, and added <code>order_status_name</code> to both tables per CLIF name/category convention.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/218" class="text-clif-burgundy hover:underline">Issue #218</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Jun 16, 2026</td>
                 </tr>
               </tbody>
             </table>
