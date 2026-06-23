@@ -47,35 +47,45 @@ export const GET: APIRoute = async ({ url, cookies, redirect }) => {
     const db = getDb();
     const now = new Date().toISOString();
 
-    // Find an existing row to attach this OAuth login to. Priority:
-    //   1) same google_id (returning user)
-    //   2) same email (Google identity already on file)
-    //   3) unattached profile (google_id IS NULL) whose work_email or
+    // Resolve this OAuth login to a member via the user_identities table, which
+    // lets one member link several Google logins. Priority:
+    //   1) a linked identity with this google_id (returning user)
+    //   2) a linked identity with this email
+    //   3) a member with no Google identity yet whose work_email or
     //      gmail_personal matches the OAuth email — i.e. a CSV-imported stub
     //      for someone signing in with a personal Gmail.
-    // Only step 3 ever triggers an email swap, since steps 1/2 already point
-    // at a row whose `email` is the auth identity.
+    // We never overwrite the member's primary email anymore: a matched login is
+    // recorded as an additional identity instead (see the INSERT below).
     let row: Record<string, unknown> | null = null;
 
     const byGoogle = await db.execute({
-      sql: 'SELECT id, email, full_name, work_email FROM users WHERE google_id = ? LIMIT 1',
+      sql: `SELECT u.id, u.email, u.full_name, u.work_email
+            FROM user_identities ui JOIN users u ON u.id = ui.user_id
+            WHERE ui.google_id = ? LIMIT 1`,
       args: [googleId],
     });
     if (byGoogle.rows[0]) row = byGoogle.rows[0];
 
     if (!row) {
       const byEmail = await db.execute({
-        sql: 'SELECT id, email, full_name, work_email FROM users WHERE LOWER(email) = LOWER(?) LIMIT 1',
+        sql: `SELECT u.id, u.email, u.full_name, u.work_email
+              FROM user_identities ui JOIN users u ON u.id = ui.user_id
+              WHERE LOWER(ui.email) = LOWER(?) LIMIT 1`,
         args: [email],
       });
       if (byEmail.rows[0]) row = byEmail.rows[0];
     }
 
     if (!row) {
+      // Un-attached stub (no Google identity on file) matched by a stored
+      // work/personal email — link this login to it rather than create a dupe.
       const byAlt = await db.execute({
         sql: `SELECT id, email, full_name, work_email
               FROM users
-              WHERE google_id IS NULL
+              WHERE NOT EXISTS (
+                      SELECT 1 FROM user_identities ui
+                      WHERE ui.user_id = users.id AND ui.google_id IS NOT NULL
+                    )
                 AND (LOWER(work_email) = LOWER(?) OR LOWER(gmail_personal) = LOWER(?))
               LIMIT 1`,
         args: [email, email],
@@ -87,36 +97,13 @@ export const GET: APIRoute = async ({ url, cookies, redirect }) => {
 
     if (row) {
       userId = row.id as string;
-      const existingEmail = String(row.email || '').toLowerCase();
-      const newEmail = email.toLowerCase();
-
-      if (existingEmail !== newEmail) {
-        // Matched via work_email or gmail_personal. The auth identity must be
-        // the OAuth email going forward, so swap: preserve the old (work)
-        // email in `work_email` if that column is currently empty.
-        const setExprs = ['google_id = ?', 'email = ?', 'avatar_url = ?', 'updated_at = ?'];
-        const args: (string | null)[] = [googleId, email, picture || null, now];
-        if (!row.work_email) {
-          setExprs.push('work_email = ?');
-          args.push(row.email as string);
-        }
-        if (!row.full_name) {
-          setExprs.push('full_name = ?');
-          args.push(name || null);
-        }
-        args.push(userId);
-        await db.execute({
-          sql: `UPDATE users SET ${setExprs.join(', ')} WHERE id = ?`,
-          args,
-        });
-      } else {
-        // Email already matches — standard attach.
-        await db.execute({
-          sql: `UPDATE users SET google_id = ?, full_name = COALESCE(full_name, ?),
-                avatar_url = ?, updated_at = ? WHERE id = ?`,
-          args: [googleId, name || null, picture || null, now, userId],
-        });
-      }
+      // Attach without clobbering the primary email. Fill in name/avatar, and
+      // adopt this google_id as the member's primary only if they had none.
+      await db.execute({
+        sql: `UPDATE users SET google_id = COALESCE(google_id, ?), full_name = COALESCE(full_name, ?),
+              avatar_url = ?, updated_at = ? WHERE id = ?`,
+        args: [googleId, name || null, picture || null, now, userId],
+      });
     } else {
       // New user — auto-create (unapproved).
       const result = await db.execute({
@@ -127,6 +114,15 @@ export const GET: APIRoute = async ({ url, cookies, redirect }) => {
       });
       userId = result.rows[0].id as string;
     }
+
+    // Record this login as a linked identity (idempotent on google_id). Marks
+    // it primary only when the member has no identities yet (brand-new user).
+    await db.execute({
+      sql: `INSERT INTO user_identities (user_id, google_id, email, is_primary)
+            SELECT ?, ?, ?, CASE WHEN EXISTS (SELECT 1 FROM user_identities WHERE user_id = ?) THEN 0 ELSE 1 END
+            WHERE NOT EXISTS (SELECT 1 FROM user_identities WHERE google_id = ?)`,
+      args: [userId, googleId, email, userId, googleId],
+    });
 
     // Create session (reuses existing session.ts logic)
     await createSession(userId, cookies);

@@ -255,6 +255,45 @@ try {
           )}
         </div>
 
+        {/* ============ Merge Duplicate Members ============ */}
+        <div class="mt-8">
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Merge Duplicate Members</h2>
+          <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            If one person has two records (e.g. they signed in with both an institutional email and a personal Gmail),
+            merge them here. The duplicate's login email, votes, site assignments and any missing profile fields move
+            onto the member you keep, then the duplicate record is deleted. Both emails will sign in to the kept record.
+          </p>
+
+          <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-5">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Keep this member (canonical)</label>
+                <select id="merge-canonical" class="w-full text-sm px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-700 text-gray-900 dark:text-white">
+                  <option value="">Choose a member to keep…</option>
+                  {allProfiles.map((u: any) => (
+                    <option value={u.id}>{u.full_name || 'No name'} — {u.email}{u.role !== 'member' ? ` (${u.role})` : ''}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Merge &amp; delete this duplicate</label>
+                <select id="merge-duplicate" class="w-full text-sm px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-700 text-gray-900 dark:text-white">
+                  <option value="">Choose the duplicate to remove…</option>
+                  {allProfiles.map((u: any) => (
+                    <option value={u.id}>{u.full_name || 'No name'} — {u.email}{u.role !== 'member' ? ` (${u.role})` : ''}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 mt-4">
+              <button id="merge-users-btn" class="px-4 py-2 text-sm font-medium text-white bg-clif-burgundy hover:bg-clif-burgundy/90 rounded-lg transition-colors">
+                Merge members
+              </button>
+              <span id="merge-status" class="text-sm hidden"></span>
+            </div>
+          </div>
+        </div>
+
         {/* ============ Site Editor Assignments ============ */}
         <div class="mt-8">
           <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Site Editor Assignments</h2>
@@ -729,6 +768,66 @@ try {
           if (userSelector) userSelector.value = '';
         });
       }
+    });
+  </script>
+
+  {/* Merge duplicate members */}
+  <script is:inline>
+    document.addEventListener('DOMContentLoaded', function () {
+      var mergeBtn = document.getElementById('merge-users-btn');
+      var canonSel = document.getElementById('merge-canonical');
+      var dupSel = document.getElementById('merge-duplicate');
+      var status = document.getElementById('merge-status');
+      if (!mergeBtn || !canonSel || !dupSel) return;
+
+      function setStatus(msg, kind) {
+        if (!status) return;
+        status.textContent = msg;
+        status.className = 'text-sm ' + (kind === 'error'
+          ? 'text-red-600 dark:text-red-400'
+          : kind === 'success'
+            ? 'text-green-600 dark:text-green-400'
+            : 'text-gray-600 dark:text-gray-400');
+        status.classList.remove('hidden');
+      }
+
+      mergeBtn.addEventListener('click', async function () {
+        var canonicalId = canonSel.value;
+        var duplicateId = dupSel.value;
+        if (!canonicalId || !duplicateId) {
+          setStatus('Choose both a member to keep and a duplicate to remove.', 'error');
+          return;
+        }
+        if (canonicalId === duplicateId) {
+          setStatus('Pick two different members.', 'error');
+          return;
+        }
+        var keepName = canonSel.options[canonSel.selectedIndex].textContent;
+        var dropName = dupSel.options[dupSel.selectedIndex].textContent;
+        if (!confirm('Merge "' + dropName + '" into "' + keepName + '"?\n\nThe duplicate record will be deleted and its login linked to the kept member. This cannot be undone.')) {
+          return;
+        }
+
+        mergeBtn.disabled = true;
+        mergeBtn.textContent = 'Merging…';
+        setStatus('', 'info');
+
+        var res = await fetch('/api/admin/merge-users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ canonicalId: canonicalId, duplicateId: duplicateId }),
+        });
+
+        if (res.ok) {
+          setStatus('Merged. Reloading…', 'success');
+          window.location.reload();
+        } else {
+          var data = await res.json().catch(function () { return {}; });
+          setStatus(data.error || 'Failed to merge members', 'error');
+          mergeBtn.disabled = false;
+          mergeBtn.textContent = 'Merge members';
+        }
+      });
     });
   </script>
 </BaseLayout>
