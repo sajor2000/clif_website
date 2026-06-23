@@ -1,5 +1,6 @@
 import { getDb } from './turso';
 import { sendEmail, buildProposalNotificationEmail } from './email';
+import { loginEmailsByUser } from './recipient-emails';
 
 /**
  * Email the "new proposal awaiting your vote" notification to eligible voters.
@@ -63,13 +64,19 @@ export async function notifyProposalOpened(
   );
   const subject = `New CLIF proposal awaiting your vote: ${p.title as string}`;
 
-  await Promise.all(
-    recipients.map((r) =>
-      sendEmail(r.email, subject, html).catch(() => {
-        /* fire-and-forget; don't fail the request on a single bad address */
-      }),
-    ),
-  );
+  // Reach each member at every email they sign in with, not just the primary.
+  const emailMap = await loginEmailsByUser(recipients.map((r) => r.id));
+  const sends: Promise<unknown>[] = [];
+  for (const r of recipients) {
+    for (const addr of emailMap.get(r.id) ?? [r.email]) {
+      sends.push(
+        sendEmail(addr, subject, html).catch(() => {
+          /* fire-and-forget; don't fail the request on a single bad address */
+        }),
+      );
+    }
+  }
+  await Promise.all(sends);
 
   return { sent: recipients.length };
 }

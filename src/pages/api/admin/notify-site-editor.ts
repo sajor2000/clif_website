@@ -3,6 +3,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { getDb } from '../../../lib/turso';
 import { sendEmail, buildSiteReviewEmail } from '../../../lib/email';
+import { loginEmailsForUser } from '../../../lib/recipient-emails';
 
 export const POST: APIRoute = async ({ locals, request, url }) => {
   if (locals.user?.role !== 'admin') {
@@ -61,15 +62,21 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
 
   const siteUrl = `${url.origin}/portal/site-details`;
   const html = buildSiteReviewEmail(userName, siteName, siteUrl);
+  const subject = `CLIF Consortium – Site details review for ${siteName}`;
 
-  const result = await sendEmail(
-    userEmail,
-    `CLIF Consortium – Site details review for ${siteName}`,
-    html,
-  );
+  // Send to every email this member signs in with; one success is enough.
+  const addrs = await loginEmailsForUser(userId);
+  if (addrs.length === 0) addrs.push(userEmail);
+  let anyOk = false;
+  let lastError: string | undefined;
+  for (const addr of addrs) {
+    const result = await sendEmail(addr, subject, html);
+    if (result.ok) anyOk = true;
+    else lastError = result.error;
+  }
 
-  if (!result.ok) {
-    return new Response(JSON.stringify({ error: result.error || 'Failed to send email' }), {
+  if (!anyOk) {
+    return new Response(JSON.stringify({ error: lastError || 'Failed to send email' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });

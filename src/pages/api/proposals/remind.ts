@@ -3,6 +3,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { getDb } from '../../../lib/turso';
 import { sendEmail, buildProposalReminderEmail } from '../../../lib/email';
+import { loginEmailsByUser } from '../../../lib/recipient-emails';
 
 /**
  * Deadline reminder job. Intended to be invoked daily by Vercel Cron.
@@ -58,14 +59,24 @@ export const GET: APIRoute = async ({ request, url }) => {
     const html = buildProposalReminderEmail(p.title as string, (p.deadline as string) || '', votingUrl);
     const subject = `Reminder: vote needed on CLIF proposal "${p.title as string}"`;
 
+    const ids = recipientsRes.rows.map((r) => r.id as string);
+    const emailMap = await loginEmailsByUser(ids);
+
     let sent = 0;
     for (const r of recipientsRes.rows) {
-      const result = await sendEmail(r.email as string, subject, html);
-      if (result.ok) {
+      const id = r.id as string;
+      const addrs = emailMap.get(id) ?? [r.email as string];
+      // Send to every linked address; one success is enough to mark reminded.
+      let anyOk = false;
+      for (const addr of addrs) {
+        const result = await sendEmail(addr, subject, html);
+        if (result.ok) anyOk = true;
+      }
+      if (anyOk) {
         // Record the reminder so this member isn't emailed again for this proposal.
         await db.execute({
           sql: 'INSERT OR IGNORE INTO proposal_reminders (proposal_id, user_id) VALUES (?, ?)',
-          args: [proposalId, r.id as string],
+          args: [proposalId, id],
         });
         sent++;
       }

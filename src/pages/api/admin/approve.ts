@@ -3,6 +3,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { getDb } from '../../../lib/turso';
 import { sendEmail } from '../../../lib/email';
+import { loginEmailsForUser } from '../../../lib/recipient-emails';
 
 export const POST: APIRoute = async ({ locals, request, url }) => {
   if (locals.user?.role !== 'admin') {
@@ -54,7 +55,10 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
   </div>
 </body>
 </html>`;
-    sendEmail(u.email as string, 'Your CLIF Consortium account has been approved', html).catch(() => {});
+    const addrs = await loginEmailsForUser(userId);
+    for (const addr of addrs.length ? addrs : [u.email as string]) {
+      sendEmail(addr, 'Your CLIF Consortium account has been approved', html).catch(() => {});
+    }
   }
 
   return new Response(JSON.stringify({ success: true }), {
