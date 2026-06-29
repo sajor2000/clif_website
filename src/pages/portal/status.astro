@@ -3,43 +3,86 @@ export const prerender = false;
 
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PortalNav from '../../components/portal/PortalNav.astro';
-import PortalTable from '../../components/portal/PortalTable.astro';
 import { getDb } from '../../lib/turso';
+import {
+  MANUSCRIPT_STATUS_TAGS,
+  normalizeStatus,
+  statusLabel,
+  statusClasses,
+} from '../../lib/manuscript-status.js';
 
 const user = Astro.locals.user;
+const isAdmin = user?.role === 'admin';
 
 const db = getDb();
-let tasks: any[] = [];
+let manuscripts: any[] = [];
 let error: string | null = null;
 
 try {
-  const result = await db.execute('SELECT * FROM status_tracker ORDER BY site_name');
-  tasks = result.rows;
+  const result = await db.execute(
+    'SELECT * FROM manuscripts ORDER BY sort_order, title'
+  );
+  manuscripts = result.rows;
 } catch (e: any) {
   error = e.message;
 }
 
-const columns = [
-  { key: 'site_name', label: 'Site' },
-  { key: 'task_name', label: 'Task' },
-  { key: 'status', label: 'Status' },
-  { key: 'assigned_to', label: 'Assigned To' },
-  { key: 'due_date', label: 'Due Date', type: 'date' as const },
-  { key: 'notes', label: 'Notes' },
-];
+// Precompute the canonical status slugs for rendering chips + client editing.
+const rows = manuscripts.map((m) => ({
+  ...m,
+  statusSlugs: normalizeStatus(m.status as string | null),
+}));
+
+// Status tag options for the admin add/edit form (in canonical order).
+const statusOptions = Object.entries(MANUSCRIPT_STATUS_TAGS).map(([slug, t]) => ({
+  slug,
+  label: t.label,
+}));
+
+// Minimal payload handed to the client modal for editing existing rows.
+const editData = rows.map((m) => ({
+  id: m.id,
+  title: m.title ?? '',
+  clif_version: m.clif_version ?? '',
+  ats: m.ats ?? '',
+  lead_authors: m.lead_authors ?? '',
+  journal: m.journal ?? '',
+  contributing_sites: m.contributing_sites ?? '',
+  validation_buddy: m.validation_buddy ?? '',
+  github_repo: m.github_repo ?? '',
+  manuscript_link: m.manuscript_link ?? '',
+  cite: m.cite ?? '',
+  notes: m.notes ?? '',
+  status: m.statusSlugs,
+}));
+
+const inputClass =
+  'w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent';
 ---
 
-<BaseLayout title="Status Tracker">
+<BaseLayout title="Manuscript Tracker">
   <div class="container mx-auto px-4 py-8">
     <div class="flex flex-col lg:flex-row gap-8">
       <aside class="lg:w-64 shrink-0">
-        <PortalNav currentPath={Astro.url.pathname} isAdmin={user?.role === 'admin'} />
+        <PortalNav currentPath={Astro.url.pathname} isAdmin={isAdmin} />
       </aside>
 
       <div class="flex-1 min-w-0">
-        <div class="mb-6">
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Status Tracker</h1>
-          <p class="text-gray-600 dark:text-gray-400 mt-1">Track tasks and progress across consortium sites</p>
+        <div class="mb-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Manuscript Tracker</h1>
+            <p class="text-gray-600 dark:text-gray-400 mt-1">
+              Consortium manuscripts and their progress — status, leads, journals, and repositories
+            </p>
+          </div>
+          {isAdmin && (
+            <button
+              id="add-manuscript-btn"
+              class="shrink-0 bg-clif-burgundy hover:bg-clif-burgundy/90 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors"
+            >
+              + Add manuscript
+            </button>
+          )}
         </div>
 
         {error ? (
@@ -47,9 +90,291 @@ const columns = [
             Error loading data: {error}
           </div>
         ) : (
-          <PortalTable columns={columns} rows={tasks} tableId="status-tracker" emptyMessage="No tasks tracked yet." />
+          <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 overflow-hidden">
+            <div class="p-4 border-b border-gray-200 dark:border-neutral-700">
+              <input
+                type="text"
+                id="search-manuscripts"
+                placeholder="Search manuscripts…"
+                class="w-full md:w-72 px-4 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent"
+              />
+            </div>
+
+            {rows.length === 0 ? (
+              <div class="p-8 text-center text-gray-500 dark:text-gray-400">No manuscripts tracked yet.</div>
+            ) : (
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm" id="manuscripts-table">
+                  <thead>
+                    <tr class="bg-gray-50 dark:bg-neutral-700/50 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                      <th class="px-4 py-3 min-w-[18rem]">Title</th>
+                      <th class="px-4 py-3 whitespace-nowrap">Lead authors</th>
+                      <th class="px-4 py-3 min-w-[12rem]">Status</th>
+                      <th class="px-4 py-3 whitespace-nowrap">Journal</th>
+                      <th class="px-4 py-3 whitespace-nowrap">CLIF</th>
+                      <th class="px-4 py-3 whitespace-nowrap">ATS</th>
+                      <th class="px-4 py-3 whitespace-nowrap">Contributing sites</th>
+                      <th class="px-4 py-3 whitespace-nowrap">Validation buddy</th>
+                      <th class="px-4 py-3 whitespace-nowrap">GitHub</th>
+                      <th class="px-4 py-3 min-w-[12rem]">Notes</th>
+                      {isAdmin && <th class="px-4 py-3 whitespace-nowrap">Actions</th>}
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-200 dark:divide-neutral-700">
+                    {rows.map((m, i) => (
+                      <tr
+                        class={`align-top hover:bg-gray-50 dark:hover:bg-neutral-700/30 transition-colors ${i % 2 === 0 ? '' : 'bg-gray-50/50 dark:bg-neutral-800/50'}`}
+                        data-search-row
+                      >
+                        <td class="px-4 py-3 text-gray-900 dark:text-gray-200">
+                          {m.manuscript_link ? (
+                            <a href={m.manuscript_link} target="_blank" rel="noopener noreferrer" class="font-medium text-clif-burgundy hover:underline">
+                              {m.title}
+                            </a>
+                          ) : (
+                            <span class="font-medium">{m.title}</span>
+                          )}
+                        </td>
+                        <td class="px-4 py-3 text-gray-700 dark:text-gray-300 whitespace-nowrap">{m.lead_authors ?? '—'}</td>
+                        <td class="px-4 py-3">
+                          {m.statusSlugs.length === 0 ? (
+                            <span class="text-gray-400">—</span>
+                          ) : (
+                            <div class="flex flex-wrap gap-1">
+                              {m.statusSlugs.map((slug: string) => (
+                                <span class={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusClasses(slug)}`}>
+                                  {statusLabel(slug)}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </td>
+                        <td class="px-4 py-3 text-gray-700 dark:text-gray-300 whitespace-nowrap">{m.journal ?? '—'}</td>
+                        <td class="px-4 py-3 text-gray-700 dark:text-gray-300 whitespace-nowrap">{m.clif_version ?? '—'}</td>
+                        <td class="px-4 py-3 text-gray-700 dark:text-gray-300 whitespace-nowrap">{m.ats ?? '—'}</td>
+                        <td class="px-4 py-3 text-gray-700 dark:text-gray-300">{m.contributing_sites ?? '—'}</td>
+                        <td class="px-4 py-3 text-gray-700 dark:text-gray-300 whitespace-nowrap">{m.validation_buddy ?? '—'}</td>
+                        <td class="px-4 py-3 whitespace-nowrap">
+                          {m.github_repo ? (
+                            <a href={m.github_repo} target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:underline">Repo</a>
+                          ) : (
+                            <span class="text-gray-400">—</span>
+                          )}
+                        </td>
+                        <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{m.notes ?? '—'}</td>
+                        {isAdmin && (
+                          <td class="px-4 py-3 whitespace-nowrap">
+                            <div class="flex gap-3">
+                              <button class="edit-manuscript-btn text-xs text-clif-burgundy hover:underline font-medium" data-id={m.id}>Edit</button>
+                              <button class="delete-manuscript-btn text-xs text-red-600 dark:text-red-400 hover:underline" data-id={m.id} data-title={m.title}>Delete</button>
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            <div class="p-3 border-t border-gray-200 dark:border-neutral-700 text-xs text-gray-500 dark:text-gray-400">
+              <span id="manuscripts-count">{rows.length}</span> {rows.length === 1 ? 'manuscript' : 'manuscripts'}
+            </div>
+          </div>
         )}
       </div>
     </div>
   </div>
+
+  {isAdmin && (
+    <dialog id="manuscript-modal" class="rounded-xl p-0 w-full max-w-2xl backdrop:bg-black/40 bg-white dark:bg-neutral-800 text-gray-900 dark:text-white">
+      <form id="manuscript-form" class="p-6 space-y-4">
+        <h2 id="manuscript-modal-title" class="text-lg font-semibold">Add manuscript</h2>
+        <input type="hidden" id="m-id" />
+
+        <div>
+          <label for="m-title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title <span class="text-red-500">*</span></label>
+          <input type="text" id="m-title" required class={inputClass} />
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label for="m-lead_authors" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Lead authors</label>
+            <input type="text" id="m-lead_authors" class={inputClass} />
+          </div>
+          <div>
+            <label for="m-journal" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Journal</label>
+            <input type="text" id="m-journal" class={inputClass} />
+          </div>
+          <div>
+            <label for="m-clif_version" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">CLIF version</label>
+            <input type="text" id="m-clif_version" class={inputClass} />
+          </div>
+          <div>
+            <label for="m-ats" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">ATS</label>
+            <input type="text" id="m-ats" class={inputClass} placeholder="e.g. ATS 2026" />
+          </div>
+          <div>
+            <label for="m-contributing_sites" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Contributing sites</label>
+            <input type="text" id="m-contributing_sites" class={inputClass} />
+          </div>
+          <div>
+            <label for="m-validation_buddy" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Validation buddy</label>
+            <input type="text" id="m-validation_buddy" class={inputClass} />
+          </div>
+          <div>
+            <label for="m-github_repo" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">GitHub repository</label>
+            <input type="url" id="m-github_repo" class={inputClass} placeholder="https://github.com/…" />
+          </div>
+          <div>
+            <label for="m-manuscript_link" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Manuscript link</label>
+            <input type="url" id="m-manuscript_link" class={inputClass} placeholder="https://…" />
+          </div>
+        </div>
+
+        <div>
+          <span class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Status</span>
+          <div class="flex flex-wrap gap-x-4 gap-y-2">
+            {statusOptions.map((opt) => (
+              <label class="inline-flex items-center gap-1.5 text-sm text-gray-700 dark:text-gray-300">
+                <input type="checkbox" class="m-status w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy" value={opt.slug} />
+                {opt.label}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label for="m-cite" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Citation</label>
+          <input type="text" id="m-cite" class={inputClass} />
+        </div>
+
+        <div>
+          <label for="m-notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
+          <textarea id="m-notes" rows="2" class={inputClass}></textarea>
+        </div>
+
+        <div id="manuscript-error" class="hidden text-sm text-red-600 dark:text-red-400"></div>
+
+        <div class="flex justify-end gap-3 pt-2">
+          <button type="button" id="manuscript-cancel" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors">Cancel</button>
+          <button type="submit" id="manuscript-save" class="bg-clif-burgundy hover:bg-clif-burgundy/90 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors">Save</button>
+        </div>
+      </form>
+    </dialog>
+  )}
+
+  <script is:inline define:vars={{ manuscripts: editData, isAdmin }}>
+    document.addEventListener('DOMContentLoaded', function () {
+      // ---- Search filter ----
+      var input = document.getElementById('search-manuscripts');
+      var table = document.getElementById('manuscripts-table');
+      var countEl = document.getElementById('manuscripts-count');
+      if (input && table) {
+        input.addEventListener('input', function () {
+          var query = this.value.toLowerCase();
+          var allRows = table.querySelectorAll('[data-search-row]');
+          var visible = 0;
+          allRows.forEach(function (row) {
+            var match = row.textContent.toLowerCase().includes(query);
+            row.style.display = match ? '' : 'none';
+            if (match) visible++;
+          });
+          if (countEl) countEl.textContent = String(visible);
+        });
+      }
+
+      if (!isAdmin) return;
+
+      // ---- Add / edit modal ----
+      var modal = document.getElementById('manuscript-modal');
+      var form = document.getElementById('manuscript-form');
+      var modalTitle = document.getElementById('manuscript-modal-title');
+      var errorEl = document.getElementById('manuscript-error');
+      var saveBtn = document.getElementById('manuscript-save');
+      var byId = {};
+      manuscripts.forEach(function (m) { byId[m.id] = m; });
+
+      var TEXT_FIELDS = ['title', 'lead_authors', 'journal', 'clif_version', 'ats',
+        'contributing_sites', 'validation_buddy', 'github_repo', 'manuscript_link',
+        'cite', 'notes'];
+
+      function setField(name, value) {
+        var el = document.getElementById('m-' + name);
+        if (el) el.value = value || '';
+      }
+
+      function openModal(data) {
+        errorEl.classList.add('hidden');
+        document.getElementById('m-id').value = data ? data.id : '';
+        TEXT_FIELDS.forEach(function (f) { setField(f, data ? data[f] : ''); });
+        var selected = data && data.status ? data.status : [];
+        form.querySelectorAll('.m-status').forEach(function (cb) {
+          cb.checked = selected.indexOf(cb.value) !== -1;
+        });
+        modalTitle.textContent = data ? 'Edit manuscript' : 'Add manuscript';
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save';
+        modal.showModal();
+      }
+
+      var addBtn = document.getElementById('add-manuscript-btn');
+      if (addBtn) addBtn.addEventListener('click', function () { openModal(null); });
+
+      document.querySelectorAll('.edit-manuscript-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () { openModal(byId[this.dataset.id]); });
+      });
+
+      var cancelBtn = document.getElementById('manuscript-cancel');
+      if (cancelBtn) cancelBtn.addEventListener('click', function () { modal.close(); });
+
+      form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        errorEl.classList.add('hidden');
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving…';
+
+        var id = document.getElementById('m-id').value;
+        var payload = { status: [] };
+        TEXT_FIELDS.forEach(function (f) {
+          payload[f] = document.getElementById('m-' + f).value;
+        });
+        form.querySelectorAll('.m-status:checked').forEach(function (cb) {
+          payload.status.push(cb.value);
+        });
+        var endpoint = '/api/manuscripts/create';
+        if (id) { payload.id = id; endpoint = '/api/manuscripts/update'; }
+
+        var res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (res.ok) {
+          window.location.reload();
+        } else {
+          var data = await res.json().catch(function () { return {}; });
+          errorEl.textContent = data.error || 'Failed to save manuscript';
+          errorEl.classList.remove('hidden');
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Save';
+        }
+      });
+
+      // ---- Delete ----
+      document.querySelectorAll('.delete-manuscript-btn').forEach(function (btn) {
+        btn.addEventListener('click', async function () {
+          if (!confirm('Delete "' + this.dataset.title + '"? This cannot be undone.')) return;
+          var res = await fetch('/api/manuscripts/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: this.dataset.id }),
+          });
+          if (res.ok) window.location.reload();
+          else alert('Failed to delete manuscript.');
+        });
+      });
+    });
+  </script>
 </BaseLayout>

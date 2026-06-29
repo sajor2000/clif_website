@@ -95,6 +95,9 @@ CREATE TABLE IF NOT EXISTS site_editors (
 CREATE INDEX IF NOT EXISTS idx_site_editors_site ON site_editors(site_id);
 CREATE INDEX IF NOT EXISTS idx_site_editors_user ON site_editors(user_id);
 
+-- DEPRECATED: generic per-site task tracker. No longer read by the app — the
+-- /portal/status page now renders the `manuscripts` table below. Kept to avoid
+-- dropping any existing rows.
 CREATE TABLE IF NOT EXISTS status_tracker (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
   site_name TEXT NOT NULL,
@@ -104,6 +107,30 @@ CREATE TABLE IF NOT EXISTS status_tracker (
   due_date TEXT,
   notes TEXT
 );
+
+-- Manuscript tracker shown at /portal/status. `status` holds comma-separated
+-- canonical tag slugs (see src/lib/manuscript-status.ts). Seeded/refreshed via
+-- scripts/import-manuscripts-csv.mjs; edited in-portal by admins.
+CREATE TABLE IF NOT EXISTS manuscripts (
+  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  title TEXT NOT NULL,
+  clif_version TEXT,
+  ats TEXT,
+  status TEXT,
+  github_repo TEXT,
+  manuscript_link TEXT,
+  lead_authors TEXT,
+  journal TEXT,
+  cite TEXT,
+  contributing_sites TEXT,
+  validation_buddy TEXT,
+  notes TEXT,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  updated_at TEXT,
+  updated_by TEXT REFERENCES users(id)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_manuscripts_title ON manuscripts(title);
 
 CREATE TABLE IF NOT EXISTS calendar_events (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
