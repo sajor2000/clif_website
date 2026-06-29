@@ -50,35 +50,39 @@ This table should represent what the clinician intends for the patients' limitat
 | 123451     | 2024-12-03 10:15:00+00:00 UTC | Full Code         | full                |
 
 
-## crrt_therapy
+## renal_replacement_therapy
 
-The crrt_therapy table captures Continuous Renal Replacement Therapy (CRRT) data, including different CRRT modalities, operational parameters, and fluid exchange details. The intermittent HD, peritoneal dialysis, PERT, and SLED tables are under development.
+The renal_replacement_therapy table captures Renal Replacement Therapy (RRT) data across both Continuous Renal Replacement Therapy (CRRT) sub-modes and intermittent hemodialysis (IHD), including the different modalities, operational parameters, and fluid exchange details.
 
 **Notes**: 
 - **SCUF:** Slow Continuous Ultrafiltration
 - **CVVH:** Continuous Veno-Venous Hemofiltration
 - **CVVHD:** Continuous Veno-Venous Hemodialysis
 - **CVVHDF:** Continuous Venous-Venous Hemodiafiltration
-- **AVVH:** Accelerated Veno-venous Hemofiltration also called ARRT or PIIRT 
+- **AVVH:** Accelerated Veno-venous Hemofiltration also called ARRT or PIIRT
+- **IHD:** Intermittent Hemodialysis
+- **IUF:** Isolated Ultrafiltration
 \
-**CRRT Modalities and Parameter Usage**:
+**RRT Modalities and Parameter Usage**:
 
-| **CRRT Modality** | **Blood Flow Rate** | **Pre-Filter Replacement Rate** | **Post-Filter Replacement Rate** | **Dialysate Flow Rate** | **Ultrafiltration Out** |
-|-------------------|---------------------|---------------------------------|---------------------------------|-------------------------|-------------------------|
-| **SCUF**          | Required            | Not Used                        | Not Used                        | Not Used                |   Required              |
-| **CVVH**          | Required            | Required                        | Required                        | Not Used                |   Required              |
-| **CVVHD**         | Required            | Not Used                        | Not Used                        | Required                |   Required              |
-| **CVVHDF**        | Required            | Required                        | Required                        | Required                |   Required              |
-| **AVVH (VVH)**    | Required            | May Be Used                     | May Be Used                     | Not Used                |   Required              |
-| **AVVH (VVHD)**   | Required            | Not Used                        | Not Used                        | May Be Used             |   Required              |
-| **AVVH (VVHF)**   | Required            | May Be Used                     | May Be Used                     | May Be Used             |   Required              |
+| **Modality**      | **Blood Flow Rate** | **Pre-Filter Replacement Rate** | **Post-Filter Replacement Rate** | **Dialysate Flow Rate** |
+|-------------------|---------------------|---------------------------------|---------------------------------|-------------------------|
+| **SCUF**          | Required            | Not Used                        | Not Used                        | Not Used                |
+| **CVVH**          | Required            | Required                        | Required                        | Not Used                |
+| **CVVHD**         | Required            | Not Used                        | Not Used                        | Required                |
+| **CVVHDF**        | Required            | Required                        | Required                        | Required                |
+| **AVVH (VVH)**    | Required            | May Be Used                     | May Be Used                     | Not Used                |
+| **AVVH (VVHD)**   | Required            | Not Used                        | Not Used                        | May Be Used             |
+| **AVVH (VVHF)**   | Required            | May Be Used                     | May Be Used                     | May Be Used             |
+| **IHD**           | Required            | Not Used                        | Not Used                        | Required                |
+| **IUF**           | Required            | Not Used                        | Not Used                        | Not Used                |
 
 **Example**:
-| hospitalization_id | device_id | recorded_dttm | crrt_mode_name | crrt_mode_category | dialysis_machine_name     | blood_flow_rate | pre_filter_replacement_fluid_rate | post_filter_replacement_fluid_rate | dialysate_flow_rate | ultrafiltration_out |
-|-------------------|-----------|---------------|----------------|-------------------|--------------------------|-----------------|-----------------------------------|------------------------------------|---------------------|---------------------|
-| 201 | J0 | 2024-02-15 07:00:00+00:00 UTC | CVVHDF | CVVHDF | NxStage by Baxter | 200.0 | 1000.0 | 500.0 | 800.0 | 1500.0 |
-| 202 | J0 | 2024-02-16 09:15:00+00:00 UTC | CVVH | CVVH | NxStage by Baxter | 180.0 | 1200.0 | 300.0 | NA | 1300.0 |
-| 203 | J0 | 2024-02-17 11:45:00+00:00 UTC | SCUF | SCUF | NxStage by Baxter | 150.0 | NA | NA | NA | 800.0 |
+| hospitalization_id | device_id | dialysis_machine_name | recorded_dttm | mode_name | mode_category | blood_flow_rate | pre_filter_replacement_fluid_rate | post_filter_replacement_fluid_rate | dialysate_flow_rate | potassium_bath | calcium_bath |
+|-------------------|-----------|--------------------------|---------------|----------------|-------------------|-----------------|-----------------------------------|------------------------------------|---------------------|----------------|--------------|
+| 201 | J0 | NxStage by Baxter | 2024-02-15 07:00:00+00:00 UTC | CVVHDF | CVVHDF | 200.0 | 1000.0 | 500.0 | 800.0 | 2 | 1.5 |
+| 202 | J0 | NxStage by Baxter | 2024-02-16 09:15:00+00:00 UTC | CVVH | CVVH | 180.0 | 1200.0 | 300.0 | NA | 4 | 2.5 |
+| 203 | J0 | Fresenius 2008T | 2024-02-17 11:45:00+00:00 UTC | HD | IHD | 350.0 | NA | NA | 50000.0 | 2 | 3.0 |
 
 
 ## mcs

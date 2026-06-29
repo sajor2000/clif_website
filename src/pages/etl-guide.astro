@@ -10,7 +10,7 @@ const navigationSections = [
   // All Tables (no beta/concept division)
   { id: 'adt', title: 'adt', type: 'table' as const, category: 'tables' as const },
   { id: 'code-status', title: 'code_status', type: 'table' as const, category: 'tables' as const },
-  { id: 'crrt-therapy', title: 'crrt_therapy', type: 'table' as const, category: 'tables' as const },
+  { id: 'renal-replacement-therapy', title: 'renal_replacement_therapy', type: 'table' as const, category: 'tables' as const },
   { id: 'hospital-diagnosis', title: 'hospital_diagnosis', type: 'table' as const, category: 'tables' as const },
   { id: 'hospitalization', title: 'hospitalization', type: 'table' as const, category: 'tables' as const },
   { id: 'labs', title: 'labs', type: 'table' as const, category: 'tables' as const },
@@ -494,34 +494,34 @@ const navigationSections = [
           </div>
         </div>
 
-        <!-- CRRT Therapy -->
-        <div id="crrt-therapy" class="flip-card h-64 cursor-pointer">
+        <!-- Renal Replacement Therapy -->
+        <div id="renal-replacement-therapy" class="flip-card h-64 cursor-pointer">
           <div class="flip-card-inner">
             <div class="flip-card-front bg-white rounded-lg shadow-md p-6 border border-gray-200">
               <h4 class="text-lg font-semibold mb-4 text-gray-800 flex items-center justify-between">
-                crrt_therapy
+                renal_replacement_therapy
                 <span class="text-xs text-gray-500">Click to flip</span>
               </h4>
               <ul class="text-sm text-gray-600 space-y-2">
-                <li>• CRRT mode category mapping (mCIDE)</li>
+                <li>• RRT mode category mapping (mCIDE)</li>
                 <li>• Unit conversions to CLIF standards</li>
                 <li>• Verify missingness by modality</li>
               </ul>
             </div>
             <div class="flip-card-back bg-clif-burgundy rounded-lg shadow-md p-6 text-white overflow-y-auto">
               <button class="modal-close" aria-label="Close">×</button>
-              <h4 class="text-2xl font-bold mb-6">CRRT Therapy</h4>
+              <h4 class="text-2xl font-bold mb-6">Renal Replacement Therapy</h4>
 
               <div class="expanded-content">
                 <div class="space-y-6">
                   <!-- Step 1 -->
                   <div>
-                    <h5 class="text-xl font-semibold mb-3">Step 1: Create CRRT Mode Mappings</h5>
-                    <p class="text-sm mb-3">Before transforming your CRRT data, prepare the mapping file:</p>
+                    <h5 class="text-xl font-semibold mb-3">Step 1: Create RRT Mode Mappings</h5>
+                    <p class="text-sm mb-3">Before transforming your RRT data, prepare the mapping file:</p>
                     <div class="space-y-3 text-sm">
                       <div class="bg-white/10 p-3 rounded-lg">
-                        <p><strong class="text-blue-300">Mode Category Mapping:</strong> Map all site-specific <code class="bg-white/20 px-1 rounded">crrt_mode_name</code> values to standardized CLIF <code class="bg-white/20 px-1 rounded">crrt_mode_category</code> values</p>
-                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/crrt_therapy/clif_crrt_therapy_mode_categories.csv" target="_blank" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_crrt_therapy_mode_categories.csv</a>
+                        <p><strong class="text-blue-300">Mode Category Mapping:</strong> Map all site-specific <code class="bg-white/20 px-1 rounded">mode_name</code> values to standardized CLIF <code class="bg-white/20 px-1 rounded">mode_category</code> values</p>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/renal_replacement_therapy/clif_renal_replacement_therapy_mode_categories.csv" target="_blank" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_renal_replacement_therapy_mode_categories.csv</a>
                       </div>
                     </div>
                   </div>
@@ -529,13 +529,13 @@ const navigationSections = [
                   <!-- Step 2 -->
                   <div>
                     <h5 class="text-xl font-semibold mb-3">Step 2: Filter to Inpatient Hospitalizations</h5>
-                    <p class="text-sm">Filter your CRRT data to include only inpatient hospitalizations.</p>
+                    <p class="text-sm">Filter your RRT data to include only inpatient hospitalizations.</p>
                   </div>
 
                   <!-- Step 3 -->
                   <div>
                     <h5 class="text-xl font-semibold mb-3">Step 3: Apply Mappings</h5>
-                    <p class="text-sm">Join the mapping file created in Step 1 to your CRRT table to add the <code class="bg-white/20 px-1 rounded">crrt_mode_category</code> column.</p>
+                    <p class="text-sm">Join the mapping file created in Step 1 to your RRT table to add the <code class="bg-white/20 px-1 rounded">mode_category</code> column.</p>
                   </div>
 
                   <!-- Step 4 -->
@@ -543,7 +543,7 @@ const navigationSections = [
                     <h5 class="text-xl font-semibold mb-3">Step 4: Unit Conversions</h5>
                     <div class="bg-yellow-500/20 p-3 rounded-lg border border-yellow-400/30 text-sm mb-3">
                       <p class="text-yellow-300 font-semibold mb-2">Critical Requirement:</p>
-                      <p class="text-sm">All CRRT parameters must be reported using CLIF units. Please refer to the data dictionary page for CRRT setting units.</p>
+                      <p class="text-sm">All RRT parameters must be reported using CLIF units. Please refer to the data dictionary page for RRT setting units.</p>
                     </div>
                     <p class="text-sm mb-3">If your source data uses different units, convert to CLIF standards. Eg:</p>
                     <div class="bg-white/10 p-3 rounded-lg text-sm">
@@ -581,7 +581,7 @@ const navigationSections = [
                   <!-- Step 5 -->
                   <div>
                     <h5 class="text-xl font-semibold mb-3">Step 5: Verify Missingness by Modality</h5>
-                    <p class="text-sm mb-3">Validate that parameter availability matches expected patterns for each CRRT modality:</p>
+                    <p class="text-sm mb-3">Validate that parameter availability matches expected patterns for each RRT modality:</p>
                     <div class="bg-white/10 p-2 rounded-lg overflow-x-auto">
                       <table class="text-xs w-full">
                         <thead>
@@ -633,7 +633,7 @@ const navigationSections = [
                     <ul class="space-y-2 text-sm">
                       <li class="flex items-start">
                         <span class="text-green-300 mr-2">✓</span>
-                        Validate <code class="bg-white/20 px-1 rounded">crrt_mode_category</code> mappings against mCIDE
+                        Validate <code class="bg-white/20 px-1 rounded">mode_category</code> mappings against mCIDE
                       </li>
                       <li class="flex items-start">
                         <span class="text-green-300 mr-2">✓</span>
