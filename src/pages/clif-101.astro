@@ -21,6 +21,7 @@ const repoTree = `my-clif-project/
 └── guides/                       # creator guide, primer, buddy-testing guide`;
 
 const STEPS = [
+  { label: 'Scope', caption: 'Refine your question; check site cohort differences' },
   { label: 'Code', caption: 'Build the analysis from the template' },
   { label: 'Buddy test', caption: 'One other site runs it end to end' },
   { label: 'Preliminary report', caption: 'Methods & aggregated results for review' },
@@ -47,8 +48,8 @@ const STEPS = [
       <!-- Process timeline -->
       <div class="relative max-w-3xl mx-auto mt-2">
         <!-- connector line behind the nodes -->
-        <div class="absolute top-6 left-[12.5%] right-[12.5%] h-0.5 bg-clif-burgundy/25" aria-hidden="true"></div>
-        <ol class="relative grid grid-cols-4 gap-2">
+        <div class="absolute top-6 left-[10%] right-[10%] h-0.5 bg-clif-burgundy/25" aria-hidden="true"></div>
+        <ol class="relative grid grid-cols-5 gap-2">
           {STEPS.map((step, i) => (
             <li class="flex flex-col items-center text-center">
               <span class="relative z-10 flex items-center justify-center w-12 h-12 rounded-full bg-clif-burgundy text-white text-lg font-bold shadow-md ring-4 ring-white dark:ring-neutral-900">{i + 1}</span>
@@ -63,8 +64,9 @@ const STEPS = [
 
   <!-- Intro -->
   <section class="container mx-auto px-4 mb-12 max-w-4xl">
-    <p class="text-clif-gray-700 dark:text-gray-300 mb-4">A CLIF project comes together in four phases:</p>
+    <p class="text-clif-gray-700 dark:text-gray-300 mb-4">A CLIF project comes together in five phases:</p>
     <ul class="space-y-2 text-clif-gray-700 dark:text-gray-300">
+      <li><strong class="text-clif-burgundy">Scope:</strong> sharpen your research question and check feasibility across CLIF sites, which differ in cohort inclusion criteria.</li>
       <li><strong class="text-clif-burgundy">Code:</strong> the creator builds the analysis from the template.</li>
       <li><strong class="text-clif-burgundy">Buddy test:</strong> one other site runs it end to end and signs off.</li>
       <li><strong class="text-clif-burgundy">Preliminary report:</strong> after buddy testing and before release, the project shares preliminary methods and aggregated results for consortium review.</li>
@@ -75,10 +77,30 @@ const STEPS = [
   <!-- Phases -->
   <section class="container mx-auto px-4 mb-16 max-w-4xl space-y-8">
 
-    <!-- 1. Code it -->
+    <!-- 1. Scope it -->
     <div class="bg-white dark:bg-neutral-800 rounded-2xl shadow-xl p-8 border-l-4 border-clif-burgundy">
       <div class="flex items-center gap-3 mb-4">
         <span class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-clif-burgundy text-white font-bold flex-shrink-0">1</span>
+        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Scope your question</h2>
+      </div>
+      <p class="text-clif-gray-700 dark:text-gray-300 mb-4">
+        Before you build, sharpen your research question and confirm it's feasible across CLIF sites — <strong>every site is different</strong>.
+        Each site's CLIF data is governed by its own <strong>IRB cohort inclusion criteria</strong>, so the available population varies.
+        Think through what your question actually needs, for example:
+      </p>
+      <ul class="list-disc list-inside space-y-1 text-clif-gray-700 dark:text-gray-300 mb-4">
+        <li>Do you need <strong>encounter stitching</strong> — and are you loading <strong>whole hospital stays</strong> or <strong>ICU stays only</strong>?</li>
+        <li>Does your cohort exist at the sites you're counting on? Some sites have <strong>ICU only</strong>, others <strong>ED + ICU</strong> or all acute-care encounters.</li>
+      </ul>
+      <p class="text-clif-gray-700 dark:text-gray-300">
+        CLIF members can <a href="/portal/site-details" class="text-clif-burgundy hover:underline">log in to the portal</a> to review each site's cohort inclusion criteria before committing.
+      </p>
+    </div>
+
+    <!-- 2. Code it -->
+    <div class="bg-white dark:bg-neutral-800 rounded-2xl shadow-xl p-8 border-l-4 border-clif-burgundy">
+      <div class="flex items-center gap-3 mb-4">
+        <span class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-clif-burgundy text-white font-bold flex-shrink-0">2</span>
         <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Code</h2>
       </div>
       <p class="text-clif-gray-700 dark:text-gray-300 mb-4">
@@ -96,10 +118,10 @@ const STEPS = [
       </p>
     </div>
 
-    <!-- 2. Buddy test it -->
+    <!-- 3. Buddy test it -->
     <div class="bg-white dark:bg-neutral-800 rounded-2xl shadow-xl p-8 border-l-4 border-clif-burgundy">
       <div class="flex items-center gap-3 mb-4">
-        <span class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-clif-burgundy text-white font-bold flex-shrink-0">2</span>
+        <span class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-clif-burgundy text-white font-bold flex-shrink-0">3</span>
         <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Buddy test</h2>
       </div>
       <p class="text-clif-gray-700 dark:text-gray-300">
@@ -114,10 +136,10 @@ const STEPS = [
       </p>
     </div>
 
-    <!-- 3. Preliminary results report -->
+    <!-- 4. Preliminary results report -->
     <div class="bg-white dark:bg-neutral-800 rounded-2xl shadow-xl p-8 border-l-4 border-clif-burgundy">
       <div class="flex items-center gap-3 mb-4">
-        <span class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-clif-burgundy text-white font-bold flex-shrink-0">3</span>
+        <span class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-clif-burgundy text-white font-bold flex-shrink-0">4</span>
         <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Preliminary results report</h2>
       </div>
       <p class="text-clif-gray-700 dark:text-gray-300 mb-4">
@@ -133,10 +155,10 @@ const STEPS = [
       </ol>
     </div>
 
-    <!-- 4. Share it -->
+    <!-- 5. Share it -->
     <div class="bg-white dark:bg-neutral-800 rounded-2xl shadow-xl p-8 border-l-4 border-clif-burgundy">
       <div class="flex items-center gap-3 mb-4">
-        <span class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-clif-burgundy text-white font-bold flex-shrink-0">4</span>
+        <span class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-clif-burgundy text-white font-bold flex-shrink-0">5</span>
         <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Share</h2>
       </div>
       <p class="text-clif-gray-700 dark:text-gray-300">
