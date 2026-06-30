@@ -45,19 +45,6 @@ CREATE TABLE renal_replacement_therapy (
   calcium_bath FLOAT COMMENT '{"description": "Calcium concentration of the dialysate bath (mEq/L)", "permissible": "0-4"}'
 );
 
--- -----------------------------------------------------
--- Table: intermittent_dialysis
--- -----------------------------------------------------
-CREATE TABLE intermittent_dialysis (
-  hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
-  device_id VARCHAR COMMENT '{"description": "Unique ID of the individual physical device used.", "permissible": "No restriction"}',
-  recorded_dttm DATETIME COMMENT '{"description": "Timestamp of the recorded measurement during the dialysis session. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
-  blood_flow_rate FLOAT COMMENT '{"description": "Blood flow rate in mL/min. The first recorded value can indicate session start time.", "permissible": "Numeric values in mL/min"}',
-  dialysate_flow_rate FLOAT COMMENT '{"description": "Dialysate flow rate in mL/min.", "permissible": "Numeric values in mL/min"}',
-  net_ultrafiltration_out FLOAT COMMENT '{"description": "Net ultrafiltration output in mL.", "permissible": "Numeric values in mL"}',
-  FOREIGN KEY (hospitalization_id) REFERENCES hospitalization(hospitalization_id)
-);
-
 -- -----------------------------------------------------#
 -- Table: mcs
 -- -----------------------------------------------------#

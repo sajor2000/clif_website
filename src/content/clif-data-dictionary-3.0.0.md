@@ -473,26 +473,6 @@ The input table captures patient fluid intake events during hospitalization. Eac
 | 1003              | 2024-01-10 12:00:00+00:00 UTC     | Free Water Flush   | enteral_water        | nutrition                 | 200          | LDA-NG01   |
 
 
-## intermittent_dialysis
-
-The intermittent_dialysis table captures intermittent hemodialysis sessions during hospitalization. 
-
-**Notes**:
-- Each dialysis session will have **multiple rows** (one per recorded measurement)
-
-\
-**Example**:
-
-| hospitalization_id | device_id | recorded_dttm | blood_flow_rate | dialysate_flow_rate | net_ultrafiltration_out |
-|-------------------|-----------|---------------|-----------------|---------------------|-------------------------|
-| 30010001 | HD-A1 | 2024-03-10 08:00:00+00:00 UTC | 250.0 | 500.0 | 0.0 |
-| 30010001 | HD-A1 | 2024-03-10 08:30:00+00:00 UTC | 300.0 | 500.0 | 200.0 |
-| 30010001 | HD-A1 | 2024-03-10 09:00:00+00:00 UTC | 300.0 | 500.0 | 450.0 |
-| 30010001 | HD-A1 | 2024-03-10 11:30:00+00:00 UTC | 0.0 | 0.0 | 1500.0 |
-| 30010002 | HD-B3 | 2024-03-11 07:00:00+00:00 UTC | 200.0 | 400.0 | 0.0 |
-| 30010002 | HD-B3 | 2024-03-11 07:30:00+00:00 UTC | 250.0 | 400.0 | 150.0 |
-
-
 ## consult_orders
 
 
