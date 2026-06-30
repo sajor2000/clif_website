@@ -7,6 +7,11 @@ const CREATOR_GUIDE = `${TEMPLATE_REPO}/blob/main/guides/creator-guide.md`;
 const BUDDY_REPORT = `${TEMPLATE_REPO}/blob/main/guides/buddy-test-report-template.md`;
 const BUDDY_GUIDE = `${TEMPLATE_REPO}/blob/main/guides/buddy-testing-guide.md`;
 
+const CLIF_ORG = 'https://github.com/Common-Longitudinal-ICU-data-Format';
+const CLIFPY = `${CLIF_ORG}/clifpy`;
+const POC_REPO = `${CLIF_ORG}/CLIF-proof-of-concept`;
+const MOBILIZATION_REPO = `${CLIF_ORG}/CLIF-eligibility-for-mobilization`;
+
 const ghCreate = `gh repo create my-clif-project \\
   --template Common-Longitudinal-ICU-data-Format/CLIF-Project-Template --private`;
 
@@ -85,15 +90,21 @@ const STEPS = [
       </div>
       <p class="text-clif-gray-700 dark:text-gray-300 mb-4">
         Before you build, sharpen your research question and confirm it's feasible across CLIF sites — <strong>every site is different</strong>.
-        Each site's CLIF data is governed by its own <strong>IRB cohort inclusion criteria</strong>, so the available population varies.
-        Think through what your question actually needs, for example:
+        Each site's CLIF data is governed by its own <strong>IRB cohort inclusion criteria</strong>, so the population it covers varies. Map your question to that reality:
       </p>
-      <ul class="list-disc list-inside space-y-1 text-clif-gray-700 dark:text-gray-300 mb-4">
-        <li>Do you need <strong>encounter stitching</strong> — and are you loading <strong>whole hospital stays</strong> or <strong>ICU stays only</strong>?</li>
-        <li>Does your cohort exist at the sites you're counting on? Some sites have <strong>ICU only</strong>, others <strong>ED + ICU</strong> or all acute-care encounters.</li>
+      <ul class="list-disc list-inside space-y-2 text-clif-gray-700 dark:text-gray-300 mb-4">
+        <li><strong>Does your cohort exist at every site?</strong> Inclusion ranges from <em>admissions with an ICU stay</em> to <em>all acute care</em> (every inpatient and ED encounter); some sites use a physiology/registry trigger (ICU/IMC, supplemental oxygen, SBP &lt; 90, or vasoactives). A question that begins in the ED or on the wards only runs at sites that capture those encounters.</li>
+        <li><strong>Do you need to rebuild full hospitalizations?</strong> Multi-encounter questions — like the consortium's ten-health-system <strong>ICU readmissions</strong> study — need <strong>encounter stitching</strong> to link ED, ward, and ICU encounters into one stay (<a href={CLIFPY} target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:underline">clifpy</a> does this with configurable time windows). A single-ICU-stay question (e.g., the <strong>prone positioning</strong> or <strong>SAT/SBT</strong> studies) usually doesn't.</li>
+        <li><strong>Mind the data window.</strong> Available years and ED/ward coverage differ by site, so the same cohort can shrink — or shift — depending on where it runs.</li>
       </ul>
-      <p class="text-clif-gray-700 dark:text-gray-300">
-        CLIF members can <a href="/portal/site-details" class="text-clif-burgundy hover:underline">log in to the portal</a> to review each site's cohort inclusion criteria before committing.
+      <p class="text-clif-gray-700 dark:text-gray-300 mb-4">
+        CLIF members can <a href="/portal/site-details" class="text-clif-burgundy hover:underline">review every site's exact cohort inclusion criteria</a>, data sources, and date ranges on the portal before committing.
+      </p>
+      <p class="text-sm text-clif-gray-600 dark:text-gray-400">
+        Helpful starting points:
+        <a href={CLIFPY} target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:underline">clifpy</a> (load tables, stitch encounters, check data quality),
+        the <a href={POC_REPO} target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:underline">federated proof-of-concept case studies</a>,
+        and an example project, <a href={MOBILIZATION_REPO} target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:underline">CLIF-eligibility-for-mobilization</a>.
       </p>
     </div>
 
