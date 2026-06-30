@@ -54,15 +54,10 @@ This table should represent what the clinician intends for the patients' limitat
 
 The renal_replacement_therapy table captures Renal Replacement Therapy (RRT) data across both Continuous Renal Replacement Therapy (CRRT) sub-modes and intermittent hemodialysis (IHD), including the different modalities, operational parameters, and fluid exchange details.
 
-**Notes**: 
-- **SCUF:** Slow Continuous Ultrafiltration
-- **CVVH:** Continuous Veno-Venous Hemofiltration
-- **CVVHD:** Continuous Veno-Venous Hemodialysis
-- **CVVHDF:** Continuous Venous-Venous Hemodiafiltration
-- **AVVH:** Accelerated Veno-venous Hemofiltration also called ARRT or PIIRT
-- **IHD:** Intermittent Hemodialysis
-- **IUF:** Isolated Ultrafiltration
-\
+**Notes**:
+- **Distinguishing IHD from IUF:** Intermittent hemodialysis (`ihd`) and isolated ultrafiltration (`iuf`) share the same operational parameters in this table; the distinguishing feature is the dialysate bath. IHD uses a dialysate bath containing potassium and calcium (recorded in `potassium_bath` and `calcium_bath`), whereas IUF does not. These two fields therefore capture the difference between IHD and IUF.
+- **Fluid volumes:** This table records RRT machine settings and rates, not fluid volumes. Net ultrafiltration (fluid removed from the patient) is captured in the `output` table under `output_group = ultrafiltration`, and replacement/dialysate fluids delivered during RRT are captured in the `input` table under `input_group = renal_replacement_fluids`.
+
 **RRT Modalities and Parameter Usage**:
 
 | **Modality**      | **Blood Flow Rate** | **Pre-Filter Replacement Rate** | **Post-Filter Replacement Rate** | **Dialysate Flow Rate** |
@@ -76,10 +71,6 @@ The renal_replacement_therapy table captures Renal Replacement Therapy (RRT) dat
 | **AVVH (VVHF)**   | Required            | May Be Used                     | May Be Used                     | May Be Used             |
 | **IHD**           | Required            | Not Used                        | Not Used                        | Required                |
 | **IUF**           | Required            | Not Used                        | Not Used                        | Required                |
-
-**Note — distinguishing IHD from IUF:** Intermittent hemodialysis (`ihd`) and isolated ultrafiltration (`iuf`) share the same operational parameters in this table; the distinguishing feature is the dialysate bath. IHD uses a dialysate bath containing potassium and calcium (recorded in `potassium_bath` and `calcium_bath`), whereas IUF does not. These two fields therefore capture the difference between IHD and IUF.
-
-**Note — fluid volumes:** This table records RRT machine settings and rates, not fluid volumes. Net ultrafiltration (fluid removed from the patient) is captured in the `output` table under `output_group = ultrafiltration`, and replacement/dialysate fluids delivered during RRT are captured in the `input` table under `input_group = renal_replacement_fluids`.
 
 **Example**:
 | hospitalization_id | device_id | dialysis_machine_name | recorded_dttm | mode_name | mode_category | blood_flow_rate | pre_filter_replacement_fluid_rate | post_filter_replacement_fluid_rate | dialysate_flow_rate | potassium_bath | calcium_bath |
