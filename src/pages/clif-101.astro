@@ -19,6 +19,13 @@ const repoTree = `my-clif-project/
 │   └── intermediate_phi/         # patient-level working data, NEVER shared (gitignored)
 ├── utils/                        # config loaders for Python & R
 └── guides/                       # creator guide, primer, buddy-testing guide`;
+
+const STEPS = [
+  { label: 'Code', caption: 'Build the analysis from the template' },
+  { label: 'Buddy test', caption: 'One other site runs it end to end' },
+  { label: 'Preliminary report', caption: 'Methods & aggregated results for review' },
+  { label: 'Share', caption: 'PI releases it for the consortium run' },
+];
 ---
 
 <BaseLayout
@@ -37,19 +44,19 @@ const repoTree = `my-clif-project/
       <p class="text-lg text-clif-gray-600 dark:text-gray-300 max-w-3xl mx-auto mb-10">
         Everything you need to turn your idea into a reproducible, consortium-ready CLIF project.
       </p>
-      <div class="flex flex-wrap justify-center gap-4">
-        <div class="bg-clif-burgundy/10 text-clif-burgundy rounded-full px-5 py-2 text-sm font-medium">
-          <span class="font-bold">1.</span> Code
-        </div>
-        <div class="bg-clif-burgundy/10 text-clif-burgundy rounded-full px-5 py-2 text-sm font-medium">
-          <span class="font-bold">2.</span> Buddy test
-        </div>
-        <div class="bg-clif-burgundy/10 text-clif-burgundy rounded-full px-5 py-2 text-sm font-medium">
-          <span class="font-bold">3.</span> Preliminary report
-        </div>
-        <div class="bg-clif-burgundy/10 text-clif-burgundy rounded-full px-5 py-2 text-sm font-medium">
-          <span class="font-bold">4.</span> Share
-        </div>
+      <!-- Process timeline -->
+      <div class="relative max-w-3xl mx-auto mt-2">
+        <!-- connector line behind the nodes -->
+        <div class="absolute top-6 left-[12.5%] right-[12.5%] h-0.5 bg-clif-burgundy/25" aria-hidden="true"></div>
+        <ol class="relative grid grid-cols-4 gap-2">
+          {STEPS.map((step, i) => (
+            <li class="flex flex-col items-center text-center">
+              <span class="relative z-10 flex items-center justify-center w-12 h-12 rounded-full bg-clif-burgundy text-white text-lg font-bold shadow-md ring-4 ring-white dark:ring-neutral-900">{i + 1}</span>
+              <span class="mt-3 text-sm font-semibold text-clif-gray-900 dark:text-white">{step.label}</span>
+              <span class="mt-1 text-xs text-clif-gray-600 dark:text-gray-400 leading-snug">{step.caption}</span>
+            </li>
+          ))}
+        </ol>
       </div>
     </div>
   </div>
