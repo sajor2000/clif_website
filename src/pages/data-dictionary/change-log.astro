@@ -350,7 +350,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            New mCIDE Values (16 updates · 240 new values) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Jun 29, 2026</span>
+            New mCIDE Values (17 updates · 241 new values) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Jun 30, 2026</span>
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -371,6 +371,12 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">lab_category (1)</td>
+                  <td class="px-4 py-3 text-sm">Added <code>neuron_specific_enolase</code> (NSE) as a new <code>labs.lab_category</code> value — order category <code>misc</code>, specimen <code>plasma_blood</code></td>
+                  <td class="px-4 py-3 text-sm"><span class="text-gray-500"></span></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Jun 30, 2026</td>
+                </tr>
                 <tr>
                   <td class="px-4 py-3 text-sm font-mono">mode_category (2)</td>
                   <td class="px-4 py-3 text-sm">Added <code>ihd</code> and <code>iuf</code> as permissible values for renal_replacement_therapy mode categories</td>
@@ -526,7 +532,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            Revisions (13 updates) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Jun 29, 2026</span>
+            Revisions (14 updates) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Jun 30, 2026</span>
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -547,6 +553,12 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">patient_procedures</td>
+                  <td class="px-4 py-3 text-sm">Clarified that <code>patient_procedures</code> should ETL <strong>all</strong> CPT codes (HCPCS Level 1), including CPT codes recorded in hospital billing encounters (e.g., PT/OT codes) — not only clinician/professional billing codes. HCPCS Level 2 products and supplies remain excluded.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/222" class="text-clif-burgundy hover:underline">Issue #222</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Jun 30, 2026</td>
+                </tr>
                 <tr>
                   <td class="px-4 py-3 text-sm font-mono">crrt_therapy &rarr; renal_replacement_therapy</td>
                   <td class="px-4 py-3 text-sm">Renamed the <code>crrt_therapy</code> table to <code>renal_replacement_therapy</code> to cover both CRRT sub-modes and intermittent HD. Renamed <code>crrt_mode_name</code> &rarr; <code>mode_name</code> and <code>crrt_mode_category</code> &rarr; <code>mode_category</code>, added <code>ihd</code>/<code>iuf</code> mode categories and <code>potassium_bath</code>/<code>calcium_bath</code> fields, widened <code>blood_flow_rate</code> to 100-600 mL/min and <code>dialysate_flow_rate</code> to 0-70000 mL/hr, removed <code>ultrafiltration_out</code>, and reclassified the table from Beta to Alpha maturity.</td>

@@ -334,7 +334,7 @@ The `patient_diagnosis` table provides a record of all diagnoses assigned to a p
 
 ## patient_procedures
 
-A long table of standardized procedural billing codes associated with the hospitalization, using the [Healthcare Common Procedure Coding System (HCPCS)](https://www.cms.gov/medicare/regulations-guidance/physician-self-referral/list-cpt-hcpcs-codes). In CLIF version 2.1, the `patient_procedures` table includes only procedures that were actually performed or completed (not cancelled), and only contains professional billing codes—specifically, **CPT codes billed by clinicians (HCPCS Level 1)**.
+A long table of standardized procedural billing codes associated with the hospitalization, using the [Healthcare Common Procedure Coding System (HCPCS)](https://www.cms.gov/medicare/regulations-guidance/physician-self-referral/list-cpt-hcpcs-codes). The `patient_procedures` table includes only procedures that were actually performed or completed (not cancelled), and contains **all CPT codes (HCPCS Level 1)**—both those billed by clinicians (professional billing) and those recorded in hospital billing encounters (e.g., PT/OT codes).
 \
 Hospital billing i.e., **Products, supplies, and services that do not have CPT codes (HCPCS Level 2)** are not included in this table.
 \
