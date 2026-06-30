@@ -1,0 +1,336 @@
+---
+export const prerender = false;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PortalNav from '../../components/portal/PortalNav.astro';
+import { getDb } from '../../lib/turso';
+import { hasRole } from '../../lib/roles';
+
+const user = Astro.locals.user!;
+const isAdmin = user.role === 'admin';
+const canApprove = hasRole(user.role, 'steering'); // steering + admin
+
+const db = getDb();
+let requests: any[] = [];
+let error: string | null = null;
+
+try {
+  const result = await db.execute({
+    sql: `SELECT r.*, u.full_name as creator_name, a.full_name as approver_name
+          FROM los_requests r
+          LEFT JOIN users u ON r.created_by = u.id
+          LEFT JOIN users a ON r.approved_by = a.id
+          ORDER BY r.created_at DESC`,
+    args: [],
+  });
+  requests = result.rows as any[];
+} catch (e: any) {
+  error = e.message;
+}
+
+// Common NIH grant mechanisms offered as datalist suggestions (free text still allowed).
+const GRANT_TYPES = ['R01', 'R03', 'R21', 'R34', 'R37', 'K01', 'K08', 'K23', 'K24', 'K99/R00', 'F31', 'F32', 'T32', 'U01', 'P01', 'DP1', 'DP2', 'Foundation', 'Other'];
+
+const statusStyles: Record<string, { badge: string; label: string }> = {
+  pending: { badge: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400', label: 'Pending' },
+  approved: { badge: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400', label: 'Approved' },
+  declined: { badge: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400', label: 'Declined' },
+};
+
+function canManage(r: any): boolean {
+  return isAdmin || r.created_by === user.id;
+}
+
+function formatDate(d: string): string {
+  return new Date(d).toLocaleDateString();
+}
+
+// Deadlines are stored as plain YYYY-MM-DD; parse as local time to avoid UTC off-by-one.
+function formatDeadline(d: string): string {
+  return new Date(d + 'T00:00:00').toLocaleDateString();
+}
+
+function isDeadlinePassed(d: string): boolean {
+  return new Date(d + 'T23:59:59') < new Date();
+}
+---
+
+<BaseLayout title="Letter of Support Tracker">
+  <div class="container mx-auto px-4 py-8">
+    <div class="flex flex-col lg:flex-row gap-8">
+      <aside class="lg:w-64 shrink-0">
+        <PortalNav currentPath={Astro.url.pathname} isAdmin={isAdmin} />
+      </aside>
+
+      <div class="flex-1 min-w-0">
+        <div class="mb-8">
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Letter of Support Tracker</h1>
+          <p class="text-gray-600 dark:text-gray-400 mt-1">
+            Request a consortium letter of support for your grant. Steering committee members approve support.
+          </p>
+        </div>
+
+        {error && (
+          <div class="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg p-4 text-sm mb-6">
+            Error: {error}
+          </div>
+        )}
+
+        {/* New request */}
+        <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6 mb-8">
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Request a Letter of Support</h2>
+          <form id="create-los-form" class="space-y-4">
+            <div>
+              <label for="los-title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Grant title <span class="text-red-500">*</span></label>
+              <input type="text" id="los-title" required placeholder="e.g. Early mobilization in mechanically ventilated patients"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent" />
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label for="los-type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Grant type <span class="text-red-500">*</span></label>
+                <input type="text" id="los-type" required list="grant-types" placeholder="e.g. R01, K99"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent" />
+                <datalist id="grant-types">
+                  {GRANT_TYPES.map((t) => <option value={t}></option>)}
+                </datalist>
+              </div>
+              <div>
+                <label for="los-deadline" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Grant deadline <span class="text-red-500">*</span></label>
+                <input type="date" id="los-deadline" required
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent" />
+              </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label for="los-aims" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Link to Specific Aims <span class="text-red-500">*</span></label>
+                <input type="url" id="los-aims" required placeholder="https://…"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent" />
+              </div>
+              <div>
+                <label for="los-los" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Link to letter of support <span class="text-red-500">*</span></label>
+                <input type="url" id="los-los" required placeholder="https://…"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent" />
+              </div>
+            </div>
+            <div id="los-create-error" class="hidden text-sm text-red-600 dark:text-red-400"></div>
+            <button type="submit" id="los-create-btn"
+              class="bg-clif-burgundy hover:bg-clif-burgundy/90 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors">
+              Submit Request
+            </button>
+          </form>
+        </div>
+
+        {/* Requests */}
+        {requests.length === 0 ? (
+          <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6 text-center text-gray-500 dark:text-gray-400 text-sm">
+            No letter of support requests yet.
+          </div>
+        ) : (
+          <div class="space-y-4">
+            {requests.map((r) => {
+              const manage = canManage(r);
+              const st = statusStyles[r.status as string] || statusStyles.pending;
+              return (
+                <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6" data-los={r.id}>
+                  <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                    <div class="min-w-0">
+                      <div class="flex items-center gap-2 flex-wrap">
+                        <h3 class="text-base font-semibold text-gray-900 dark:text-white">{r.grant_title}</h3>
+                        {r.grant_type && (
+                          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-clif-burgundy/10 text-clif-burgundy dark:bg-clif-burgundy/20">{r.grant_type}</span>
+                        )}
+                        <span class={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${st.badge}`}>{st.label}</span>
+                      </div>
+                      <div class="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-gray-500 dark:text-gray-400">
+                        <span>By {r.creator_name || 'Unknown'}</span>
+                        <span>Requested: {formatDate(r.created_at as string)}</span>
+                        {r.grant_deadline && (
+                          <span class={r.status !== 'approved' && isDeadlinePassed(r.grant_deadline as string) ? 'text-red-500 dark:text-red-400 font-medium' : ''}>
+                            Grant deadline: {formatDeadline(r.grant_deadline as string)}
+                            {r.status !== 'approved' && isDeadlinePassed(r.grant_deadline as string) && ' (passed)'}
+                          </span>
+                        )}
+                        {r.aims_link && (
+                          <a href={r.aims_link} target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:underline">Specific Aims &#8599;</a>
+                        )}
+                        {r.los_link && (
+                          <a href={r.los_link} target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:underline">Letter of support &#8599;</a>
+                        )}
+                        {r.status === 'approved' && r.approver_name && (
+                          <span class="text-green-600 dark:text-green-400">Approved by {r.approver_name}{r.approved_at ? ` on ${formatDate(r.approved_at as string)}` : ''}</span>
+                        )}
+                        {r.status === 'declined' && r.approver_name && (
+                          <span class="text-red-600 dark:text-red-400">Declined by {r.approver_name}{r.approved_at ? ` on ${formatDate(r.approved_at as string)}` : ''}</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div class="flex items-center gap-3 shrink-0">
+                      {canApprove && (
+                        <>
+                          {r.status !== 'approved' && (
+                            <button class="los-approve-btn text-xs text-green-600 hover:text-green-800 dark:text-green-400 underline" data-id={r.id} data-action="approve">Approve</button>
+                          )}
+                          {r.status !== 'declined' && (
+                            <button class="los-approve-btn text-xs text-red-500 hover:text-red-700 dark:text-red-400 underline" data-id={r.id} data-action="decline">Decline</button>
+                          )}
+                          {r.status !== 'pending' && (
+                            <button class="los-approve-btn text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 underline" data-id={r.id} data-action="reset">Reset</button>
+                          )}
+                        </>
+                      )}
+                      {manage && (
+                        <>
+                          <button class="edit-los-btn text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 underline" data-id={r.id}>Edit</button>
+                          <button class="delete-los-btn text-xs text-red-500 hover:text-red-700 dark:text-red-400 underline" data-id={r.id}>Delete</button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Edit form (hidden) */}
+                  {manage && (
+                    <form class="los-edit-form hidden mt-4 pt-4 border-t border-gray-100 dark:border-neutral-700 space-y-3" data-id={r.id}>
+                      <input type="text" class="edit-title w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" value={r.grant_title} placeholder="Grant title" required />
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <input type="text" class="edit-type w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" list="grant-types" value={r.grant_type || ''} placeholder="Grant type" required />
+                        <input type="date" class="edit-deadline w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" value={r.grant_deadline || ''} placeholder="Grant deadline" required />
+                        <input type="url" class="edit-aims w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" value={r.aims_link || ''} placeholder="Specific Aims link" required />
+                        <input type="url" class="edit-los w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" value={r.los_link || ''} placeholder="Letter of support link" required />
+                      </div>
+                      <div class="flex gap-2">
+                        <button type="submit" class="save-los-btn bg-clif-burgundy hover:bg-clif-burgundy/90 text-white font-medium py-1.5 px-3 rounded-lg text-xs transition-colors">Save</button>
+                        <button type="button" class="cancel-los-edit-btn text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 underline" data-id={r.id}>Cancel</button>
+                      </div>
+                    </form>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+
+  <script is:inline>
+    document.addEventListener('DOMContentLoaded', function () {
+      // Create request
+      var form = document.getElementById('create-los-form');
+      if (form) {
+        form.addEventListener('submit', async function (e) {
+          e.preventDefault();
+          var btn = document.getElementById('los-create-btn');
+          var errorEl = document.getElementById('los-create-error');
+          btn.disabled = true;
+          btn.textContent = 'Submitting...';
+          errorEl.classList.add('hidden');
+
+          var res = await fetch('/api/los-requests/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              grant_title: document.getElementById('los-title').value,
+              grant_type: document.getElementById('los-type').value,
+              grant_deadline: document.getElementById('los-deadline').value,
+              aims_link: document.getElementById('los-aims').value,
+              los_link: document.getElementById('los-los').value,
+            }),
+          });
+
+          if (res.ok) {
+            window.location.reload();
+          } else {
+            var data = await res.json();
+            errorEl.textContent = data.error || 'Failed to submit request';
+            errorEl.classList.remove('hidden');
+            btn.disabled = false;
+            btn.textContent = 'Submit Request';
+          }
+        });
+      }
+
+      // Approve / decline / reset (steering only)
+      document.querySelectorAll('.los-approve-btn').forEach(function (btn) {
+        btn.addEventListener('click', async function () {
+          var action = this.getAttribute('data-action');
+          if (action === 'decline' && !confirm('Decline this letter of support request?')) return;
+          this.disabled = true;
+          var res = await fetch('/api/los-requests/approve', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: this.getAttribute('data-id'), action: action }),
+          });
+          if (res.ok) {
+            window.location.reload();
+          } else {
+            var data = await res.json().catch(function () { return {}; });
+            alert(data.error || 'Failed to update');
+            this.disabled = false;
+          }
+        });
+      });
+
+      // Edit toggles
+      document.querySelectorAll('.edit-los-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var id = this.getAttribute('data-id');
+          var f = document.querySelector('.los-edit-form[data-id="' + id + '"]');
+          if (f) f.classList.toggle('hidden');
+        });
+      });
+      document.querySelectorAll('.cancel-los-edit-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var id = this.getAttribute('data-id');
+          var f = document.querySelector('.los-edit-form[data-id="' + id + '"]');
+          if (f) f.classList.add('hidden');
+        });
+      });
+
+      // Save edits
+      document.querySelectorAll('.los-edit-form').forEach(function (f) {
+        f.addEventListener('submit', async function (e) {
+          e.preventDefault();
+          var id = this.getAttribute('data-id');
+          var saveBtn = this.querySelector('.save-los-btn');
+          saveBtn.disabled = true;
+          saveBtn.textContent = 'Saving...';
+          var res = await fetch('/api/los-requests/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: id,
+              grant_title: this.querySelector('.edit-title').value,
+              grant_type: this.querySelector('.edit-type').value,
+              grant_deadline: this.querySelector('.edit-deadline').value,
+              aims_link: this.querySelector('.edit-aims').value,
+              los_link: this.querySelector('.edit-los').value,
+            }),
+          });
+          if (res.ok) {
+            window.location.reload();
+          } else {
+            var data = await res.json();
+            alert(data.error || 'Failed to save');
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Save';
+          }
+        });
+      });
+
+      // Delete
+      document.querySelectorAll('.delete-los-btn').forEach(function (btn) {
+        btn.addEventListener('click', async function () {
+          if (!confirm('Delete this request? This cannot be undone.')) return;
+          var res = await fetch('/api/los-requests/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: this.getAttribute('data-id') }),
+          });
+          if (res.ok) window.location.reload();
+          else alert('Failed to delete request');
+        });
+      });
+    });
+  </script>
+</BaseLayout>

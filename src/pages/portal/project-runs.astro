@@ -1,0 +1,593 @@
+---
+export const prerender = false;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PortalNav from '../../components/portal/PortalNav.astro';
+import { getDb } from '../../lib/turso';
+
+const user = Astro.locals.user!;
+const isAdmin = user.role === 'admin';
+
+const db = getDb();
+let projects: any[] = [];
+let sites: any[] = [];
+const runMap: Record<string, Set<string>> = {};
+let editableSiteIds = new Set<string>();
+let error: string | null = null;
+
+try {
+  const projectsResult = await db.execute({
+    sql: `SELECT p.*, u.full_name as creator_name
+          FROM project_runs p
+          LEFT JOIN users u ON p.created_by = u.id
+          ORDER BY p.status ASC, p.created_at DESC`,
+    args: [],
+  });
+  projects = projectsResult.rows as any[];
+
+  const sitesResult = await db.execute('SELECT id, site_name, institution FROM site_details ORDER BY site_name');
+  sites = sitesResult.rows as any[];
+
+  const statusResult = await db.execute('SELECT project_id, site_id FROM project_run_sites WHERE has_run = 1');
+  for (const row of statusResult.rows as any[]) {
+    const pid = row.project_id as string;
+    if (!runMap[pid]) runMap[pid] = new Set();
+    runMap[pid].add(row.site_id as string);
+  }
+
+  if (isAdmin) {
+    editableSiteIds = new Set(sites.map((s) => s.id as string));
+  } else {
+    const editorResult = await db.execute({
+      sql: 'SELECT site_id FROM site_editors WHERE user_id = ?',
+      args: [user.id],
+    });
+    editableSiteIds = new Set((editorResult.rows as any[]).map((r) => r.site_id as string));
+  }
+} catch (e: any) {
+  error = e.message;
+}
+
+function canManage(p: any): boolean {
+  return isAdmin || p.created_by === user.id;
+}
+
+function formatDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString();
+}
+
+// Deadlines are stored as plain YYYY-MM-DD; parse as local time to avoid UTC off-by-one.
+function formatDeadline(dateStr: string): string {
+  return new Date(dateStr + 'T00:00:00').toLocaleDateString();
+}
+
+function isDeadlinePassed(dateStr: string): boolean {
+  return new Date(dateStr + 'T23:59:59') < new Date();
+}
+
+const PURPOSE_LABELS: Record<string, string> = {
+  grant: 'Grant',
+  conference: 'Conference / Abstract',
+  journal: 'Journal / Manuscript',
+  other: 'Exploratory / Other',
+};
+const PURPOSE_OPTIONS = Object.entries(PURPOSE_LABELS).map(([value, label]) => ({ value, label }));
+---
+
+<BaseLayout title="Project Run Tracker">
+  <div class="container mx-auto px-4 py-8">
+    <div class="flex flex-col lg:flex-row gap-8">
+      <aside class="lg:w-64 shrink-0">
+        <PortalNav currentPath={Astro.url.pathname} isAdmin={isAdmin} />
+      </aside>
+
+      <div class="flex-1 min-w-0">
+        <div class="mb-8">
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Project Run Tracker</h1>
+          <p class="text-gray-600 dark:text-gray-400 mt-1">
+            Request that the consortium run a project, and track which sites have run it.
+          </p>
+          <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
+            Anyone can file a request. Each site's checkbox is updated by that site's data editor (or an admin).
+          </p>
+        </div>
+
+        {error && (
+          <div class="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg p-4 text-sm mb-6">
+            Error: {error}
+          </div>
+        )}
+
+        {/* Tabs */}
+        <div class="mb-6">
+          <div class="flex border-b border-gray-200 dark:border-neutral-700">
+            <button id="tab-create" class="tab-btn px-5 py-3 text-sm font-medium border-b-2 border-clif-burgundy text-clif-burgundy transition-colors">
+              Create a Run Request
+            </button>
+            <button id="tab-active" class="tab-btn px-5 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
+              Active Project Runs
+            </button>
+            <button id="tab-all" class="tab-btn px-5 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
+              All Runs
+            </button>
+          </div>
+        </div>
+
+        {/* Tab: Create a Run Request */}
+        <div id="panel-create" class="tab-panel">
+        <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6 mb-8">
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">New Project Run Request</h2>
+          <form id="create-project-form" class="space-y-4">
+            {/* Prerequisite: preliminary results must be shared before a run can be requested */}
+            <div class="rounded-lg border-l-4 border-clif-burgundy bg-clif-burgundy/5 dark:bg-clif-burgundy/10 px-4 py-3 space-y-2">
+              <label class="flex items-start gap-2 cursor-pointer">
+                <input type="checkbox" id="pr-prelim" required class="mt-0.5 w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy" />
+                <span class="text-sm font-medium text-gray-800 dark:text-gray-200">
+                  I have shared the preliminary project results <span class="text-red-500">*</span>
+                  <span class="block text-xs font-normal text-gray-500 dark:text-gray-400 mt-0.5">Required — a consortium run can only be requested after preliminary results have been shared.</span>
+                </span>
+              </label>
+              <div id="pr-prelim-link-field" class="hidden">
+                <label for="pr-prelim-link" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Link to preliminary results <span class="text-red-500">*</span></label>
+                <input type="url" id="pr-prelim-link" placeholder="https://..."
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent" />
+              </div>
+            </div>
+            <div>
+              <label for="pr-title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Project Title <span class="text-red-500">*</span></label>
+              <input type="text" id="pr-title" required placeholder="e.g. Sepsis phenotyping across CLIF sites"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent" />
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label for="pr-repo" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Project Repo <span class="text-red-500">*</span></label>
+                <input type="url" id="pr-repo" required placeholder="https://github.com/..."
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent" />
+              </div>
+              <div>
+                <label for="pr-box" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Box Folder <span class="text-red-500">*</span></label>
+                <input type="url" id="pr-box" required placeholder="https://uchicago.box.com/..."
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent" />
+              </div>
+            </div>
+            <div>
+              <label for="pr-description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Brief description <span class="text-red-500">*</span></label>
+              <textarea id="pr-description" rows="2" required placeholder="A one or two sentence summary of the project..."
+                class="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent"></textarea>
+            </div>
+            <div>
+              <label for="pr-instructions" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Specific instructions <span class="text-red-500">*</span></label>
+              <textarea id="pr-instructions" rows="4" required placeholder="Exactly what each site needs to do to run the project (steps, config, what to upload)..."
+                class="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent"></textarea>
+              <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Highlighted on the request so sites can't miss it.</p>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label for="pr-purpose" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Purpose <span class="text-red-500">*</span></label>
+                <select id="pr-purpose" required
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent">
+                  <option value="" disabled selected>Select a purpose…</option>
+                  {PURPOSE_OPTIONS.map((o) => (
+                    <option value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label for="pr-purpose-detail" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Purpose detail <span class="text-red-500">*</span></label>
+                <input type="text" id="pr-purpose-detail" required placeholder="e.g. grant name, conference, or journal"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent" />
+              </div>
+            </div>
+            <div>
+              <label for="pr-deadline" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Deadline to upload results to Box <span class="text-red-500">*</span></label>
+              <input type="date" id="pr-deadline" required
+                class="w-full sm:w-auto px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent" />
+            </div>
+            <div class="flex items-center gap-2 pt-1">
+              <input type="checkbox" id="pr-notify" class="w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy" />
+              <label for="pr-notify" class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Notify all members that this project run is ready
+              </label>
+              <span class="text-xs text-gray-400 dark:text-gray-500">(emails every approved member)</span>
+            </div>
+            <div id="pr-create-error" class="hidden text-sm text-red-600 dark:text-red-400"></div>
+            <button type="submit" id="pr-create-btn"
+              class="bg-clif-burgundy hover:bg-clif-burgundy/90 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors">
+              Submit Request
+            </button>
+          </form>
+        </div>
+        </div>
+
+        {/* Tab: Active Project Runs / All Runs (one panel; JS filters cards by status) */}
+        <div id="panel-runs" class="tab-panel hidden">
+        {projects.length === 0 ? (
+          <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6 text-center text-gray-500 dark:text-gray-400 text-sm">
+            No project run requests yet.
+          </div>
+        ) : (
+          <div class="space-y-4">
+            <div id="no-active-msg" class="hidden bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6 text-center text-gray-500 dark:text-gray-400 text-sm">
+              No active project runs.
+            </div>
+            {projects.map((p) => {
+              const ranSites = runMap[p.id as string] || new Set();
+              const ranCount = ranSites.size;
+              const isClosed = p.status === 'closed';
+              const manage = canManage(p);
+              return (
+                <div class="project-card bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6" data-project={p.id} data-status={p.status}>
+                  <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                    <div class="min-w-0">
+                      <div class="flex items-center gap-2 flex-wrap">
+                        <h3 class="text-base font-semibold text-gray-900 dark:text-white">{p.title}</h3>
+                        {isClosed && (
+                          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-neutral-700 dark:text-gray-400">Closed</span>
+                        )}
+                        {p.purpose && PURPOSE_LABELS[p.purpose as string] && (
+                          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-clif-burgundy/10 text-clif-burgundy dark:bg-clif-burgundy/20">{PURPOSE_LABELS[p.purpose as string]}</span>
+                        )}
+                        {Number(p.prelim_shared) === 1 ? (
+                          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">Prelim results shared</span>
+                        ) : (
+                          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">Prelim results not shared</span>
+                        )}
+                      </div>
+                      {p.description && (
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1 whitespace-pre-line">{p.description}</p>
+                      )}
+                      <div class="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-gray-500 dark:text-gray-400">
+                        <span>By {p.creator_name || 'Unknown'}</span>
+                        <span>Requested: {formatDate(p.created_at as string)}</span>
+                        {p.purpose_detail && (
+                          <span>Purpose: {PURPOSE_LABELS[p.purpose as string] || p.purpose} — {p.purpose_detail}</span>
+                        )}
+                        {p.results_deadline && (
+                          <span class={!isClosed && isDeadlinePassed(p.results_deadline as string) ? 'text-red-500 dark:text-red-400 font-medium' : ''}>
+                            Box upload deadline: {formatDeadline(p.results_deadline as string)}
+                            {!isClosed && isDeadlinePassed(p.results_deadline as string) && ' (passed)'}
+                          </span>
+                        )}
+                        {p.repo_url && (
+                          <a href={p.repo_url} target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:underline">Repo &#8599;</a>
+                        )}
+                        {p.box_folder_url && (
+                          <a href={p.box_folder_url} target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:underline">Box folder &#8599;</a>
+                        )}
+                        {Number(p.prelim_shared) === 1 && p.prelim_link && (
+                          <a href={p.prelim_link} target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:underline">Preliminary results &#8599;</a>
+                        )}
+                      </div>
+                    </div>
+
+                    {manage && (
+                      <div class="flex items-center gap-3 shrink-0">
+                        <button class="notify-project-btn text-xs text-clif-burgundy hover:text-clif-burgundy/80 underline" data-project-id={p.id} title="Email all approved members that this run is ready">Notify members</button>
+                        <button class="edit-project-btn text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline" data-project-id={p.id}>Edit</button>
+                        <button class="delete-project-btn text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 underline" data-project-id={p.id}>Delete</button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Specific instructions — highlighted so sites can't miss them */}
+                  {p.instructions && (
+                    <div class="mt-3 rounded-lg border-l-4 border-clif-burgundy bg-clif-burgundy/5 dark:bg-clif-burgundy/10 px-4 py-3">
+                      <p class="text-xs font-semibold uppercase tracking-wide text-clif-burgundy mb-1">Instructions to run</p>
+                      <p class="text-sm text-gray-700 dark:text-gray-200 whitespace-pre-line">{p.instructions}</p>
+                    </div>
+                  )}
+
+                  {/* Edit form (hidden) */}
+                  {manage && (
+                    <form class="project-edit-form hidden mt-4 pt-4 border-t border-gray-100 dark:border-neutral-700 space-y-3" data-project-id={p.id}>
+                      <input type="text" class="edit-title w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" value={p.title} placeholder="Title" required />
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <input type="url" class="edit-repo w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" value={p.repo_url || ''} placeholder="Repo URL" required />
+                        <input type="url" class="edit-box w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" value={p.box_folder_url || ''} placeholder="Box folder URL" required />
+                      </div>
+                      <textarea class="edit-description w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" rows="2" placeholder="Brief description" required>{p.description || ''}</textarea>
+                      <textarea class="edit-instructions w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" rows="4" placeholder="Specific instructions to run" required>{p.instructions || ''}</textarea>
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <select class="edit-purpose w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" required>
+                          <option value="" disabled selected={!p.purpose}>Select a purpose…</option>
+                          {PURPOSE_OPTIONS.map((o) => (
+                            <option value={o.value} selected={p.purpose === o.value}>{o.label}</option>
+                          ))}
+                        </select>
+                        <input type="text" class="edit-purpose-detail w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" value={p.purpose_detail || ''} placeholder="Purpose detail (grant name, conference, journal)" required />
+                      </div>
+                      <div>
+                        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Deadline to upload results to Box</label>
+                        <input type="date" class="edit-deadline px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" value={p.results_deadline || ''} required />
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <input type="checkbox" class="edit-prelim w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy" checked={Number(p.prelim_shared) === 1} />
+                        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Preliminary results shared</label>
+                      </div>
+                      <input type="url" class="edit-prelim-link w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" value={p.prelim_link || ''} placeholder="Link to preliminary results" />
+                      <div class="flex items-center gap-2">
+                        <input type="checkbox" class="edit-closed w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy" checked={isClosed} />
+                        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Mark as closed</label>
+                      </div>
+                      <div class="flex gap-2">
+                        <button type="submit" class="save-project-btn bg-clif-burgundy hover:bg-clif-burgundy/90 text-white font-medium py-1.5 px-3 rounded-lg text-xs transition-colors">Save</button>
+                        <button type="button" class="cancel-edit-btn text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 underline" data-project-id={p.id}>Cancel</button>
+                      </div>
+                    </form>
+                  )}
+
+                  {/* Per-site checklist */}
+                  <div class="mt-4 pt-4 border-t border-gray-100 dark:border-neutral-700">
+                    <div class="flex items-center justify-between mb-3">
+                      <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Sites that have run this</h4>
+                      <span class="text-xs text-gray-500 dark:text-gray-400">{ranCount} / {sites.length} sites</span>
+                    </div>
+                    {sites.length === 0 ? (
+                      <p class="text-xs text-gray-400 dark:text-gray-500 italic">No sites on record.</p>
+                    ) : (
+                      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-2">
+                        {sites.map((s) => {
+                          const checked = ranSites.has(s.id as string);
+                          const editable = !isClosed && editableSiteIds.has(s.id as string);
+                          return (
+                            <label class={`flex items-center gap-2 text-sm ${editable ? 'cursor-pointer text-gray-700 dark:text-gray-300' : 'text-gray-500 dark:text-gray-400'}`}
+                              title={editable ? '' : "Only this site's data editor (or an admin) can change this"}>
+                              <input
+                                type="checkbox"
+                                class="site-run-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy disabled:opacity-50"
+                                data-project-id={p.id}
+                                data-site-id={s.id}
+                                checked={checked}
+                                disabled={!editable}
+                              />
+                              <span class="truncate">{s.site_name}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script is:inline>
+    document.addEventListener('DOMContentLoaded', function () {
+      // === Sub-tabs: Create / Active Project Runs / All Runs ===
+      var tabCreate = document.getElementById('tab-create');
+      var tabActive = document.getElementById('tab-active');
+      var tabAll = document.getElementById('tab-all');
+      var panelCreate = document.getElementById('panel-create');
+      var panelRuns = document.getElementById('panel-runs');
+      var noActiveMsg = document.getElementById('no-active-msg');
+
+      function setActiveTab(btn) {
+        [tabCreate, tabActive, tabAll].forEach(function (b) {
+          if (!b) return;
+          b.classList.remove('border-clif-burgundy', 'text-clif-burgundy');
+          b.classList.add('border-transparent', 'text-gray-500', 'dark:text-gray-400');
+        });
+        btn.classList.add('border-clif-burgundy', 'text-clif-burgundy');
+        btn.classList.remove('border-transparent', 'text-gray-500', 'dark:text-gray-400');
+      }
+
+      function showCreate() {
+        setActiveTab(tabCreate);
+        if (panelCreate) panelCreate.classList.remove('hidden');
+        if (panelRuns) panelRuns.classList.add('hidden');
+      }
+
+      function showRuns(activeOnly, btn) {
+        setActiveTab(btn);
+        if (panelCreate) panelCreate.classList.add('hidden');
+        if (panelRuns) panelRuns.classList.remove('hidden');
+        var visible = 0;
+        document.querySelectorAll('.project-card').forEach(function (c) {
+          var hide = activeOnly && c.getAttribute('data-status') === 'closed';
+          c.classList.toggle('hidden', hide);
+          if (!hide) visible++;
+        });
+        if (noActiveMsg) noActiveMsg.classList.toggle('hidden', !(activeOnly && visible === 0));
+      }
+
+      if (tabCreate) tabCreate.addEventListener('click', showCreate);
+      if (tabActive) tabActive.addEventListener('click', function () { showRuns(true, tabActive); });
+      if (tabAll) tabAll.addEventListener('click', function () { showRuns(false, tabAll); });
+
+      // Toggle preliminary-results link field on the create form. The link is
+      // required only when the "results shared" box is checked.
+      var prelim = document.getElementById('pr-prelim');
+      var prelimField = document.getElementById('pr-prelim-link-field');
+      var prelimLink = document.getElementById('pr-prelim-link');
+      if (prelim && prelimField && prelimLink) {
+        prelim.addEventListener('change', function () {
+          prelimField.classList.toggle('hidden', !this.checked);
+          prelimLink.required = this.checked;
+          if (!this.checked) prelimLink.value = '';
+        });
+      }
+
+      // Create request
+      var form = document.getElementById('create-project-form');
+      if (form) {
+        form.addEventListener('submit', async function (e) {
+          e.preventDefault();
+          var btn = document.getElementById('pr-create-btn');
+          var errorEl = document.getElementById('pr-create-error');
+          btn.disabled = true;
+          btn.textContent = 'Submitting...';
+          errorEl.classList.add('hidden');
+
+          var res = await fetch('/api/project-runs/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              title: document.getElementById('pr-title').value,
+              repo_url: document.getElementById('pr-repo').value,
+              box_folder_url: document.getElementById('pr-box').value,
+              description: document.getElementById('pr-description').value,
+              instructions: document.getElementById('pr-instructions').value,
+              purpose: document.getElementById('pr-purpose').value,
+              purpose_detail: document.getElementById('pr-purpose-detail').value,
+              results_deadline: document.getElementById('pr-deadline').value,
+              prelim_shared: document.getElementById('pr-prelim').checked,
+              prelim_link: document.getElementById('pr-prelim-link').value,
+              notify_all: document.getElementById('pr-notify').checked,
+            }),
+          });
+
+          if (res.ok) {
+            window.location.reload();
+          } else {
+            var data = await res.json();
+            errorEl.textContent = data.error || 'Failed to submit request';
+            errorEl.classList.remove('hidden');
+            btn.disabled = false;
+            btn.textContent = 'Submit Request';
+          }
+        });
+      }
+
+      // Edit toggles
+      document.querySelectorAll('.edit-project-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var pid = this.getAttribute('data-project-id');
+          var f = document.querySelector('.project-edit-form[data-project-id="' + pid + '"]');
+          if (f) f.classList.toggle('hidden');
+        });
+      });
+      document.querySelectorAll('.cancel-edit-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var pid = this.getAttribute('data-project-id');
+          var f = document.querySelector('.project-edit-form[data-project-id="' + pid + '"]');
+          if (f) f.classList.add('hidden');
+        });
+      });
+
+      // On each edit form, the preliminary-results link is required only when
+      // its "results shared" box is checked.
+      document.querySelectorAll('.project-edit-form').forEach(function (f) {
+        var cb = f.querySelector('.edit-prelim');
+        var link = f.querySelector('.edit-prelim-link');
+        if (!cb || !link) return;
+        var sync = function () { link.required = cb.checked; };
+        sync();
+        cb.addEventListener('change', sync);
+      });
+
+      // Save edits
+      document.querySelectorAll('.project-edit-form').forEach(function (f) {
+        f.addEventListener('submit', async function (e) {
+          e.preventDefault();
+          var pid = this.getAttribute('data-project-id');
+          var saveBtn = this.querySelector('.save-project-btn');
+          saveBtn.disabled = true;
+          saveBtn.textContent = 'Saving...';
+
+          var res = await fetch('/api/project-runs/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              projectId: pid,
+              title: this.querySelector('.edit-title').value,
+              repo_url: this.querySelector('.edit-repo').value,
+              box_folder_url: this.querySelector('.edit-box').value,
+              description: this.querySelector('.edit-description').value,
+              instructions: this.querySelector('.edit-instructions').value,
+              purpose: this.querySelector('.edit-purpose').value,
+              purpose_detail: this.querySelector('.edit-purpose-detail').value,
+              results_deadline: this.querySelector('.edit-deadline').value,
+              prelim_shared: this.querySelector('.edit-prelim').checked,
+              prelim_link: this.querySelector('.edit-prelim-link').value,
+              status: this.querySelector('.edit-closed').checked ? 'closed' : 'open',
+            }),
+          });
+
+          if (res.ok) {
+            window.location.reload();
+          } else {
+            var data = await res.json();
+            alert(data.error || 'Failed to save');
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Save';
+          }
+        });
+      });
+
+      // Notify all members
+      document.querySelectorAll('.notify-project-btn').forEach(function (btn) {
+        btn.addEventListener('click', async function () {
+          var pid = this.getAttribute('data-project-id');
+          if (!confirm('Email all approved members that this project run is ready?')) return;
+          var self = this;
+          var original = self.textContent;
+          self.disabled = true;
+          self.textContent = 'Sending...';
+          var res = await fetch('/api/project-runs/notify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ projectId: pid }),
+          });
+          if (res.ok) {
+            var data = await res.json();
+            alert('Notification sent to ' + data.sent + ' member' + (data.sent === 1 ? '' : 's') + '.');
+          } else {
+            var err = await res.json().catch(function () { return {}; });
+            alert(err.error || 'Failed to send notifications.');
+          }
+          self.textContent = original;
+          self.disabled = false;
+        });
+      });
+
+      // Delete
+      document.querySelectorAll('.delete-project-btn').forEach(function (btn) {
+        btn.addEventListener('click', async function () {
+          var pid = this.getAttribute('data-project-id');
+          if (!confirm('Delete this project run request? This cannot be undone.')) return;
+          var res = await fetch('/api/project-runs/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ projectId: pid }),
+          });
+          if (res.ok) {
+            window.location.reload();
+          } else {
+            alert('Failed to delete request');
+          }
+        });
+      });
+
+      // Per-site run checkboxes
+      document.querySelectorAll('.site-run-checkbox').forEach(function (box) {
+        box.addEventListener('change', async function () {
+          var self = this;
+          self.disabled = true;
+          var res = await fetch('/api/project-runs/toggle-site', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              projectId: self.getAttribute('data-project-id'),
+              siteId: self.getAttribute('data-site-id'),
+              hasRun: self.checked,
+            }),
+          });
+          if (res.ok) {
+            window.location.reload();
+          } else {
+            var data = await res.json();
+            alert(data.error || 'Failed to update');
+            self.checked = !self.checked;
+            self.disabled = false;
+          }
+        });
+      });
+    });
+  </script>
+</BaseLayout>

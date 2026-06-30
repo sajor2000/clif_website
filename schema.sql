@@ -238,3 +238,50 @@ CREATE INDEX IF NOT EXISTS idx_crypto_master_keys_key_set ON crypto_master_keys(
 CREATE INDEX IF NOT EXISTS idx_crypto_submissions_project ON crypto_submissions(project_id);
 CREATE INDEX IF NOT EXISTS idx_crypto_submissions_key_set ON crypto_submissions(key_set_id);
 
+-- Project Run Request tracker (/portal/project-runs). See migrations/007-project-runs.sql.
+CREATE TABLE IF NOT EXISTS project_runs (
+  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  title TEXT NOT NULL,
+  repo_url TEXT,
+  box_folder_url TEXT,
+  prelim_shared INTEGER NOT NULL DEFAULT 0,
+  prelim_link TEXT,
+  description TEXT,
+  instructions TEXT,
+  purpose TEXT,
+  purpose_detail TEXT,
+  results_deadline TEXT,
+  status TEXT NOT NULL DEFAULT 'open',
+  created_by TEXT NOT NULL REFERENCES users(id),
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS project_run_sites (
+  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  project_id TEXT NOT NULL REFERENCES project_runs(id) ON DELETE CASCADE,
+  site_id TEXT NOT NULL REFERENCES site_details(id) ON DELETE CASCADE,
+  has_run INTEGER NOT NULL DEFAULT 0,
+  updated_at TEXT,
+  updated_by TEXT REFERENCES users(id),
+  UNIQUE(project_id, site_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_project_run_sites_project ON project_run_sites(project_id);
+
+-- Letter of Support (LOS) request tracker (/portal/los-requests). See migrations/009-los-requests.sql.
+CREATE TABLE IF NOT EXISTS los_requests (
+  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  grant_title TEXT NOT NULL,
+  grant_type TEXT,
+  grant_deadline TEXT,
+  aims_link TEXT,
+  los_link TEXT,
+  status TEXT NOT NULL DEFAULT 'pending',
+  approved_by TEXT REFERENCES users(id),
+  approved_at TEXT,
+  created_by TEXT NOT NULL REFERENCES users(id),
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+

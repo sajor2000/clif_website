@@ -124,6 +124,56 @@ export function buildProposalNotificationEmail(
 </html>`.trim();
 }
 
+export function buildProjectRunNotificationEmail(
+  title: string,
+  description: string | null,
+  instructions: string | null,
+  deadline: string | null,
+  projectUrl: string,
+): string {
+  const descBlock = description
+    ? `<p style="white-space: pre-line; color: #444;">${escapeHtml(description)}</p>`
+    : '';
+  const instrBlock = instructions
+    ? `<div style="border-left: 4px solid #8B1538; background: #faf5f6; padding: 12px 16px; margin: 16px 0; border-radius: 4px;">
+         <p style="margin: 0 0 4px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: #8B1538;">Instructions to run</p>
+         <p style="margin: 0; white-space: pre-line; color: #444;">${escapeHtml(instructions)}</p>
+       </div>`
+    : '';
+  const deadlineBlock = deadline
+    ? `<p style="margin: 16px 0;"><strong>Deadline to upload results to Box:</strong> ${formatDeadline(deadline)}</p>`
+    : '';
+  return `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+  <div style="border-bottom: 3px solid #8B1538; padding-bottom: 16px; margin-bottom: 24px;">
+    <h1 style="color: #8B1538; font-size: 20px; margin: 0;">CLIF Consortium</h1>
+  </div>
+
+  <p>A new project run is ready for sites to run:</p>
+
+  <h2 style="font-size: 18px; color: #111; margin: 16px 0 8px;">${escapeHtml(title)}</h2>
+  ${descBlock}
+  ${instrBlock}
+  ${deadlineBlock}
+
+  <div style="margin: 28px 0;">
+    <a href="${projectUrl}" style="background-color: #8B1538; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">
+      View Project Run
+    </a>
+  </div>
+
+  <p style="color: #666; font-size: 14px;">When your site has run it, check it off on the Project Run Tracker. Questions? Reach out to <a href="mailto:clif_consortium@uchicago.edu">clif_consortium@uchicago.edu</a>.</p>
+
+  <div style="border-top: 1px solid #e5e7eb; margin-top: 32px; padding-top: 16px; font-size: 12px; color: #9ca3af;">
+    CLIF Consortium &middot; Common Longitudinal ICU Data Format
+  </div>
+</body>
+</html>`.trim();
+}
+
 export function buildProposalReminderEmail(
   title: string,
   deadline: string,

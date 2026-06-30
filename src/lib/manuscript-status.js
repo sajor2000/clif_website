@@ -51,6 +51,44 @@ export const MANUSCRIPT_STATUS_TAGS = {
 const FALLBACK_CLASSES =
   'bg-gray-100 text-gray-600 dark:bg-neutral-700 dark:text-gray-400';
 
+/**
+ * The manuscript lifecycle as an ordered pipeline, earliest → most advanced.
+ * Drives the "progress map" legend on the tracker and selects the single
+ * furthest-along status shown on each manuscript row.
+ * @type {string[]}
+ */
+export const STATUS_PROGRESSION = [
+  'code-under-development',
+  'code-run-complete',
+  'buddy-testing',
+  'code-released',
+  'manuscript-wip',
+  'pre-print',
+  'under-review',
+  'published',
+];
+
+/**
+ * Pick the most-advanced status from a list of slugs, per STATUS_PROGRESSION.
+ * Falls back to the first slug if none are in the known progression, or null
+ * when the list is empty.
+ * @param {string[]} slugs
+ * @returns {string | null}
+ */
+export function latestStatus(slugs) {
+  if (!slugs || slugs.length === 0) return null;
+  let best = null;
+  let bestIdx = -1;
+  for (const s of slugs) {
+    const idx = STATUS_PROGRESSION.indexOf(s);
+    if (idx > bestIdx) {
+      bestIdx = idx;
+      best = s;
+    }
+  }
+  return best || slugs[0];
+}
+
 // Normalized free-text phrase -> canonical slug. Covers the spelling variants
 // seen in the source "Internal Tracker - Manuscripts" sheet.
 const PHRASE_TO_SLUG = {

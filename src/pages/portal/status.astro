@@ -6,7 +6,9 @@ import PortalNav from '../../components/portal/PortalNav.astro';
 import { getDb } from '../../lib/turso';
 import {
   MANUSCRIPT_STATUS_TAGS,
+  STATUS_PROGRESSION,
   normalizeStatus,
+  latestStatus,
   statusLabel,
   statusClasses,
 } from '../../lib/manuscript-status.js';
@@ -27,11 +29,70 @@ try {
   error = e.message;
 }
 
+// Consortium sites for the "Contributing sites" checklist in the add/edit modal.
+let siteNames: string[] = [];
+try {
+  const sitesRes = await db.execute('SELECT site_name FROM site_details ORDER BY site_name');
+  siteNames = sitesRes.rows.map((r) => r.site_name as string);
+} catch {
+  /* non-fatal: fall back to an empty checklist */
+}
+
+// Canonical CLIF versions, derived from the data-dictionary content files so the
+// dropdown stays in sync with the versions the site actually documents. Latest first.
+const clifVersions = Object.keys(
+  import.meta.glob('../../content/clif-data-dictionary-*.md')
+)
+  .map((p) => p.match(/clif-data-dictionary-(.+)\.md$/)?.[1])
+  .filter((v): v is string => Boolean(v) && v !== '1.0.0')
+  .sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
+
+// Approved members for the "Lead authors" checklist and "Validation buddy" dropdown.
+let memberNames: string[] = [];
+try {
+  const membersRes = await db.execute(
+    "SELECT full_name FROM users WHERE is_approved = 1 AND full_name IS NOT NULL AND TRIM(full_name) != '' ORDER BY full_name"
+  );
+  memberNames = membersRes.rows.map((r) => r.full_name as string);
+} catch {
+  /* non-fatal: fall back to an empty list */
+}
+
 // Precompute the canonical status slugs for rendering chips + client editing.
-const rows = manuscripts.map((m) => ({
-  ...m,
-  statusSlugs: normalizeStatus(m.status as string | null),
-}));
+const rows = manuscripts.map((m) => {
+  const statusSlugs = normalizeStatus(m.status as string | null);
+  // Precomputed lowercase haystack for the search box. Built server-side so it
+  // isn't polluted by the inline status <select> options (which contain every
+  // label) and still matches on any status tag the manuscript carries.
+  const searchText = [
+    m.title,
+    m.lead_authors,
+    m.journal,
+    m.clif_version,
+    m.ats,
+    m.contributing_sites,
+    m.validation_buddy,
+    m.notes,
+    ...statusSlugs.map((s: string) => statusLabel(s)),
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+  return {
+    ...m,
+    statusSlugs,
+    latest: latestStatus(statusSlugs) as string | null,
+    searchText,
+  };
+});
+
+// slug -> Tailwind chip classes, handed to the client so the inline status
+// dropdown can recolor itself when an admin changes a manuscript's status.
+const statusClassMap: Record<string, string> = {};
+for (const slug of Object.keys(MANUSCRIPT_STATUS_TAGS)) {
+  statusClassMap[slug] = statusClasses(slug);
+}
+const STATUS_EMPTY_CLASSES = 'bg-gray-100 text-gray-600 dark:bg-neutral-700 dark:text-gray-400';
 
 // Status tag options for the admin add/edit form (in canonical order).
 const statusOptions = Object.entries(MANUSCRIPT_STATUS_TAGS).map(([slug, t]) => ({
@@ -68,28 +129,78 @@ const inputClass =
       </aside>
 
       <div class="flex-1 min-w-0">
-        <div class="mb-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-          <div>
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Manuscript Tracker</h1>
-            <p class="text-gray-600 dark:text-gray-400 mt-1">
-              Consortium manuscripts and their progress — status, leads, journals, and repositories
-            </p>
-          </div>
-          {isAdmin && (
-            <button
-              id="add-manuscript-btn"
-              class="shrink-0 bg-clif-burgundy hover:bg-clif-burgundy/90 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors"
-            >
-              + Add manuscript
-            </button>
-          )}
+        <div class="mb-6">
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Manuscript Tracker</h1>
+          <p class="text-gray-600 dark:text-gray-400 mt-1">
+            Consortium manuscripts and their progress — status, leads, journals, and repositories
+          </p>
         </div>
+
+        {/* Progress map: the lifecycle a manuscript moves through. Each row shows its furthest-along stage. */}
+        <div class="mb-6 bg-gradient-to-br from-white to-gray-50 dark:from-neutral-800 dark:to-neutral-800/60 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-5">
+          <div class="flex items-baseline justify-between gap-2 mb-4">
+            <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Manuscript progress</h2>
+            <span class="text-xs text-gray-400 dark:text-gray-500">each row shows its furthest stage</span>
+          </div>
+          <div class="overflow-x-auto -mx-1 px-1 pb-1">
+            <ol class="flex items-center gap-1 min-w-max">
+              {STATUS_PROGRESSION.map((slug, i) => (
+                <Fragment>
+                  <li class="flex items-center gap-2 shrink-0">
+                    <span class={`flex items-center justify-center w-7 h-7 rounded-full text-[11px] font-bold shadow-sm ${statusClasses(slug)}`}>
+                      {i + 1}
+                    </span>
+                    <span class="text-xs font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap">
+                      {statusLabel(slug)}
+                    </span>
+                  </li>
+                  {i < STATUS_PROGRESSION.length - 1 && (
+                    <span class="w-5 sm:w-8 h-0.5 rounded-full bg-gray-200 dark:bg-neutral-600 shrink-0 mx-0.5" aria-hidden="true"></span>
+                  )}
+                </Fragment>
+              ))}
+            </ol>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div class="mb-6">
+          <div class="flex border-b border-gray-200 dark:border-neutral-700">
+            {isAdmin && (
+              <button id="tab-add" class="tab-btn px-5 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
+                Add a Manuscript
+              </button>
+            )}
+            <button id="tab-active" class="tab-btn px-5 py-3 text-sm font-medium border-b-2 border-clif-burgundy text-clif-burgundy transition-colors">
+              Active Manuscripts
+            </button>
+            <button id="tab-all" class="tab-btn px-5 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
+              All Manuscripts
+            </button>
+          </div>
+        </div>
+
+        {isAdmin && (
+          <div id="panel-add" class="tab-panel hidden">
+            <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6">
+              <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Add a manuscript</h2>
+              <p class="text-sm text-gray-600 dark:text-gray-400 mt-1 mb-4">Add a new consortium manuscript to the tracker.</p>
+              <button
+                id="add-manuscript-btn"
+                class="bg-clif-burgundy hover:bg-clif-burgundy/90 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors"
+              >
+                + Add manuscript
+              </button>
+            </div>
+          </div>
+        )}
 
         {error ? (
           <div class="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg p-4 text-sm">
             Error loading data: {error}
           </div>
         ) : (
+          <div id="panel-table" class="tab-panel">
           <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 overflow-hidden">
             <div class="p-4 border-b border-gray-200 dark:border-neutral-700">
               <input
@@ -109,9 +220,8 @@ const inputClass =
                     <tr class="bg-gray-50 dark:bg-neutral-700/50 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
                       <th class="px-4 py-3 min-w-[18rem]">Title</th>
                       <th class="px-4 py-3 whitespace-nowrap">Lead authors</th>
-                      <th class="px-4 py-3 min-w-[12rem]">Status</th>
+                      <th class="px-4 py-3">Status</th>
                       <th class="px-4 py-3 whitespace-nowrap">Journal</th>
-                      <th class="px-4 py-3 whitespace-nowrap">CLIF</th>
                       <th class="px-4 py-3 whitespace-nowrap">ATS</th>
                       <th class="px-4 py-3 whitespace-nowrap">Contributing sites</th>
                       <th class="px-4 py-3 whitespace-nowrap">Validation buddy</th>
@@ -125,6 +235,8 @@ const inputClass =
                       <tr
                         class={`align-top hover:bg-gray-50 dark:hover:bg-neutral-700/30 transition-colors ${i % 2 === 0 ? '' : 'bg-gray-50/50 dark:bg-neutral-800/50'}`}
                         data-search-row
+                        data-search-text={m.searchText}
+                        data-published={m.statusSlugs.includes('published') ? '1' : '0'}
                       >
                         <td class="px-4 py-3 text-gray-900 dark:text-gray-200">
                           {m.manuscript_link ? (
@@ -134,23 +246,36 @@ const inputClass =
                           ) : (
                             <span class="font-medium">{m.title}</span>
                           )}
+                          {m.clif_version && (
+                            <span class="inline-flex items-center align-middle ml-1.5 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-clif-burgundy/10 text-clif-burgundy dark:bg-clif-burgundy/20 whitespace-nowrap" title="CLIF version">
+                              v{String(m.clif_version).replace(/\.0$/, '')}
+                            </span>
+                          )}
                         </td>
                         <td class="px-4 py-3 text-gray-700 dark:text-gray-300 whitespace-nowrap">{m.lead_authors ?? '—'}</td>
                         <td class="px-4 py-3">
-                          {m.statusSlugs.length === 0 ? (
-                            <span class="text-gray-400">—</span>
-                          ) : (
-                            <div class="flex flex-wrap gap-1">
-                              {m.statusSlugs.map((slug: string) => (
-                                <span class={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusClasses(slug)}`}>
-                                  {statusLabel(slug)}
-                                </span>
+                          {isAdmin ? (
+                            <select
+                              class={`status-select w-40 max-w-full truncate cursor-pointer rounded-full text-xs font-medium pl-2.5 pr-7 py-1 border-0 focus:outline-none focus:ring-2 focus:ring-clif-burgundy ${m.latest ? statusClasses(m.latest) : STATUS_EMPTY_CLASSES}`}
+                              data-id={m.id}
+                            >
+                              <option value="">—</option>
+                              {m.latest && !STATUS_PROGRESSION.includes(m.latest) && (
+                                <option value={m.latest} selected>{statusLabel(m.latest)}</option>
+                              )}
+                              {STATUS_PROGRESSION.map((slug) => (
+                                <option value={slug} selected={m.latest === slug}>{statusLabel(slug)}</option>
                               ))}
-                            </div>
+                            </select>
+                          ) : m.latest ? (
+                            <span class={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusClasses(m.latest)}`}>
+                              {statusLabel(m.latest)}
+                            </span>
+                          ) : (
+                            <span class="text-gray-400">—</span>
                           )}
                         </td>
                         <td class="px-4 py-3 text-gray-700 dark:text-gray-300 whitespace-nowrap">{m.journal ?? '—'}</td>
-                        <td class="px-4 py-3 text-gray-700 dark:text-gray-300 whitespace-nowrap">{m.clif_version ?? '—'}</td>
                         <td class="px-4 py-3 text-gray-700 dark:text-gray-300 whitespace-nowrap">{m.ats ?? '—'}</td>
                         <td class="px-4 py-3 text-gray-700 dark:text-gray-300">{m.contributing_sites ?? '—'}</td>
                         <td class="px-4 py-3 text-gray-700 dark:text-gray-300 whitespace-nowrap">{m.validation_buddy ?? '—'}</td>
@@ -177,9 +302,14 @@ const inputClass =
               </div>
             )}
 
+            <div id="manuscripts-empty" class="hidden p-8 text-center text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-neutral-700">
+              No manuscripts match this view.
+            </div>
+
             <div class="p-3 border-t border-gray-200 dark:border-neutral-700 text-xs text-gray-500 dark:text-gray-400">
               <span id="manuscripts-count">{rows.length}</span> {rows.length === 1 ? 'manuscript' : 'manuscripts'}
             </div>
+          </div>
           </div>
         )}
       </div>
@@ -199,28 +329,30 @@ const inputClass =
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label for="m-lead_authors" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Lead authors</label>
-            <input type="text" id="m-lead_authors" class={inputClass} />
-          </div>
-          <div>
             <label for="m-journal" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Journal</label>
             <input type="text" id="m-journal" class={inputClass} />
           </div>
           <div>
             <label for="m-clif_version" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">CLIF version</label>
-            <input type="text" id="m-clif_version" class={inputClass} />
+            <select id="m-clif_version" class={inputClass}>
+              <option value="">—</option>
+              {clifVersions.map((v) => (
+                <option value={v}>{v}</option>
+              ))}
+            </select>
           </div>
           <div>
             <label for="m-ats" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">ATS</label>
             <input type="text" id="m-ats" class={inputClass} placeholder="e.g. ATS 2026" />
           </div>
           <div>
-            <label for="m-contributing_sites" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Contributing sites</label>
-            <input type="text" id="m-contributing_sites" class={inputClass} />
-          </div>
-          <div>
             <label for="m-validation_buddy" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Validation buddy</label>
-            <input type="text" id="m-validation_buddy" class={inputClass} />
+            <select id="m-validation_buddy" class={inputClass}>
+              <option value="">—</option>
+              {memberNames.map((name) => (
+                <option value={name}>{name}</option>
+              ))}
+            </select>
           </div>
           <div>
             <label for="m-github_repo" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">GitHub repository</label>
@@ -230,6 +362,36 @@ const inputClass =
             <label for="m-manuscript_link" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Manuscript link</label>
             <input type="url" id="m-manuscript_link" class={inputClass} placeholder="https://…" />
           </div>
+        </div>
+
+        <div>
+          <span class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Lead authors</span>
+          {memberNames.length > 0 && (
+            <div class="max-h-36 overflow-y-auto border border-gray-200 dark:border-neutral-600 rounded-lg p-3 flex flex-wrap gap-x-4 gap-y-2">
+              {memberNames.map((name) => (
+                <label class="inline-flex items-center gap-1.5 text-sm text-gray-700 dark:text-gray-300">
+                  <input type="checkbox" class="m-lead-author w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy" value={name} />
+                  {name}
+                </label>
+              ))}
+            </div>
+          )}
+          <input type="text" id="m-lead_authors_other" class={`${inputClass} mt-2`} placeholder="Other authors (comma-separated)" />
+        </div>
+
+        <div>
+          <span class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Contributing sites</span>
+          {siteNames.length > 0 && (
+            <div class="max-h-36 overflow-y-auto border border-gray-200 dark:border-neutral-600 rounded-lg p-3 flex flex-wrap gap-x-4 gap-y-2">
+              {siteNames.map((name) => (
+                <label class="inline-flex items-center gap-1.5 text-sm text-gray-700 dark:text-gray-300">
+                  <input type="checkbox" class="m-site w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy" value={name} />
+                  {name}
+                </label>
+              ))}
+            </div>
+          )}
+          <input type="text" id="m-contributing_sites_other" class={`${inputClass} mt-2`} placeholder="Other sites (comma-separated)" />
         </div>
 
         <div>
@@ -264,27 +426,104 @@ const inputClass =
     </dialog>
   )}
 
-  <script is:inline define:vars={{ manuscripts: editData, isAdmin }}>
+  <script is:inline define:vars={{ manuscripts: editData, isAdmin, statusClassMap, statusEmptyClasses: STATUS_EMPTY_CLASSES }}>
     document.addEventListener('DOMContentLoaded', function () {
-      // ---- Search filter ----
+      // ---- Sub-tabs (Add / Active / All) + search filter ----
       var input = document.getElementById('search-manuscripts');
       var table = document.getElementById('manuscripts-table');
       var countEl = document.getElementById('manuscripts-count');
-      if (input && table) {
+      var emptyEl = document.getElementById('manuscripts-empty');
+      var tabAdd = document.getElementById('tab-add');
+      var tabActive = document.getElementById('tab-active');
+      var tabAll = document.getElementById('tab-all');
+      var panelAdd = document.getElementById('panel-add');
+      var panelTable = document.getElementById('panel-table');
+
+      var searchQuery = '';
+      var rowFilter = 'active'; // 'active' = not published, 'all' = everything
+
+      function applyFilters() {
+        if (!table) return;
+        var allRows = table.querySelectorAll('[data-search-row]');
+        var visible = 0;
+        allRows.forEach(function (row) {
+          var matchesSearch = (row.getAttribute('data-search-text') || '').includes(searchQuery);
+          var matchesFilter = rowFilter === 'all' || row.getAttribute('data-published') !== '1';
+          var show = matchesSearch && matchesFilter;
+          row.style.display = show ? '' : 'none';
+          if (show) visible++;
+        });
+        if (countEl) countEl.textContent = String(visible);
+        if (emptyEl) emptyEl.classList.toggle('hidden', visible !== 0 || allRows.length === 0);
+      }
+
+      if (input) {
         input.addEventListener('input', function () {
-          var query = this.value.toLowerCase();
-          var allRows = table.querySelectorAll('[data-search-row]');
-          var visible = 0;
-          allRows.forEach(function (row) {
-            var match = row.textContent.toLowerCase().includes(query);
-            row.style.display = match ? '' : 'none';
-            if (match) visible++;
-          });
-          if (countEl) countEl.textContent = String(visible);
+          searchQuery = this.value.toLowerCase();
+          applyFilters();
         });
       }
 
+      function setActiveTab(btn) {
+        [tabAdd, tabActive, tabAll].forEach(function (b) {
+          if (!b) return;
+          b.classList.remove('border-clif-burgundy', 'text-clif-burgundy');
+          b.classList.add('border-transparent', 'text-gray-500', 'dark:text-gray-400');
+        });
+        btn.classList.add('border-clif-burgundy', 'text-clif-burgundy');
+        btn.classList.remove('border-transparent', 'text-gray-500', 'dark:text-gray-400');
+      }
+
+      function showTable(filter, btn) {
+        setActiveTab(btn);
+        if (panelAdd) panelAdd.classList.add('hidden');
+        if (panelTable) panelTable.classList.remove('hidden');
+        rowFilter = filter;
+        applyFilters();
+      }
+
+      if (tabAdd) tabAdd.addEventListener('click', function () {
+        setActiveTab(tabAdd);
+        if (panelTable) panelTable.classList.add('hidden');
+        if (panelAdd) panelAdd.classList.remove('hidden');
+      });
+      if (tabActive) tabActive.addEventListener('click', function () { showTable('active', tabActive); });
+      if (tabAll) tabAll.addEventListener('click', function () { showTable('all', tabAll); });
+
+      // Default view: Active Manuscripts
+      applyFilters();
+
       if (!isAdmin) return;
+
+      // ---- Inline status dropdown (quick-edit without opening the modal) ----
+      var STATUS_SELECT_BASE = 'status-select w-40 max-w-full truncate cursor-pointer rounded-full text-xs font-medium pl-2.5 pr-7 py-1 border-0 focus:outline-none focus:ring-2 focus:ring-clif-burgundy';
+      document.querySelectorAll('.status-select').forEach(function (sel) {
+        var prev = sel.value;
+        sel.addEventListener('change', async function () {
+          var id = this.dataset.id;
+          var slug = this.value;
+          this.disabled = true;
+          var res = await fetch('/api/manuscripts/update-status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: id, status: slug ? [slug] : [] }),
+          });
+          if (res.ok) {
+            // Recolor the dropdown and keep Active/All filtering in sync.
+            this.className = STATUS_SELECT_BASE + ' ' + (slug ? (statusClassMap[slug] || statusEmptyClasses) : statusEmptyClasses);
+            var row = this.closest('[data-search-row]');
+            if (row) row.setAttribute('data-published', slug === 'published' ? '1' : '0');
+            prev = slug;
+            applyFilters();
+            this.disabled = false;
+          } else {
+            var data = await res.json().catch(function () { return {}; });
+            alert(data.error || 'Failed to update status');
+            this.value = prev; // revert
+            this.disabled = false;
+          }
+        });
+      });
 
       // ---- Add / edit modal ----
       var modal = document.getElementById('manuscript-modal');
@@ -295,19 +534,69 @@ const inputClass =
       var byId = {};
       manuscripts.forEach(function (m) { byId[m.id] = m; });
 
-      var TEXT_FIELDS = ['title', 'lead_authors', 'journal', 'clif_version', 'ats',
-        'contributing_sites', 'validation_buddy', 'github_repo', 'manuscript_link',
-        'cite', 'notes'];
+      // lead_authors, contributing_sites, validation_buddy and clif_version are
+      // handled separately as checkbox lists / dropdowns.
+      var TEXT_FIELDS = ['title', 'journal', 'ats',
+        'github_repo', 'manuscript_link', 'cite', 'notes'];
 
       function setField(name, value) {
         var el = document.getElementById('m-' + name);
         if (el) el.value = value || '';
       }
 
+      // Check the boxes (class `cls`) whose value matches a name in the stored
+      // comma-separated string; anything unmatched goes into the `otherId` input
+      // so existing free-text values are preserved.
+      function setChecklist(cls, otherId, raw) {
+        var boxes = form.querySelectorAll('.' + cls);
+        var known = {};
+        boxes.forEach(function (cb) { cb.checked = false; known[cb.value.toLowerCase()] = cb; });
+        var leftover = [];
+        String(raw || '').split(',').forEach(function (part) {
+          var name = part.trim();
+          if (!name) return;
+          var cb = known[name.toLowerCase()];
+          if (cb) cb.checked = true;
+          else leftover.push(name);
+        });
+        var otherEl = document.getElementById(otherId);
+        if (otherEl) otherEl.value = leftover.join(', ');
+      }
+
+      // Read a checklist + its "other" input back into one comma-separated string.
+      function readChecklist(cls, otherId) {
+        var vals = [];
+        form.querySelectorAll('.' + cls + ':checked').forEach(function (cb) { vals.push(cb.value); });
+        var otherEl = document.getElementById(otherId);
+        if (otherEl && otherEl.value.trim()) {
+          otherEl.value.split(',').forEach(function (p) { if (p.trim()) vals.push(p.trim()); });
+        }
+        return vals.join(', ');
+      }
+
+      // Set a <select> to `value`, adding a matching option first if the stored
+      // value isn't already in the list so existing data is preserved.
+      function setSelectValue(id, value) {
+        var sel = document.getElementById(id);
+        if (!sel) return;
+        var v = value || '';
+        if (v && !Array.prototype.some.call(sel.options, function (o) { return o.value === v; })) {
+          var opt = document.createElement('option');
+          opt.value = v;
+          opt.textContent = v;
+          sel.appendChild(opt);
+        }
+        sel.value = v;
+      }
+
       function openModal(data) {
         errorEl.classList.add('hidden');
         document.getElementById('m-id').value = data ? data.id : '';
         TEXT_FIELDS.forEach(function (f) { setField(f, data ? data[f] : ''); });
+        setChecklist('m-lead-author', 'm-lead_authors_other', data ? data.lead_authors : '');
+        setChecklist('m-site', 'm-contributing_sites_other', data ? data.contributing_sites : '');
+        setSelectValue('m-validation_buddy', data ? data.validation_buddy : '');
+        setSelectValue('m-clif_version', data ? data.clif_version : '');
         var selected = data && data.status ? data.status : [];
         form.querySelectorAll('.m-status').forEach(function (cb) {
           cb.checked = selected.indexOf(cb.value) !== -1;
@@ -339,6 +628,12 @@ const inputClass =
         TEXT_FIELDS.forEach(function (f) {
           payload[f] = document.getElementById('m-' + f).value;
         });
+        payload.lead_authors = readChecklist('m-lead-author', 'm-lead_authors_other');
+        payload.contributing_sites = readChecklist('m-site', 'm-contributing_sites_other');
+        var buddyEl = document.getElementById('m-validation_buddy');
+        payload.validation_buddy = buddyEl ? buddyEl.value : '';
+        var clifEl = document.getElementById('m-clif_version');
+        payload.clif_version = clifEl ? clifEl.value : '';
         form.querySelectorAll('.m-status:checked').forEach(function (cb) {
           payload.status.push(cb.value);
         });
