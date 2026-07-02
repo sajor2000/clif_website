@@ -21,39 +21,77 @@ if (isAdmin) {
 const portalItems = [
   { label: 'Dashboard', href: '/portal', icon: 'grid', wip: false },
   { label: 'Authorship Tool', href: '/portal/authorship', icon: 'document', wip: false },
-  { label: 'Calendar', href: '/portal/calendar', icon: 'calendar-days', wip: false },
+  { label: 'Calendar', href: '/portal/calendar', icon: 'calendar', wip: false },
   { label: 'Letter of Support Tracker', href: '/portal/los-requests', icon: 'document', wip: false },
   { label: 'Manuscript Tracker', href: '/portal/status', icon: 'check-circle', wip: false },
   { label: 'Member Directory', href: '/portal/directory', icon: 'users', wip: false },
   { label: 'Project Run Tracker', href: '/portal/project-runs', icon: 'check-circle', wip: false },
   { label: 'Secure Masking', href: '/portal/crypto', icon: 'lock', wip: false },
   { label: 'Site Details', href: '/portal/site-details', icon: 'building', wip: false },
-  { label: 'Voting', href: '/portal/voting', icon: 'vote', wip: false },
+  { label: 'Voting', href: '/portal/voting', icon: 'ballot', wip: false },
 ];
 
 function isActive(href: string): boolean {
   if (href === '/portal') return currentPath === '/portal' || currentPath === '/portal/';
   return currentPath.startsWith(href);
 }
+
+// Inline heroicon (outline) paths, keyed by the icon name used above. Icons are only
+// visible when the sidebar is collapsed, giving each item a recognizable glyph.
+const ICON_PATHS: Record<string, string> = {
+  grid: 'M3.75 6A2.25 2.25 0 0 1 6 3.75h1.5A2.25 2.25 0 0 1 9.75 6v1.5A2.25 2.25 0 0 1 7.5 9.75H6A2.25 2.25 0 0 1 3.75 7.5V6ZM3.75 16.5A2.25 2.25 0 0 1 6 14.25h1.5A2.25 2.25 0 0 1 9.75 16.5V18A2.25 2.25 0 0 1 7.5 20.25H6A2.25 2.25 0 0 1 3.75 18v-1.5ZM14.25 6A2.25 2.25 0 0 1 16.5 3.75H18A2.25 2.25 0 0 1 20.25 6v1.5A2.25 2.25 0 0 1 18 9.75h-1.5A2.25 2.25 0 0 1 14.25 7.5V6ZM14.25 16.5A2.25 2.25 0 0 1 16.5 14.25H18A2.25 2.25 0 0 1 20.25 16.5V18A2.25 2.25 0 0 1 18 20.25h-1.5A2.25 2.25 0 0 1 14.25 18v-1.5Z',
+  document: 'M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z',
+  calendar: 'M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5',
+  'check-circle': 'M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
+  users: 'M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z',
+  lock: 'M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z',
+  building: 'M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21',
+  ballot: 'M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25Z',
+  shield: 'M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z',
+};
+
+function iconSvg(name: string): string {
+  const d = ICON_PATHS[name] || ICON_PATHS.grid;
+  return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="${d}" /></svg>`;
+}
 ---
 
-<nav class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-4" aria-label="Portal navigation">
-  <h2 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 tracking-wider mb-3 px-3">Portal</h2>
+<nav
+  id="portal-nav"
+  class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-4"
+  aria-label="Portal navigation"
+>
+  <div class="nav-header flex items-center justify-between mb-3 px-3">
+    <h2 class="nav-title text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 tracking-wider">Portal</h2>
+    <button
+      type="button"
+      id="portal-nav-toggle"
+      class="hidden lg:inline-flex items-center justify-center rounded-md p-1 text-gray-400 hover:text-clif-burgundy hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors"
+      aria-label="Toggle sidebar"
+      aria-expanded="true"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="nav-chevron w-4 h-4 transition-transform">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M18.75 4.5 11.25 12l7.5 7.5m-9-15L2.25 12l7.5 7.5" />
+      </svg>
+    </button>
+  </div>
   <ul class="space-y-1">
     {portalItems.map((item) => (
       <li>
         <a
           href={item.href}
-          class={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+          title={item.label}
+          class={`nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
             isActive(item.href)
               ? 'bg-clif-burgundy/10 text-clif-burgundy dark:bg-clif-burgundy/20'
               : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700'
           }`}
           aria-current={isActive(item.href) ? 'page' : undefined}
         >
-          {item.label}
+          <span class="nav-icon shrink-0" set:html={iconSvg(item.icon)} />
+          <span class="nav-label">{item.label}</span>
           {item.wip && (
-            <span class="ml-auto text-[10px] font-semibold uppercase tracking-wide bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-1.5 py-0.5 rounded">WIP</span>
+            <span class="wip-badge ml-auto text-[10px] font-semibold uppercase tracking-wide bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-1.5 py-0.5 rounded">WIP</span>
           )}
         </a>
       </li>
@@ -62,19 +100,98 @@ function isActive(href: string): boolean {
       <li class="pt-2 mt-2 border-t border-gray-200 dark:border-neutral-700">
         <a
           href="/portal/admin"
-          class={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+          title="Admin Panel"
+          class={`nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
             isActive('/portal/admin')
               ? 'bg-clif-burgundy/10 text-clif-burgundy dark:bg-clif-burgundy/20'
               : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700'
           }`}
           aria-current={isActive('/portal/admin') ? 'page' : undefined}
         >
-          Admin Panel
+          <span class="nav-icon shrink-0" set:html={iconSvg('shield')} />
+          <span class="nav-label">Admin Panel</span>
           {pendingCount > 0 && (
-            <span class="ml-auto inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold text-white bg-red-500 rounded-full">{pendingCount}</span>
+            <span class="admin-count ml-auto inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold text-white bg-red-500 rounded-full">{pendingCount}</span>
           )}
         </a>
       </li>
     )}
   </ul>
 </nav>
+
+<style>
+  /* Icons only show once the sidebar collapses; expanded view stays label-only. */
+  #portal-nav .nav-icon {
+    display: none;
+  }
+
+  /* Collapse behavior applies on lg+ where the sidebar sits beside the content.
+     Below that the nav stacks on top and always shows full labels. */
+  @media (min-width: 1024px) {
+    #portal-nav.is-collapsed .nav-title,
+    #portal-nav.is-collapsed .nav-label,
+    #portal-nav.is-collapsed .wip-badge {
+      display: none;
+    }
+    #portal-nav.is-collapsed .nav-icon {
+      display: inline-flex;
+    }
+    #portal-nav.is-collapsed .nav-header {
+      justify-content: center;
+    }
+    #portal-nav.is-collapsed .nav-link {
+      justify-content: center;
+      padding-left: 0;
+      padding-right: 0;
+    }
+    #portal-nav.is-collapsed .admin-count {
+      position: absolute;
+      margin: 0;
+      top: 0.15rem;
+      right: 0.35rem;
+      width: 1rem;
+      height: 1rem;
+    }
+    #portal-nav.is-collapsed .nav-link {
+      position: relative;
+    }
+    #portal-nav.is-collapsed {
+      padding-left: 0.5rem;
+      padding-right: 0.5rem;
+    }
+    #portal-nav.is-collapsed .nav-chevron {
+      transform: rotate(180deg);
+    }
+  }
+</style>
+
+<script is:inline>
+  (function () {
+    var KEY = 'clifPortalNavCollapsed';
+    var nav = document.getElementById('portal-nav');
+    if (!nav) return;
+    var aside = nav.closest('aside');
+    var toggle = document.getElementById('portal-nav-toggle');
+
+    function apply(collapsed) {
+      nav.classList.toggle('is-collapsed', collapsed);
+      if (aside) {
+        aside.classList.toggle('lg:w-64', !collapsed);
+        aside.classList.toggle('lg:w-16', collapsed);
+      }
+      if (toggle) toggle.setAttribute('aria-expanded', String(!collapsed));
+    }
+
+    apply(localStorage.getItem(KEY) === '1');
+
+    if (toggle) {
+      toggle.addEventListener('click', function () {
+        var collapsed = !nav.classList.contains('is-collapsed');
+        try {
+          localStorage.setItem(KEY, collapsed ? '1' : '0');
+        } catch (e) {}
+        apply(collapsed);
+      });
+    }
+  })();
+</script>
