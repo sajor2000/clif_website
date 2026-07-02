@@ -15,6 +15,7 @@ export const TEXT_FIELDS = [
   'journal',
   'cite',
   'contributing_sites',
+  'lead_site',
   'validation_buddy',
   'notes',
 ] as const;
@@ -77,9 +78,9 @@ export const POST: APIRoute = async ({ locals, request }) => {
     await db.execute({
       sql: `INSERT INTO manuscripts
               (title, clif_version, ats, github_repo, manuscript_link,
-               lead_authors, journal, cite, contributing_sites,
+               lead_authors, journal, cite, contributing_sites, lead_site,
                validation_buddy, notes, status, sort_order, updated_at, updated_by)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [title, ...values, status, sortOrder, now, locals.user.id],
     });
   } catch (e: any) {

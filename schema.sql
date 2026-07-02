@@ -123,6 +123,7 @@ CREATE TABLE IF NOT EXISTS manuscripts (
   journal TEXT,
   cite TEXT,
   contributing_sites TEXT,
+  lead_site TEXT,
   validation_buddy TEXT,
   notes TEXT,
   sort_order INTEGER NOT NULL DEFAULT 0,
