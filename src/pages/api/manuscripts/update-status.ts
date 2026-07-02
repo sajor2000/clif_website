@@ -8,7 +8,7 @@ import { serializeStatus } from './create';
 // Unlike /api/manuscripts/update, this touches ONLY the status column so the
 // other fields are left untouched.
 export const POST: APIRoute = async ({ locals, request }) => {
-  if (locals.user?.role !== 'admin') {
+  if (!locals.user?.is_approved) {
     return new Response(JSON.stringify({ error: 'Forbidden' }), {
       status: 403,
       headers: { 'Content-Type': 'application/json' },

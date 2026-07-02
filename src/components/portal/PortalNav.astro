@@ -17,17 +17,18 @@ if (isAdmin) {
   } catch {}
 }
 
+// Dashboard stays pinned first; everything after it is sorted alphabetically by label.
 const portalItems = [
   { label: 'Dashboard', href: '/portal', icon: 'grid', wip: false },
-  { label: 'Site Details', href: '/portal/site-details', icon: 'building', wip: false },
-  { label: 'Member Directory', href: '/portal/directory', icon: 'users', wip: false },
   { label: 'Authorship Tool', href: '/portal/authorship', icon: 'document', wip: false },
-  { label: 'Project Run Tracker', href: '/portal/project-runs', icon: 'check-circle', wip: false },
+  { label: 'Calendar', href: '/portal/calendar', icon: 'calendar-days', wip: false },
   { label: 'Letter of Support Tracker', href: '/portal/los-requests', icon: 'document', wip: false },
   { label: 'Manuscript Tracker', href: '/portal/status', icon: 'check-circle', wip: false },
-  { label: 'Calendar', href: '/portal/calendar', icon: 'calendar-days', wip: false },
-  { label: 'Voting', href: '/portal/voting', icon: 'vote', wip: false },
+  { label: 'Member Directory', href: '/portal/directory', icon: 'users', wip: false },
+  { label: 'Project Run Tracker', href: '/portal/project-runs', icon: 'check-circle', wip: false },
   { label: 'Secure Masking', href: '/portal/crypto', icon: 'lock', wip: false },
+  { label: 'Site Details', href: '/portal/site-details', icon: 'building', wip: false },
+  { label: 'Voting', href: '/portal/voting', icon: 'vote', wip: false },
 ];
 
 function isActive(href: string): boolean {

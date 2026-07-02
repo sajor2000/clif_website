@@ -281,7 +281,43 @@ export function formatAmaJama(
   };
 }
 
-export type FormatId = 'vancouver' | 'ama';
+/**
+ * NLM / PubMed byline.
+ *   "Lastname II¹, Lastname II², Lastname II³"
+ * Surname first, then initials run together with no periods (the form PubMed
+ * indexes and displays). Authors are comma-separated; no degrees in the byline.
+ */
+export function formatNlm(
+  authors: AuthorInput[],
+  registry: AffiliationRegistry,
+  opts: FormatOptions = {}
+): FormattedByline {
+  const segments = authors.map((a) => {
+    const { last } = parseName(a.full_name);
+    const initials = nameInitialsRunTogether(a.full_name);
+    const namePart = [last, initials].filter(Boolean).join(' ');
+    const sup = superscriptList(registry.byAuthor[a.id] || []);
+    const marker = markerSuperscript(a);
+    return `${namePart}${marker}${sup}`;
+  });
+  const byline = segments.join(', ');
+
+  const footnoteLines: string[] = [];
+  if (opts.includeFootnotes !== false) {
+    const ec = equalContribFootnote(authors);
+    if (ec) footnoteLines.push(ec);
+    const cor = correspondingFootnote(authors);
+    if (cor) footnoteLines.push(cor);
+  }
+
+  return {
+    byline,
+    footnotes: footnoteLines.join('\n'),
+    affBlock: affBlockText(registry),
+  };
+}
+
+export type FormatId = 'vancouver' | 'ama' | 'nlm';
 
 export function format(
   id: FormatId,
@@ -289,9 +325,9 @@ export function format(
   registry: AffiliationRegistry,
   opts: FormatOptions = {}
 ): FormattedByline {
-  return id === 'ama'
-    ? formatAmaJama(authors, registry, opts)
-    : formatVancouver(authors, registry, opts);
+  if (id === 'ama') return formatAmaJama(authors, registry, opts);
+  if (id === 'nlm') return formatNlm(authors, registry, opts);
+  return formatVancouver(authors, registry, opts);
 }
 
 /**

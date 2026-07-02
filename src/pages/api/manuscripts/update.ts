@@ -5,7 +5,7 @@ import { getDb } from '../../../lib/turso';
 import { serializeStatus, TEXT_FIELDS } from './create';
 
 export const POST: APIRoute = async ({ locals, request }) => {
-  if (locals.user?.role !== 'admin') {
+  if (!locals.user?.is_approved) {
     return new Response(JSON.stringify({ error: 'Forbidden' }), {
       status: 403,
       headers: { 'Content-Type': 'application/json' },

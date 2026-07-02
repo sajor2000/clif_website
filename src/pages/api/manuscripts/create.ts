@@ -34,7 +34,7 @@ export function serializeStatus(status: unknown): string | null {
 }
 
 export const POST: APIRoute = async ({ locals, request }) => {
-  if (locals.user?.role !== 'admin') {
+  if (!locals.user?.is_approved) {
     return new Response(JSON.stringify({ error: 'Forbidden' }), {
       status: 403,
       headers: { 'Content-Type': 'application/json' },
