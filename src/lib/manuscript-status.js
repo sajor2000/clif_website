@@ -18,6 +18,10 @@ export const MANUSCRIPT_STATUS_TAGS = {
     label: 'Published',
     classes: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
   },
+  accepted: {
+    label: 'Accepted',
+    classes: 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400',
+  },
   'under-review': {
     label: 'Under review',
     classes: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
@@ -29,6 +33,10 @@ export const MANUSCRIPT_STATUS_TAGS = {
   'manuscript-wip': {
     label: 'Manuscript WIP',
     classes: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
+  },
+  'code-released': {
+    label: 'Code released',
+    classes: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400',
   },
   'buddy-testing': {
     label: 'Buddy testing',
@@ -42,9 +50,13 @@ export const MANUSCRIPT_STATUS_TAGS = {
     label: 'Code under development',
     classes: 'bg-gray-100 text-gray-600 dark:bg-neutral-700 dark:text-gray-400',
   },
-  'code-released': {
-    label: 'Code released',
-    classes: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400',
+  'research-design': {
+    label: 'Research Design',
+    classes: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400',
+  },
+  'not-started': {
+    label: 'Not started',
+    classes: 'bg-slate-100 text-slate-600 dark:bg-slate-800/40 dark:text-slate-300',
   },
 };
 
@@ -58,6 +70,8 @@ const FALLBACK_CLASSES =
  * @type {string[]}
  */
 export const STATUS_PROGRESSION = [
+  'not-started',
+  'research-design',
   'code-under-development',
   'code-run-complete',
   'buddy-testing',
@@ -65,6 +79,7 @@ export const STATUS_PROGRESSION = [
   'manuscript-wip',
   'pre-print',
   'under-review',
+  'accepted',
   'published',
 ];
 
@@ -93,6 +108,7 @@ export function latestStatus(slugs) {
 // seen in the source "Internal Tracker - Manuscripts" sheet.
 const PHRASE_TO_SLUG = {
   'published': 'published',
+  'accepted': 'accepted',
   'under review': 'under-review',
   'in review': 'under-review',
   'pre print': 'pre-print',
@@ -103,6 +119,8 @@ const PHRASE_TO_SLUG = {
   'code run complete': 'code-run-complete',
   'code under development': 'code-under-development',
   'code released': 'code-released',
+  'research design': 'research-design',
+  'not started': 'not-started',
 };
 
 /** Lowercase, collapse whitespace/underscores/dashes to single spaces, trim. */

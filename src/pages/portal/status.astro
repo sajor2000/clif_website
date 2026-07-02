@@ -149,25 +149,18 @@ const inputClass =
             <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Manuscript progress</h2>
             <span class="text-xs text-gray-400 dark:text-gray-500">each row shows its furthest stage</span>
           </div>
-          <div class="overflow-x-auto -mx-1 px-1 pb-1">
-            <ol class="flex items-center gap-1 min-w-max">
-              {STATUS_PROGRESSION.map((slug, i) => (
-                <Fragment>
-                  <li class="flex items-center gap-2 shrink-0">
-                    <span class={`flex items-center justify-center w-7 h-7 rounded-full text-[11px] font-bold shadow-sm ${statusClasses(slug)}`}>
-                      {i + 1}
-                    </span>
-                    <span class="text-xs font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap">
-                      {statusLabel(slug)}
-                    </span>
-                  </li>
-                  {i < STATUS_PROGRESSION.length - 1 && (
-                    <span class="w-5 sm:w-8 h-0.5 rounded-full bg-gray-200 dark:bg-neutral-600 shrink-0 mx-0.5" aria-hidden="true"></span>
-                  )}
-                </Fragment>
-              ))}
-            </ol>
-          </div>
+          <ol class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-11 gap-x-2 gap-y-4">
+            {STATUS_PROGRESSION.map((slug, i) => (
+              <li class="flex flex-col items-center text-center gap-1.5">
+                <span class={`flex items-center justify-center w-7 h-7 rounded-full text-[11px] font-bold shadow-sm ${statusClasses(slug)}`}>
+                  {i + 1}
+                </span>
+                <span class="text-[11px] font-semibold leading-tight text-gray-700 dark:text-gray-200">
+                  {statusLabel(slug)}
+                </span>
+              </li>
+            ))}
+          </ol>
         </div>
 
         {/* Tabs */}
