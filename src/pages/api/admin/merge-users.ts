@@ -120,6 +120,11 @@ export const POST: APIRoute = async ({ locals, request }) => {
     { sql: `UPDATE crypto_projects SET key_assigner_id = ? WHERE key_assigner_id = ?`, args: [canonicalId, duplicateId] },
     { sql: `UPDATE crypto_site_keys SET assigned_to = ? WHERE assigned_to = ?`, args: [canonicalId, duplicateId] },
     { sql: `UPDATE crypto_submissions SET submitted_by = ? WHERE submitted_by = ?`, args: [canonicalId, duplicateId] },
+    { sql: `UPDATE manuscripts SET updated_by = ? WHERE updated_by = ?`, args: [canonicalId, duplicateId] },
+    { sql: `UPDATE project_runs SET created_by = ? WHERE created_by = ?`, args: [canonicalId, duplicateId] },
+    { sql: `UPDATE project_run_sites SET updated_by = ? WHERE updated_by = ?`, args: [canonicalId, duplicateId] },
+    { sql: `UPDATE los_requests SET created_by = ? WHERE created_by = ?`, args: [canonicalId, duplicateId] },
+    { sql: `UPDATE los_requests SET approved_by = ? WHERE approved_by = ?`, args: [canonicalId, duplicateId] },
 
     // Move login identities; they become non-primary under the canonical user.
     // (google_id is globally unique, so no collision is possible.)
