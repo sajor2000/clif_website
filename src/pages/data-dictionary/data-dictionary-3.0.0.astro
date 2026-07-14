@@ -449,9 +449,8 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
                 return (
                   <section id={table.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}
                            class="mb-10 scroll-mt-20">
-                    <h3 class="text-xl font-semibold mb-3 mt-6 text-gray-900 flex items-center gap-2">
+                    <h3 class="text-xl font-semibold mb-3 mt-6 text-gray-900">
                       {table.name.replace(/_/g, ' ')}
-                      <span class="text-xs bg-gray-100 text-gray-700 border border-gray-300 px-2 py-1 rounded-full font-medium">Proposed</span>
                     </h3>
                     {intro && (
                       <div class="prose" set:html={md.render(intro)} />
