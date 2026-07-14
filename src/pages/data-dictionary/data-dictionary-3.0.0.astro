@@ -78,8 +78,11 @@ const alphaTableNames = [
 ];
 const conceptTableNames = [
   'airway', 'clinical_trial', 'drain', 'ed_encounter', 'line', 'patient_attributes', 'place_based_index',
-  'provider', 'radiology', 'therapy_details', 'transfusion', 'validated_diagnosis'
+  'provider', 'radiology', 'transfusion'
 ];
+// Future Proposed tables: listed by name/description only — schema is hidden
+// because the consortium has not committed to a structure for these yet.
+const futureProposedTableNames = ['therapy_details', 'validated_diagnosis'];
 const betaTables = allTables
   .filter(t => betaTableNames.includes(t.name))
   .sort((a, b) => a.name.localeCompare(b.name));;
@@ -88,6 +91,9 @@ const alphaTables = allTables
   .sort((a, b) => a.name.localeCompare(b.name));
 const conceptTables = allTables
   .filter(t => conceptTableNames.includes(t.name))
+  .sort((a, b) => a.name.localeCompare(b.name));
+const futureProposedTables = allTables
+  .filter(t => futureProposedTableNames.includes(t.name))
   .sort((a, b) => a.name.localeCompare(b.name));
 
 
@@ -227,11 +233,20 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
               </div>
             </div>
             <!-- Future Proposed Tables -->
-            <div class="mb-4">
+            <div class="mb-4" data-table-group>
               <div class="flex items-center gap-2 mb-2">
                 <span class="font-medium">Future Proposed Tables</span>
+                <span class="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full">{futureProposedTables.length}</span>
               </div>
-              {/* No links under this section */}
+              <div class="pl-4 space-y-1">
+                {futureProposedTables.map(table => (
+                  <a href={`#${table.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                     data-table-name={table.name.toLowerCase()}
+                     class="table-link block py-1 px-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-gray-50 rounded">
+                    {table.name}
+                  </a>
+                ))}
+              </div>
             </div>
           </nav>
         </aside>
@@ -244,6 +259,7 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
               !betaTableNames.includes(sectionName) &&
               !alphaTableNames.includes(sectionName) &&
               !conceptTableNames.includes(sectionName) &&
+              !futureProposedTableNames.includes(sectionName) &&
               sectionName !== 'Beta_Tables' &&
               sectionName !== 'Alpha_Tables' &&
               sectionName !== 'Concept_Tables' &&
@@ -420,10 +436,29 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
           })}
 
           {/* Render Future Proposed Tables section if present */}
-          {markdownTableSections['Future_Proposed_Tables'] && (
+          {(markdownTableSections['Future_Proposed_Tables'] || futureProposedTables.length > 0) && (
             <div>
               <h2 class="section-header">Future Proposed Tables</h2>
-              <div class="prose mb-8" set:html={md.render(markdownTableSections['Future_Proposed_Tables'])} />
+              {markdownTableSections['Future_Proposed_Tables'] && (
+                <div class="prose mb-8" set:html={md.render(markdownTableSections['Future_Proposed_Tables'])} />
+              )}
+              {/* Proposed tables: show name + description only, schema hidden */}
+              {futureProposedTables.map(table => {
+                const section = markdownTableSections[table.name] || '';
+                const { intro } = splitTableSection(section);
+                return (
+                  <section id={table.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}
+                           class="mb-10 scroll-mt-20">
+                    <h3 class="text-xl font-semibold mb-3 mt-6 text-gray-900 flex items-center gap-2">
+                      {table.name.replace(/_/g, ' ')}
+                      <span class="text-xs bg-gray-100 text-gray-700 border border-gray-300 px-2 py-1 rounded-full font-medium">Proposed</span>
+                    </h3>
+                    {intro && (
+                      <div class="prose" set:html={md.render(intro)} />
+                    )}
+                  </section>
+                );
+              })}
             </div>
           )}
         </article>
