@@ -153,8 +153,6 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
     purposeDetail: f.purpose_detail,
     deadline: f.results_deadline,
     requestedBy: user.full_name || user.email || null,
-    repoUrl: f.repo_url,
-    boxFolderUrl: f.box_folder_url,
     projectUrl: `${url.origin}/portal/project-runs`,
   }).catch(() => {});
 

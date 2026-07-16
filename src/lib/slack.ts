@@ -28,8 +28,6 @@ export interface ProjectRunSlackInput {
   purposeDetail: string | null;
   deadline: string | null;
   requestedBy: string | null;
-  repoUrl: string | null;
-  boxFolderUrl: string | null;
   projectUrl: string;
 }
 
@@ -63,7 +61,10 @@ export function buildProjectRunSlackMessage(r: ProjectRunSlackInput): Record<str
       type: 'section',
       text: {
         type: 'mrkdwn',
-        text: `:bell: *New project run request*\n<${r.projectUrl}|${escapeSlack(numPrefix + r.title)}>`,
+        // <!channel> is Slack's raw token for @channel -- it notifies every
+        // member of #run_requests, including those currently offline. Written
+        // literally (not "@channel"), which would render as plain text.
+        text: `<!channel> :bell: *New project run request*\n<${r.projectUrl}|${escapeSlack(numPrefix + r.title)}>`,
       },
     },
   ];
@@ -86,23 +87,20 @@ export function buildProjectRunSlackMessage(r: ProjectRunSlackInput): Record<str
     blocks.push({ type: 'context', elements: [{ type: 'mrkdwn', text: bits.join('  ·  ') }] });
   }
 
-  // Slack rejects a button whose url isn't http(s), so only trusted links pass.
-  const isHttp = (u: string | null): u is string => !!u && /^https?:\/\//i.test(u);
-  const actions: Record<string, unknown>[] = [
-    {
-      type: 'button',
-      text: { type: 'plain_text', text: 'View in portal' },
-      url: r.projectUrl,
-      style: 'primary',
-    },
-  ];
-  if (isHttp(r.repoUrl)) {
-    actions.push({ type: 'button', text: { type: 'plain_text', text: 'Repo' }, url: r.repoUrl });
-  }
-  if (isHttp(r.boxFolderUrl)) {
-    actions.push({ type: 'button', text: { type: 'plain_text', text: 'Box folder' }, url: r.boxFolderUrl });
-  }
-  blocks.push({ type: 'actions', elements: actions });
+  // The portal is the only way out of this message -- no repo or Box buttons.
+  // Members must land on the tracker, where the instructions and the "has run"
+  // checkbox live, rather than jumping straight to code or a folder.
+  blocks.push({
+    type: 'actions',
+    elements: [
+      {
+        type: 'button',
+        text: { type: 'plain_text', text: 'View in portal' },
+        url: r.projectUrl,
+        style: 'primary',
+      },
+    ],
+  });
 
   return {
     // Fallback used for push/desktop notifications and any client that can't
