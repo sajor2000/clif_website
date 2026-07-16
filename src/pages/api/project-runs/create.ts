@@ -105,12 +105,17 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
   const db = getDb();
   const now = new Date().toISOString();
 
+  // project_number is taken as MAX + 1 inside the INSERT so the read and the
+  // write are one statement — two concurrent creates can't both read the same
+  // max. A unique index backs this up.
   const insertRes = await db.execute({
     sql: `INSERT INTO project_runs
             (title, repo_url, box_folder_url, prelim_shared, prelim_link, description, instructions,
-             purpose, purpose_detail, results_deadline, status, created_by, created_at, updated_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?, ?, ?)
-          RETURNING id`,
+             purpose, purpose_detail, results_deadline, status, created_by, created_at, updated_at,
+             project_number)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?, ?, ?,
+                  (SELECT COALESCE(MAX(project_number), 0) + 1 FROM project_runs))
+          RETURNING id, project_number`,
     args: [
       f.title,
       f.repo_url,
