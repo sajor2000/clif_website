@@ -1,6 +1,7 @@
 import { getDb } from './turso';
 import { sendEmail, buildProjectRunNotificationEmail } from './email';
 import { loginEmailsByUser } from './recipient-emails';
+import { createNotification } from './notifications';
 
 /**
  * Email the "a new project run is ready" notification to every approved
@@ -54,6 +55,20 @@ export async function notifyProjectRunReady(
   );
   const subject = `New CLIF project run ready: ${p.title as string}`;
 
+  // In-app notification for the bell/inbox — one per recipient, best-effort.
+  const title = p.title as string;
+  const inApp = recipients.map((r) =>
+    createNotification(r.id, {
+      type: 'project_run.created',
+      title: `New project run ready: ${title}`,
+      body: (p.description as string) || null,
+      link: projectUrl,
+      entityType: 'project_run',
+      entityId: projectId,
+      actorId: opts.excludeUserId ?? null,
+    }),
+  );
+
   // Reach each member at every address they sign in with, not just the primary.
   const emailMap = await loginEmailsByUser(recipients.map((r) => r.id));
   const sends: Promise<unknown>[] = [];
@@ -66,7 +81,7 @@ export async function notifyProjectRunReady(
       );
     }
   }
-  await Promise.all(sends);
+  await Promise.all([...inApp, ...sends]);
 
   return { sent: recipients.length };
 }

@@ -329,19 +329,33 @@ const PURPOSE_OPTIONS = Object.entries(PURPOSE_LABELS).map(([value, label]) => (
                         {sites.map((s) => {
                           const checked = ranSites.has(s.id as string);
                           const editable = !isClosed && editableSiteIds.has(s.id as string);
+                          // The creator (or an admin) can nudge a site that hasn't run yet.
+                          const canNudge = !isClosed && !checked && canManage(p);
                           return (
-                            <label class={`flex items-center gap-2 text-sm ${editable ? 'cursor-pointer text-gray-700 dark:text-gray-300' : 'text-gray-500 dark:text-gray-400'}`}
-                              title={editable ? '' : "Only this site's data editor (or an admin) can change this"}>
-                              <input
-                                type="checkbox"
-                                class="site-run-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy disabled:opacity-50"
-                                data-project-id={p.id}
-                                data-site-id={s.id}
-                                checked={checked}
-                                disabled={!editable}
-                              />
-                              <span class="truncate">{s.site_name}</span>
-                            </label>
+                            <div class="flex items-center gap-2 min-w-0">
+                              <label class={`flex items-center gap-2 text-sm min-w-0 flex-1 ${editable ? 'cursor-pointer text-gray-700 dark:text-gray-300' : 'text-gray-500 dark:text-gray-400'}`}
+                                title={editable ? '' : "Only this site's data editor (or an admin) can change this"}>
+                                <input
+                                  type="checkbox"
+                                  class="site-run-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy disabled:opacity-50"
+                                  data-project-id={p.id}
+                                  data-site-id={s.id}
+                                  checked={checked}
+                                  disabled={!editable}
+                                />
+                                <span class="truncate">{s.site_name}</span>
+                              </label>
+                              {canNudge && (
+                                <button
+                                  type="button"
+                                  class="nudge-site-btn shrink-0 text-[11px] font-medium text-clif-burgundy hover:text-clif-burgundy/80 hover:underline"
+                                  data-project-id={p.id}
+                                  data-site-id={s.id}
+                                  data-site-name={s.site_name}
+                                  title={`Remind ${s.site_name}'s data editor to run this project`}
+                                >Remind</button>
+                              )}
+                            </div>
                           );
                         })}
                       </div>
@@ -584,6 +598,41 @@ const PURPOSE_OPTIONS = Object.entries(PURPOSE_LABELS).map(([value, label]) => (
             var data = await res.json();
             alert(data.error || 'Failed to update');
             self.checked = !self.checked;
+            self.disabled = false;
+          }
+        });
+      });
+
+      // "Remind" — nudge a site's data editor(s) to run this project.
+      document.querySelectorAll('.nudge-site-btn').forEach(function (btn) {
+        btn.addEventListener('click', async function () {
+          var self = this;
+          var siteName = self.getAttribute('data-site-name') || 'this site';
+          if (!confirm('Send a reminder to ' + siteName + "'s data editor to run this project?")) return;
+          var original = self.textContent;
+          self.disabled = true;
+          self.textContent = 'Sending…';
+          try {
+            var res = await fetch('/api/project-runs/nudge', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                projectId: self.getAttribute('data-project-id'),
+                siteId: self.getAttribute('data-site-id'),
+              }),
+            });
+            var data = await res.json();
+            if (res.ok) {
+              self.textContent = 'Reminded ✓';
+              self.classList.add('text-green-600');
+            } else {
+              alert(data.error || 'Failed to send reminder');
+              self.textContent = original;
+              self.disabled = false;
+            }
+          } catch (e) {
+            alert('Failed to send reminder');
+            self.textContent = original;
             self.disabled = false;
           }
         });
