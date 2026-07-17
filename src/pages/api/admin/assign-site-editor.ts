@@ -2,6 +2,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { getDb } from '../../../lib/turso';
+import { createNotification } from '../../../lib/notifications';
 
 export const POST: APIRoute = async ({ locals, request }) => {
   if (locals.user?.role !== 'admin') {
@@ -23,7 +24,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
   const db = getDb();
 
   // Verify site and user exist
-  const site = await db.execute({ sql: 'SELECT id FROM site_details WHERE id = ?', args: [siteId] });
+  const site = await db.execute({ sql: 'SELECT id, site_name FROM site_details WHERE id = ?', args: [siteId] });
   if (site.rows.length === 0) {
     return new Response(JSON.stringify({ error: 'Site not found' }), {
       status: 404,
@@ -47,6 +48,26 @@ export const POST: APIRoute = async ({ locals, request }) => {
   });
 
   const alreadyAssigned = result.rowsAffected === 0;
+
+  // Ring the assignee's bell — but only on a genuinely new assignment, so a
+  // re-assign no-op (ON CONFLICT DO NOTHING) doesn't spam them. Their derived
+  // pending tasks already reflect the site; this is the discrete "you were
+  // assigned" event. Awaited (not fire-and-forget): on a serverless host the
+  // instance can freeze the moment we respond, so a detached insert might
+  // never commit. createNotification swallows its own errors, so a
+  // notification hiccup still can't fail the assignment.
+  if (!alreadyAssigned) {
+    const siteName = (site.rows[0].site_name as string) || 'a site';
+    await createNotification(userId, {
+      type: 'site_editor.assigned',
+      title: `You've been assigned to review ${siteName}`,
+      body: 'Please review and complete this site’s details in the portal.',
+      link: '/portal/site-details',
+      entityType: 'site',
+      entityId: siteId,
+      actorId: locals.user.id,
+    });
+  }
 
   return new Response(JSON.stringify({ success: true, alreadyAssigned }), {
     status: 200,
