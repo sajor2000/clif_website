@@ -62,9 +62,9 @@ const styles: Record<string, { dot: string; chip: string; label: string }> = {
       <p class="text-sm">You're all caught up — no pending tasks right now.</p>
     </div>
   ) : (
-    <ul class="divide-y divide-gray-100 dark:divide-neutral-700">
-      {tasks.map((t) => (
-        <li>
+    <ul class="divide-y divide-gray-100 dark:divide-neutral-700" id="pending-tasks-list">
+      {tasks.map((t, i) => (
+        <li class={i >= 3 ? 'pending-task-extra hidden' : ''}>
           <a
             href={t.link}
             class="flex items-start gap-3 px-6 py-4 hover:bg-gray-50 dark:hover:bg-neutral-700/40 transition-colors group"
@@ -89,4 +89,32 @@ const styles: Record<string, { dot: string; chip: string; label: string }> = {
       ))}
     </ul>
   )}
+
+  {tasks.length > 3 && (
+    <button
+      type="button"
+      id="pending-tasks-toggle"
+      class="w-full px-6 py-3 text-sm font-medium text-clif-burgundy hover:bg-gray-50 dark:hover:bg-neutral-700/40 border-t border-gray-100 dark:border-neutral-700 transition-colors"
+      aria-expanded="false"
+      data-more={tasks.length - 3}
+    >
+      Show {tasks.length - 3} more
+    </button>
+  )}
 </section>
+
+<script is:inline>
+  (function () {
+    var btn = document.getElementById('pending-tasks-toggle');
+    if (!btn) return;
+    var more = btn.getAttribute('data-more');
+    btn.addEventListener('click', function () {
+      var expanded = btn.getAttribute('aria-expanded') === 'true';
+      document.querySelectorAll('#pending-tasks-list .pending-task-extra').forEach(function (li) {
+        li.classList.toggle('hidden', expanded);
+      });
+      btn.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+      btn.textContent = expanded ? 'Show ' + more + ' more' : 'Show less';
+    });
+  })();
+</script>
