@@ -252,7 +252,7 @@ const PURPOSE_OPTIONS = Object.entries(PURPOSE_LABELS).map(([value, label]) => (
                       </div>
                       {/* Stays visible while collapsed — enough to scan without opening. */}
                       <div class="flex flex-wrap gap-x-4 gap-y-1 mt-1.5 text-xs text-gray-500 dark:text-gray-400">
-                        <span>{ranCount} / {sites.length} sites have run this</span>
+                        <span class="ran-summary">{ranCount} / {sites.length} sites have run this</span>
                         {p.results_deadline && (
                           <span class={deadlinePassed ? 'text-red-500 dark:text-red-400 font-medium' : ''}>
                             Box upload deadline: {formatDeadline(p.results_deadline as string)}
@@ -347,7 +347,7 @@ const PURPOSE_OPTIONS = Object.entries(PURPOSE_LABELS).map(([value, label]) => (
                   <div class="mt-4 pt-4 border-t border-gray-100 dark:border-neutral-700">
                     <div class="flex items-center justify-between mb-3">
                       <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Sites that have run this</h4>
-                      <span class="text-xs text-gray-500 dark:text-gray-400">{ranCount} / {sites.length} sites</span>
+                      <span class="ran-count text-xs text-gray-500 dark:text-gray-400">{ranCount} / {sites.length} sites</span>
                     </div>
                     {sites.length === 0 ? (
                       <p class="text-xs text-gray-400 dark:text-gray-500 italic">No sites on record.</p>
@@ -361,6 +361,7 @@ const PURPOSE_OPTIONS = Object.entries(PURPOSE_LABELS).map(([value, label]) => (
                               title={editable ? '' : "Only this site's data editor (or an admin) can change this"}>
                               <input
                                 type="checkbox"
+                                autocomplete="off"
                                 class="site-run-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy disabled:opacity-50"
                                 data-project-id={p.id}
                                 data-site-id={s.id}
@@ -598,6 +599,22 @@ const PURPOSE_OPTIONS = Object.entries(PURPOSE_LABELS).map(([value, label]) => (
         });
       });
 
+      // Recompute the "N / M sites" counters for a card from its checkboxes.
+      // Lets a site toggle update in place instead of reloading — a reload
+      // would bounce the user back to the default Create tab and re-collapse
+      // every card.
+      function refreshRanCounts(card) {
+        if (!card) return;
+        var boxes = card.querySelectorAll('.site-run-checkbox');
+        var total = boxes.length;
+        var count = 0;
+        boxes.forEach(function (b) { if (b.checked) count++; });
+        var summary = card.querySelector('.ran-summary');
+        if (summary) summary.textContent = count + ' / ' + total + ' sites have run this';
+        var header = card.querySelector('.ran-count');
+        if (header) header.textContent = count + ' / ' + total + ' sites';
+      }
+
       // Per-site run checkboxes
       document.querySelectorAll('.site-run-checkbox').forEach(function (box) {
         box.addEventListener('change', async function () {
@@ -613,7 +630,8 @@ const PURPOSE_OPTIONS = Object.entries(PURPOSE_LABELS).map(([value, label]) => (
             }),
           });
           if (res.ok) {
-            window.location.reload();
+            self.disabled = false;
+            refreshRanCounts(self.closest('.project-card'));
           } else {
             var data = await res.json();
             alert(data.error || 'Failed to update');
