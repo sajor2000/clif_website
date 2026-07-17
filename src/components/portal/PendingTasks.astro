@@ -64,10 +64,10 @@ const styles: Record<string, { dot: string; chip: string; label: string }> = {
   ) : (
     <ul class="divide-y divide-gray-100 dark:divide-neutral-700" id="pending-tasks-list">
       {tasks.map((t, i) => (
-        <li class={i >= 3 ? 'pending-task-extra hidden' : ''}>
+        <li class={`pending-task-row flex items-stretch ${i >= 3 ? 'pending-task-extra hidden' : ''}`}>
           <a
             href={t.link}
-            class="flex items-start gap-3 px-6 py-4 hover:bg-gray-50 dark:hover:bg-neutral-700/40 transition-colors group"
+            class="flex items-start gap-3 px-6 py-4 flex-1 min-w-0 hover:bg-gray-50 dark:hover:bg-neutral-700/40 transition-colors group"
           >
             <span class={`mt-1.5 w-2.5 h-2.5 rounded-full shrink-0 ${styles[t.severity].dot}`} aria-hidden="true" />
             <div class="min-w-0 flex-1">
@@ -85,6 +85,20 @@ const styles: Record<string, { dot: string; chip: string; label: string }> = {
               <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
             </svg>
           </a>
+          {t.dismissible && (
+            <button
+              type="button"
+              class="task-dismiss shrink-0 px-3 text-gray-300 hover:text-gray-600 dark:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700/40 transition-colors"
+              data-key={t.key}
+              data-signature={t.signature}
+              aria-label="Nothing to change — dismiss this task"
+              title="Nothing to change — dismiss"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="w-4 h-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
         </li>
       ))}
     </ul>
@@ -105,16 +119,61 @@ const styles: Record<string, { dot: string; chip: string; label: string }> = {
 
 <script is:inline>
   (function () {
-    var btn = document.getElementById('pending-tasks-toggle');
-    if (!btn) return;
-    var more = btn.getAttribute('data-more');
-    btn.addEventListener('click', function () {
-      var expanded = btn.getAttribute('aria-expanded') === 'true';
-      document.querySelectorAll('#pending-tasks-list .pending-task-extra').forEach(function (li) {
-        li.classList.toggle('hidden', expanded);
+    var toggle = document.getElementById('pending-tasks-toggle');
+    if (toggle) {
+      var more = toggle.getAttribute('data-more');
+      toggle.addEventListener('click', function () {
+        var expanded = toggle.getAttribute('aria-expanded') === 'true';
+        document.querySelectorAll('#pending-tasks-list .pending-task-extra').forEach(function (li) {
+          li.classList.toggle('hidden', expanded);
+        });
+        toggle.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+        toggle.textContent = expanded ? 'Show ' + more + ' more' : 'Show less';
       });
-      btn.setAttribute('aria-expanded', expanded ? 'false' : 'true');
-      btn.textContent = expanded ? 'Show ' + more + ' more' : 'Show less';
+    }
+
+    var section = document.querySelector('[aria-labelledby="pending-tasks-heading"]');
+    var list = document.getElementById('pending-tasks-list');
+    var countBadge = document.querySelector('#pending-tasks-heading + span');
+
+    function afterRemoval() {
+      var remaining = list ? list.querySelectorAll('li').length : 0;
+      if (countBadge) {
+        if (remaining > 0) countBadge.textContent = String(remaining);
+        else countBadge.remove();
+      }
+      // Hide the "Show N more" control once nothing is left to reveal.
+      if (toggle && remaining <= 3) toggle.classList.add('hidden');
+      // Nothing left at all — swap in the caught-up state.
+      if (remaining === 0 && section) {
+        if (list) list.remove();
+        if (toggle) toggle.remove();
+        var done = document.createElement('div');
+        done.className = 'px-6 py-8 flex items-center gap-3 text-gray-500 dark:text-gray-400';
+        done.innerHTML =
+          '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-green-500"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>' +
+          '<p class="text-sm">You’re all caught up — no pending tasks right now.</p>';
+        section.appendChild(done);
+      }
+    }
+
+    document.querySelectorAll('.task-dismiss').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var key = btn.getAttribute('data-key');
+        var signature = btn.getAttribute('data-signature');
+        // Fire-and-forget; the row goes immediately so it feels instant.
+        fetch('/api/tasks/dismiss', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key: key, signature: signature }),
+          keepalive: true,
+        }).catch(function () {});
+        var row = btn.closest('li');
+        if (row) row.remove();
+        afterRemoval();
+      });
     });
   })();
 </script>

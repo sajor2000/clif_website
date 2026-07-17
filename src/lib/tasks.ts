@@ -19,6 +19,11 @@ export interface PendingTask {
   detail?: string;
   link: string;
   severity: TaskSeverity;
+  // Site-detail and profile tasks can be dismissed ("nothing to change"); a
+  // project you owe or a review you must do cannot. `signature` captures what
+  // was dismissed so the task returns if that situation later changes.
+  dismissible?: boolean;
+  signature?: string;
 }
 
 // A site record is considered "stale" if it hasn't been touched in this long OR
@@ -147,6 +152,11 @@ export async function computePendingTasks(user: TaskUser): Promise<PendingTask[]
           detail,
           link: '/portal/site-details',
           severity: missing.length > 0 ? 'action' : 'warning',
+          dismissible: true,
+          // Reason snapshot: exactly which fields are missing + whether stale.
+          // A new missing field or a fresh staleness changes this, so a prior
+          // "nothing to change" dismissal no longer applies.
+          signature: `m:${missing.slice().sort().join(',')}|s:${stale ? 1 : 0}`,
         });
       }
     } catch {
@@ -172,6 +182,8 @@ export async function computePendingTasks(user: TaskUser): Promise<PendingTask[]
           detail: `Missing: ${missing.map(prettyField).join(', ')}`,
           link: `/portal/members/${user.id}`,
           severity: 'action',
+          dismissible: true,
+          signature: `m:${missing.slice().sort().join(',')}`,
         });
       }
     }
@@ -202,7 +214,21 @@ export async function computePendingTasks(user: TaskUser): Promise<PendingTask[]
     }
   }
 
-  return tasks;
+  // Drop dismissible tasks the member has waved away — but only while the
+  // dismissed signature still matches. If the situation changed, the signature
+  // differs and the task stays, so nothing important is silenced permanently.
+  const dismissed = new Map<string, string>();
+  try {
+    const res = await db.execute({
+      sql: 'SELECT task_key, signature FROM task_dismissals WHERE user_id = ?',
+      args: [user.id],
+    });
+    for (const r of res.rows as any[]) dismissed.set(r.task_key as string, r.signature as string);
+  } catch {
+    /* no dismissals table / query failed — show everything */
+  }
+
+  return tasks.filter((t) => !(t.dismissible && dismissed.get(t.key) === t.signature));
 }
 
 /** Lightweight count for badges — avoids building full task objects downstream. */
