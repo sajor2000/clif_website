@@ -88,44 +88,96 @@ export async function computePendingTasks(user: TaskUser): Promise<PendingTask[]
     siteIds = [];
   }
 
-  // --- 1. Run an open project at a site you edit ------------------------------
-  if (siteIds.length > 0) {
-    try {
-      const placeholders = siteIds.map(() => '?').join(', ');
-      const res = await db.execute({
-        sql: `SELECT p.id AS project_id, p.title, p.results_deadline,
-                     sd.id AS site_id, sd.site_name
-              FROM project_runs p
-              CROSS JOIN site_details sd
-              LEFT JOIN project_run_sites prs
-                     ON prs.project_id = p.id AND prs.site_id = sd.id
-              WHERE p.status = 'open'
-                AND sd.id IN (${placeholders})
-                AND COALESCE(prs.has_run, 0) = 0
-              ORDER BY p.results_deadline IS NULL, p.results_deadline ASC`,
-        args: siteIds,
-      });
-      for (const r of res.rows as any[]) {
-        const deadline = r.results_deadline as string | null;
-        tasks.push({
-          key: `run_project:${r.project_id}:${r.site_id}`,
-          kind: 'run_project',
-          title: `Run "${r.title}" for ${r.site_name}`,
-          detail: !deadline
-            ? undefined
-            : isPast(deadline)
-              ? `Overdue — results were due ${formatDate(deadline)}`
-              : `Results due ${formatDate(deadline)}`,
-          link: '/portal/project-runs',
-          // Running an open project is always an action item; the query orders
-          // by deadline (soonest first, undated last) and the severity sort is
-          // stable, so overdue rows stay at the top of the panel.
-          severity: 'action',
+  // --- 1. Open project runs ---------------------------------------------------
+  // Every member sees each open run. A site editor whose site still owes the run
+  // gets an actionable "run it for your site" task (one per owing site). Everyone
+  // else gets a lower-key info task with the run's progress, so open runs are
+  // visible on every dashboard — not just editors'.
+  try {
+    const openRuns = (await db.execute(
+      `SELECT id, title, results_deadline FROM project_runs
+       WHERE status = 'open'
+       ORDER BY results_deadline IS NULL, results_deadline ASC`,
+    )).rows as any[];
+
+    if (openRuns.length > 0) {
+      const totalSites =
+        Number((await db.execute('SELECT COUNT(*) AS c FROM site_details')).rows[0].c) || 0;
+
+      // How many sites have run each project (for the info task's progress line).
+      const ranByProject = new Map<string, number>();
+      const ranRes = await db.execute(
+        'SELECT project_id, COUNT(*) AS c FROM project_run_sites WHERE has_run = 1 GROUP BY project_id',
+      );
+      for (const r of ranRes.rows as any[]) ranByProject.set(r.project_id as string, Number(r.c));
+
+      // Which of THIS member's sites still owe which project.
+      const owedByProject = new Map<string, { site_id: string; site_name: string }[]>();
+      if (siteIds.length > 0) {
+        const placeholders = siteIds.map(() => '?').join(', ');
+        const res = await db.execute({
+          sql: `SELECT p.id AS project_id, sd.id AS site_id, sd.site_name
+                FROM project_runs p
+                CROSS JOIN site_details sd
+                LEFT JOIN project_run_sites prs ON prs.project_id = p.id AND prs.site_id = sd.id
+                WHERE p.status = 'open' AND sd.id IN (${placeholders}) AND COALESCE(prs.has_run, 0) = 0`,
+          args: siteIds,
         });
+        for (const r of res.rows as any[]) {
+          const arr = owedByProject.get(r.project_id as string) ?? [];
+          arr.push({ site_id: r.site_id as string, site_name: r.site_name as string });
+          owedByProject.set(r.project_id as string, arr);
+        }
       }
-    } catch {
-      /* skip this check on error */
+
+      for (const p of openRuns) {
+        const projectId = p.id as string;
+        const title = p.title as string;
+        const deadline = (p.results_deadline as string) || null;
+        const mine = owedByProject.get(projectId);
+
+        if (mine && mine.length > 0) {
+          // Actionable: this member edits sites that still owe the run.
+          for (const s of mine) {
+            tasks.push({
+              key: `run_project:${projectId}:${s.site_id}`,
+              kind: 'run_project',
+              title: `Run "${title}" for ${s.site_name}`,
+              detail: !deadline
+                ? undefined
+                : isPast(deadline)
+                  ? `Overdue — results were due ${formatDate(deadline)}`
+                  : `Results due ${formatDate(deadline)}`,
+              link: '/portal/project-runs',
+              severity: 'action',
+            });
+          }
+        } else {
+          // Awareness only: shown to members with no actionable stake in this run
+          // (not a site editor, or their sites already ran it).
+          const ran = ranByProject.get(projectId) ?? 0;
+          tasks.push({
+            key: `run_project_info:${projectId}`,
+            kind: 'run_project',
+            title: `Open project run: ${title}`,
+            detail: [
+              `${ran}/${totalSites} sites have run this`,
+              deadline
+                ? isPast(deadline)
+                  ? `overdue ${formatDate(deadline)}`
+                  : `due ${formatDate(deadline)}`
+                : null,
+            ]
+              .filter(Boolean)
+              .join(' · '),
+            link: '/portal/project-runs',
+            severity: 'info',
+          });
+        }
+      }
     }
+  } catch {
+    /* skip this check on error */
   }
 
   // --- 2. Update stale / incomplete site details -----------------------------
