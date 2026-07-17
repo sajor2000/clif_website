@@ -1,6 +1,7 @@
 ---
 import { getDb } from '../../lib/turso';
 import { unreadCount } from '../../lib/notifications';
+import { pendingTaskCount } from '../../lib/tasks';
 
 interface Props {
   currentPath: string;
@@ -18,11 +19,17 @@ if (isAdmin) {
   } catch {}
 }
 
-// Unread in-app notifications for the current member (for the sidebar badge).
+// Per-member sidebar badges: unread notifications and outstanding pending tasks.
+// The nav renders on every portal page, so both counts are visible everywhere,
+// not just on the pages that own them. Each guards its own failure.
 let unreadNotifs = 0;
-const currentUserId = Astro.locals.user?.id;
-if (currentUserId) {
-  unreadNotifs = await unreadCount(currentUserId);
+let taskCount = 0;
+const currentUser = Astro.locals.user;
+if (currentUser?.id) {
+  [unreadNotifs, taskCount] = await Promise.all([
+    unreadCount(currentUser.id).catch(() => 0),
+    pendingTaskCount({ id: currentUser.id, role: currentUser.role }).catch(() => 0),
+  ]);
 }
 
 // Dashboard stays pinned first; everything after it is sorted alphabetically by label.
@@ -103,8 +110,11 @@ function iconSvg(name: string): string {
           {item.wip && (
             <span class="wip-badge ml-auto text-[10px] font-semibold uppercase tracking-wide bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-1.5 py-0.5 rounded">WIP</span>
           )}
+          {item.href === '/portal' && taskCount > 0 && (
+            <span class="admin-count ml-auto inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 text-[10px] font-bold text-white bg-clif-burgundy rounded-full" title={`${taskCount} pending task${taskCount === 1 ? '' : 's'}`}>{taskCount > 99 ? '99+' : taskCount}</span>
+          )}
           {item.href === '/portal/notifications' && unreadNotifs > 0 && (
-            <span class="admin-count ml-auto inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold text-white bg-red-500 rounded-full">{unreadNotifs > 99 ? '99+' : unreadNotifs}</span>
+            <span class="admin-count ml-auto inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 text-[10px] font-bold text-white bg-red-500 rounded-full" title={`${unreadNotifs} unread notification${unreadNotifs === 1 ? '' : 's'}`}>{unreadNotifs > 99 ? '99+' : unreadNotifs}</span>
           )}
         </a>
       </li>
