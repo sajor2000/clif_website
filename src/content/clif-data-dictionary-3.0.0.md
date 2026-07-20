@@ -314,7 +314,7 @@ The patient_assessments table captures various assessments performed on patients
 
 ## patient_diagnosis
 
-The `patient_diagnosis` table provides a record of all diagnoses assigned to a patient. 
+The `patient_diagnosis` table provides a record of all diagnoses assigned to a patient. It captures all ICD-10 diagnosis codes that are **not** generated at billing (e.g., problem list, encounter, and medical history diagnoses) — in contrast to `hospital_diagnosis`, which holds the finalized billing codes. 
     
 
 **Example**:
