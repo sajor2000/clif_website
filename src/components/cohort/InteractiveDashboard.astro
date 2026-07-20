@@ -1,98 +1,65 @@
 ---
-import { parseConsortiumCSV, groupCharacteristics } from '../../utils/csvParser';
-import { readFile } from 'fs/promises';
-import { join } from 'path';
+import { groupCharacteristics, type ParsedConsortiumData } from '../../utils/csvParser';
+import { parseCohortCSV, COHORTS, DEFAULT_COHORT, AGGREGATE_SITE } from '../../utils/cohortData';
+import fs from 'node:fs';
+import path from 'node:path';
 
-// Read and parse the detailed CSV file for Charts view
-const csvPath = join(process.cwd(), 'src', 'data', 'consortium_t1_by_year_site_1113.csv');
-const csvContent = await readFile(csvPath, 'utf-8');
-const data = parseConsortiumCSV(csvContent);
+const cohortDir = path.join(process.cwd(), 'src', 'data', 'cohorts');
+
+// Serialize a ParsedConsortiumData for the Charts view.
+function toConsortiumJson(parsed: ParsedConsortiumData) {
+  return {
+    allSites: parsed.allSites,
+    allYears: parsed.allYears,
+    characteristics: parsed.characteristics.map((c) => ({
+      variable: c.variable,
+      sites: Object.fromEntries(
+        Array.from(c.sites.entries()).map(([site, yearMap]) => [site, Object.fromEntries(yearMap)])
+      ),
+    })),
+    siteYearData: parsed.siteYearData.map((d) => ({
+      site: d.site,
+      year: d.year,
+      characteristics: Object.fromEntries(d.characteristics),
+    })),
+  };
+}
+
+// Derive the Table view (characteristic x site, all-years "Overall" column) from
+// the same parse — headers are the site codes plus the ALL consortium aggregate.
+function deriveOverall(parsed: ParsedConsortiumData) {
+  const sites = [...parsed.allSites, AGGREGATE_SITE];
+  const rows = parsed.characteristics.map((c) => {
+    const values: Record<string, string> = {};
+    for (const s of sites) {
+      const v = c.sites.get(s)?.get('Overall');
+      values[s] = v && v !== '' ? v : '-';
+    }
+    return { characteristic: c.variable, values };
+  });
+  return { headers: sites, data: rows };
+}
+
+function loadCohort(key: string) {
+  const csv = fs.readFileSync(path.join(cohortDir, key, 'table_one_by_year.csv'), 'utf-8');
+  const parsed = parseCohortCSV(csv);
+  return { consortium: toConsortiumJson(parsed), overall: deriveOverall(parsed), parsed };
+}
+
+// All cohorts' data (for client-side switching) + the default cohort for SSR.
+const cohortsPayload: Record<string, { consortium: ReturnType<typeof toConsortiumJson>; overall: ReturnType<typeof deriveOverall> }> = {};
+for (const c of COHORTS) {
+  const { consortium, overall } = loadCohort(c.key);
+  cohortsPayload[c.key] = { consortium, overall };
+}
+const { parsed: data } = loadCohort(DEFAULT_COHORT);
 const groupedChars = groupCharacteristics(data);
+const overallData = cohortsPayload[DEFAULT_COHORT].overall;
 
-// Read the overall CSV file for Table view and Export
-const overallCsvPath = join(process.cwd(), 'src', 'data', 'overall_1113.csv');
-const overallCsvContent = await readFile(overallCsvPath, 'utf-8');
-
-// Helper to parse CSV line with quoted values
-function parseCSVLineHelper(line: string, preserveFirstColumnSpaces: boolean = false): string[] {
-  const result: string[] = [];
-  let current = '';
-  let inQuotes = false;
-
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-
-    if (char === '"') {
-      inQuotes = !inQuotes;
-    } else if (char === ',' && !inQuotes) {
-      // For first column (index 0), preserve leading spaces if requested
-      if (preserveFirstColumnSpaces && result.length === 0) {
-        result.push(current.replace(/^"|"$/g, '')); // Remove quotes but keep spaces
-      } else {
-        result.push(current.trim());
-      }
-      current = '';
-    } else {
-      current += char;
-    }
-  }
-
-  // Handle last field
-  if (preserveFirstColumnSpaces && result.length === 0) {
-    result.push(current.replace(/^"|"$/g, ''));
-  } else {
-    result.push(current.trim());
-  }
-  return result;
-}
-
-// Parse overall CSV into simple format
-function parseOverallCSV(content: string) {
-  const lines = content.trim().split('\n');
-  const headers = parseCSVLineHelper(lines[0]);
-
-  const tableData: Array<{ characteristic: string; values: Record<string, string> }> = [];
-
-  for (let i = 1; i < lines.length; i++) { // Start from row 1 to include Years row
-    const values = parseCSVLineHelper(lines[i]);
-    const characteristic = values[0];
-
-    if (!characteristic) continue;
-
-    const row: Record<string, string> = {};
-    for (let j = 1; j < headers.length && j < values.length; j++) {
-      row[headers[j]] = values[j] || '-';
-    }
-
-    tableData.push({ characteristic, values: row });
-  }
-
-  return { headers: headers.slice(1), data: tableData }; // Skip "Characteristics" column header
-}
-
-const overallData = parseOverallCSV(overallCsvContent);
-
-// Convert to JSON for client-side use
-const dataJson = JSON.stringify({
-  allSites: data.allSites,
-  allYears: data.allYears,
-  characteristics: data.characteristics.map(c => ({
-    variable: c.variable,
-    sites: Object.fromEntries(
-      Array.from(c.sites.entries()).map(([site, yearMap]) => [
-        site,
-        Object.fromEntries(yearMap)
-      ])
-    )
-  })),
-  siteYearData: data.siteYearData.map(d => ({
-    site: d.site,
-    year: d.year,
-    characteristics: Object.fromEntries(d.characteristics)
-  }))
-});
-
+const dataJson = JSON.stringify(cohortsPayload[DEFAULT_COHORT].consortium);
 const overallDataJson = JSON.stringify(overallData);
+const cohortsJson = JSON.stringify(cohortsPayload);
+const defaultCohort = DEFAULT_COHORT;
 
 const categories = Array.from(groupedChars.keys());
 ---
@@ -693,11 +660,17 @@ const categories = Array.from(groupedChars.keys());
 <!-- JSON data storage -->
 <script type="application/json" id="consortium-json-data" set:html={dataJson}></script>
 <script type="application/json" id="overall-json-data" set:html={overallDataJson}></script>
+<script type="application/json" id="cohorts-json-data" set:html={cohortsJson} data-default={defaultCohort}></script>
 
 <script>
-  // Parse data from JSON script tags
-  const consortiumData = JSON.parse(document.getElementById('consortium-json-data').textContent);
-  const overallTableData = JSON.parse(document.getElementById('overall-json-data').textContent);
+  // All cohorts' data; the active dataset is swapped when the cohort picker changes.
+  const COHORTS_DATA = JSON.parse(document.getElementById('cohorts-json-data').textContent);
+  const DEFAULT_COHORT_KEY = document.getElementById('cohorts-json-data').getAttribute('data-default') || Object.keys(COHORTS_DATA)[0];
+  let activeCohort = (window.CohortBus && window.CohortBus.current && COHORTS_DATA[window.CohortBus.current]) ? window.CohortBus.current : DEFAULT_COHORT_KEY;
+
+  // `let` so a cohort switch can repoint them; kept as the same object shape.
+  let consortiumData = COHORTS_DATA[activeCohort].consortium;
+  let overallTableData = COHORTS_DATA[activeCohort].overall;
 
   // State management
   let selectedSites = [...consortiumData.allSites];
@@ -712,56 +685,90 @@ const categories = Array.from(groupedChars.keys());
     initializeFilters();
     initializeViewToggle();
     initializeExport();
+    // Sync filter checkboxes to the active cohort, then render.
+    rebuildSiteCheckboxes();
+    rebuildYearCheckboxes();
     updateDashboard();
+    // React to the global cohort picker (window.CohortBus).
+    if (window.CohortBus && typeof window.CohortBus.subscribe === 'function') {
+      window.CohortBus.subscribe((key) => { if (COHORTS_DATA[key] && key !== activeCohort) reloadCohort(key); });
+    }
   });
 
+  const SITE_CB_CLASS = 'site-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy';
+  const YEAR_CB_CLASS = 'year-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy';
+
+  // Rebuild the site checkbox list from consortiumData.allSites (keeps #site-all).
+  function rebuildSiteCheckboxes() {
+    const container = document.querySelector('#site-filter-dropdown .p-2');
+    if (!container) return;
+    let html = `<label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer"><input type="checkbox" id="site-all" class="${SITE_CB_CLASS}" checked /><span class="ml-2 text-sm text-gray-700 font-semibold">All Sites</span></label>`;
+    for (const site of consortiumData.allSites) {
+      html += `<label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer"><input type="checkbox" class="${SITE_CB_CLASS}" value="${site}" checked /><span class="ml-2 text-sm text-gray-700">${site}</span></label>`;
+    }
+    container.innerHTML = html;
+  }
+
+  // Rebuild the year checkbox list from consortiumData.allYears (keeps #year-all).
+  function rebuildYearCheckboxes() {
+    const container = document.querySelector('#year-filter-dropdown .p-2');
+    if (!container) return;
+    let html = `<label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer"><input type="checkbox" id="year-all" class="${YEAR_CB_CLASS}" checked /><span class="ml-2 text-sm text-gray-700 font-semibold">All Years</span></label>`;
+    for (const year of consortiumData.allYears) {
+      html += `<label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer"><input type="checkbox" class="${YEAR_CB_CLASS}" value="${year}" checked /><span class="ml-2 text-sm text-gray-700">${year}</span></label>`;
+    }
+    container.innerHTML = html;
+  }
+
+  // Swap the active cohort's dataset and re-render the explorer.
+  function reloadCohort(key) {
+    activeCohort = key;
+    consortiumData = COHORTS_DATA[key].consortium;
+    overallTableData = COHORTS_DATA[key].overall;
+    selectedSites = [...consortiumData.allSites];
+    selectedYears = [...consortiumData.allYears];
+    rebuildSiteCheckboxes();
+    rebuildYearCheckboxes();
+    const siteText = document.getElementById('site-filter-text');
+    if (siteText) siteText.textContent = 'All Sites';
+    const yearText = document.getElementById('year-filter-text');
+    if (yearText) yearText.textContent = 'All Years';
+    if (typeof buildCategorySidebar === 'function') buildCategorySidebar();
+    updateDashboard();
+  }
+
   function initializeFilters() {
-    // Site filter
     const siteToggle = document.getElementById('site-filter-toggle');
     const siteDropdown = document.getElementById('site-filter-dropdown');
-    const siteAll = document.getElementById('site-all');
-    const siteCheckboxes = document.querySelectorAll('.site-checkbox:not(#site-all)');
-
     siteToggle?.addEventListener('click', (e) => {
       e.stopPropagation();
       siteDropdown?.classList.toggle('hidden');
       document.getElementById('year-filter-dropdown')?.classList.add('hidden');
     });
-
-    siteAll?.addEventListener('change', (e) => {
-      const checked = e.target.checked;
-      siteCheckboxes.forEach(cb => cb.checked = checked);
+    // Event delegation so current AND rebuilt checkboxes both work.
+    siteDropdown?.addEventListener('change', (e) => {
+      const t = e.target;
+      if (!t.classList || !t.classList.contains('site-checkbox')) return;
+      if (t.id === 'site-all') {
+        siteDropdown.querySelectorAll('.site-checkbox:not(#site-all)').forEach(cb => { cb.checked = t.checked; });
+      }
       updateSelectedSites();
     });
 
-    siteCheckboxes.forEach(cb => {
-      cb.addEventListener('change', () => {
-        updateSelectedSites();
-      });
-    });
-
-    // Year filter
     const yearToggle = document.getElementById('year-filter-toggle');
     const yearDropdown = document.getElementById('year-filter-dropdown');
-    const yearAll = document.getElementById('year-all');
-    const yearCheckboxes = document.querySelectorAll('.year-checkbox:not(#year-all)');
-
     yearToggle?.addEventListener('click', (e) => {
       e.stopPropagation();
       yearDropdown?.classList.toggle('hidden');
       document.getElementById('site-filter-dropdown')?.classList.add('hidden');
     });
-
-    yearAll?.addEventListener('change', (e) => {
-      const checked = e.target.checked;
-      yearCheckboxes.forEach(cb => cb.checked = checked);
+    yearDropdown?.addEventListener('change', (e) => {
+      const t = e.target;
+      if (!t.classList || !t.classList.contains('year-checkbox')) return;
+      if (t.id === 'year-all') {
+        yearDropdown.querySelectorAll('.year-checkbox:not(#year-all)').forEach(cb => { cb.checked = t.checked; });
+      }
       updateSelectedYears();
-    });
-
-    yearCheckboxes.forEach(cb => {
-      cb.addEventListener('change', () => {
-        updateSelectedYears();
-      });
     });
 
     // Close dropdowns when clicking outside
@@ -4693,6 +4700,7 @@ const categories = Array.from(groupedChars.keys());
   // These colors are unique to sites and NOT used by any other chart elements
   const SITE_COLORS = {
     'emory':    'rgba(165, 42, 42, 0.7)',     // brown
+    'mimic':    'rgba(0, 114, 178, 0.7)',     // blue
     'jhu':      'rgba(0, 114, 178, 0.7)',     // blue
     'nu':       'rgba(0, 158, 115, 0.7)',     // teal-green
     'ohsu':     'rgba(230, 159, 0, 0.7)',     // golden yellow

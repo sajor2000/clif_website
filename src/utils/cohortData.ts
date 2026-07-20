@@ -1,0 +1,202 @@
+// Cohort data registry + parser for the 07202026 export.
+//
+// The dashboard is organized around a two-level cohort model:
+//   - "Overall"          = all hospitalized patients (overall_ward)
+//   - "Critically ill"   = a ventilated/critically-ill aggregate (overall) plus
+//                          four illness-type strata (icu, advanced_resp, vaso, deaths)
+//
+// New-export column convention differs from the legacy files: headers are
+//   `<Group>__<Site>`  (double underscore, group/metric first, site last)
+// with a consortium aggregate column suffixed `__ALL`. For the by-year table the
+// group is a year label (`Overall`, `2022`, ...); for stat tables it is a metric.
+// Legacy files were `<site>_<year>` / `<site>__<metric>` (site first) — do NOT
+// route new files through src/utils/csvParser.ts's parseConsortiumCSV.
+
+import { parseCSVLine } from './csvLine';
+import type { ParsedConsortiumData, CharacteristicData } from './csvParser';
+
+export const AGGREGATE_SITE = 'ALL';
+
+export type CohortGroup = 'overall' | 'critically_ill';
+
+export interface CohortDef {
+  /** Stable key = folder name under src/data/cohorts/ */
+  key: string;
+  /** Human label shown in the picker */
+  label: string;
+  /** Top-level grouping for the two-level picker */
+  group: CohortGroup;
+  /** Short blurb for the picker / hero */
+  description: string;
+  /** Has a standalone table_one_overall.csv (else derive summary from the by-year Overall block) */
+  hasOverallFile: boolean;
+  /** Has medications_hourly_data.csv */
+  hasHourly: boolean;
+  /** Has sofa_mortality_summary.csv */
+  hasSofa: boolean;
+}
+
+/**
+ * Cohort registry. Order here is the order shown in the picker.
+ * `nippv_hfnc` is intentionally excluded (per product decision).
+ */
+export const COHORTS: CohortDef[] = [
+  {
+    key: 'overall_ward',
+    label: 'Overall',
+    group: 'overall',
+    description: 'All hospitalized patients across the consortium.',
+    hasOverallFile: true,
+    hasHourly: false,
+    hasSofa: false,
+  },
+  {
+    key: 'overall',
+    label: 'Critically ill (all)',
+    group: 'critically_ill',
+    description: 'Aggregate of all critically ill / ventilated encounters.',
+    hasOverallFile: true,
+    hasHourly: true,
+    hasSofa: true,
+  },
+  {
+    key: 'icu',
+    label: 'ICU',
+    group: 'critically_ill',
+    description: 'Encounters with at least one ICU episode.',
+    hasOverallFile: false,
+    hasHourly: true,
+    hasSofa: true,
+  },
+  {
+    key: 'advanced_resp',
+    label: 'Advanced respiratory support',
+    group: 'critically_ill',
+    description: 'Encounters receiving advanced respiratory support.',
+    hasOverallFile: false,
+    hasHourly: true,
+    hasSofa: true,
+  },
+  {
+    key: 'vaso',
+    label: 'Vasoactive support',
+    group: 'critically_ill',
+    description: 'Encounters receiving vasoactive medications.',
+    hasOverallFile: false,
+    hasHourly: true,
+    hasSofa: true,
+  },
+  {
+    key: 'deaths',
+    label: 'Deaths',
+    group: 'critically_ill',
+    description: 'Encounters ending in death (6 reporting sites).',
+    hasOverallFile: false,
+    hasHourly: true,
+    hasSofa: true,
+  },
+];
+
+export const DEFAULT_COHORT = 'overall_ward';
+
+export function getCohort(key: string): CohortDef {
+  return COHORTS.find((c) => c.key === key) ?? COHORTS[0];
+}
+
+/**
+ * Parse a new-export table whose columns are `<Group>__<Site>` (+ `__ALL`).
+ *
+ * Returns the same ParsedConsortiumData shape the InteractiveDashboard already
+ * consumes, so it is a drop-in for parseConsortiumCSV — but with the site/year
+ * axes read from the new metric-first convention:
+ *   - `site`  = the token after the final `__`  (e.g. Emory, UMN, ALL)
+ *   - `year`  = the token(s) before it           (e.g. Overall, 2022)
+ *
+ * The `ALL` aggregate is kept in `characteristics` (so callers can read the
+ * consortium value) but excluded from `allSites` and from `siteYearData` so it
+ * never double-counts in per-site rollups. `Overall` year columns are likewise
+ * excluded from `siteYearData` (they are per-site all-years aggregates).
+ */
+export function parseCohortCSV(csvContent: string): ParsedConsortiumData {
+  const lines = csvContent.trim().split('\n');
+  const headers = parseCSVLine(lines[0]);
+
+  const allSitesSet = new Set<string>();
+  const allYearsSet = new Set<string>();
+  const siteYearMap = new Map<string, Set<string>>();
+
+  // Column index -> { site, year }; null for unparseable / the Variable column.
+  const colMeta: ({ site: string; year: string } | null)[] = headers.map(
+    (raw, i) => {
+      if (i === 0) return null;
+      const header = raw.trim();
+      const idx = header.lastIndexOf('__');
+      if (idx === -1) return null;
+      const year = header.slice(0, idx);
+      const site = header.slice(idx + 2);
+      if (!site || !year) return null;
+
+      if (site !== AGGREGATE_SITE) {
+        allSitesSet.add(site);
+        if (year !== 'Overall') allYearsSet.add(year);
+        if (!siteYearMap.has(site)) siteYearMap.set(site, new Set());
+        siteYearMap.get(site)!.add(year);
+      }
+      return { site, year };
+    }
+  );
+
+  const characteristics: CharacteristicData[] = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const values = parseCSVLine(lines[i]);
+    const variable = (values[0] ?? '').trim();
+    if (!variable) continue;
+
+    const charData: CharacteristicData = { variable, sites: new Map() };
+
+    for (let j = 1; j < headers.length && j < values.length; j++) {
+      const meta = colMeta[j];
+      if (!meta) continue;
+      const value = (values[j] ?? '').trim();
+      if (!charData.sites.has(meta.site)) charData.sites.set(meta.site, new Map());
+      charData.sites.get(meta.site)!.set(meta.year, value);
+    }
+
+    characteristics.push(charData);
+  }
+
+  const siteYearData = [];
+  for (const [site, years] of siteYearMap) {
+    for (const year of years) {
+      if (year === 'Overall') continue; // per-site all-years aggregate
+      const charMap = new Map<string, string>();
+      for (const char of characteristics) {
+        const siteData = char.sites.get(site);
+        if (siteData?.has(year)) charMap.set(char.variable, siteData.get(year)!);
+      }
+      siteYearData.push({ site, year, characteristics: charMap });
+    }
+  }
+
+  return {
+    allSites: Array.from(allSitesSet).sort(),
+    allYears: Array.from(allYearsSet).sort(),
+    characteristics,
+    siteYearData,
+  };
+}
+
+/**
+ * Look up a single characteristic's consortium-aggregate (`__ALL`) value for a
+ * given year (default the cohort's all-years `Overall` column).
+ */
+export function getAggregateValue(
+  data: ParsedConsortiumData,
+  variable: string,
+  year = 'Overall'
+): string | null {
+  const char = data.characteristics.find((c) => c.variable.trim() === variable.trim());
+  const allData = char?.sites.get(AGGREGATE_SITE);
+  return allData?.get(year) ?? null;
+}
