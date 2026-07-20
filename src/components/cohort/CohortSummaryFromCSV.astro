@@ -1,155 +1,101 @@
 ---
-// CLIF Cohort Summary — reads per-cohort table_one from src/data/cohorts/<key>/
-// and re-renders client-side when the cohort picker (window.CohortBus) changes.
-import fs from 'node:fs';
-import path from 'node:path';
-import { DEFAULT_COHORT, parseCohortCSV, getAggregateValue } from '../../utils/cohortData';
+// CLIF Cohort Summary Dashboard using data from overall_1113.csv
+import { readFile } from 'fs/promises';
+import { join } from 'path';
 
-// field name -> row label in the new table_one files (trimmed; case as in file)
-const LABELS: Record<string, string> = {
-  uniquePatients: 'N: Unique patients',
-  encounterBlocks: 'N: Encounter blocks',
-  hospitals: 'N: Hospitals',
-  medianAge: 'Age at admission, median [Q1, Q3]',
-  sexFemale: 'Sex: Female',
-  sexMale: 'Sex: Male',
-  raceWhite: 'Race: White',
-  raceBlack: 'Race: Black or African American',
-  raceAsian: 'Race: Asian',
-  raceOther: 'Race: Other',
-  raceUnknown: 'Race: unknown',
-  raceAmericanIndian: 'Race: american indian or alaska native',
-  racePacificIslander: 'Race: native hawaiian or other pacific islander',
-  ethnicityHispanic: 'Ethnicity: Hispanic',
-  ethnicityNonHispanic: 'Ethnicity: Non-Hispanic',
-  admissionED: 'Admission type: ed',
-  admissionElective: 'Admission type: elective',
-  admissionOSH: 'Admission type: osh',
-  admissionFacility: 'Admission type: facility',
-  admissionDirect: 'Admission type: direct',
-  admissionOther: 'Admission type: other',
-  comorbCHF: 'Congestive Heart Failure',
-  comorbRenal: 'Renal Disease',
-  comorbPulmonary: 'Chronic Pulmonary Disease',
-  comorbCerebrovascular: 'Cerebrovascular Disease',
-  comorbCancer: 'Cancer',
-  comorbMetastatic: 'Metastatic Solid Tumor',
-  comorbPVD: 'Peripheral Vascular Disease',
-  comorbMI: 'Myocardial Infarction',
-  comorbDementia: 'Dementia',
-  comorbLiver: 'Mild Liver Disease',
-  comorbHemiplegia: 'Hemiplegia',
-  comorbConnective: 'Connective Tissue Disease',
-  comorbPeptic: 'Peptic Ulcer Disease',
-  comorbAIDS: 'Aids',
-  hospitalMortality: 'Hospital mortality, n (%)',
-  icuLOS: 'ICU length of stay (days), median [Q1, Q3]',
-  hospitalLOS: 'Hospital length of stay (days), median [Q1, Q3]',
-  sofaScore: 'Total SOFA score, median [Q1, Q3]',
-  charlsonIndex: 'Charlson Comorbidity Index, median [Q1, Q3]',
-  crrt: 'CRRT, n (%)',
-  icuEncounters: 'ICU encounters, n (%)',
-  advancedRespiratory: 'Advanced respiratory support, n (%)',
-  vasoactiveSupport: 'Vasoactive support, n (%)',
-  otherCriticallyIll: 'Other critically ill, n (%)',
-  imvTotal: 'Invasive mechanical ventilation, n (%)',
-  imvLocationICU: 'First location at IMV start: icu',
-  imvLocationED: 'First location at IMV start: ed',
-  imvLocationProcedural: 'First location at IMV start: procedural',
-  imvLocationWard: 'First location at IMV start: ward',
-  imvLocationStepdown: 'First location at IMV start: stepdown',
-  ventModeACV: 'Initial ventilator mode: assist control-volume control',
-  ventModeSIMV: 'Initial ventilator mode: simv',
-  ventModePSV: 'Initial ventilator mode: pressure support/cpap',
-  ventModePCV: 'Initial ventilator mode: pressure control',
-  ventModePRVC: 'Initial ventilator mode: pressure-regulated volume control',
-  ventModeOther: 'Initial ventilator mode: other',
-  fio2Median: 'FiO2 (%), median [Q1, Q3]',
-  peepMedian: 'PEEP (cmH2O), median [Q1, Q3]',
-  rrMedian: 'Respiratory rate (breaths/min), median [Q1, Q3]',
-  tidalVolumeMedian: 'Tidal volume (mL), median [Q1, Q3]',
-  vasopressorEncounters: 'Vasopressor encounters, n (%)',
-  norepinephrine: 'Norepinephrine, n (%)',
-  norepinephrineDose: 'Norepinephrine dose (mcg/kg/min), median [Q1, Q3]',
-  epinephrine: 'Epinephrine, n (%)',
-  epinephrineDose: 'Epinephrine dose (mcg/kg/min), median [Q1, Q3]',
-  phenylephrine: 'Phenylephrine, n (%)',
-  phenylephrineDose: 'Phenylephrine dose (mcg/kg/min), median [Q1, Q3]',
-  vasopressin: 'Vasopressin, n (%)',
-  dopamine: 'Dopamine, n (%)',
-  dopamineDose: 'Dopamine dose (mcg/kg/min), median [Q1, Q3]',
-};
+// Read and parse the CSV file at build time
+const csvPath = join(process.cwd(), 'src', 'data', 'overall_1113.csv');
+const csvContent = await readFile(csvPath, 'utf-8');
+const lines = csvContent.trim().split('\n');
 
-// Build the full field set for every cohort from its by-year table_one
-// (the `Overall` year column carries the all-years aggregate; `__ALL` = consortium).
-const cohortDir = path.join(process.cwd(), 'src', 'data', 'cohorts');
-function fieldsFor(key: string) {
-  const csv = fs.readFileSync(path.join(cohortDir, key, 'table_one_by_year.csv'), 'utf-8');
-  const data = parseCohortCSV(csv);
-  const f: Record<string, string> = {};
-  for (const [name, label] of Object.entries(LABELS)) {
-    f[name] = (getAggregateValue(data, label, 'Overall') || '').replace(/^"|"$/g, '').trim();
+// Parse CSV helper function
+function parseCSVLine(line: string): string[] {
+  const result: string[] = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) {
+      result.push(current);
+      current = '';
+    } else {
+      current += char;
+    }
   }
-  const yrs = data.allYears.filter((y) => /^\d{4}$/.test(y)).sort();
-  f.years = yrs.length ? `${yrs[0]}-${yrs[yrs.length - 1]}` : '';
-  f.hasSofa = f.sofaScore ? '1' : '';
-  f.hasVent = f.imvTotal ? '1' : '';
-  return f;
+  result.push(current);
+  return result;
 }
-interface Props {
-  cohort?: string;
-}
-const { cohort = DEFAULT_COHORT } = Astro.props;
-const uid = cohort;
-const d = fieldsFor(cohort);
-const isDefault = cohort === DEFAULT_COHORT;
-// Availability flags -> conditionally render cards a cohort has no data for.
-const hasVent = d.hasVent === '1';
-const hasSofa = d.hasSofa === '1';
-const hasIcuLos = !!d.icuLOS;
 
-// Existing template variable names, populated from the default cohort for SSR.
-const uniquePatients = d.uniquePatients || '—';
-const encounterBlocks = d.encounterBlocks || '—';
-const hospitals = d.hospitals || '—';
-const years = d.years || '—';
-const sexMale = d.sexMale;
-const sexFemale = d.sexFemale;
-const raceWhite = d.raceWhite;
-const raceBlack = d.raceBlack;
-const raceAsian = d.raceAsian;
-const raceOther = d.raceOther;
-const raceUnknown = d.raceUnknown;
-const ethnicityHispanic = d.ethnicityHispanic;
-const ethnicityNonHispanic = d.ethnicityNonHispanic;
-const medianAge = d.medianAge;
-const admissionED = d.admissionED;
-const admissionElective = d.admissionElective;
-const admissionOSH = d.admissionOSH;
-const admissionFacility = d.admissionFacility;
-const admissionDirect = d.admissionDirect;
-const admissionOther = d.admissionOther;
-const comorbCHF = d.comorbCHF;
-const comorbRenal = d.comorbRenal;
-const comorbPulmonary = d.comorbPulmonary;
-const comorbCerebrovascular = d.comorbCerebrovascular;
-const comorbCancer = d.comorbCancer;
-const comorbMetastatic = d.comorbMetastatic;
-const comorbPVD = d.comorbPVD;
-const comorbMI = d.comorbMI;
-const comorbDementia = d.comorbDementia;
-const comorbLiver = d.comorbLiver;
-const comorbHemiplegia = d.comorbHemiplegia;
-const comorbConnective = d.comorbConnective;
-const comorbPeptic = d.comorbPeptic;
-const comorbAIDS = d.comorbAIDS;
-const hospitalMortality = d.hospitalMortality;
-const icuLOS = d.icuLOS;
-const hospitalLOS = d.hospitalLOS;
-const vasopressorUse = d.vasoactiveSupport;
-const sofaScore = d.sofaScore;
-const charlsonIndex = d.charlsonIndex;
-const crrt = d.crrt;
+// Parse all rows into a map
+const dataMap = new Map<string, string>();
+for (let i = 1; i < lines.length; i++) {
+  const values = parseCSVLine(lines[i]);
+  if (values.length >= 2) {
+    const characteristic = values[0].trim();
+    const consortiumValue = values[1].trim();
+    dataMap.set(characteristic, consortiumValue);
+  }
+}
+
+// Extract data
+const uniquePatients = dataMap.get('N: Unique patients') || '808,749';
+const encounterBlocks = dataMap.get('N: Hospitalizations') || '1,029,400';
+const hospitals = dataMap.get('N: Hospitals') || '62';
+const years = dataMap.get('Years') || '2011-2025';
+
+// Demographics - Sex
+const sexMale = dataMap.get('  Sex: male') || '440,597 (54.5%)';
+const sexFemale = dataMap.get('  Sex: female') || '367,997 (45.5%)';
+
+// Demographics - Race
+const raceWhite = dataMap.get('  Race: white') || '511,899 (63.3%)';
+const raceBlack = dataMap.get('  Race: black or african american') || '157,430 (19.5%)';
+const raceAsian = dataMap.get('  Race: asian') || '36,342 (4.5%)';
+const raceOther = dataMap.get('  Race: other') || '41,902 (5.2%)';
+const raceUnknown = dataMap.get('  Race: unknown') || '53,206 (6.6%)';
+
+// Demographics - Ethnicity
+const ethnicityHispanic = dataMap.get('  Ethnicity: hispanic') || '47,271 (5.8%)';
+const ethnicityNonHispanic = dataMap.get('  Ethnicity: non-hispanic') || '700,818 (86.7%)';
+
+// Demographics - Age
+const medianAge = dataMap.get('Age at admission, median [Q1, Q3]') || '66 [47,79]';
+
+// Admission Types
+const admissionED = dataMap.get('  Admission type: ed') || '670,921 (65.2%)';
+const admissionElective = dataMap.get('  Admission type: elective') || '81,078 (7.9%)';
+const admissionOSH = dataMap.get('  Admission type: osh') || '149,423 (14.5%)';
+const admissionFacility = dataMap.get('  Admission type: facility') || '34,120 (3.3%)';
+const admissionDirect = dataMap.get('  Admission type: direct') || '59,731 (5.8%)';
+const admissionOther = dataMap.get('  Admission type: other') || '25,463 (2.5%)';
+
+// Comorbidities
+const comorbCHF = dataMap.get('Congestive Heart Failure') || '217,619 (21.1%)';
+const comorbRenal = dataMap.get('  Renal Disease') || '194,088 (18.9%)';
+const comorbPulmonary = dataMap.get('  Chronic Pulmonary Disease') || '179,526 (17.4%)';
+const comorbCerebrovascular = dataMap.get('  Cerebrovascular Disease') || '138,330 (13.4%)';
+const comorbCancer = dataMap.get('  Cancer') || '75,755 (7.4%)';
+const comorbMetastatic = dataMap.get('  Metastatic Solid Tumor') || '73,649 (7.2%)';
+const comorbPVD = dataMap.get('  Peripheral Vascular Disease') || '63,341 (6.2%)';
+const comorbMI = dataMap.get('  Myocardial Infarction') || '78,700 (7.6%)';
+const comorbDementia = dataMap.get('  Dementia') || '35,096 (3.4%)';
+const comorbLiver = dataMap.get('  Mild Liver Disease') || '34,309 (3.3%)';
+const comorbHemiplegia = dataMap.get('  Hemiplegia') || '40,168 (3.9%)';
+const comorbConnective = dataMap.get('  Connective Tissue Disease') || '23,637 (2.3%)';
+const comorbPeptic = dataMap.get('  Peptic Ulcer Disease') || '19,999 (1.9%)';
+const comorbAIDS = dataMap.get('  Aids') || '4,082 (0.4%)';
+
+// Clinical Outcomes
+const hospitalMortality = dataMap.get('Hospital mortality, n (%)') || '208,813 (25.8%)';
+const icuLOS = dataMap.get('ICU length of stay (days), median [Q1, Q3]') || '1.7 [0.8,5]';
+const hospitalLOS = dataMap.get('Hospital length of stay (days), median [Q1, Q3]') || '6.4 [2.6,18.6]';
+const vasopressorUse = dataMap.get('  Vasoactive support, n (%)') || '347,730 (33.8%)';
+const sofaScore = dataMap.get('  Total SOFA score, median [Q1, Q3]') || '3 [1,9]';
+const charlsonIndex = dataMap.get('Charlson Comorbidity Index, median [Q1, Q3]') || '2 [0,5]';
+const crrt = dataMap.get('CRRT, n (%)') || '34,707 (3.4%)';
 
 // Helper functions to extract numbers and percentages
 function extractNumber(str: string): string {
@@ -172,60 +118,78 @@ function extractIQR(str: string): string {
   return match ? match[1] : '';
 }
 
-// Race detail + combined "Other" percentage (default cohort, for SSR)
-const raceAmericanIndian = d.raceAmericanIndian;
-const racePacificIslander = d.racePacificIslander;
-const pctOf = (n: number, t: number) => (t > 0 ? ((n / t) * 100).toFixed(1) : '0.0');
-const numOf = (s: string) => parseInt(extractNumber(s || '').replace(/,/g, ''), 10) || 0;
-const totalOtherRaces = [d.raceAsian, d.raceOther, d.raceUnknown, d.raceAmericanIndian, d.racePacificIslander]
-  .reduce((sum, v) => sum + numOf(v), 0);
-const totalPatients = numOf(uniquePatients);
-const otherRacePercentage = pctOf(totalOtherRaces, totalPatients);
+// Calculate "Other" races (Asian + Other + Unknown + American Indian + Pacific Islander)
+const raceAsianNum = extractNumber(raceAsian);
+const raceOtherNum = extractNumber(raceOther);
+const raceUnknownNum = extractNumber(raceUnknown);
+const raceAmericanIndian = dataMap.get('  Race: american indian or alaska native') || '3,936 (0.5%)';
+const racePacificIslander = dataMap.get('  Race: native hawaiian or other pacific islander') || '2,176 (0.3%)';
 
-// Encounter Types (proportion of total critical-care encounter types)
-const icuEncounters = d.icuEncounters;
-const advancedRespiratory = d.advancedRespiratory;
-const vasoactiveSupport = d.vasoactiveSupport;
-const otherCriticallyIll = d.otherCriticallyIll;
-const totalEncounterTypes =
-  numOf(icuEncounters) + numOf(advancedRespiratory) + numOf(vasoactiveSupport) + numOf(otherCriticallyIll);
-const icuPct = pctOf(numOf(icuEncounters), totalEncounterTypes);
-const respiratoryPct = pctOf(numOf(advancedRespiratory), totalEncounterTypes);
-const vasoactivePct = pctOf(numOf(vasoactiveSupport), totalEncounterTypes);
-const otherPct = pctOf(numOf(otherCriticallyIll), totalEncounterTypes);
+// Calculate combined "Other" percentage
+const totalOtherRaces = [
+  parseInt(raceAsianNum.replace(/,/g, '')),
+  parseInt(extractNumber(raceOther).replace(/,/g, '')),
+  parseInt(extractNumber(raceUnknown).replace(/,/g, '')),
+  parseInt(extractNumber(raceAmericanIndian).replace(/,/g, '')),
+  parseInt(extractNumber(racePacificIslander).replace(/,/g, ''))
+].reduce((a, b) => a + b, 0);
+
+const totalPatients = parseInt(uniquePatients.replace(/,/g, ''));
+const otherRacePercentage = ((totalOtherRaces / totalPatients) * 100).toFixed(1);
+
+// Encounter Types
+const icuEncounters = dataMap.get('  ICU encounters, n (%)') || '933,058 (90.6%)';
+const advancedRespiratory = dataMap.get('  Advanced respiratory support, n (%)') || '454,071 (44.1%)';
+const vasoactiveSupport = dataMap.get('  Vasoactive support, n (%)') || '347,730 (33.8%)';
+const otherCriticallyIll = dataMap.get('  Other critically ill, n (%)') || '74,095 (7.2%)';
+
+// Calculate encounter type percentages (as proportion of total encounters)
+const icuCount = parseInt(extractNumber(icuEncounters).replace(/,/g, ''));
+const advancedRespiratoryCount = parseInt(extractNumber(advancedRespiratory).replace(/,/g, ''));
+const vasoactiveSupportCount = parseInt(extractNumber(vasoactiveSupport).replace(/,/g, ''));
+const otherCriticallyIllCount = parseInt(extractNumber(otherCriticallyIll).replace(/,/g, ''));
+const totalEncounterTypes = icuCount + advancedRespiratoryCount + vasoactiveSupportCount + otherCriticallyIllCount;
+
+const icuPct = ((icuCount / totalEncounterTypes) * 100).toFixed(1);
+const respiratoryPct = ((advancedRespiratoryCount / totalEncounterTypes) * 100).toFixed(1);
+const vasoactivePct = ((vasoactiveSupportCount / totalEncounterTypes) * 100).toFixed(1);
+const otherPct = ((otherCriticallyIllCount / totalEncounterTypes) * 100).toFixed(1);
 
 // Respiratory Support Details
-const imvTotal = d.imvTotal;
-const imvLocationICU = d.imvLocationICU;
-const imvLocationED = d.imvLocationED;
-const imvLocationProcedural = d.imvLocationProcedural;
-const imvLocationWard = d.imvLocationWard;
-const imvLocationStepdown = d.imvLocationStepdown;
-const ventModeACV = d.ventModeACV;
-const ventModeSIMV = d.ventModeSIMV;
-const ventModePSV = d.ventModePSV;
-const ventModePCV = d.ventModePCV;
-const ventModePRVC = d.ventModePRVC;
-const ventModeOther = d.ventModeOther;
-const fio2Median = d.fio2Median;
-const peepMedian = d.peepMedian;
-const rrMedian = d.rrMedian;
-const tidalVolumeMedian = d.tidalVolumeMedian;
+const imvTotal = dataMap.get('Invasive mechanical ventilation, n (%)') || '315,193 (30.6%)';
+// First location at IMV start
+const imvLocationICU = dataMap.get('  First location at IMV start: icu') || '237,573 (23.1%)';
+const imvLocationED = dataMap.get('  First location at IMV start: ed') || '41,734 (4.1%)';
+const imvLocationProcedural = dataMap.get('  First location at IMV start: procedural') || '23,815 (2.3%)';
+const imvLocationWard = dataMap.get('  First location at IMV start: ward') || '6,039 (0.6%)';
+const imvLocationStepdown = dataMap.get('  First location at IMV start: stepdown') || '1,550 (0.2%)';
+// Initial ventilator mode
+const ventModeACV = dataMap.get('Initial ventilator mode: assist control-volume control') || '188,099 (18.3%)';
+const ventModeSIMV = dataMap.get('  Initial ventilator mode: simv') || '29,872 (2.9%)';
+const ventModePSV = dataMap.get('  Initial ventilator mode: pressure support/cpap') || '19,921 (1.9%)';
+const ventModePCV = dataMap.get('  Initial ventilator mode: pressure control') || '6,473 (0.6%)';
+const ventModePRVC = dataMap.get('  Initial ventilator mode: pressure-regulated volume control') || '52,903 (5.1%)';
+const ventModeOther = dataMap.get('  Initial ventilator mode: other') || '9,677 (0.9%)';
+// IMV device settings
+const fio2Median = dataMap.get('  FiO2 (%), median [Q1, Q3]') || '0.4 [0.3,0.6]';
+const peepMedian = dataMap.get('  PEEP (cmH2O), median [Q1, Q3]') || '5 [5,8]';
+const rrMedian = dataMap.get('  Respiratory rate (breaths/min), median [Q1, Q3]') || '16 [0,20]';
+const tidalVolumeMedian = dataMap.get('  Tidal volume (mL), median [Q1, Q3]') || '450 [400,500]';
 
 // Vasopressor Support Details
-const vasopressorEncounters = d.vasopressorEncounters;
-const norepinephrine = d.norepinephrine;
-const norepinephrineDose = d.norepinephrineDose;
-const epinephrine = d.epinephrine;
-const epinephrineDose = d.epinephrineDose;
-const phenylephrine = d.phenylephrine;
-const phenylephrineDose = d.phenylephrineDose;
-const vasopressin = d.vasopressin;
-const dopamine = d.dopamine;
-const dopamineDose = d.dopamineDose;
+const vasopressorEncounters = dataMap.get('Vasopressor encounters, n (%)') || '260,090 (25.3%)';
+const norepinephrine = dataMap.get('  Norepinephrine, n (%)') || '184,565 (17.9%)';
+const norepinephrineDose = dataMap.get('    Norepinephrine dose (mcg/kg/min), median [Q1, Q3]') || '0.07 [0.03,7]';
+const epinephrine = dataMap.get('  Epinephrine, n (%)') || '69,664 (6.8%)';
+const epinephrineDose = dataMap.get('    Epinephrine dose (mcg/kg/min), median [Q1, Q3]') || '0.04 [0.01,6]';
+const phenylephrine = dataMap.get('  Phenylephrine, n (%)') || '113,088 (11.0%)';
+const phenylephrineDose = dataMap.get('    Phenylephrine dose (mcg/kg/min), median [Q1, Q3]') || '3.33 [0.23,50]';
+const vasopressin = dataMap.get('  Vasopressin, n (%)') || '75,611 (7.3%)';
+const dopamine = dataMap.get('  Dopamine, n (%)') || '15,732 (1.5%)';
+const dopamineDose = dataMap.get('    Dopamine dose (mcg/kg/min), median [Q1, Q3]') || '4 [2,6.12]';
 ---
 
-<div class={`cohort-dashboard cohort-summary-panel${isDefault ? '' : ' hidden'}`} id={`summary-${uid}`} data-cohort={uid}>
+<div class="cohort-dashboard">
   <!-- Compact Top Grid Layout -->
   <section class="mb-8">
     <div class="flex flex-col lg:flex-row gap-4">
@@ -296,7 +260,6 @@ const dopamineDose = d.dopamineDose;
               <div class="relative text-xs text-gray-700 dark:!text-white">Hispanic</div>
             </div>
             <!-- ICU Stay -->
-            {hasIcuLos && (
             <div class="relative py-2">
               <svg class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 opacity-30 text-slate-400" fill="currentColor" viewBox="0 0 640 512">
                 <path d="M176 256c44.11 0 80-35.89 80-80s-35.89-80-80-80-80 35.89-80 80 35.89 80 80 80zm352-128H304c-8.84 0-16 7.16-16 16v144H64V80c0-8.84-7.16-16-16-16H16C7.16 64 0 71.16 0 80v352c0 8.84 7.16 16 16 16h32c8.84 0 16-7.16 16-16v-48h512v48c0 8.84 7.16 16 16 16h32c8.84 0 16-7.16 16-16V240c0-61.86-50.14-112-112-112z"/>
@@ -304,7 +267,6 @@ const dopamineDose = d.dopamineDose;
               <div class="relative text-xl font-bold text-gray-900">{extractMedian(icuLOS)} <span class="text-base font-normal text-gray-800">[{extractIQR(icuLOS)}]</span></div>
               <div class="relative text-xs text-gray-700 dark:!text-white">Median ICU Stay, days</div>
             </div>
-            )}
             <!-- Hospital Stay -->
             <div class="relative py-2">
               <svg class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 opacity-30 text-slate-400" fill="currentColor" viewBox="0 0 20 20">
@@ -314,7 +276,6 @@ const dopamineDose = d.dopamineDose;
               <div class="relative text-xs text-gray-700 dark:!text-white">Median Hospital Stay, days</div>
             </div>
             <!-- SOFA -->
-            {hasSofa && (
             <div class="relative py-2">
               <svg class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 opacity-30 text-slate-400" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
@@ -323,7 +284,6 @@ const dopamineDose = d.dopamineDose;
               <div class="relative text-xl font-bold text-gray-900">{extractMedian(sofaScore)} <span class="text-base font-normal text-gray-800">[{extractIQR(sofaScore)}]</span></div>
               <div class="relative text-xs text-gray-700 dark:!text-white">Median SOFA Score</div>
             </div>
-            )}
             <!-- Charlson -->
             <div class="relative py-2">
               <svg class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 opacity-30 text-slate-400" fill="currentColor" viewBox="0 0 20 20">
@@ -344,7 +304,7 @@ const dopamineDose = d.dopamineDose;
             <div class="flex flex-col items-center gap-2">
               <!-- Pie Chart -->
               <div class="w-32 h-32 relative overflow-visible">
-                <canvas id={`encounterTypesChart-${uid}`}></canvas>
+                <canvas id="encounterTypesChart"></canvas>
               </div>
               <!-- Data List -->
               <div class="w-full space-y-1 text-xs">
@@ -386,7 +346,7 @@ const dopamineDose = d.dopamineDose;
             <div class="flex flex-col items-center gap-2">
               <!-- Pie Chart -->
               <div class="w-32 h-32 relative overflow-visible">
-                <canvas id={`admissionTypesChart-${uid}`}></canvas>
+                <canvas id="admissionTypesChart"></canvas>
               </div>
               <!-- Data List -->
               <div class="w-full space-y-1 text-xs">
@@ -426,12 +386,12 @@ const dopamineDose = d.dopamineDose;
           <div class="bg-white p-4 rounded-lg shadow border border-gray-200 flex flex-col" style="min-height: 320px;">
             <div class="flex justify-between items-center mb-2">
               <h3 class="text-sm font-semibold text-gray-700">Top Comorbidities</h3>
-              <button id={`expandComorbidities-${uid}`} class="text-xs text-slate-600 hover:text-slate-800 underline">
+              <button id="expandComorbidities" class="text-xs text-slate-600 hover:text-slate-800 underline">
                 View All
               </button>
             </div>
             <div class="flex items-center justify-center flex-1">
-              <svg id={`comorbidityBubbleChart-${uid}`} class="w-full h-full" style="max-height: 240px;"></svg>
+              <svg id="comorbidityBubbleChart" class="w-full h-full" style="max-height: 240px;"></svg>
             </div>
           </div>
 
@@ -450,7 +410,6 @@ const dopamineDose = d.dopamineDose;
     <h2 class="text-xl font-bold mb-4 text-gray-800">Advanced Support</h2>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <!-- IMV -->
-      {hasVent && (
       <div class="bg-gradient-to-br from-slate-500 to-slate-600 text-white p-4 rounded-lg shadow">
         <div class="flex items-center gap-2">
           <svg class="w-20 h-20 opacity-90 breathing-lungs flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
@@ -463,7 +422,6 @@ const dopamineDose = d.dopamineDose;
           </div>
         </div>
       </div>
-      )}
 
       <!-- Vasopressor -->
       <div class="bg-gradient-to-br from-slate-600 to-slate-700 text-white p-4 rounded-lg shadow">
@@ -514,11 +472,10 @@ const dopamineDose = d.dopamineDose;
   <section class="mb-8">
 
     <!-- Respiratory Support Subsection -->
-    {hasVent && (
     <div class="mb-8">
       <button
         class="collapsible-header collapsed w-full flex items-center justify-between bg-gray-50 hover:bg-gray-100 p-4 rounded-lg transition-colors duration-200 border border-gray-200"
-        data-target={`respiratory-support-${uid}`}
+        data-target="respiratory-support"
       >
         <h3 class="text-xl font-bold text-gray-800">Respiratory Support</h3>
         <svg class="chevron w-6 h-6 text-gray-600 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -526,7 +483,7 @@ const dopamineDose = d.dopamineDose;
         </svg>
       </button>
 
-      <div id={`respiratory-support-${uid}`} class="collapsible-content collapsed mt-6">
+      <div id="respiratory-support" class="collapsible-content collapsed mt-6">
 
     <!-- Two columns layout for Location and Mode -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
@@ -535,14 +492,14 @@ const dopamineDose = d.dopamineDose;
       <div class="bg-white p-5 rounded-lg shadow border border-gray-200">
         <h3 class="text-base font-semibold mb-4 text-gray-700">First Location at IMV Start</h3>
         <div class="flex items-center justify-center" style="height: 280px;">
-          <canvas id={`locationPieChart-${uid}`}></canvas>
+          <canvas id="locationPieChart"></canvas>
         </div>
       </div>
 
       <!-- Initial Ventilator Mode -->
       <div class="bg-white p-5 rounded-lg shadow border border-gray-200">
         <h3 class="text-base font-semibold mb-4 text-gray-700">Initial Ventilator Mode</h3>
-        <div id={`ventModeTreemap-${uid}`} class="w-full" style="height: 256px;"></div>
+        <div id="ventModeTreemap" class="w-full" style="height: 256px;"></div>
       </div>
 
     </div>
@@ -575,13 +532,12 @@ const dopamineDose = d.dopamineDose;
     </div>
       </div>
     </div>
-    )}
 
     <!-- Vasopressor Support Subsection -->
     <div class="mb-8">
       <button
         class="collapsible-header collapsed w-full flex items-center justify-between bg-gray-50 hover:bg-gray-100 p-4 rounded-lg transition-colors duration-200 border border-gray-200"
-        data-target={`vasopressor-support-${uid}`}
+        data-target="vasopressor-support"
       >
         <h3 class="text-xl font-bold text-gray-800">Vasopressor Support</h3>
         <svg class="chevron w-6 h-6 text-gray-600 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -589,7 +545,7 @@ const dopamineDose = d.dopamineDose;
         </svg>
       </button>
 
-      <div id={`vasopressor-support-${uid}`} class="collapsible-content collapsed mt-6">
+      <div id="vasopressor-support" class="collapsible-content collapsed mt-6">
 
     <!-- Vasopressor Medications - Integrated Card -->
     <div class="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white p-6 rounded-lg shadow">
@@ -647,11 +603,11 @@ const dopamineDose = d.dopamineDose;
   </section>
 
   <!-- Modal for All Comorbidities -->
-  <div id={`comorbiditiesModal-${uid}`} class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+  <div id="comorbiditiesModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-lg shadow-xl max-w-5xl w-full max-h-[90vh] overflow-hidden">
       <div class="flex justify-between items-center p-6 border-b">
         <h2 class="text-2xl font-bold text-gray-800">All Comorbidities</h2>
-        <button id={`closeModal-${uid}`} class="text-gray-500 hover:text-gray-700">
+        <button id="closeModal" class="text-gray-500 hover:text-gray-700">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
           </svg>
@@ -659,7 +615,7 @@ const dopamineDose = d.dopamineDose;
       </div>
       <div class="p-6 overflow-y-auto max-h-[calc(90vh-100px)]">
         <div class="flex items-center justify-center">
-          <svg id={`comorbidityBubbleChartFull-${uid}`} class="w-full" style="height: 600px;"></svg>
+          <svg id="comorbidityBubbleChartFull" class="w-full" style="height: 600px;"></svg>
         </div>
       </div>
     </div>
@@ -825,21 +781,16 @@ const dopamineDose = d.dopamineDose;
   }
 </style>
 
+<script src="https://d3js.org/d3.v7.min.js"></script>
+
 <script define:vars={{
-  uid,
   icuEncounters, advancedRespiratory, vasoactiveSupport, otherCriticallyIll,
   admissionED, admissionOSH, admissionElective, admissionDirect, admissionFacility, admissionOther,
   comorbCHF, comorbRenal, comorbPulmonary, comorbCerebrovascular, comorbCancer, comorbMetastatic,
-  comorbPVD, comorbMI, comorbDementia, comorbLiver, comorbHemiplegia, comorbConnective, comorbPeptic, comorbAIDS,
-  imvLocationICU, imvLocationED, imvLocationProcedural, imvLocationWard, imvLocationStepdown,
-  ventModeACV, ventModeSIMV, ventModePSV, ventModePCV, ventModePRVC, ventModeOther
+  comorbPVD, comorbMI, comorbDementia, comorbLiver, comorbHemiplegia, comorbConnective, comorbPeptic, comorbAIDS
 }}>
   document.addEventListener('DOMContentLoaded', () => {
-    const root = document.getElementById('summary-' + uid);
-    if (!root) return;
-    const byId = (base) => document.getElementById(base + '-' + uid);
-    const pctVal = (str) => { const m = (str || '').match(/\(([^)]+)%\)/); return m ? parseFloat(m[1]) : 0; };
-    const collapsibleHeaders = root.querySelectorAll('.collapsible-header');
+    const collapsibleHeaders = document.querySelectorAll('.collapsible-header');
 
     // Track if respiratory charts have been created
     let respiratoryChartsCreated = false;
@@ -855,23 +806,20 @@ const dopamineDose = d.dopamineDose;
           content.classList.toggle('collapsed');
 
           // If we just opened the respiratory support section, create the charts
-          if (targetId === 'respiratory-support-' + uid && !content.classList.contains('collapsed') && !respiratoryChartsCreated) {
+          if (targetId === 'respiratory-support' && !content.classList.contains('collapsed') && !respiratoryChartsCreated) {
             respiratoryChartsCreated = true;
 
             // Wait a tick for the section to fully expand
             setTimeout(() => {
-              // Create Pie Chart for Location using Chart.js (data-driven)
-              const locationPieCtx = byId('locationPieChart');
+              // Create Pie Chart for Location using Chart.js
+              const locationPieCtx = document.getElementById('locationPieChart');
               if (locationPieCtx && typeof Chart !== 'undefined') {
                 new Chart(locationPieCtx, {
                   type: 'doughnut',
                   data: {
                     labels: ['ICU', 'ED', 'Procedural', 'Ward', 'Stepdown'],
                     datasets: [{
-                      data: [
-                        pctVal(imvLocationICU), pctVal(imvLocationED), pctVal(imvLocationProcedural),
-                        pctVal(imvLocationWard), pctVal(imvLocationStepdown)
-                      ],
+                      data: [75.4, 13.2, 7.6, 1.9, 0.5],
                       backgroundColor: [
                         'rgb(20, 184, 166)',   // teal-500
                         'rgb(45, 212, 191)',   // teal-400
@@ -912,16 +860,16 @@ const dopamineDose = d.dopamineDose;
                 const ventModeData = {
                   name: "Modes",
                   children: [
-                    { name: "Assist Control/Volume Control", shortName: "AC/VC", value: pctVal(ventModeACV) },
-                    { name: "Pressure Regulated Volume Control", shortName: "PRVC", value: pctVal(ventModePRVC) },
-                    { name: "Synchronized Intermittent Mandatory Ventilation", shortName: "SIMV", value: pctVal(ventModeSIMV) },
-                    { name: "Pressure Support Ventilation/CPAP", shortName: "PSV/CPAP", value: pctVal(ventModePSV) },
-                    { name: "Pressure Control Ventilation", shortName: "PCV", value: pctVal(ventModePCV) },
-                    { name: "Other", shortName: "Other", value: pctVal(ventModeOther) }
-                  ].filter((m) => m.value > 0)
+                    { name: "Assist Control/Volume Control", shortName: "AC/VC", value: 59.7 },
+                    { name: "Pressure Regulated Volume Control", shortName: "PRVC", value: 16.8 },
+                    { name: "Synchronized Intermittent Mandatory Ventilation", shortName: "SIMV", value: 9.5 },
+                    { name: "Pressure Support Ventilation/CPAP", shortName: "PSV/CPAP", value: 6.3 },
+                    { name: "Pressure Control Ventilation", shortName: "PCV", value: 2.1 },
+                    { name: "Other", shortName: "Other", value: 3.1 }
+                  ]
                 };
 
-                const container = byId('ventModeTreemap');
+                const container = document.getElementById('ventModeTreemap');
                 if (container) {
                   const width = container.clientWidth;
                   const height = 256;
@@ -1054,7 +1002,7 @@ const dopamineDose = d.dopamineDose;
     };
 
     // Create Encounter Types Donut Chart
-    const encounterCtx = byId('encounterTypesChart');
+    const encounterCtx = document.getElementById('encounterTypesChart');
     if (encounterCtx && typeof Chart !== 'undefined') {
       // Get counts
       const icuCount = parseCount(icuEncounters);
@@ -1115,7 +1063,7 @@ const dopamineDose = d.dopamineDose;
     }
 
     // Create Admission Types Donut Chart
-    const admissionCtx = byId('admissionTypesChart');
+    const admissionCtx = document.getElementById('admissionTypesChart');
     if (admissionCtx && typeof Chart !== 'undefined') {
       // Get counts
       const edCount = parseCount(admissionED);
@@ -1345,24 +1293,24 @@ const dopamineDose = d.dopamineDose;
 
     // Create initial bubble chart (all 14 comorbidities - top 3 with labels, rest blank and smaller)
     if (typeof d3 !== 'undefined') {
-      const svg = byId('comorbidityBubbleChart');
+      const svg = document.getElementById('comorbidityBubbleChart');
       if (svg) {
         const width = svg.clientWidth || 300;
         const height = 240; // Reduced height to match other cards
-        createBubbleChart('comorbidityBubbleChart-' + uid, compactViewData, width, height);
+        createBubbleChart('comorbidityBubbleChart', compactViewData, width, height);
       }
     }
 
     // Modal handling
-    const modal = byId('comorbiditiesModal');
-    const expandBtn = byId('expandComorbidities');
-    const closeBtn = byId('closeModal');
+    const modal = document.getElementById('comorbiditiesModal');
+    const expandBtn = document.getElementById('expandComorbidities');
+    const closeBtn = document.getElementById('closeModal');
 
-    expandBtn && expandBtn.addEventListener('click', () => {
+    expandBtn.addEventListener('click', () => {
       modal.classList.remove('hidden');
       // Create full bubble chart with ALL labels visible using full names
       if (typeof d3 !== 'undefined') {
-        const svg = byId('comorbidityBubbleChartFull');
+        const svg = document.getElementById('comorbidityBubbleChartFull');
         if (svg) {
           const width = svg.clientWidth || 800;
           const height = 600;
@@ -1372,26 +1320,20 @@ const dopamineDose = d.dopamineDose;
             name: item.full,  // Use full name instead of abbreviation
             isTop3: true
           }));
-          createBubbleChart('comorbidityBubbleChartFull-' + uid, allWithFullNames, width, height);
+          createBubbleChart('comorbidityBubbleChartFull', allWithFullNames, width, height);
         }
       }
     });
 
-    closeBtn && closeBtn.addEventListener('click', () => {
+    closeBtn.addEventListener('click', () => {
       modal.classList.add('hidden');
     });
 
     // Close modal on outside click
-    modal && modal.addEventListener('click', (e) => {
+    modal.addEventListener('click', (e) => {
       if (e.target === modal) {
         modal.classList.add('hidden');
       }
     });
-
-    // Show/hide this cohort's panel based on the active cohort (window.CohortBus).
-    function showPanel(active) { root.classList.toggle('hidden', !active); }
-    if (window.CohortBus && typeof window.CohortBus.subscribe === 'function') {
-      window.CohortBus.subscribe((key) => showPanel(key === uid));
-    }
   });
 </script>

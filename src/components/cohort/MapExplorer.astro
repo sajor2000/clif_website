@@ -2,46 +2,11 @@
 // CLIF Map Explorer - Interactive map showing consortium sites
 import { readFile } from 'fs/promises';
 import { join } from 'path';
-import fs from 'node:fs';
-import { parseCohortCSV } from '../../utils/cohortData';
 
 // Read and parse the CSV file at build time
 const csvPath = join(process.cwd(), 'src', 'data', 'site_details.csv');
 const csvContent = await readFile(csvPath, 'utf-8');
 const lines = csvContent.trim().split('\n');
-
-// Refresh per-site encounter / patient / hospital counts from the new overall_ward
-// data (geography/lat-long still come from site_details.csv). The export uses site
-// codes; map them to the display names used in site_details.csv.
-const CODE_TO_NAME: Record<string, string> = {
-  Emory: 'Emory University',
-  MIMIC: 'Harvard University / MIMIC-IV',
-  NU: 'Northwestern University',
-  OHSU: 'Oregon Health & Science University',
-  RUSH: 'Rush University',
-  UCMC: 'University of Chicago',
-  UCSF: 'University of California, San Francisco (UCSF)',
-  UMN: 'University of Minnesota',
-  UPenn: 'University of Pennsylvania',
-};
-const wardCsv = fs.readFileSync(
-  join(process.cwd(), 'src', 'data', 'cohorts', 'overall_ward', 'table_one_overall.csv'),
-  'utf-8'
-);
-const ward = parseCohortCSV(wardCsv);
-function wardSiteCount(variable: string, site: string): number {
-  const row = ward.characteristics.find((c) => c.variable.trim() === variable);
-  const v = row?.sites.get(site)?.get('Overall') || '';
-  return parseInt((v.match(/^[\d,]+/)?.[0] || '0').replace(/,/g, ''), 10) || 0;
-}
-const freshCounts: Record<string, { hospitals: number; encounters: number; patients: number }> = {};
-for (const [code, name] of Object.entries(CODE_TO_NAME)) {
-  freshCounts[name] = {
-    hospitals: wardSiteCount('N: Hospitals', code),
-    encounters: wardSiteCount('N: Encounter blocks', code),
-    patients: wardSiteCount('N: Unique patients', code),
-  };
-}
 
 // Parse CSV helper function
 function parseCSVLine(line: string): string[] {
@@ -84,17 +49,15 @@ for (let i = 1; i < lines.length; i++) {
     const latStr = values[2].trim().replace(/−/g, '-');
     const lonStr = values[3].trim().replace(/−/g, '-');
 
-    const name = values[0].trim();
-    const fresh = freshCounts[name];
     const site: SiteData = {
-      name,
+      name: values[0].trim(),
       location: values[1].trim(),
       latitude: parseFloat(latStr),
       longitude: parseFloat(lonStr),
       dataReady: values[4].trim().toLowerCase() === 'yes',
-      hospitals: fresh ? fresh.hospitals : (values[5].trim() ? parseInt(values[5].trim().replace(/,/g, '')) : 0),
-      encounters: fresh ? fresh.encounters : (values[6].trim() ? parseInt(values[6].trim().replace(/,/g, '')) : 0),
-      patients: fresh ? fresh.patients : (values[7].trim() ? parseInt(values[7].trim().replace(/,/g, '')) : 0),
+      hospitals: values[5].trim() ? parseInt(values[5].trim().replace(/,/g, '')) : 0,
+      encounters: values[6].trim() ? parseInt(values[6].trim().replace(/,/g, '')) : 0,
+      patients: values[7].trim() ? parseInt(values[7].trim().replace(/,/g, '')) : 0,
     };
     sites.push(site);
   }

@@ -1,7 +1,5 @@
 ---
 export const prerender = true;
-import fs from 'node:fs';
-import path from 'node:path';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import CohortSummaryFromCSV from '../components/cohort/CohortSummaryFromCSV.astro';
 import InteractiveDashboard from '../components/cohort/InteractiveDashboard.astro';
@@ -9,32 +7,6 @@ import HourlyTrends from '../components/cohort/HourlyTrends.astro';
 import DataDistributions from '../components/cohort/DataDistributions.astro';
 import MapExplorer from '../components/cohort/MapExplorer.astro';
 import CTAButton from '../components/shared/CTAButton.astro';
-import { COHORTS, DEFAULT_COHORT, getCohort, parseCohortCSV, getAggregateValue } from '../utils/cohortData';
-
-// Build per-cohort headline numbers (unique patients / encounter blocks / hospitals)
-// for the hero + picker. Read the cohort's summary source at build time.
-const cohortDir = path.join(process.cwd(), 'src', 'data', 'cohorts');
-function headlineFor(key: string) {
-  const def = getCohort(key);
-  const file = def.hasOverallFile ? 'table_one_overall.csv' : 'table_one_by_year.csv';
-  const csv = fs.readFileSync(path.join(cohortDir, key, file), 'utf-8');
-  const data = parseCohortCSV(csv);
-  const num = (v: string | null) => (v ? v.replace(/^"|"$/g, '').replace(/\s*\(.*$/, '').trim() : '—');
-  return {
-    key,
-    label: def.label,
-    group: def.group,
-    description: def.description,
-    hasHourly: def.hasHourly,
-    hasSofa: def.hasSofa,
-    patients: num(getAggregateValue(data, 'N: Unique patients')),
-    encounters: num(getAggregateValue(data, 'N: Encounter blocks')),
-    hospitals: num(getAggregateValue(data, 'N: Hospitals')),
-  };
-}
-const cohortHeadlines = Object.fromEntries(COHORTS.map((c) => [c.key, headlineFor(c.key)]));
-const overallCohorts = COHORTS.filter((c) => c.group === 'overall');
-const critCohorts = COHORTS.filter((c) => c.group === 'critically_ill');
 ---
 
 <BaseLayout
@@ -82,9 +54,6 @@ const critCohorts = COHORTS.filter((c) => c.group === 'critically_ill');
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
   </script>
 
-  <!-- D3 (used by the cohort summary charts) -->
-  <script is:inline src="https://d3js.org/d3.v7.min.js"></script>
-
   <!-- Leaflet CSS and JS for Map -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
   <script is:inline src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
@@ -97,69 +66,19 @@ const critCohorts = COHORTS.filter((c) => c.group === 'critically_ill');
           CLIF Cohort Dashboard
         </h1>
         <p class="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto mb-6">
-          Insights from <span id="hero-patients" class="font-semibold text-clif-burgundy">—</span> unique
-          <span id="hero-cohort-label">patients</span>
-          across <span id="hero-encounters" class="font-semibold text-clif-burgundy">—</span> encounter blocks
-          from <span id="hero-hospitals" class="font-semibold text-clif-burgundy">—</span> hospitals
+          Insights from <span class="font-semibold text-clif-burgundy">808,749</span> unique critically ill patients
+          across <span class="font-semibold text-clif-burgundy">62</span> hospitals in
+          <span class="font-semibold text-clif-burgundy">12</span> participating institutions
         </p>
         <div class="inline-flex items-center gap-6 text-sm text-gray-600 bg-white px-6 py-3 rounded-full shadow-sm">
           <span class="flex items-center gap-2">
             <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
               <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
             </svg>
-            Last updated: July 2026
+            Last updated: November 2025
           </span>
         </div>
       </div>
-
-      <!-- Cohort Picker (two-level: Overall vs Critically ill -> type) -->
-      <div class="max-w-3xl mx-auto mb-10">
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 md:p-5">
-          <div class="flex flex-col sm:flex-row sm:items-center gap-3">
-            <span class="text-sm font-semibold text-gray-500 uppercase tracking-wide shrink-0">Cohort</span>
-            <!-- Level 1 -->
-            <div class="inline-flex bg-gray-100 rounded-lg p-1 shadow-inner">
-              {[{ g: 'overall', label: 'Overall' }, { g: 'critically_ill', label: 'Critically ill' }].map((lvl) => (
-                <button
-                  data-cohort-group={lvl.g}
-                  class="cohort-group-btn px-4 py-2 text-sm font-semibold rounded-md transition-all duration-200 text-gray-700 hover:text-gray-900"
-                >
-                  {lvl.label}
-                </button>
-              ))}
-            </div>
-            <!-- Level 2 (critically-ill type) -->
-            <div id="cohort-type-wrap" class="flex-1 hidden">
-              <select
-                id="cohort-type-select"
-                class="w-full bg-white border-2 border-gray-300 rounded-lg px-3 py-2 text-sm font-medium text-gray-800 focus:border-clif-burgundy focus:outline-none"
-              >
-                {critCohorts.map((c) => <option value={c.key}>{c.label}</option>)}
-              </select>
-            </div>
-          </div>
-          <p id="cohort-description" class="text-sm text-gray-500 mt-3"></p>
-        </div>
-      </div>
-
-      <!-- Per-cohort headline data + cohort event bus -->
-      <script is:inline set:html={`window.__COHORT_HEADLINES__ = ${JSON.stringify(cohortHeadlines)}; window.__DEFAULT_COHORT__ = ${JSON.stringify(DEFAULT_COHORT)};`}></script>
-      <script is:inline>
-        (function () {
-          const H = window.__COHORT_HEADLINES__ || {};
-          window.CohortBus = {
-            current: window.__DEFAULT_COHORT__ || 'overall_ward',
-            _subs: [],
-            headline: function (key) { return H[key] || {}; },
-            subscribe: function (fn) { this._subs.push(fn); try { fn(this.current); } catch (e) {} },
-            set: function (key) {
-              if (!H[key] || key === this.current) { this.current = key; }
-              this.current = key;
-              this._subs.forEach(function (fn) { try { fn(key); } catch (e) {} });
-            },
-          };
-        })();
-      </script>
 
       <!-- Tabbed Dashboard Section -->
       <section class="mb-16">
@@ -218,7 +137,7 @@ const critCohorts = COHORTS.filter((c) => c.group === 'critically_ill');
             </p>
           </div>
 
-          {COHORTS.map((c) => <CohortSummaryFromCSV cohort={c.key} />)}
+          <CohortSummaryFromCSV />
         </div>
 
         <!-- Tab Content: Interactive Data Explorer -->
@@ -518,63 +437,6 @@ const critCohorts = COHORTS.filter((c) => c.group === 'critically_ill');
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') closeModal();
       });
-    });
-  </script>
-
-  <!-- Cohort Picker wiring -->
-  <script is:inline>
-    document.addEventListener('DOMContentLoaded', () => {
-      const Bus = window.CohortBus;
-      if (!Bus) return;
-      const groupBtns = Array.from(document.querySelectorAll('.cohort-group-btn'));
-      const typeWrap = document.getElementById('cohort-type-wrap');
-      const typeSelect = document.getElementById('cohort-type-select');
-      const desc = document.getElementById('cohort-description');
-      const tabHourly = document.getElementById('tab-hourly');
-
-      const GROUP_OF = {};
-      Object.values(window.__COHORT_HEADLINES__ || {}).forEach((h) => { GROUP_OF[h.key] = h.group; });
-
-      function activeGroup() { return GROUP_OF[Bus.current] || 'overall'; }
-
-      function paintGroupButtons() {
-        const g = activeGroup();
-        groupBtns.forEach((btn) => {
-          const on = btn.getAttribute('data-cohort-group') === g;
-          btn.classList.toggle('bg-clif-burgundy', on);
-          btn.classList.toggle('text-white', on);
-          btn.classList.toggle('shadow-md', on);
-          btn.classList.toggle('text-gray-700', !on);
-        });
-        typeWrap?.classList.toggle('hidden', g !== 'critically_ill');
-      }
-
-      // Hero + description + tab gating react to cohort changes.
-      Bus.subscribe((key) => {
-        const h = Bus.headline(key);
-        const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-        set('hero-patients', h.patients || '—');
-        set('hero-encounters', h.encounters || '—');
-        set('hero-hospitals', h.hospitals || '—');
-        set('hero-cohort-label', key === 'overall_ward' ? 'patients' : 'critically ill patients');
-        if (desc) desc.textContent = h.description || '';
-        // Hourly tab only applies to cohorts that ship hourly data.
-        if (tabHourly) tabHourly.classList.toggle('hidden', !h.hasHourly);
-        paintGroupButtons();
-      });
-
-      groupBtns.forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const g = btn.getAttribute('data-cohort-group');
-          if (g === 'overall') {
-            Bus.set('overall_ward');
-          } else {
-            // default to the currently-selected type (or first option)
-            Bus.set((typeSelect && typeSelect.value) || 'overall');
-          }
-        });
-      });
-      typeSelect?.addEventListener('change', (e) => Bus.set(e.target.value));
     });
   </script>
 
