@@ -2,12 +2,15 @@
 import { readFile, readdir } from 'fs/promises';
 import { join } from 'path';
 
-// Read ECDF data from all categories
-const ecdfBasePath = join(process.cwd(), 'src', 'data', 'cohort_wip_ecdf');
+// Cohort-aware ECDF: one folder per cohort under cohort_wip_ecdf/<cohort>/.
+const ecdfRoot = join(process.cwd(), 'src', 'data', 'cohort_wip_ecdf');
+const DIST_COHORTS = ['overall', 'icu', 'advanced_resp', 'vaso', 'deaths'];
+const DEFAULT_DIST = 'overall';
 
-// Read stats file for metadata
-const statsPath = join(ecdfBasePath, 'collection_stats_by_site.csv');
-const statsContent = await readFile(statsPath, 'utf-8');
+// Reassigned per cohort during the build loop (formatParameterName + readECDFFiles
+// close over these).
+let currentBase = join(ecdfRoot, DEFAULT_DIST);
+let statsData: Record<string, { unit: string; sites: Record<string, number> }> = {};
 
 // Parse stats CSV to get observation counts and units
 function parseStatsCSV(content: string) {
@@ -44,8 +47,6 @@ function parseStatsCSV(content: string) {
 
   return stats;
 }
-
-const statsData = parseStatsCSV(statsContent);
 
 // Helper function to format parameter name cleanly
 function formatParameterName(baseName: string, category: string): { displayName: string; unit: string } {
@@ -135,8 +136,13 @@ function formatParameterName(baseName: string, category: string): { displayName:
 
 // Read ECDF files from each category
 async function readECDFFiles(category: string) {
-  const categoryPath = join(ecdfBasePath, category);
-  const files = await readdir(categoryPath);
+  const categoryPath = join(currentBase, category);
+  let files: string[];
+  try {
+    files = await readdir(categoryPath);
+  } catch {
+    return [];
+  }
   const ecdfFiles: { name: string; displayName: string; unit: string }[] = [];
 
   for (const file of files) {
@@ -150,46 +156,38 @@ async function readECDFFiles(category: string) {
   return ecdfFiles.sort((a, b) => a.displayName.localeCompare(b.displayName));
 }
 
-const labFiles = await readECDFFiles('labs');
-const respiratoryFiles = await readECDFFiles('respiratory_support');
-const vitalFiles = await readECDFFiles('vitals');
-
-// Get all available sites by scanning all ECDF files
-async function getAllSites() {
-  const allSites = new Set<string>();
-  const categories = ['labs', 'respiratory_support', 'vitals'];
-
-  for (const category of categories) {
-    const categoryPath = join(ecdfBasePath, category);
-    const files = await readdir(categoryPath);
-
-    for (const file of files) {
-      if (file.endsWith('.csv')) {
-        const filePath = join(categoryPath, file);
-        const content = await readFile(filePath, 'utf-8');
-        const headers = content.split('\n')[0].split(',');
-        headers
-          .filter(h => h.endsWith('_probability'))
-          .map(h => h.replace('_probability', ''))
-          .forEach(site => allSites.add(site));
-      }
-    }
+// Build a parameter manifest per cohort (readdir + stats-derived display names).
+// Cheap enough for per-request SSR: readdir per category + one stats file per cohort
+// (no per-file content reads — the site list is derived client-side per parameter).
+async function buildCohortDist(cohort: string) {
+  currentBase = join(ecdfRoot, cohort);
+  let sc = '';
+  try {
+    sc = await readFile(join(currentBase, 'collection_stats_by_site.csv'), 'utf-8');
+  } catch {
+    sc = '';
   }
-
-  return Array.from(allSites).sort();
+  statsData = sc ? parseStatsCSV(sc) : {};
+  const [labs, respiratory_support, vitals] = await Promise.all([
+    readECDFFiles('labs'),
+    readECDFFiles('respiratory_support'),
+    readECDFFiles('vitals'),
+  ]);
+  return { labs, respiratory_support, vitals };
 }
 
-const availableSites = await getAllSites();
+const cohortsDist: Record<string, { labs: any[]; respiratory_support: any[]; vitals: any[] }> = {};
+for (const c of DIST_COHORTS) cohortsDist[c] = await buildCohortDist(c);
 
-// Prepare data for client-side
-const categoriesData = {
-  labs: labFiles,
-  respiratory_support: respiratoryFiles,
-  vitals: vitalFiles
-};
+// SSR default cohort for the initial accordion render.
+const def = cohortsDist[DEFAULT_DIST];
+const labFiles = def.labs;
+const respiratoryFiles = def.respiratory_support;
+const vitalFiles = def.vitals;
 
-const categoriesJson = JSON.stringify(categoriesData);
-const sitesJson = JSON.stringify(availableSites);
+const cohortsDistJson = JSON.stringify(cohortsDist);
+const defaultDistCohort = DEFAULT_DIST;
+const categoriesJson = JSON.stringify({ labs: labFiles, respiratory_support: respiratoryFiles, vitals: vitalFiles });
 ---
 
 <div class="data-distributions bg-white rounded-2xl shadow-xl p-6 md:p-8">
@@ -221,6 +219,13 @@ const sitesJson = JSON.stringify(availableSites);
     </div>
   </div>
 
+  <!-- Empty state for cohorts with no distribution data (e.g. Overall/ward) -->
+  <div id="distribution-no-cohort" class="hidden bg-gray-50 border border-gray-200 rounded-lg p-8 text-center text-gray-500">
+    No distribution data is available for this cohort. Select a critically-ill cohort
+    (ICU, Advanced respiratory, Vasoactive, Deaths, or Critically ill (all)) to view distributions.
+  </div>
+
+  <div id="distribution-main">
   <!-- Site Selection (dynamic based on selected variable) -->
   <div class="mb-6">
     <label class="block text-sm font-semibold text-gray-700 mb-2">
@@ -376,11 +381,12 @@ const sitesJson = JSON.stringify(availableSites);
       </div>
     </div>
   </div>
+  </div>
 </div>
 
 <!-- JSON Data -->
 <script type="application/json" id="categories-data" set:html={categoriesJson}></script>
-<script type="application/json" id="sites-data" set:html={sitesJson}></script>
+<script type="application/json" id="cohorts-dist-data" set:html={cohortsDistJson} data-default={defaultDistCohort}></script>
 
 <script>
   // State
@@ -389,6 +395,11 @@ const sitesJson = JSON.stringify(availableSites);
   let distributionChart: any = null;
   let ecdfCache: Record<string, any> = {};
   let availableSitesForParameter: string[] = [];
+
+  // Cohort-aware distributions: per-cohort parameter manifest + the active cohort.
+  const COHORTS_DIST = JSON.parse(document.getElementById('cohorts-dist-data').textContent);
+  const DEFAULT_DIST = document.getElementById('cohorts-dist-data').getAttribute('data-default');
+  let distCohort = (window.CohortBus && window.CohortBus.current && COHORTS_DIST[window.CohortBus.current]) ? window.CohortBus.current : DEFAULT_DIST;
 
   // Site-specific colors for consistent visualization across all charts
   // These colors are unique to sites and NOT used by any other chart elements
@@ -447,70 +458,97 @@ const sitesJson = JSON.stringify(availableSites);
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    initializeCategoryAccordion();
-    initializeParameterSelection();
+    initializeAccordionDelegation();
+    renderParams(distCohort);
     initializeSearch();
     initializeClearButton();
+    applyDistCohort(distCohort, true);
+    // React to the global cohort picker.
+    if (window.CohortBus && typeof window.CohortBus.subscribe === 'function') {
+      window.CohortBus.subscribe((key) => applyDistCohort(key, false));
+    }
   });
 
-  function initializeCategoryAccordion() {
-    const headers = document.querySelectorAll('.category-header');
-
-    headers.forEach(header => {
-      header.addEventListener('click', () => {
+  // Delegated accordion + parameter selection so rebuilt param lists keep working.
+  function initializeAccordionDelegation() {
+    const container = document.getElementById('distribution-categories');
+    if (!container) return;
+    container.addEventListener('click', async (e) => {
+      const target = e.target as HTMLElement;
+      const header = target.closest('.category-header') as HTMLElement | null;
+      if (header) {
         const category = header.getAttribute('data-category');
-        const list = document.querySelector(`.parameter-list[data-category="${category}"]`);
-        const chevron = header.querySelector('.chevron');
-
-        if (list?.classList.contains('hidden')) {
-          // Collapse all others
-          document.querySelectorAll('.parameter-list').forEach(l => l.classList.add('hidden'));
-          document.querySelectorAll('.chevron').forEach(c => (c as HTMLElement).style.transform = 'rotate(-90deg)');
-
-          // Expand this one
+        const list = container.querySelector(`.parameter-list[data-category="${category}"]`);
+        const chevron = header.querySelector('.chevron') as HTMLElement | null;
+        const isHidden = list?.classList.contains('hidden');
+        container.querySelectorAll('.parameter-list').forEach(l => l.classList.add('hidden'));
+        container.querySelectorAll('.chevron').forEach(c => (c as HTMLElement).style.transform = 'rotate(-90deg)');
+        if (isHidden && list) {
           list.classList.remove('hidden');
-          if (chevron) (chevron as HTMLElement).style.transform = 'rotate(0deg)';
-        } else {
-          list?.classList.add('hidden');
-          if (chevron) (chevron as HTMLElement).style.transform = 'rotate(-90deg)';
+          if (chevron) chevron.style.transform = 'rotate(0deg)';
         }
-      });
-
-      // Set initial chevron state
-      const chevron = header.querySelector('.chevron');
-      if (chevron) (chevron as HTMLElement).style.transform = 'rotate(-90deg)';
+        return;
+      }
+      const item = target.closest('.parameter-item') as HTMLElement | null;
+      if (item) {
+        const category = item.getAttribute('data-category')!;
+        const parameter = item.getAttribute('data-parameter')!;
+        container.querySelectorAll('.parameter-item').forEach(i =>
+          i.classList.remove('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold'));
+        item.classList.add('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
+        selectedParameter = { category, name: parameter };
+        await loadParameterAndUpdateSites(category, parameter);
+      }
     });
   }
 
-  function initializeParameterSelection() {
-    const items = document.querySelectorAll('.parameter-item');
+  // Rebuild the parameter lists + header counts from a cohort's manifest.
+  function renderParams(cohort: string) {
+    const data = COHORTS_DIST[cohort];
+    if (!data) return;
+    const cats: [string, string][] = [['labs', 'Labs'], ['respiratory_support', 'Respiratory Support'], ['vitals', 'Vitals']];
+    for (const [cat, label] of cats) {
+      const items = data[cat] || [];
+      const header = document.querySelector(`.category-header[data-category="${cat}"] span`);
+      if (header) header.textContent = `${label} (${items.length})`;
+      const list = document.querySelector(`.parameter-list[data-category="${cat}"]`);
+      if (list) {
+        list.classList.add('hidden');
+        list.innerHTML = items.map((f: any) =>
+          `<button class="parameter-item w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-clif-burgundy hover:bg-opacity-10 hover:text-clif-burgundy transition-colors" data-category="${cat}" data-parameter="${f.name}">${f.displayName}</button>`
+        ).join('');
+      }
+      const chev = document.querySelector(`.category-header[data-category="${cat}"] .chevron`) as HTMLElement | null;
+      if (chev) chev.style.transform = 'rotate(-90deg)';
+    }
+  }
 
-    items.forEach(item => {
-      item.addEventListener('click', async () => {
-        const category = item.getAttribute('data-category')!;
-        const parameter = item.getAttribute('data-parameter')!;
-
-        // Update selection state
-        document.querySelectorAll('.parameter-item').forEach(i => {
-          i.classList.remove('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
-        });
-        item.classList.add('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
-
-        selectedParameter = { category, name: parameter };
-
-        // Load the ECDF data and extract available sites
-        await loadParameterAndUpdateSites(category, parameter);
-      });
-    });
+  // Switch the distribution cohort: repoint fetches, rebuild params, reset the chart.
+  // Cohorts without distribution data (e.g. Overall/ward) show an empty-state message.
+  function applyDistCohort(cohort: string, initial: boolean) {
+    const hasDist = !!COHORTS_DIST[cohort];
+    const noData = document.getElementById('distribution-no-cohort');
+    const main = document.getElementById('distribution-main');
+    if (!hasDist) {
+      noData?.classList.remove('hidden');
+      main?.classList.add('hidden');
+      return;
+    }
+    noData?.classList.add('hidden');
+    main?.classList.remove('hidden');
+    if (!initial && cohort === distCohort) return;
+    distCohort = cohort;
+    renderParams(cohort);
+    if (typeof clearChart === 'function') clearChart();
   }
 
   async function loadParameterAndUpdateSites(category: string, parameter: string) {
-    const cacheKey = `${category}/${parameter}`;
+    const cacheKey = `${distCohort}/${category}/${parameter}`;
 
     // Fetch ECDF data if not cached
     if (!ecdfCache[cacheKey]) {
       try {
-        const response = await fetch(`/api/cohort-wip-ecdf/${category}/${parameter}.csv`);
+        const response = await fetch(`/api/cohort-wip-ecdf/${distCohort}/${category}/${parameter}.csv`);
         if (!response.ok) throw new Error('Failed to load data');
         const csvText = await response.text();
         ecdfCache[cacheKey] = parseECDFCSV(csvText);
@@ -655,12 +693,12 @@ const sitesJson = JSON.stringify(availableSites);
     if (!selectedParameter || selectedSites.length === 0) return;
 
     const { category, name } = selectedParameter;
-    const cacheKey = `${category}/${name}`;
+    const cacheKey = `${distCohort}/${category}/${name}`;
 
     // Fetch ECDF data if not cached
     if (!ecdfCache[cacheKey]) {
       try {
-        const response = await fetch(`/api/cohort-wip-ecdf/${category}/${name}.csv`);
+        const response = await fetch(`/api/cohort-wip-ecdf/${distCohort}/${category}/${name}.csv`);
         if (!response.ok) throw new Error('Failed to load data');
         const csvText = await response.text();
         ecdfCache[cacheKey] = parseECDFCSV(csvText);

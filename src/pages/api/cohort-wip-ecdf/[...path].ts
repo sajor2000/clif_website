@@ -10,19 +10,22 @@ const BASE = ['src', 'data', 'cohort_wip_ecdf'];
 export const getStaticPaths: GetStaticPaths = async () => {
   const ecdfBasePath = join(process.cwd(), ...BASE);
   const categories = ['labs', 'respiratory_support', 'vitals'];
+  const cohorts = ['overall', 'icu', 'advanced_resp', 'vaso', 'deaths'];
   const paths: { params: { path: string } }[] = [];
 
-  for (const category of categories) {
-    const categoryPath = join(ecdfBasePath, category);
-    try {
-      const files = await readdir(categoryPath);
-      for (const file of files) {
-        if (file.endsWith('.csv')) {
-          paths.push({ params: { path: `${category}/${file}` } });
+  for (const cohort of cohorts) {
+    for (const category of categories) {
+      const categoryPath = join(ecdfBasePath, cohort, category);
+      try {
+        const files = await readdir(categoryPath);
+        for (const file of files) {
+          if (file.endsWith('.csv')) {
+            paths.push({ params: { path: `${cohort}/${category}/${file}` } });
+          }
         }
+      } catch {
+        // Category directory doesn't exist for this cohort, skip
       }
-    } catch {
-      // Category directory doesn't exist, skip
     }
   }
 
