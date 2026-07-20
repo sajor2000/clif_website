@@ -351,7 +351,7 @@ const medicationsData = cohortsPayload[defaultHourlyCohort].medications;
     applyRespiratoryAvailability();
     // React to the global cohort picker (window.CohortBus).
     if (window.CohortBus && typeof window.CohortBus.subscribe === 'function') {
-      window.CohortBus.subscribe((key) => { if (HOURLY_COHORTS_DATA[key] && key !== activeCohort) reloadHourlyCohort(key); });
+      window.CohortBus.subscribe((key) => { const eff = HOURLY_COHORTS_DATA[key] ? key : key.split('__')[0]; if (HOURLY_COHORTS_DATA[eff] && eff !== activeCohort) reloadHourlyCohort(eff); });
     }
   });
 

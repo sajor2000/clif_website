@@ -465,7 +465,7 @@ const categoriesJson = JSON.stringify({ labs: labFiles, respiratory_support: res
     applyDistCohort(distCohort, true);
     // React to the global cohort picker.
     if (window.CohortBus && typeof window.CohortBus.subscribe === 'function') {
-      window.CohortBus.subscribe((key) => applyDistCohort(key, false));
+      window.CohortBus.subscribe((key) => applyDistCohort(COHORTS_DIST[key] ? key : key.split('__')[0], false));
     }
   });
 

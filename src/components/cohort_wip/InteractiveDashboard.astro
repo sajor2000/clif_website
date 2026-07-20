@@ -691,7 +691,7 @@ const categories = Array.from(groupedChars.keys());
     updateDashboard();
     // React to the global cohort picker (window.CohortBus).
     if (window.CohortBus && typeof window.CohortBus.subscribe === 'function') {
-      window.CohortBus.subscribe((key) => { if (COHORTS_DATA[key] && key !== activeCohort) reloadCohort(key); });
+      window.CohortBus.subscribe((key) => { const eff = COHORTS_DATA[key] ? key : key.split('__')[0]; if (COHORTS_DATA[eff] && eff !== activeCohort) reloadCohort(eff); });
     }
   });
 

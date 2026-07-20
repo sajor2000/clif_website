@@ -10,22 +10,25 @@ import HourlyTrends from '../components/cohort_wip/HourlyTrends.astro';
 import DataDistributions from '../components/cohort_wip/DataDistributions.astro';
 import MapExplorer from '../components/cohort_wip/MapExplorer.astro';
 import CTAButton from '../components/shared/CTAButton.astro';
-import { COHORTS, DEFAULT_COHORT, getCohort, parseCohortCSV, getAggregateValue } from '../utils/cohortData';
+import { COHORTS, SUBCOHORTS, PANEL_COHORTS, DEFAULT_COHORT, getCohort, parseCohortCSV, getAggregateValue } from '../utils/cohortData';
 
 // Build per-cohort headline numbers (unique patients / encounter blocks / hospitals)
 // for the hero + picker. Read the cohort's summary source at build time.
+// Sub-cohorts (advanced_resp/vaso splits) reuse the parent's CohortDef but read
+// their own Overall-shaped table_one and inherit the parent's tab availability.
 const cohortDir = path.join(process.cwd(), 'src', 'data', 'cohorts');
 function headlineFor(key: string) {
-  const def = getCohort(key);
-  const file = def.hasOverallFile ? 'table_one_overall.csv' : 'table_one_by_year.csv';
+  const sub = SUBCOHORTS.find((s) => s.key === key);
+  const def = getCohort(sub ? sub.parent : key);
+  const file = !sub && def.hasOverallFile ? 'table_one_overall.csv' : 'table_one_by_year.csv';
   const csv = fs.readFileSync(path.join(cohortDir, key, file), 'utf-8');
   const data = parseCohortCSV(csv);
   const num = (v: string | null) => (v ? v.replace(/^"|"$/g, '').replace(/\s*\(.*$/, '').trim() : '—');
   return {
     key,
-    label: def.label,
-    group: def.group,
-    description: def.description,
+    label: sub ? `${def.label} — ${sub.label}` : def.label,
+    group: sub ? 'critically_ill' : def.group,
+    description: sub ? `${def.label}, ${sub.label} subgroup.` : def.description,
     hasHourly: def.hasHourly,
     hasSofa: def.hasSofa,
     patients: num(getAggregateValue(data, 'N: Unique patients')),
@@ -33,9 +36,15 @@ function headlineFor(key: string) {
     hospitals: num(getAggregateValue(data, 'N: Hospitals')),
   };
 }
-const cohortHeadlines = Object.fromEntries(COHORTS.map((c) => [c.key, headlineFor(c.key)]));
-const overallCohorts = COHORTS.filter((c) => c.group === 'overall');
+const cohortHeadlines = Object.fromEntries(PANEL_COHORTS.map((k) => [k, headlineFor(k)]));
 const critCohorts = COHORTS.filter((c) => c.group === 'critically_ill');
+// Sub-group options per parent for the 3rd-level picker (data for the client).
+const subsByParent = Object.fromEntries(
+  COHORTS.filter((c) => SUBCOHORTS.some((s) => s.parent === c.key)).map((c) => [
+    c.key,
+    SUBCOHORTS.filter((s) => s.parent === c.key).map((s) => ({ key: s.key, label: s.label })),
+  ])
+);
 ---
 
 <BaseLayout
@@ -138,13 +147,22 @@ const critCohorts = COHORTS.filter((c) => c.group === 'critically_ill');
                 {critCohorts.map((c) => <option value={c.key}>{c.label}</option>)}
               </select>
             </div>
+            <!-- Level 3 (sub-group: advanced_resp / vaso ICU & ED splits) -->
+            <div id="cohort-sub-wrap" class="flex-1 hidden">
+              <select
+                id="cohort-sub-select"
+                class="w-full bg-white border-2 border-gray-300 rounded-lg px-3 py-2 text-sm font-medium text-gray-800 focus:border-clif-burgundy focus:outline-none"
+              >
+                <!-- populated by JS based on the selected type -->
+              </select>
+            </div>
           </div>
           <p id="cohort-description" class="text-sm text-gray-500 mt-3"></p>
         </div>
       </div>
 
       <!-- Per-cohort headline data + cohort event bus -->
-      <script is:inline set:html={`window.__COHORT_HEADLINES__ = ${JSON.stringify(cohortHeadlines)}; window.__DEFAULT_COHORT__ = ${JSON.stringify(DEFAULT_COHORT)};`}></script>
+      <script is:inline set:html={`window.__COHORT_HEADLINES__ = ${JSON.stringify(cohortHeadlines)}; window.__DEFAULT_COHORT__ = ${JSON.stringify(DEFAULT_COHORT)}; window.__SUBS_BY_PARENT__ = ${JSON.stringify(subsByParent)};`}></script>
       <script is:inline>
         (function () {
           const H = window.__COHORT_HEADLINES__ || {};
@@ -225,7 +243,7 @@ const critCohorts = COHORTS.filter((c) => c.group === 'critically_ill');
             </p>
           </div>
 
-          {COHORTS.map((c) => <CohortSummaryFromCSV cohort={c.key} />)}
+          {PANEL_COHORTS.map((k) => <CohortSummaryFromCSV cohort={k} />)}
         </div>
 
         <!-- Tab Content: Outcomes -->
@@ -234,7 +252,7 @@ const critCohorts = COHORTS.filter((c) => c.group === 'critically_ill');
             <h2 class="text-3xl font-bold text-gray-800 mb-3">Outcomes &amp; Severity</h2>
             <p class="text-lg text-gray-600">Mortality, illness severity, and comorbidity burden for the selected cohort.</p>
           </div>
-          {COHORTS.map((c) => <CohortOutcomes cohort={c.key} />)}
+          {PANEL_COHORTS.map((k) => <CohortOutcomes cohort={k} />)}
         </div>
 
         <!-- Tab Content: Interactive Data Explorer -->
@@ -439,12 +457,16 @@ const critCohorts = COHORTS.filter((c) => c.group === 'critically_ill');
       const groupBtns = Array.from(document.querySelectorAll('.cohort-group-btn'));
       const typeWrap = document.getElementById('cohort-type-wrap');
       const typeSelect = document.getElementById('cohort-type-select');
+      const subWrap = document.getElementById('cohort-sub-wrap');
+      const subSelect = document.getElementById('cohort-sub-select');
       const desc = document.getElementById('cohort-description');
       const tabHourly = document.getElementById('tab-hourly');
+      const SUBS = window.__SUBS_BY_PARENT__ || {};
 
       const GROUP_OF = {};
       Object.values(window.__COHORT_HEADLINES__ || {}).forEach((h) => { GROUP_OF[h.key] = h.group; });
 
+      function parentOf(key) { return key && key.indexOf('__') > -1 ? key.split('__')[0] : key; }
       function activeGroup() { return GROUP_OF[Bus.current] || 'overall'; }
 
       function paintGroupButtons() {
@@ -459,7 +481,22 @@ const critCohorts = COHORTS.filter((c) => c.group === 'critically_ill');
         typeWrap?.classList.toggle('hidden', g !== 'critically_ill');
       }
 
-      // Hero + description + tab gating react to cohort changes.
+      // Show/populate the sub-group selector when the active type has ICU/ED splits.
+      function paintSubSelect(current) {
+        const type = parentOf(current);
+        const subs = SUBS[type];
+        if (activeGroup() !== 'critically_ill' || !subs || !subs.length) {
+          subWrap?.classList.add('hidden');
+          return;
+        }
+        const typeLabel = (Bus.headline(type).label) || 'All';
+        let html = `<option value="${type}">All ${typeLabel}</option>`;
+        subs.forEach((s) => { html += `<option value="${s.key}">${s.label}</option>`; });
+        if (subSelect) { subSelect.innerHTML = html; subSelect.value = current; }
+        subWrap?.classList.remove('hidden');
+      }
+
+      // Hero + description + tab gating + selectors react to cohort changes.
       Bus.subscribe((key) => {
         const h = Bus.headline(key);
         const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
@@ -471,6 +508,8 @@ const critCohorts = COHORTS.filter((c) => c.group === 'critically_ill');
         // Hourly tab only applies to cohorts that ship hourly data.
         if (tabHourly) tabHourly.classList.toggle('hidden', !h.hasHourly);
         paintGroupButtons();
+        if (activeGroup() === 'critically_ill' && typeSelect) typeSelect.value = parentOf(key);
+        paintSubSelect(key);
       });
 
       groupBtns.forEach((btn) => {
@@ -484,7 +523,9 @@ const critCohorts = COHORTS.filter((c) => c.group === 'critically_ill');
           }
         });
       });
+      // Changing type resets to the "All" subgroup (the base cohort key).
       typeSelect?.addEventListener('change', (e) => Bus.set(e.target.value));
+      subSelect?.addEventListener('change', (e) => Bus.set(e.target.value));
     });
   </script>
 

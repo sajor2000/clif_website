@@ -104,6 +104,36 @@ export function getCohort(key: string): CohortDef {
 }
 
 /**
+ * Sub-cohorts: ICU / non-ICU (+ vaso ED routing) splits of advanced_resp & vaso.
+ * They only have Summary + Outcomes-worth of data (table_one comparison columns,
+ * comorbidities, demographics, partial SOFA) — NOT by-year / hourly / distributions,
+ * so the Explorer/Hourly/Distributions tabs fall back to the parent cohort.
+ * Key convention: `<parent>__<group>` (helpers split on `__`).
+ */
+export interface SubCohortDef {
+  key: string;
+  label: string;
+  parent: string;
+  group: string;
+}
+export const SUBCOHORTS: SubCohortDef[] = [
+  { key: 'advanced_resp__icu', label: 'ICU', parent: 'advanced_resp', group: 'icu' },
+  { key: 'advanced_resp__no_icu', label: 'Non-ICU', parent: 'advanced_resp', group: 'no_icu' },
+  { key: 'vaso__icu', label: 'ICU', parent: 'vaso', group: 'icu' },
+  { key: 'vaso__no_icu', label: 'Non-ICU', parent: 'vaso', group: 'no_icu' },
+  { key: 'vaso__ed_icu', label: 'ED → ICU', parent: 'vaso', group: 'ed_icu' },
+  { key: 'vaso__ed_ward', label: 'ED → Ward', parent: 'vaso', group: 'ed_ward' },
+];
+
+/** Sub-cohorts belonging to a parent cohort (empty if the cohort has no splits). */
+export function subsFor(parent: string): SubCohortDef[] {
+  return SUBCOHORTS.filter((s) => s.parent === parent);
+}
+
+/** All cohort keys that own a Summary/Outcomes panel (base cohorts + sub-cohorts). */
+export const PANEL_COHORTS = [...COHORTS.map((c) => c.key), ...SUBCOHORTS.map((s) => s.key)];
+
+/**
  * Parse a new-export table whose columns are `<Group>__<Site>` (+ `__ALL`).
  *
  * Returns the same ParsedConsortiumData shape the InteractiveDashboard already
