@@ -1045,8 +1045,19 @@ const dopamineDose = d.dopamineDose;
                 };
 
                 const container = byId('ventModeTreemap');
-                if (container) {
+                // This card sits inside a collapsed section — and, for every
+                // non-default cohort, a hidden panel — so on first run
+                // clientWidth is 0, and a treemap laid out at zero width draws
+                // nothing. The donut beside it survives because Chart.js
+                // re-measures on resize; D3 has no equivalent, so the card just
+                // stayed blank forever once the section was expanded.
+                // Defer until the container actually has width, then redraw
+                // whenever it changes.
+                const drawVentTreemap = () => {
+                  if (!container) return;
                   const width = container.clientWidth;
+                  if (!width) return;
+                  container.innerHTML = ''; // idempotent: safe to call repeatedly
                   const height = 256;
 
                   const colorScale = d3.scaleOrdinal()
@@ -1162,6 +1173,13 @@ const dopamineDose = d.dopamineDose;
                       }
                     }
                   });
+                };
+
+                drawVentTreemap();
+                // Fires when the collapsible opens or the cohort panel is shown,
+                // which is the moment the container first has a usable width.
+                if (container && typeof ResizeObserver !== 'undefined') {
+                  new ResizeObserver(drawVentTreemap).observe(container);
                 }
               }
             }, 100);
