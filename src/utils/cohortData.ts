@@ -34,6 +34,11 @@ export interface CohortDef {
   hasHourly: boolean;
   /** Has sofa_mortality_summary.csv */
   hasSofa: boolean;
+  /**
+   * Withheld from the picker while its numbers are still being verified. The
+   * definition and its CSVs stay in place — flip this off to restore it.
+   */
+  hidden?: boolean;
 }
 
 /**
@@ -49,6 +54,9 @@ export const COHORTS: CohortDef[] = [
     hasOverallFile: true,
     hasHourly: false,
     hasSofa: false,
+    // Hidden pending data verification (2026-07-21). This is the only cohort in
+    // the 'overall' group, so hiding it removes that group from the picker too.
+    hidden: true,
   },
   {
     key: 'overall',
@@ -97,7 +105,18 @@ export const COHORTS: CohortDef[] = [
   },
 ];
 
-export const DEFAULT_COHORT = 'overall_ward';
+/** Cohorts offered in the picker. Hidden ones stay in COHORTS so getCohort()
+ *  still resolves them for any data that references them directly. */
+export const VISIBLE_COHORTS = COHORTS.filter((c) => !c.hidden);
+
+/** Groups still represented by at least one visible cohort, in registry order. */
+export const VISIBLE_GROUPS = VISIBLE_COHORTS.reduce<CohortGroup[]>((acc, c) => {
+  if (!acc.includes(c.group)) acc.push(c.group);
+  return acc;
+}, []);
+
+// Must be a visible cohort — it is what the page renders before any interaction.
+export const DEFAULT_COHORT = 'overall';
 
 export function getCohort(key: string): CohortDef {
   return COHORTS.find((c) => c.key === key) ?? COHORTS[0];
@@ -130,8 +149,12 @@ export function subsFor(parent: string): SubCohortDef[] {
   return SUBCOHORTS.filter((s) => s.parent === parent);
 }
 
-/** All cohort keys that own a Summary/Outcomes panel (base cohorts + sub-cohorts). */
-export const PANEL_COHORTS = [...COHORTS.map((c) => c.key), ...SUBCOHORTS.map((s) => s.key)];
+/** All cohort keys that own a Summary/Outcomes panel (base cohorts + sub-cohorts).
+ *  Hidden cohorts are excluded — no picker entry means no panel to reach. */
+export const PANEL_COHORTS = [
+  ...VISIBLE_COHORTS.map((c) => c.key),
+  ...SUBCOHORTS.filter((s) => VISIBLE_COHORTS.some((c) => c.key === s.parent)).map((s) => s.key),
+];
 
 /**
  * Parse a new-export table whose columns are `<Group>__<Site>` (+ `__ALL`).

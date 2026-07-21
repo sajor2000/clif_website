@@ -10,7 +10,14 @@ import HourlyTrends from '../components/cohort_wip/HourlyTrends.astro';
 import DataDistributions from '../components/cohort_wip/DataDistributions.astro';
 import MapExplorer from '../components/cohort_wip/MapExplorer.astro';
 import CTAButton from '../components/shared/CTAButton.astro';
-import { COHORTS, SUBCOHORTS, PANEL_COHORTS, DEFAULT_COHORT, getCohort, parseCohortCSV, getAggregateValue } from '../utils/cohortData';
+import { COHORTS, VISIBLE_COHORTS, VISIBLE_GROUPS, SUBCOHORTS, PANEL_COHORTS, DEFAULT_COHORT, getCohort, parseCohortCSV, getAggregateValue } from '../utils/cohortData';
+
+// Labels for the level-1 group buttons. Only groups that still have a visible
+// cohort are rendered, so hiding every cohort in a group removes its button.
+const GROUP_LABELS: Record<string, string> = {
+  overall: 'Overall',
+  critically_ill: 'Critically ill',
+};
 
 // Build per-cohort headline numbers (unique patients / encounter blocks / hospitals)
 // for the hero + picker. Read the cohort's summary source at build time.
@@ -37,10 +44,10 @@ function headlineFor(key: string) {
   };
 }
 const cohortHeadlines = Object.fromEntries(PANEL_COHORTS.map((k) => [k, headlineFor(k)]));
-const critCohorts = COHORTS.filter((c) => c.group === 'critically_ill');
+const critCohorts = VISIBLE_COHORTS.filter((c) => c.group === 'critically_ill');
 // Sub-group options per parent for the 3rd-level picker (data for the client).
 const subsByParent = Object.fromEntries(
-  COHORTS.filter((c) => SUBCOHORTS.some((s) => s.parent === c.key)).map((c) => [
+  VISIBLE_COHORTS.filter((c) => SUBCOHORTS.some((s) => s.parent === c.key)).map((c) => [
     c.key,
     SUBCOHORTS.filter((s) => s.parent === c.key).map((s) => ({ key: s.key, label: s.label })),
   ])
@@ -129,7 +136,7 @@ const subsByParent = Object.fromEntries(
             <span class="text-sm font-semibold text-gray-500 uppercase tracking-wide shrink-0">Cohort</span>
             <!-- Level 1 -->
             <div class="inline-flex bg-gray-100 rounded-lg p-1 shadow-inner">
-              {[{ g: 'overall', label: 'Overall' }, { g: 'critically_ill', label: 'Critically ill' }].map((lvl) => (
+              {VISIBLE_GROUPS.map((g) => ({ g, label: GROUP_LABELS[g] })).map((lvl) => (
                 <button
                   data-cohort-group={lvl.g}
                   class="cohort-group-btn px-4 py-2 text-sm font-semibold rounded-md transition-all duration-200 text-gray-700 hover:text-gray-900"
@@ -167,7 +174,7 @@ const subsByParent = Object.fromEntries(
         (function () {
           const H = window.__COHORT_HEADLINES__ || {};
           window.CohortBus = {
-            current: window.__DEFAULT_COHORT__ || 'overall_ward',
+            current: window.__DEFAULT_COHORT__ || 'overall',
             _subs: [],
             headline: function (key) { return H[key] || {}; },
             subscribe: function (fn) { this._subs.push(fn); try { fn(this.current); } catch (e) {} },
@@ -467,7 +474,10 @@ const subsByParent = Object.fromEntries(
       Object.values(window.__COHORT_HEADLINES__ || {}).forEach((h) => { GROUP_OF[h.key] = h.group; });
 
       function parentOf(key) { return key && key.indexOf('__') > -1 ? key.split('__')[0] : key; }
-      function activeGroup() { return GROUP_OF[Bus.current] || 'overall'; }
+      // Fall back to the first group that actually has a button, so a missed
+      // lookup can't strand the picker on a hidden group.
+      const FALLBACK_GROUP = (groupBtns[0] && groupBtns[0].getAttribute('data-cohort-group')) || 'critically_ill';
+      function activeGroup() { return GROUP_OF[Bus.current] || FALLBACK_GROUP; }
 
       function paintGroupButtons() {
         const g = activeGroup();
