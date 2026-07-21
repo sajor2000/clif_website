@@ -43,10 +43,35 @@ interface TaskUser {
   role: Role | string;
 }
 
+/**
+ * Parse a timestamp out of the database as UTC.
+ *
+ * SQLite's `datetime('now')` (how site_details.updated_at is written) returns
+ * "YYYY-MM-DD HH:MM:SS" — a space separator and no zone marker. `new Date()`
+ * reads that as LOCAL time, so every comparison drifts by the runtime's UTC
+ * offset. Normalize to an explicit UTC instant instead.
+ *
+ * `dateOnlyTime` decides what a bare "YYYY-MM-DD" means: start of day for
+ * staleness, end of day for deadlines, midday for display.
+ * Returns null for missing/unparseable input so each caller decides what that
+ * means, rather than throwing on NULL columns.
+ */
+function parseUtc(value: string | null | undefined, dateOnlyTime = 'T00:00:00Z'): number | null {
+  const s = typeof value === 'string' ? value.trim() : '';
+  if (!s) return null;
+  const iso =
+    s.length <= 10
+      ? s + dateOnlyTime
+      : /([zZ]|[+-]\d{2}:?\d{2})$/.test(s)
+        ? s // already carries a zone — trust it
+        : s.replace(' ', 'T') + 'Z';
+  const t = new Date(iso).getTime();
+  return isNaN(t) ? null : t;
+}
+
 function isOlderThanMonths(iso: string | null, months: number): boolean {
-  if (!iso) return true; // never updated counts as stale
-  const then = new Date(iso).getTime();
-  if (isNaN(then)) return true;
+  const then = parseUtc(iso);
+  if (then === null) return true; // never updated counts as stale
   const cutoff = Date.now() - months * 30 * 24 * 60 * 60 * 1000;
   return then < cutoff;
 }
@@ -58,9 +83,8 @@ function isOlderThanMonths(iso: string | null, months: number): boolean {
  * means "never updated" and so counts as stale).
  */
 function isPast(iso: string | null): boolean {
-  if (!iso) return false;
-  const due = new Date(iso.length <= 10 ? iso + 'T23:59:59Z' : iso).getTime();
-  return !isNaN(due) && due < Date.now();
+  const due = parseUtc(iso, 'T23:59:59Z');
+  return due !== null && due < Date.now();
 }
 
 function isBlank(v: unknown): boolean {
@@ -196,7 +220,9 @@ export async function computePendingTasks(user: TaskUser): Promise<PendingTask[]
         const detail =
           missing.length > 0
             ? `Missing: ${missing.map(prettyField).join(', ')}`
-            : `Not updated since ${formatDate(r.updated_at as string)}`;
+            : r.updated_at
+              ? `Not updated since ${formatDate(r.updated_at as string)}`
+              : 'Never reviewed';
         tasks.push({
           key: `stale_site:${r.id}`,
           kind: 'stale_site',
@@ -295,10 +321,12 @@ function prettyField(f: string): string {
     .replace(/^\w/, (c) => c.toUpperCase());
 }
 
-function formatDate(dateStr: string): string {
-  const d = new Date(dateStr.length <= 10 ? dateStr + 'T12:00:00Z' : dateStr);
-  if (isNaN(d.getTime())) return dateStr;
-  return d.toLocaleDateString('en-US', {
+function formatDate(dateStr: string | null | undefined): string {
+  // Midday UTC for date-only input, so the rendered calendar date can't slip a
+  // day in either direction.
+  const t = parseUtc(dateStr, 'T12:00:00Z');
+  if (t === null) return typeof dateStr === 'string' && dateStr.trim() ? dateStr : 'unknown date';
+  return new Date(t).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
