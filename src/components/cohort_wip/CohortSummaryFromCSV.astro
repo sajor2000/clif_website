@@ -48,6 +48,15 @@ const LABELS: Record<string, string> = {
   sofaScore: 'Total SOFA score, median [Q1, Q3]',
   charlsonIndex: 'Charlson Comorbidity Index, median [Q1, Q3]',
   crrt: 'CRRT, n (%)',
+  icuEpisodes: 'ICU episodes, total n',
+  encountersWithIcuEpisode: 'Encounters with >=1 ICU episode, n (%)',
+  sepsisEvents: 'Sepsis events (CDC ASE), n',
+  encountersWithSepsis: 'Encounters with >=1 sepsis event, n (%)',
+  timeToExtubation: 'Time to extubation (hrs), median [Q1, Q3]',
+  vfdEncounters: '28-day VFD (IMV encounters), n (%)',
+  vfdMedian: 'VFD, median [Q1, Q3]',
+  nidfdEncounters: '28-day NIDFD (NIPPV/HFNC encounters), n (%)',
+  nidfdMedian: 'NIDFD, median [Q1, Q3]',
   icuEncounters: 'ICU encounters, n (%)',
   advancedRespiratory: 'Advanced respiratory support, n (%)',
   vasoactiveSupport: 'Vasoactive support, n (%)',
@@ -150,6 +159,23 @@ const vasopressorUse = d.vasoactiveSupport;
 const sofaScore = d.sofaScore;
 const charlsonIndex = d.charlsonIndex;
 const crrt = d.crrt;
+
+// Clinical course: ICU burden, sepsis, and ventilator-free-day outcomes.
+// Every one is optional — the strata exports do not all carry them — so each
+// tile is gated on its own value rather than assuming the block is present.
+const icuEpisodes = d.icuEpisodes;
+const encountersWithIcuEpisode = d.encountersWithIcuEpisode;
+const sepsisEvents = d.sepsisEvents;
+const encountersWithSepsis = d.encountersWithSepsis;
+const timeToExtubation = d.timeToExtubation;
+const vfdEncounters = d.vfdEncounters;
+const vfdMedian = d.vfdMedian;
+const nidfdEncounters = d.nidfdEncounters;
+const nidfdMedian = d.nidfdMedian;
+const hasClinicalCourse = !!(
+  icuEpisodes || encountersWithIcuEpisode || sepsisEvents || encountersWithSepsis ||
+  timeToExtubation || vfdEncounters || nidfdEncounters
+);
 
 // Helper functions to extract numbers and percentages
 function extractNumber(str: string): string {
@@ -524,6 +550,88 @@ const dopamineDose = d.dopamineDose;
       </div>
     </div>
   </section>
+
+  <!-- Clinical Course: ICU burden, sepsis, ventilator-free days -->
+  {hasClinicalCourse && (
+  <section class="mb-8">
+    <h2 class="text-xl font-bold mb-4 text-gray-800">Clinical Course</h2>
+
+    {/* Counts and their encounter-level rates. Event totals (episodes, sepsis
+        events) exceed encounter counts because one encounter can have several,
+        so each pair shows the total and the share of encounters affected. */}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+      {icuEpisodes && (
+      <div class="bg-white p-4 rounded-lg shadow border border-gray-200">
+        <div class="text-2xl font-bold text-gray-900">{extractNumber(icuEpisodes)}</div>
+        <div class="text-sm text-gray-700 mt-1">ICU episodes</div>
+        <div class="text-xs text-gray-500">total across all encounters</div>
+      </div>
+      )}
+      {encountersWithIcuEpisode && (
+      <div class="bg-white p-4 rounded-lg shadow border border-gray-200">
+        <div class="text-2xl font-bold text-gray-900">{extractPercentage(encountersWithIcuEpisode)}</div>
+        <div class="text-sm text-gray-700 mt-1">Encounters with ≥1 ICU episode</div>
+        <div class="text-xs text-gray-500">n={extractNumber(encountersWithIcuEpisode)}</div>
+      </div>
+      )}
+      {sepsisEvents && (
+      <div class="bg-white p-4 rounded-lg shadow border border-gray-200">
+        <div class="text-2xl font-bold text-gray-900">{extractNumber(sepsisEvents)}</div>
+        <div class="text-sm text-gray-700 mt-1">Sepsis events</div>
+        <div class="text-xs text-gray-500">CDC Adult Sepsis Event</div>
+      </div>
+      )}
+      {encountersWithSepsis && (
+      <div class="bg-white p-4 rounded-lg shadow border border-gray-200">
+        <div class="text-2xl font-bold text-gray-900">{extractPercentage(encountersWithSepsis)}</div>
+        <div class="text-sm text-gray-700 mt-1">Encounters with ≥1 sepsis event</div>
+        <div class="text-xs text-gray-500">n={extractNumber(encountersWithSepsis)}</div>
+      </div>
+      )}
+    </div>
+
+    {/* Ventilation outcomes. VFD/NIDFD each pair a denominator (how many
+        encounters the measure applies to) with the median free-days among them. */}
+    {(timeToExtubation || vfdEncounters || nidfdEncounters) && (
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {timeToExtubation && (
+      <div class="bg-gradient-to-br from-slate-500 to-slate-600 text-white p-4 rounded-lg shadow">
+        <div class="text-2xl font-bold">
+          {extractMedian(timeToExtubation)}
+          <span class="text-base font-normal opacity-90"> [{extractIQR(timeToExtubation)}]</span>
+        </div>
+        <div class="text-sm opacity-90 mt-1">Time to extubation, hours</div>
+        <div class="text-xs opacity-75">median [Q1, Q3]</div>
+      </div>
+      )}
+      {vfdEncounters && (
+      <div class="bg-gradient-to-br from-slate-600 to-slate-700 text-white p-4 rounded-lg shadow">
+        <div class="text-2xl font-bold">
+          {vfdMedian ? extractMedian(vfdMedian) : extractPercentage(vfdEncounters)}
+          {vfdMedian && <span class="text-base font-normal opacity-90"> [{extractIQR(vfdMedian)}]</span>}
+        </div>
+        <div class="text-sm opacity-90 mt-1">28-day ventilator-free days</div>
+        <div class="text-xs opacity-75">
+          IMV encounters: {extractNumber(vfdEncounters)} ({extractPercentage(vfdEncounters)})
+        </div>
+      </div>
+      )}
+      {nidfdEncounters && (
+      <div class="bg-gradient-to-br from-slate-500 to-slate-600 text-white p-4 rounded-lg shadow">
+        <div class="text-2xl font-bold">
+          {nidfdMedian ? extractMedian(nidfdMedian) : extractPercentage(nidfdEncounters)}
+          {nidfdMedian && <span class="text-base font-normal opacity-90"> [{extractIQR(nidfdMedian)}]</span>}
+        </div>
+        <div class="text-sm opacity-90 mt-1">28-day non-invasive device-free days</div>
+        <div class="text-xs opacity-75">
+          NIPPV/HFNC encounters: {extractNumber(nidfdEncounters)} ({extractPercentage(nidfdEncounters)})
+        </div>
+      </div>
+      )}
+    </div>
+    )}
+  </section>
+  )}
 
   <!-- Detailed Metrics - Collapsible Sections -->
   <section class="mb-8">
