@@ -36,6 +36,9 @@ export const SITE_LABELS: Record<string, string> = {
   UCMC: 'University of Chicago',
   UMN: 'University of Minnesota',
   UPenn: 'University of Pennsylvania',
+  // Sunnybrook Health Sciences Centre. Named "University of Toronto" to match
+  // site_details.csv and the public dashboard's existing column.
+  Sunnybrook: 'University of Toronto',
   MIMIC: 'MIMIC IV',
 };
 
@@ -44,7 +47,7 @@ export const SITE_LABELS: Record<string, string> = {
  * alphabetically by display name, with MIMIC IV last. Codes not listed here
  * sort after these, alphabetically, so a new site still renders.
  */
-export const SITE_ORDER = ['ALL', 'Emory', 'NU', 'OHSU', 'RUSH', 'UCSF', 'UCMC', 'UMN', 'UPenn', 'MIMIC'];
+export const SITE_ORDER = ['ALL', 'Emory', 'NU', 'OHSU', 'RUSH', 'UCSF', 'UCMC', 'UMN', 'UPenn', 'Sunnybrook', 'MIMIC'];
 
 /** Display name for a site code; unknown codes fall back to the code itself. */
 export function siteLabel(code: string): string {
