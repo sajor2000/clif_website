@@ -1078,7 +1078,12 @@ const dopamineDose = d.dopamineDose;
                       "rgb(240, 253, 250)"   // teal-50
                     ]);
 
-                  const svg = d3.select('#ventModeTreemap')
+                  // Select the resolved element, NOT '#ventModeTreemap'. Every id
+                  // in this component is suffixed with `-${uid}` so several cohort
+                  // panels can coexist on one page, so the bare id matches nothing —
+                  // and d3.select returns an empty selection that swallows every
+                  // chained .append() without error, leaving a blank card.
+                  const svg = d3.select(container)
                     .append("svg")
                     .attr("width", width)
                     .attr("height", height);
