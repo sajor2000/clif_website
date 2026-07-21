@@ -566,7 +566,7 @@ const categoriesJson = JSON.stringify({ labs: labFiles, respiratory_support: res
       Object.keys(row.sites).forEach(site => sitesInData.add(site));
     });
 
-    availableSitesForParameter = Array.from(sitesInData).sort();
+    availableSitesForParameter = Array.from(sitesInData).sort(window.compareSites);
 
     // Exclude sites with known bad data for specific parameters
     // Note: Site names are extracted from CSV columns like "emory_probability" -> "emory"
@@ -634,7 +634,7 @@ const categoriesJson = JSON.stringify({ labs: labFiles, respiratory_support: res
 
       const span = document.createElement('span');
       span.className = 'ml-2 text-sm font-medium text-gray-700 uppercase';
-      span.textContent = site.replace('_', ' ');
+      span.textContent = window.siteLabel ? window.siteLabel(site) : site.replace('_', ' ');
 
       label.appendChild(checkbox);
       label.appendChild(span);

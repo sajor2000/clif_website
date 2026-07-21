@@ -17,6 +17,50 @@ import type { ParsedConsortiumData, CharacteristicData } from './csvParser';
 
 export const AGGREGATE_SITE = 'ALL';
 
+/**
+ * Site codes as they appear in the export CSV headers (`<Group>__<Code>`),
+ * mapped to the display names used on the public /cohort dashboard, so both
+ * dashboards read identically.
+ *
+ * These are LABELS ONLY. The codes remain the keys everywhere data is looked
+ * up (`${site}__${med}`, Map keys, checkbox values) — never substitute a label
+ * into a data path.
+ */
+export const SITE_LABELS: Record<string, string> = {
+  ALL: 'Consortium Aggregate',
+  Emory: 'Emory University',
+  NU: 'Northwestern University',
+  OHSU: 'Oregon Health & Science University',
+  RUSH: 'Rush University',
+  UCSF: 'University of California San Francisco',
+  UCMC: 'University of Chicago',
+  UMN: 'University of Minnesota',
+  UPenn: 'University of Pennsylvania',
+  MIMIC: 'MIMIC IV',
+};
+
+/**
+ * Column order, matching the public dashboard: aggregate first, then sites
+ * alphabetically by display name, with MIMIC IV last. Codes not listed here
+ * sort after these, alphabetically, so a new site still renders.
+ */
+export const SITE_ORDER = ['ALL', 'Emory', 'NU', 'OHSU', 'RUSH', 'UCSF', 'UCMC', 'UMN', 'UPenn', 'MIMIC'];
+
+/** Display name for a site code; unknown codes fall back to the code itself. */
+export function siteLabel(code: string): string {
+  return SITE_LABELS[code] ?? code;
+}
+
+/** Comparator putting site codes in SITE_ORDER, unknown codes last (A–Z). */
+export function compareSites(a: string, b: string): number {
+  const ia = SITE_ORDER.indexOf(a);
+  const ib = SITE_ORDER.indexOf(b);
+  if (ia === -1 && ib === -1) return a.localeCompare(b);
+  if (ia === -1) return 1;
+  if (ib === -1) return -1;
+  return ia - ib;
+}
+
 export type CohortGroup = 'overall' | 'critically_ill';
 
 export interface CohortDef {
@@ -233,7 +277,7 @@ export function parseCohortCSV(csvContent: string): ParsedConsortiumData {
   }
 
   return {
-    allSites: Array.from(allSitesSet).sort(),
+    allSites: Array.from(allSitesSet).sort(compareSites),
     allYears: Array.from(allYearsSet).sort(),
     characteristics,
     siteYearData,

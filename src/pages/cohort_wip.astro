@@ -10,7 +10,7 @@ import HourlyTrends from '../components/cohort_wip/HourlyTrends.astro';
 import DataDistributions from '../components/cohort_wip/DataDistributions.astro';
 import MapExplorer from '../components/cohort_wip/MapExplorer.astro';
 import CTAButton from '../components/shared/CTAButton.astro';
-import { COHORTS, VISIBLE_COHORTS, VISIBLE_GROUPS, SUBCOHORTS, PANEL_COHORTS, DEFAULT_COHORT, getCohort, parseCohortCSV, getAggregateValue } from '../utils/cohortData';
+import { COHORTS, VISIBLE_COHORTS, VISIBLE_GROUPS, SUBCOHORTS, PANEL_COHORTS, DEFAULT_COHORT, SITE_LABELS, SITE_ORDER, getCohort, parseCohortCSV, getAggregateValue } from '../utils/cohortData';
 
 // Labels for the level-1 group buttons. Only groups that still have a visible
 // cohort are rendered, so hiding every cohort in a group removes its button.
@@ -169,6 +169,9 @@ const subsByParent = Object.fromEntries(
       </div>
 
       <!-- Per-cohort headline data + cohort event bus -->
+      {/* Site display names + column order for the inline chart/table scripts.
+          Site CODES stay the data keys; these are labels only. */}
+      <script is:inline set:html={`window.__SITE_LABELS__ = ${JSON.stringify(SITE_LABELS)}; window.__SITE_ORDER__ = ${JSON.stringify(SITE_ORDER)}; window.siteLabel = function (c) { return (window.__SITE_LABELS__ || {})[c] || c; }; window.compareSites = function (a, b) { var o = window.__SITE_ORDER__ || [], ia = o.indexOf(a), ib = o.indexOf(b); if (ia === -1 && ib === -1) return String(a).localeCompare(String(b)); if (ia === -1) return 1; if (ib === -1) return -1; return ia - ib; };`}></script>
       <script is:inline set:html={`window.__COHORT_HEADLINES__ = ${JSON.stringify(cohortHeadlines)}; window.__DEFAULT_COHORT__ = ${JSON.stringify(DEFAULT_COHORT)}; window.__SUBS_BY_PARENT__ = ${JSON.stringify(subsByParent)};`}></script>
       <script is:inline>
         (function () {

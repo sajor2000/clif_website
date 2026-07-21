@@ -704,7 +704,7 @@ const categories = Array.from(groupedChars.keys());
     if (!container) return;
     let html = `<label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer"><input type="checkbox" id="site-all" class="${SITE_CB_CLASS}" checked /><span class="ml-2 text-sm text-gray-700 font-semibold">All Sites</span></label>`;
     for (const site of consortiumData.allSites) {
-      html += `<label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer"><input type="checkbox" class="${SITE_CB_CLASS}" value="${site}" checked /><span class="ml-2 text-sm text-gray-700">${site}</span></label>`;
+      html += `<label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer"><input type="checkbox" class="${SITE_CB_CLASS}" value="${site}" checked /><span class="ml-2 text-sm text-gray-700">${window.siteLabel(site)}</span></label>`;
     }
     container.innerHTML = html;
   }
@@ -2942,7 +2942,7 @@ const categories = Array.from(groupedChars.keys());
             return;
           }
 
-          const label = site;
+          const label = window.siteLabel(site);
 
           if (isMedianChar) {
             const medianIQR = extractMedianAndIQR(overallValue);
@@ -3058,7 +3058,7 @@ const categories = Array.from(groupedChars.keys());
 
       let label;
       if (groupBy === 'site') {
-        label = d.site;
+        label = window.siteLabel(d.site);
       } else {
         label = d.year;
       }
