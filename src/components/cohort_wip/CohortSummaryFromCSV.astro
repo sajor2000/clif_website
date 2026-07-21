@@ -198,11 +198,72 @@ function extractIQR(str: string): string {
   return match ? match[1] : '';
 }
 
+// --- Clinical-course derived values -----------------------------------------
+// Free-day measures are a fraction of a FIXED window, so they read as meters
+// rather than bare numbers: 24.7 is meaningless until you see it against 28.
+const FREE_DAY_WINDOW = 28;
+const asNum = (s: string): number => {
+  const m = (s || '').replace(/,/g, '').match(/-?[\d.]+/);
+  return m ? parseFloat(m[0]) : NaN;
+};
+/** "24.7 [0, 27]" -> { median: 24.7, q1: 0, q3: 27 } */
+function medianIQR(s: string): { median: number; q1: number; q3: number } {
+  const median = asNum(s);
+  const m = (s || '').match(/\[\s*([^\],]+),\s*([^\]]+)\]/);
+  return {
+    median,
+    q1: m ? parseFloat(m[1].replace(/,/g, '')) : NaN,
+    q3: m ? parseFloat(m[2].replace(/,/g, '')) : NaN,
+  };
+}
+const clampPct = (n: number, max: number) =>
+  Number.isFinite(n) && max > 0 ? Math.max(0, Math.min(100, (n / max) * 100)) : 0;
+/** Percentage as a human ratio: 15.8% -> "about 1 in 6". */
+const oneInN = (pctStr: string): string => {
+  const p = parseFloat(pctStr);
+  if (!Number.isFinite(p) || p <= 0) return '';
+  const n = Math.round(100 / p);
+  return n >= 2 ? `about 1 in ${n}` : '';
+};
+
 // Race detail + combined "Other" percentage (default cohort, for SSR)
 const raceAmericanIndian = d.raceAmericanIndian;
 const racePacificIslander = d.racePacificIslander;
 const pctOf = (n: number, t: number) => (t > 0 ? ((n / t) * 100).toFixed(1) : '0.0');
 const numOf = (s: string) => parseInt(extractNumber(s || '').replace(/,/g, ''), 10) || 0;
+
+// Bar widths and human-scale framings for the Clinical-course section. All
+// derived from the cell text so it holds for every cohort; each guard yields a
+// benign value rather than NaN when a row is absent. Declared here, after the
+// helpers above, since const declarations do not hoist.
+const icuSharePct = parseFloat(extractPercentage(encountersWithIcuEpisode) || '0') || 0;
+const sepsisSharePct = parseFloat(extractPercentage(encountersWithSepsis) || '0') || 0;
+const sepsisOneIn = oneInN(extractPercentage(encountersWithSepsis));
+// Episodes per affected encounter — anything above 1 is ICU bouncebacks made visible.
+const icuEpisodeCount = numOf(icuEpisodes);
+const icuEncounterCount = numOf(encountersWithIcuEpisode);
+const icuEpisodesPerEncounter =
+  icuEpisodeCount > 0 && icuEncounterCount > 0
+    ? (icuEpisodeCount / icuEncounterCount).toFixed(2)
+    : '';
+
+const extub = medianIQR(timeToExtubation);
+// Hours have no fixed ceiling, so scale the track to Q3 with a little headroom.
+const extubScale = Number.isFinite(extub.q3) && extub.q3 > 0 ? extub.q3 * 1.05 : 0;
+const extubQ1Pct = clampPct(extub.q1, extubScale);
+const extubQ3Pct = clampPct(extub.q3, extubScale);
+const extubMedianPct = clampPct(extub.median, extubScale);
+const extubQ1 = Number.isFinite(extub.q1) ? extub.q1 : '—';
+const extubQ3 = Number.isFinite(extub.q3) ? extub.q3 : '—';
+
+const vfd = medianIQR(vfdMedian);
+const nidfd = medianIQR(nidfdMedian);
+const vfdMedianPct = clampPct(vfd.median, FREE_DAY_WINDOW);
+const nidfdMedianPct = clampPct(nidfd.median, FREE_DAY_WINDOW);
+// Q1 of zero means at least a quarter never came off support inside the window —
+// the most consequential fact here, and invisible when written "[0, 27]".
+const vfdZeroQ1 = vfd.q1 === 0;
+const nidfdZeroQ1 = nidfd.q1 === 0;
 const totalOtherRaces = [d.raceAsian, d.raceOther, d.raceUnknown, d.raceAmericanIndian, d.racePacificIslander]
   .reduce((sum, v) => sum + numOf(v), 0);
 const totalPatients = numOf(uniquePatients);
@@ -551,84 +612,156 @@ const dopamineDose = d.dopamineDose;
     </div>
   </section>
 
-  <!-- Clinical Course: ICU burden, sepsis, ventilator-free days -->
+  <!-- ICU and Sepsis Events -->
   {hasClinicalCourse && (
   <section class="mb-8">
-    <h2 class="text-xl font-bold mb-4 text-gray-800">Clinical Course</h2>
-
-    {/* Counts and their encounter-level rates. Event totals (episodes, sepsis
-        events) exceed encounter counts because one encounter can have several,
-        so each pair shows the total and the share of encounters affected. */}
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+    {(icuEpisodes || sepsisEvents) && (
+    <>
+    <h2 class="text-xl font-bold mb-1 text-gray-800">ICU and Sepsis Events</h2>
+    <p class="text-xs text-gray-500 mb-4">
+      Event totals exceed encounter counts — one encounter can have several.
+    </p>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+      {/* Each card pairs the event total with the share of encounters affected,
+          so a large count is never mistaken for a patient count. The bar encodes
+          that share; the count stays the headline. */}
       {icuEpisodes && (
-      <div class="bg-white p-4 rounded-lg shadow border border-gray-200">
-        <div class="text-2xl font-bold text-gray-900">{extractNumber(icuEpisodes)}</div>
-        <div class="text-sm text-gray-700 mt-1">ICU episodes</div>
-        <div class="text-xs text-gray-500">total across all encounters</div>
+      <div class="bg-white p-5 rounded-lg shadow border border-gray-200">
+        <div class="flex items-baseline gap-2">
+          <span class="text-3xl font-bold text-gray-900">{extractNumber(icuEpisodes)}</span>
+          <span class="text-sm text-gray-600">ICU episodes</span>
+        </div>
+        {icuEpisodesPerEncounter && (
+          <div class="text-xs text-gray-500 mt-0.5">{icuEpisodesPerEncounter} episodes per affected encounter</div>
+        )}
+        {encountersWithIcuEpisode && (
+        <div class="mt-4">
+          <div class="flex items-baseline justify-between text-xs mb-1.5">
+            <span class="text-gray-600">Encounters with ≥1 ICU episode</span>
+            <span class="font-semibold text-gray-900">{extractPercentage(encountersWithIcuEpisode)}</span>
+          </div>
+          <div class="h-2 w-full rounded-full bg-gray-100 overflow-hidden">
+            <div class="h-full rounded-full bg-teal-500" style={`width:${icuSharePct}%`}></div>
+          </div>
+          <div class="text-[11px] text-gray-500 mt-1">n={extractNumber(encountersWithIcuEpisode)}</div>
+        </div>
+        )}
       </div>
       )}
-      {encountersWithIcuEpisode && (
-      <div class="bg-white p-4 rounded-lg shadow border border-gray-200">
-        <div class="text-2xl font-bold text-gray-900">{extractPercentage(encountersWithIcuEpisode)}</div>
-        <div class="text-sm text-gray-700 mt-1">Encounters with ≥1 ICU episode</div>
-        <div class="text-xs text-gray-500">n={extractNumber(encountersWithIcuEpisode)}</div>
-      </div>
-      )}
-      {sepsisEvents && (
-      <div class="bg-white p-4 rounded-lg shadow border border-gray-200">
-        <div class="text-2xl font-bold text-gray-900">{extractNumber(sepsisEvents)}</div>
-        <div class="text-sm text-gray-700 mt-1">Sepsis events</div>
-        <div class="text-xs text-gray-500">CDC Adult Sepsis Event</div>
-      </div>
-      )}
-      {encountersWithSepsis && (
-      <div class="bg-white p-4 rounded-lg shadow border border-gray-200">
-        <div class="text-2xl font-bold text-gray-900">{extractPercentage(encountersWithSepsis)}</div>
-        <div class="text-sm text-gray-700 mt-1">Encounters with ≥1 sepsis event</div>
-        <div class="text-xs text-gray-500">n={extractNumber(encountersWithSepsis)}</div>
-      </div>
-      )}
-    </div>
 
-    {/* Ventilation outcomes. VFD/NIDFD each pair a denominator (how many
-        encounters the measure applies to) with the median free-days among them. */}
+      {sepsisEvents && (
+      <div class="bg-white p-5 rounded-lg shadow border border-gray-200">
+        <div class="flex items-baseline gap-2">
+          <span class="text-3xl font-bold text-gray-900">{extractNumber(sepsisEvents)}</span>
+          <span class="text-sm text-gray-600">sepsis events</span>
+        </div>
+        <div class="text-xs text-gray-500 mt-0.5">CDC Adult Sepsis Event criteria</div>
+        {encountersWithSepsis && (
+        <div class="mt-4">
+          <div class="flex items-baseline justify-between text-xs mb-1.5">
+            <span class="text-gray-600">Encounters with ≥1 sepsis event</span>
+            <span class="font-semibold text-gray-900">
+              {extractPercentage(encountersWithSepsis)}
+              {sepsisOneIn && <span class="font-normal text-gray-500"> · {sepsisOneIn}</span>}
+            </span>
+          </div>
+          <div class="h-2 w-full rounded-full bg-gray-100 overflow-hidden">
+            <div class="h-full rounded-full bg-teal-500" style={`width:${sepsisSharePct}%`}></div>
+          </div>
+          <div class="text-[11px] text-gray-500 mt-1">n={extractNumber(encountersWithSepsis)}</div>
+        </div>
+        )}
+      </div>
+      )}
+    </div>
+    </>
+    )}
+
     {(timeToExtubation || vfdEncounters || nidfdEncounters) && (
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <>
+    <h2 class="text-xl font-bold mb-1 text-gray-800">Ventilation Outcomes</h2>
+    <p class="text-xs text-gray-500 mb-4">
+      Free-day measures are counted within a fixed {FREE_DAY_WINDOW}-day window.
+    </p>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+      {/* Time to extubation has no fixed ceiling, so the track is scaled to Q3
+          and shows the interquartile range rather than a fill. */}
       {timeToExtubation && (
-      <div class="bg-gradient-to-br from-slate-500 to-slate-600 text-white p-4 rounded-lg shadow">
-        <div class="text-2xl font-bold">
-          {extractMedian(timeToExtubation)}
-          <span class="text-base font-normal opacity-90"> [{extractIQR(timeToExtubation)}]</span>
+      <div class="bg-white p-5 rounded-lg shadow border border-gray-200">
+        <div class="text-sm font-semibold text-gray-700">Time to extubation</div>
+        <div class="flex items-baseline gap-1.5 mt-2">
+          <span class="text-3xl font-bold text-gray-900">{extractMedian(timeToExtubation)}</span>
+          <span class="text-sm text-gray-600">hours, median</span>
         </div>
-        <div class="text-sm opacity-90 mt-1">Time to extubation, hours</div>
-        <div class="text-xs opacity-75">median [Q1, Q3]</div>
-      </div>
-      )}
-      {vfdEncounters && (
-      <div class="bg-gradient-to-br from-slate-600 to-slate-700 text-white p-4 rounded-lg shadow">
-        <div class="text-2xl font-bold">
-          {vfdMedian ? extractMedian(vfdMedian) : extractPercentage(vfdEncounters)}
-          {vfdMedian && <span class="text-base font-normal opacity-90"> [{extractIQR(vfdMedian)}]</span>}
+        <div class="relative h-2 w-full rounded-full bg-gray-100 mt-4">
+          <div
+            class="absolute h-full rounded-full bg-teal-200"
+            style={`left:${extubQ1Pct}%; width:${Math.max(extubQ3Pct - extubQ1Pct, 1)}%`}
+          ></div>
+          <div class="absolute w-0.5 h-4 -top-1 bg-teal-600 rounded" style={`left:${extubMedianPct}%`}></div>
         </div>
-        <div class="text-sm opacity-90 mt-1">28-day ventilator-free days</div>
-        <div class="text-xs opacity-75">
-          IMV encounters: {extractNumber(vfdEncounters)} ({extractPercentage(vfdEncounters)})
+        <div class="flex justify-between text-[11px] text-gray-500 mt-1.5">
+          <span>Q1 {extubQ1}h</span>
+          <span>Q3 {extubQ3}h</span>
         </div>
       </div>
       )}
-      {nidfdEncounters && (
-      <div class="bg-gradient-to-br from-slate-500 to-slate-600 text-white p-4 rounded-lg shadow">
-        <div class="text-2xl font-bold">
-          {nidfdMedian ? extractMedian(nidfdMedian) : extractPercentage(nidfdEncounters)}
-          {nidfdMedian && <span class="text-base font-normal opacity-90"> [{extractIQR(nidfdMedian)}]</span>}
+
+      {/* VFD / NIDFD: a fixed 0–28 track. The fill is the median; Q1 and Q3 sit
+          on the same track, which is what makes a Q1 of zero visible instead of
+          buried inside brackets. */}
+      {vfdEncounters && vfdMedian && (
+      <div class="bg-white p-5 rounded-lg shadow border border-gray-200">
+        <div class="text-sm font-semibold text-gray-700">Ventilator-free days</div>
+        <div class="flex items-baseline gap-1.5 mt-2">
+          <span class="text-3xl font-bold text-gray-900">{extractMedian(vfdMedian)}</span>
+          <span class="text-sm text-gray-600">of {FREE_DAY_WINDOW} days, median</span>
         </div>
-        <div class="text-sm opacity-90 mt-1">28-day non-invasive device-free days</div>
-        <div class="text-xs opacity-75">
-          NIPPV/HFNC encounters: {extractNumber(nidfdEncounters)} ({extractPercentage(nidfdEncounters)})
+        <div class="relative h-2 w-full rounded-full bg-gray-100 mt-4 overflow-hidden">
+          <div class="h-full rounded-full bg-teal-500" style={`width:${vfdMedianPct}%`}></div>
+        </div>
+        <div class="flex justify-between text-[11px] text-gray-500 mt-1.5">
+          <span>Q1 {vfd.q1}</span>
+          <span>Q3 {vfd.q3}</span>
+        </div>
+        {vfdZeroQ1 && (
+          <div class="text-[11px] text-amber-700 bg-amber-50 rounded px-2 py-1 mt-2">
+            A quarter or more had zero ventilator-free days
+          </div>
+        )}
+        <div class="text-[11px] text-gray-500 mt-2">
+          Among {extractNumber(vfdEncounters)} IMV encounters ({extractPercentage(vfdEncounters)})
+        </div>
+      </div>
+      )}
+
+      {nidfdEncounters && nidfdMedian && (
+      <div class="bg-white p-5 rounded-lg shadow border border-gray-200">
+        <div class="text-sm font-semibold text-gray-700">Non-invasive device-free days</div>
+        <div class="flex items-baseline gap-1.5 mt-2">
+          <span class="text-3xl font-bold text-gray-900">{extractMedian(nidfdMedian)}</span>
+          <span class="text-sm text-gray-600">of {FREE_DAY_WINDOW} days, median</span>
+        </div>
+        <div class="relative h-2 w-full rounded-full bg-gray-100 mt-4 overflow-hidden">
+          <div class="h-full rounded-full bg-teal-500" style={`width:${nidfdMedianPct}%`}></div>
+        </div>
+        <div class="flex justify-between text-[11px] text-gray-500 mt-1.5">
+          <span>Q1 {nidfd.q1}</span>
+          <span>Q3 {nidfd.q3}</span>
+        </div>
+        {nidfdZeroQ1 && (
+          <div class="text-[11px] text-amber-700 bg-amber-50 rounded px-2 py-1 mt-2">
+            A quarter or more had zero device-free days
+          </div>
+        )}
+        <div class="text-[11px] text-gray-500 mt-2">
+          Among {extractNumber(nidfdEncounters)} NIPPV/HFNC encounters ({extractPercentage(nidfdEncounters)})
         </div>
       </div>
       )}
     </div>
+    </>
     )}
   </section>
   )}
