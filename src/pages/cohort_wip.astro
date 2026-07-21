@@ -4,7 +4,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import CohortSummaryFromCSV from '../components/cohort_wip/CohortSummaryFromCSV.astro';
-import CohortOutcomes from '../components/cohort_wip/CohortOutcomes.astro';
 import InteractiveDashboard from '../components/cohort_wip/InteractiveDashboard.astro';
 import HourlyTrends from '../components/cohort_wip/HourlyTrends.astro';
 import DataDistributions from '../components/cohort_wip/DataDistributions.astro';
@@ -202,12 +201,6 @@ const subsByParent = Object.fromEntries(
               Summary Statistics
             </button>
             <button
-              id="tab-outcomes"
-              class="px-4 py-3 text-xs md:text-base font-semibold rounded-md transition-all duration-200 text-gray-700 hover:text-gray-900 whitespace-nowrap"
-            >
-              Outcomes
-            </button>
-            <button
               id="tab-explorer"
               class="px-4 py-3 text-xs md:text-base font-semibold rounded-md transition-all duration-200 text-gray-700 hover:text-gray-900 whitespace-nowrap"
             >
@@ -254,15 +247,6 @@ const subsByParent = Object.fromEntries(
           </div>
 
           {PANEL_COHORTS.map((k) => <CohortSummaryFromCSV cohort={k} />)}
-        </div>
-
-        <!-- Tab Content: Outcomes -->
-        <div id="content-outcomes" class="tab-content hidden">
-          <div class="text-center mb-8">
-            <h2 class="text-3xl font-bold text-gray-800 mb-3">Outcomes &amp; Severity</h2>
-            <p class="text-lg text-gray-600">Mortality, illness severity, and comorbidity burden for the selected cohort.</p>
-          </div>
-          {PANEL_COHORTS.map((k) => <CohortOutcomes cohort={k} />)}
         </div>
 
         <!-- Tab Content: Interactive Data Explorer -->
@@ -404,7 +388,7 @@ const subsByParent = Object.fromEntries(
   <script is:inline>
     document.addEventListener('DOMContentLoaded', () => {
       // Generic tab controller: one active tab at a time.
-      const TABS = ['summary', 'outcomes', 'explorer', 'hourly', 'distributions', 'map'];
+      const TABS = ['summary', 'explorer', 'hourly', 'distributions', 'map'];
       function activateTab(name) {
         TABS.forEach((t) => {
           const btn = document.getElementById('tab-' + t);
