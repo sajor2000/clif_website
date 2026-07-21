@@ -318,12 +318,12 @@ const PURPOSE_OPTIONS = Object.entries(PURPOSE_LABELS).map(([value, label]) => (
                         </button>
                           <button
                             type="button"
-                            class="run-info-btn inline-flex items-center justify-center w-4 h-4 rounded-full border border-gray-400 text-gray-500 dark:border-gray-500 dark:text-gray-400 text-[10px] leading-none font-semibold hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-200 focus:outline-none focus:ring-2 focus:ring-clif-burgundy/50"
+                            class="run-info-btn peer inline-flex items-center justify-center w-4 h-4 rounded-full border border-gray-400 text-gray-500 dark:border-gray-500 dark:text-gray-400 text-[10px] leading-none font-semibold hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-200 focus:outline-none focus:ring-2 focus:ring-clif-burgundy/50"
                             aria-label={isClosed ? 'What reopening does' : 'What closing does'}
                           >i</button>
                           <span
                             role="note"
-                            class="pointer-events-none invisible opacity-0 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 transition-opacity absolute right-0 top-full mt-2 z-20 w-72 rounded-lg bg-gray-900 dark:bg-neutral-700 text-white text-xs leading-relaxed p-3 shadow-lg text-left font-normal normal-case"
+                            class="pointer-events-none invisible opacity-0 group-hover:visible group-hover:opacity-100 peer-focus-visible:visible peer-focus-visible:opacity-100 transition-opacity absolute right-0 top-full mt-2 z-20 w-72 rounded-lg bg-gray-900 dark:bg-neutral-700 text-white text-xs leading-relaxed p-3 shadow-lg text-left font-normal normal-case"
                           >
                             {isClosed ? (
                               <>
@@ -647,15 +647,6 @@ const PURPOSE_OPTIONS = Object.entries(PURPOSE_LABELS).map(([value, label]) => (
           self.textContent = original;
           self.disabled = false;
         });
-      });
-
-      // The info marker explains what closing does on hover. It stays a real
-      // button so keyboard users can Tab to it (focus-within opens the note),
-      // but a mouse click must not leave it focused — that would pin the note
-      // open until the user clicked elsewhere.
-      document.querySelectorAll('.run-info-btn').forEach(function (btn) {
-        btn.addEventListener('mousedown', function (e) { e.preventDefault(); });
-        btn.addEventListener('click', function (e) { e.preventDefault(); });
       });
 
       // Close / reopen
