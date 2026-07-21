@@ -502,7 +502,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                       <li><strong>Urine chemistry</strong> (2): <code>albumin_to_creatinine_ratio</code>, <code>protein_to_creatinine_ratio</code></li>
                       <li><strong>Thyroid</strong> (3): <code>free_t3</code>, <code>free_t4</code>, <code>tsh</code></li>
                       <li><strong>Coagulation</strong> (2): <code>d_dimer</code>, <code>fibrinogen</code></li>
-                      <li><strong>POC / bedside</strong> (3): <code>co2</code>, <code>glucose</code> (replaces <code>glucose_fingerstick</code>), <code>hematocrit</code></li>
+                      <li><strong>POC / bedside</strong> (3): <code>co2</code>, <code>glucose</code> (replaces both <code>glucose_fingerstick</code> and <code>glucose_serum</code>), <code>hematocrit</code></li>
                       <li><strong>Mixed-venous blood gas</strong> (1): <code>po2_mixed_venous</code></li>
                       <li><strong>Misc</strong> (1): <code>triglycerides</code></li>
                     </ul>
@@ -526,7 +526,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            Revisions (14 updates) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Jun 30, 2026</span>
+            Revisions (15 updates) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Jul 21, 2026</span>
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -547,6 +547,12 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">labs.lab_category</td>
+                  <td class="px-4 py-3 text-sm">Dropped <code>glucose_serum</code> from the <code>labs.lab_category</code> mCIDE. <code>glucose</code> replaces both <code>glucose_serum</code> and <code>glucose_fingerstick</code>, with the specimen distinguished by <code>lab_specimen_category</code> and the panel by <code>lab_order_category</code> — the same de-prefixing convention applied to the other source-specific labs in 3.0.</td>
+                  <td class="px-4 py-3 text-sm text-gray-500">&mdash;</td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Jul 21, 2026</td>
+                </tr>
                 <tr>
                   <td class="px-4 py-3 text-sm font-mono">patient_procedures</td>
                   <td class="px-4 py-3 text-sm">Clarified that <code>patient_procedures</code> should ETL <strong>all</strong> CPT codes (HCPCS Level 1), including CPT codes recorded in hospital billing encounters (e.g., PT/OT codes) — not only clinician/professional billing codes. HCPCS Level 2 products and supplies remain excluded.</td>
