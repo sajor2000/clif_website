@@ -106,7 +106,11 @@ const subsByParent = Object.fromEntries(
   <script is:inline src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
   <div class="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-    <div class="container mx-auto px-4 py-8 max-w-7xl">
+    {/* Wide by design: this is a dashboard of cards and charts, not prose, so it
+        earns the horizontal room. `container` is dropped deliberately — it caps
+        at 1536px on 2xl, which would override anything wider set here. Body text
+        below keeps its own narrower max-widths for readability. */}
+    <div class="mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-[1800px]">
       <!-- Enhanced Hero Section -->
       <div class="text-center mb-12 animate-fade-in">
         <h1 class="text-4xl md:text-5xl font-bold text-clif-burgundy mb-4 bg-clip-text text-transparent bg-gradient-to-r from-clif-burgundy to-clif-burgundy-dark">
