@@ -73,8 +73,6 @@ export interface CohortDef {
   label: string;
   /** Top-level grouping for the two-level picker */
   group: CohortGroup;
-  /** Short blurb for the picker / hero */
-  description: string;
   /** Has a standalone table_one_overall.csv (else derive summary from the by-year Overall block) */
   hasOverallFile: boolean;
   /** Has medications_hourly_data.csv */
@@ -97,7 +95,6 @@ export const COHORTS: CohortDef[] = [
     key: 'overall_ward',
     label: 'Overall',
     group: 'overall',
-    description: 'All hospitalized patients across the consortium.',
     hasOverallFile: true,
     hasHourly: false,
     hasSofa: false,
@@ -107,9 +104,8 @@ export const COHORTS: CohortDef[] = [
   },
   {
     key: 'overall',
-    label: 'Critically ill (all)',
+    label: 'Critically Ill',
     group: 'critically_ill',
-    description: 'Aggregate of all critically ill / ventilated encounters.',
     hasOverallFile: true,
     hasHourly: true,
     hasSofa: true,
@@ -118,7 +114,6 @@ export const COHORTS: CohortDef[] = [
     key: 'icu',
     label: 'ICU',
     group: 'critically_ill',
-    description: 'Encounters with at least one ICU episode.',
     hasOverallFile: false,
     hasHourly: true,
     hasSofa: true,
@@ -127,7 +122,6 @@ export const COHORTS: CohortDef[] = [
     key: 'advanced_resp',
     label: 'Advanced respiratory support',
     group: 'critically_ill',
-    description: 'Encounters receiving advanced respiratory support.',
     hasOverallFile: false,
     hasHourly: true,
     hasSofa: true,
@@ -136,7 +130,6 @@ export const COHORTS: CohortDef[] = [
     key: 'vaso',
     label: 'Vasoactive support',
     group: 'critically_ill',
-    description: 'Encounters receiving vasoactive medications.',
     hasOverallFile: false,
     hasHourly: true,
     hasSofa: true,
@@ -145,7 +138,6 @@ export const COHORTS: CohortDef[] = [
     key: 'deaths',
     label: 'Deaths',
     group: 'critically_ill',
-    description: 'Encounters ending in death (6 reporting sites).',
     hasOverallFile: false,
     hasHourly: true,
     hasSofa: true,
@@ -170,7 +162,7 @@ export function getCohort(key: string): CohortDef {
 }
 
 /**
- * Sub-cohorts: ICU / non-ICU (+ vaso ED routing) splits of advanced_resp & vaso.
+ * Sub-cohorts: ICU / non-ICU splits of advanced_resp & vaso.
  * They only have Summary + Outcomes-worth of data (table_one comparison columns,
  * comorbidities, demographics, partial SOFA) — NOT by-year / hourly / distributions,
  * so the Explorer/Hourly/Distributions tabs fall back to the parent cohort.
@@ -187,8 +179,6 @@ export const SUBCOHORTS: SubCohortDef[] = [
   { key: 'advanced_resp__no_icu', label: 'Non-ICU', parent: 'advanced_resp', group: 'no_icu' },
   { key: 'vaso__icu', label: 'ICU', parent: 'vaso', group: 'icu' },
   { key: 'vaso__no_icu', label: 'Non-ICU', parent: 'vaso', group: 'no_icu' },
-  { key: 'vaso__ed_icu', label: 'ED → ICU', parent: 'vaso', group: 'ed_icu' },
-  { key: 'vaso__ed_ward', label: 'ED → Ward', parent: 'vaso', group: 'ed_ward' },
 ];
 
 /** Sub-cohorts belonging to a parent cohort (empty if the cohort has no splits). */

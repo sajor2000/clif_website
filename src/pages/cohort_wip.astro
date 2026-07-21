@@ -34,7 +34,6 @@ function headlineFor(key: string) {
     key,
     label: sub ? `${def.label} — ${sub.label}` : def.label,
     group: sub ? 'critically_ill' : def.group,
-    description: sub ? `${def.label}, ${sub.label} subgroup.` : def.description,
     hasHourly: def.hasHourly,
     hasSofa: def.hasSofa,
     patients: num(getAggregateValue(data, 'N: Unique patients')),
@@ -43,6 +42,9 @@ function headlineFor(key: string) {
   };
 }
 const cohortHeadlines = Object.fromEntries(PANEL_COHORTS.map((k) => [k, headlineFor(k)]));
+// The hero states the dashboard's overall scope and stays fixed — it is NOT
+// rewired by the cohort bus, so it always reads from the default cohort.
+const heroStats = cohortHeadlines[DEFAULT_COHORT];
 const critCohorts = VISIBLE_COHORTS.filter((c) => c.group === 'critically_ill');
 // Sub-group options per parent for the 3rd-level picker (data for the client).
 const subsByParent = Object.fromEntries(
@@ -117,10 +119,9 @@ const subsByParent = Object.fromEntries(
           CLIF Cohort Dashboard
         </h1>
         <p class="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto mb-6">
-          Insights from <span id="hero-patients" class="font-semibold text-clif-burgundy">—</span> unique
-          {/* The definition lives on the hero's own "critically ill" wording. The
-              trigger is a sibling, not a child, because the cohort bus rewrites
-              hero-cohort-label via textContent and would wipe a nested icon. */}
+          Insights from <span class="font-semibold text-clif-burgundy">{heroStats.patients}</span> unique
+          {/* The definition lives on the hero's own "critically ill" wording; the
+              trigger is a sibling of the phrase so the underline stops at the text. */}
           <span
             id="hero-cohort-label"
             class="text-blue-600 hover:text-blue-800 underline decoration-dotted underline-offset-2 cursor-help"
@@ -133,8 +134,8 @@ const subsByParent = Object.fromEntries(
           ><svg class="w-4 h-4 inline-block" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"
             ><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg
           ></button>
-          across <span id="hero-encounters" class="font-semibold text-clif-burgundy">—</span> encounter blocks
-          from <span id="hero-hospitals" class="font-semibold text-clif-burgundy">—</span> hospitals
+          across <span class="font-semibold text-clif-burgundy">{heroStats.encounters}</span> encounter blocks
+          from <span class="font-semibold text-clif-burgundy">{heroStats.hospitals}</span> hospitals
         </p>
         <div class="inline-flex items-center gap-6 text-sm text-gray-600 bg-white px-6 py-3 rounded-full shadow-sm">
           <span class="flex items-center gap-2">
@@ -188,7 +189,6 @@ const subsByParent = Object.fromEntries(
             </select>
           </div>
         </div>
-        <p id="cohort-description" class="text-sm text-gray-500 mt-2"></p>
       </div>
 
       <!-- Per-cohort headline data + cohort event bus -->
@@ -478,7 +478,6 @@ const subsByParent = Object.fromEntries(
       const typeSelect = document.getElementById('cohort-type-select');
       const subWrap = document.getElementById('cohort-sub-wrap');
       const subSelect = document.getElementById('cohort-sub-select');
-      const desc = document.getElementById('cohort-description');
       const tabHourly = document.getElementById('tab-hourly');
       const SUBS = window.__SUBS_BY_PARENT__ || {};
 
@@ -518,25 +517,15 @@ const subsByParent = Object.fromEntries(
         subWrap?.classList.remove('hidden');
       }
 
-      // Hero + description + tab gating + selectors react to cohort changes.
+      // Tab gating + selectors react to cohort changes.
       Bus.subscribe((key) => {
         const h = Bus.headline(key);
         const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-        set('hero-patients', h.patients || '—');
-        set('hero-encounters', h.encounters || '—');
-        set('hero-hospitals', h.hospitals || '—');
-        const isCritIll = key !== 'overall_ward';
-        set('hero-cohort-label', isCritIll ? 'critically ill patients' : 'patients');
-        // The definition only applies while a critically-ill cohort is selected —
-        // hide the marker and drop the link styling from the phrase when it doesn't.
-        document.getElementById('critically-ill-trigger')?.classList.toggle('hidden', !isCritIll);
-        const heroLabel = document.getElementById('hero-cohort-label');
-        ['text-blue-600', 'hover:text-blue-800', 'underline', 'decoration-dotted', 'underline-offset-2', 'cursor-help']
-          .forEach((c) => heroLabel?.classList.toggle(c, isCritIll));
+        // The hero is deliberately static (rendered from DEFAULT_COHORT at build
+        // time) — it frames the dashboard as a whole, not the current selection.
         // Summary subtitle names the selected cohort — including sub-cohorts,
         // whose headline label already reads "<parent> — <split>".
         if (h.label) set('summary-cohort-name', h.label);
-        if (desc) desc.textContent = h.description || '';
         // Hourly tab only applies to cohorts that ship hourly data.
         if (tabHourly) tabHourly.classList.toggle('hidden', !h.hasHourly);
         paintGroupButtons();
