@@ -108,7 +108,11 @@ export async function computePendingTasks(user: TaskUser): Promise<PendingTask[]
       args: [user.id],
     });
     siteIds = (res.rows as any[]).map((r) => r.site_id as string);
-  } catch {
+  } catch (e) {
+    // Each section below degrades to "no tasks" rather than breaking the panel.
+    // Log it: a missing task is indistinguishable from a resolved one, so a
+    // silent failure here is invisible by construction.
+    console.error('[tasks] site_editors lookup failed', e);
     siteIds = [];
   }
 
@@ -200,8 +204,8 @@ export async function computePendingTasks(user: TaskUser): Promise<PendingTask[]
         }
       }
     }
-  } catch {
-    /* skip this check on error */
+  } catch (e) {
+    console.error('[tasks] open project-run check failed', e);
   }
 
   // --- 2. Update stale / incomplete site details -----------------------------
@@ -237,8 +241,8 @@ export async function computePendingTasks(user: TaskUser): Promise<PendingTask[]
           signature: `m:${missing.slice().sort().join(',')}|s:${stale ? 1 : 0}`,
         });
       }
-    } catch {
-      /* skip */
+    } catch (e) {
+      console.error('[tasks] site-details check failed', e);
     }
   }
 
@@ -265,8 +269,8 @@ export async function computePendingTasks(user: TaskUser): Promise<PendingTask[]
         });
       }
     }
-  } catch {
-    /* skip */
+  } catch (e) {
+    console.error('[tasks] profile-completeness check failed', e);
   }
 
   // --- 4. Letters of support awaiting your approval (steering / admin) --------
@@ -287,8 +291,8 @@ export async function computePendingTasks(user: TaskUser): Promise<PendingTask[]
           severity: 'action',
         });
       }
-    } catch {
-      /* skip */
+    } catch (e) {
+      console.error('[tasks] letter-of-support check failed', e);
     }
   }
 
@@ -302,16 +306,27 @@ export async function computePendingTasks(user: TaskUser): Promise<PendingTask[]
       args: [user.id],
     });
     for (const r of res.rows as any[]) dismissed.set(r.task_key as string, r.signature as string);
-  } catch {
-    /* no dismissals table / query failed — show everything */
+  } catch (e) {
+    // Showing everything is the safe failure here — better a task the member
+    // already waved away than a silently suppressed one.
+    console.error('[tasks] dismissal lookup failed — showing all tasks', e);
   }
 
   return tasks.filter((t) => !(t.dismissible && dismissed.get(t.key) === t.signature));
 }
 
-/** Lightweight count for badges — avoids building full task objects downstream. */
+/**
+ * Count for the nav badge: only tasks the member can actually resolve.
+ *
+ * `info` tasks (an open run the member has no stake in) carry no action and
+ * cannot be dismissed, so counting them leaves members with a badge they are
+ * powerless to clear — and a badge that never reaches zero stops being read as
+ * "you have work", taking the actionable items down with it. They still render
+ * in the list; they just don't inflate the count.
+ */
 export async function pendingTaskCount(user: TaskUser): Promise<number> {
-  return (await computePendingTasks(user)).length;
+  const tasks = await computePendingTasks(user);
+  return tasks.filter((t) => t.severity !== 'info').length;
 }
 
 function prettyField(f: string): string {

@@ -20,6 +20,12 @@ try {
 const severityRank: Record<string, number> = { action: 0, warning: 1, info: 2 };
 tasks.sort((a, b) => severityRank[a.severity] - severityRank[b.severity]);
 
+// The header count must match the nav badge (see pendingTaskCount): only tasks
+// the member can actually resolve. `info` rows are awareness items with no
+// action and no dismiss, so counting them would show a number nobody can clear.
+// They still render in the list, tagged Info.
+const actionableCount = tasks.filter((t) => t.severity !== 'info').length;
+
 const styles: Record<string, { dot: string; chip: string; label: string }> = {
   action: {
     dot: 'bg-clif-burgundy',
@@ -47,9 +53,9 @@ const styles: Record<string, { dot: string; chip: string; label: string }> = {
     <h2 id="pending-tasks-heading" class="text-lg font-semibold text-gray-900 dark:text-white">
       Pending tasks
     </h2>
-    {tasks.length > 0 && (
+    {actionableCount > 0 && (
       <span class="inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 text-xs font-bold text-white bg-clif-burgundy rounded-full">
-        {tasks.length}
+        {actionableCount}
       </span>
     )}
   </div>
