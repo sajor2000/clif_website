@@ -182,17 +182,29 @@ const totalOtherRaces = [d.raceAsian, d.raceOther, d.raceUnknown, d.raceAmerican
 const totalPatients = numOf(uniquePatients);
 const otherRacePercentage = pctOf(totalOtherRaces, totalPatients);
 
-// Encounter Types (proportion of total critical-care encounter types)
+// Encounter Types — these categories OVERLAP: one encounter can be an ICU stay
+// AND receive advanced respiratory support. Their true percentages therefore sum
+// to ~167%, not 100%.
+//
+// This previously divided each count by the SUM of the four counts, inventing a
+// denominator and understating every category (ICU read 50.5% instead of 84.5%).
+// Each cell already carries the export's own figure — "891,734 (84.5%)" — so use
+// that rather than recomputing, and fall back to a share of total encounters if a
+// cell ever lacks one.
 const icuEncounters = d.icuEncounters;
 const advancedRespiratory = d.advancedRespiratory;
 const vasoactiveSupport = d.vasoactiveSupport;
 const otherCriticallyIll = d.otherCriticallyIll;
-const totalEncounterTypes =
-  numOf(icuEncounters) + numOf(advancedRespiratory) + numOf(vasoactiveSupport) + numOf(otherCriticallyIll);
-const icuPct = pctOf(numOf(icuEncounters), totalEncounterTypes);
-const respiratoryPct = pctOf(numOf(advancedRespiratory), totalEncounterTypes);
-const vasoactivePct = pctOf(numOf(vasoactiveSupport), totalEncounterTypes);
-const otherPct = pctOf(numOf(otherCriticallyIll), totalEncounterTypes);
+const totalEncounters = numOf(encounterBlocks);
+/** Percentage as stated in the cell, e.g. "891,734 (84.5%)" -> "84.5". */
+const statedPct = (cell: string) => {
+  const m = (cell || '').match(/\(([\d.]+)\s*%\)/);
+  return m ? m[1] : pctOf(numOf(cell), totalEncounters);
+};
+const icuPct = statedPct(icuEncounters);
+const respiratoryPct = statedPct(advancedRespiratory);
+const vasoactivePct = statedPct(vasoactiveSupport);
+const otherPct = statedPct(otherCriticallyIll);
 
 // Respiratory Support Details
 const imvTotal = d.imvTotal;
@@ -340,7 +352,10 @@ const dopamineDose = d.dopamineDose;
 
           <!-- Encounter Types -->
           <div class="bg-white p-4 rounded-lg shadow border border-gray-200 flex flex-col overflow-visible" style="min-height: 320px;">
-            <h3 class="text-sm font-semibold mb-2 text-gray-700">Encounter Types</h3>
+            <h3 class="text-sm font-semibold text-gray-700">Encounter Types</h3>
+            {/* The categories overlap, so the listed percentages sum to more than
+                100% and the ring shows relative size, not shares of a whole. */}
+            <p class="text-[11px] text-gray-500 mb-2">% of all encounters — categories overlap</p>
             <div class="flex flex-col items-center gap-2">
               <!-- Pie Chart -->
               <div class="w-32 h-32 relative overflow-visible">
@@ -827,7 +842,7 @@ const dopamineDose = d.dopamineDose;
 
 <script define:vars={{
   uid,
-  icuEncounters, advancedRespiratory, vasoactiveSupport, otherCriticallyIll,
+  icuEncounters, advancedRespiratory, vasoactiveSupport, otherCriticallyIll, totalEncounters,
   admissionED, admissionOSH, admissionElective, admissionDirect, admissionFacility, admissionOther,
   comorbCHF, comorbRenal, comorbPulmonary, comorbCerebrovascular, comorbCancer, comorbMetastatic,
   comorbPVD, comorbMI, comorbDementia, comorbLiver, comorbHemiplegia, comorbConnective, comorbPeptic, comorbAIDS,
@@ -1103,8 +1118,12 @@ const dopamineDose = d.dopamineDose;
                 },
                 label: function(context) {
                   const count = context.parsed.toLocaleString();
-                  const pct = ((context.parsed / total) * 100).toFixed(1);
-                  return count + ' (' + pct + '%)';
+                  // Denominator is all encounters, not the sum of these four —
+                  // the categories overlap, so their shares total ~167%.
+                  const pct = totalEncounters > 0
+                    ? ((context.parsed / totalEncounters) * 100).toFixed(1)
+                    : '0.0';
+                  return count + ' (' + pct + '% of encounters)';
                 }
               }
             }
