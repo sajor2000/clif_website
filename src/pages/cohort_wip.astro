@@ -121,7 +121,10 @@ const subsByParent = Object.fromEntries(
           {/* The definition lives on the hero's own "critically ill" wording. The
               trigger is a sibling, not a child, because the cohort bus rewrites
               hero-cohort-label via textContent and would wipe a nested icon. */}
-          <span id="hero-cohort-label">patients</span><button
+          <span
+            id="hero-cohort-label"
+            class="text-blue-600 hover:text-blue-800 underline decoration-dotted underline-offset-2 cursor-help"
+          >patients</span><button
             id="critically-ill-trigger"
             type="button"
             class="text-blue-600 hover:text-blue-800 align-middle ml-0.5 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500/40"
@@ -445,6 +448,12 @@ const subsByParent = Object.fromEntries(
       }
 
       criticallyIllTrigger?.addEventListener('click', openModal);
+      // The phrase is styled as a definition link, so it opens the modal too —
+      // the marker beside it should not be the only hit target. Listener sits on
+      // the span itself, so the bus rewriting its textContent doesn't remove it.
+      document.getElementById('hero-cohort-label')?.addEventListener('click', (e) => {
+        if (e.currentTarget.classList.contains('cursor-help')) openModal();
+      });
       modalBackdrop?.addEventListener('click', closeModal);
       modalClose?.addEventListener('click', closeModal);
 
@@ -514,8 +523,12 @@ const subsByParent = Object.fromEntries(
         set('hero-hospitals', h.hospitals || '—');
         const isCritIll = key !== 'overall_ward';
         set('hero-cohort-label', isCritIll ? 'critically ill patients' : 'patients');
-        // The definition only applies while a critically-ill cohort is selected.
+        // The definition only applies while a critically-ill cohort is selected —
+        // hide the marker and drop the link styling from the phrase when it doesn't.
         document.getElementById('critically-ill-trigger')?.classList.toggle('hidden', !isCritIll);
+        const heroLabel = document.getElementById('hero-cohort-label');
+        ['text-blue-600', 'hover:text-blue-800', 'underline', 'decoration-dotted', 'underline-offset-2', 'cursor-help']
+          .forEach((c) => heroLabel?.classList.toggle(c, isCritIll));
         // Summary subtitle names the selected cohort — including sub-cohorts,
         // whose headline label already reads "<parent> — <split>".
         if (h.label) set('summary-cohort-name', h.label);
