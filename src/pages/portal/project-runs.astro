@@ -20,7 +20,11 @@ try {
     sql: `SELECT p.*, u.full_name as creator_name
           FROM project_runs p
           LEFT JOIN users u ON p.created_by = u.id
-          ORDER BY p.status ASC, p.created_at DESC`,
+          -- Order by the number members actually see on the card, newest first.
+          -- Sorting by status first made closing a run yank it to the top; using
+          -- created_at meant the sequence could disagree with the shown number.
+          -- Rows predating project_number (NULL) fall to the bottom.
+          ORDER BY p.project_number IS NULL, p.project_number DESC, p.created_at DESC`,
     args: [],
   });
   projects = projectsResult.rows as any[];
@@ -289,6 +293,9 @@ const PURPOSE_OPTIONS = Object.entries(PURPOSE_LABELS).map(([value, label]) => (
 
                     {manage && (
                       <div class="flex items-center gap-3 shrink-0">
+                        {/* Close button and its info marker share one hover group, so
+                            the explanation appears whenever the pointer is on either. */}
+                        <span class="group relative inline-flex items-center gap-1.5">
                         <button
                           class={`status-project-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-clif-burgundy/50 ${
                             isClosed
@@ -309,10 +316,9 @@ const PURPOSE_OPTIONS = Object.entries(PURPOSE_LABELS).map(([value, label]) => (
                           )}
                           {isClosed ? 'Reopen run' : 'Close run'}
                         </button>
-                        <span class="group relative inline-flex">
                           <button
                             type="button"
-                            class="inline-flex items-center justify-center w-4 h-4 rounded-full border border-gray-400 text-gray-500 dark:border-gray-500 dark:text-gray-400 text-[10px] leading-none font-semibold hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-200 focus:outline-none focus:ring-2 focus:ring-clif-burgundy/50"
+                            class="run-info-btn inline-flex items-center justify-center w-4 h-4 rounded-full border border-gray-400 text-gray-500 dark:border-gray-500 dark:text-gray-400 text-[10px] leading-none font-semibold hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-200 focus:outline-none focus:ring-2 focus:ring-clif-burgundy/50"
                             aria-label={isClosed ? 'What reopening does' : 'What closing does'}
                           >i</button>
                           <span
@@ -641,6 +647,15 @@ const PURPOSE_OPTIONS = Object.entries(PURPOSE_LABELS).map(([value, label]) => (
           self.textContent = original;
           self.disabled = false;
         });
+      });
+
+      // The info marker explains what closing does on hover. It stays a real
+      // button so keyboard users can Tab to it (focus-within opens the note),
+      // but a mouse click must not leave it focused — that would pin the note
+      // open until the user clicked elsewhere.
+      document.querySelectorAll('.run-info-btn').forEach(function (btn) {
+        btn.addEventListener('mousedown', function (e) { e.preventDefault(); });
+        btn.addEventListener('click', function (e) { e.preventDefault(); });
       });
 
       // Close / reopen
