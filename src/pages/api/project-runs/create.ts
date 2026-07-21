@@ -3,6 +3,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { getDb } from '../../../lib/turso';
 import { notifyProjectRunReady } from '../../../lib/notify-project-run';
+import { notifySlackProjectRun } from '../../../lib/slack';
 
 // Allowed purpose categories. Kept here and re-used by update.ts so the two
 // endpoints stay in sync.
@@ -105,12 +106,17 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
   const db = getDb();
   const now = new Date().toISOString();
 
+  // project_number is taken as MAX + 1 inside the INSERT so the read and the
+  // write are one statement — two concurrent creates can't both read the same
+  // max. A unique index backs this up.
   const insertRes = await db.execute({
     sql: `INSERT INTO project_runs
             (title, repo_url, box_folder_url, prelim_shared, prelim_link, description, instructions,
-             purpose, purpose_detail, results_deadline, status, created_by, created_at, updated_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?, ?, ?)
-          RETURNING id`,
+             purpose, purpose_detail, results_deadline, status, created_by, created_at, updated_at,
+             project_number)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?, ?, ?,
+                  (SELECT COALESCE(MAX(project_number), 0) + 1 FROM project_runs))
+          RETURNING id, project_number`,
     args: [
       f.title,
       f.repo_url,
@@ -134,6 +140,21 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
   if (newId && body.notify_all) {
     notifyProjectRunReady(newId, url.origin, { excludeUserId: user.id }).catch(() => {});
   }
+
+  // Announce every new request in Slack, regardless of notify_all: a channel
+  // post is opt-in to read, unlike mailing all approved members. No-ops when
+  // SLACK_WEBHOOK_URL is unset, and never blocks creation.
+  const newNumber = insertRes.rows[0]?.project_number;
+  notifySlackProjectRun({
+    projectNumber: newNumber == null ? null : Number(newNumber),
+    title: f.title,
+    description: f.description,
+    purpose: f.purpose,
+    purposeDetail: f.purpose_detail,
+    deadline: f.results_deadline,
+    requestedBy: user.full_name || user.email || null,
+    projectUrl: `${url.origin}/portal/project-runs`,
+  }).catch(() => {});
 
   return new Response(JSON.stringify({ success: true }), {
     status: 200,

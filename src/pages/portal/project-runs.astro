@@ -214,15 +214,32 @@ const PURPOSE_OPTIONS = Object.entries(PURPOSE_LABELS).map(([value, label]) => (
               const ranSites = runMap[p.id as string] || new Set();
               const ranCount = ranSites.size;
               const isClosed = p.status === 'closed';
+              // A run drops out of the Active tab once its deadline is behind
+              // it, but stays fully editable (unlike Closed) so a late site can
+              // still check its box. Extending the deadline brings it back.
+              const deadlinePassed =
+                !isClosed && !!p.results_deadline && isDeadlinePassed(p.results_deadline as string);
               const manage = canManage(p);
               return (
-                <div class="project-card bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6" data-project={p.id} data-status={p.status}>
-                  <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                    <div class="min-w-0">
+                <div class="project-card bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700" data-project={p.id} data-status={p.status} data-deadline-passed={deadlinePassed ? 'true' : 'false'}>
+                  {/* Collapsed by default: the summary carries the number, title,
+                      badges and a one-line status. Detail lives in the body. */}
+                  <details class="group">
+                    <summary class="list-none [&::-webkit-details-marker]:hidden cursor-pointer select-none p-6 flex items-start gap-3 rounded-xl hover:bg-gray-50 dark:hover:bg-neutral-700/30 transition-colors">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4 mt-1 shrink-0 text-gray-400 dark:text-gray-500 transition-transform group-open:rotate-90" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+                      </svg>
+                      <div class="min-w-0 flex-1">
                       <div class="flex items-center gap-2 flex-wrap">
+                        {p.project_number != null && (
+                          <span class="shrink-0 text-base font-semibold text-gray-400 dark:text-gray-500 tabular-nums">{p.project_number}.</span>
+                        )}
                         <h3 class="text-base font-semibold text-gray-900 dark:text-white">{p.title}</h3>
                         {isClosed && (
                           <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-neutral-700 dark:text-gray-400">Closed</span>
+                        )}
+                        {deadlinePassed && (
+                          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">Deadline passed</span>
                         )}
                         {p.purpose && PURPOSE_LABELS[p.purpose as string] && (
                           <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-clif-burgundy/10 text-clif-burgundy dark:bg-clif-burgundy/20">{PURPOSE_LABELS[p.purpose as string]}</span>
@@ -233,20 +250,30 @@ const PURPOSE_OPTIONS = Object.entries(PURPOSE_LABELS).map(([value, label]) => (
                           <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">Prelim results not shared</span>
                         )}
                       </div>
+                      {/* Stays visible while collapsed — enough to scan without opening. */}
+                      <div class="flex flex-wrap gap-x-4 gap-y-1 mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                        <span class="ran-summary">{ranCount} / {sites.length} sites have run this</span>
+                        {p.results_deadline && (
+                          <span class={deadlinePassed ? 'text-red-500 dark:text-red-400 font-medium' : ''}>
+                            Box upload deadline: {formatDeadline(p.results_deadline as string)}
+                            {deadlinePassed && ' (passed)'}
+                          </span>
+                        )}
+                      </div>
+                      </div>
+                    </summary>
+
+                    <div class="px-6 pb-6">
+                      <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                        <div class="min-w-0">
                       {p.description && (
-                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1 whitespace-pre-line">{p.description}</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-line">{p.description}</p>
                       )}
                       <div class="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-gray-500 dark:text-gray-400">
                         <span>By {p.creator_name || 'Unknown'}</span>
                         <span>Requested: {formatDate(p.created_at as string)}</span>
                         {p.purpose_detail && (
                           <span>Purpose: {PURPOSE_LABELS[p.purpose as string] || p.purpose} — {p.purpose_detail}</span>
-                        )}
-                        {p.results_deadline && (
-                          <span class={!isClosed && isDeadlinePassed(p.results_deadline as string) ? 'text-red-500 dark:text-red-400 font-medium' : ''}>
-                            Box upload deadline: {formatDeadline(p.results_deadline as string)}
-                            {!isClosed && isDeadlinePassed(p.results_deadline as string) && ' (passed)'}
-                          </span>
                         )}
                         {p.repo_url && (
                           <a href={p.repo_url} target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:underline">Repo &#8599;</a>
@@ -368,7 +395,7 @@ const PURPOSE_OPTIONS = Object.entries(PURPOSE_LABELS).map(([value, label]) => (
                   <div class="mt-4 pt-4 border-t border-gray-100 dark:border-neutral-700">
                     <div class="flex items-center justify-between mb-3">
                       <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Sites that have run this</h4>
-                      <span class="text-xs text-gray-500 dark:text-gray-400">{ranCount} / {sites.length} sites</span>
+                      <span class="ran-count text-xs text-gray-500 dark:text-gray-400">{ranCount} / {sites.length} sites</span>
                     </div>
                     {sites.length === 0 ? (
                       <p class="text-xs text-gray-400 dark:text-gray-500 italic">No sites on record.</p>
@@ -385,6 +412,7 @@ const PURPOSE_OPTIONS = Object.entries(PURPOSE_LABELS).map(([value, label]) => (
                                 title={editable ? '' : "Only this site's data editor (or an admin) can change this"}>
                                 <input
                                   type="checkbox"
+                                  autocomplete="off"
                                   class="site-run-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy disabled:opacity-50"
                                   data-project-id={p.id}
                                   data-site-id={s.id}
@@ -409,6 +437,8 @@ const PURPOSE_OPTIONS = Object.entries(PURPOSE_LABELS).map(([value, label]) => (
                       </div>
                     )}
                   </div>
+                    </div>
+                  </details>
                 </div>
               );
             })}
@@ -451,7 +481,12 @@ const PURPOSE_OPTIONS = Object.entries(PURPOSE_LABELS).map(([value, label]) => (
         if (panelRuns) panelRuns.classList.remove('hidden');
         var visible = 0;
         document.querySelectorAll('.project-card').forEach(function (c) {
-          var hide = activeOnly && c.getAttribute('data-status') === 'closed';
+          // "Active" means still open AND still within its deadline. Both kinds
+          // remain listed under All Runs.
+          var inactive =
+            c.getAttribute('data-status') === 'closed' ||
+            c.getAttribute('data-deadline-passed') === 'true';
+          var hide = activeOnly && inactive;
           c.classList.toggle('hidden', hide);
           if (!hide) visible++;
         });
@@ -655,6 +690,22 @@ const PURPOSE_OPTIONS = Object.entries(PURPOSE_LABELS).map(([value, label]) => (
         });
       });
 
+      // Recompute the "N / M sites" counters for a card from its checkboxes.
+      // Lets a site toggle update in place instead of reloading — a reload
+      // would bounce the user back to the default Create tab and re-collapse
+      // every card.
+      function refreshRanCounts(card) {
+        if (!card) return;
+        var boxes = card.querySelectorAll('.site-run-checkbox');
+        var total = boxes.length;
+        var count = 0;
+        boxes.forEach(function (b) { if (b.checked) count++; });
+        var summary = card.querySelector('.ran-summary');
+        if (summary) summary.textContent = count + ' / ' + total + ' sites have run this';
+        var header = card.querySelector('.ran-count');
+        if (header) header.textContent = count + ' / ' + total + ' sites';
+      }
+
       // Per-site run checkboxes
       document.querySelectorAll('.site-run-checkbox').forEach(function (box) {
         box.addEventListener('change', async function () {
@@ -670,7 +721,8 @@ const PURPOSE_OPTIONS = Object.entries(PURPOSE_LABELS).map(([value, label]) => (
             }),
           });
           if (res.ok) {
-            window.location.reload();
+            self.disabled = false;
+            refreshRanCounts(self.closest('.project-card'));
           } else {
             var data = await res.json();
             alert(data.error || 'Failed to update');
