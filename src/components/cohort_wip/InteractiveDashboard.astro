@@ -999,7 +999,12 @@ const categories = Array.from(groupedChars.keys());
     return lower === 'years' ||
            lower === 'n: hospitalizations' ||
            lower === 'n: unique patients' ||
-           lower === 'n: hospitals';
+           lower === 'n: hospitals' ||
+           // Not a patient count — millions of ventilator hours can never
+           // identify anyone, so the n < 10 rule must not blank it. Median /
+           // IQR measures are already exempt via valueHasIQR; this one is a
+           // bare number, so it needs naming.
+           lower === 'ventilator hours (millions)';
   }
 
   // Check if a value has n < 10 (for privacy protection)
@@ -1010,8 +1015,14 @@ const categories = Array.from(groupedChars.keys());
     if (valueHasIQR(value)) return false;
 
     // Extract the first numeric value (before parentheses or brackets)
-    const numericMatch = value.match(/^\s*([\d,]+)/);
+    const numericMatch = value.match(/^\s*([\d,]+)(\.\d+)?/);
     if (numericMatch) {
+      // A patient count is a whole number. Decimals are derived measures —
+      // "2.58" million ventilator hours, a standalone rate — and the n < 10
+      // rule doesn't apply to them. Without this the old pattern read "2.58"
+      // as n = 2 and blanked every site's ventilator hours while leaving the
+      // consortium total (29) visible.
+      if (numericMatch[2]) return false;
       const num = parseInt(numericMatch[1].replace(/,/g, ''), 10);
       return num < 10;
     }
