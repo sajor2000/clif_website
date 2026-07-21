@@ -289,6 +289,54 @@ const PURPOSE_OPTIONS = Object.entries(PURPOSE_LABELS).map(([value, label]) => (
 
                     {manage && (
                       <div class="flex items-center gap-3 shrink-0">
+                        <button
+                          class={`status-project-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-clif-burgundy/50 ${
+                            isClosed
+                              ? 'border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 dark:border-neutral-600 dark:text-gray-200 dark:bg-neutral-800 dark:hover:bg-neutral-700'
+                              : 'bg-clif-burgundy text-white hover:bg-clif-burgundy/90'
+                          }`}
+                          data-project-id={p.id}
+                          data-next={isClosed ? 'open' : 'closed'}
+                        >
+                          {isClosed ? (
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                          ) : (
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          )}
+                          {isClosed ? 'Reopen run' : 'Close run'}
+                        </button>
+                        <span class="group relative inline-flex">
+                          <button
+                            type="button"
+                            class="inline-flex items-center justify-center w-4 h-4 rounded-full border border-gray-400 text-gray-500 dark:border-gray-500 dark:text-gray-400 text-[10px] leading-none font-semibold hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-200 focus:outline-none focus:ring-2 focus:ring-clif-burgundy/50"
+                            aria-label={isClosed ? 'What reopening does' : 'What closing does'}
+                          >i</button>
+                          <span
+                            role="note"
+                            class="pointer-events-none invisible opacity-0 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 transition-opacity absolute right-0 top-full mt-2 z-20 w-72 rounded-lg bg-gray-900 dark:bg-neutral-700 text-white text-xs leading-relaxed p-3 shadow-lg text-left font-normal normal-case"
+                          >
+                            {isClosed ? (
+                              <>
+                                <strong class="block mb-1">Reopening this run</strong>
+                                Requests for runs open again — sites can submit new data for this project.
+                                Members will see it in their pending tasks again, and sites that still owe a
+                                run can be notified about it.
+                              </>
+                            ) : (
+                              <>
+                                <strong class="block mb-1">Closing this run</strong>
+                                Requests for runs are closed — sites are no longer submitting new data for
+                                this project. Members will also stop seeing it in their pending tasks, and
+                                will no longer be notified that a run is still pending at their site.
+                              </>
+                            )}
+                          </span>
+                        </span>
+                        <span class="w-px h-4 bg-gray-200 dark:bg-neutral-600" aria-hidden="true"></span>
                         <button class="notify-project-btn text-xs text-clif-burgundy hover:text-clif-burgundy/80 underline" data-project-id={p.id} title="Email all approved members that this run is ready">Notify members</button>
                         <button class="edit-project-btn text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline" data-project-id={p.id}>Edit</button>
                         <button class="delete-project-btn text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 underline" data-project-id={p.id}>Delete</button>
@@ -356,20 +404,34 @@ const PURPOSE_OPTIONS = Object.entries(PURPOSE_LABELS).map(([value, label]) => (
                         {sites.map((s) => {
                           const checked = ranSites.has(s.id as string);
                           const editable = !isClosed && editableSiteIds.has(s.id as string);
+                          // The creator (or an admin) can nudge a site that hasn't run yet.
+                          const canNudge = !isClosed && !checked && canManage(p);
                           return (
-                            <label class={`flex items-center gap-2 text-sm ${editable ? 'cursor-pointer text-gray-700 dark:text-gray-300' : 'text-gray-500 dark:text-gray-400'}`}
-                              title={editable ? '' : "Only this site's data editor (or an admin) can change this"}>
-                              <input
-                                type="checkbox"
-                                autocomplete="off"
-                                class="site-run-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy disabled:opacity-50"
-                                data-project-id={p.id}
-                                data-site-id={s.id}
-                                checked={checked}
-                                disabled={!editable}
-                              />
-                              <span class="truncate">{s.site_name}</span>
-                            </label>
+                            <div class="flex items-center gap-2 min-w-0">
+                              <label class={`flex items-center gap-2 text-sm min-w-0 flex-1 ${editable ? 'cursor-pointer text-gray-700 dark:text-gray-300' : 'text-gray-500 dark:text-gray-400'}`}
+                                title={editable ? '' : "Only this site's data editor (or an admin) can change this"}>
+                                <input
+                                  type="checkbox"
+                                  autocomplete="off"
+                                  class="site-run-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy disabled:opacity-50"
+                                  data-project-id={p.id}
+                                  data-site-id={s.id}
+                                  checked={checked}
+                                  disabled={!editable}
+                                />
+                                <span class="truncate">{s.site_name}</span>
+                              </label>
+                              {canNudge && (
+                                <button
+                                  type="button"
+                                  class="nudge-site-btn shrink-0 text-[11px] font-medium text-clif-burgundy hover:text-clif-burgundy/80 hover:underline"
+                                  data-project-id={p.id}
+                                  data-site-id={s.id}
+                                  data-site-name={s.site_name}
+                                  title={`Remind ${s.site_name}'s data editor to run this project`}
+                                >Remind</button>
+                              )}
+                            </div>
                           );
                         })}
                       </div>
@@ -581,6 +643,35 @@ const PURPOSE_OPTIONS = Object.entries(PURPOSE_LABELS).map(([value, label]) => (
         });
       });
 
+      // Close / reopen
+      document.querySelectorAll('.status-project-btn').forEach(function (btn) {
+        btn.addEventListener('click', async function () {
+          var pid = this.getAttribute('data-project-id');
+          var next = this.getAttribute('data-next');
+          var msg = next === 'closed'
+            ? 'Close this project run?\n\nRequests for runs will be closed — sites can no longer submit new data for this project. Members will stop seeing it in their pending tasks and will no longer be notified that a run is pending at their site.'
+            : 'Reopen this project run?\n\nSites can submit new data again, and it will return to members\' pending tasks.';
+          if (!confirm(msg)) return;
+          var self = this;
+          var original = self.textContent;
+          self.disabled = true;
+          self.textContent = next === 'closed' ? 'Closing...' : 'Reopening...';
+          var res = await fetch('/api/project-runs/set-status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ projectId: pid, status: next }),
+          });
+          if (res.ok) {
+            window.location.reload();
+          } else {
+            var err = await res.json().catch(function () { return {}; });
+            alert(err.error || 'Failed to update status.');
+            self.textContent = original;
+            self.disabled = false;
+          }
+        });
+      });
+
       // Delete
       document.querySelectorAll('.delete-project-btn').forEach(function (btn) {
         btn.addEventListener('click', async function () {
@@ -636,6 +727,41 @@ const PURPOSE_OPTIONS = Object.entries(PURPOSE_LABELS).map(([value, label]) => (
             var data = await res.json();
             alert(data.error || 'Failed to update');
             self.checked = !self.checked;
+            self.disabled = false;
+          }
+        });
+      });
+
+      // "Remind" — nudge a site's data editor(s) to run this project.
+      document.querySelectorAll('.nudge-site-btn').forEach(function (btn) {
+        btn.addEventListener('click', async function () {
+          var self = this;
+          var siteName = self.getAttribute('data-site-name') || 'this site';
+          if (!confirm('Send a reminder to ' + siteName + "'s data editor to run this project?")) return;
+          var original = self.textContent;
+          self.disabled = true;
+          self.textContent = 'Sending…';
+          try {
+            var res = await fetch('/api/project-runs/nudge', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                projectId: self.getAttribute('data-project-id'),
+                siteId: self.getAttribute('data-site-id'),
+              }),
+            });
+            var data = await res.json();
+            if (res.ok) {
+              self.textContent = 'Reminded ✓';
+              self.classList.add('text-green-600');
+            } else {
+              alert(data.error || 'Failed to send reminder');
+              self.textContent = original;
+              self.disabled = false;
+            }
+          } catch (e) {
+            alert('Failed to send reminder');
+            self.textContent = original;
             self.disabled = false;
           }
         });

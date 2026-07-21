@@ -3,6 +3,7 @@ export const prerender = false;
 
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PortalNav from '../../components/portal/PortalNav.astro';
+import PendingTasks from '../../components/portal/PendingTasks.astro';
 
 const profile = Astro.locals.user;
 
@@ -35,6 +36,8 @@ const portalSections = [
           </h1>
           <p class="text-gray-600 dark:text-gray-400 mt-2">Access consortium data and resources</p>
         </div>
+
+        {profile?.id && <PendingTasks userId={profile.id} role={profile.role} />}
 
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {portalSections.map((section) => (
