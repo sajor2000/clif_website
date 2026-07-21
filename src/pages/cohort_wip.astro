@@ -146,45 +146,49 @@ const subsByParent = Object.fromEntries(
         </div>
       </div>
 
-      <!-- Cohort Picker (two-level: Overall vs Critically ill -> type) -->
-      <div class="max-w-3xl mx-auto mb-10">
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 md:p-5">
-          <div class="flex flex-col sm:flex-row sm:items-center gap-3">
-            <span class="text-sm font-semibold text-gray-500 uppercase tracking-wide shrink-0">Cohort</span>
-            <!-- Level 1 -->
-            <div class="inline-flex items-center gap-1.5">
-              <div class="inline-flex bg-gray-100 rounded-lg p-1 shadow-inner">
-                {VISIBLE_GROUPS.map((g) => ({ g, label: GROUP_LABELS[g] })).map((lvl) => (
-                  <button
-                    data-cohort-group={lvl.g}
-                    class="cohort-group-btn px-4 py-2 text-sm font-semibold rounded-md transition-all duration-200 text-gray-700 hover:text-gray-900"
-                  >
-                    {lvl.label}
-                  </button>
-                ))}
-              </div>
+      {/* Cohort picker. Deliberately not a card: it sat directly above the tab
+          bar, so two stacked panels read as competing chrome. An inline control
+          keeps the tab bar the only horizontal band here. */}
+      <div class="max-w-3xl mx-auto mb-8 text-center">
+        <div class="inline-flex flex-wrap items-center justify-center gap-2">
+          <span class="text-sm font-semibold text-gray-500 uppercase tracking-wide shrink-0">Cohort</span>
+          {/* Level 1 — only meaningful with more than one group to choose between.
+              With `overall_ward` hidden there is exactly one, so the toggle would
+              have nothing to toggle to and would just restate the dropdown. */}
+          {VISIBLE_GROUPS.length > 1 && (
+            <div class="inline-flex bg-gray-100 rounded-lg p-1 shadow-inner">
+              {VISIBLE_GROUPS.map((g) => ({ g, label: GROUP_LABELS[g] })).map((lvl) => (
+                <button
+                  data-cohort-group={lvl.g}
+                  class="cohort-group-btn px-4 py-2 text-sm font-semibold rounded-md transition-all duration-200 text-gray-700 hover:text-gray-900"
+                >
+                  {lvl.label}
+                </button>
+              ))}
             </div>
-            <!-- Level 2 (critically-ill type) -->
-            <div id="cohort-type-wrap" class="flex-1 hidden">
-              <select
-                id="cohort-type-select"
-                class="w-full bg-white border-2 border-gray-300 rounded-lg px-3 py-2 text-sm font-medium text-gray-800 focus:border-clif-burgundy focus:outline-none"
-              >
-                {critCohorts.map((c) => <option value={c.key}>{c.label}</option>)}
-              </select>
-            </div>
-            <!-- Level 3 (sub-group: advanced_resp / vaso ICU & ED splits) -->
-            <div id="cohort-sub-wrap" class="flex-1 hidden">
-              <select
-                id="cohort-sub-select"
-                class="w-full bg-white border-2 border-gray-300 rounded-lg px-3 py-2 text-sm font-medium text-gray-800 focus:border-clif-burgundy focus:outline-none"
-              >
-                <!-- populated by JS based on the selected type -->
-              </select>
-            </div>
+          )}
+          <!-- Level 2 (critically-ill type) -->
+          <div id="cohort-type-wrap" class="hidden">
+            <select
+              id="cohort-type-select"
+              aria-label="Cohort"
+              class="min-w-[15rem] bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm font-medium text-gray-800 shadow-sm focus:border-clif-burgundy focus:outline-none focus:ring-1 focus:ring-clif-burgundy"
+            >
+              {critCohorts.map((c) => <option value={c.key}>{c.label}</option>)}
+            </select>
           </div>
-          <p id="cohort-description" class="text-sm text-gray-500 mt-3"></p>
+          <!-- Level 3 (sub-group: advanced_resp / vaso ICU & ED splits) -->
+          <div id="cohort-sub-wrap" class="hidden">
+            <select
+              id="cohort-sub-select"
+              aria-label="Sub-cohort"
+              class="min-w-[11rem] bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm font-medium text-gray-800 shadow-sm focus:border-clif-burgundy focus:outline-none focus:ring-1 focus:ring-clif-burgundy"
+            >
+              <!-- populated by JS based on the selected type -->
+            </select>
+          </div>
         </div>
+        <p id="cohort-description" class="text-sm text-gray-500 mt-2"></p>
       </div>
 
       <!-- Per-cohort headline data + cohort event bus -->
