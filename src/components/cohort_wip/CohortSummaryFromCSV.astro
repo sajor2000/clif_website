@@ -671,10 +671,14 @@ const dopamineDose = d.dopamineDose;
         <div class="text-xs text-gray-500 mt-0.5">CDC Adult Sepsis Event criteria</div>
         {encountersWithSepsis && (
         <div class="mt-4">
-          <div class="unit-grid" role="img"
+          <div class="unit-grid is-people" role="img"
                aria-label={`${extractPercentage(encountersWithSepsis)} of encounters had at least one sepsis event`}>
             {waffle.map((i) => (
-              <span class={`unit-dot${i < sepsisLitDots ? ' is-sepsis' : ''}`}></span>
+              <svg class={`unit-person${i < sepsisLitDots ? ' is-sepsis' : ''}`}
+                   viewBox="0 0 12 24" aria-hidden="true">
+                <circle cx="6" cy="5" r="4" />
+                <path d="M6 11c-3.3 0-6 2.2-6 5v8h12v-8c0-2.8-2.7-5-6-5z" />
+              </svg>
             ))}
           </div>
           <div class="text-xs text-gray-700 mt-2.5 leading-snug">
@@ -1020,7 +1024,19 @@ const dopamineDose = d.dopamineDose;
     background: #e5e7eb; /* gray-200: the unlit remainder */
   }
   .unit-dot.is-on { background: #14b8a6; }     /* teal-500 */
-  .unit-dot.is-sepsis { background: #e11d48; } /* rose-600 — a distinct entity, not a rank */
+
+  /* Person pictograms — the isotype form. Taller than they are wide, so the
+     grid needs its own row gap and a wider max to stay legible. */
+  .unit-grid.is-people {
+    gap: 4px 3px;
+    max-width: 300px;
+  }
+  .unit-person {
+    width: 100%;
+    height: auto;
+    fill: #e5e7eb; /* gray-200: the unaffected remainder */
+  }
+  .unit-person.is-sepsis { fill: #e11d48; } /* rose-600 — a distinct entity, not a rank */
 
   .day-strip {
     display: grid;
