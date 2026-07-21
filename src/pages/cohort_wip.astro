@@ -118,7 +118,18 @@ const subsByParent = Object.fromEntries(
         </h1>
         <p class="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto mb-6">
           Insights from <span id="hero-patients" class="font-semibold text-clif-burgundy">—</span> unique
-          <span id="hero-cohort-label">patients</span>
+          {/* The definition lives on the hero's own "critically ill" wording. The
+              trigger is a sibling, not a child, because the cohort bus rewrites
+              hero-cohort-label via textContent and would wipe a nested icon. */}
+          <span id="hero-cohort-label">patients</span><button
+            id="critically-ill-trigger"
+            type="button"
+            class="text-blue-600 hover:text-blue-800 align-middle ml-0.5 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+            aria-label="How is “critically ill” defined?"
+            title="How is “critically ill” defined?"
+          ><svg class="w-4 h-4 inline-block" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"
+            ><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg
+          ></button>
           across <span id="hero-encounters" class="font-semibold text-clif-burgundy">—</span> encounter blocks
           from <span id="hero-hospitals" class="font-semibold text-clif-burgundy">—</span> hospitals
         </p>
@@ -138,15 +149,17 @@ const subsByParent = Object.fromEntries(
           <div class="flex flex-col sm:flex-row sm:items-center gap-3">
             <span class="text-sm font-semibold text-gray-500 uppercase tracking-wide shrink-0">Cohort</span>
             <!-- Level 1 -->
-            <div class="inline-flex bg-gray-100 rounded-lg p-1 shadow-inner">
-              {VISIBLE_GROUPS.map((g) => ({ g, label: GROUP_LABELS[g] })).map((lvl) => (
-                <button
-                  data-cohort-group={lvl.g}
-                  class="cohort-group-btn px-4 py-2 text-sm font-semibold rounded-md transition-all duration-200 text-gray-700 hover:text-gray-900"
-                >
-                  {lvl.label}
-                </button>
-              ))}
+            <div class="inline-flex items-center gap-1.5">
+              <div class="inline-flex bg-gray-100 rounded-lg p-1 shadow-inner">
+                {VISIBLE_GROUPS.map((g) => ({ g, label: GROUP_LABELS[g] })).map((lvl) => (
+                  <button
+                    data-cohort-group={lvl.g}
+                    class="cohort-group-btn px-4 py-2 text-sm font-semibold rounded-md transition-all duration-200 text-gray-700 hover:text-gray-900"
+                  >
+                    {lvl.label}
+                  </button>
+                ))}
+              </div>
             </div>
             <!-- Level 2 (critically-ill type) -->
             <div id="cohort-type-wrap" class="flex-1 hidden">
@@ -235,17 +248,12 @@ const subsByParent = Object.fromEntries(
         <div id="content-summary" class="tab-content">
           <div class="text-center mb-8">
             <h2 class="text-3xl font-bold text-gray-800 mb-3">Summary Statistics</h2>
+            {/* Names the cohort actually selected. The span is repopulated by the
+                cohort bus on every change; the server-rendered default keeps it
+                correct before any JS runs. */}
             <p class="text-lg text-gray-600">
-              Quick overview of the CLIF consortium
-              <button
-                id="critically-ill-trigger"
-                class="text-blue-600 hover:text-blue-800 underline decoration-dotted underline-offset-2 cursor-help inline-flex items-center gap-0.5"
-              >
-                critically ill
-                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
-                </svg>
-              </button>
+              Quick overview of the
+              <span id="summary-cohort-name" class="font-semibold text-gray-800">{getCohort(DEFAULT_COHORT).label}</span>
               patient cohort characteristics
             </p>
           </div>
@@ -504,7 +512,13 @@ const subsByParent = Object.fromEntries(
         set('hero-patients', h.patients || '—');
         set('hero-encounters', h.encounters || '—');
         set('hero-hospitals', h.hospitals || '—');
-        set('hero-cohort-label', key === 'overall_ward' ? 'patients' : 'critically ill patients');
+        const isCritIll = key !== 'overall_ward';
+        set('hero-cohort-label', isCritIll ? 'critically ill patients' : 'patients');
+        // The definition only applies while a critically-ill cohort is selected.
+        document.getElementById('critically-ill-trigger')?.classList.toggle('hidden', !isCritIll);
+        // Summary subtitle names the selected cohort — including sub-cohorts,
+        // whose headline label already reads "<parent> — <split>".
+        if (h.label) set('summary-cohort-name', h.label);
         if (desc) desc.textContent = h.description || '';
         // Hourly tab only applies to cohorts that ship hourly data.
         if (tabHourly) tabHourly.classList.toggle('hidden', !h.hasHourly);
