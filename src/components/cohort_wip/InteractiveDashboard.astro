@@ -28,7 +28,9 @@ function toConsortiumJson(parsed: ParsedConsortiumData) {
 // Derive the Table view (characteristic x site, all-years "Overall" column) from
 // the same parse — headers are the site codes plus the ALL consortium aggregate.
 function deriveOverall(parsed: ParsedConsortiumData) {
-  const sites = [...parsed.allSites, AGGREGATE_SITE];
+  // Aggregate first, matching the public dashboard's "Consortium Aggregate"
+  // leading column; allSites is already in SITE_ORDER.
+  const sites = [AGGREGATE_SITE, ...parsed.allSites];
   const rows = parsed.characteristics.map((c) => {
     const values: Record<string, string> = {};
     for (const s of sites) {
@@ -4777,7 +4779,7 @@ const categories = Array.from(groupedChars.keys());
     // Build table headers - Characteristic + all site columns
     thead.innerHTML = `
       <th class="px-4 py-3 text-left font-semibold sticky left-0 bg-clif-burgundy z-10">Characteristic</th>
-      ${headers.map(header => `<th class="px-3 py-3 text-left font-semibold text-xs min-w-[100px] max-w-[150px]" style="word-wrap: break-word; white-space: normal;">${header}</th>`).join('')}
+      ${headers.map(header => `<th class="px-3 py-3 text-left font-semibold text-xs min-w-[100px] max-w-[150px]" style="word-wrap: break-word; white-space: normal;">${window.siteLabel(header)}</th>`).join('')}
     `;
 
     // Populate table body
@@ -4811,8 +4813,9 @@ const categories = Array.from(groupedChars.keys());
     // Use overall data for CSV export
     const { headers, data } = overallTableData;
 
-    // Build CSV header
-    let csv = 'Characteristic,' + headers.join(',') + '\n';
+    // Build CSV header — display names, matching the on-screen table and the
+    // public dashboard's export. `headers` stays the key for row lookups below.
+    let csv = 'Characteristic,' + headers.map(h => `"${window.siteLabel(h)}"`).join(',') + '\n';
 
     // Build CSV rows
     data.forEach(row => {

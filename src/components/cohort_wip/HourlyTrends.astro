@@ -527,7 +527,7 @@ const medicationsData = cohortsPayload[defaultHourlyCohort].medications;
     if (hasAllForTitle && individualSitesForTitle.length === 0) {
       titleText = `${categoryName}${medLabel} - Count (All Sites)`;
     } else if (individualSitesForTitle.length === 1 && !hasAllForTitle) {
-      titleText = `${categoryName}${medLabel} - Count (${individualSitesForTitle[0].toUpperCase()})`;
+      titleText = `${categoryName}${medLabel} - Count (${window.siteLabel(individualSitesForTitle[0])})`;
     } else {
       // Multiple sites selected - don't include site info in title
       titleText = `${categoryName}${medLabel} - Count`;
@@ -787,7 +787,7 @@ const medicationsData = cohortsPayload[defaultHourlyCohort].medications;
     if (hasAll && individualSites.length === 0) {
       titleText = `${categoryLabel} - Median Values (All Sites)`;
     } else if (individualSites.length === 1 && !hasAll) {
-      titleText = `${categoryLabel} - Median Values (${individualSites[0].toUpperCase()})`;
+      titleText = `${categoryLabel} - Median Values (${window.siteLabel(individualSites[0])})`;
     } else {
       // Multiple sites selected - don't include site info in title
       titleText = `${categoryLabel} - Median Values`;
