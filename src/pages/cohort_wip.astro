@@ -501,8 +501,7 @@ const subsByParent = Object.fromEntries(
           subWrap?.classList.add('hidden');
           return;
         }
-        const typeLabel = (Bus.headline(type).label) || 'All';
-        let html = `<option value="${type}">All ${typeLabel}</option>`;
+        let html = `<option value="${type}">All</option>`;
         subs.forEach((s) => { html += `<option value="${s.key}">${s.label}</option>`; });
         if (subSelect) { subSelect.innerHTML = html; subSelect.value = current; }
         subWrap?.classList.remove('hidden');
