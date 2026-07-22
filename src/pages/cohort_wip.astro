@@ -108,24 +108,46 @@ const subsByParent = Object.fromEntries(
   <script is:inline src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
   <div class="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-    {/* Wide by design: this is a dashboard of cards and charts, not prose, so it
-        earns the horizontal room. `container` is dropped deliberately — it caps
-        at 1536px on 2xl, which would override anything wider set here. Body text
-        below keeps its own narrower max-widths for readability. */}
-    <div class="mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-[1800px]">
+    {/* Trying the production cohort page's width (max-w-7xl = 1280px) for the
+        cleaner centered look; swap back to max-w-[1800px] to go wide again. */}
+    <div class="mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-7xl">
       <!-- Enhanced Hero Section -->
-      <div class="text-center mb-12 animate-fade-in">
+      <div class="relative text-center mb-12 animate-fade-in">
+        {/* Freshness + schema metadata as a corner chip: costs no vertical
+            space. Hidden on small screens where it would collide with the h1. */}
+        <div class="absolute top-0 right-0 hidden md:flex items-center gap-4 text-xs text-gray-500">
+          <span class="flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+            </svg>
+            Last updated: July 2026
+          </span>
+          <a
+            href="/data-dictionary/data-dictionary-2.1.0"
+            class="flex items-center gap-1.5 hover:text-clif-burgundy transition-colors"
+            title="View the CLIF 2.1.0 data dictionary"
+          >
+            <svg class="w-3.5 h-3.5 text-clif-burgundy" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+              <path d="M10 2c-4.418 0-8 1.343-8 3s3.582 3 8 3 8-1.343 8-3-3.582-3-8-3z"/>
+              <path d="M2 7.5V10c0 1.657 3.582 3 8 3s8-1.343 8-3V7.5c-1.73 1.13-4.72 1.75-8 1.75S3.73 8.63 2 7.5z"/>
+              <path d="M2 12.5V15c0 1.657 3.582 3 8 3s8-1.343 8-3v-2.5c-1.73 1.13-4.72 1.75-8 1.75s-6.27-.62-8-1.75z"/>
+            </svg>
+            Built on CLIF v2.1
+          </a>
+        </div>
         <h1 class="text-4xl md:text-5xl font-bold text-clif-burgundy mb-4 bg-clip-text text-transparent bg-gradient-to-r from-clif-burgundy to-clif-burgundy-dark">
           CLIF Cohort Dashboard
         </h1>
-        <p class="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto mb-6">
+        {/* whitespace-nowrap + no max-width: the sentence is short enough to own
+            one line at desktop widths; it re-wraps naturally on small screens. */}
+        <p class="text-lg md:text-xl text-gray-600 mx-auto mb-6 md:whitespace-nowrap">
           Insights from <span class="font-semibold text-clif-burgundy">{heroStats.patients}</span> unique
           {/* The definition lives on the hero's own "critically ill" wording; the
               trigger is a sibling of the phrase so the underline stops at the text. */}
           <span
             id="hero-cohort-label"
             class="text-blue-600 hover:text-blue-800 underline decoration-dotted underline-offset-2 cursor-help"
-          >patients</span><button
+          >critically ill patients</span><button
             id="critically-ill-trigger"
             type="button"
             class="text-blue-600 hover:text-blue-800 align-middle ml-0.5 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500/40"
@@ -134,61 +156,9 @@ const subsByParent = Object.fromEntries(
           ><svg class="w-4 h-4 inline-block" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"
             ><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg
           ></button>
-          across <span class="font-semibold text-clif-burgundy">{heroStats.encounters}</span> encounter blocks
+          across <span class="font-semibold text-clif-burgundy">{heroStats.encounters}</span> hospitalizations
           from <span class="font-semibold text-clif-burgundy">{heroStats.hospitals}</span> hospitals
         </p>
-        <div class="inline-flex items-center gap-6 text-sm text-gray-600 bg-white px-6 py-3 rounded-full shadow-sm">
-          <span class="flex items-center gap-2">
-            <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-            </svg>
-            Last updated: July 2026
-          </span>
-        </div>
-      </div>
-
-      {/* Cohort picker. Deliberately not a card: it sat directly above the tab
-          bar, so two stacked panels read as competing chrome. An inline control
-          keeps the tab bar the only horizontal band here. */}
-      <div class="max-w-3xl mx-auto mb-8 text-center">
-        <div class="inline-flex flex-wrap items-center justify-center gap-2">
-          <span class="text-sm font-semibold text-gray-500 uppercase tracking-wide shrink-0">Cohort</span>
-          {/* Level 1 — only meaningful with more than one group to choose between.
-              With `overall_ward` hidden there is exactly one, so the toggle would
-              have nothing to toggle to and would just restate the dropdown. */}
-          {VISIBLE_GROUPS.length > 1 && (
-            <div class="inline-flex bg-gray-100 rounded-lg p-1 shadow-inner">
-              {VISIBLE_GROUPS.map((g) => ({ g, label: GROUP_LABELS[g] })).map((lvl) => (
-                <button
-                  data-cohort-group={lvl.g}
-                  class="cohort-group-btn px-4 py-2 text-sm font-semibold rounded-md transition-all duration-200 text-gray-700 hover:text-gray-900"
-                >
-                  {lvl.label}
-                </button>
-              ))}
-            </div>
-          )}
-          <!-- Level 2 (critically-ill type) -->
-          <div id="cohort-type-wrap" class="hidden">
-            <select
-              id="cohort-type-select"
-              aria-label="Cohort"
-              class="min-w-[15rem] bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm font-medium text-gray-800 shadow-sm focus:border-clif-burgundy focus:outline-none focus:ring-1 focus:ring-clif-burgundy"
-            >
-              {critCohorts.map((c) => <option value={c.key}>{c.label}</option>)}
-            </select>
-          </div>
-          <!-- Level 3 (sub-group: advanced_resp / vaso ICU & ED splits) -->
-          <div id="cohort-sub-wrap" class="hidden">
-            <select
-              id="cohort-sub-select"
-              aria-label="Sub-cohort"
-              class="min-w-[11rem] bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm font-medium text-gray-800 shadow-sm focus:border-clif-burgundy focus:outline-none focus:ring-1 focus:ring-clif-burgundy"
-            >
-              <!-- populated by JS based on the selected type -->
-            </select>
-          </div>
-        </div>
       </div>
 
       <!-- Per-cohort headline data + cohort event bus -->
@@ -215,9 +185,42 @@ const subsByParent = Object.fromEntries(
 
       <!-- Tabbed Dashboard Section -->
       <section class="mb-16">
-        <!-- Tab Navigation -->
+        <!-- Tab Navigation (cohort picker rides in the same band, left of the
+             tabs: burgundy-tinted so it reads as a control, not another tab,
+             and global so every tab keeps access to it) -->
         <div class="flex justify-center mb-8">
-          <div class="inline-flex bg-gray-100 rounded-lg p-1 shadow-sm overflow-x-auto">
+          <div class="inline-flex items-stretch bg-gray-100 rounded-lg p-1 shadow-sm overflow-x-auto">
+            {VISIBLE_GROUPS.length > 1 && (
+              <span class="inline-flex">
+                {VISIBLE_GROUPS.map((g) => ({ g, label: GROUP_LABELS[g] })).map((lvl) => (
+                  <button
+                    data-cohort-group={lvl.g}
+                    class="cohort-group-btn px-4 py-2 text-sm font-semibold rounded-md transition-all duration-200 text-gray-700 hover:text-gray-900"
+                  >
+                    {lvl.label}
+                  </button>
+                ))}
+              </span>
+            )}
+            <span id="cohort-type-wrap" class="hidden">
+              <select
+                id="cohort-type-select"
+                aria-label="Cohort"
+                class="h-full cursor-pointer border-0 rounded-md px-3 py-3 text-xs md:text-base font-semibold bg-clif-burgundy/10 text-clif-burgundy focus:outline-none focus:ring-2 focus:ring-clif-burgundy/40"
+              >
+                {critCohorts.map((c) => <option value={c.key}>{c.label}</option>)}
+              </select>
+            </span>
+            <span id="cohort-sub-wrap" class="hidden">
+              <select
+                id="cohort-sub-select"
+                aria-label="Sub-cohort"
+                class="h-full cursor-pointer border-0 rounded-md px-3 py-3 text-xs md:text-base font-semibold bg-clif-burgundy/10 text-clif-burgundy focus:outline-none focus:ring-2 focus:ring-clif-burgundy/40 ml-1"
+              >
+                <!-- populated by JS based on the selected type -->
+              </select>
+            </span>
+            <div class="w-px self-stretch bg-gray-300 mx-2 my-1"></div>
             <button
               id="tab-summary"
               class="px-4 py-3 text-xs md:text-base font-semibold rounded-md transition-all duration-200 bg-clif-burgundy text-white shadow-md whitespace-nowrap"
@@ -253,18 +256,6 @@ const subsByParent = Object.fromEntries(
 
         <!-- Tab Content: Summary Statistics -->
         <div id="content-summary" class="tab-content">
-          <div class="text-center mb-8">
-            <h2 class="text-3xl font-bold text-gray-800 mb-3">Summary Statistics</h2>
-            {/* Names the cohort actually selected. The span is repopulated by the
-                cohort bus on every change; the server-rendered default keeps it
-                correct before any JS runs. */}
-            <p class="text-lg text-gray-600">
-              Quick overview of the
-              <span id="summary-cohort-name" class="font-semibold text-gray-800">{getCohort(DEFAULT_COHORT).label}</span>
-              patient cohort characteristics
-            </p>
-          </div>
-
           {PANEL_COHORTS.map((k) => <CohortSummaryFromCSV cohort={k} />)}
         </div>
 
@@ -523,9 +514,8 @@ const subsByParent = Object.fromEntries(
         const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
         // The hero is deliberately static (rendered from DEFAULT_COHORT at build
         // time) — it frames the dashboard as a whole, not the current selection.
-        // Summary subtitle names the selected cohort — including sub-cohorts,
-        // whose headline label already reads "<parent> — <split>".
-        if (h.label) set('summary-cohort-name', h.label);
+        // The summary subtitle no longer needs a name span: the picker itself
+        // sits inline in the sentence and shows the selection.
         // Hourly tab only applies to cohorts that ship hourly data.
         if (tabHourly) tabHourly.classList.toggle('hidden', !h.hasHourly);
         paintGroupButtons();
