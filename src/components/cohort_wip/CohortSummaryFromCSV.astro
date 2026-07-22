@@ -240,6 +240,16 @@ const admissionCounts = {
 };
 const admissionTotal = Object.values(admissionCounts).reduce((a, b) => a + b, 0);
 const admissionPct = (n: number) => `${pctOf(n, admissionTotal)}%`;
+// Legend rows: every category, sorted largest-first. Colors are fixed per
+// category (rose ramp, darkest = ED) so they follow the entity, not the rank.
+const admissionLegend = [
+  { label: 'ED', color: 'rgb(136, 19, 55)', n: admissionCounts.ed },
+  { label: 'OSH', color: 'rgb(159, 18, 57)', n: admissionCounts.osh },
+  { label: 'Elective', color: 'rgb(190, 18, 60)', n: admissionCounts.elective },
+  { label: 'Direct', color: 'rgb(225, 29, 72)', n: admissionCounts.direct },
+  { label: 'Facility', color: 'rgb(244, 63, 94)', n: admissionCounts.facility },
+  { label: 'Other', color: 'rgb(251, 113, 133)', n: admissionCounts.other },
+].sort((a, b) => b.n - a.n);
 
 // Bar widths and human-scale framings for the Clinical-course section. All
 // derived from the cell text so it holds for every cohort; each guard yields a
@@ -338,37 +348,37 @@ const dopamineDose = d.dopamineDose;
       <!-- Left Column: Key Stats Cards (Stacked) -->
       {/* flex column + grow on every tile: the rail stretches to match the
           right column's height, so both columns end on the same line. */}
-      <div class="flex-none w-max flex flex-col gap-3">
+      <div class="flex-none w-64 flex flex-col gap-3">
         <div class="bg-gradient-to-br from-slate-600 to-slate-700 text-white px-4 py-2 rounded-lg shadow min-w-full grow flex flex-col justify-center">
           <div class="text-xl font-bold">{extractNumber(uniquePatients)}</div>
-          <div class="text-xs opacity-90 whitespace-nowrap">Unique Patients</div>
+          <div class="text-xs opacity-90">Unique Patients</div>
         </div>
         <div class="bg-gradient-to-br from-slate-600 to-slate-700 text-white px-4 py-2 rounded-lg shadow min-w-full grow flex flex-col justify-center">
           <div class="text-xl font-bold">{extractNumber(encounterBlocks)}</div>
-          <div class="text-xs opacity-90 whitespace-nowrap">Total Hospitalizations</div>
+          <div class="text-xs opacity-90">Total Hospitalizations</div>
         </div>
         <div class="bg-gradient-to-br from-slate-600 to-slate-700 text-white px-4 py-2 rounded-lg shadow min-w-full grow flex flex-col justify-center">
           <div class="text-xl font-bold">{extractNumber(icuEncounters)}</div>
-          <div class="text-xs opacity-90 whitespace-nowrap">Hospitalizations with an ICU stay</div>
+          <div class="text-xs opacity-90">Hospitalizations with an ICU stay</div>
         </div>
         <div class="bg-gradient-to-br from-slate-600 to-slate-700 text-white px-4 py-2 rounded-lg shadow min-w-full grow flex flex-col justify-center">
           <div class="text-xl font-bold">{hospitals}</div>
-          <div class="text-xs opacity-90 whitespace-nowrap">Hospitals</div>
+          <div class="text-xs opacity-90">Hospitals</div>
         </div>
         <div class="bg-gradient-to-br from-slate-600 to-slate-700 text-white px-4 py-2 rounded-lg shadow min-w-full grow flex flex-col justify-center">
           <div class="text-xl font-bold">{years}</div>
-          <div class="text-xs opacity-90 whitespace-nowrap">Data Timespan</div>
+          <div class="text-xs opacity-90">Data Timespan</div>
         </div>
         <div class="bg-gradient-to-br from-slate-600 to-slate-700 text-white px-4 py-2 rounded-lg shadow min-w-full grow flex flex-col justify-center">
           <div class="text-xl font-bold">{extractPercentage(hospitalMortality)}</div>
-          <div class="text-xs opacity-90 whitespace-nowrap">Hospital Mortality</div>
+          <div class="text-xs opacity-90">Hospital Mortality</div>
         </div>
         {hasVent && (
         <div class="bg-gradient-to-br from-clif-burgundy to-clif-burgundy-dark text-white px-4 py-3 rounded-lg shadow min-w-full grow flex items-center gap-3">
           <div>
             <div class="text-xl font-bold">{extractPercentage(imvTotal)}</div>
-            <div class="text-[10px] opacity-75 whitespace-nowrap">Hospitalizations</div>
-            <div class="text-sm font-semibold whitespace-nowrap">Invasive Mechanical Ventilation Support</div>
+            <div class="text-[10px] opacity-75">Hospitalizations</div>
+            <div class="text-sm font-semibold">Invasive Mechanical Ventilation Support</div>
           </div>
           <svg class="w-12 h-12 opacity-90 breathing-lungs shrink-0 ml-auto" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 2c.5 0 1 .2 1 .5v3c2-1.5 4.5-2 6.5-.5 2.5 2 3 5.5 2.5 8.5-.5 3.5-2 7-4.5 9-1 .8-2 1-3 .5-.8-.4-1.5-1.2-2-2.5V21c0 .3-.5.5-1 .5s-1-.2-1-.5v-1c-.5 1.3-1.2 2.1-2 2.5-1 .5-2 .3-3-.5-2.5-2-4-5.5-4.5-9C.5 10.5 1 7 3.5 5c2-1.5 4.5-1 6.5.5v-3c0-.3.5-.5 1-.5zM6.5 7C5 7.5 4 9 3.5 11c-.5 2.5 0 5.5 1.5 7.5.5.8 1.2 1.5 2 1.8.3.1.5 0 .8-.2.8-.8 1.5-2.2 1.8-4 .2-1.2.2-2.5 0-3.8-.3-1.8-1-3.5-2-4.8-.3-.3-.7-.5-1.1-.5zm11 0c-.4 0-.8.2-1.1.5-1 1.3-1.7 3-2 4.8-.2 1.3-.2 2.6 0 3.8.3 1.8 1 3.2 1.8 4 .3.2.5.3.8.2.8-.3 1.5-1 2-1.8 1.5-2 2-5 1.5-7.5-.5-2-1.5-3.5-3-4z"/>
@@ -378,8 +388,8 @@ const dopamineDose = d.dopamineDose;
         <div class="bg-gradient-to-br from-clif-burgundy to-clif-burgundy-dark text-white px-4 py-3 rounded-lg shadow min-w-full grow flex items-center gap-3">
           <div>
             <div class="text-xl font-bold">{extractPercentage(vasopressorEncounters)}</div>
-            <div class="text-[10px] opacity-75 whitespace-nowrap">Hospitalizations</div>
-            <div class="text-sm font-semibold whitespace-nowrap">Vasopressor Support</div>
+            <div class="text-[10px] opacity-75">Hospitalizations</div>
+            <div class="text-sm font-semibold">Vasopressor Support</div>
           </div>
           <svg class="w-12 h-12 opacity-90 shrink-0 ml-auto" fill="none" stroke="currentColor" stroke-width="2" viewBox="8 0 48 80" aria-hidden="true">
             <rect x="12" y="8" width="32" height="32" rx="4" stroke-linejoin="round"/>
@@ -396,8 +406,8 @@ const dopamineDose = d.dopamineDose;
         <div class="bg-gradient-to-br from-clif-burgundy to-clif-burgundy-dark text-white px-4 py-3 rounded-lg shadow min-w-full grow flex items-center gap-3">
           <div>
             <div class="text-xl font-bold">{extractPercentage(crrt)}</div>
-            <div class="text-[10px] opacity-75 whitespace-nowrap">Hospitalizations</div>
-            <div class="text-sm font-semibold whitespace-nowrap">Continuous Renal Replacement Therapy</div>
+            <div class="text-[10px] opacity-75">Hospitalizations</div>
+            <div class="text-sm font-semibold">Continuous Renal Replacement Therapy</div>
           </div>
           <svg class="w-12 h-12 opacity-90 shrink-0 ml-auto" fill="none" stroke="currentColor" stroke-width="2" viewBox="-64 -32 176 168" aria-hidden="true">
             <path d="M15 -30 C-20 -25 -35 10 -35 45 C-35 80 -15 115 15 130 C45 145 70 140 82 115 C94 90 92 75 75 60 C65 50 62 48 68 38 C74 28 85 10 80 -8 C75 -26 45 -35 15 -30 Z"
@@ -493,7 +503,7 @@ const dopamineDose = d.dopamineDose;
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
           <!-- Encounter Types -->
-          <div class="bg-white p-4 rounded-lg shadow border border-gray-200 flex flex-col overflow-visible" style="min-height: 320px;">
+          <div class="bg-white p-4 rounded-lg shadow border border-gray-200 flex flex-col overflow-visible" style="min-height: 400px;">
             <h3 class="text-sm font-semibold text-gray-700">Encounter Types</h3>
             {/* The categories overlap (one encounter can be in several), so a
                 parts-of-whole donut would misstate them. Each bar is instead an
@@ -527,49 +537,30 @@ const dopamineDose = d.dopamineDose;
           </div>
 
           <!-- Admission Types -->
-          <div class="bg-white p-4 rounded-lg shadow border border-gray-200 flex flex-col overflow-visible" style="min-height: 320px;">
+          <div class="bg-white p-4 rounded-lg shadow border border-gray-200 flex flex-col overflow-visible" style="min-height: 400px;">
             <h3 class="text-sm font-semibold mb-2 text-gray-700">Admission Types</h3>
             <div class="flex flex-col items-center gap-2">
               <!-- Pie Chart -->
-              <div class="w-32 h-32 relative overflow-visible">
+              <div class="w-40 h-40 relative overflow-visible">
                 <canvas id={`admissionTypesChart-${uid}`}></canvas>
               </div>
-              <!-- Data List -->
+              <!-- Data List: all categories, largest first -->
               <div class="w-full space-y-1 text-xs">
-                <div class="flex justify-between items-center">
-                  <div class="flex items-center gap-2">
-                    <div class="w-3 h-3 rounded-full" style="background-color: rgb(136, 19, 55);"></div>
-                    <span class="text-gray-700">ED</span>
+                {admissionLegend.map((row) => (
+                  <div class="flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                      <div class="w-3 h-3 rounded-full" style={`background-color: ${row.color};`}></div>
+                      <span class="text-gray-700">{row.label}</span>
+                    </div>
+                    <span class="font-semibold text-gray-800">{admissionPct(row.n)}</span>
                   </div>
-                  <span class="font-semibold text-gray-800">{admissionPct(admissionCounts.ed)}</span>
-                </div>
-                <div class="flex justify-between items-center">
-                  <div class="flex items-center gap-2">
-                    <div class="w-3 h-3 rounded-full" style="background-color: rgb(159, 18, 57);"></div>
-                    <span class="text-gray-700">OSH</span>
-                  </div>
-                  <span class="font-semibold text-gray-800">{admissionPct(admissionCounts.osh)}</span>
-                </div>
-                <div class="flex justify-between items-center">
-                  <div class="flex items-center gap-2">
-                    <div class="w-3 h-3 rounded-full" style="background-color: rgb(190, 18, 60);"></div>
-                    <span class="text-gray-700">Elective</span>
-                  </div>
-                  <span class="font-semibold text-gray-800">{admissionPct(admissionCounts.elective)}</span>
-                </div>
-                <div class="flex justify-between items-center">
-                  <div class="flex items-center gap-2">
-                    <div class="w-3 h-3 rounded-full" style="background-color: rgb(225, 29, 72);"></div>
-                    <span class="text-gray-700">Direct</span>
-                  </div>
-                  <span class="font-semibold text-gray-800">{admissionPct(admissionCounts.direct)}</span>
-                </div>
+                ))}
               </div>
             </div>
           </div>
 
           <!-- Top Comorbidities - Packed Bubble -->
-          <div class="bg-white p-4 rounded-lg shadow border border-gray-200 flex flex-col" style="min-height: 320px;">
+          <div class="bg-white p-4 rounded-lg shadow border border-gray-200 flex flex-col" style="min-height: 400px;">
             <div class="flex justify-between items-center mb-2">
               <h3 class="text-sm font-semibold text-gray-700">Top Comorbidities</h3>
               <button id={`expandComorbidities-${uid}`} class="text-xs text-slate-600 hover:text-slate-800 underline">
@@ -577,7 +568,7 @@ const dopamineDose = d.dopamineDose;
               </button>
             </div>
             <div class="flex items-center justify-center flex-1">
-              <svg id={`comorbidityBubbleChart-${uid}`} class="w-full h-full" style="max-height: 240px;"></svg>
+              <svg id={`comorbidityBubbleChart-${uid}`} class="w-full h-full" style="max-height: 300px;"></svg>
             </div>
           </div>
 
@@ -649,9 +640,9 @@ const dopamineDose = d.dopamineDose;
             )}
 
             {icuEpisodes && (
-            <div class="bg-white p-4 rounded-lg shadow border border-gray-200 flex-1">
+            <div class="bg-white p-4 rounded-lg shadow border border-gray-200 flex-1 flex flex-col justify-center">
               <div class="flex items-baseline gap-2">
-                <span class="text-2xl font-bold text-gray-900">{extractNumber(icuEpisodes)}</span>
+                <span class="text-3xl font-bold text-gray-900">{extractNumber(icuEpisodes)}</span>
                 <span class="text-sm text-gray-600">ICU episodes</span>
               </div>
             </div>
@@ -672,28 +663,37 @@ const dopamineDose = d.dopamineDose;
             {(timeToExtubation || ventilatorHoursMillions) && (
             <div class="flex flex-col gap-4">
               {ventilatorHoursMillions && (
-              <div class="bg-white p-4 rounded-lg shadow border border-gray-200">
-                <div class="text-sm font-semibold text-gray-700">Total ventilator hours</div>
-                <div class="flex items-baseline gap-1.5 mt-1">
-                  <span class="text-2xl font-bold text-gray-900">{ventilatorHoursMillions}</span>
-                  <span class="text-sm text-gray-600">million hours</span>
-                </div>
+              <div class="relative overflow-hidden bg-white p-4 rounded-lg shadow border border-gray-200 flex-1 flex flex-col items-center justify-center text-center">
+                {/* Watermark clock, same treatment as the extubation card. */}
+                <svg class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-28 h-28 opacity-25 text-clif-burgundy" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="12" cy="12" r="8.5" stroke-width="1.4"/>
+                  <path stroke-width="1.4" stroke-linecap="round" d="M12 7.5V12l3 1.8"/>
+                </svg>
+                <div class="relative text-3xl font-bold text-black">{ventilatorHoursMillions} million</div>
+                <div class="relative text-sm text-black mt-1">ventilator hours</div>
               </div>
               )}
               {timeToExtubation && (
               <div class="relative overflow-hidden bg-white p-4 rounded-lg shadow border border-gray-200 flex-1 flex flex-col justify-center">
-                {/* Watermark hourglass, same treatment as the demographics row:
-                    behind the content, so it costs no layout space. */}
-                <svg class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 opacity-30 text-slate-400" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M6 2a1 1 0 000 2h.5v2.5c0 1.5.8 2.9 2.1 3.7l2 1.3c.3.2.3.6 0 .8l-2 1.3a4.4 4.4 0 00-2.1 3.7V20H6a1 1 0 000 2h12a1 1 0 000-2h-.5v-2.5c0-1.5-.8-2.9-2.1-3.7l-2-1.3a.5.5 0 010-.8l2-1.3c1.3-.8 2.1-2.2 2.1-3.7V4h.5a1 1 0 000-2H6z"/>
+                {/* Watermark extubation icon, same treatment as the demographics
+                    row: behind the content, so it costs no layout space. Outline
+                    head in profile; the ET tube line retracts out of the mouth
+                    along its own curve on a slow loop (static under
+                    prefers-reduced-motion). */}
+                <svg class="absolute top-[calc(50%+12px)] right-2 -translate-y-1/2 w-28 h-28 opacity-25 text-clif-burgundy" fill="none" stroke="currentColor" viewBox="0 0 32 32" aria-hidden="true">
+                  {/* outline head in profile, rotated 90° to lie supine
+                      (face up, neck to the left — patient-in-bed) */}
+                  <g transform="rotate(90 16 16)">
+                    <path stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" d="M16 29 V25.5 C16 24.1 15.1 23 13.8 22.4 L11 21.2 C10.6 21 10.45 20.6 10.5 20.2 C10.8 18.9 10.4 17.7 9.4 17.3 C9.9 17.05 9.9 16.55 9.4 16.3 L8.1 16.1 C7.5 16 7.3 15.5 7.6 15 L9.5 12 V10.5 C9.5 6.5 12.5 3 17 3 C23 3 28 8 28 14 C28 17.5 26.5 20.3 24.5 22 V29"/>
+                    {/* ET tube: mouth → throat; pathLength=100 lets the CSS
+                        dashoffset animation pull it out along its own curve */}
+                    <path class="ett-tube" pathLength="100" stroke-width="1.5" stroke-linecap="round" d="M2.2 16.5 L9.3 17.6 C14 18.4 18.7 20 18.7 23.9"/>
+                  </g>
                 </svg>
-                <div class="relative">
-                  <div class="text-sm font-semibold text-gray-700">Time to extubation</div>
-                  <div class="flex items-baseline gap-1.5 mt-1 whitespace-nowrap">
-                    <span class="text-2xl font-bold text-gray-900">{extractMedian(timeToExtubation)}</span>
-                    <span class="text-xs font-normal text-gray-800">[{extubQ1}, {extubQ3}]</span>
-                  </div>
-                  <div class="text-[11px] text-gray-500 mt-0.5">Median hours</div>
+                <div class="relative text-left">
+                  <div class="text-3xl font-bold text-black">{extractMedian(timeToExtubation)}</div>
+                  <div class="text-xs text-black mt-0.5">[{extubQ1}, {extubQ3}]</div>
+                  <div class="text-sm text-black mt-1">Median <span class="font-bold">hours</span> to extubation</div>
                 </div>
               </div>
               )}
@@ -705,7 +705,10 @@ const dopamineDose = d.dopamineDose;
                 filled = free, dark = still on support. */}
             {((vfdEncounters && vfdMedian) || (nidfdEncounters && nidfdMedian)) && (
             <div class="bg-white p-4 rounded-lg shadow border border-gray-200 lg:col-span-2 flex flex-col">
-              <div class="space-y-4">
+              {/* flex-1 + justify-evenly: when the card stretches for the row
+                  alignment, the two measures spread through the height instead
+                  of pooling empty space above the legend. */}
+              <div class="flex-1 flex flex-col justify-evenly gap-4">
                 {vfdEncounters && vfdMedian && (
                 <div>
                   <div class="flex items-baseline justify-between gap-x-4">
@@ -967,6 +970,26 @@ const dopamineDose = d.dopamineDose;
 
   .collapsible-header {
     cursor: pointer;
+  }
+
+  /* --- Extubation watermark ---------------------------------------------
+     The ET tube line is drawn mouth-first (pathLength=100), so sliding the
+     dash pattern toward the path start retracts the line out through the
+     mouth along its own curve. It holds clear, then fades back in place for
+     the next loop (fading in-place avoids reading as re-intubation).
+     Subtle + slow: it lives behind the stat as a low-opacity watermark. */
+  .ett-tube {
+    stroke-dasharray: 100;
+    animation: ett-pull-out 5s ease-in-out infinite;
+  }
+  @keyframes ett-pull-out {
+    0%, 28%   { stroke-dashoffset: 0; opacity: 1; }
+    55%, 72%  { stroke-dashoffset: 104; opacity: 1; }
+    73%       { stroke-dashoffset: 0; opacity: 0; }
+    92%, 100% { stroke-dashoffset: 0; opacity: 1; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ett-tube { animation: none; }
   }
 
   /* --- Unit charts -------------------------------------------------------
@@ -1357,20 +1380,24 @@ const dopamineDose = d.dopamineDose;
       // Calculate total
       const totalAdmissions = edCount + oshCount + electiveCount + directCount + facilityCount + otherCount;
 
+      // Slices largest-first (matching the sorted legend); each category keeps
+      // its fixed rose-ramp color, so color follows the entity, not the rank.
+      const admissionSlices = [
+        { label: 'ED', count: edCount, color: 'rgb(136, 19, 55)' },
+        { label: 'OSH', count: oshCount, color: 'rgb(159, 18, 57)' },
+        { label: 'Elective', count: electiveCount, color: 'rgb(190, 18, 60)' },
+        { label: 'Direct', count: directCount, color: 'rgb(225, 29, 72)' },
+        { label: 'Facility', count: facilityCount, color: 'rgb(244, 63, 94)' },
+        { label: 'Other', count: otherCount, color: 'rgb(251, 113, 133)' }
+      ].sort((a, b) => b.count - a.count);
+
       new Chart(admissionCtx, {
         type: 'doughnut',
         data: {
-          labels: ['ED', 'OSH', 'Elective', 'Direct', 'Facility', 'Other'],
+          labels: admissionSlices.map(s => s.label),
           datasets: [{
-            data: [edCount, oshCount, electiveCount, directCount, facilityCount, otherCount],
-            backgroundColor: [
-              'rgb(136, 19, 55)',    // rose-900
-              'rgb(159, 18, 57)',    // rose-800
-              'rgb(190, 18, 60)',    // rose-700
-              'rgb(225, 29, 72)',    // rose-600
-              'rgb(244, 63, 94)',    // rose-500
-              'rgb(251, 113, 133)'   // rose-400
-            ],
+            data: admissionSlices.map(s => s.count),
+            backgroundColor: admissionSlices.map(s => s.color),
             borderWidth: 2,
             borderColor: '#fff'
           }]
@@ -1583,7 +1610,7 @@ const dopamineDose = d.dopamineDose;
       const svg = byId('comorbidityBubbleChart');
       if (svg) {
         const width = svg.clientWidth || 300;
-        const height = 240; // Reduced height to match other cards
+        const height = 300; // Matches the svg max-height in the taller card
         createBubbleChart('comorbidityBubbleChart-' + uid, compactViewData, width, height);
       }
     }
