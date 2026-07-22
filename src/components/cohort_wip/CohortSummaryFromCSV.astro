@@ -341,7 +341,7 @@ const dopamineDose = d.dopamineDose;
       <div class="flex-none w-max flex flex-col gap-3">
         <div class="bg-gradient-to-br from-slate-600 to-slate-700 text-white px-4 py-2 rounded-lg shadow min-w-full grow flex flex-col justify-center">
           <div class="text-xl font-bold">{extractNumber(uniquePatients)}</div>
-          <div class="text-xs opacity-90 whitespace-nowrap">Unique Critically Ill Patients</div>
+          <div class="text-xs opacity-90 whitespace-nowrap">Unique Patients</div>
         </div>
         <div class="bg-gradient-to-br from-slate-600 to-slate-700 text-white px-4 py-2 rounded-lg shadow min-w-full grow flex flex-col justify-center">
           <div class="text-xl font-bold">{extractNumber(encounterBlocks)}</div>
@@ -367,7 +367,7 @@ const dopamineDose = d.dopamineDose;
         <div class="bg-gradient-to-br from-clif-burgundy to-clif-burgundy-dark text-white px-4 py-3 rounded-lg shadow min-w-full grow flex items-center gap-3">
           <div>
             <div class="text-xl font-bold">{extractPercentage(imvTotal)}</div>
-            <div class="text-[10px] opacity-75 whitespace-nowrap">Hospitalizations receiving</div>
+            <div class="text-[10px] opacity-75 whitespace-nowrap">Hospitalizations</div>
             <div class="text-sm font-semibold whitespace-nowrap">Invasive Mechanical Ventilation Support</div>
           </div>
           <svg class="w-12 h-12 opacity-90 breathing-lungs shrink-0 ml-auto" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -378,7 +378,7 @@ const dopamineDose = d.dopamineDose;
         <div class="bg-gradient-to-br from-clif-burgundy to-clif-burgundy-dark text-white px-4 py-3 rounded-lg shadow min-w-full grow flex items-center gap-3">
           <div>
             <div class="text-xl font-bold">{extractPercentage(vasopressorEncounters)}</div>
-            <div class="text-[10px] opacity-75 whitespace-nowrap">Hospitalizations receiving</div>
+            <div class="text-[10px] opacity-75 whitespace-nowrap">Hospitalizations</div>
             <div class="text-sm font-semibold whitespace-nowrap">Vasopressor Support</div>
           </div>
           <svg class="w-12 h-12 opacity-90 shrink-0 ml-auto" fill="none" stroke="currentColor" stroke-width="2" viewBox="8 0 48 80" aria-hidden="true">
@@ -396,7 +396,7 @@ const dopamineDose = d.dopamineDose;
         <div class="bg-gradient-to-br from-clif-burgundy to-clif-burgundy-dark text-white px-4 py-3 rounded-lg shadow min-w-full grow flex items-center gap-3">
           <div>
             <div class="text-xl font-bold">{extractPercentage(crrt)}</div>
-            <div class="text-[10px] opacity-75 whitespace-nowrap">Hospitalizations receiving</div>
+            <div class="text-[10px] opacity-75 whitespace-nowrap">Hospitalizations</div>
             <div class="text-sm font-semibold whitespace-nowrap">Continuous Renal Replacement Therapy</div>
           </div>
           <svg class="w-12 h-12 opacity-90 shrink-0 ml-auto" fill="none" stroke="currentColor" stroke-width="2" viewBox="-64 -32 176 168" aria-hidden="true">
@@ -1498,14 +1498,20 @@ const dopamineDose = d.dopamineDose;
       const offsetX = width / 2;
       const offsetY = (height / 2) + 10; // Move down by 10px
 
+      // Center on the packed cluster's actual bounding box, not packSize/2 —
+      // the pack layout doesn't fill its size box symmetrically, so using its
+      // nominal center drifts the cluster toward one edge of the card.
+      const centerX = (bounds.minX + bounds.maxX) / 2;
+      const centerY = (bounds.minY + bounds.maxY) / 2;
+
       const bubble = svg.selectAll('.bubble')
         .data(nodes)
         .enter()
         .append('g')
         .attr('class', 'bubble')
         .attr('transform', d => {
-          const x = offsetX + (d.x - packSize / 2) * scale;
-          const y = offsetY + (d.y - packSize / 2) * scale;
+          const x = offsetX + (d.x - centerX) * scale;
+          const y = offsetY + (d.y - centerY) * scale;
           return `translate(${x},${y})`;
         });
 
