@@ -1190,12 +1190,17 @@ const categories = Array.from(groupedChars.keys());
        selectedCharacteristic === '__FIRST_ADMISSION_LOCATION_CONSOLIDATED__' ||
        selectedCharacteristic === '__ENCOUNTER_TYPE_CONSOLIDATED__');
 
-    // For consolidated multi-type items, offer stacked vs grouped bar options
+    // For consolidated multi-type items, offer stacked vs grouped bar options.
+    // Exception: encounter-type categories OVERLAP (one encounter can be ICU +
+    // vaso + advanced resp), so a 100%-stacked chart would fabricate a
+    // partition out of double-counted encounters — grouped bars only.
     if (isConsolidatedMultiType) {
-      const types = [
-        { value: 'stacked', label: 'Stacked' },
-        { value: 'grouped', label: 'Bar' }
-      ];
+      const types = selectedCharacteristic === '__ENCOUNTER_TYPE_CONSOLIDATED__'
+        ? [{ value: 'grouped', label: 'Bar' }]
+        : [
+            { value: 'stacked', label: 'Stacked' },
+            { value: 'grouped', label: 'Bar' }
+          ];
 
       // Line chart: only for Year grouping (temporal trends)
       if (groupBy === 'year') {
@@ -3334,7 +3339,7 @@ const categories = Array.from(groupedChars.keys());
 
     // Sort labels: alphabetically for sites, numerically for years
     if (groupBy === 'site') {
-      labels.sort((a, b) => a.localeCompare(b));
+      labels.sort(compareSiteLabels);
     } else {
       labels.sort((a, b) => parseInt(a) - parseInt(b));
     }
@@ -3901,7 +3906,7 @@ const categories = Array.from(groupedChars.keys());
     // Sort labels
     let labels = Array.from(allLabels);
     if (groupBy === 'site') {
-      labels.sort((a, b) => a.localeCompare(b));
+      labels.sort(compareSiteLabels);
     } else {
       labels.sort((a, b) => parseInt(a) - parseInt(b));
     }
@@ -4259,7 +4264,7 @@ const categories = Array.from(groupedChars.keys());
     // Sort labels
     let labels = Array.from(allLabels);
     if (groupBy === 'site') {
-      labels.sort((a, b) => a.localeCompare(b));
+      labels.sort(compareSiteLabels);
     } else {
       labels.sort((a, b) => parseInt(a) - parseInt(b));
     }
@@ -4444,13 +4449,44 @@ const categories = Array.from(groupedChars.keys());
       });
     });
 
+    // Encounter-type categories OVERLAP, so the sum above double-counts
+    // encounters (an encounter can be ICU + vaso + advanced resp at once).
+    // Use the real denominator instead — 'N: Encounter blocks' per site/year —
+    // so each bar reads as a true % of that site's/year's encounters.
+    if (demographicName === 'Encounter Type') {
+      const N_VAR = 'N: Encounter blocks';
+      const parseN = (v) => {
+        const n = parseInt(String(v ?? '').replace(/[",]/g, ''), 10);
+        return isNaN(n) ? 0 : n;
+      };
+      Array.from(allLabels).forEach(label => { totalCountsPerLabel[label] = 0; });
+      if (useOverallColumns) {
+        const nChar = consortiumData.characteristics.find(c => c.variable.trim() === N_VAR);
+        if (nChar) {
+          selectedSites.forEach(site => {
+            if (allLabels.has(site)) totalCountsPerLabel[site] = parseN(nChar.sites[site]?.['Overall']);
+          });
+        }
+      } else {
+        filteredData.forEach(d => {
+          let v = d.characteristics[N_VAR];
+          if (!v) {
+            const k = Object.keys(d.characteristics).find(key => key.trim() === N_VAR);
+            if (k) v = d.characteristics[k];
+          }
+          const label = groupBy === 'site' ? d.site : d.year;
+          if (allLabels.has(label)) totalCountsPerLabel[label] += parseN(v);
+        });
+      }
+    }
+
     // Build datasets
     const datasets = [];
 
     // Get sorted labels first (needed for single-type site coloring)
     let sortedLabels = Array.from(allLabels);
     if (groupBy === 'site') {
-      sortedLabels.sort((a, b) => a.localeCompare(b));
+      sortedLabels.sort(compareSiteLabels);
     } else {
       sortedLabels.sort((a, b) => parseInt(a) - parseInt(b));
     }
@@ -4709,22 +4745,50 @@ const categories = Array.from(groupedChars.keys());
     }
   }
 
-  // Site-specific colors for consistent visualization across all charts
-  // These colors are unique to sites and NOT used by any other chart elements
+  // Site-specific colors for consistent visualization across all charts.
+  // Each site wears its university's brand color; where a primary would
+  // collide with another site's (the navy and maroon clusters), the school's
+  // secondary brand color is used instead:
+  //   Emory Blue #012169 · MIT gray #8A8B8C (MIMIC) · Hopkins Spirit Blue
+  //   #68ACE5 · Northwestern Purple #4E2A84 · OHSU blue #5D98CA · Rush green
+  //   #006747 · Chicago Maroon #800000 · UCSF teal #18A3AC · Gopher Gold
+  //   #FFCC33 · Penn Red #990000 · Sunnybrook blue #005EB8 (shown as Toronto)
   const SITE_COLORS = {
-    'emory':    'rgba(165, 42, 42, 0.7)',     // brown
-    'mimic':    'rgba(0, 114, 178, 0.7)',     // blue
-    'jhu':      'rgba(0, 114, 178, 0.7)',     // blue
-    'nu':       'rgba(0, 158, 115, 0.7)',     // teal-green
-    'ohsu':     'rgba(230, 159, 0, 0.7)',     // golden yellow
-    'rush':     'rgba(128, 0, 128, 0.7)',     // purple
-    'ucmc':     'rgba(86, 180, 233, 0.7)',    // sky blue
-    'ucsf':     'rgba(240, 128, 128, 0.7)',   // light coral/pink
-    'umich':    'rgba(105, 105, 105, 0.7)',   // dim gray
-    'umn':      'rgba(0, 128, 0, 0.7)',       // green
-    'upenn':    'rgba(255, 127, 14, 0.7)',    // orange
-    'utoronto': 'rgba(139, 0, 0, 0.7)',       // dark red
+    'emory':    'rgba(1, 33, 105, 0.7)',
+    'mimic':    'rgba(138, 139, 140, 0.7)',
+    'jhu':      'rgba(104, 172, 229, 0.7)',
+    'nu':       'rgba(78, 42, 132, 0.7)',
+    'ohsu':     'rgba(93, 152, 202, 0.7)',
+    'rush':     'rgba(0, 103, 71, 0.7)',
+    'ucmc':     'rgba(128, 0, 0, 0.7)',
+    'ucsf':     'rgba(24, 163, 172, 0.7)',
+    'umn':      'rgba(255, 204, 51, 0.7)',
+    'upenn':    'rgba(153, 0, 0, 0.7)',
+    'utoronto': 'rgba(0, 94, 184, 0.7)',
+    // The 07/2026 data drop labels charts with SITE_LABELS display names
+    // instead of the short codes above — alias them to the same colors.
+    'emory university':                        'rgba(1, 33, 105, 0.7)',
+    'mimic iv':                                'rgba(138, 139, 140, 0.7)',
+    'johns hopkins university':                'rgba(104, 172, 229, 0.7)',
+    'northwestern university':                 'rgba(78, 42, 132, 0.7)',
+    'oregon health & science university':      'rgba(93, 152, 202, 0.7)',
+    'rush university':                         'rgba(0, 103, 71, 0.7)',
+    'university of chicago':                   'rgba(128, 0, 0, 0.7)',
+    'university of california san francisco':  'rgba(24, 163, 172, 0.7)',
+    'university of minnesota':                 'rgba(255, 204, 51, 0.7)',
+    'university of pennsylvania':              'rgba(153, 0, 0, 0.7)',
+    'university of toronto':                   'rgba(0, 94, 184, 0.7)',
   };
+
+  // Site label comparator: alphabetical, except MIMIC always sorts last —
+  // it's the public benchmark dataset, not a consortium site, so it reads
+  // as the comparison column at the end of every by-site chart.
+  function compareSiteLabels(a, b) {
+    const aMimic = a.toLowerCase().startsWith('mimic');
+    const bMimic = b.toLowerCase().startsWith('mimic');
+    if (aMimic !== bMimic) return aMimic ? 1 : -1;
+    return a.localeCompare(b);
+  }
 
   function getSiteColor(siteName, opacity = 0.7) {
     const normalizedSite = siteName.toLowerCase().trim();
