@@ -128,7 +128,7 @@ export const COHORTS: CohortDef[] = [
   },
   {
     key: 'vaso',
-    label: 'Vasoactive support',
+    label: 'Vasopressor support',
     group: 'critically_ill',
     hasOverallFile: false,
     hasHourly: true,

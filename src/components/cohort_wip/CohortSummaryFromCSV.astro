@@ -38,6 +38,9 @@ const LABELS: Record<string, string> = {
   comorbMI: 'Myocardial Infarction',
   comorbDementia: 'Dementia',
   comorbLiver: 'Mild Liver Disease',
+  comorbModLiver: 'Moderate Severe Liver Disease',
+  comorbDiabetesComp: 'Diabetes With Complications',
+  comorbDiabetesUncomp: 'Diabetes Uncomplicated',
   comorbHemiplegia: 'Hemiplegia',
   comorbConnective: 'Connective Tissue Disease',
   comorbPeptic: 'Peptic Ulcer Disease',
@@ -100,8 +103,11 @@ function fieldsFor(key: string) {
   for (const [name, label] of Object.entries(LABELS)) {
     f[name] = (getAggregateValue(data, label, 'Overall') || '').replace(/^"|"$/g, '').trim();
   }
+  // The by-year breakout only starts in 2022, but the Overall aggregates
+  // include admissions back to 2011 — anchor the start there and take the
+  // end from the latest year column so it tracks future data drops.
   const yrs = data.allYears.filter((y) => /^\d{4}$/.test(y)).sort();
-  f.years = yrs.length ? `${yrs[0]}-${yrs[yrs.length - 1]}` : '';
+  f.years = yrs.length ? `2011-${yrs[yrs.length - 1]}` : '';
   f.hasSofa = f.sofaScore ? '1' : '';
   f.hasVent = f.imvTotal ? '1' : '';
   return f;
@@ -149,6 +155,9 @@ const comorbPVD = d.comorbPVD;
 const comorbMI = d.comorbMI;
 const comorbDementia = d.comorbDementia;
 const comorbLiver = d.comorbLiver;
+const comorbModLiver = d.comorbModLiver;
+const comorbDiabetesComp = d.comorbDiabetesComp;
+const comorbDiabetesUncomp = d.comorbDiabetesUncomp;
 const comorbHemiplegia = d.comorbHemiplegia;
 const comorbConnective = d.comorbConnective;
 const comorbPeptic = d.comorbPeptic;
@@ -514,7 +523,7 @@ const dopamineDose = d.dopamineDose;
               {[
                 { label: 'ICU encounters', pct: icuPct, n: extractNumber(icuEncounters) },
                 { label: 'Advanced respiratory support', pct: respiratoryPct, n: extractNumber(advancedRespiratory) },
-                { label: 'Vasoactive support', pct: vasoactivePct, n: extractNumber(vasoactiveSupport) },
+                { label: 'Vasopressor support', pct: vasoactivePct, n: extractNumber(vasoactiveSupport) },
                 { label: 'Other critically ill', pct: otherPct, n: extractNumber(otherCriticallyIll) },
               ].map(({ label, pct, n }) => (
                 <div>
@@ -1117,7 +1126,8 @@ const dopamineDose = d.dopamineDose;
   uid,
   admissionED, admissionOSH, admissionElective, admissionDirect, admissionFacility, admissionOther,
   comorbCHF, comorbRenal, comorbPulmonary, comorbCerebrovascular, comorbCancer, comorbMetastatic,
-  comorbPVD, comorbMI, comorbDementia, comorbLiver, comorbHemiplegia, comorbConnective, comorbPeptic, comorbAIDS,
+  comorbPVD, comorbMI, comorbDementia, comorbLiver, comorbModLiver, comorbDiabetesComp, comorbDiabetesUncomp,
+  comorbHemiplegia, comorbConnective, comorbPeptic, comorbAIDS,
   imvLocationICU, imvLocationED, imvLocationProcedural, imvLocationWard, imvLocationStepdown,
   ventModeACV, ventModeSIMV, ventModePSV, ventModePCV, ventModePRVC, ventModeOther
 }}>
@@ -1452,6 +1462,9 @@ const dopamineDose = d.dopamineDose;
       { name: 'MI', value: parsePercentage(comorbMI), full: 'Myocardial Infarction' },
       { name: 'Dementia', value: parsePercentage(comorbDementia), full: 'Dementia' },
       { name: 'Liver', value: parsePercentage(comorbLiver), full: 'Mild Liver Disease' },
+      { name: 'Mod-Severe Liver', value: parsePercentage(comorbModLiver), full: 'Moderate-Severe Liver Disease' },
+      { name: 'Diabetes+Comp', value: parsePercentage(comorbDiabetesComp), full: 'Diabetes With Complications' },
+      { name: 'Diabetes', value: parsePercentage(comorbDiabetesUncomp), full: 'Diabetes Uncomplicated' },
       { name: 'Hemiplegia', value: parsePercentage(comorbHemiplegia), full: 'Hemiplegia' },
       { name: 'Connective', value: parsePercentage(comorbConnective), full: 'Connective Tissue Disease' },
       { name: 'Peptic', value: parsePercentage(comorbPeptic), full: 'Peptic Ulcer Disease' },

@@ -110,7 +110,7 @@ function parseUpset() {
   const headers = parseCSVLine(lines[0]);
   const nIdx = headers.findIndex((h) => h.trim() === 'n__ALL');
   const crit = ['ICU Hospitalizations', 'Died', 'Advanced O2 Support', 'Vasoactive Support'];
-  const shortName: Record<string, string> = { 'ICU Hospitalizations': 'ICU', Died: 'Died', 'Advanced O2 Support': 'Adv O2', 'Vasoactive Support': 'Vasoactive' };
+  const shortName: Record<string, string> = { 'ICU Hospitalizations': 'ICU', Died: 'Died', 'Advanced O2 Support': 'Adv O2', 'Vasoactive Support': 'Vasopressor' };
   const idx = crit.map((c) => headers.findIndex((h) => h.trim() === c));
   const combos: Array<{ label: string; n: number }> = [];
   for (let i = 1; i < lines.length; i++) {
@@ -167,7 +167,7 @@ const payload = JSON.stringify({ sofa, comorb, codeStatus, strobe, upset });
     {hasUpset && (
       <div class="bg-white p-5 rounded-lg shadow border border-gray-200">
         <h3 class="text-base font-semibold mb-1 text-gray-800">Critical-Care Criteria Overlap</h3>
-        <p class="text-xs text-gray-500 mb-3">Hospitalizations by combination of ICU / Died / Advanced O2 / Vasoactive.</p>
+        <p class="text-xs text-gray-500 mb-3">Hospitalizations by combination of ICU / Died / Advanced O2 / Vasopressor.</p>
         <div style="height: 320px; overflow-y: auto;"><canvas id={`upset-chart-${uid}`} height="380"></canvas></div>
       </div>
     )}
