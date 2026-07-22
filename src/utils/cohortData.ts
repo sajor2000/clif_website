@@ -238,10 +238,21 @@ export function parseCohortCSV(csvContent: string): ParsedConsortiumData {
 
   const characteristics: CharacteristicData[] = [];
 
+  // The 'Medications during IMV (N=...)' block repeats the medication rows
+  // with identical names (only the CSV indentation differs). Trimming would
+  // collide them — and the by-site-year maps are keyed by name, so the IMV
+  // value would silently overwrite the all-encounters one. Suffix the block's
+  // rows to keep every variable name unique.
+  let inImvMedBlock = false;
+
   for (let i = 1; i < lines.length; i++) {
     const values = parseCSVLine(lines[i]);
-    const variable = (values[0] ?? '').trim();
+    const raw = values[0] ?? '';
+    let variable = raw.trim();
     if (!variable) continue;
+
+    if (!raw.startsWith(' ')) inImvMedBlock = variable.startsWith('Medications during IMV');
+    else if (inImvMedBlock) variable = `${variable} (during IMV)`;
 
     const charData: CharacteristicData = { variable, sites: new Map() };
 

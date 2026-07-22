@@ -1357,16 +1357,19 @@ const categories = Array.from(groupedChars.keys());
     const headerPatterns = [
       'Neuromuscular blocking agents, n (%)',
       'Sedatives and analgesics, n (%)',
+      'Neuromuscular blocking agents, n (%) (during IMV)',
+      'Sedatives and analgesics, n (%) (during IMV)',
       'SOFA Scores',
       'Comorbidities, n (%)',
-      'Encounter Types',
-      'Vasopressor encounters, n (%)'
+      'Encounter Types'
     ];
 
     allData.forEach(d => {
       Object.keys(d.characteristics).forEach(char => {
-        // Skip if it's a header/placeholder row
-        if (!headerPatterns.includes(char.trim())) {
+        // Skip header/placeholder rows ('Medications during IMV (N=...)'
+        // embeds a cohort-specific N, so match it by prefix).
+        const trimmed = char.trim();
+        if (!headerPatterns.includes(trimmed) && !trimmed.startsWith('Medications during IMV')) {
           characteristics.add(char);
         }
       });
@@ -1394,6 +1397,14 @@ const categories = Array.from(groupedChars.keys());
       'Respiratory Support': { items: [], subcategories: {} },
       'Renal Support': { items: [], subcategories: {} },
       'Medications': {
+        items: [],
+        subcategories: {
+          'Neuromuscular blocking agents': [],
+          'Sedatives and analgesics': [],
+          'Vasopressors': []
+        }
+      },
+      'Medications during IMV': {
         items: [],
         subcategories: {
           'Neuromuscular blocking agents': [],
@@ -1522,6 +1533,7 @@ const categories = Array.from(groupedChars.keys());
                charTrimmed.includes('Myocardial') ||
                charTrimmed.includes('Dementia') ||
                charTrimmed.includes('Liver Disease') ||
+               charTrimmed.includes('Diabetes') ||
                charTrimmed.includes('Hemiplegia') ||
                charTrimmed.includes('Connective Tissue') ||
                charTrimmed.includes('Peptic Ulcer') ||
@@ -1554,13 +1566,16 @@ const categories = Array.from(groupedChars.keys());
         }
         categorized = true; // Don't add to sidebar - we'll add a consolidated entry
       }
-      // Other Respiratory Support items
-      else if (charTrimmed.includes('mechanical ventilation') ||
-               charTrimmed.includes('IMV') ||
-               charTrimmed.includes('FiO2') ||
-               charTrimmed.includes('PEEP') ||
-               charTrimmed.includes('Respiratory rate') ||
-               charTrimmed.includes('Tidal volume')) {
+      // Other Respiratory Support items. The '(during IMV)' suffix marks
+      // medication rows from the IMV block — those belong to the
+      // 'Medications during IMV' rules below, not here, despite the 'IMV'.
+      else if (!charTrimmed.endsWith('(during IMV)') &&
+               (charTrimmed.includes('mechanical ventilation') ||
+                charTrimmed.includes('IMV') ||
+                charTrimmed.includes('FiO2') ||
+                charTrimmed.includes('PEEP') ||
+                charTrimmed.includes('Respiratory rate') ||
+                charTrimmed.includes('Tidal volume'))) {
         categories['Respiratory Support'].items.push(charTrimmed);
         categorized = true;
       }
@@ -1569,28 +1584,47 @@ const categories = Array.from(groupedChars.keys());
         categories['Renal Support'].items.push(charTrimmed);
         categorized = true;
       }
-      // Medications with subcategories
+      // Medications with subcategories. The CSV carries two parallel blocks
+      // with identical drug names: top-level rows (% of ALL encounters) and
+      // the 'Medications during IMV' block (% of IMV encounters). The parser
+      // disambiguates the latter with a '(during IMV)' suffix — route on it.
       else if (charTrimmed.includes('Cisatracurium') ||
-               charTrimmed.includes('Rocuronium')) {
-        categories['Medications'].subcategories['Neuromuscular blocking agents'].push(charTrimmed);
-        categorized = true;
-      }
-      else if (charTrimmed.includes('Propofol') ||
+               charTrimmed.includes('Rocuronium') ||
+               charTrimmed.includes('Propofol') ||
                charTrimmed.includes('Midazolam') ||
                charTrimmed.includes('Lorazepam') ||
                charTrimmed.includes('Dexmedetomidine') ||
-               charTrimmed.includes('Fentanyl')) {
-        categories['Medications'].subcategories['Sedatives and analgesics'].push(charTrimmed);
-        categorized = true;
-      }
-      // Vasopressors - moved from Cardiovascular Support to Medications
-      else if (charTrimmed.includes('Norepinephrine') ||
+               charTrimmed.includes('Fentanyl') ||
+               charTrimmed.includes('Norepinephrine') ||
                charTrimmed.includes('Epinephrine') ||
                charTrimmed.includes('Phenylephrine') ||
                charTrimmed.includes('Vasopressin') ||
                charTrimmed.includes('Dopamine') ||
                charTrimmed.includes('Dobutamine')) {
-        categories['Medications'].subcategories['Vasopressors'].push(charTrimmed);
+        const duringIMV = charTrimmed.endsWith('(during IMV)');
+        const catName = duringIMV ? 'Medications during IMV' : 'Medications';
+        let subName;
+        if (charTrimmed.includes('Cisatracurium') || charTrimmed.includes('Rocuronium')) {
+          subName = 'Neuromuscular blocking agents';
+        } else if (charTrimmed.includes('Propofol') || charTrimmed.includes('Midazolam') ||
+                   charTrimmed.includes('Lorazepam') || charTrimmed.includes('Dexmedetomidine') ||
+                   charTrimmed.includes('Fentanyl')) {
+          subName = 'Sedatives and analgesics';
+        } else {
+          subName = 'Vasopressors';
+        }
+        categories[catName].subcategories[subName].push(charOriginal);
+        categorized = true;
+      }
+      // The IMV block's 'Vasopressors, n (%)' subheader carries a value
+      // (any vasopressor, % of IMV encounters) — keep it as an item.
+      else if (charTrimmed === 'Vasopressors, n (%) (during IMV)') {
+        categories['Medications during IMV'].items.push(charOriginal);
+        categorized = true;
+      }
+      // Any-vasopressor aggregate over all encounters.
+      else if (charTrimmed === 'Vasopressor encounters, n (%)') {
+        categories['Medications'].items.push(charOriginal);
         categorized = true;
       }
       else if (charTrimmed.startsWith('N:')) {
@@ -1663,7 +1697,7 @@ const categories = Array.from(groupedChars.keys());
 
     Object.entries(categories).forEach(([categoryName, categoryData]) => {
       const hasItems = categoryData.items.length > 0;
-      const hasSubcategories = Object.keys(categoryData.subcategories).length > 0;
+      const hasSubcategories = Object.values(categoryData.subcategories).some(items => items.length > 0);
 
       if (!hasItems && !hasSubcategories) return; // Skip empty categories
 
