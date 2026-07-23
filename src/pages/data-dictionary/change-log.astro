@@ -526,7 +526,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            Revisions (15 updates) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Jul 21, 2026</span>
+            Revisions (16 updates) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Jul 23, 2026</span>
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -547,6 +547,12 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">med_category (continuous)</td>
+                  <td class="px-4 py-3 text-sm">Removed the duplicate <code>oxytocin</code> value from the <code>medication_admin_continuous.med_category</code> mCIDE — <code>pitocin</code> (the same drug) is the single retained category. Sites should map oxytocin infusions to <code>pitocin</code>.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/226" class="text-clif-burgundy hover:underline">Issue #226</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Jul 23, 2026</td>
+                </tr>
                 <tr>
                   <td class="px-4 py-3 text-sm font-mono">labs.lab_category</td>
                   <td class="px-4 py-3 text-sm">Dropped <code>glucose_serum</code> from the <code>labs.lab_category</code> mCIDE. <code>glucose</code> replaces both <code>glucose_serum</code> and <code>glucose_fingerstick</code>, with the specimen distinguished by <code>lab_specimen_category</code> and the panel by <code>lab_order_category</code> — the same de-prefixing convention applied to the other source-specific labs in 3.0.</td>

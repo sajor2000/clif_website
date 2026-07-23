@@ -16,6 +16,7 @@ The admission, discharge, and transfer (adt) table is a start-stop longitudinal 
 
 * ADT represents the patient's physical location, NOT the patient "status".
 * Procedural areas and operating rooms should be mapped to `Procedural`. Pre/Intra/Post-procedural/OR EHR data (such as anesthesia flowsheet records from Labs, Vitals, Scores, Respiratory Support) **are not currently** represented in CLIF.
+* `location_type` represents the **nursing capabilities of the unit** and should be derived from ADT data alone — do **not** map `location_type` based on who the attending clinician or service is.
 
 \
 **Example**:
