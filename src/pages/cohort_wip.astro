@@ -45,7 +45,6 @@ const cohortHeadlines = Object.fromEntries(PANEL_COHORTS.map((k) => [k, headline
 // The hero states the dashboard's overall scope and stays fixed — it is NOT
 // rewired by the cohort bus, so it always reads from the default cohort.
 const heroStats = cohortHeadlines[DEFAULT_COHORT];
-const critCohorts = VISIBLE_COHORTS.filter((c) => c.group === 'critically_ill');
 // Sub-group options per parent for the 3rd-level picker (data for the client).
 const subsByParent = Object.fromEntries(
   VISIBLE_COHORTS.filter((c) => SUBCOHORTS.some((s) => s.parent === c.key)).map((c) => [
@@ -190,25 +189,26 @@ const subsByParent = Object.fromEntries(
              and global so every tab keeps access to it) -->
         <div class="flex justify-center mb-8">
           <div class="inline-flex items-stretch bg-gray-100 rounded-lg p-1 shadow-sm overflow-x-auto">
-            {VISIBLE_GROUPS.length > 1 && (
-              <span class="inline-flex">
-                {VISIBLE_GROUPS.map((g) => ({ g, label: GROUP_LABELS[g] })).map((lvl) => (
-                  <button
-                    data-cohort-group={lvl.g}
-                    class="cohort-group-btn px-4 py-2 text-sm font-semibold rounded-md transition-all duration-200 text-gray-700 hover:text-gray-900"
-                  >
-                    {lvl.label}
-                  </button>
-                ))}
-              </span>
-            )}
-            <span id="cohort-type-wrap" class="hidden">
+            {/* One dropdown for every cohort. Overall used to be a separate
+                level-1 button; it is an option here instead. The optgroups keep
+                the distinction that button carried — Overall is all
+                hospitalizations, the rest are critically ill — without spending
+                a second control on it. */}
+            <span id="cohort-type-wrap">
               <select
                 id="cohort-type-select"
                 aria-label="Cohort"
                 class="h-full cursor-pointer border-0 rounded-md px-3 py-3 text-xs md:text-base font-semibold bg-clif-burgundy/10 text-clif-burgundy focus:outline-none focus:ring-2 focus:ring-clif-burgundy/40"
               >
-                {critCohorts.map((c) => <option value={c.key}>{c.label}</option>)}
+                {VISIBLE_GROUPS.length > 1
+                  ? VISIBLE_GROUPS.map((g) => (
+                      <optgroup label={GROUP_LABELS[g]}>
+                        {VISIBLE_COHORTS.filter((c) => c.group === g).map((c) => (
+                          <option value={c.key} selected={c.key === DEFAULT_COHORT}>{c.label}</option>
+                        ))}
+                      </optgroup>
+                    ))
+                  : VISIBLE_COHORTS.map((c) => <option value={c.key} selected={c.key === DEFAULT_COHORT}>{c.label}</option>)}
               </select>
             </span>
             <span id="cohort-sub-wrap" class="hidden">
@@ -464,40 +464,21 @@ const subsByParent = Object.fromEntries(
     document.addEventListener('DOMContentLoaded', () => {
       const Bus = window.CohortBus;
       if (!Bus) return;
-      const groupBtns = Array.from(document.querySelectorAll('.cohort-group-btn'));
-      const typeWrap = document.getElementById('cohort-type-wrap');
       const typeSelect = document.getElementById('cohort-type-select');
       const subWrap = document.getElementById('cohort-sub-wrap');
       const subSelect = document.getElementById('cohort-sub-select');
       const tabHourly = document.getElementById('tab-hourly');
       const SUBS = window.__SUBS_BY_PARENT__ || {};
 
-      const GROUP_OF = {};
-      Object.values(window.__COHORT_HEADLINES__ || {}).forEach((h) => { GROUP_OF[h.key] = h.group; });
-
       function parentOf(key) { return key && key.indexOf('__') > -1 ? key.split('__')[0] : key; }
-      // Fall back to the first group that actually has a button, so a missed
-      // lookup can't strand the picker on a hidden group.
-      const FALLBACK_GROUP = (groupBtns[0] && groupBtns[0].getAttribute('data-cohort-group')) || 'critically_ill';
-      function activeGroup() { return GROUP_OF[Bus.current] || FALLBACK_GROUP; }
 
-      function paintGroupButtons() {
-        const g = activeGroup();
-        groupBtns.forEach((btn) => {
-          const on = btn.getAttribute('data-cohort-group') === g;
-          btn.classList.toggle('bg-clif-burgundy', on);
-          btn.classList.toggle('text-white', on);
-          btn.classList.toggle('shadow-md', on);
-          btn.classList.toggle('text-gray-700', !on);
-        });
-        typeWrap?.classList.toggle('hidden', g !== 'critically_ill');
-      }
-
-      // Show/populate the sub-group selector when the active type has ICU/ED splits.
+      // Show/populate the sub-group selector when the active type has ICU/ED
+      // splits. Driven purely by the SUBS lookup now that there is no group
+      // control — a cohort without splits simply has no entry.
       function paintSubSelect(current) {
         const type = parentOf(current);
         const subs = SUBS[type];
-        if (activeGroup() !== 'critically_ill' || !subs || !subs.length) {
+        if (!subs || !subs.length) {
           subWrap?.classList.add('hidden');
           return;
         }
@@ -517,22 +498,10 @@ const subsByParent = Object.fromEntries(
         // sits inline in the sentence and shows the selection.
         // Hourly tab only applies to cohorts that ship hourly data.
         if (tabHourly) tabHourly.classList.toggle('hidden', !h.hasHourly);
-        paintGroupButtons();
-        if (activeGroup() === 'critically_ill' && typeSelect) typeSelect.value = parentOf(key);
+        if (typeSelect) typeSelect.value = parentOf(key);
         paintSubSelect(key);
       });
 
-      groupBtns.forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const g = btn.getAttribute('data-cohort-group');
-          if (g === 'overall') {
-            Bus.set('overall_ward');
-          } else {
-            // default to the currently-selected type (or first option)
-            Bus.set((typeSelect && typeSelect.value) || 'overall');
-          }
-        });
-      });
       // Changing type resets to the "All" subgroup (the base cohort key).
       typeSelect?.addEventListener('change', (e) => Bus.set(e.target.value));
       subSelect?.addEventListener('change', (e) => Bus.set(e.target.value));

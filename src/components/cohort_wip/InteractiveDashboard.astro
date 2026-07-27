@@ -31,14 +31,80 @@ function deriveOverall(parsed: ParsedConsortiumData) {
   // Aggregate first, matching the public dashboard's "Consortium Aggregate"
   // leading column; allSites is already in SITE_ORDER.
   const sites = [AGGREGATE_SITE, ...parsed.allSites];
-  const rows = parsed.characteristics.map((c) => {
+
+  // Some groups ship as a run of `Prefix: value` children with no header row of
+  // their own — Race, Sex, Ethnicity, Admission type, First admission location,
+  // First location at IMV start, Initial ventilator mode, Extubation outcome.
+  // (Others, like 'Encounter Types', do carry a real header.) Synthesize the
+  // missing parent so every indented run reads under a heading. Marked
+  // `synthetic` so the CSV export can leave these invented rows out.
+  // `characteristic` stays the full CSV name — search, the hidden-row check and
+  // the CSV export all key off it. `label` is display-only: under a synthesized
+  // header the group prefix is redundant, so 'Race: White' shows as 'White'
+  // while still matching a search for "race".
+  const rows: { characteristic: string; label?: string; depth: number; values: Record<string, string>; synthetic?: boolean }[] = [];
+  const blank = Object.fromEntries(sites.map((s) => [s, '-']));
+
+  // The 07202026 export dropped the `Years` row the previous export carried, so
+  // the Table view had no timespan at all. Derive it from which year columns
+  // each site actually populates.
+  //
+  // NOTE the scope: this is the by-year breakout only, which starts at 2022 —
+  // it is NOT the full span. The Overall aggregate reaches back to 2011, which
+  // is why the Data Timespan tile hardcodes that start (CohortSummaryFromCSV
+  // 'f.years'). The row is labelled accordingly so the two cannot be misread as
+  // the same measure. A truthful per-site span needs `Years` back in the export.
+  const yearCols = parsed.allYears.filter((y) => /^\d{4}$/.test(y)).sort();
+  const encRow = parsed.characteristics.find((c) => c.variable.trim() === 'N: Encounter blocks');
+  if (encRow && yearCols.length) {
+    const span: Record<string, string> = {};
+    for (const s of sites) {
+      const have = yearCols.filter((y) => {
+        const v = encRow.sites.get(s)?.get(y);
+        return v != null && v.trim() !== '' && v.trim() !== '-';
+      });
+      span[s] = have.length ? `${have[0]}-${have[have.length - 1]}` : '-';
+    }
+    rows.push({ characteristic: 'Years (by-year data)', depth: 0, values: span, synthetic: true });
+  }
+  let currentGroup: string | null = null;
+  let prevName: string | null = null;
+  // Header once per group per file. The sub-cohort exports append a few
+  // stragglers ('First admission location: psych', 'Initial ventilator mode:
+  // volume support', ...) after the medications block instead of merging them
+  // with their siblings, which would otherwise emit the same header twice.
+  const headed = new Set<string>();
+
+  for (const c of parsed.characteristics) {
+    const depth = c.depth ?? 0;
+    // `(?:\s|$)` not just ': ' — one row is 'Initial ventilator mode:' with an
+    // empty category, and treating it as a non-member would split the run and
+    // emit a second header for the rest of the modes.
+    const prefixMatch = depth > 0 ? c.variable.match(/^([^:]+):(?:\s|$)/) : null;
+    const prefix = prefixMatch ? prefixMatch[1] : null;
+
+    if (prefix !== currentGroup) {
+      currentGroup = prefix;
+      // `prevName !== prefix` leaves an existing real header alone.
+      if (prefix && prevName !== prefix && !headed.has(prefix)) {
+        headed.add(prefix);
+        rows.push({ characteristic: prefix, depth: Math.max(0, depth - 1), values: { ...blank }, synthetic: true });
+      }
+    }
+
     const values: Record<string, string> = {};
     for (const s of sites) {
       const v = c.sites.get(s)?.get('Overall');
       values[s] = v && v !== '' ? v : '-';
     }
-    return { characteristic: c.variable, values };
-  });
+    // Drop the prefix once the group has a header. Falls back to the full name
+    // when nothing follows the colon ('Initial ventilator mode:' has an empty
+    // category) so the row never renders blank.
+    const stripped = prefix && headed.has(prefix) ? c.variable.slice(prefix.length + 1).trim() : '';
+    rows.push({ characteristic: c.variable, label: stripped || undefined, depth, values });
+    prevName = c.variable;
+  }
+
   return { headers: sites, data: rows };
 }
 
@@ -628,6 +694,23 @@ const categories = Array.from(groupedChars.keys());
         />
       </div>
 
+      <!-- Expand / collapse: the table is 10+ site columns wide, so the
+           600px-tall card clips it badly on a laptop. -->
+      <button
+        id="table-expand"
+        type="button"
+        aria-pressed="false"
+        class="flex items-center gap-2 px-4 py-2 mr-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors whitespace-nowrap"
+      >
+        <svg class="expand-icon w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-5v4m0-4h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5"/>
+        </svg>
+        <svg class="collapse-icon w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9V5m0 4H5m4 0L4 4m11 5h4m-4 0V5m0 4l5-5M9 15v4m0-4H5m4 0l-5 5m11-5h4m-4 0v4m0-4l5 5"/>
+        </svg>
+        <span class="expand-label">Expand</span>
+      </button>
+
       <!-- Export Button -->
       <button
         id="export-data"
@@ -640,8 +723,11 @@ const categories = Array.from(groupedChars.keys());
       </button>
     </div>
 
+    <!-- TEMPORARY (review aid): count of cells blanked by the n < 10 rule. -->
+    <div id="small-n-count" class="mb-2 text-sm font-medium text-red-700"></div>
+
     <!-- Data Table -->
-    <div class="overflow-x-auto max-h-[600px] overflow-y-auto">
+    <div class="table-scroll overflow-x-auto max-h-[600px] overflow-y-auto">
       <table id="data-table" class="w-full border-collapse">
         <thead class="bg-clif-burgundy text-white sticky top-0 z-10">
           <tr>
@@ -673,6 +759,14 @@ const categories = Array.from(groupedChars.keys());
   // `let` so a cohort switch can repoint them; kept as the same object shape.
   let consortiumData = COHORTS_DATA[activeCohort].consortium;
   let overallTableData = COHORTS_DATA[activeCohort].overall;
+
+  // Real data rows withheld from the dashboard entirely — sidebar, Table view
+  // and CSV export. Distinct from the sidebar's headerPatterns, which lists
+  // rows that carry no value at all. The rows stay in the source CSV.
+  const HIDDEN_CHARACTERISTICS = [
+    'Pre-admit IMV (excluded from time-to-extubation), n (%)'
+  ];
+  const isHiddenCharacteristic = (char) => HIDDEN_CHARACTERISTICS.includes((char || '').trim());
 
   // State management
   let selectedSites = [...consortiumData.allSites];
@@ -858,6 +952,35 @@ const categories = Array.from(groupedChars.keys());
       chartsView?.classList.add('hidden');
       updateTable();
     });
+
+    // Expand the table to fill the viewport. Body scroll is locked while
+    // expanded so the wheel drives the table's own scroller, not the page
+    // behind the overlay.
+    const expandBtn = document.getElementById('table-expand');
+    function setTableExpanded(expanded) {
+      if (!tableView || !expandBtn) return;
+      tableView.classList.toggle('table-expanded', expanded);
+      document.body.style.overflow = expanded ? 'hidden' : '';
+      expandBtn.setAttribute('aria-pressed', String(expanded));
+      expandBtn.querySelector('.expand-icon')?.classList.toggle('hidden', expanded);
+      expandBtn.querySelector('.collapse-icon')?.classList.toggle('hidden', !expanded);
+      const label = expandBtn.querySelector('.expand-label');
+      if (label) label.textContent = expanded ? 'Exit full screen' : 'Expand';
+    }
+
+    expandBtn?.addEventListener('click', () => {
+      setTableExpanded(!tableView?.classList.contains('table-expanded'));
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && tableView?.classList.contains('table-expanded')) {
+        setTableExpanded(false);
+      }
+    });
+
+    // Switching back to Charts hides #table-view, which would otherwise leave
+    // the overlay class and the body scroll lock behind.
+    chartsBtn?.addEventListener('click', () => setTableExpanded(false));
 
     // Table search
     const searchInput = document.getElementById('table-search');
@@ -1347,6 +1470,82 @@ const categories = Array.from(groupedChars.keys());
     }
   }
 
+  /**
+   * Sidebar row order: alphabetical, except that a summary score leads the
+   * list of individual rows it sits with. Matched by prefix so the ', median
+   * [Q1, Q3]' suffix does not have to be repeated here.
+   *
+   * The tie-break is `<`/`>` rather than localeCompare on purpose — that is
+   * what Array.sort() does by default, and some rows carry the CSV's leading
+   * indent, which locale collation would ignore and reorder.
+   */
+  const PINNED_FIRST = ['Charlson Comorbidity Index'];
+  function compareSidebarItems(a, b) {
+    const rank = (s) => {
+      const i = PINNED_FIRST.findIndex(p => s.trim().startsWith(p));
+      return i === -1 ? Number.MAX_SAFE_INTEGER : i;
+    };
+    const ra = rank(a);
+    const rb = rank(b);
+    if (ra !== rb) return ra - rb;
+    return a < b ? -1 : a > b ? 1 : 0;
+  }
+
+  /**
+   * Does this characteristic belong to Respiratory Support?
+   *
+   * The export has no category column, so the vocabulary is matched by name.
+   * Covers intubation/extubation events, ventilator settings and exposure, and
+   * both device-free-day endpoints — VFD (invasive) and NIDFD (NIPPV/HFNC).
+   * 'tubat' is deliberate: it catches intubated / intubation / reintubation /
+   * extubation / extubated in one token.
+   */
+  function isRespiratoryCharacteristic(char) {
+    const lower = char.toLowerCase();
+    return [
+      'mechanical ventilation', 'ventilator hours', 'imv', 'tubat',
+      'fio2', 'peep', 'respiratory rate', 'tidal volume', 'vfd', 'nidfd'
+    ].some(token => lower.includes(token));
+  }
+
+  /**
+   * Build one sidebar row. `indent` is set for rows inside a subcategory so
+   * they sit under the subsection header.
+   *
+   * A `__*_CONSOLIDATED__` marker stands in for a family of CSV rows (one per
+   * location / mode / race / ...) that the dashboard renders as a single item
+   * driven by its own type selector, so it gets a label and a dedicated
+   * handler instead of the generic selectCharacteristic.
+   */
+  function createCharacteristicItem(char, indent) {
+    const CONSOLIDATED = {
+      '__IMV_LOCATION_CONSOLIDATED__': ['First location at IMV start', selectIMVLocationCharacteristic],
+      '__VENT_MODE_CONSOLIDATED__': ['Initial ventilator mode', selectVentModeCharacteristic],
+      '__ETHNICITY_CONSOLIDATED__': ['Ethnicity', selectEthnicityCharacteristic],
+      '__RACE_CONSOLIDATED__': ['Race', selectRaceCharacteristic],
+      '__SEX_CONSOLIDATED__': ['Sex', selectSexCharacteristic],
+      '__ADMISSION_TYPE_CONSOLIDATED__': ['Admission type', selectAdmissionTypeCharacteristic],
+      '__FIRST_ADMISSION_LOCATION_CONSOLIDATED__': ['First admission location', selectFirstAdmissionLocationCharacteristic],
+      '__ENCOUNTER_TYPE_CONSOLIDATED__': ['Encounter type', selectEncounterTypeCharacteristic]
+    };
+
+    const charItem = document.createElement('button');
+    charItem.className = `characteristic-item w-full text-left ${indent ? 'pl-6 pr-4' : 'px-4'} py-2 text-sm text-gray-700 hover:bg-clif-burgundy hover:bg-opacity-10 hover:text-clif-burgundy transition-colors`;
+
+    const consolidated = CONSOLIDATED[char];
+    if (consolidated) {
+      const [label, handler] = consolidated;
+      charItem.dataset.characteristic = char;
+      charItem.textContent = label;
+      charItem.addEventListener('click', () => handler(charItem));
+    } else {
+      charItem.dataset.characteristic = char; // Keep original with spaces for data lookup
+      charItem.textContent = char.trim(); // Display trimmed version
+      charItem.addEventListener('click', () => selectCharacteristic(char, charItem)); // Pass original
+    }
+    return charItem;
+  }
+
   function buildCategorySidebar() {
     // Use ALL data for sidebar, not filtered data
     // The sidebar should show all available characteristics regardless of filter selection
@@ -1369,7 +1568,9 @@ const categories = Array.from(groupedChars.keys());
         // Skip header/placeholder rows ('Medications during IMV (N=...)'
         // embeds a cohort-specific N, so match it by prefix).
         const trimmed = char.trim();
-        if (!headerPatterns.includes(trimmed) && !trimmed.startsWith('Medications during IMV')) {
+        if (!headerPatterns.includes(trimmed) &&
+            !isHiddenCharacteristic(trimmed) &&
+            !trimmed.startsWith('Medications during IMV')) {
           characteristics.add(char);
         }
       });
@@ -1386,6 +1587,8 @@ const categories = Array.from(groupedChars.keys());
           'Encounter Types': []
         }
       },
+      'ICU Episodes': { items: [], subcategories: {} },
+      'Sepsis Events': { items: [], subcategories: {} },
       'Clinical Outcomes': { items: [], subcategories: {} },
       'Comorbidities': { items: [], subcategories: {} },
       'Severity Scores': {
@@ -1394,7 +1597,14 @@ const categories = Array.from(groupedChars.keys());
           'SOFA Scores': []
         }
       },
-      'Respiratory Support': { items: [], subcategories: {} },
+      'Respiratory Support': {
+        items: [],
+        subcategories: {
+          'Ventilator settings': [],
+          'Extubation': [],
+          'Free days': []
+        }
+      },
       'Renal Support': { items: [], subcategories: {} },
       'Medications': {
         items: [],
@@ -1497,11 +1707,14 @@ const categories = Array.from(groupedChars.keys());
         }
         categorized = true; // Don't add to sidebar - we'll add a consolidated entry
       }
-      // Encounter Information - handle encounter types specially for consolidated dropdown
+      // Encounter Information - handle encounter types specially for consolidated dropdown.
+      // 'Ward only' is an encounter type too, present in the Overall (ward)
+      // export alone — and the only one that does NOT overlap the others.
       else if (charTrimmed.includes('ICU encounters') ||
                charTrimmed.includes('Advanced respiratory support') ||
                charTrimmed.includes('Vasoactive support') ||
-               charTrimmed.includes('Other critically ill')) {
+               charTrimmed.includes('Other critically ill') ||
+               charTrimmed.startsWith('Ward only')) {
         // Extract the encounter type name
         const encType = charTrimmed.replace(', n (%)', '').trim();
         if (encType) {
@@ -1518,6 +1731,18 @@ const categories = Array.from(groupedChars.keys());
                charTrimmed.includes('Expired') ||
                charTrimmed.includes('length of stay')) {
         categories['Clinical Outcomes'].items.push(charTrimmed);
+        categorized = true;
+      }
+      // ICU burden and sepsis: a total count plus the share of encounters
+      // affected. Two denominators, so they get a section each rather than
+      // sharing one. Note 'ICU encounters' (an encounter TYPE) is matched
+      // earlier and is not one of these.
+      else if (charTrimmed.includes('ICU episode')) {
+        categories['ICU Episodes'].items.push(charTrimmed);
+        categorized = true;
+      }
+      else if (/sepsis/i.test(charTrimmed)) {
+        categories['Sepsis Events'].items.push(charTrimmed);
         categorized = true;
       }
       // Comorbidities
@@ -1566,17 +1791,33 @@ const categories = Array.from(groupedChars.keys());
         }
         categorized = true; // Don't add to sidebar - we'll add a consolidated entry
       }
-      // Other Respiratory Support items. The '(during IMV)' suffix marks
-      // medication rows from the IMV block — those belong to the
-      // 'Medications during IMV' rules below, not here, despite the 'IMV'.
+      // Other Respiratory Support items. Only the vent settings get their own
+      // subsection — every other row stays at top level, since a collapsible
+      // over two or three rows hid more than it organized.
+      // The '(during IMV)' suffix marks medication rows from the IMV block —
+      // those belong to the 'Medications during IMV' rules below, not here,
+      // despite the 'IMV'.
       else if (!charTrimmed.endsWith('(during IMV)') &&
-               (charTrimmed.includes('mechanical ventilation') ||
-                charTrimmed.includes('IMV') ||
-                charTrimmed.includes('FiO2') ||
-                charTrimmed.includes('PEEP') ||
-                charTrimmed.includes('Respiratory rate') ||
-                charTrimmed.includes('Tidal volume'))) {
-        categories['Respiratory Support'].items.push(charTrimmed);
+               isRespiratoryCharacteristic(charTrimmed)) {
+        const isSetting = charTrimmed.includes('FiO2') || charTrimmed.includes('PEEP') ||
+                          charTrimmed.includes('Respiratory rate') || charTrimmed.includes('Tidal volume');
+        // Anchored, not a bare substring: 'Pre-admit IMV (excluded from
+        // time-to-extubation)' names extubation only in a parenthetical and is
+        // an intubation row. Reintubation lives here too — it is the failure
+        // mode of the extubation it follows.
+        const isExtubation = /^(extubation|reintubation|time to (?:extubation|reintubation))/i.test(charTrimmed);
+        // Device-free-day endpoints: VFD is invasive ventilation, NIDFD is
+        // NIPPV/HFNC. Each is a count row (the denominator) plus a median.
+        const isFreeDays = /vfd|nidfd/i.test(charTrimmed);
+        if (isSetting) {
+          categories['Respiratory Support'].subcategories['Ventilator settings'].push(charTrimmed);
+        } else if (isExtubation) {
+          categories['Respiratory Support'].subcategories['Extubation'].push(charTrimmed);
+        } else if (isFreeDays) {
+          categories['Respiratory Support'].subcategories['Free days'].push(charTrimmed);
+        } else {
+          categories['Respiratory Support'].items.push(charTrimmed);
+        }
         categorized = true;
       }
       // Renal Support
@@ -1650,7 +1891,7 @@ const categories = Array.from(groupedChars.keys());
       // Sort mode types alphabetically
       ventModeTypes.sort();
       // Add a special marker for the consolidated entry
-      categories['Respiratory Support'].items.push('__VENT_MODE_CONSOLIDATED__');
+      categories['Respiratory Support'].subcategories['Ventilator settings'].push('__VENT_MODE_CONSOLIDATED__');
     }
 
     // Add consolidated "Ethnicity" entry if we have ethnicity types
@@ -1720,63 +1961,8 @@ const categories = Array.from(groupedChars.keys());
       charList.style.display = 'none'; // Start collapsed
 
       // Add top-level items first
-      categoryData.items.sort().forEach(char => {
-        const charItem = document.createElement('button');
-        charItem.className = 'characteristic-item w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-clif-burgundy hover:bg-opacity-10 hover:text-clif-burgundy transition-colors';
-
-        // Handle consolidated IMV location entry specially
-        if (char === '__IMV_LOCATION_CONSOLIDATED__') {
-          charItem.dataset.characteristic = '__IMV_LOCATION_CONSOLIDATED__';
-          charItem.textContent = 'First location at IMV start';
-          charItem.addEventListener('click', () => selectIMVLocationCharacteristic(charItem));
-        }
-        // Handle consolidated ventilator mode entry specially
-        else if (char === '__VENT_MODE_CONSOLIDATED__') {
-          charItem.dataset.characteristic = '__VENT_MODE_CONSOLIDATED__';
-          charItem.textContent = 'Initial ventilator mode';
-          charItem.addEventListener('click', () => selectVentModeCharacteristic(charItem));
-        }
-        // Handle consolidated ethnicity entry specially
-        else if (char === '__ETHNICITY_CONSOLIDATED__') {
-          charItem.dataset.characteristic = '__ETHNICITY_CONSOLIDATED__';
-          charItem.textContent = 'Ethnicity';
-          charItem.addEventListener('click', () => selectEthnicityCharacteristic(charItem));
-        }
-        // Handle consolidated race entry specially
-        else if (char === '__RACE_CONSOLIDATED__') {
-          charItem.dataset.characteristic = '__RACE_CONSOLIDATED__';
-          charItem.textContent = 'Race';
-          charItem.addEventListener('click', () => selectRaceCharacteristic(charItem));
-        }
-        // Handle consolidated sex entry specially
-        else if (char === '__SEX_CONSOLIDATED__') {
-          charItem.dataset.characteristic = '__SEX_CONSOLIDATED__';
-          charItem.textContent = 'Sex';
-          charItem.addEventListener('click', () => selectSexCharacteristic(charItem));
-        }
-        // Handle consolidated admission type entry specially
-        else if (char === '__ADMISSION_TYPE_CONSOLIDATED__') {
-          charItem.dataset.characteristic = '__ADMISSION_TYPE_CONSOLIDATED__';
-          charItem.textContent = 'Admission type';
-          charItem.addEventListener('click', () => selectAdmissionTypeCharacteristic(charItem));
-        }
-        // Handle consolidated first admission location entry specially
-        else if (char === '__FIRST_ADMISSION_LOCATION_CONSOLIDATED__') {
-          charItem.dataset.characteristic = '__FIRST_ADMISSION_LOCATION_CONSOLIDATED__';
-          charItem.textContent = 'First admission location';
-          charItem.addEventListener('click', () => selectFirstAdmissionLocationCharacteristic(charItem));
-        }
-        // Handle consolidated encounter type entry specially
-        else if (char === '__ENCOUNTER_TYPE_CONSOLIDATED__') {
-          charItem.dataset.characteristic = '__ENCOUNTER_TYPE_CONSOLIDATED__';
-          charItem.textContent = 'Encounter type';
-          charItem.addEventListener('click', () => selectEncounterTypeCharacteristic(charItem));
-        } else {
-          charItem.dataset.characteristic = char; // Keep original with spaces for data lookup
-          charItem.textContent = char.trim(); // Display trimmed version
-          charItem.addEventListener('click', () => selectCharacteristic(char, charItem)); // Pass original
-        }
-        charList.appendChild(charItem);
+      categoryData.items.sort(compareSidebarItems).forEach(char => {
+        charList.appendChild(createCharacteristicItem(char, false));
       });
 
       // Add subcategories
@@ -1802,13 +1988,8 @@ const categories = Array.from(groupedChars.keys());
         subItemsList.className = 'subcategory-items';
         subItemsList.style.display = 'none'; // Start collapsed
 
-        subItems.sort().forEach(char => {
-          const charItem = document.createElement('button');
-          charItem.className = 'characteristic-item w-full text-left pl-6 pr-4 py-2 text-sm text-gray-700 hover:bg-clif-burgundy hover:bg-opacity-10 hover:text-clif-burgundy transition-colors';
-          charItem.dataset.characteristic = char;
-          charItem.textContent = char.trim();
-          charItem.addEventListener('click', () => selectCharacteristic(char, charItem));
-          subItemsList.appendChild(charItem);
+        subItems.sort(compareSidebarItems).forEach(char => {
+          subItemsList.appendChild(createCharacteristicItem(char, true));
         });
 
         // Set initial subcategory chevron to collapsed state
@@ -2810,6 +2991,19 @@ const categories = Array.from(groupedChars.keys());
           hasVisibleChar = true;
         } else {
           char.style.display = 'none';
+        }
+      });
+
+      // Subcategories start collapsed, so a match inside one would stay hidden
+      // even though the category expanded — expand the ones that match and
+      // hide the ones that don't.
+      category.querySelectorAll('.subcategory-section').forEach(sub => {
+        const subMatches = Array.from(sub.querySelectorAll('.characteristic-item'))
+          .some(char => char.style.display !== 'none');
+        sub.style.display = subMatches ? 'block' : 'none';
+        if (term && subMatches) {
+          sub.querySelector('.subcategory-items').style.display = 'block';
+          sub.querySelector('.sub-chevron').style.transform = 'rotate(0deg)';
         }
       });
 
@@ -4893,9 +5087,11 @@ const categories = Array.from(groupedChars.keys());
 
     // Populate table body
     tbody.innerHTML = '';
+    let smallNCount = 0;
 
     data.forEach(row => {
       const characteristic = row.characteristic;
+      if (isHiddenCharacteristic(characteristic)) return;
 
       // Apply search filter
       const matchesSearch = characteristic.toLowerCase().includes(searchTerm) ||
@@ -4905,17 +5101,43 @@ const categories = Array.from(groupedChars.keys());
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-gray-50';
 
-        let html = `<td class="px-4 py-3 text-sm text-gray-700 font-medium sticky left-0 bg-white">${characteristic}</td>`;
+        // Render the CSV's own hierarchy: top-level rows bold, children
+        // progressively lighter and indented. Padding is inline rather than a
+        // Tailwind class because the depth is only known at runtime and
+        // Tailwind cannot see a template-built class name.
+        const depth = row.depth || 0;
+        const nameWeight = depth === 0 ? 'font-bold text-gray-900' : 'font-normal text-gray-600';
+        const namePad = 1 + depth * 1.25;
+        // row.label drops the redundant group prefix; row.characteristic (the
+        // full name) is what search and export still use.
+        let html = `<td class="px-4 py-3 text-sm ${nameWeight} sticky left-0 bg-white" style="padding-left:${namePad}rem">${row.label || characteristic}</td>`;
         headers.forEach(header => {
           const rawValue = row.values[header] || '-';
-          const value = (!isMetadataCharacteristic(row.characteristic) && hasSmallN(rawValue)) ? '-' : rawValue;
-          html += `<td class="px-4 py-3 text-sm text-gray-700">${value}</td>`;
+          // TEMPORARY (review aid): outline every small-n cell so suppression
+          // can be audited. Two sources, and the second is the common one:
+          //   1. hasSmallN() — the dashboard's own rule, blanks the value here.
+          //   2. the literal '<10' the export already ships pre-suppressed.
+          // Empty cells ('-') are NOT flagged: those are sites with no data for
+          // the row, not suppressions. Delete the class + counter to revert.
+          const blankedHere = !isMetadataCharacteristic(row.characteristic) && hasSmallN(rawValue);
+          const suppressed = blankedHere || rawValue.trim() === '<10';
+          if (suppressed) smallNCount++;
+          const value = blankedHere ? '-' : rawValue;
+          html += `<td class="px-4 py-3 text-sm text-gray-700${suppressed ? ' small-n-cell' : ''}"${suppressed ? ' title="Suppressed: n < 10"' : ''}>${value}</td>`;
         });
 
         tr.innerHTML = html;
         tbody.appendChild(tr);
       }
     });
+
+    // TEMPORARY (review aid): report how many visible cells the rule blanked.
+    const smallNReadout = document.getElementById('small-n-count');
+    if (smallNReadout) {
+      smallNReadout.textContent = smallNCount
+        ? `${smallNCount.toLocaleString()} cell${smallNCount === 1 ? '' : 's'} suppressed for n < 10 — outlined in red below`
+        : '';
+    }
   }
 
   function exportToCSV() {
@@ -4928,6 +5150,10 @@ const categories = Array.from(groupedChars.keys());
 
     // Build CSV rows
     data.forEach(row => {
+      if (isHiddenCharacteristic(row.characteristic)) return;
+      // Synthetic group headers are a display aid; exporting invented all-'-'
+      // rows would not match the source CSV.
+      if (row.synthetic) return;
       const characteristic = `"${row.characteristic}"`;
       const values = headers.map(header => {
         const rawValue = row.values[header] || '-';
@@ -4951,6 +5177,42 @@ const categories = Array.from(groupedChars.keys());
 <style>
   .interactive-dashboard {
     animation: fadeIn 0.5s ease-in;
+  }
+
+  /* Expanded table view: lift #table-view out of the card and fill the
+     viewport. A fixed overlay rather than the Fullscreen API — it keeps the
+     search box and Export button reachable, and behaves the same when the
+     page is embedded. The scroll container gives up its 600px cap and takes
+     the leftover height instead. */
+  #table-view.table-expanded {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    background: #fff;
+    padding: 1.5rem;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  #table-view.table-expanded .table-scroll {
+    max-height: none;
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* TEMPORARY (review aid): mark small-n cells in the table.
+     `outline` rather than `border` so the boxes add no width and the column
+     grid stays put.
+     :global() is REQUIRED — these <td>s are built in JS via innerHTML, so they
+     never receive Astro's data-astro-cid-* scope attribute and a scoped
+     selector silently matches nothing. */
+  #data-table :global(td.small-n-cell) {
+    outline: 2px solid #dc2626;
+    outline-offset: -2px;
+    background: #fef2f2;
+    color: #b91c1c;
+    text-align: center;
   }
 
   @keyframes fadeIn {

@@ -12,6 +12,12 @@ export interface SiteYearData {
 export interface CharacteristicData {
   variable: string;
   sites: Map<string, Map<string, string>>; // site -> year -> value
+  /**
+   * Nesting level from the source CSV's leading indent (0 = top-level row,
+   * 1 = its children, ...). Optional: only parseCohortCSV sets it, and the
+   * name itself is always trimmed, so consumers that ignore it are unaffected.
+   */
+  depth?: number;
 }
 
 export interface ParsedConsortiumData {

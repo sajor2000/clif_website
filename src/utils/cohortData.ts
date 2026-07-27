@@ -98,9 +98,6 @@ export const COHORTS: CohortDef[] = [
     hasOverallFile: true,
     hasHourly: false,
     hasSofa: false,
-    // Hidden pending data verification (2026-07-21). This is the only cohort in
-    // the 'overall' group, so hiding it removes that group from the picker too.
-    hidden: true,
   },
   {
     key: 'overall',
@@ -245,6 +242,10 @@ export function parseCohortCSV(csvContent: string): ParsedConsortiumData {
   // rows to keep every variable name unique.
   let inImvMedBlock = false;
 
+  // Carried across rows so a sibling can inherit the group's indent level.
+  let prevPrefix: string | null = null;
+  let prevDepth = 0;
+
   for (let i = 1; i < lines.length; i++) {
     const values = parseCSVLine(lines[i]);
     const raw = values[0] ?? '';
@@ -254,7 +255,22 @@ export function parseCohortCSV(csvContent: string): ParsedConsortiumData {
     if (!raw.startsWith(' ')) inImvMedBlock = variable.startsWith('Medications during IMV');
     else if (inImvMedBlock) variable = `${variable} (during IMV)`;
 
-    const charData: CharacteristicData = { variable, sites: new Map() };
+    // The export indents children by two spaces per level (0/2/4/6 in the
+    // current files). Keep that as a number before the name is used trimmed,
+    // so the table can render the hierarchy the CSV already encodes.
+    let depth = Math.floor((raw.length - raw.replace(/^ +/, '').length) / 2);
+
+    // The indent is not applied consistently: 'Race: Other', 'Ethnicity: Other'
+    // and 'Sex: Other' sit flush left while every sibling in their group is
+    // indented. Siblings share a `<Prefix>: ` label, so when a row repeats the
+    // previous row's prefix, it inherits its depth. A no-op wherever the export
+    // already indents consistently.
+    const prefix = variable.includes(': ') ? variable.slice(0, variable.indexOf(': ')) : null;
+    if (prefix && prefix === prevPrefix && depth !== prevDepth) depth = prevDepth;
+    prevPrefix = prefix;
+    prevDepth = depth;
+
+    const charData: CharacteristicData = { variable, sites: new Map(), depth };
 
     for (let j = 1; j < headers.length && j < values.length; j++) {
       const meta = colMeta[j];
