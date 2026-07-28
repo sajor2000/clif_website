@@ -1,4 +1,4 @@
-// Cohort data registry + parser for the 07202026 export.
+// Cohort data registry + parser for the _aggregated export.
 //
 // The dashboard is organized around a two-level cohort model:
 //   - "Overall"          = all hospitalized patients (overall_ward)
@@ -29,6 +29,7 @@ export const AGGREGATE_SITE = 'ALL';
 export const SITE_LABELS: Record<string, string> = {
   ALL: 'Consortium Aggregate',
   Emory: 'Emory University',
+  JHU: 'Johns Hopkins University',
   NU: 'Northwestern University',
   OHSU: 'Oregon Health & Science University',
   RUSH: 'Rush University',
@@ -47,7 +48,7 @@ export const SITE_LABELS: Record<string, string> = {
  * alphabetically by display name, with MIMIC IV last. Codes not listed here
  * sort after these, alphabetically, so a new site still renders.
  */
-export const SITE_ORDER = ['ALL', 'Emory', 'NU', 'OHSU', 'RUSH', 'UCSF', 'UCMC', 'UMN', 'UPenn', 'Sunnybrook', 'MIMIC'];
+export const SITE_ORDER = ['ALL', 'Emory', 'JHU', 'NU', 'OHSU', 'RUSH', 'UCSF', 'UCMC', 'UMN', 'UPenn', 'Sunnybrook', 'MIMIC'];
 
 /** Display name for a site code; unknown codes fall back to the code itself. */
 export function siteLabel(code: string): string {

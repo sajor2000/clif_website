@@ -45,9 +45,9 @@ function deriveOverall(parsed: ParsedConsortiumData) {
   const rows: { characteristic: string; label?: string; depth: number; values: Record<string, string>; synthetic?: boolean }[] = [];
   const blank = Object.fromEntries(sites.map((s) => [s, '-']));
 
-  // The 07202026 export dropped the `Years` row the previous export carried, so
-  // the Table view had no timespan at all. Derive it from which year columns
-  // each site actually populates.
+  // Neither the 07202026 nor the _aggregated export carries the `Years` row the
+  // export before them did, so the Table view has no timespan of its own.
+  // Derive it from which year columns each site actually populates.
   //
   // NOTE the scope: this is the by-year breakout only, which starts at 2022 —
   // it is NOT the full span. The Overall aggregate reaches back to 2011, which

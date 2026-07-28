@@ -66,6 +66,10 @@ CLIF Consortium Internal Tracker - *.csv
 .claude/
 .vercel
 
-# Raw cohort-data export (118 MB: parquet bins, PNGs, full pipeline output).
-# Only the transformed per-cohort CSVs under src/data/cohorts/ are committed.
+# Raw cohort-data exports (126 MB: parquet bins, full pipeline output). Only
+# the transformed CSVs under src/data/cohorts/ and src/data/cohort_wip_ecdf/
+# are committed; regenerate them with
+#   node scripts/refresh-cohort-tableone.mjs
+#   python3 scripts/refresh-cohort-ecdf.py
 src/data/07202026/
+src/data/_aggregated/
