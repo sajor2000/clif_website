@@ -1,10 +1,10 @@
 /**
  * How each dashboard characteristic is actually computed upstream.
  *
- * Every entry is transcribed from the CLIF-TableOne pipeline — the file and
- * symbol are named in `source` so a reader can check the claim rather than
- * trust it. Keep them that way: a definition nobody can verify is worse than
- * no definition, because it looks authoritative.
+ * Every entry is transcribed from the CLIF-TableOne pipeline. `source` names
+ * the file it came from so the claim can be re-checked when the pipeline
+ * changes — it is NOT rendered to users, who should not need to read code to
+ * understand a number. Keep filling it in for the same reason.
  *
  * Keys are the CSV variable names (the lookup key, not the display name).
  * Rows whose name carries a category suffix — `Initial ventilator mode: simv`,
@@ -51,7 +51,7 @@ export const CHARACTERISTIC_DEFINITIONS: Record<string, CharacteristicDefinition
   },
 
   'Invasive mechanical ventilation, n (%)': {
-    text: 'Encounters with any invasive mechanical ventilation observation in the respiratory support data (on_vent = 1).',
+    text: 'Encounters with any invasive mechanical ventilation observation in the respiratory support data.',
     source: 'modules/tableone/generator.py',
   },
   'Ventilator hours (millions)': {
@@ -97,15 +97,15 @@ export const CHARACTERISTIC_DEFINITIONS: Record<string, CharacteristicDefinition
   },
 
   'ICU encounters, n (%)': {
-    text: 'Encounters that ever had an ADT row whose location category contains "icu" (icu_enc).',
+    text: 'Encounters that ever had an ADT row whose location category contains "icu".',
     source: 'README.md — per-encounter-block flags',
   },
   'Advanced respiratory support, n (%)': {
-    text: 'Encounters that ever received IMV, NIPPV or CPAP — or high-flow nasal cannula at 30 L/min or more (high_support_enc).',
+    text: 'Encounters that ever received IMV, NIPPV or CPAP — or high-flow nasal cannula at 30 L/min or more.',
     source: 'README.md — per-encounter-block flags',
   },
   'Vasoactive support, n (%)': {
-    text: 'Encounters that ever received norepinephrine, epinephrine, phenylephrine, vasopressin, dopamine or angiotensin (vaso_support_enc).',
+    text: 'Encounters that ever received norepinephrine, epinephrine, phenylephrine, vasopressin, dopamine or angiotensin.',
     source: 'README.md — per-encounter-block flags',
   },
   'Other critically ill, n (%)': {
@@ -122,7 +122,7 @@ export const CHARACTERISTIC_DEFINITIONS: Record<string, CharacteristicDefinition
     source: 'modules/sofa/calculator.py',
   },
   'Charlson Comorbidity Index, median [Q1, Q3]': {
-    text: 'Comorbidity index computed by clifpy from the hospital diagnosis codes attached to the encounter.',
+    text: 'Comorbidity index computed from the hospital diagnosis codes attached to the encounter.',
     source: 'clifpy.utils.comorbidity.calculate_cci (generator.py:74)',
   },
   'CRRT, n (%)': {

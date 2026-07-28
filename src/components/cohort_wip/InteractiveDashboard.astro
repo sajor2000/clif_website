@@ -810,7 +810,7 @@ const categories = Array.from(groupedChars.keys());
     const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     return `<span class="def-info" tabindex="0" role="note" aria-label="Definition: ${esc(def.text)}">
       <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
-      <span class="def-tip"><span class="def-tip-text">${esc(def.text)}</span><span class="def-tip-src">${esc(def.source)}</span></span>
+      <span class="def-tip"><span class="def-tip-text">${esc(def.text)}</span></span>
     </span>`;
   }
 
@@ -5332,18 +5332,6 @@ const categories = Array.from(groupedChars.keys());
   :global(#selected-characteristic-def .def-info:hover .def-tip),
   :global(#selected-characteristic-def .def-info:focus .def-tip) {
     display: block;
-  }
-
-  /* Provenance line: which pipeline file the definition came from. */
-  #data-table :global(.def-tip-src),
-  :global(#selected-characteristic-def .def-tip-src) {
-    display: block;
-    margin-top: 0.4rem;
-    padding-top: 0.35rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.15);
-    color: #9ca3af;
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 0.65rem;
   }
 
   /* TEMPORARY (review aid): mark small-n cells in the table.
