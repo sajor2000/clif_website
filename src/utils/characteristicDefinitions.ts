@@ -148,6 +148,26 @@ export const CHARACTERISTIC_DEFINITIONS: Record<string, CharacteristicDefinition
  * keyed by a synthetic name so they can share definitionFor().
  */
 export const DERIVED_DEFINITIONS: Record<string, CharacteristicDefinition> = {
+  '__VENT_SETTINGS_CARD__': {
+    text: 'Median ventilator settings over the first 24 hours of invasive ventilation, with the interquartile range beneath. Measured from ventilation start, not from admission.',
+    source: 'modules/tableone/ventilation_stats.py (first 24h window)',
+  },
+  '__VENT_MODE_CARD__': {
+    text: 'Share of ventilator observations in the first 24 hours of invasive ventilation falling in each mode — weighted by observations rather than by patient, so a patient with more frequent charting contributes more. Modes outside the five named groups are pooled as Other.',
+    source: 'modules/tableone/ventilation_stats.py (generate_mode_proportions)',
+  },
+  '__VASO_DOSE_CARD__': {
+    text: 'Per-drug: the share of encounters that received it, and the median infusion dose across those encounters with the interquartile range. Doses are the median of each encounter\'s own median, so an encounter counts once regardless of how long it was infused.',
+    source: 'modules/tableone/generator.py:6211',
+  },
+  '__RESP_SECTION__': {
+    text: 'Everything in this section is limited to encounters that received invasive mechanical ventilation, and is measured from ventilation start rather than from admission.',
+    source: 'modules/tableone/generator.py',
+  },
+  '__VASO_SECTION__': {
+    text: 'Vasoactive medications given at any point during the encounter — norepinephrine, epinephrine, phenylephrine, vasopressin, dopamine or angiotensin. Percentages are of all encounters in the selected cohort.',
+    source: 'README.md — vaso_support_enc flag',
+  },
   '__ICU_STAY_TILE__': {
     text: 'Hospitalizations with at least one ICU stay, taken from the ICU encounters row — encounters whose ADT record ever shows a location category containing "icu".',
     source: 'README.md — icu_enc flag',

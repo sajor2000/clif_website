@@ -93,6 +93,20 @@ const MAX_ALPHA = 0.85;
 
 const pct = (n: number) => (grandTotal > 0 ? `${((n / grandTotal) * 100).toFixed(1)}%` : '');
 const fmt = (n: number) => n.toLocaleString();
+
+/**
+ * Download payload. Built here rather than scraped from the DOM so the file
+ * carries the real integers, not the thousands-separated display strings, and
+ * so em-dash placeholders come out as 0.
+ *
+ * The two header rows are flattened to one `<Ethnicity> — <Sex>` row, since a
+ * two-row header does not survive a CSV into a spreadsheet intact.
+ */
+const csvHeader = ['Race', ...dataCols.map((c) => `${c.ethnicity} - ${c.sex}`), 'Total'];
+const csvRows = body.map((r) => [r.race, ...r.cells.map(String), String(r.total)]);
+const csvText = [csvHeader, ...csvRows]
+  .map((row) => row.map((f) => (/[",\n]/.test(f) ? `"${f.replace(/"/g, '""')}"` : f)).join(','))
+  .join('\n');
 ---
 
 {body.length > 0 && (
@@ -108,11 +122,24 @@ const fmt = (n: number) => n.toLocaleString();
     </button>
 
     <div id={`demographic-crosstab-${cohort}`} class="collapsible-content collapsed mt-6">
-      <p class="mb-3 text-sm text-gray-600">
-        Unique <span class="font-semibold">patients</span> by race, ethnicity and sex — {fmt(grandTotal)} in total.
-        Counted per patient, not per hospitalization, so these do not sum to the encounter counts elsewhere on this page.
-        Cell shading is a log scale, so smaller groups stay visible beside the largest.
-      </p>
+      <div class="mb-3 flex items-start justify-between gap-4">
+        <p class="text-sm text-gray-600">
+          Unique <span class="font-semibold">patients</span> by race, ethnicity and sex — {fmt(grandTotal)} in total.
+          Counted per patient, not per hospitalization, so these do not sum to the encounter counts elsewhere on this page.
+          Cell shading is a log scale, so smaller groups stay visible beside the largest.
+        </p>
+        <button
+          type="button"
+          class="crosstab-export flex shrink-0 items-center gap-2 rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-green-700"
+          data-cohort={cohort}
+          data-csv={csvText}
+        >
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          Export CSV
+        </button>
+      </div>
 
       <div class="overflow-x-auto rounded-lg border border-gray-200">
         <table class="crosstab w-full border-collapse text-sm">
@@ -168,4 +195,56 @@ const fmt = (n: number) => n.toLocaleString();
   .crosstab th {
     font-variant-numeric: tabular-nums;
   }
+
+  /* Collapsible behaviour, repeated from CohortSummaryFromCSV rather than
+     inherited. Astro scopes styles per component, so the parent's rules compile
+     to `.collapsible-content[data-astro-cid-<parent>]` and never match this
+     component's markup — the section rendered permanently open. The toggle
+     SCRIPT does reach it, because it queries the panel root at runtime and this
+     markup is inside it; only the CSS needed restating. */
+  .collapsible-content {
+    max-height: 5000px;
+    overflow: hidden;
+    transition: max-height 0.5s ease-in-out, opacity 0.3s ease-in-out;
+    opacity: 1;
+  }
+
+  .collapsible-content.collapsed {
+    max-height: 0;
+    opacity: 0;
+    margin-top: 0 !important;
+  }
+
+  .collapsible-header {
+    cursor: pointer;
+  }
+
+  .collapsible-header .chevron {
+    transition: transform 0.3s ease-in-out;
+  }
+
+  .collapsible-header.collapsed .chevron {
+    transform: rotate(-90deg);
+  }
 </style>
+
+<script>
+  // Delegated so one listener serves every cohort's copy of this table.
+  // The CSV is carried on the button rather than rebuilt from the DOM, so the
+  // download holds real integers instead of "193,132" display strings.
+  document.addEventListener('click', (e) => {
+    const btn = (e.target as HTMLElement | null)?.closest?.('.crosstab-export') as HTMLElement | null;
+    if (!btn) return;
+    const csv = btn.dataset.csv;
+    if (!csv) return;
+    const cohort = btn.dataset.cohort || 'cohort';
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `clif-${cohort}-race-ethnicity-sex.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+</script>

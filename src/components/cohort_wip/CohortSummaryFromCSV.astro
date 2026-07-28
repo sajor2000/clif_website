@@ -903,6 +903,8 @@ const dopamineDose = d.dopamineDose;
   <!-- Detailed Metrics - Collapsible Sections -->
   <section class="mb-8">
 
+    <DemographicCrosstab cohort={cohort} />
+
     <!-- Respiratory Support Subsection -->
     {hasVent && (
     <div class="mb-8">
@@ -910,7 +912,7 @@ const dopamineDose = d.dopamineDose;
         class="collapsible-header collapsed w-full flex items-center justify-between bg-gray-50 hover:bg-gray-100 p-4 rounded-lg transition-colors duration-200 border border-gray-200"
         data-target={`respiratory-support-${uid}`}
       >
-        <h3 class="text-xl font-bold text-gray-800">Respiratory Support</h3>
+        <h3 class="text-xl font-bold text-gray-800">Respiratory Support<InfoTip characteristic="__RESP_SECTION__" /></h3>
         <svg class="chevron w-6 h-6 text-gray-600 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
         </svg>
@@ -923,7 +925,7 @@ const dopamineDose = d.dopamineDose;
 
       <!-- First Location at IMV Start -->
       <div class="bg-white p-5 rounded-lg shadow border border-gray-200">
-        <h3 class="text-base font-semibold mb-4 text-gray-700">First Location at IMV Start</h3>
+        <h3 class="text-base font-semibold mb-4 text-gray-700">First Location at IMV Start<InfoTip characteristic="First location at IMV start: icu" /></h3>
         <div class="flex items-center justify-center" style="height: 280px;">
           <canvas id={`locationPieChart-${uid}`}></canvas>
         </div>
@@ -931,7 +933,7 @@ const dopamineDose = d.dopamineDose;
 
       <!-- Initial Ventilator Mode -->
       <div class="bg-white p-5 rounded-lg shadow border border-gray-200">
-        <h3 class="text-base font-semibold mb-4 text-gray-700">Initial Ventilator Mode</h3>
+        <h3 class="text-base font-semibold mb-4 text-gray-700">Initial Ventilator Mode<InfoTip characteristic="__VENT_MODE_CARD__" /></h3>
         <div id={`ventModeTreemap-${uid}`} class="w-full" style="height: 256px;"></div>
       </div>
 
@@ -939,7 +941,7 @@ const dopamineDose = d.dopamineDose;
 
     <!-- IMV Device Settings - Integrated Card -->
     <div class="bg-gradient-to-br from-teal-500 to-teal-600 text-white p-6 rounded-lg shadow mb-6">
-      <h4 class="text-sm font-semibold mb-4 opacity-90">Initial Ventilator Settings</h4>
+      <h4 class="text-sm font-semibold mb-4 opacity-90">Initial Ventilator Settings<InfoTip characteristic="__VENT_SETTINGS_CARD__" /></h4>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
         <div class="text-center">
           <div class="text-xs opacity-75 mb-1">FiO2 (%)</div>
@@ -976,7 +978,7 @@ const dopamineDose = d.dopamineDose;
         class="collapsible-header collapsed w-full flex items-center justify-between bg-gray-50 hover:bg-gray-100 p-4 rounded-lg transition-colors duration-200 border border-gray-200"
         data-target={`vasopressor-support-${uid}`}
       >
-        <h3 class="text-xl font-bold text-gray-800">Vasopressor Support</h3>
+        <h3 class="text-xl font-bold text-gray-800">Vasopressor Support<InfoTip characteristic="__VASO_SECTION__" /></h3>
         <svg class="chevron w-6 h-6 text-gray-600 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
         </svg>
@@ -986,7 +988,7 @@ const dopamineDose = d.dopamineDose;
 
     <!-- Vasopressor Medications - Integrated Card -->
     <div class="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white p-6 rounded-lg shadow">
-      <h4 class="text-sm font-semibold mb-4 opacity-90">Vasopressor Medications</h4>
+      <h4 class="text-sm font-semibold mb-4 opacity-90">Vasopressor Medications<InfoTip characteristic="__VASO_DOSE_CARD__" /></h4>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
 
         <!-- Norepinephrine -->
@@ -1037,8 +1039,6 @@ const dopamineDose = d.dopamineDose;
       </div>
     </div>
     )}
-
-    <DemographicCrosstab cohort={cohort} />
 
   </section>
 
