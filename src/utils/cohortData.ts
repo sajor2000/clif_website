@@ -102,7 +102,10 @@ export const COHORTS: CohortDef[] = [
   },
   {
     key: 'overall',
-    label: 'Critically Ill',
+    // "All" distinguishes the aggregate from the optgroup of the same name and
+    // from the four strata listed under it — this cohort is their union, not a
+    // sibling category.
+    label: 'All Critically Ill',
     group: 'critically_ill',
     hasOverallFile: true,
     hasHourly: true,

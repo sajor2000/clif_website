@@ -36,6 +36,15 @@ function headlineFor(key: string) {
     group: sub ? 'critically_ill' : def.group,
     hasHourly: def.hasHourly,
     hasSofa: def.hasSofa,
+    // Derived from disk rather than declared, so it cannot drift from what the
+    // Distributions tab can actually load. Sub-cohorts have no ECDF folder of
+    // their own and fall back to the parent, matching DataDistributions.
+    // The ward cohort has none at all: the upstream ward pipeline
+    // (run_tableone_ward.py) emits table_one only — no bins, and no entry in
+    // the ECDF generator's STRATUM_WINDOW_TYPE map.
+    hasDistributions: fs.existsSync(
+      path.join(process.cwd(), 'src', 'data', 'cohort_wip_ecdf', sub ? sub.parent : key)
+    ),
     patients: num(getAggregateValue(data, 'N: Unique patients')),
     encounters: num(getAggregateValue(data, 'N: Encounter blocks')),
     hospitals: num(getAggregateValue(data, 'N: Hospitals')),
@@ -426,6 +435,10 @@ const subsByParent = Object.fromEntries(
       }
       TABS.forEach((t) => document.getElementById('tab-' + t)?.addEventListener('click', () => activateTab(t)));
 
+      // The cohort picker lives in another script block and needs to move off a
+      // tab that a cohort switch has just hidden.
+      window.__activateTab = activateTab;
+
       // Critically ill modal
       const criticallyIllTrigger = document.getElementById('critically-ill-trigger');
       const criticallyIllModal = document.getElementById('critically-ill-modal');
@@ -468,6 +481,7 @@ const subsByParent = Object.fromEntries(
       const subWrap = document.getElementById('cohort-sub-wrap');
       const subSelect = document.getElementById('cohort-sub-select');
       const tabHourly = document.getElementById('tab-hourly');
+      const tabDistributions = document.getElementById('tab-distributions');
       const SUBS = window.__SUBS_BY_PARENT__ || {};
 
       function parentOf(key) { return key && key.indexOf('__') > -1 ? key.split('__')[0] : key; }
@@ -496,8 +510,24 @@ const subsByParent = Object.fromEntries(
         // time) — it frames the dashboard as a whole, not the current selection.
         // The summary subtitle no longer needs a name span: the picker itself
         // sits inline in the sentence and shows the selection.
-        // Hourly tab only applies to cohorts that ship hourly data.
+        // Hourly and Distributions only apply to cohorts that ship that data.
+        // The ward cohort has neither — its upstream pipeline emits table_one
+        // only — so both tabs disappear rather than opening on an empty state.
         if (tabHourly) tabHourly.classList.toggle('hidden', !h.hasHourly);
+        if (tabDistributions) tabDistributions.classList.toggle('hidden', !h.hasDistributions);
+
+        // Hiding the button is not enough: if that tab is the one currently
+        // open, its panel stays on screen with no way back to it. Fall back to
+        // Summary, which every cohort has.
+        const openHidden = [
+          [tabHourly, 'hourly'],
+          [tabDistributions, 'distributions'],
+        ].some(([btn, name]) =>
+          btn && btn.classList.contains('hidden') &&
+          !document.getElementById('content-' + name)?.classList.contains('hidden')
+        );
+        if (openHidden && typeof window.__activateTab === 'function') window.__activateTab('summary');
+
         if (typeSelect) typeSelect.value = parentOf(key);
         paintSubSelect(key);
       });
