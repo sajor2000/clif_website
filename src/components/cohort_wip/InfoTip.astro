@@ -1,0 +1,115 @@
+---
+/**
+ * Info affordance explaining how a number was computed.
+ *
+ * Two ways to use it:
+ *   <InfoTip characteristic="ICU episodes, total n" />   look the definition up
+ *   <InfoTip text="..." source="..." />                  supply one directly,
+ *                                                        for tiles that are
+ *                                                        derived rather than a
+ *                                                        CSV row
+ *
+ * Renders nothing when there is no definition, so it can be dropped beside any
+ * value without guarding each call site.
+ *
+ * The icon inherits `currentColor`, so it works on the white cards and on the
+ * burgundy tiles without a variant.
+ */
+import { definitionFor } from '../../utils/characteristicDefinitions';
+
+interface Props {
+  characteristic?: string;
+  text?: string;
+  source?: string;
+  /** Anchor the card's right edge instead of its left, for tiles near the viewport edge. */
+  align?: 'left' | 'right';
+}
+
+const { characteristic, text, source, align = 'left' } = Astro.props;
+const def = characteristic
+  ? definitionFor(characteristic)
+  : text
+    ? { text, source: source ?? '' }
+    : null;
+---
+
+{def && (
+  <span
+    class:list={['info-tip', align === 'right' && 'info-tip-right']}
+    tabindex="0"
+    role="note"
+    aria-label={`Definition: ${def.text}`}
+  >
+    <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+      <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+    </svg>
+    <span class="info-tip-card">
+      <span>{def.text}</span>
+      {def.source && <span class="info-tip-src">{def.source}</span>}
+    </span>
+  </span>
+)}
+
+<style>
+  .info-tip {
+    position: relative;
+    display: inline-flex;
+    margin-left: 0.25rem;
+    vertical-align: text-top;
+    opacity: 0.5;
+    cursor: help;
+  }
+
+  .info-tip svg {
+    width: 0.8em;
+    height: 0.8em;
+  }
+
+  .info-tip:hover,
+  .info-tip:focus {
+    opacity: 1;
+    outline: none;
+  }
+
+  .info-tip-card {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    z-index: 80;
+    display: none;
+    width: 19rem;
+    max-width: 70vw;
+    padding: 0.6rem 0.7rem;
+    border-radius: 0.5rem;
+    background: #1f2937;
+    color: #f9fafb;
+    font-size: 0.75rem;
+    font-weight: 400;
+    line-height: 1.45;
+    text-align: left;
+    white-space: normal;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  }
+
+  /* Tiles on the right of the grid would push the card off-screen. */
+  .info-tip-right .info-tip-card {
+    left: auto;
+    right: 0;
+  }
+
+  .info-tip:hover .info-tip-card,
+  .info-tip:focus .info-tip-card {
+    display: block;
+  }
+
+  /* Which pipeline file the definition came from. */
+  .info-tip-src {
+    display: block;
+    margin-top: 0.4rem;
+    padding-top: 0.35rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    color: #9ca3af;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.65rem;
+  }
+</style>

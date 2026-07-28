@@ -129,9 +129,48 @@ export const CHARACTERISTIC_DEFINITIONS: Record<string, CharacteristicDefinition
     text: 'Encounters that received continuous renal replacement therapy.',
     source: 'modules/tableone/generator.py:6068',
   },
+  'ICU length of stay (days), median [Q1, Q3]': {
+    text: 'Median days spent in the ICU per encounter, with the interquartile range in brackets. Counts ICU time only, so it is shorter than the hospital stay and is undefined for encounters that never reached an ICU.',
+    source: 'modules/tableone/generator.py',
+  },
+  'Hospital length of stay (days), median [Q1, Q3]': {
+    text: 'Median days from admission to discharge per encounter, with the interquartile range in brackets. Measured on the stitched encounter block, so a readmission within 6 hours is one continuous stay.',
+    source: 'modules/tableone/generator.py',
+  },
   'P/F ratio (imputed), median [Q1, Q3]': {
     text: 'PaO2/FiO2 ratio with values imputed from SpO2/FiO2 where an arterial blood gas is unavailable — coverage is therefore wider than the non-imputed row, and the two are not interchangeable.',
     source: 'modules/tableone/pf_sf_calculator.py',
+  },
+};
+
+/**
+ * Summary-page tiles that are derived rather than a CSV row of their own —
+ * keyed by a synthetic name so they can share definitionFor().
+ */
+export const DERIVED_DEFINITIONS: Record<string, CharacteristicDefinition> = {
+  '__ICU_STAY_TILE__': {
+    text: 'Hospitalizations with at least one ICU stay, taken from the ICU encounters row — encounters whose ADT record ever shows a location category containing "icu".',
+    source: 'README.md — icu_enc flag',
+  },
+  '__TIMESPAN_TILE__': {
+    text: 'Span of admissions in the cohort. The end year is read from the latest year column in the export; the 2011 start is a fixed value in the dashboard, because the by-year breakout only reaches back to 2022 while the aggregate includes earlier admissions.',
+    source: 'CohortSummaryFromCSV.astro (f.years)',
+  },
+  '__HOSPITAL_MORTALITY_TILE__': {
+    text: 'Encounters discharged as expired or to hospice, over all encounters in the selected cohort.',
+    source: 'README.md — death_enc flag',
+  },
+  '__DEMOGRAPHIC_SHARE__': {
+    text: 'Share of encounters in the selected cohort. Race, ethnicity and sex are as recorded in the source data; categories do not always sum to 100% because of Missing and Other.',
+    source: 'modules/tableone/generator.py',
+  },
+  '__MEDIAN_AGE_TILE__': {
+    text: 'Median age at admission with the interquartile range in brackets. Pooled across sites.',
+    source: 'modules/tableone/generator.py',
+  },
+  '__ENCOUNTER_TYPES_CARD__': {
+    text: 'These four categories OVERLAP — one encounter can be an ICU stay AND receive advanced respiratory support AND receive vasopressors — so they do not sum to 100%, and they sum to more than the share of encounters that received any critical care.',
+    source: 'README.md — per-encounter-block flags',
   },
 };
 
@@ -166,6 +205,7 @@ export const PREFIX_DEFINITIONS: Record<string, CharacteristicDefinition> = {
 export function definitionFor(name: string): CharacteristicDefinition | null {
   const trimmed = (name || '').trim();
   if (CHARACTERISTIC_DEFINITIONS[trimmed]) return CHARACTERISTIC_DEFINITIONS[trimmed];
+  if (DERIVED_DEFINITIONS[trimmed]) return DERIVED_DEFINITIONS[trimmed];
   const sep = trimmed.indexOf(':');
   if (sep > 0) {
     const prefix = trimmed.slice(0, sep);

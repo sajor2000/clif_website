@@ -4,6 +4,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { DEFAULT_COHORT, parseCohortCSV, getAggregateValue } from '../../utils/cohortData';
+import InfoTip from './InfoTip.astro';
 
 // field name -> row label in the new table_one files (trimmed; case as in file)
 const LABELS: Record<string, string> = {
@@ -374,42 +375,42 @@ const hospitalWindows = [
  */
 const demographicCells = [
   {
-    label: 'Median Age', value: extractMedian(medianAge), iqr: extractIQR(medianAge), show: true,
+    label: 'Median Age', def: '__MEDIAN_AGE_TILE__', value: extractMedian(medianAge), iqr: extractIQR(medianAge), show: true,
     viewBox: '0 0 20 20',
     icon: '<path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zM4 8h12v8H4V8z" clip-rule="evenodd"/>',
   },
   {
-    label: 'Female', value: extractPercentage(sexFemale), iqr: '', show: true,
+    label: 'Female', def: '__DEMOGRAPHIC_SHARE__', value: extractPercentage(sexFemale), iqr: '', show: true,
     viewBox: '0 0 20 20',
     icon: '<path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/>',
   },
   {
-    label: 'White', value: extractPercentage(raceWhite), iqr: '', show: true,
+    label: 'White', def: '__DEMOGRAPHIC_SHARE__', value: extractPercentage(raceWhite), iqr: '', show: true,
     viewBox: '0 0 20 20',
     icon: '<path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>',
   },
   {
-    label: 'Hispanic', value: extractPercentage(ethnicityHispanic), iqr: '', show: true,
+    label: 'Hispanic', def: '__DEMOGRAPHIC_SHARE__', value: extractPercentage(ethnicityHispanic), iqr: '', show: true,
     viewBox: '0 0 20 20',
     icon: '<path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>',
   },
   {
-    label: 'Median ICU Stay, days', value: extractMedian(icuLOS), iqr: extractIQR(icuLOS), show: hasIcuLos,
+    label: 'Median ICU Stay, days', def: 'ICU length of stay (days), median [Q1, Q3]', value: extractMedian(icuLOS), iqr: extractIQR(icuLOS), show: hasIcuLos,
     viewBox: '0 0 640 512',
     icon: '<path d="M176 256c44.11 0 80-35.89 80-80s-35.89-80-80-80-80 35.89-80 80 35.89 80 80 80zm352-128H304c-8.84 0-16 7.16-16 16v144H64V80c0-8.84-7.16-16-16-16H16C7.16 64 0 71.16 0 80v352c0 8.84 7.16 16 16 16h32c8.84 0 16-7.16 16-16v-48h512v48c0 8.84 7.16 16 16 16h32c8.84 0 16-7.16 16-16V240c0-61.86-50.14-112-112-112z"/>',
   },
   {
-    label: 'Median Hospital Stay, days', value: extractMedian(hospitalLOS), iqr: extractIQR(hospitalLOS), show: true,
+    label: 'Median Hospital Stay, days', def: 'Hospital length of stay (days), median [Q1, Q3]', value: extractMedian(hospitalLOS), iqr: extractIQR(hospitalLOS), show: true,
     viewBox: '0 0 20 20',
     icon: '<path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clip-rule="evenodd"/>',
   },
   {
-    label: 'Median SOFA Score', value: extractMedian(sofaScore), iqr: extractIQR(sofaScore), show: hasSofa,
+    label: 'Median SOFA Score', def: 'Total SOFA score, median [Q1, Q3]', value: extractMedian(sofaScore), iqr: extractIQR(sofaScore), show: hasSofa,
     viewBox: '0 0 20 20',
     icon: '<path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/>',
   },
   {
-    label: 'Median Charlson Index', value: extractMedian(charlsonIndex), iqr: extractIQR(charlsonIndex), show: true,
+    label: 'Median Charlson Index', def: 'Charlson Comorbidity Index, median [Q1, Q3]', value: extractMedian(charlsonIndex), iqr: extractIQR(charlsonIndex), show: true,
     viewBox: '0 0 20 20',
     icon: '<path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/>',
   },
@@ -501,7 +502,7 @@ const dopamineDose = d.dopamineDose;
           <div>
             <div class="text-xl font-bold">{extractPercentage(imvTotal)}</div>
             <div class="text-[10px] opacity-75">Hospitalizations</div>
-            <div class="text-sm font-semibold">Invasive Mechanical Ventilation Support</div>
+            <div class="text-sm font-semibold">Invasive Mechanical Ventilation Support<InfoTip characteristic="Invasive mechanical ventilation, n (%)" /></div>
           </div>
           <svg class="w-12 h-12 opacity-90 breathing-lungs shrink-0 ml-auto" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 2c.5 0 1 .2 1 .5v3c2-1.5 4.5-2 6.5-.5 2.5 2 3 5.5 2.5 8.5-.5 3.5-2 7-4.5 9-1 .8-2 1-3 .5-.8-.4-1.5-1.2-2-2.5V21c0 .3-.5.5-1 .5s-1-.2-1-.5v-1c-.5 1.3-1.2 2.1-2 2.5-1 .5-2 .3-3-.5-2.5-2-4-5.5-4.5-9C.5 10.5 1 7 3.5 5c2-1.5 4.5-1 6.5.5v-3c0-.3.5-.5 1-.5zM6.5 7C5 7.5 4 9 3.5 11c-.5 2.5 0 5.5 1.5 7.5.5.8 1.2 1.5 2 1.8.3.1.5 0 .8-.2.8-.8 1.5-2.2 1.8-4 .2-1.2.2-2.5 0-3.8-.3-1.8-1-3.5-2-4.8-.3-.3-.7-.5-1.1-.5zm11 0c-.4 0-.8.2-1.1.5-1 1.3-1.7 3-2 4.8-.2 1.3-.2 2.6 0 3.8.3 1.8 1 3.2 1.8 4 .3.2.5.3.8.2.8-.3 1.5-1 2-1.8 1.5-2 2-5 1.5-7.5-.5-2-1.5-3.5-3-4z"/>
@@ -513,7 +514,7 @@ const dopamineDose = d.dopamineDose;
           <div>
             <div class="text-xl font-bold">{extractPercentage(vasopressorEncounters)}</div>
             <div class="text-[10px] opacity-75">Hospitalizations</div>
-            <div class="text-sm font-semibold">Vasopressor Support</div>
+            <div class="text-sm font-semibold">Vasopressor Support<InfoTip characteristic="Vasoactive support, n (%)" /></div>
           </div>
           <svg class="w-12 h-12 opacity-90 shrink-0 ml-auto" fill="none" stroke="currentColor" stroke-width="2" viewBox="8 0 48 80" aria-hidden="true">
             <rect x="12" y="8" width="32" height="32" rx="4" stroke-linejoin="round"/>
@@ -533,7 +534,7 @@ const dopamineDose = d.dopamineDose;
           <div>
             <div class="text-xl font-bold">{extractPercentage(crrt)}</div>
             <div class="text-[10px] opacity-75">Hospitalizations</div>
-            <div class="text-sm font-semibold">Continuous Renal Replacement Therapy</div>
+            <div class="text-sm font-semibold">Continuous Renal Replacement Therapy<InfoTip characteristic="CRRT, n (%)" /></div>
           </div>
           <svg class="w-12 h-12 opacity-90 shrink-0 ml-auto" fill="none" stroke="currentColor" stroke-width="2" viewBox="-64 -32 176 168" aria-hidden="true">
             <path d="M15 -30 C-20 -25 -35 10 -35 45 C-35 80 -15 115 15 130 C45 145 70 140 82 115 C94 90 92 75 75 60 C65 50 62 48 68 38 C74 28 85 10 80 -8 C75 -26 45 -35 15 -30 Z"
@@ -560,7 +561,7 @@ const dopamineDose = d.dopamineDose;
             class="demo-grid grid grid-cols-2 md:grid-cols-4 gap-4 text-center"
             style={`--demo-cols:${demographicCells.length}`}
           >
-            {demographicCells.map((cell) => (
+            {demographicCells.map((cell, i) => (
               <div class="relative py-2 flex flex-col items-center justify-start">
                 <svg
                   class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 opacity-30 text-slate-400"
@@ -574,7 +575,7 @@ const dopamineDose = d.dopamineDose;
                 </div>
                 {/* Reserved height for two lines so one- and two-line labels
                     do not shift their neighbours' vertical rhythm. */}
-                <div class="relative mt-1 min-h-[2rem] text-xs leading-tight text-gray-700 dark:!text-white">{cell.label}</div>
+                <div class="relative mt-1 min-h-[2rem] text-xs leading-tight text-gray-700 dark:!text-white">{cell.label}{cell.def && <InfoTip characteristic={cell.def} align={i >= demographicCells.length - 2 ? 'right' : 'left'} />}</div>
               </div>
             ))}
           </div>
@@ -585,7 +586,7 @@ const dopamineDose = d.dopamineDose;
 
           <!-- Encounter Types -->
           <div class="bg-white p-4 rounded-lg shadow border border-gray-200 flex flex-col overflow-visible" style="min-height: 400px;">
-            <h3 class="text-sm font-semibold text-gray-700">Encounter Types</h3>
+            <h3 class="text-sm font-semibold text-gray-700">Encounter Types<InfoTip characteristic="__ENCOUNTER_TYPES_CARD__" /></h3>
             {/* The categories overlap (one encounter can be in several), so a
                 parts-of-whole donut would misstate them. Each bar is instead an
                 independent 0–100% meter against all encounters; one fill color
@@ -732,7 +733,7 @@ const dopamineDose = d.dopamineDose;
                 <span class="text-2xl font-bold text-gray-900">{extractNumber(sepsisEvents)}</span>
                 <span class="text-sm text-gray-600">sepsis events</span>
               </div>
-              <div class="text-xs text-gray-500 mt-0.5">CDC Adult Sepsis Event criteria</div>
+              <div class="text-xs text-gray-500 mt-0.5">CDC Adult Sepsis Event criteria<InfoTip characteristic="Sepsis events (CDC ASE), n" /></div>
               {/* Divider: the headline above is total EVENTS; below is the share
                   of ENCOUNTERS affected — two different denominators. */}
               {encountersWithSepsis && (
@@ -777,7 +778,7 @@ const dopamineDose = d.dopamineDose;
             <div class="bg-white p-4 rounded-lg shadow border border-gray-200 flex-1 flex flex-col justify-center">
               <div class="flex items-baseline gap-2">
                 <span class="text-3xl font-bold text-gray-900">{extractNumber(icuEpisodes)}</span>
-                <span class="text-sm text-gray-600">ICU episodes</span>
+                <span class="text-sm text-gray-600">ICU episodes<InfoTip characteristic="ICU episodes, total n" /></span>
               </div>
             </div>
             )}
@@ -799,7 +800,7 @@ const dopamineDose = d.dopamineDose;
               {ventilatorHoursMillions && (
               <div class="bg-white p-4 rounded-lg shadow border border-gray-200 flex-1 flex flex-col items-center justify-center text-center">
                 <div class="text-3xl font-bold text-black">{ventilatorHoursMillions} million</div>
-                <div class="text-sm text-black mt-1">ventilator hours</div>
+                <div class="text-sm text-black mt-1">ventilator hours<InfoTip characteristic="Ventilator hours (millions)" /></div>
               </div>
               )}
               {timeToExtubation && (
@@ -822,7 +823,7 @@ const dopamineDose = d.dopamineDose;
                 <div class="relative text-left">
                   <div class="text-3xl font-bold text-black">{extractMedian(timeToExtubation)}</div>
                   <div class="text-xs text-black mt-0.5">[{extubQ1}, {extubQ3}]</div>
-                  <div class="text-sm text-black mt-1">Median <span class="font-bold">hours</span> to extubation</div>
+                  <div class="text-sm text-black mt-1">Median <span class="font-bold">hours</span> to extubation<InfoTip characteristic="Time to extubation (hrs), median [Q1, Q3]" /></div>
                 </div>
               </div>
               )}
@@ -841,7 +842,7 @@ const dopamineDose = d.dopamineDose;
                 {vfdEncounters && vfdMedian && (
                 <div>
                   <div class="flex items-baseline justify-between gap-x-4">
-                    <span class="text-sm font-semibold text-gray-700">Ventilator-free days</span>
+                    <span class="text-sm font-semibold text-gray-700">Ventilator-free days<InfoTip characteristic="VFD, median [Q1, Q3]" /></span>
                     <span class="flex items-baseline gap-1.5 shrink-0 whitespace-nowrap">
                       <span class="text-2xl font-bold text-gray-900">{extractMedian(vfdMedian)}</span>
                       <span class="text-sm text-gray-600">of {FREE_DAY_WINDOW} days</span>
@@ -862,7 +863,7 @@ const dopamineDose = d.dopamineDose;
                 {nidfdEncounters && nidfdMedian && (
                 <div>
                   <div class="flex items-baseline justify-between gap-x-4">
-                    <span class="text-sm font-semibold text-gray-700">Non-invasive device-free days</span>
+                    <span class="text-sm font-semibold text-gray-700">Non-invasive device-free days<InfoTip characteristic="NIDFD, median [Q1, Q3]" /></span>
                     <span class="flex items-baseline gap-1.5 shrink-0 whitespace-nowrap">
                       <span class="text-2xl font-bold text-gray-900">{extractMedian(nidfdMedian)}</span>
                       <span class="text-sm text-gray-600">of {FREE_DAY_WINDOW} days</span>
