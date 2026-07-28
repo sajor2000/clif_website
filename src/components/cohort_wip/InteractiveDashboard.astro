@@ -1,6 +1,7 @@
 ---
 import { groupCharacteristics, type ParsedConsortiumData } from '../../utils/csvParser';
 import { parseCohortCSV, COHORTS, DEFAULT_COHORT, AGGREGATE_SITE } from '../../utils/cohortData';
+import { CHARACTERISTIC_DEFINITIONS, PREFIX_DEFINITIONS } from '../../utils/characteristicDefinitions';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -124,6 +125,7 @@ for (const c of COHORTS) {
 const { parsed: data } = loadCohort(DEFAULT_COHORT);
 const groupedChars = groupCharacteristics(data);
 const overallData = cohortsPayload[DEFAULT_COHORT].overall;
+const definitionsJson = JSON.stringify({ exact: CHARACTERISTIC_DEFINITIONS, prefix: PREFIX_DEFINITIONS });
 
 const dataJson = JSON.stringify(cohortsPayload[DEFAULT_COHORT].consortium);
 const overallDataJson = JSON.stringify(overallData);
@@ -631,7 +633,7 @@ const categories = Array.from(groupedChars.keys());
             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
               <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
             </svg>
-            <span>Selected: <strong id="selected-characteristic-name"></strong></span>
+            <span>Selected: <strong id="selected-characteristic-name"></strong><span id="selected-characteristic-def"></span></span>
           </div>
         </div>
       </div>
@@ -750,6 +752,7 @@ const categories = Array.from(groupedChars.keys());
 <script type="application/json" id="consortium-json-data" set:html={dataJson}></script>
 <script type="application/json" id="overall-json-data" set:html={overallDataJson}></script>
 <script type="application/json" id="cohorts-json-data" set:html={cohortsJson} data-default={defaultCohort}></script>
+<script type="application/json" id="definitions-json-data" set:html={definitionsJson}></script>
 
 <script>
   // All cohorts' data; the active dataset is swapped when the cohort picker changes.
@@ -784,6 +787,31 @@ const categories = Array.from(groupedChars.keys());
   function displayCharacteristic(char) {
     const trimmed = (char || '').trim();
     return DISPLAY_NAMES[trimmed] || trimmed;
+  }
+
+  /**
+   * How each characteristic is computed upstream, surfaced as a hover card.
+   * Sourced from src/utils/characteristicDefinitions.ts, which transcribes the
+   * CLIF-TableOne pipeline and cites the file each definition comes from.
+   */
+  const DEFINITIONS = JSON.parse(document.getElementById('definitions-json-data')?.textContent || '{"exact":{},"prefix":{}}');
+  function definitionFor(name) {
+    const trimmed = (name || '').trim();
+    if (DEFINITIONS.exact[trimmed]) return DEFINITIONS.exact[trimmed];
+    const sep = trimmed.indexOf(':');
+    if (sep > 0 && DEFINITIONS.prefix[trimmed.slice(0, sep)]) return DEFINITIONS.prefix[trimmed.slice(0, sep)];
+    return null;
+  }
+
+  /** Info affordance for a characteristic, or '' when it has no definition. */
+  function definitionBadge(name) {
+    const def = definitionFor(name);
+    if (!def) return '';
+    const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    return `<span class="def-info" tabindex="0" role="note" aria-label="Definition: ${esc(def.text)}">
+      <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+      <span class="def-tip"><span class="def-tip-text">${esc(def.text)}</span><span class="def-tip-src">${esc(def.source)}</span></span>
+    </span>`;
   }
 
   // State management
@@ -2067,6 +2095,8 @@ const categories = Array.from(groupedChars.keys());
     const nameEl = document.getElementById('selected-characteristic-name');
     if (display && nameEl) {
       nameEl.textContent = displayCharacteristic(characteristic);
+      const defEl = document.getElementById('selected-characteristic-def');
+      if (defEl) defEl.innerHTML = definitionBadge(characteristic);
       display.classList.remove('hidden');
     }
 
@@ -5128,7 +5158,7 @@ const categories = Array.from(groupedChars.keys());
         const namePad = 1 + depth * 1.25;
         // row.label drops the redundant group prefix; row.characteristic (the
         // full name) is what search and export still use.
-        let html = `<td class="px-4 py-3 text-sm ${nameWeight} sticky left-0 bg-white" style="padding-left:${namePad}rem">${row.label || displayCharacteristic(characteristic)}</td>`;
+        let html = `<td class="px-4 py-3 text-sm ${nameWeight} sticky left-0 bg-white" style="padding-left:${namePad}rem">${row.label || displayCharacteristic(characteristic)}${definitionBadge(characteristic)}</td>`;
         headers.forEach(header => {
           const rawValue = row.values[header] || '-';
           // TEMPORARY (review aid): outline every small-n cell so suppression
@@ -5148,6 +5178,20 @@ const categories = Array.from(groupedChars.keys());
         tbody.appendChild(tr);
       }
     });
+
+    // Flip the definition card upward for icons with no room below them, so it
+    // is never clipped by the table's own scroll container. Measured after the
+    // rows are in the DOM; re-run on scroll because "near the bottom" moves.
+    const positionDefTips = () => {
+      const scroller = document.querySelector('.table-scroll');
+      if (!scroller) return;
+      const limit = scroller.getBoundingClientRect().bottom - 160;
+      tbody.querySelectorAll('.def-info').forEach((el) => {
+        el.classList.toggle('def-above', el.getBoundingClientRect().top > limit);
+      });
+    };
+    positionDefTips();
+    document.querySelector('.table-scroll')?.addEventListener('scroll', positionDefTips, { passive: true });
 
     // TEMPORARY (review aid): report how many visible cells the rule blanked.
     const smallNReadout = document.getElementById('small-n-count');
@@ -5219,6 +5263,87 @@ const categories = Array.from(groupedChars.keys());
     max-height: none;
     flex: 1;
     min-height: 0;
+  }
+
+  /* Definition hover card.
+     :global() is REQUIRED — these nodes are built in JS via innerHTML and so
+     never receive Astro's data-astro-cid-* scope attribute (the same trap as
+     .small-n-cell below).
+     Shown on hover AND focus so it is reachable by keyboard; the icon carries
+     an aria-label with the same text, so screen readers get it without the
+     hover layer. */
+  #data-table :global(.def-info),
+  :global(#selected-characteristic-def .def-info) {
+    position: relative;
+    display: inline-flex;
+    margin-left: 0.3rem;
+    vertical-align: text-top;
+    color: #9ca3af;
+    cursor: help;
+  }
+
+  #data-table :global(.def-info svg),
+  :global(#selected-characteristic-def .def-info svg) {
+    width: 0.85em;
+    height: 0.85em;
+  }
+
+  #data-table :global(.def-info:hover),
+  #data-table :global(.def-info:focus),
+  :global(#selected-characteristic-def .def-info:hover),
+  :global(#selected-characteristic-def .def-info:focus) {
+    color: #7c2d3a;
+    outline: none;
+  }
+
+  /* Sits BELOW the icon by default. The table body is a scroll container, so
+     an absolutely-positioned card is clipped by it — and above-the-icon
+     clipped the very first rows, which are the most-hovered ones. Rows close
+     to the bottom get .def-above from updateTable() and flip back up. */
+  #data-table :global(.def-info .def-tip),
+  :global(#selected-characteristic-def .def-tip) {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    z-index: 70;
+    display: none;
+    width: 20rem;
+    max-width: 70vw;
+    padding: 0.6rem 0.7rem;
+    border-radius: 0.5rem;
+    background: #1f2937;
+    color: #f9fafb;
+    font-size: 0.75rem;
+    font-weight: 400;
+    line-height: 1.45;
+    text-align: left;
+    white-space: normal;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  }
+
+  /* Near the bottom of the scroller there is no room below — flip up. */
+  #data-table :global(.def-info.def-above .def-tip) {
+    top: auto;
+    bottom: calc(100% + 8px);
+  }
+
+  #data-table :global(.def-info:hover .def-tip),
+  #data-table :global(.def-info:focus .def-tip),
+  :global(#selected-characteristic-def .def-info:hover .def-tip),
+  :global(#selected-characteristic-def .def-info:focus .def-tip) {
+    display: block;
+  }
+
+  /* Provenance line: which pipeline file the definition came from. */
+  #data-table :global(.def-tip-src),
+  :global(#selected-characteristic-def .def-tip-src) {
+    display: block;
+    margin-top: 0.4rem;
+    padding-top: 0.35rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    color: #9ca3af;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.65rem;
   }
 
   /* TEMPORARY (review aid): mark small-n cells in the table.
