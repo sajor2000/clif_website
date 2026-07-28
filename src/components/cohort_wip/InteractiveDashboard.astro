@@ -825,7 +825,9 @@ const categories = Array.from(groupedChars.keys());
   // and CSV export. Distinct from the sidebar's headerPatterns, which lists
   // rows that carry no value at all. The rows stay in the source CSV.
   const HIDDEN_CHARACTERISTICS = [
-    'Pre-admit IMV (excluded from time-to-extubation), n (%)'
+    'Pre-admit IMV (excluded from time-to-extubation), n (%)',
+    'Encounters with >=1 sepsis event, n (%)',
+    'Encounters with >=1 ICU episode, n (%)'
   ];
   const isHiddenCharacteristic = (char) => HIDDEN_CHARACTERISTICS.includes((char || '').trim());
 
