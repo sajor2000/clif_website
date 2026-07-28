@@ -139,14 +139,20 @@ const defaultCohortKey = DEFAULT_COHORT;
 
     <!-- Legend - Embedded in bottom left -->
     <div class="absolute bottom-8 left-6 bg-white/95 backdrop-blur-sm px-4 py-3 rounded-lg shadow-lg z-[1000]">
+      {/* Three states — see markerHtml(). "Active, no data in this cohort" is
+          NOT the same as "upcoming", and greying both alike misstated it. */}
       <div class="flex flex-col gap-2">
         <div class="flex items-center gap-2">
           <div class="w-3 h-3 bg-clif-burgundy rounded-full border border-white shadow-sm"></div>
-          <span class="text-xs font-medium text-gray-700">Active Sites</span>
+          <span class="text-xs font-medium text-gray-700">In this cohort</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="w-3 h-3 rounded-full bg-white border-2 border-clif-burgundy shadow-sm"></div>
+          <span class="text-xs font-medium text-gray-700">Active site, not in this cohort</span>
         </div>
         <div class="flex items-center gap-2">
           <div class="w-3 h-3 bg-gray-400 rounded-full border border-white shadow-sm"></div>
-          <span class="text-xs font-medium text-gray-700">Upcoming Sites</span>
+          <span class="text-xs font-medium text-gray-700">Upcoming site</span>
         </div>
       </div>
     </div>
@@ -171,9 +177,12 @@ const defaultCohortKey = DEFAULT_COHORT;
             <svg class="w-3.5 h-3.5 text-clif-burgundy" fill="currentColor" viewBox="0 0 20 20">
               <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
             </svg>
-            <div id="map-stat-active" class="text-lg font-bold text-clif-burgundy">{sites.filter(s => s.dataReady).length}</div>
+            <div id="map-stat-active" class="text-lg font-bold text-clif-burgundy">{Object.keys(freshCounts).length}</div>
           </div>
-          <div class="text-[9px] text-gray-600 font-medium uppercase tracking-wide">Active Sites</div>
+          {/* Not "Active Sites": that is a fixed property of a site (12 of the
+              15 institutions are active) and does not vary by cohort. This
+              counts the sites contributing data to the SELECTED cohort. */}
+          <div class="text-[9px] text-gray-600 font-medium uppercase tracking-wide">Sites in Cohort</div>
         </div>
 
         <!-- Total Hospitals -->
@@ -347,12 +356,24 @@ const defaultCohortKey = DEFAULT_COHORT;
     return html + `</div>`;
   }
 
-  /** Burgundy when the site contributes to the active cohort, grey otherwise. */
+  /**
+   * Three states, because "contributes to this cohort" and "is an active CLIF
+   * site" are different facts. A site can be active and still have no data in
+   * the selected cohort — painting it the same grey as an upcoming site said
+   * something false about its membership.
+   *   solid burgundy  — contributes to the selected cohort
+   *   hollow burgundy — active site, no data in this cohort
+   *   solid grey      — upcoming, not yet contributing anywhere
+   */
   function markerHtml(site) {
-    const has = site.dataReady && countsFor(site.name);
-    const color = has ? '#8B1538' : '#9ca3af';
-    const opacity = has ? '1' : '0.55';
-    return `<div style="background-color: ${color}; opacity: ${opacity}; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"></div>`;
+    const base = 'width: 24px; height: 24px; border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.3);';
+    if (site.dataReady && countsFor(site.name)) {
+      return `<div style="${base} background-color: #8B1538; border: 3px solid white;"></div>`;
+    }
+    if (site.dataReady) {
+      return `<div style="${base} background-color: white; border: 3px solid #8B1538; opacity: 0.85;"></div>`;
+    }
+    return `<div style="${base} background-color: #9ca3af; border: 3px solid white; opacity: 0.55;"></div>`;
   }
 
   /** Repaint every marker, its popup, and the corner totals for activeCohort. */
