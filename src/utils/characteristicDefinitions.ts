@@ -63,12 +63,12 @@ export const CHARACTERISTIC_DEFINITIONS: Record<string, CharacteristicDefinition
     source: 'modules/tableone/generator.py:6145',
   },
   'Reintubation (≥2 IMV episodes), n (%)': {
-    text: 'Encounters with two or more real IMV episodes. Episodes shorter than 5 minutes are treated as failed attempts and do not count toward this.',
+    text: 'Encounters with two or more separate ventilation episodes. Episodes are built from the same timeline detection used for extubation, and any episode shorter than 5 minutes is treated as a failed attempt rather than a real one.',
     source: 'modules/tableone/extubation_calculator.py:166',
   },
   'Time to extubation (hrs), median [Q1, Q3]': {
-    text: 'Hours from ventilation start to extubation, among encounters that were extubated. Encounters already ventilated on arrival are excluded, since their true start time is unknown.',
-    source: 'modules/tableone/extubation_calculator.py',
+    text: 'Hours from ventilation start to extubation, among encounters that were extubated. Extubation is not a recorded event — it is read off the respiratory-support timeline: a patient counts as extubated when two consecutive readings on invasive ventilation are followed by two consecutive readings off it. Requiring two on each side stops a single stray reading registering as an extubation. Patients already ventilated on arrival are excluded, since their true start time is unknown.',
+    source: 'modules/tableone/extubation_calculator.py (clifpy issue #124 pattern)',
   },
   'Time to reintubation (hrs), median [Q1, Q3]': {
     text: 'Hours from extubation to the next intubation, among encounters that were reintubated.',
@@ -88,11 +88,11 @@ export const CHARACTERISTIC_DEFINITIONS: Record<string, CharacteristicDefinition
     source: 'modules/tableone/vfd_calculator.py',
   },
   '28-day NIDFD (NIPPV/HFNC encounters), n (%)': {
-    text: 'The count of NIPPV/HFNC encounters with a computable 28-day NIDFD, as a share of all encounters in the cohort — the denominator for the median below, not a device-free-days figure.',
+    text: 'The count of encounters that received NIPPV, CPAP or high-flow nasal cannula at 30 L/min or more, shown as a share of all encounters in the cohort. This is the denominator for the median below — it is not itself a device-free-days figure.',
     source: 'modules/tableone/generator.py',
   },
   'NIDFD, median [Q1, Q3]': {
-    text: '28-day non-invasive device-free days, computed like VFD but for NIPPV and high-flow nasal cannula rather than invasive ventilation.',
+    text: '28-day non-invasive device-free days, computed like VFD but counting time off non-invasive support. The denominator is ONLY encounters that received NIPPV or CPAP, or high-flow nasal cannula at 30 L/min or more — not every encounter on respiratory support. Invasively ventilated patients are covered by VFD instead, and an encounter that had both appears in both figures.',
     source: 'modules/tableone/generator.py',
   },
 
@@ -188,7 +188,7 @@ export const PREFIX_DEFINITIONS: Record<string, CharacteristicDefinition> = {
     source: 'modules/tableone/generator.py',
   },
   'Extubation outcome': {
-    text: 'How ventilation ended for each IMV encounter: extubated, died on the ventilator, discharged still ventilated, a failed attempt (an episode under 5 minutes), or unknown.',
+    text: 'How ventilation ended for each IMV encounter: extubated, died on the ventilator, discharged still ventilated, a failed attempt (an episode under 5 minutes), or unknown. Extubation is detected from the respiratory-support timeline — two consecutive readings on invasive ventilation followed by two consecutive readings off it — rather than from a recorded extubation event.',
     source: 'modules/tableone/extubation_calculator.py:245',
   },
   'First admission location': {
