@@ -769,6 +769,23 @@ const categories = Array.from(groupedChars.keys());
   ];
   const isHiddenCharacteristic = (char) => HIDDEN_CHARACTERISTICS.includes((char || '').trim());
 
+  /**
+   * Display-only renames. The CSV name stays the lookup key everywhere — it is
+   * how rows are found in the parsed data, how weights and denominators are
+   * resolved, and what the export writes — so only the rendered text changes.
+   *
+   * "Encounter block" is the pipeline's internal term for a hospitalization;
+   * the previous export called this row 'N: Hospitalizations', which is also
+   * what the public /cohort dashboard shows.
+   */
+  const DISPLAY_NAMES = {
+    'N: Encounter blocks': 'N: Hospitalizations',
+  };
+  function displayCharacteristic(char) {
+    const trimmed = (char || '').trim();
+    return DISPLAY_NAMES[trimmed] || trimmed;
+  }
+
   // State management
   let selectedSites = [...consortiumData.allSites];
   let selectedYears = [...consortiumData.allYears];
@@ -1541,7 +1558,7 @@ const categories = Array.from(groupedChars.keys());
       charItem.addEventListener('click', () => handler(charItem));
     } else {
       charItem.dataset.characteristic = char; // Keep original with spaces for data lookup
-      charItem.textContent = char.trim(); // Display trimmed version
+      charItem.textContent = displayCharacteristic(char);
       charItem.addEventListener('click', () => selectCharacteristic(char, charItem)); // Pass original
     }
     return charItem;
@@ -2049,7 +2066,7 @@ const categories = Array.from(groupedChars.keys());
     const display = document.getElementById('selected-characteristic-display');
     const nameEl = document.getElementById('selected-characteristic-name');
     if (display && nameEl) {
-      nameEl.textContent = characteristic.trim(); // Display trimmed version
+      nameEl.textContent = displayCharacteristic(characteristic);
       display.classList.remove('hidden');
     }
 
@@ -3737,7 +3754,7 @@ const categories = Array.from(groupedChars.keys());
                 max: yAxisMax, // SOFA components are 0-4, others scale to fit Q3 values
                 title: {
                   display: true,
-                  text: characteristic.replace(/, median \[Q1, Q3\]/, '').replace(/ median \[Q1, Q3\]/, '')
+                  text: displayCharacteristic(characteristic).replace(/, median \[Q1, Q3\]/, '').replace(/ median \[Q1, Q3\]/, '')
                 }
               }
             }
@@ -3757,7 +3774,7 @@ const categories = Array.from(groupedChars.keys());
         data: {
           labels: labels,
           datasets: [{
-            label: characteristic,
+            label: displayCharacteristic(characteristic),
             data: sortedData,
             backgroundColor: colors.background,
             borderColor: colors.border,
@@ -5111,7 +5128,7 @@ const categories = Array.from(groupedChars.keys());
         const namePad = 1 + depth * 1.25;
         // row.label drops the redundant group prefix; row.characteristic (the
         // full name) is what search and export still use.
-        let html = `<td class="px-4 py-3 text-sm ${nameWeight} sticky left-0 bg-white" style="padding-left:${namePad}rem">${row.label || characteristic}</td>`;
+        let html = `<td class="px-4 py-3 text-sm ${nameWeight} sticky left-0 bg-white" style="padding-left:${namePad}rem">${row.label || displayCharacteristic(characteristic)}</td>`;
         headers.forEach(header => {
           const rawValue = row.values[header] || '-';
           // TEMPORARY (review aid): outline every small-n cell so suppression
@@ -5155,7 +5172,9 @@ const categories = Array.from(groupedChars.keys());
       // Synthetic group headers are a display aid; exporting invented all-'-'
       // rows would not match the source CSV.
       if (row.synthetic) return;
-      const characteristic = `"${row.characteristic}"`;
+      // Export the display name too, so a downloaded file matches what the
+      // table showed. The source CSV under src/data keeps its own wording.
+      const characteristic = `"${displayCharacteristic(row.characteristic)}"`;
       const values = headers.map(header => {
         const rawValue = row.values[header] || '-';
         return `"${(!isMetadataCharacteristic(row.characteristic) && hasSmallN(rawValue)) ? '-' : rawValue}"`;
