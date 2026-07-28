@@ -561,7 +561,7 @@ const dopamineDose = d.dopamineDose;
             class="demo-grid grid grid-cols-2 md:grid-cols-4 gap-4 text-center"
             style={`--demo-cols:${demographicCells.length}`}
           >
-            {demographicCells.map((cell, i) => (
+            {demographicCells.map((cell) => (
               <div class="relative py-2 flex flex-col items-center justify-start">
                 <svg
                   class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 opacity-30 text-slate-400"
@@ -575,7 +575,7 @@ const dopamineDose = d.dopamineDose;
                 </div>
                 {/* Reserved height for two lines so one- and two-line labels
                     do not shift their neighbours' vertical rhythm. */}
-                <div class="relative mt-1 min-h-[2rem] text-xs leading-tight text-gray-700 dark:!text-white">{cell.label}{cell.def && <InfoTip characteristic={cell.def} align={i >= demographicCells.length - 2 ? 'right' : 'left'} />}</div>
+                <div class="relative mt-1 min-h-[2rem] text-xs leading-tight text-gray-700 dark:!text-white">{cell.label}{cell.def && <InfoTip characteristic={cell.def} />}</div>
               </div>
             ))}
           </div>

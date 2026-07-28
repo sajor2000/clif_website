@@ -21,11 +21,9 @@ interface Props {
   characteristic?: string;
   text?: string;
   source?: string;
-  /** Anchor the card's right edge instead of its left, for tiles near the viewport edge. */
-  align?: 'left' | 'right';
 }
 
-const { characteristic, text, source, align = 'left' } = Astro.props;
+const { characteristic, text, source } = Astro.props;
 const def = characteristic
   ? definitionFor(characteristic)
   : text
@@ -35,7 +33,7 @@ const def = characteristic
 
 {def && (
   <span
-    class:list={['info-tip', align === 'right' && 'info-tip-right']}
+    class="info-tip"
     tabindex="0"
     role="note"
     aria-label={`Definition: ${def.text}`}
@@ -68,9 +66,16 @@ const def = characteristic
     outline: none;
   }
 
+  /* position: fixed, NOT absolute.
+     Several of these tiles set overflow-hidden to clip their watermark icon,
+     and an absolutely-positioned card is clipped along with it — the tooltip
+     was being cut off mid-sentence. A fixed card escapes an overflow-hidden
+     ancestor (none of these tiles create a containing block via transform), so
+     it can render over the card edge. The trade-off is that fixed coordinates
+     are viewport-relative, so the script below places it on hover. */
   .info-tip-card {
-    position: absolute;
-    top: calc(100% + 8px);
+    position: fixed;
+    top: 0;
     left: 0;
     z-index: 80;
     display: none;
@@ -88,14 +93,57 @@ const def = characteristic
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
   }
 
-  /* Tiles on the right of the grid would push the card off-screen. */
-  .info-tip-right .info-tip-card {
-    left: auto;
-    right: 0;
-  }
-
   .info-tip:hover .info-tip-card,
   .info-tip:focus .info-tip-card {
     display: block;
   }
 </style>
+
+<script>
+  // Places the fixed-position card next to its icon. Astro hoists and dedupes
+  // component scripts, so this runs once no matter how many tips are on the
+  // page, and uses delegation rather than a listener per instance.
+  //
+  // Beyond escaping overflow-hidden tiles, doing this in JS also lets the card
+  // pick a side: it prefers below-and-left-aligned, flips above when there is
+  // no room below, and clamps to the viewport so a tip near the right edge
+  // stays fully readable. The `align` prop is no longer needed for that.
+  function placeInfoTip(tip: Element) {
+    const card = tip.querySelector<HTMLElement>('.info-tip-card');
+    if (!card) return;
+    const icon = tip.getBoundingClientRect();
+    const gap = 8;
+    const margin = 8;
+
+    // Measure at its natural size before deciding a side.
+    card.style.visibility = 'hidden';
+    card.style.display = 'block';
+    const w = card.offsetWidth;
+    const h = card.offsetHeight;
+    card.style.display = '';
+    card.style.visibility = '';
+
+    const below = icon.bottom + gap;
+    const top = below + h > window.innerHeight - margin && icon.top - gap - h > margin
+      ? icon.top - gap - h
+      : below;
+
+    let left = icon.left;
+    if (left + w > window.innerWidth - margin) left = window.innerWidth - margin - w;
+    if (left < margin) left = margin;
+
+    card.style.top = `${Math.round(top)}px`;
+    card.style.left = `${Math.round(left)}px`;
+  }
+
+  for (const evt of ['mouseenter', 'focusin'] as const) {
+    document.addEventListener(
+      evt,
+      (e) => {
+        const tip = (e.target as HTMLElement | null)?.closest?.('.info-tip');
+        if (tip) placeInfoTip(tip);
+      },
+      true, // capture: mouseenter does not bubble
+    );
+  }
+</script>
