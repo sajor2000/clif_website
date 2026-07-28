@@ -197,6 +197,17 @@ const categoriesJson = JSON.stringify({ labs: labFiles, respiratory_support: res
     <p class="text-gray-600 mb-3">
       Compare lab values, vital signs, and respiratory parameters across institutions using histograms and empirical cumulative distribution functions (ECDF).
     </p>
+    {/* "ALL measurements" below begs the question: measured when? The upstream
+        ECDF pipeline collects each cohort over a different observation window
+        (STRATUM_WINDOW_TYPE in modules/ecdf/generator.py), so the same
+        parameter means different things across cohorts. Set per cohort by
+        applyDistCohort(). */}
+    <p id="dist-window-note" class="mb-3 flex items-start gap-1.5 text-sm text-gray-700">
+      <svg class="mt-0.5 h-4 w-4 shrink-0 text-gray-400" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+      </svg>
+      <span><span class="font-semibold">Measurement window:</span> <span id="dist-window-text"></span></span>
+    </p>
     <div class="bg-gray-50 border-l-4 border-gray-400 p-4 rounded mb-3">
       <p class="font-semibold text-gray-700 mb-2">How to interpret the chart:</p>
       <div class="text-sm text-gray-600 space-y-2">
@@ -525,7 +536,24 @@ const categoriesJson = JSON.stringify({ labs: labFiles, respiratory_support: res
 
   // Switch the distribution cohort: repoint fetches, rebuild params, reset the chart.
   // Cohorts without distribution data (e.g. Overall/ward) show an empty-state message.
+  /**
+   * Observation window per cohort, mirroring STRATUM_WINDOW_TYPE in the
+   * upstream ECDF pipeline (CLIF-TableOne modules/ecdf/generator.py). Cohorts
+   * absent from that map fall back to ICU windows, as they do upstream.
+   */
+  const DIST_WINDOWS: Record<string, string> = {
+    overall: 'the ICU stay (ICU admission to ICU discharge).',
+    icu: 'the ICU stay (ICU admission to ICU discharge).',
+    deaths: 'the ICU stay (ICU admission to ICU discharge).',
+    vaso: 'first vasopressor administration through hospital discharge.',
+    advanced_resp: 'first advanced respiratory support device (IMV, NIPPV, CPAP or HFNC) through hospital discharge.',
+  };
+
   function applyDistCohort(cohort: string, initial: boolean) {
+    const windowText = document.getElementById('dist-window-text');
+    if (windowText) {
+      windowText.textContent = `all measurements recorded during ${DIST_WINDOWS[cohort] || DIST_WINDOWS.icu}`;
+    }
     const hasDist = !!COHORTS_DIST[cohort];
     const noData = document.getElementById('distribution-no-cohort');
     const main = document.getElementById('distribution-main');

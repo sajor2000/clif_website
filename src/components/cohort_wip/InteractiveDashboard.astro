@@ -52,8 +52,9 @@ function deriveOverall(parsed: ParsedConsortiumData) {
   // NOTE the scope: this is the by-year breakout only, which starts at 2022 —
   // it is NOT the full span. The Overall aggregate reaches back to 2011, which
   // is why the Data Timespan tile hardcodes that start (CohortSummaryFromCSV
-  // 'f.years'). The row is labelled accordingly so the two cannot be misread as
-  // the same measure. A truthful per-site span needs `Years` back in the export.
+  // 'f.years'), and why this row can read 2022-2026 beside a tile saying
+  // 2011-2026. Restoring `Years` to the export would make both truthful and
+  // let this derivation go away.
   const yearCols = parsed.allYears.filter((y) => /^\d{4}$/.test(y)).sort();
   const encRow = parsed.characteristics.find((c) => c.variable.trim() === 'N: Encounter blocks');
   if (encRow && yearCols.length) {
@@ -65,7 +66,7 @@ function deriveOverall(parsed: ParsedConsortiumData) {
       });
       span[s] = have.length ? `${have[0]}-${have[have.length - 1]}` : '-';
     }
-    rows.push({ characteristic: 'Years (by-year data)', depth: 0, values: span, synthetic: true });
+    rows.push({ characteristic: 'Years', depth: 0, values: span, synthetic: true });
   }
   let currentGroup: string | null = null;
   let prevName: string | null = null;
