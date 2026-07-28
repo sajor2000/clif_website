@@ -45,6 +45,10 @@ export const CHARACTERISTIC_DEFINITIONS: Record<string, CharacteristicDefinition
     text: 'Total CDC Adult Sepsis Events. Computed for every encounter in the cohort, NOT only ICU encounters — an encounter can contribute more than one event.',
     source: 'modules/tableone/generator.py:4510 (sepsis_events_by_sepsis_col)',
   },
+  'Sepsis events per 100 encounters': {
+    text: 'Sepsis events divided by all encounters in the cohort, times 100 — a size-independent rate, so sites can be compared directly. The raw event count above cannot: it scales with how many patients a site contributes. Counts repeat events, so it runs higher than the share of encounters affected.',
+    source: 'derived in InteractiveDashboard.astro (withSepsisRate)',
+  },
   'Encounters with >=1 sepsis event, n (%)': {
     text: 'Encounters with at least one CDC Adult Sepsis Event, over all encounters in the selected cohort — not restricted to ICU encounters.',
     source: 'modules/tableone/generator.py:4520',
