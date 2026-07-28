@@ -1,0 +1,171 @@
+---
+/**
+ * Race x Ethnicity x Sex crosstab for a cohort.
+ *
+ * The export ships a two-header-row matrix: row 1 is the ethnicity group
+ * spanning three sex columns, row 2 is the sex within it, and the last row and
+ * column are margins.
+ *
+ * Counts are PATIENT-level, not encounter-level — the grand total matches
+ * "N: Unique patients" to within ~0.02% (the shortfall is patients with no
+ * demographics recorded), while the cohort has far more encounters than that.
+ * The heading says so, because every other number in this panel is per
+ * encounter and the two are easy to conflate.
+ *
+ * Rendered as a shaded table rather than a chart: 63 cells all carry meaning,
+ * and the reader wants to look values up as often as compare them. Shading is
+ * one hue, light to dark, so it reads as magnitude rather than category.
+ */
+import fs from 'node:fs';
+import path from 'node:path';
+
+interface Props {
+  cohort: string;
+}
+const { cohort } = Astro.props;
+
+const file = path.join(process.cwd(), 'src', 'data', 'cohorts', cohort, 'demographic_crosstab_race_ethnicity_sex.csv');
+const raw = fs.existsSync(file) ? fs.readFileSync(file, 'utf-8').trim() : '';
+const rows = raw ? raw.split('\n').map((l) => l.split(',')) : [];
+
+// Two header rows: ethnicity group, then sex within it. The final column is the
+// row margin; its second-row label is a pandas artifact ("Unnamed: N_level_1").
+const ethnicityRow = rows[0] ?? [];
+const sexRow = rows[1] ?? [];
+const bodyRows = rows.slice(2);
+
+interface Col {
+  index: number;
+  ethnicity: string;
+  sex: string;
+  isTotal: boolean;
+}
+const cols: Col[] = ethnicityRow
+  .map((eth, i) => ({
+    index: i,
+    ethnicity: eth.trim(),
+    sex: (sexRow[i] ?? '').trim(),
+    isTotal: eth.trim().toLowerCase() === 'total',
+  }))
+  .filter((c) => c.index > 0);
+
+// Group the data columns under their ethnicity so the header can span them.
+const dataCols = cols.filter((c) => !c.isTotal);
+const totalCol = cols.find((c) => c.isTotal);
+const groups: { ethnicity: string; cols: Col[] }[] = [];
+for (const c of dataCols) {
+  const last = groups[groups.length - 1];
+  if (last && last.ethnicity === c.ethnicity) last.cols.push(c);
+  else groups.push({ ethnicity: c.ethnicity, cols: [c] });
+}
+
+const num = (v: string | undefined) => {
+  const n = parseInt((v ?? '').replace(/[^0-9-]/g, ''), 10);
+  return Number.isFinite(n) ? n : 0;
+};
+
+const body = bodyRows.map((r) => ({
+  race: (r[0] ?? '').trim(),
+  isTotal: (r[0] ?? '').trim().toLowerCase() === 'total',
+  cells: dataCols.map((c) => num(r[c.index])),
+  total: totalCol ? num(r[totalCol.index]) : 0,
+}));
+
+const grandTotal = body.find((r) => r.isTotal)?.total ?? 0;
+
+/**
+ * Shade intensity 0..1 on a LOG scale. Counts span three orders of magnitude
+ * here (0 to ~235,000); on a linear ramp every cell but the largest two would
+ * read as empty, which would hide exactly the small-group detail this table
+ * exists to show.
+ */
+const maxCell = Math.max(1, ...body.filter((r) => !r.isTotal).flatMap((r) => r.cells));
+const shade = (n: number) => (n <= 0 ? 0 : Math.log(n + 1) / Math.log(maxCell + 1));
+
+/**
+ * Alpha ceiling for the darkest cell. Text stays dark at every step rather
+ * than flipping to white: measured against this ramp, white on the darkest
+ * cell is 3.04:1 (below AA) and 1.94:1 at a mid flip-point, while dark text is
+ * 4.83:1 at the darkest and better everywhere lighter. Raising this ceiling
+ * pushes the darkest cell below AA — re-check the contrast if you do.
+ */
+const MAX_ALPHA = 0.85;
+
+const pct = (n: number) => (grandTotal > 0 ? `${((n / grandTotal) * 100).toFixed(1)}%` : '');
+const fmt = (n: number) => n.toLocaleString();
+---
+
+{body.length > 0 && (
+  <div class="mb-8">
+    <button
+      class="collapsible-header collapsed w-full flex items-center justify-between bg-gray-50 hover:bg-gray-100 p-4 rounded-lg transition-colors duration-200 border border-gray-200"
+      data-target={`demographic-crosstab-${cohort}`}
+    >
+      <h3 class="text-xl font-bold text-gray-800">Race, Ethnicity &amp; Sex</h3>
+      <svg class="chevron w-6 h-6 text-gray-600 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+      </svg>
+    </button>
+
+    <div id={`demographic-crosstab-${cohort}`} class="collapsible-content collapsed mt-6">
+      <p class="mb-3 text-sm text-gray-600">
+        Unique <span class="font-semibold">patients</span> by race, ethnicity and sex — {fmt(grandTotal)} in total.
+        Counted per patient, not per hospitalization, so these do not sum to the encounter counts elsewhere on this page.
+        Cell shading is a log scale, so smaller groups stay visible beside the largest.
+      </p>
+
+      <div class="overflow-x-auto rounded-lg border border-gray-200">
+        <table class="crosstab w-full border-collapse text-sm">
+          <thead>
+            <tr class="bg-gray-50">
+              <th rowspan="2" class="sticky left-0 z-10 bg-gray-50 px-3 py-2 text-left font-semibold text-gray-700">Race</th>
+              {groups.map((g) => (
+                <th colspan={g.cols.length} class="border-l border-gray-200 px-3 py-2 text-center font-semibold text-gray-700">
+                  {g.ethnicity}
+                </th>
+              ))}
+              <th rowspan="2" class="border-l border-gray-300 px-3 py-2 text-right font-semibold text-gray-700">Total</th>
+            </tr>
+            <tr class="bg-gray-50">
+              {groups.flatMap((g) =>
+                g.cols.map((c, i) => (
+                  <th class:list={['px-3 py-1.5 text-right text-xs font-medium text-gray-500', i === 0 && 'border-l border-gray-200']}>
+                    {c.sex}
+                  </th>
+                ))
+              )}
+            </tr>
+          </thead>
+          <tbody>
+            {body.map((r) => (
+              <tr class:list={[r.isTotal && 'border-t-2 border-gray-300 font-semibold']}>
+                <td class="sticky left-0 z-10 bg-white px-3 py-2 text-left text-gray-800">{r.race}</td>
+                {r.cells.map((n, i) => {
+                  const s = r.isTotal ? 0 : shade(n);
+                  return (
+                    <td
+                      class:list={['px-3 py-2 text-right tabular-nums', dataCols[i].sex === 'Female' && 'border-l border-gray-200']}
+                      style={r.isTotal ? '' : `background-color: rgba(13, 148, 136, ${(s * MAX_ALPHA).toFixed(3)})`}
+                      title={n > 0 ? `${fmt(n)} patients — ${pct(n)} of the cohort` : 'None'}
+                    >
+                      {n > 0 ? fmt(n) : <span class="text-gray-300">—</span>}
+                    </td>
+                  );
+                })}
+                <td class="border-l border-gray-300 px-3 py-2 text-right tabular-nums text-gray-800">{fmt(r.total)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+)}
+
+<style>
+  /* Numbers must line up column-to-column for a table read as a grid. */
+  .crosstab td.tabular-nums,
+  .crosstab th {
+    font-variant-numeric: tabular-nums;
+  }
+</style>

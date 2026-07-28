@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { DEFAULT_COHORT, parseCohortCSV, getAggregateValue } from '../../utils/cohortData';
 import InfoTip from './InfoTip.astro';
+import DemographicCrosstab from './DemographicCrosstab.astro';
 
 // field name -> row label in the new table_one files (trimmed; case as in file)
 const LABELS: Record<string, string> = {
@@ -1036,6 +1037,8 @@ const dopamineDose = d.dopamineDose;
       </div>
     </div>
     )}
+
+    <DemographicCrosstab cohort={cohort} />
 
   </section>
 
