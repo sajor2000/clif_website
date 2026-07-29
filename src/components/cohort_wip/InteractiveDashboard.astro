@@ -42,6 +42,10 @@ function toConsortiumJson(parsed: ParsedConsortiumData) {
 const DISPLAY_RENAMES: Record<string, string> = {
   'N: Encounter blocks': 'N: Hospitalizations',
   'Admission type: na': 'Admission type: Missing',
+  // Re-based by withRebasedDenominators — the label has to say so, or two rows
+  // in this section silently carry a different denominator from their siblings.
+  'Intubated ≤24hr of admission, n (%)': 'Intubated ≤24hr of admission, n (% of IMV)',
+  'Reintubation (≥2 IMV episodes), n (%)': 'Reintubation (≥2 IMV episodes), n (% of IMV)',
 };
 const displayName = (name: string) => DISPLAY_RENAMES[name.trim()] ?? name;
 
@@ -198,6 +202,93 @@ function withSepsisRate(parsed: ParsedConsortiumData): ParsedConsortiumData {
 }
 
 /**
+ * Re-base two respiratory rows onto the population that can actually appear in
+ * their numerator.
+ *
+ * The export divides both by N_enc — every hospitalization in the cohort — but
+ * neither numerator can come from outside the ventilated population:
+ *
+ *   Intubated <=24hr   requires an IMV episode AND `pre_admission_imv == 0`
+ *                      (extubation_calculator.py:237), so the 95,445 patients
+ *                      already ventilated on arrival are excluded from the
+ *                      numerator while still sitting in the denominator.
+ *   Reintubation       requires >=2 IMV episodes, so it is undefined for
+ *                      anyone never ventilated.
+ *
+ * Against N_enc, "intubated early" reads 4.9% and mostly reports how few of a
+ * site's admissions are ever ventilated — case mix, not timing. Re-based it is
+ * 26.2%, and comparable across sites. The section already does this for
+ * `Extubation failure <=48hr, n (% of extubated)`; these two rows are the
+ * stragglers.
+ *
+ * Rewrites the stated percentage in place, per site and per year, so the table,
+ * the CSV export and the charts all read one number. The count is untouched —
+ * it is real data — and DISPLAY_RENAMES carries the new denominator into the
+ * row label, following the export's own `(% of extubated)` convention.
+ *
+ * Cells whose numerator or denominator is suppressed or absent are left exactly
+ * as the export wrote them: a corrected percentage is not worth inventing a
+ * denominator for.
+ */
+const IMV_ROW = 'Invasive mechanical ventilation, n (%)';
+const PRE_ADMIT_IMV_ROW = 'Pre-admit IMV (excluded from time-to-extubation), n (%)';
+const REBASED_ROWS: Record<string, { of: string; less?: string }> = {
+  'Intubated ≤24hr of admission, n (%)': { of: IMV_ROW, less: PRE_ADMIT_IMV_ROW },
+  'Reintubation (≥2 IMV episodes), n (%)': { of: IMV_ROW },
+};
+
+function withRebasedDenominators(parsed: ParsedConsortiumData): ParsedConsortiumData {
+  const row = (name: string) => parsed.characteristics.find((c) => c.variable.trim() === name);
+  const count = (v: string | undefined) => {
+    const m = (v ?? '').match(/^\s*([\d,]+)/);
+    return m ? parseInt(m[1].replace(/,/g, ''), 10) : null;
+  };
+
+  const imv = row(IMV_ROW);
+  if (!imv) return parsed;
+
+  // site -> year -> corrected cell, so siteYearData can be patched in step two.
+  const rewritten = new Map<string, Map<string, string>>();
+
+  for (const [name, basis] of Object.entries(REBASED_ROWS)) {
+    const target = row(name);
+    if (!target) continue;
+    const source = basis.of === IMV_ROW ? imv : row(basis.of);
+    if (!source) continue;
+
+    for (const [site, years] of target.sites) {
+      for (const [year, raw] of years) {
+        const n = count(raw);
+        const base = count(source.sites.get(site)?.get(year));
+        if (n == null || base == null) continue;
+        const exclude = basis.less ? count(row(basis.less)?.sites.get(site)?.get(year)) ?? 0 : 0;
+        const denom = base - exclude;
+        if (denom <= 0) continue;
+        const cell = `${n.toLocaleString()} (${((n / denom) * 100).toFixed(1)}%)`;
+        years.set(year, cell);
+        ((rewritten.get(name) ?? rewritten.set(name, new Map()).get(name))!).set(`${site} ${year}`, cell);
+      }
+    }
+  }
+  if (!rewritten.size) return parsed;
+
+  const siteYearData = parsed.siteYearData.map((d) => {
+    let chars: Map<string, string> | null = null;
+    for (const [name, cells] of rewritten) {
+      const cell = cells.get(`${d.site} ${d.year}`);
+      if (cell == null) continue;
+      chars ??= new Map(d.characteristics);
+      // The parse may hold the row under its untrimmed name.
+      const key = [...chars.keys()].find((k) => k.trim() === name) ?? name;
+      chars.set(key, cell);
+    }
+    return chars ? { ...d, characteristics: chars } : d;
+  });
+
+  return { ...parsed, siteYearData };
+}
+
+/**
  * Complementary suppression: stop a lone `<10` from being back-calculated.
  *
  * The export suppresses any cell under 10 to `<10`. In a group whose categories
@@ -321,7 +412,7 @@ const unresolvedSuppressions: string[] = [];
 function loadCohort(key: string) {
   const csv = fs.readFileSync(path.join(cohortDir, key, 'table_one_by_year.csv'), 'utf-8');
   const { parsed, injected, unresolved } = withSuppressedMissing(
-    withSepsisRate(parseCohortCSV(csv)),
+    withRebasedDenominators(withSepsisRate(parseCohortCSV(csv))),
     key
   );
   unresolvedSuppressions.push(...unresolved);
@@ -1029,6 +1120,10 @@ const categories = Array.from(groupedChars.keys());
     if (DEFINITIONS.exact[trimmed]) return DEFINITIONS.exact[trimmed];
     const sep = trimmed.indexOf(':');
     if (sep > 0 && DEFINITIONS.prefix[trimmed.slice(0, sep)]) return DEFINITIONS.prefix[trimmed.slice(0, sep)];
+    // A group is selectable in its own right ('Initial ventilator mode'), and
+    // carries no colon — so match the bare name against the prefix map too, or
+    // the group that defines every child row would itself explain nothing.
+    if (DEFINITIONS.prefix[trimmed]) return DEFINITIONS.prefix[trimmed];
     return null;
   }
 
@@ -1038,6 +1133,25 @@ const categories = Array.from(groupedChars.keys());
    * while browsers recover from them, stricter parsers drop the whole cell.
    */
   const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+  /**
+   * Point the "Selected:" line at a characteristic — name AND definition
+   * together.
+   *
+   * Every selection path must go through this. The group paths (Race, Sex,
+   * 'First location at IMV start', ...) used to set only the name and leave the
+   * PREVIOUS selection's badge in the DOM, so picking one of them showed
+   * whatever definition happened to be there before.
+   */
+  function showSelectedCharacteristic(name) {
+    const display = document.getElementById('selected-characteristic-display');
+    const nameEl = document.getElementById('selected-characteristic-name');
+    if (!display || !nameEl) return;
+    nameEl.textContent = displayCharacteristic(name);
+    const defEl = document.getElementById('selected-characteristic-def');
+    if (defEl) defEl.innerHTML = definitionBadge(name);
+    display.classList.remove('hidden');
+  }
 
   /** Info affordance for a characteristic, or '' when it has no definition. */
   function definitionBadge(name) {
@@ -1460,6 +1574,49 @@ const categories = Array.from(groupedChars.keys());
       };
     }
     return null;
+  }
+
+  /**
+   * Rows whose percentage is re-based off the ventilated population rather than
+   * all hospitalizations — the server does the same for the table and the CSV
+   * export (see withRebasedDenominators). Kept in sync with that map.
+   *
+   * This is a property of the metric, not a user preference, so it takes
+   * precedence over the respiratory denominator toggle: neither numerator can
+   * come from outside the IMV population, and `Intubated ≤24hr` additionally
+   * excludes patients already ventilated on arrival.
+   */
+  const REBASED_BASIS = {
+    'Intubated ≤24hr of admission, n (%)': {
+      of: 'Invasive mechanical ventilation, n (%)',
+      less: 'Pre-admit IMV (excluded from time-to-extubation), n (%)',
+      label: 'IMV Hospitalizations excl. pre-admit',
+    },
+    'Reintubation (≥2 IMV episodes), n (%)': {
+      of: 'Invasive mechanical ventilation, n (%)',
+      label: 'IMV Hospitalizations',
+    },
+  };
+
+  /** Leading count of a `12,345 (6.7%)` cell, or null when suppressed/absent. */
+  function cellCount(value) {
+    const m = String(value ?? '').match(/^\s*([\d,]+)/);
+    return m ? parseInt(m[1].replace(/,/g, ''), 10) : null;
+  }
+
+  /**
+   * Denominator for a re-based row, or null when the row is not re-based or the
+   * basis cells are unavailable. `lookup(rowName)` must return that row's cell
+   * for the SAME site and year as the numerator.
+   */
+  function rebasedDenominator(characteristic, lookup) {
+    const basis = REBASED_BASIS[(characteristic || '').trim()];
+    if (!basis) return null;
+    const base = cellCount(lookup(basis.of));
+    if (base == null) return null;
+    const less = basis.less ? cellCount(lookup(basis.less)) ?? 0 : 0;
+    const denom = base - less;
+    return denom > 0 ? denom : null;
   }
 
   // Determine which category a characteristic belongs to
@@ -2329,15 +2486,7 @@ const categories = Array.from(groupedChars.keys());
     // Highlight selected item
     element.classList.add('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
 
-    // Show selected characteristic
-    const display = document.getElementById('selected-characteristic-display');
-    const nameEl = document.getElementById('selected-characteristic-name');
-    if (display && nameEl) {
-      nameEl.textContent = displayCharacteristic(characteristic);
-      const defEl = document.getElementById('selected-characteristic-def');
-      if (defEl) defEl.innerHTML = definitionBadge(characteristic);
-      display.classList.remove('hidden');
-    }
+    showSelectedCharacteristic(characteristic);
 
     // Show/hide respiratory support denominator selector
     const respDenomSelector = document.getElementById('resp-denominator-selector');
@@ -2415,13 +2564,7 @@ const categories = Array.from(groupedChars.keys());
     // Highlight selected item
     element.classList.add('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
 
-    // Show selected characteristic
-    const display = document.getElementById('selected-characteristic-display');
-    const nameEl = document.getElementById('selected-characteristic-name');
-    if (display && nameEl) {
-      nameEl.textContent = 'First location at IMV start';
-      display.classList.remove('hidden');
-    }
+    showSelectedCharacteristic('First location at IMV start');
 
     // Show location type selector and populate checkboxes
     const locationSelector = document.getElementById('location-type-selector');
@@ -2571,13 +2714,7 @@ const categories = Array.from(groupedChars.keys());
     // Highlight selected item
     element.classList.add('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
 
-    // Show selected characteristic
-    const display = document.getElementById('selected-characteristic-display');
-    const nameEl = document.getElementById('selected-characteristic-name');
-    if (display && nameEl) {
-      nameEl.textContent = 'Initial ventilator mode';
-      display.classList.remove('hidden');
-    }
+    showSelectedCharacteristic('Initial ventilator mode');
 
     // Hide location type selector (it's for IMV location, not vent modes)
     const locationSelector = document.getElementById('location-type-selector');
@@ -2738,13 +2875,7 @@ const categories = Array.from(groupedChars.keys());
     });
     element.classList.add('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
 
-    // Show selected characteristic
-    const display = document.getElementById('selected-characteristic-display');
-    const nameEl = document.getElementById('selected-characteristic-name');
-    if (display && nameEl) {
-      nameEl.textContent = 'Ethnicity';
-      display.classList.remove('hidden');
-    }
+    showSelectedCharacteristic('Ethnicity');
 
     // Hide other selectors
     document.getElementById('location-type-selector')?.classList.add('hidden');
@@ -2825,12 +2956,7 @@ const categories = Array.from(groupedChars.keys());
     });
     element.classList.add('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
 
-    const display = document.getElementById('selected-characteristic-display');
-    const nameEl = document.getElementById('selected-characteristic-name');
-    if (display && nameEl) {
-      nameEl.textContent = 'Race';
-      display.classList.remove('hidden');
-    }
+    showSelectedCharacteristic('Race');
 
     // Hide other selectors
     document.getElementById('location-type-selector')?.classList.add('hidden');
@@ -2910,12 +3036,7 @@ const categories = Array.from(groupedChars.keys());
     });
     element.classList.add('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
 
-    const display = document.getElementById('selected-characteristic-display');
-    const nameEl = document.getElementById('selected-characteristic-name');
-    if (display && nameEl) {
-      nameEl.textContent = 'Sex';
-      display.classList.remove('hidden');
-    }
+    showSelectedCharacteristic('Sex');
 
     // Hide other selectors
     document.getElementById('location-type-selector')?.classList.add('hidden');
@@ -3010,12 +3131,7 @@ const categories = Array.from(groupedChars.keys());
     });
     element.classList.add('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
 
-    const display = document.getElementById('selected-characteristic-display');
-    const nameEl = document.getElementById('selected-characteristic-name');
-    if (display && nameEl) {
-      nameEl.textContent = 'Admission type';
-      display.classList.remove('hidden');
-    }
+    showSelectedCharacteristic('Admission type');
 
     // Hide other selectors
     document.getElementById('location-type-selector')?.classList.add('hidden');
@@ -3098,12 +3214,7 @@ const categories = Array.from(groupedChars.keys());
     });
     element.classList.add('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
 
-    const display = document.getElementById('selected-characteristic-display');
-    const nameEl = document.getElementById('selected-characteristic-name');
-    if (display && nameEl) {
-      nameEl.textContent = 'First admission location';
-      display.classList.remove('hidden');
-    }
+    showSelectedCharacteristic('First admission location');
 
     // Hide other selectors
     document.getElementById('location-type-selector')?.classList.add('hidden');
@@ -3186,12 +3297,7 @@ const categories = Array.from(groupedChars.keys());
     });
     element.classList.add('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
 
-    const display = document.getElementById('selected-characteristic-display');
-    const nameEl = document.getElementById('selected-characteristic-name');
-    if (display && nameEl) {
-      nameEl.textContent = 'Encounter type';
-      display.classList.remove('hidden');
-    }
+    showSelectedCharacteristic('Encounter type');
 
     // Hide other selectors
     document.getElementById('location-type-selector')?.classList.add('hidden');
@@ -3517,18 +3623,31 @@ const categories = Array.from(groupedChars.keys());
                 denominatorKey = 'Invasive mechanical ventilation, n (%)';
               }
 
-              const denomCharData = consortiumData.characteristics.find(c =>
-                c.variable === denominatorKey || c.variable.trim() === denominatorKey
-              );
+              // A re-based row carries its own denominator, so it never reaches
+              // the key-based lookup or the toggle above.
+              const rebased = rebasedDenominator(characteristic, (rowName) => {
+                const r = consortiumData.characteristics.find(c =>
+                  c.variable === rowName || c.variable.trim() === rowName
+                );
+                return r && r.sites[site] ? r.sites[site]['Overall'] : null;
+              });
 
-              if (denomCharData && denomCharData.sites[site]) {
-                const denomOverallValue = denomCharData.sites[site]['Overall'];
-                if (denomOverallValue) {
-                  // Handle both formats: "315,193 (30.6%)" and plain numbers
-                  const numMatch = denomOverallValue.match(/^\s*([\d,]+)/);
-                  if (numMatch) {
-                    const denominator = parseInt(numMatch[1].replace(/,/g, ''), 10);
-                    groupDenominators[label] = denominator;
+              if (rebased != null) {
+                groupDenominators[label] = rebased;
+              } else {
+                const denomCharData = consortiumData.characteristics.find(c =>
+                  c.variable === denominatorKey || c.variable.trim() === denominatorKey
+                );
+
+                if (denomCharData && denomCharData.sites[site]) {
+                  const denomOverallValue = denomCharData.sites[site]['Overall'];
+                  if (denomOverallValue) {
+                    // Handle both formats: "315,193 (30.6%)" and plain numbers
+                    const numMatch = denomOverallValue.match(/^\s*([\d,]+)/);
+                    if (numMatch) {
+                      const denominator = parseInt(numMatch[1].replace(/,/g, ''), 10);
+                      groupDenominators[label] = denominator;
+                    }
                   }
                 }
               }
@@ -3652,19 +3771,24 @@ const categories = Array.from(groupedChars.keys());
             denominatorKey = 'Invasive mechanical ventilation, n (%)';
           }
 
-          let denominatorValue = d.characteristics[denominatorKey];
+          // Row-level lookup shared by both paths below: exact key first, then
+          // the untrimmed variant the parse sometimes holds.
+          const cellFor = (rowName) => {
+            const direct = d.characteristics[rowName];
+            if (direct) return direct;
+            const key = Object.keys(d.characteristics).find((k) => k.trim() === rowName);
+            return key ? d.characteristics[key] : null;
+          };
 
-          // Try trimmed match if exact match fails
-          if (!denominatorValue) {
-            const charKey = Object.keys(d.characteristics).find(key =>
-              key.trim() === denominatorKey
-            );
-            if (charKey) {
-              denominatorValue = d.characteristics[charKey];
-            }
-          }
+          // A re-based row carries its own denominator, so it never reaches the
+          // key-based lookup or the toggle above.
+          const rebased = rebasedDenominator(characteristic, cellFor);
+          let denominatorValue = rebased == null ? cellFor(denominatorKey) : null;
 
-          if (denominatorValue) {
+          if (rebased != null) {
+            if (!groupDenominators[label]) groupDenominators[label] = 0;
+            groupDenominators[label] += rebased;
+          } else if (denominatorValue) {
             const numMatch = denominatorValue.match(/^\s*([\d,]+)/);
             if (numMatch) {
               const denominator = parseInt(numMatch[1].replace(/,/g, ''), 10);
@@ -3798,6 +3922,10 @@ const categories = Array.from(groupedChars.keys());
         if (isRespSupportVar && useIMVDenom && !isIMVCountVariable) {
           denominatorType = 'IMV Hospitalizations';
         }
+
+        // A re-based row states its own basis, whatever the toggle says.
+        const rebasedBasis = REBASED_BASIS[characteristic.trim()];
+        if (rebasedBasis) denominatorType = rebasedBasis.label;
 
         title += ` (% of ${denominatorType})`;
       }

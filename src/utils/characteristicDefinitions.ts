@@ -63,15 +63,15 @@ export const CHARACTERISTIC_DEFINITIONS: Record<string, CharacteristicDefinition
     source: 'modules/tableone/generator.py:6095',
   },
   'Intubated ≤24hr of admission, n (%)': {
-    text: 'Hospitalizations whose ventilation started within 24 hours of admission, as a share of all hospitalizations in the cohort.',
-    source: 'modules/tableone/generator.py:6145',
+    text: 'Hospitalizations NEWLY intubated within 24 hours of admission — patients already ventilated on arrival are excluded. An intubation charted up to an hour before the admission timestamp still counts, as slack for clock skew. The percentage shown is of ventilated hospitalizations excluding those pre-admit arrivals.',
+    source: 'extubation_calculator.py:237 (pre_admission_imv == 0, -1 to 24h of admission); re-based in InteractiveDashboard.astro (withRebasedDenominators)',
   },
   'Reintubation (≥2 IMV episodes), n (%)': {
-    text: 'Hospitalizations with two or more separate ventilation episodes. Episodes are built from the same timeline detection used for extubation, and any episode shorter than 5 minutes is treated as a failed attempt rather than a real one.',
-    source: 'modules/tableone/extubation_calculator.py:166',
+    text: 'Hospitalizations with two or more separate ventilation episodes. Episodes come from the same timeline detection used for extubation, and any episode shorter than 5 minutes is treated as a failed attempt rather than a real one. The percentage shown is of ventilated hospitalizations, since the measure is undefined for anyone never ventilated.',
+    source: 'extubation_calculator.py:166; re-based in InteractiveDashboard.astro (withRebasedDenominators)',
   },
   'Time to extubation (hrs), median [Q1, Q3]': {
-    text: 'Hours from ventilation start to extubation, among hospitalizations that were extubated. Extubation is not a recorded event — it is read off the respiratory-support timeline: a patient counts as extubated when two consecutive readings on invasive ventilation are followed by two consecutive readings off it. Requiring two on each side stops a single stray reading registering as an extubation. Patients already ventilated on arrival are excluded, since their true start time is unknown.',
+    text: 'A patient counts as extubated when two consecutive readings on invasive ventilation are followed by two consecutive readings off it. Requiring two on each side stops a single stray reading registering as an extubation. Patients already ventilated on arrival are excluded, since their true start time is unknown.',
     source: 'modules/tableone/extubation_calculator.py (clifpy issue #124 pattern)',
   },
   'Time to reintubation (hrs), median [Q1, Q3]': {
@@ -79,7 +79,7 @@ export const CHARACTERISTIC_DEFINITIONS: Record<string, CharacteristicDefinition
     source: 'modules/tableone/extubation_calculator.py:218',
   },
   'Extubation failure ≤48hr, n (% of extubated)': {
-    text: 'Reintubation within 48 hours of extubation. NOTE the denominator differs from its neighbours: the percentage is of EXTUBATED hospitalizations, not of all hospitalizations in the cohort.',
+    text: 'Reintubation within 48 hours of extubation. The percentage is of EXTUBATED hospitalizations, not of all hospitalizations in the cohort.',
     source: 'modules/tableone/extubation_calculator.py:221',
   },
 
@@ -112,10 +112,6 @@ export const CHARACTERISTIC_DEFINITIONS: Record<string, CharacteristicDefinition
     text: 'Hospitalizations that ever received norepinephrine, epinephrine, phenylephrine, vasopressin, dopamine or angiotensin.',
     source: 'README.md — per-encounter-block flags',
   },
-  'Other critically ill, n (%)': {
-    text: 'Hospitalizations that died or were discharged to hospice WITHOUT ever touching an ICU, receiving vasoactive medications, or receiving advanced respiratory support — in effect, death in the ED or on the ward without escalation.',
-    source: 'README.md — other_critically_ill flag',
-  },
   'Ward only (survived, no critical care), n (%)': {
     text: 'Hospitalizations that touched a ward and never received critical care, and survived. The complement of the four categories above rather than another overlapping one.',
     source: 'run_tableone_ward.py',
@@ -129,10 +125,6 @@ export const CHARACTERISTIC_DEFINITIONS: Record<string, CharacteristicDefinition
     text: 'Comorbidity index computed from the hospital diagnosis codes attached to the hospitalization.',
     source: 'clifpy.utils.comorbidity.calculate_cci (generator.py:74)',
   },
-  'CRRT, n (%)': {
-    text: 'Hospitalizations that received continuous renal replacement therapy.',
-    source: 'modules/tableone/generator.py:6068',
-  },
   'ICU length of stay (days), median [Q1, Q3]': {
     text: 'Median days spent in the ICU per hospitalization. Counts ICU time only and is undefined for hospitalizations that never reached an ICU.',
     source: 'modules/tableone/generator.py',
@@ -142,7 +134,7 @@ export const CHARACTERISTIC_DEFINITIONS: Record<string, CharacteristicDefinition
     source: 'modules/tableone/generator.py',
   },
   'P/F ratio (imputed), median [Q1, Q3]': {
-    text: 'PaO2/FiO2 ratio with values imputed from SpO2/FiO2 where an arterial blood gas is unavailable — coverage is therefore wider than the non-imputed row, and the two are not interchangeable.',
+    text: 'Imputed from SpO2/FiO2 where an arterial blood gas is unavailable.',
     source: 'modules/tableone/pf_sf_calculator.py',
   },
 };
@@ -165,7 +157,7 @@ export const DERIVED_DEFINITIONS: Record<string, CharacteristicDefinition> = {
     source: 'modules/tableone/generator.py:6211',
   },
   '__RESP_SECTION__': {
-    text: 'Everything in this section is limited to hospitalizations that received invasive mechanical ventilation, and is measured from ventilation start rather than from admission.',
+    text: 'Everything in this section is limited to hospitalizations that received invasive mechanical ventilation, and is measured from ventilation start.',
     source: 'modules/tableone/generator.py',
   },
   '__VASO_SECTION__': {
@@ -173,11 +165,11 @@ export const DERIVED_DEFINITIONS: Record<string, CharacteristicDefinition> = {
     source: 'README.md — vaso_support_enc flag',
   },
   '__ICU_STAY_TILE__': {
-    text: 'Hospitalizations with at least one ICU stay, taken from the ICU hospitalizations row — hospitalizations whose ADT record ever shows a location category containing "icu".',
+    text: 'Hospitalizations with at least one ICU stay, — hospitalizations whose ADT record ever shows a location category containing "icu".',
     source: 'README.md — icu_enc flag',
   },
   '__TIMESPAN_TILE__': {
-    text: 'Span of admissions in the cohort. The end year is read from the latest year column in the export; the 2011 start is a fixed value in the dashboard, because the by-year breakout only reaches back to 2022 while the aggregate includes earlier admissions.',
+    text: 'Span of admissions in the cohort.',
     source: 'CohortSummaryFromCSV.astro (f.years)',
   },
   '__HOSPITAL_MORTALITY_TILE__': {
@@ -231,5 +223,8 @@ export function definitionFor(name: string): CharacteristicDefinition | null {
     const prefix = trimmed.slice(0, sep);
     if (PREFIX_DEFINITIONS[prefix]) return PREFIX_DEFINITIONS[prefix];
   }
+  // A group can be selected in its own right in the Explorer ('Initial
+  // ventilator mode'), where the name carries no colon to strip.
+  if (PREFIX_DEFINITIONS[trimmed]) return PREFIX_DEFINITIONS[trimmed];
   return null;
 }

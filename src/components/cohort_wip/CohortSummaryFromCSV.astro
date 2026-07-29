@@ -1448,25 +1448,81 @@ const dopamineDose = d.dopamineDose;
                     .attr("stroke-width", 3)
                     .attr("rx", 6);
 
+                  // Rendered width of a candidate label at the 10px label size.
+                  // Measured off a hidden node rather than estimated from
+                  // character counts, so wrapping holds for any font the page
+                  // actually resolves.
+                  const measureText = (str) => {
+                    const probe = svg.append("text")
+                      .attr("visibility", "hidden")
+                      .attr("font-size", "10px")
+                      .attr("font-weight", "600")
+                      .text(str);
+                    const len = probe.node().getComputedTextLength();
+                    probe.remove();
+                    return len;
+                  };
+
                   cell.each(function(d) {
                     const cellWidth = d.x1 - d.x0;
                     const cellHeight = d.y1 - d.y0;
                     const cellArea = cellWidth * cellHeight;
 
                     const group = d3.select(this);
-                    // Rotated fallback for tiles too narrow to hold a
-                    // horizontal label — the abbreviation runs up the tile
-                    // rather than overflowing into its neighbour. Named so both
-                    // the up-front check and the measured check below use it.
+
+                    /**
+                     * Rotated label for tiles too narrow to hold a horizontal
+                     * one. Spells the mode out in full when it fits, and only
+                     * falls back to the abbreviation when it cannot.
+                     *
+                     * Rotated by -90deg, the axes swap: a line's LENGTH is
+                     * bounded by the tile's height, and the number of stacked
+                     * lines is bounded by its width. So a tall narrow tile can
+                     * carry a long name — just not many lines of it.
+                     */
                     const labelVertically = () => {
-                      group.append("text")
-                        .attr("transform", `translate(${cellWidth / 2}, ${cellHeight / 2}) rotate(-90)`)
-                        .attr("text-anchor", "middle")
-                        .attr("dominant-baseline", "central")
-                        .attr("fill", "#000000")
-                        .attr("font-size", "10px")
-                        .attr("font-weight", "700")
-                        .text((d.data.shortName || d.data.name) + ' ' + d.data.value + '%');
+                      const LINE = 12;
+                      const maxLines = Math.floor((cellWidth - 8) / LINE);
+                      const maxLen = cellHeight - 12;
+                      const value = d.data.value + '%';
+
+                      // Greedy word wrap, measured rather than estimated.
+                      let lines = null;
+                      if (maxLines >= 2) {
+                        const wrapped = [];
+                        let current = '';
+                        for (const word of String(d.data.name).split(/[\s\/]+/)) {
+                          const next = current ? current + ' ' + word : word;
+                          if (current && measureText(next) > maxLen) {
+                            wrapped.push(current);
+                            current = word;
+                          } else {
+                            current = next;
+                          }
+                        }
+                        if (current) wrapped.push(current);
+                        // A single word longer than the tile is unwrappable, and
+                        // the value needs a line of its own.
+                        if (wrapped.every((l) => measureText(l) <= maxLen) && wrapped.length + 1 <= maxLines) {
+                          lines = wrapped.concat(value);
+                        }
+                      }
+                      if (!lines) lines = [(d.data.shortName || d.data.name) + ' ' + value];
+
+                      const rotated = group.append("g")
+                        .attr("transform", `translate(${cellWidth / 2}, ${cellHeight / 2}) rotate(-90)`);
+                      const start = -((lines.length - 1) * LINE) / 2;
+                      lines.forEach((line, i) => {
+                        rotated.append("text")
+                          .attr("x", 0)
+                          .attr("y", start + i * LINE)
+                          .attr("text-anchor", "middle")
+                          .attr("dominant-baseline", "central")
+                          .attr("fill", "#000000")
+                          .attr("font-size", "10px")
+                          .attr("font-weight", line === value ? "700" : "600")
+                          .text(line);
+                      });
                     };
 
                     // The pooled Other lands around 1% of the area — no
