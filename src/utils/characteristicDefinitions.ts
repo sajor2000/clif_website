@@ -33,58 +33,58 @@ export const CHARACTERISTIC_DEFINITIONS: Record<string, CharacteristicDefinition
   },
 
   'ICU episodes, total n': {
-    text: 'Total number of separate ICU stays, which can exceed the number of encounters. A new episode begins when the patient passes through ward, stepdown, L&D, hospice, psych, rehab or other between two ICU rows. Lateral ICU-to-ICU transfers and trips to procedural, radiology or dialysis stay within the same episode, and ED rows are ignored entirely.',
+    text: 'Total number of separate ICU stays. A new episode begins when the patient passes through ward, stepdown, L&D, hospice, psych, rehab or other between two ICU rows. Lateral ICU-to-ICU transfers and trips to procedural, radiology or dialysis stay within the same episode.',
     source: 'modules/tableone/generator.py:2275 (NEW_EPISODE_LOCS)',
   },
   'Encounters with >=1 ICU episode, n (%)': {
-    text: 'Encounters with at least one ICU episode, as a share of all encounters in the selected cohort.',
+    text: 'Hospitalizations with at least one ICU episode, as a share of all hospitalizations in the selected cohort.',
     source: 'modules/tableone/generator.py:2275',
   },
 
   'Sepsis events (CDC ASE), n': {
-    text: 'Total CDC Adult Sepsis Events. Computed for every encounter in the cohort, NOT only ICU encounters — an encounter can contribute more than one event.',
+    text: 'Total CDC Adult Sepsis Events. Computed for every hospitalization in the cohort, NOT only ICU hospitalizations — a hospitalization can contribute more than one event.',
     source: 'modules/tableone/generator.py:4510 (sepsis_events_by_sepsis_col)',
   },
   'Sepsis events per 100 encounters': {
-    text: 'Sepsis events divided by all encounters in the cohort, times 100 — a size-independent rate, so sites can be compared directly. The raw event count above cannot: it scales with how many patients a site contributes. Counts repeat events, so it runs higher than the share of encounters affected.',
+    text: 'Sepsis events divided by all hospitalizations in the cohort.',
     source: 'derived in InteractiveDashboard.astro (withSepsisRate)',
   },
   'Encounters with >=1 sepsis event, n (%)': {
-    text: 'Encounters with at least one CDC Adult Sepsis Event, over all encounters in the selected cohort — not restricted to ICU encounters.',
+    text: 'Hospitalizations with at least one CDC Adult Sepsis Event, over all hospitalizations in the selected cohort — not restricted to ICU hospitalizations.',
     source: 'modules/tableone/generator.py:4520',
   },
 
   'Invasive mechanical ventilation, n (%)': {
-    text: 'Encounters with any invasive mechanical ventilation observation in the respiratory support data.',
+    text: 'Hospitalizations with any invasive mechanical ventilation observation in the respiratory support data.',
     source: 'modules/tableone/generator.py',
   },
   'Ventilator hours (millions)': {
-    text: 'Total invasive ventilation hours summed across every encounter in the cohort — a resource total, not a per-patient average. Not comparable between sites without normalizing by encounters.',
+    text: 'Total invasive ventilation hours summed across every hospitalization in the cohort.',
     source: 'modules/tableone/generator.py:6095',
   },
   'Intubated ≤24hr of admission, n (%)': {
-    text: 'Encounters whose ventilation started within 24 hours of admission, as a share of all encounters in the cohort.',
+    text: 'Hospitalizations whose ventilation started within 24 hours of admission, as a share of all hospitalizations in the cohort.',
     source: 'modules/tableone/generator.py:6145',
   },
   'Reintubation (≥2 IMV episodes), n (%)': {
-    text: 'Encounters with two or more separate ventilation episodes. Episodes are built from the same timeline detection used for extubation, and any episode shorter than 5 minutes is treated as a failed attempt rather than a real one.',
+    text: 'Hospitalizations with two or more separate ventilation episodes. Episodes are built from the same timeline detection used for extubation, and any episode shorter than 5 minutes is treated as a failed attempt rather than a real one.',
     source: 'modules/tableone/extubation_calculator.py:166',
   },
   'Time to extubation (hrs), median [Q1, Q3]': {
-    text: 'Hours from ventilation start to extubation, among encounters that were extubated. Extubation is not a recorded event — it is read off the respiratory-support timeline: a patient counts as extubated when two consecutive readings on invasive ventilation are followed by two consecutive readings off it. Requiring two on each side stops a single stray reading registering as an extubation. Patients already ventilated on arrival are excluded, since their true start time is unknown.',
+    text: 'Hours from ventilation start to extubation, among hospitalizations that were extubated. Extubation is not a recorded event — it is read off the respiratory-support timeline: a patient counts as extubated when two consecutive readings on invasive ventilation are followed by two consecutive readings off it. Requiring two on each side stops a single stray reading registering as an extubation. Patients already ventilated on arrival are excluded, since their true start time is unknown.',
     source: 'modules/tableone/extubation_calculator.py (clifpy issue #124 pattern)',
   },
   'Time to reintubation (hrs), median [Q1, Q3]': {
-    text: 'Hours from extubation to the next intubation, among encounters that were reintubated.',
+    text: 'Hours from extubation to the next intubation, among hospitalizations that were reintubated.',
     source: 'modules/tableone/extubation_calculator.py:218',
   },
   'Extubation failure ≤48hr, n (% of extubated)': {
-    text: 'Reintubation within 48 hours of extubation. NOTE the denominator differs from its neighbours: the percentage is of EXTUBATED encounters, not of all encounters in the cohort.',
+    text: 'Reintubation within 48 hours of extubation. NOTE the denominator differs from its neighbours: the percentage is of EXTUBATED hospitalizations, not of all hospitalizations in the cohort.',
     source: 'modules/tableone/extubation_calculator.py:221',
   },
 
   '28-day VFD (IMV encounters), n (%)': {
-    text: 'The count of IMV encounters that have a computable 28-day VFD, shown as a share of all encounters in the cohort. This is the denominator for the median below — it is not itself a ventilator-free-days figure.',
+    text: 'The count of IMV hospitalizations that have a computable 28-day VFD, shown as a share of all hospitalizations in the cohort. This is the denominator for the median below — it is not itself a ventilator-free-days figure.',
     source: 'modules/tableone/generator.py:6170',
   },
   'VFD, median [Q1, Q3]': {
