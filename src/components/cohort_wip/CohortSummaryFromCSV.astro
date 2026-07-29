@@ -501,7 +501,7 @@ const dopamineDose = d.dopamineDose;
           <div>
             <div class="text-xl font-bold">{extractPercentage(imvTotal)}</div>
             <div class="text-[10px] opacity-75">Hospitalizations</div>
-            <div class="text-sm font-semibold">Invasive Mechanical Ventilation Support<InfoTip characteristic="Invasive mechanical ventilation, n (%)" /></div>
+            <div class="text-sm font-semibold">Invasive Mechanical Ventilation Support</div>
           </div>
           <svg class="w-12 h-12 opacity-90 breathing-lungs shrink-0 ml-auto" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 2c.5 0 1 .2 1 .5v3c2-1.5 4.5-2 6.5-.5 2.5 2 3 5.5 2.5 8.5-.5 3.5-2 7-4.5 9-1 .8-2 1-3 .5-.8-.4-1.5-1.2-2-2.5V21c0 .3-.5.5-1 .5s-1-.2-1-.5v-1c-.5 1.3-1.2 2.1-2 2.5-1 .5-2 .3-3-.5-2.5-2-4-5.5-4.5-9C.5 10.5 1 7 3.5 5c2-1.5 4.5-1 6.5.5v-3c0-.3.5-.5 1-.5zM6.5 7C5 7.5 4 9 3.5 11c-.5 2.5 0 5.5 1.5 7.5.5.8 1.2 1.5 2 1.8.3.1.5 0 .8-.2.8-.8 1.5-2.2 1.8-4 .2-1.2.2-2.5 0-3.8-.3-1.8-1-3.5-2-4.8-.3-.3-.7-.5-1.1-.5zm11 0c-.4 0-.8.2-1.1.5-1 1.3-1.7 3-2 4.8-.2 1.3-.2 2.6 0 3.8.3 1.8 1 3.2 1.8 4 .3.2.5.3.8.2.8-.3 1.5-1 2-1.8 1.5-2 2-5 1.5-7.5-.5-2-1.5-3.5-3-4z"/>
@@ -513,7 +513,7 @@ const dopamineDose = d.dopamineDose;
           <div>
             <div class="text-xl font-bold">{extractPercentage(vasopressorEncounters)}</div>
             <div class="text-[10px] opacity-75">Hospitalizations</div>
-            <div class="text-sm font-semibold">Vasopressor Support<InfoTip characteristic="Vasoactive support, n (%)" /></div>
+            <div class="text-sm font-semibold">Vasopressor Support</div>
           </div>
           <svg class="w-12 h-12 opacity-90 shrink-0 ml-auto" fill="none" stroke="currentColor" stroke-width="2" viewBox="8 0 48 80" aria-hidden="true">
             <rect x="12" y="8" width="32" height="32" rx="4" stroke-linejoin="round"/>
@@ -533,7 +533,7 @@ const dopamineDose = d.dopamineDose;
           <div>
             <div class="text-xl font-bold">{extractPercentage(crrt)}</div>
             <div class="text-[10px] opacity-75">Hospitalizations</div>
-            <div class="text-sm font-semibold">Continuous Renal Replacement Therapy<InfoTip characteristic="CRRT, n (%)" /></div>
+            <div class="text-sm font-semibold">Continuous Renal Replacement Therapy</div>
           </div>
           <svg class="w-12 h-12 opacity-90 shrink-0 ml-auto" fill="none" stroke="currentColor" stroke-width="2" viewBox="-64 -32 176 168" aria-hidden="true">
             <path d="M15 -30 C-20 -25 -35 10 -35 45 C-35 80 -15 115 15 130 C45 145 70 140 82 115 C94 90 92 75 75 60 C65 50 62 48 68 38 C74 28 85 10 80 -8 C75 -26 45 -35 15 -30 Z"
@@ -598,9 +598,14 @@ const dopamineDose = d.dopamineDose;
                 one hue keeps meaning "share of all encounters" in this card. */}
             {wardOnly && (
             <div class="mb-4 pb-4 border-b border-gray-200">
-              <div class="flex items-center gap-3">
+              {/* Wraps rather than squeezes: at narrow card widths the text
+                  column would be starved below the width of "19.2%", and a
+                  single unbreakable number overflows the card instead of
+                  wrapping. basis-32 forces the number onto its own line before
+                  that happens. */}
+              <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
                 <svg
-                  class="w-32 shrink-0"
+                  class="w-24 xl:w-32 shrink-0"
                   viewBox="0 0 232 140"
                   role="img"
                   aria-label={`Hospital pictogram: ${litWindows} of ${WINDOW_TOTAL} windows lit, representing ${criticalPct}% of hospitalizations (${criticalCount.toLocaleString()} of ${totalEncounters.toLocaleString()}) that involved critical care. The remaining ${wardOnlyPct}% were ward only.`}
@@ -619,7 +624,7 @@ const dopamineDose = d.dopamineDose;
                   <line x1="116" y1="112" x2="116" y2="132" stroke="#cbd5e1" stroke-width="1.5"/>
                 </svg>
 
-                <div class="min-w-0">
+                <div class="min-w-0 flex-1 basis-32">
                   <div class="text-3xl font-bold text-gray-900 leading-none">{criticalPct}%</div>
                   <div class="mt-1 text-xs text-gray-700 leading-tight">
                     of hospitalizations<br/>involved <span class="font-semibold">critical care</span>
