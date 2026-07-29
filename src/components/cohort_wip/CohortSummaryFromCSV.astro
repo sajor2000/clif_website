@@ -1,0 +1,1928 @@
+---
+// CLIF Cohort Summary — reads per-cohort table_one from src/data/cohorts/<key>/
+// and re-renders client-side when the cohort picker (window.CohortBus) changes.
+import fs from 'node:fs';
+import path from 'node:path';
+import { DEFAULT_COHORT, parseCohortCSV, getAggregateValue, contributingSitesForCohort } from '../../utils/cohortData';
+import InfoTip from './InfoTip.astro';
+import DemographicCrosstab from './DemographicCrosstab.astro';
+
+// field name -> row label in the new table_one files (trimmed; case as in file)
+const LABELS: Record<string, string> = {
+  uniquePatients: 'N: Unique patients',
+  encounterBlocks: 'N: Encounter blocks',
+  hospitals: 'N: Hospitals',
+  medianAge: 'Age at admission, median [Q1, Q3]',
+  sexFemale: 'Sex: Female',
+  sexMale: 'Sex: Male',
+  raceWhite: 'Race: White',
+  raceBlack: 'Race: Black or African American',
+  raceAsian: 'Race: Asian',
+  raceOther: 'Race: Other',
+  raceUnknown: 'Race: unknown',
+  raceAmericanIndian: 'Race: american indian or alaska native',
+  racePacificIslander: 'Race: native hawaiian or other pacific islander',
+  ethnicityHispanic: 'Ethnicity: Hispanic',
+  ethnicityNonHispanic: 'Ethnicity: Non-Hispanic',
+  admissionED: 'Admission type: ed',
+  admissionElective: 'Admission type: elective',
+  admissionOSH: 'Admission type: osh',
+  admissionFacility: 'Admission type: facility',
+  admissionDirect: 'Admission type: direct',
+  admissionOther: 'Admission type: other',
+  comorbCHF: 'Congestive Heart Failure',
+  comorbRenal: 'Renal Disease',
+  comorbPulmonary: 'Chronic Pulmonary Disease',
+  comorbCerebrovascular: 'Cerebrovascular Disease',
+  comorbCancer: 'Cancer',
+  comorbMetastatic: 'Metastatic Solid Tumor',
+  comorbPVD: 'Peripheral Vascular Disease',
+  comorbMI: 'Myocardial Infarction',
+  comorbDementia: 'Dementia',
+  comorbLiver: 'Mild Liver Disease',
+  comorbModLiver: 'Moderate Severe Liver Disease',
+  comorbDiabetesComp: 'Diabetes With Complications',
+  comorbDiabetesUncomp: 'Diabetes Uncomplicated',
+  comorbHemiplegia: 'Hemiplegia',
+  comorbConnective: 'Connective Tissue Disease',
+  comorbPeptic: 'Peptic Ulcer Disease',
+  comorbAIDS: 'Aids',
+  hospitalMortality: 'Hospital mortality, n (%)',
+  icuLOS: 'ICU length of stay (days), median [Q1, Q3]',
+  hospitalLOS: 'Hospital length of stay (days), median [Q1, Q3]',
+  sofaScore: 'Total SOFA score, median [Q1, Q3]',
+  charlsonIndex: 'Charlson Comorbidity Index, median [Q1, Q3]',
+  crrt: 'CRRT, n (%)',
+  // Overall (ward) only — the complement of the four critical-care categories.
+  wardOnly: 'Ward only (survived, no critical care), n (%)',
+  icuEpisodes: 'ICU episodes, total n',
+  encountersWithIcuEpisode: 'Encounters with >=1 ICU episode, n (%)',
+  sepsisEvents: 'Sepsis events (CDC ASE), n',
+  encountersWithSepsis: 'Encounters with >=1 sepsis event, n (%)',
+  timeToExtubation: 'Time to extubation (hrs), median [Q1, Q3]',
+  ventilatorHoursMillions: 'Ventilator hours (millions)',
+  vfdEncounters: '28-day VFD (IMV encounters), n (%)',
+  vfdMedian: 'VFD, median [Q1, Q3]',
+  nidfdEncounters: '28-day NIDFD (NIPPV/HFNC encounters), n (%)',
+  nidfdMedian: 'NIDFD, median [Q1, Q3]',
+  icuEncounters: 'ICU encounters, n (%)',
+  advancedRespiratory: 'Advanced respiratory support, n (%)',
+  vasoactiveSupport: 'Vasoactive support, n (%)',
+  otherCriticallyIll: 'Other critically ill, n (%)',
+  imvTotal: 'Invasive mechanical ventilation, n (%)',
+  imvLocationICU: 'First location at IMV start: icu',
+  imvLocationED: 'First location at IMV start: ed',
+  imvLocationProcedural: 'First location at IMV start: procedural',
+  imvLocationWard: 'First location at IMV start: ward',
+  imvLocationStepdown: 'First location at IMV start: stepdown',
+  ventModeACV: 'Initial ventilator mode: assist control-volume control',
+  ventModeSIMV: 'Initial ventilator mode: simv',
+  ventModePSV: 'Initial ventilator mode: pressure support/cpap',
+  ventModePCV: 'Initial ventilator mode: pressure control',
+  ventModePRVC: 'Initial ventilator mode: pressure-regulated volume control',
+  // The export ships one row per mCIDE mode value. `other` is its own upstream
+  // category, NOT a catch-all, so the four rare modes below are pooled into the
+  // treemap's Other tile. `Missing` is deliberately left out — no mode recorded
+  // is not a mode.
+  ventModeOther: 'Initial ventilator mode: other',
+  ventModeAPRV: 'Initial ventilator mode: aprv',
+  ventModeBlowBy: 'Initial ventilator mode: blow by',
+  ventModeStandby: 'Initial ventilator mode: standby',
+  ventModeVolumeSupport: 'Initial ventilator mode: volume support',
+  fio2Median: 'FiO2 (%), median [Q1, Q3]',
+  peepMedian: 'PEEP (cmH2O), median [Q1, Q3]',
+  rrMedian: 'Respiratory rate (breaths/min), median [Q1, Q3]',
+  tidalVolumeMedian: 'Tidal volume (mL), median [Q1, Q3]',
+  vasopressorEncounters: 'Vasopressor encounters, n (%)',
+  norepinephrine: 'Norepinephrine, n (%)',
+  norepinephrineDose: 'Norepinephrine dose (mcg/kg/min), median [Q1, Q3]',
+  epinephrine: 'Epinephrine, n (%)',
+  epinephrineDose: 'Epinephrine dose (mcg/kg/min), median [Q1, Q3]',
+  phenylephrine: 'Phenylephrine, n (%)',
+  phenylephrineDose: 'Phenylephrine dose (mcg/kg/min), median [Q1, Q3]',
+  vasopressin: 'Vasopressin, n (%)',
+  dopamine: 'Dopamine, n (%)',
+  dopamineDose: 'Dopamine dose (mcg/kg/min), median [Q1, Q3]',
+};
+
+// Build the full field set for every cohort from its by-year table_one
+// (the `Overall` year column carries the all-years aggregate; `__ALL` = consortium).
+const cohortDir = path.join(process.cwd(), 'src', 'data', 'cohorts');
+function fieldsFor(key: string) {
+  const csv = fs.readFileSync(path.join(cohortDir, key, 'table_one_by_year.csv'), 'utf-8');
+  const data = parseCohortCSV(csv);
+  const f: Record<string, string> = {};
+  for (const [name, label] of Object.entries(LABELS)) {
+    f[name] = (getAggregateValue(data, label, 'Overall') || '').replace(/^"|"$/g, '').trim();
+  }
+  // The by-year breakout only starts in 2022, but the Overall aggregates
+  // include admissions back to 2011 — anchor the start there and take the
+  // end from the latest year column so it tracks future data drops.
+  const yrs = data.allYears.filter((y) => /^\d{4}$/.test(y)).sort();
+  f.years = yrs.length ? `2011-${yrs[yrs.length - 1]}` : '';
+  f.hasSofa = f.sofaScore ? '1' : '';
+  f.hasVent = f.imvTotal ? '1' : '';
+  return f;
+}
+interface Props {
+  cohort?: string;
+}
+const { cohort = DEFAULT_COHORT } = Astro.props;
+const uid = cohort;
+const d = fieldsFor(cohort);
+const contributingSites = contributingSitesForCohort(cohort);
+const isDefault = cohort === DEFAULT_COHORT;
+// Availability flags -> conditionally render cards a cohort has no data for.
+const hasVent = d.hasVent === '1';
+const hasSofa = d.hasSofa === '1';
+const hasIcuLos = !!d.icuLOS;
+// Not an availability flag — a deliberate suppression. Overall (ward) DOES
+// carry CRRT, vasopressor and sepsis rows, but its denominator is ~81%
+// non-ICU, so those rates read as consortium-wide when they describe a mostly
+// -ward population. The rows stay in the CSV for the Explorer, where the
+// cohort is labelled on the axis.
+const suppressForWard = cohort === 'overall_ward';
+const hasTherapyTiles = !suppressForWard;
+
+// Existing template variable names, populated from the default cohort for SSR.
+const uniquePatients = d.uniquePatients || '—';
+const encounterBlocks = d.encounterBlocks || '—';
+const hospitals = d.hospitals || '—';
+const years = d.years || '—';
+const sexMale = d.sexMale;
+const sexFemale = d.sexFemale;
+const raceWhite = d.raceWhite;
+const raceBlack = d.raceBlack;
+const raceAsian = d.raceAsian;
+const raceOther = d.raceOther;
+const raceUnknown = d.raceUnknown;
+const ethnicityHispanic = d.ethnicityHispanic;
+const ethnicityNonHispanic = d.ethnicityNonHispanic;
+const medianAge = d.medianAge;
+const admissionED = d.admissionED;
+const admissionElective = d.admissionElective;
+const admissionOSH = d.admissionOSH;
+const admissionFacility = d.admissionFacility;
+const admissionDirect = d.admissionDirect;
+const admissionOther = d.admissionOther;
+const comorbCHF = d.comorbCHF;
+const comorbRenal = d.comorbRenal;
+const comorbPulmonary = d.comorbPulmonary;
+const comorbCerebrovascular = d.comorbCerebrovascular;
+const comorbCancer = d.comorbCancer;
+const comorbMetastatic = d.comorbMetastatic;
+const comorbPVD = d.comorbPVD;
+const comorbMI = d.comorbMI;
+const comorbDementia = d.comorbDementia;
+const comorbLiver = d.comorbLiver;
+const comorbModLiver = d.comorbModLiver;
+const comorbDiabetesComp = d.comorbDiabetesComp;
+const comorbDiabetesUncomp = d.comorbDiabetesUncomp;
+const comorbHemiplegia = d.comorbHemiplegia;
+const comorbConnective = d.comorbConnective;
+const comorbPeptic = d.comorbPeptic;
+const comorbAIDS = d.comorbAIDS;
+const hospitalMortality = d.hospitalMortality;
+const icuLOS = d.icuLOS;
+const hospitalLOS = d.hospitalLOS;
+const vasopressorUse = d.vasoactiveSupport;
+const sofaScore = d.sofaScore;
+const charlsonIndex = d.charlsonIndex;
+const crrt = d.crrt;
+
+// Clinical course: ICU burden, sepsis, and ventilator-free-day outcomes.
+// Every one is optional — the strata exports do not all carry them — so each
+// tile is gated on its own value rather than assuming the block is present.
+const icuEpisodes = d.icuEpisodes;
+const encountersWithIcuEpisode = d.encountersWithIcuEpisode;
+// Blanked rather than gated at the card: every downstream conditional — the
+// card itself, the column wrapper, hasClinicalCourse — keys off these, so
+// emptying them collapses the layout correctly with no extra flags.
+const sepsisEvents = suppressForWard ? '' : d.sepsisEvents;
+const encountersWithSepsis = suppressForWard ? '' : d.encountersWithSepsis;
+const timeToExtubation = d.timeToExtubation;
+const vfdEncounters = d.vfdEncounters;
+const vfdMedian = d.vfdMedian;
+const nidfdEncounters = d.nidfdEncounters;
+const nidfdMedian = d.nidfdMedian;
+const hasClinicalCourse = !!(
+  icuEpisodes || encountersWithIcuEpisode || sepsisEvents || encountersWithSepsis ||
+  timeToExtubation || vfdEncounters || nidfdEncounters
+);
+
+// Helper functions to extract numbers and percentages
+function extractNumber(str: string): string {
+  const match = str.match(/^[\d,]+/);
+  return match ? match[0] : str;
+}
+
+function extractPercentage(str: string): string {
+  const match = str.match(/\(([^)]+)\)/);
+  return match ? match[1] : '';
+}
+
+function extractMedian(str: string): string {
+  const match = str.match(/^[\d.]+/);
+  return match ? match[0] : str;
+}
+
+function extractIQR(str: string): string {
+  const match = str.match(/\[([^\]]+)\]/);
+  return match ? match[1] : '';
+}
+
+// --- Clinical-course derived values -----------------------------------------
+// Free-day measures are a fraction of a FIXED window, so they read as meters
+// rather than bare numbers: 24.7 is meaningless until you see it against 28.
+const FREE_DAY_WINDOW = 28;
+const asNum = (s: string): number => {
+  const m = (s || '').replace(/,/g, '').match(/-?[\d.]+/);
+  return m ? parseFloat(m[0]) : NaN;
+};
+/** "24.7 [0, 27]" -> { median: 24.7, q1: 0, q3: 27 } */
+function medianIQR(s: string): { median: number; q1: number; q3: number } {
+  const median = asNum(s);
+  const m = (s || '').match(/\[\s*([^\],]+),\s*([^\]]+)\]/);
+  return {
+    median,
+    q1: m ? parseFloat(m[1].replace(/,/g, '')) : NaN,
+    q3: m ? parseFloat(m[2].replace(/,/g, '')) : NaN,
+  };
+}
+const clampPct = (n: number, max: number) =>
+  Number.isFinite(n) && max > 0 ? Math.max(0, Math.min(100, (n / max) * 100)) : 0;
+
+// Race detail + combined "Other" percentage (default cohort, for SSR)
+const raceAmericanIndian = d.raceAmericanIndian;
+const racePacificIslander = d.racePacificIslander;
+const pctOf = (n: number, t: number) => (t > 0 ? ((n / t) * 100).toFixed(1) : '0.0');
+const numOf = (s: string) => parseInt(extractNumber(s || '').replace(/,/g, ''), 10) || 0;
+
+// Admission-type legend percentages, recomputed over the pooled total of all
+// six categories so they match the donut slice geometry and the tooltip. The
+// CSV's precomputed percentages use per-category denominators (sites that
+// don't report a category are excluded), so they can sum to more than 100%.
+const admissionCounts = {
+  ed: numOf(admissionED),
+  osh: numOf(admissionOSH),
+  elective: numOf(admissionElective),
+  direct: numOf(admissionDirect),
+  facility: numOf(admissionFacility),
+  other: numOf(admissionOther),
+};
+const admissionTotal = Object.values(admissionCounts).reduce((a, b) => a + b, 0);
+const admissionPct = (n: number) => `${pctOf(n, admissionTotal)}%`;
+// Legend rows: every category, sorted largest-first. Colors are fixed per
+// category (rose ramp, darkest = ED) so they follow the entity, not the rank.
+const admissionLegend = [
+  { label: 'ED', color: 'rgb(136, 19, 55)', n: admissionCounts.ed },
+  { label: 'OSH', color: 'rgb(159, 18, 57)', n: admissionCounts.osh },
+  { label: 'Elective', color: 'rgb(190, 18, 60)', n: admissionCounts.elective },
+  { label: 'Direct', color: 'rgb(225, 29, 72)', n: admissionCounts.direct },
+  { label: 'Facility', color: 'rgb(244, 63, 94)', n: admissionCounts.facility },
+  { label: 'Other', color: 'rgb(251, 113, 133)', n: admissionCounts.other },
+].sort((a, b) => b.n - a.n);
+
+// Bar widths and human-scale framings for the Clinical-course section. All
+// derived from the cell text so it holds for every cohort; each guard yields a
+// benign value rather than NaN when a row is absent. Declared here, after the
+// helpers above, since const declarations do not hoist.
+const sepsisSharePct = parseFloat(extractPercentage(encountersWithSepsis) || '0') || 0;
+
+const extub = medianIQR(timeToExtubation);
+const extubQ1 = Number.isFinite(extub.q1) ? extub.q1 : '—';
+const ventilatorHoursMillions = d.ventilatorHoursMillions;
+const extubQ3 = Number.isFinite(extub.q3) ? extub.q3 : '—';
+
+const vfd = medianIQR(vfdMedian);
+const nidfd = medianIQR(nidfdMedian);
+const vfdMedianPct = clampPct(vfd.median, FREE_DAY_WINDOW);
+const nidfdMedianPct = clampPct(nidfd.median, FREE_DAY_WINDOW);
+// Q1 of zero means at least a quarter never came off support inside the window —
+// the most consequential fact here, and invisible when written "[0, 27]".
+
+// Unit-chart scaffolding. One block = one day of the 28-day window — a reader
+// COUNTS the days instead of decoding a bar length.
+const dayBlocks = Array.from({ length: FREE_DAY_WINDOW }, (_, i) => i);
+const vfdFreeDays = Number.isFinite(vfd.median) ? Math.round(vfd.median) : 0;
+const nidfdFreeDays = Number.isFinite(nidfd.median) ? Math.round(nidfd.median) : 0;
+// Sepsis reads as a 1-in-N pictogram: N person icons, one highlighted. Unit
+// charts earn their keep on RARE events (1 in 6), not large shares — the ICU
+// card (often 80%+) uses a plain meter bar instead. Past 20 icons the count
+// stops being glanceable, so rare-beyond-1-in-20 falls back to the bar too.
+const sepsisN = sepsisSharePct > 0 ? Math.round(100 / sepsisSharePct) : 0;
+const sepsisPicto = sepsisN >= 2 && sepsisN <= 20 ? Array.from({ length: sepsisN }, (_, i) => i) : null;
+const totalOtherRaces = [d.raceAsian, d.raceOther, d.raceUnknown, d.raceAmericanIndian, d.racePacificIslander]
+  .reduce((sum, v) => sum + numOf(v), 0);
+const totalPatients = numOf(uniquePatients);
+const otherRacePercentage = pctOf(totalOtherRaces, totalPatients);
+
+// Encounter Types — these categories OVERLAP: one encounter can be an ICU stay
+// AND receive advanced respiratory support. Their true percentages therefore sum
+// to ~167%, not 100%.
+//
+// This previously divided each count by the SUM of the four counts, inventing a
+// denominator and understating every category (ICU read 50.5% instead of 84.5%).
+// Each cell already carries the export's own figure — "891,734 (84.5%)" — so use
+// that rather than recomputing, and fall back to a share of total encounters if a
+// cell ever lacks one.
+const icuEncounters = d.icuEncounters;
+const advancedRespiratory = d.advancedRespiratory;
+const vasoactiveSupport = d.vasoactiveSupport;
+const otherCriticallyIll = d.otherCriticallyIll;
+const totalEncounters = numOf(encounterBlocks);
+/** Percentage as stated in the cell, e.g. "891,734 (84.5%)" -> "84.5". */
+const statedPct = (cell: string) => {
+  const m = (cell || '').match(/\(([\d.]+)\s*%\)/);
+  return m ? m[1] : pctOf(numOf(cell), totalEncounters);
+};
+const icuPct = statedPct(icuEncounters);
+const respiratoryPct = statedPct(advancedRespiratory);
+const vasoactivePct = statedPct(vasoactiveSupport);
+const otherPct = statedPct(otherCriticallyIll);
+
+// Ward only — present in the Overall (ward) export alone. Unlike the four rows
+// above it does NOT overlap them: it is exactly the encounters that never
+// received critical care and survived, so it shares their denominator and acts
+// as their complement. Its inverse is the headline fact about this cohort: how
+// often a hospitalization involves critical care at all.
+const wardOnly = d.wardOnly;
+const wardOnlyPct = wardOnly ? parseFloat(statedPct(wardOnly)) : 0;
+const wardOnlyCount = wardOnly ? numOf(wardOnly) : 0;
+const criticalPct = wardOnly ? Math.round((100 - wardOnlyPct) * 10) / 10 : 0;
+const criticalCount = wardOnly ? totalEncounters - wardOnlyCount : 0;
+
+/**
+ * Hospital pictogram: 40 windows, each one 2.5% of all hospitalizations, lit
+ * when that slice received critical care.
+ *
+ * Discrete windows rather than a part-filled silhouette on purpose. A building
+ * filled to a level reads as OCCUPANCY — a share of beds — and this is a share
+ * of ADMISSIONS. The two differ a lot here (critically ill stay a median 6.0
+ * days against 3.6 overall), and bed-days are not computable from medians, so a
+ * fill would assert an intensity the export cannot support. Countable units say
+ * "n in 40 admissions" and cannot be misread as a fill level.
+ *
+ * Order is tower-then-wings so the lit windows form one contiguous block; a
+ * scattered lit set is much harder to count.
+ */
+const WINDOW_TOTAL = 40;
+const litWindows = Math.round((criticalPct / 100) * WINDOW_TOTAL);
+const hospitalWindows = [
+  // Tower: 5 columns x 4 rows.
+  ...[40, 58, 76, 94].flatMap((y) => [88, 100, 112, 124, 136].map((x) => ({ x, y }))),
+  // Left wing, then right wing: 5 columns x 2 rows each.
+  ...[76, 94].flatMap((y) => [12, 24, 36, 48, 60].map((x) => ({ x, y }))),
+  ...[76, 94].flatMap((y) => [164, 176, 188, 200, 212].map((x) => ({ x, y }))),
+].map((w, i) => ({ ...w, lit: i < litWindows }));
+
+/**
+ * Demographics strip. Built as data rather than eight near-identical blocks so
+ * the row can size itself: cohorts differ in which cells they have (Overall
+ * has no ICU LOS and no SOFA), and a fixed 8-column grid left those cohorts
+ * with dead columns on the right. `--demo-cols` is set from the surviving
+ * count and drives the large-screen track list.
+ */
+const demographicCells = [
+  {
+    label: 'Median Age', def: '__MEDIAN_AGE_TILE__', value: extractMedian(medianAge), iqr: extractIQR(medianAge), show: true,
+    viewBox: '0 0 20 20',
+    icon: '<path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zM4 8h12v8H4V8z" clip-rule="evenodd"/>',
+  },
+  {
+    label: 'Female', def: '', value: extractPercentage(sexFemale), iqr: '', show: true,
+    viewBox: '0 0 20 20',
+    icon: '<path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/>',
+  },
+  {
+    label: 'White', def: '', value: extractPercentage(raceWhite), iqr: '', show: true,
+    viewBox: '0 0 20 20',
+    icon: '<path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>',
+  },
+  {
+    label: 'Hispanic', def: '', value: extractPercentage(ethnicityHispanic), iqr: '', show: true,
+    viewBox: '0 0 20 20',
+    icon: '<path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>',
+  },
+  {
+    label: 'Median ICU Stay, days', def: 'ICU length of stay (days), median [Q1, Q3]', value: extractMedian(icuLOS), iqr: extractIQR(icuLOS), show: hasIcuLos,
+    viewBox: '0 0 640 512',
+    icon: '<path d="M176 256c44.11 0 80-35.89 80-80s-35.89-80-80-80-80 35.89-80 80 35.89 80 80 80zm352-128H304c-8.84 0-16 7.16-16 16v144H64V80c0-8.84-7.16-16-16-16H16C7.16 64 0 71.16 0 80v352c0 8.84 7.16 16 16 16h32c8.84 0 16-7.16 16-16v-48h512v48c0 8.84 7.16 16 16 16h32c8.84 0 16-7.16 16-16V240c0-61.86-50.14-112-112-112z"/>',
+  },
+  {
+    label: 'Median Hospital Stay, days', def: 'Hospital length of stay (days), median [Q1, Q3]', value: extractMedian(hospitalLOS), iqr: extractIQR(hospitalLOS), show: true,
+    viewBox: '0 0 20 20',
+    icon: '<path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clip-rule="evenodd"/>',
+  },
+  {
+    label: 'Median SOFA Score', def: 'Total SOFA score, median [Q1, Q3]', value: extractMedian(sofaScore), iqr: extractIQR(sofaScore), show: hasSofa,
+    viewBox: '0 0 20 20',
+    icon: '<path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/>',
+  },
+  {
+    label: 'Median Charlson Index', def: 'Charlson Comorbidity Index, median [Q1, Q3]', value: extractMedian(charlsonIndex), iqr: extractIQR(charlsonIndex), show: true,
+    viewBox: '0 0 20 20',
+    icon: '<path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/>',
+  },
+].filter((c) => c.show);
+
+// Respiratory Support Details
+const imvTotal = d.imvTotal;
+const imvLocationICU = d.imvLocationICU;
+const imvLocationED = d.imvLocationED;
+const imvLocationProcedural = d.imvLocationProcedural;
+const imvLocationWard = d.imvLocationWard;
+const imvLocationStepdown = d.imvLocationStepdown;
+/**
+ * Initial-ventilator-mode tiles for the treemap: the five named modes plus a
+ * pooled Other.
+ *
+ * Pooled on COUNTS, then re-percentaged over their own total, for the same
+ * reason the admission donut does it (see admissionCounts): the CSV's stated
+ * percentages use per-row denominators — sites that never report a mode are
+ * left out of that row's denominator — so they sum to ~103% here and cannot be
+ * added together. Recomputing makes each tile's area match its own label.
+ *
+ * `Missing` is excluded rather than pooled: it means no mode was charted, which
+ * is a data-coverage fact, not a ventilator setting.
+ */
+const ventModeCounts = [
+  { name: 'Assist Control/Volume Control', shortName: 'AC/VC', n: numOf(d.ventModeACV) },
+  { name: 'Pressure Regulated Volume Control', shortName: 'PRVC', n: numOf(d.ventModePRVC) },
+  { name: 'Synchronized Intermittent Mandatory Ventilation', shortName: 'SIMV', n: numOf(d.ventModeSIMV) },
+  { name: 'Pressure Support Ventilation/CPAP', shortName: 'PSV/CPAP', n: numOf(d.ventModePSV) },
+  { name: 'Pressure Control Ventilation', shortName: 'PCV', n: numOf(d.ventModePCV) },
+  {
+    name: 'Other',
+    shortName: 'Other',
+    n: numOf(d.ventModeOther) + numOf(d.ventModeAPRV) + numOf(d.ventModeBlowBy)
+      + numOf(d.ventModeStandby) + numOf(d.ventModeVolumeSupport),
+  },
+];
+const ventModeTotal = ventModeCounts.reduce((sum, m) => sum + m.n, 0);
+const ventModeTiles = ventModeCounts
+  .filter((m) => m.n > 0)
+  .map((m) => ({ name: m.name, shortName: m.shortName, value: parseFloat(pctOf(m.n, ventModeTotal)) }));
+const fio2Median = d.fio2Median;
+const peepMedian = d.peepMedian;
+const rrMedian = d.rrMedian;
+const tidalVolumeMedian = d.tidalVolumeMedian;
+
+// Vasopressor Support Details
+const vasopressorEncounters = d.vasopressorEncounters;
+const norepinephrine = d.norepinephrine;
+const norepinephrineDose = d.norepinephrineDose;
+const epinephrine = d.epinephrine;
+const epinephrineDose = d.epinephrineDose;
+const phenylephrine = d.phenylephrine;
+const phenylephrineDose = d.phenylephrineDose;
+const vasopressin = d.vasopressin;
+const dopamine = d.dopamine;
+const dopamineDose = d.dopamineDose;
+---
+
+<div class={`cohort-dashboard cohort-summary-panel${isDefault ? '' : ' hidden'}`} id={`summary-${uid}`} data-cohort={uid}>
+  {/* Overall (ward) still excludes Northwestern and UCSF — they submitted
+      essentially no ward patients (2.7% and 0.0% ward-only against 73–84%
+      everywhere else), so their encounters cannot represent an
+      all-hospitalizations population. The exclusion lives in the export; the
+      banner that used to announce it here was removed. */}
+
+  <!-- Compact Top Grid Layout -->
+  <section class="mb-8">
+    <div class="flex flex-col lg:flex-row gap-4">
+
+      <!-- Left Column: Key Stats Cards (Stacked) -->
+      {/* flex column + grow on every tile: the rail stretches to match the
+          right column's height, so both columns end on the same line. */}
+      <div class="flex-none w-64 flex flex-col gap-3">
+        <div class="bg-gradient-to-br from-slate-600 to-slate-700 text-white px-4 py-2 rounded-lg shadow min-w-full grow flex flex-col justify-center">
+          <div class="text-xl font-bold">{extractNumber(uniquePatients)}</div>
+          <div class="text-xs opacity-90">Unique Patients</div>
+        </div>
+        <div class="bg-gradient-to-br from-slate-600 to-slate-700 text-white px-4 py-2 rounded-lg shadow min-w-full grow flex flex-col justify-center">
+          <div class="text-xl font-bold">{extractNumber(encounterBlocks)}</div>
+          <div class="text-xs opacity-90">Total Hospitalizations</div>
+        </div>
+        <div class="bg-gradient-to-br from-slate-600 to-slate-700 text-white px-4 py-2 rounded-lg shadow min-w-full grow flex flex-col justify-center">
+          <div class="text-xl font-bold">{extractNumber(icuEncounters)}</div>
+          <div class="text-xs opacity-90">Hospitalizations with an ICU stay</div>
+        </div>
+        {/* Sites and hospitals share one tile: the site count is the roster
+            behind the hospital count, so the two read together. */}
+        <div class="bg-gradient-to-br from-slate-600 to-slate-700 text-white px-4 py-2 rounded-lg shadow min-w-full grow flex items-stretch gap-3">
+          <div class="flex-1 min-w-0 flex flex-col justify-center border-r border-white/20 pr-3">
+            <div class="text-xl font-bold">{contributingSites.length}</div>
+            <div class="text-xs opacity-90">{contributingSites.length === 1 ? 'Site' : 'Sites'}</div>
+          </div>
+          <div class="flex-1 min-w-0 flex flex-col justify-center">
+            <div class="text-xl font-bold">{hospitals}</div>
+            <div class="text-xs opacity-90">Hospitals</div>
+          </div>
+        </div>
+        <div class="bg-gradient-to-br from-slate-600 to-slate-700 text-white px-4 py-2 rounded-lg shadow min-w-full grow flex flex-col justify-center">
+          <div class="text-xl font-bold">{years}</div>
+          <div class="text-xs opacity-90">Data Timespan</div>
+        </div>
+        <div class="bg-gradient-to-br from-slate-600 to-slate-700 text-white px-4 py-2 rounded-lg shadow min-w-full grow flex flex-col justify-center">
+          <div class="text-xl font-bold">{extractPercentage(hospitalMortality)}</div>
+          <div class="text-xs opacity-90">Hospital Mortality</div>
+        </div>
+        {hasVent && (
+        <div class="bg-gradient-to-br from-clif-burgundy to-clif-burgundy-dark text-white px-4 py-3 rounded-lg shadow min-w-full grow flex items-center gap-3">
+          <div>
+            <div class="text-xl font-bold">{extractPercentage(imvTotal)}</div>
+            <div class="text-[10px] opacity-75">Hospitalizations</div>
+            <div class="text-sm font-semibold">Invasive Mechanical Ventilation Support</div>
+          </div>
+          <svg class="w-12 h-12 opacity-90 breathing-lungs shrink-0 ml-auto" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 2c.5 0 1 .2 1 .5v3c2-1.5 4.5-2 6.5-.5 2.5 2 3 5.5 2.5 8.5-.5 3.5-2 7-4.5 9-1 .8-2 1-3 .5-.8-.4-1.5-1.2-2-2.5V21c0 .3-.5.5-1 .5s-1-.2-1-.5v-1c-.5 1.3-1.2 2.1-2 2.5-1 .5-2 .3-3-.5-2.5-2-4-5.5-4.5-9C.5 10.5 1 7 3.5 5c2-1.5 4.5-1 6.5.5v-3c0-.3.5-.5 1-.5zM6.5 7C5 7.5 4 9 3.5 11c-.5 2.5 0 5.5 1.5 7.5.5.8 1.2 1.5 2 1.8.3.1.5 0 .8-.2.8-.8 1.5-2.2 1.8-4 .2-1.2.2-2.5 0-3.8-.3-1.8-1-3.5-2-4.8-.3-.3-.7-.5-1.1-.5zm11 0c-.4 0-.8.2-1.1.5-1 1.3-1.7 3-2 4.8-.2 1.3-.2 2.6 0 3.8.3 1.8 1 3.2 1.8 4 .3.2.5.3.8.2.8-.3 1.5-1 2-1.8 1.5-2 2-5 1.5-7.5-.5-2-1.5-3.5-3-4z"/>
+          </svg>
+        </div>
+        )}
+        {hasTherapyTiles && (
+        <div class="bg-gradient-to-br from-clif-burgundy to-clif-burgundy-dark text-white px-4 py-3 rounded-lg shadow min-w-full grow flex items-center gap-3">
+          <div>
+            <div class="text-xl font-bold">{extractPercentage(vasopressorEncounters)}</div>
+            <div class="text-[10px] opacity-75">Hospitalizations</div>
+            <div class="text-sm font-semibold">Vasopressor Support</div>
+          </div>
+          <svg class="w-12 h-12 opacity-90 shrink-0 ml-auto" fill="none" stroke="currentColor" stroke-width="2" viewBox="8 0 48 80" aria-hidden="true">
+            <rect x="12" y="8" width="32" height="32" rx="4" stroke-linejoin="round"/>
+            <line x1="16" y1="16" x2="32" y2="16" stroke-width="1.5"/>
+            <path d="M16 28 L40 20 L40 36 L16 36 Z" fill="currentColor" opacity="0.3"/>
+            <circle cx="28" cy="4" r="2" fill="currentColor"/>
+            <line x1="28" y1="4" x2="28" y2="8"/>
+            <line x1="28" y1="44" x2="28" y2="48"/>
+            <circle cx="28" cy="50" r="3"/>
+            <line x1="28" y1="53" x2="28" y2="68"/>
+            <path class="iv-drop iv-drop-1" d="M28 72 Q26 74 28 76 Q30 74 28 72 Z" fill="currentColor"/>
+          </svg>
+        </div>
+        )}
+        {hasTherapyTiles && (
+        <div class="bg-gradient-to-br from-clif-burgundy to-clif-burgundy-dark text-white px-4 py-3 rounded-lg shadow min-w-full grow flex items-center gap-3">
+          <div>
+            <div class="text-xl font-bold">{extractPercentage(crrt)}</div>
+            <div class="text-[10px] opacity-75">Hospitalizations</div>
+            <div class="text-sm font-semibold">Continuous Renal Replacement Therapy</div>
+          </div>
+          <svg class="w-12 h-12 opacity-90 shrink-0 ml-auto" fill="none" stroke="currentColor" stroke-width="2" viewBox="-64 -32 176 168" aria-hidden="true">
+            <path d="M15 -30 C-20 -25 -35 10 -35 45 C-35 80 -15 115 15 130 C45 145 70 140 82 115 C94 90 92 75 75 60 C65 50 62 48 68 38 C74 28 85 10 80 -8 C75 -26 45 -35 15 -30 Z"
+                  fill="currentColor" opacity="0.2" stroke-linejoin="round"/>
+            <line x1="-62" y1="54" x2="-16" y2="54" stroke-width="8"/>
+            <circle class="kidney-particle-in kidney-particle-in-1" cx="-48" cy="54" r="6.5" fill="#fda4af"/>
+            <circle class="kidney-particle-in kidney-particle-in-2" cx="-28" cy="54" r="6.5" fill="#fda4af"/>
+            <line x1="70" y1="54" x2="116" y2="54" stroke-width="8"/>
+            <circle class="kidney-particle-out kidney-particle-out-1" cx="72" cy="54" r="6.5" fill="currentColor" opacity="0.9"/>
+            <circle class="kidney-particle-out kidney-particle-out-2" cx="96" cy="54" r="6.5" fill="currentColor" opacity="0.9"/>
+          </svg>
+        </div>
+        )}
+      </div>
+
+      <!-- Middle + Right Column: Demographics, Admission Types, Comorbidities, Encounter Types -->
+      <div class="flex-1 flex flex-col gap-3">
+        <!-- Demographics Row - Full Width -->
+        <div class="bg-white p-4 rounded-lg shadow border border-gray-200">
+          {/* One cell template driven by demographicCells: equal internal
+              structure means the values share a baseline and the watermark
+              icons land at the same offset regardless of how the label wraps. */}
+          <div
+            class="demo-grid grid grid-cols-2 md:grid-cols-4 gap-4 text-center"
+            style={`--demo-cols:${demographicCells.length}`}
+          >
+            {demographicCells.map((cell) => (
+              <div class="relative py-2 flex flex-col items-center justify-start">
+                <svg
+                  class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 opacity-30 text-slate-400"
+                  fill="currentColor"
+                  viewBox={cell.viewBox}
+                  aria-hidden="true"
+                  set:html={cell.icon}
+                />
+                <div class="relative text-lg font-bold text-gray-900 whitespace-nowrap leading-tight">
+                  {cell.value}{cell.iqr && <span class="text-xs font-normal text-gray-800"> [{cell.iqr}]</span>}
+                </div>
+                {/* Reserved height for two lines so one- and two-line labels
+                    do not shift their neighbours' vertical rhythm. */}
+                <div class="relative mt-1 min-h-[2rem] text-xs leading-tight text-gray-700 dark:!text-white">{cell.label}{cell.def && <InfoTip characteristic={cell.def} />}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <!-- Three Cards Row: Encounter Types, Admission Types, Top Comorbidities -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+          <!-- Encounter Types -->
+          <div class="bg-white p-4 rounded-lg shadow border border-gray-200 flex flex-col overflow-visible" style="min-height: 400px;">
+            <h3 class="text-sm font-semibold text-gray-700">Encounter Types<InfoTip characteristic="__ENCOUNTER_TYPES_CARD__" /></h3>
+            {/* The categories overlap (one encounter can be in several), so a
+                parts-of-whole donut would misstate them. Each bar is instead an
+                independent 0–100% meter against all encounters; one fill color
+                because identity is carried by the row label, not by hue. */}
+            <p class="text-[11px] text-gray-500 mb-2">% of all encounters</p>
+
+            {/* How often critical illness happens, before the breakdown of
+                what kind. Lit windows = the share of hospitalizations that
+                involved critical care; the teal matches the meters below, so
+                one hue keeps meaning "share of all encounters" in this card. */}
+            {wardOnly && (
+            <div class="mb-4 pb-4 border-b border-gray-200">
+              {/* Wraps rather than squeezes: at narrow card widths the text
+                  column would be starved below the width of "19.2%", and a
+                  single unbreakable number overflows the card instead of
+                  wrapping. basis-32 forces the number onto its own line before
+                  that happens. */}
+              <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+                <svg
+                  class="w-24 xl:w-32 shrink-0"
+                  viewBox="0 0 232 140"
+                  role="img"
+                  aria-label={`Hospital pictogram: ${litWindows} of ${WINDOW_TOTAL} windows lit, representing ${criticalPct}% of hospitalizations (${criticalCount.toLocaleString()} of ${totalEncounters.toLocaleString()}) that involved critical care. The remaining ${wardOnlyPct}% were ward only.`}
+                >
+                  {/* Silhouette: two wings and a central tower. */}
+                  <rect x="4" y="60" width="72" height="72" rx="3" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>
+                  <rect x="156" y="60" width="72" height="72" rx="3" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>
+                  <rect x="80" y="24" width="72" height="108" rx="3" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>
+                  {/* Hospital cross, muted so it reads as an icon, not a mark. */}
+                  <path d="M112 8h8v6h6v8h-6v6h-8v-6h-6v-8h6z" fill="#7c2d3a" opacity="0.55"/>
+                  {hospitalWindows.map((w) => (
+                    <rect x={w.x} y={w.y} width="8" height="8" rx="1.5" fill={w.lit ? '#0d9488' : '#e2e8f0'}/>
+                  ))}
+                  {/* Entrance — decoration, never counted. */}
+                  <rect x="104" y="112" width="24" height="20" rx="2" fill="#e2e8f0"/>
+                  <line x1="116" y1="112" x2="116" y2="132" stroke="#cbd5e1" stroke-width="1.5"/>
+                </svg>
+
+                <div class="min-w-0 flex-1 basis-32">
+                  <div class="text-3xl font-bold text-gray-900 leading-none">{criticalPct}%</div>
+                  <div class="mt-1 text-xs text-gray-700 leading-tight">
+                    of hospitalizations<br/>involved <span class="font-semibold">critical care</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Direct labels rather than a legend box — two states only. */}
+              <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-gray-500">
+                <span class="flex items-center gap-1">
+                  <span class="inline-block w-2 h-2 rounded-sm bg-teal-600"></span>
+                  critical care {criticalPct}%
+                </span>
+                <span class="flex items-center gap-1">
+                  <span class="inline-block w-2 h-2 rounded-sm bg-slate-200"></span>
+                  ward only {wardOnlyPct}%
+                </span>
+              </div>
+            </div>
+            )}
+
+            <div class="flex flex-col justify-center flex-1 space-y-4 text-xs">
+              {[
+                { label: 'ICU encounters', pct: icuPct, n: extractNumber(icuEncounters) },
+                { label: 'Advanced respiratory support', pct: respiratoryPct, n: extractNumber(advancedRespiratory) },
+                { label: 'Vasopressor support', pct: vasoactivePct, n: extractNumber(vasoactiveSupport) },
+                { label: 'Other critically ill', pct: otherPct, n: extractNumber(otherCriticallyIll) },
+              ].map(({ label, pct, n }) => (
+                <div>
+                  <div class="flex justify-between items-baseline gap-2">
+                    <span class="text-gray-700">{label}</span>
+                    <span class="font-semibold text-gray-800">{pct}%</span>
+                  </div>
+                  <div
+                    class="mt-1 h-2 rounded bg-teal-100 overflow-hidden"
+                    role="img"
+                    aria-label={`${label}: ${n} encounters (${pct}% of all encounters)`}
+                    title={`n=${n}`}
+                  >
+                    <div class="h-full rounded-r bg-teal-600" style={`width: ${pct}%`}></div>
+                  </div>
+                  <div class="mt-0.5 text-[10px] text-gray-500">n={n}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <!-- Admission Types -->
+          <div class="bg-white p-4 rounded-lg shadow border border-gray-200 flex flex-col overflow-visible" style="min-height: 400px;">
+            <h3 class="text-sm font-semibold mb-2 text-gray-700">Admission Types</h3>
+            {/* flex-1 + justify-center: the card is pinned to the row's
+                min-height, so the donut and its legend sit centred in whatever
+                space is left rather than hugging the heading. */}
+            <div class="flex flex-1 flex-col items-center justify-center gap-2">
+              <!-- Pie Chart -->
+              <div class="w-40 h-40 relative overflow-visible">
+                <canvas id={`admissionTypesChart-${uid}`}></canvas>
+              </div>
+              <!-- Data List: all categories, largest first -->
+              <div class="w-full space-y-1 text-xs">
+                {admissionLegend.map((row) => (
+                  <div class="flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                      <div class="w-3 h-3 rounded-full" style={`background-color: ${row.color};`}></div>
+                      <span class="text-gray-700">{row.label}</span>
+                    </div>
+                    <span class="font-semibold text-gray-800">{admissionPct(row.n)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <!-- Top Comorbidities - Packed Bubble -->
+          <div class="bg-white p-4 rounded-lg shadow border border-gray-200 flex flex-col" style="min-height: 400px;">
+            <div class="flex justify-between items-center mb-2">
+              <h3 class="text-sm font-semibold text-gray-700">Top Comorbidities</h3>
+              <button id={`expandComorbidities-${uid}`} class="text-xs text-slate-600 hover:text-slate-800 underline">
+                View All
+              </button>
+            </div>
+            <div class="flex items-center justify-center flex-1">
+              <svg id={`comorbidityBubbleChart-${uid}`} class="w-full h-full" style="max-height: 300px;"></svg>
+            </div>
+          </div>
+
+        </div>
+
+        {/* ICU & sepsis unit charts — pulled up from their own section to fill
+            the space the taller stat rail opened beneath the three-card row.
+            The former h2 becomes an inline header so the row reads as part of
+            the top grid rather than a new page section. */}
+        {/* Events + ventilation outcomes share one row: the events stack is
+            narrow, so the outcomes group rides in the space to its right. */}
+        {/* flex-1 + stretch: this last row absorbs the leftover column height so
+            every card's bottom edge lands on the rail's bottom line. */}
+        {hasClinicalCourse && (icuEpisodes || sepsisEvents || timeToExtubation || vfdEncounters || nidfdEncounters) && (
+        <div class="flex-1 flex flex-col lg:flex-row items-stretch gap-4">
+          {(icuEpisodes || sepsisEvents) && (
+          <div class="w-full lg:w-72 lg:shrink-0">
+          {/* Stacked: the ICU count is a one-liner, so side-by-side left it
+              floating next to the taller sepsis card. */}
+          <div class="flex flex-col gap-4 h-full">
+            {/* Unit charts: 100 dots, one per percentage point of encounters. The
+                reader counts the lit dots rather than judging a bar's length — which
+                is what makes "about 1 in 6" land as a fact instead of a phrase. */}
+            {sepsisEvents && (
+            <div class="bg-white p-4 rounded-lg shadow border border-gray-200">
+              <div class="flex items-baseline gap-2">
+                <span class="text-2xl font-bold text-gray-900">{extractNumber(sepsisEvents)}</span>
+                <span class="text-sm text-gray-600">sepsis events</span>
+              </div>
+              <div class="text-xs text-gray-500 mt-0.5">CDC Adult Sepsis Event criteria<InfoTip characteristic="Sepsis events (CDC ASE), n" /></div>
+              {/* Divider: the headline above is total EVENTS; below is the share
+                  of ENCOUNTERS affected — two different denominators. */}
+              {encountersWithSepsis && (
+              <div class="mt-3 pt-3 border-t border-gray-100">
+                {sepsisPicto ? (
+                  <div class="flex flex-wrap items-end gap-1.5" role="img"
+                       aria-label={`About 1 in ${sepsisN} encounters had at least one sepsis event (${extractPercentage(encountersWithSepsis)})`}>
+                    {sepsisPicto.map((i) => (
+                      <svg class={`w-4 h-8 ${i === 0 ? 'fill-rose-600' : 'fill-gray-300'}`}
+                           viewBox="0 0 12 24" aria-hidden="true">
+                        <circle cx="6" cy="5" r="4" />
+                        <path d="M6 11c-3.3 0-6 2.2-6 5v8h12v-8c0-2.8-2.7-5-6-5z" />
+                      </svg>
+                    ))}
+                  </div>
+                ) : (
+                  <div class="h-2 rounded bg-rose-100 overflow-hidden" role="img"
+                       aria-label={`${extractPercentage(encountersWithSepsis)} of encounters had at least one sepsis event`}>
+                    <div class="h-full rounded-r bg-rose-600" style={`width: ${sepsisSharePct}%`}></div>
+                  </div>
+                )}
+                <div class="text-xs text-gray-700 mt-1.5 leading-snug">
+                  {sepsisPicto ? (
+                    <>
+                      <span class="font-semibold text-rose-700">about 1 in {sepsisN}</span>
+                      hospitalizations in this cohort had at least one sepsis event
+                      <span class="text-gray-500"> — {extractNumber(encountersWithSepsis)} of {totalEncounters.toLocaleString()} ({extractPercentage(encountersWithSepsis)})</span>
+                    </>
+                  ) : (
+                    <>
+                      <span class="font-semibold text-gray-900">{extractPercentage(encountersWithSepsis)}</span>
+                      of the {totalEncounters.toLocaleString()} hospitalizations in this cohort had at least one sepsis event
+                    </>
+                  )}
+                </div>
+              </div>
+              )}
+            </div>
+            )}
+
+            {icuEpisodes && (
+            <div class="bg-white p-4 rounded-lg shadow border border-gray-200 flex-1 flex flex-col justify-center">
+              <div class="flex items-baseline gap-2">
+                <span class="text-3xl font-bold text-gray-900">{extractNumber(icuEpisodes)}</span>
+                <span class="text-sm text-gray-600">ICU episodes<InfoTip characteristic="ICU episodes, total n" /></span>
+              </div>
+            </div>
+            )}
+          </div>
+          </div>
+          )}
+
+          {/* Ventilation Outcomes — findings, so they live in the main grid; the
+              collapsibles below stay pure drill-down. NOTE: these cover only the
+              ventilated subset, so each card states its own denominator. */}
+          {(timeToExtubation || vfdEncounters || nidfdEncounters) && (
+          <div class="flex-1 min-w-0 w-full">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 h-full">
+
+            {/* Compact stat column: median [IQR] as text (the demographics-row
+                form) plus the total-hours scale figure. */}
+            {(timeToExtubation || ventilatorHoursMillions) && (
+            <div class="flex flex-col gap-4">
+              {ventilatorHoursMillions && (
+              <div class="bg-white p-4 rounded-lg shadow border border-gray-200 flex-1 flex flex-col items-center justify-center text-center">
+                <div class="text-3xl font-bold text-black">{ventilatorHoursMillions} million</div>
+                <div class="text-sm text-black mt-1">ventilator hours<InfoTip characteristic="Ventilator hours (millions)" /></div>
+              </div>
+              )}
+              {timeToExtubation && (
+              <div class="relative overflow-hidden bg-white p-4 rounded-lg shadow border border-gray-200 flex-1 flex flex-col justify-center">
+                {/* Watermark extubation icon, same treatment as the demographics
+                    row: behind the content, so it costs no layout space. Outline
+                    head in profile; the ET tube line retracts out of the mouth
+                    along its own curve on a slow loop (static under
+                    prefers-reduced-motion). */}
+                <svg class="absolute top-[calc(50%+12px)] right-2 -translate-y-1/2 w-28 h-28 opacity-25 text-clif-burgundy" fill="none" stroke="currentColor" viewBox="0 0 32 32" aria-hidden="true">
+                  {/* outline head in profile, rotated 90° to lie supine
+                      (face up, neck to the left — patient-in-bed) */}
+                  <g transform="rotate(90 16 16)">
+                    <path stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" d="M16 29 V25.5 C16 24.1 15.1 23 13.8 22.4 L11 21.2 C10.6 21 10.45 20.6 10.5 20.2 C10.8 18.9 10.4 17.7 9.4 17.3 C9.9 17.05 9.9 16.55 9.4 16.3 L8.1 16.1 C7.5 16 7.3 15.5 7.6 15 L9.5 12 V10.5 C9.5 6.5 12.5 3 17 3 C23 3 28 8 28 14 C28 17.5 26.5 20.3 24.5 22 V29"/>
+                    {/* ET tube: mouth → throat; pathLength=100 lets the CSS
+                        dashoffset animation pull it out along its own curve */}
+                    <path class="ett-tube" pathLength="100" stroke-width="1.5" stroke-linecap="round" d="M2.2 16.5 L9.3 17.6 C14 18.4 18.7 20 18.7 23.9"/>
+                  </g>
+                </svg>
+                <div class="relative text-left">
+                  <div class="text-3xl font-bold text-black">{extractMedian(timeToExtubation)}</div>
+                  <div class="text-xs text-black mt-0.5">[{extubQ1}, {extubQ3}]</div>
+                  <div class="text-sm text-black mt-1">Median <span class="font-bold">hours</span> to extubation<InfoTip characteristic="Time to extubation (hrs), median [Q1, Q3]" /></div>
+                </div>
+              </div>
+              )}
+            </div>
+            )}
+
+            {/* VFD + NIDFD share one card: same 0–28 form, same legend — two
+                cards restated the same grammar twice. One block = one day;
+                filled = free, dark = still on support. */}
+            {((vfdEncounters && vfdMedian) || (nidfdEncounters && nidfdMedian)) && (
+            <div class="bg-white p-4 rounded-lg shadow border border-gray-200 lg:col-span-2 flex flex-col">
+              {/* flex-1 + justify-evenly: when the card stretches for the row
+                  alignment, the two measures spread through the height instead
+                  of pooling empty space above the legend. */}
+              <div class="flex-1 flex flex-col justify-evenly gap-4">
+                {vfdEncounters && vfdMedian && (
+                <div>
+                  <div class="flex items-baseline justify-between gap-x-4">
+                    <span class="text-sm font-semibold text-gray-700">Ventilator-free days<InfoTip characteristic="VFD, median [Q1, Q3]" /></span>
+                    <span class="flex items-baseline gap-1.5 shrink-0 whitespace-nowrap">
+                      <span class="text-2xl font-bold text-gray-900">{extractMedian(vfdMedian)}</span>
+                      <span class="text-sm text-gray-600">of {FREE_DAY_WINDOW} days</span>
+                    </span>
+                  </div>
+                  <div class="day-strip mt-1.5" role="img"
+                       aria-label={`Median ${extractMedian(vfdMedian)} of ${FREE_DAY_WINDOW} days free of the ventilator`}>
+                    {dayBlocks.map((i) => (
+                      <span class={`day-block${i < vfdFreeDays ? ' is-free' : ' is-vent'}`}></span>
+                    ))}
+                  </div>
+                  {/* Q1 is 0 in every cohort (death counts as zero free days),
+                      so the IQR's lower bound is a constant — show Q3 only. */}
+                  <div class="text-[11px] text-gray-500 mt-1">median · Q3 {vfd.q3} days</div>
+                </div>
+                )}
+
+                {nidfdEncounters && nidfdMedian && (
+                <div>
+                  <div class="flex items-baseline justify-between gap-x-4">
+                    <span class="text-sm font-semibold text-gray-700">Non-invasive device-free days<InfoTip characteristic="NIDFD, median [Q1, Q3]" /></span>
+                    <span class="flex items-baseline gap-1.5 shrink-0 whitespace-nowrap">
+                      <span class="text-2xl font-bold text-gray-900">{extractMedian(nidfdMedian)}</span>
+                      <span class="text-sm text-gray-600">of {FREE_DAY_WINDOW} days</span>
+                    </span>
+                  </div>
+                  <div class="day-strip mt-1.5" role="img"
+                       aria-label={`Median ${extractMedian(nidfdMedian)} of ${FREE_DAY_WINDOW} days free of NIPPV or HFNC`}>
+                    {dayBlocks.map((i) => (
+                      <span class={`day-block${i < nidfdFreeDays ? ' is-free' : ' is-vent'}`}></span>
+                    ))}
+                  </div>
+                  <div class="text-[11px] text-gray-500 mt-1">median · Q3 {nidfd.q3} days</div>
+                </div>
+                )}
+              </div>
+              <div class="flex gap-4 text-[11px] text-gray-500 mt-auto pt-2 border-t border-gray-100">
+                <span><span class="legend-swatch is-free"></span>free day</span>
+                <span><span class="legend-swatch is-vent"></span>on device</span>
+              </div>
+            </div>
+            )}
+          </div>
+          </div>
+          )}
+        </div>
+        )}
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Divider -->
+  <div class="border-t border-gray-200 my-6"></div>
+
+  <!-- Detailed Metrics - Collapsible Sections -->
+  <section class="mb-8">
+
+    <DemographicCrosstab cohort={cohort} />
+
+    <!-- Respiratory Support Subsection -->
+    {hasVent && (
+    <div class="mb-8">
+      <button
+        class="collapsible-header collapsed w-full flex items-center justify-between bg-gray-50 hover:bg-gray-100 p-4 rounded-lg transition-colors duration-200 border border-gray-200"
+        data-target={`respiratory-support-${uid}`}
+      >
+        <h3 class="text-xl font-bold text-gray-800">Respiratory Support<InfoTip characteristic="__RESP_SECTION__" /></h3>
+        <svg class="chevron w-6 h-6 text-gray-600 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+        </svg>
+      </button>
+
+      <div id={`respiratory-support-${uid}`} class="collapsible-content collapsed mt-6">
+
+    <!-- Two columns layout for Location and Mode -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+
+      <!-- First Location at IMV Start -->
+      <div class="bg-white p-5 rounded-lg shadow border border-gray-200">
+        <h3 class="text-base font-semibold mb-4 text-gray-700">First Location at IMV Start<InfoTip characteristic="First location at IMV start: icu" /></h3>
+        <div class="flex items-center justify-center" style="height: 280px;">
+          <canvas id={`locationPieChart-${uid}`}></canvas>
+        </div>
+      </div>
+
+      <!-- Initial Ventilator Mode -->
+      <div class="bg-white p-5 rounded-lg shadow border border-gray-200">
+        <h3 class="text-base font-semibold mb-4 text-gray-700">Initial Ventilator Mode<InfoTip characteristic="__VENT_MODE_CARD__" /></h3>
+        <div id={`ventModeTreemap-${uid}`} class="w-full" style="height: 256px;"></div>
+      </div>
+
+    </div>
+
+    <!-- IMV Device Settings - Integrated Card -->
+    <div class="bg-gradient-to-br from-teal-500 to-teal-600 text-white p-6 rounded-lg shadow mb-6">
+      <h4 class="text-sm font-semibold mb-4 opacity-90">Initial Ventilator Settings<InfoTip characteristic="__VENT_SETTINGS_CARD__" /></h4>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div class="text-center">
+          <div class="text-xs opacity-75 mb-1">FiO2 (%)</div>
+          <div class="text-3xl font-bold">{extractMedian(fio2Median)}</div>
+          <div class="text-xs opacity-75 mt-1">{fio2Median.replace(/^[\d.]+\s*/, '')}</div>
+        </div>
+        <div class="text-center">
+          <div class="text-xs opacity-75 mb-1">PEEP (cmH2O)</div>
+          <div class="text-3xl font-bold">{extractMedian(peepMedian)}</div>
+          <div class="text-xs opacity-75 mt-1">{peepMedian.replace(/^[\d.]+\s*/, '')}</div>
+        </div>
+        <div class="text-center">
+          <div class="text-xs opacity-75 mb-1">Tidal Volume (mL)</div>
+          <div class="text-3xl font-bold">{extractMedian(tidalVolumeMedian)}</div>
+          <div class="text-xs opacity-75 mt-1">{tidalVolumeMedian.replace(/^[\d.]+\s*/, '')}</div>
+        </div>
+        <div class="text-center">
+          <div class="text-xs opacity-75 mb-1">Respiratory Rate</div>
+          <div class="text-3xl font-bold">{extractMedian(rrMedian)}</div>
+          <div class="text-xs opacity-75 mt-1">{rrMedian.replace(/^[\d.]+\s*/, '')}</div>
+        </div>
+      </div>
+    </div>
+      </div>
+    </div>
+    )}
+
+    {/* Vasopressor Support — hidden for Overall (ward) for the same reason as
+        its stat tile: the drug percentages here sit on a denominator that is
+        ~81% non-ICU, so they read as consortium-wide therapy rates. */}
+    {hasTherapyTiles && (
+    <div class="mb-8">
+      <button
+        class="collapsible-header collapsed w-full flex items-center justify-between bg-gray-50 hover:bg-gray-100 p-4 rounded-lg transition-colors duration-200 border border-gray-200"
+        data-target={`vasopressor-support-${uid}`}
+      >
+        <h3 class="text-xl font-bold text-gray-800">Vasopressor Support<InfoTip characteristic="__VASO_SECTION__" /></h3>
+        <svg class="chevron w-6 h-6 text-gray-600 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+        </svg>
+      </button>
+
+      <div id={`vasopressor-support-${uid}`} class="collapsible-content collapsed mt-6">
+
+    <!-- Vasopressor Medications - Integrated Card -->
+    <div class="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white p-6 rounded-lg shadow">
+      <h4 class="text-sm font-semibold mb-4 opacity-90">Vasopressor Medications<InfoTip characteristic="__VASO_DOSE_CARD__" /></h4>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+
+        <!-- Norepinephrine -->
+        <div class="text-center">
+          <div class="text-xs opacity-75 mb-1">Norepinephrine</div>
+          <div class="text-2xl font-bold">{extractPercentage(norepinephrine)}</div>
+          <div class="text-xs opacity-75 mt-1">n={extractNumber(norepinephrine)}</div>
+          <div class="text-xs opacity-90 mt-2 font-semibold">Dose: {extractMedian(norepinephrineDose)}</div>
+          <div class="text-xs opacity-75">{norepinephrineDose.replace(/^[\d.]+\s*/, '')}</div>
+        </div>
+
+        <!-- Phenylephrine -->
+        <div class="text-center">
+          <div class="text-xs opacity-75 mb-1">Phenylephrine</div>
+          <div class="text-2xl font-bold">{extractPercentage(phenylephrine)}</div>
+          <div class="text-xs opacity-75 mt-1">n={extractNumber(phenylephrine)}</div>
+          <div class="text-xs opacity-90 mt-2 font-semibold">Dose: {extractMedian(phenylephrineDose)}</div>
+          <div class="text-xs opacity-75">{phenylephrineDose.replace(/^[\d.]+\s*/, '')}</div>
+        </div>
+
+        <!-- Vasopressin -->
+        <div class="text-center">
+          <div class="text-xs opacity-75 mb-1">Vasopressin</div>
+          <div class="text-2xl font-bold">{extractPercentage(vasopressin)}</div>
+          <div class="text-xs opacity-75 mt-1">n={extractNumber(vasopressin)}</div>
+        </div>
+
+        <!-- Epinephrine -->
+        <div class="text-center">
+          <div class="text-xs opacity-75 mb-1">Epinephrine</div>
+          <div class="text-2xl font-bold">{extractPercentage(epinephrine)}</div>
+          <div class="text-xs opacity-75 mt-1">n={extractNumber(epinephrine)}</div>
+          <div class="text-xs opacity-90 mt-2 font-semibold">Dose: {extractMedian(epinephrineDose)}</div>
+          <div class="text-xs opacity-75">{epinephrineDose.replace(/^[\d.]+\s*/, '')}</div>
+        </div>
+
+        <!-- Dopamine -->
+        <div class="text-center">
+          <div class="text-xs opacity-75 mb-1">Dopamine</div>
+          <div class="text-2xl font-bold">{extractPercentage(dopamine)}</div>
+          <div class="text-xs opacity-75 mt-1">n={extractNumber(dopamine)}</div>
+          <div class="text-xs opacity-90 mt-2 font-semibold">Dose: {extractMedian(dopamineDose)}</div>
+          <div class="text-xs opacity-75">{dopamineDose.replace(/^[\d.]+\s*/, '')}</div>
+        </div>
+
+      </div>
+    </div>
+      </div>
+    </div>
+    )}
+
+  </section>
+
+  <!-- Modal for All Comorbidities -->
+  <div id={`comorbiditiesModal-${uid}`} class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl max-w-5xl w-full max-h-[90vh] overflow-hidden">
+      <div class="flex justify-between items-center p-6 border-b">
+        <h2 class="text-2xl font-bold text-gray-800">All Comorbidities</h2>
+        <button id={`closeModal-${uid}`} class="text-gray-500 hover:text-gray-700">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="p-6 overflow-y-auto max-h-[calc(90vh-100px)]">
+        <div class="flex items-center justify-center">
+          <svg id={`comorbidityBubbleChartFull-${uid}`} class="w-full" style="height: 600px;"></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .cohort-dashboard {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  /* Large screens get one track per surviving cell, so a cohort with fewer
+     stats (Overall has no ICU LOS and no SOFA) spreads across the full width
+     instead of leaving dead columns on the right. */
+  @media (min-width: 1024px) {
+    .demo-grid {
+      grid-template-columns: repeat(var(--demo-cols, 8), minmax(0, 1fr));
+    }
+  }
+
+  .cohort-dashboard h2 {
+    position: relative;
+  }
+
+  .cohort-dashboard h2::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--clif-burgundy), var(--clif-burgundy)/0.5);
+    border-radius: 2px;
+  }
+
+  /* Collapsible sections */
+  .collapsible-content {
+    max-height: 5000px;
+    overflow: hidden;
+    transition: max-height 0.5s ease-in-out, opacity 0.3s ease-in-out;
+    opacity: 1;
+  }
+
+  .collapsible-content.collapsed {
+    max-height: 0;
+    opacity: 0;
+    margin-top: 0 !important;
+  }
+
+  .collapsible-header .chevron {
+    transition: transform 0.3s ease-in-out;
+  }
+
+  .collapsible-header.collapsed .chevron {
+    transform: rotate(-90deg);
+  }
+
+  .collapsible-header {
+    cursor: pointer;
+  }
+
+  /* --- Extubation watermark ---------------------------------------------
+     The ET tube line is drawn mouth-first (pathLength=100), so sliding the
+     dash pattern toward the path start retracts the line out through the
+     mouth along its own curve. It holds clear, then fades back in place for
+     the next loop (fading in-place avoids reading as re-intubation).
+     Subtle + slow: it lives behind the stat as a low-opacity watermark. */
+  .ett-tube {
+    stroke-dasharray: 100;
+    animation: ett-pull-out 5s ease-in-out infinite;
+  }
+  @keyframes ett-pull-out {
+    0%, 28%   { stroke-dashoffset: 0; opacity: 1; }
+    55%, 72%  { stroke-dashoffset: 104; opacity: 1; }
+    73%       { stroke-dashoffset: 0; opacity: 0; }
+    92%, 100% { stroke-dashoffset: 0; opacity: 1; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ett-tube { animation: none; }
+  }
+
+  /* --- Unit charts -------------------------------------------------------
+     One block = one day of the 28-day window. Rendering the units lets the
+     reader count the finding rather than judge a length. */
+  .day-strip {
+    display: grid;
+    grid-template-columns: repeat(28, 1fr);
+    gap: 2px; /* the 2px surface gap between adjacent fills */
+  }
+  .day-block {
+    height: 26px;
+    border-radius: 2px;
+  }
+  .day-block.is-free { background: #14b8a6; }
+  .day-block.is-vent { background: #475569; } /* slate-600 */
+
+  .legend-swatch {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    margin-right: 4px;
+  }
+  .legend-swatch.is-free { background: #14b8a6; }
+  .legend-swatch.is-vent { background: #475569; }
+
+  /* Breathing lungs animation */
+  .breathing-lungs {
+    animation: breathe 2.5s ease-in-out infinite;
+    transform-origin: center;
+  }
+
+  @keyframes breathe {
+    0%, 100% {
+      transform: scale(0.95);
+    }
+    50% {
+      transform: scale(1.15);
+    }
+  }
+
+  /* IV drip animation */
+  .iv-drop {
+    animation: drip 3s ease-in-out infinite;
+  }
+
+  .iv-drop-1 {
+    animation-delay: 0s;
+  }
+
+  @keyframes drip {
+    0%, 20% {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    25%, 75% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    80%, 100% {
+      opacity: 0;
+      transform: translateY(2px);
+    }
+  }
+
+  /* Kidney filtration animation - dirty blood flowing in */
+  .kidney-particle-in {
+    animation: flowIn 2.5s ease-in-out infinite;
+  }
+
+  .kidney-particle-in-1 {
+    animation-delay: 0s;
+  }
+
+  .kidney-particle-in-2 {
+    animation-delay: 0.3s;
+  }
+
+  @keyframes flowIn {
+    0% {
+      opacity: 0;
+      transform: translateX(-8px);
+    }
+    25%, 75% {
+      opacity: 0.8;
+      transform: translateX(0);
+    }
+    100% {
+      opacity: 0;
+      transform: translateX(8px);
+    }
+  }
+
+  /* Kidney filtration animation - clean blood flowing out */
+  .kidney-particle-out {
+    animation: flowOut 2.5s ease-in-out infinite;
+  }
+
+  .kidney-particle-out-1 {
+    animation-delay: 0.9s;
+  }
+
+  .kidney-particle-out-2 {
+    animation-delay: 1.2s;
+  }
+
+  @keyframes flowOut {
+    0% {
+      opacity: 0;
+      transform: translateX(-8px);
+    }
+    25%, 75% {
+      opacity: 0.9;
+      transform: translateX(0);
+    }
+    100% {
+      opacity: 0;
+      transform: translateX(8px);
+    }
+  }
+</style>
+
+<script define:vars={{
+  uid,
+  admissionED, admissionOSH, admissionElective, admissionDirect, admissionFacility, admissionOther,
+  comorbCHF, comorbRenal, comorbPulmonary, comorbCerebrovascular, comorbCancer, comorbMetastatic,
+  comorbPVD, comorbMI, comorbDementia, comorbLiver, comorbModLiver, comorbDiabetesComp, comorbDiabetesUncomp,
+  comorbHemiplegia, comorbConnective, comorbPeptic, comorbAIDS,
+  imvLocationICU, imvLocationED, imvLocationProcedural, imvLocationWard, imvLocationStepdown,
+  ventModeTiles
+}}>
+  document.addEventListener('DOMContentLoaded', () => {
+    const root = document.getElementById('summary-' + uid);
+    if (!root) return;
+    const byId = (base) => document.getElementById(base + '-' + uid);
+    const pctVal = (str) => { const m = (str || '').match(/\(([^)]+)%\)/); return m ? parseFloat(m[1]) : 0; };
+    const collapsibleHeaders = root.querySelectorAll('.collapsible-header');
+
+    // Track if respiratory charts have been created
+    let respiratoryChartsCreated = false;
+
+    collapsibleHeaders.forEach(header => {
+      header.addEventListener('click', () => {
+        const targetId = header.getAttribute('data-target');
+        const content = document.getElementById(targetId);
+
+        if (content) {
+          // Toggle collapsed class on both header and content
+          header.classList.toggle('collapsed');
+          content.classList.toggle('collapsed');
+
+          // If we just opened the respiratory support section, create the charts
+          if (targetId === 'respiratory-support-' + uid && !content.classList.contains('collapsed') && !respiratoryChartsCreated) {
+            respiratoryChartsCreated = true;
+
+            // Wait a tick for the section to fully expand
+            setTimeout(() => {
+              // Create Pie Chart for Location using Chart.js (data-driven)
+              const locationPieCtx = byId('locationPieChart');
+              if (locationPieCtx && typeof Chart !== 'undefined') {
+                new Chart(locationPieCtx, {
+                  type: 'doughnut',
+                  data: {
+                    labels: ['ICU', 'ED', 'Procedural', 'Ward', 'Stepdown'],
+                    datasets: [{
+                      data: [
+                        pctVal(imvLocationICU), pctVal(imvLocationED), pctVal(imvLocationProcedural),
+                        pctVal(imvLocationWard), pctVal(imvLocationStepdown)
+                      ],
+                      backgroundColor: [
+                        'rgb(20, 184, 166)',   // teal-500
+                        'rgb(45, 212, 191)',   // teal-400
+                        'rgb(94, 234, 212)',   // teal-300
+                        'rgb(153, 246, 228)',  // teal-200
+                        'rgb(204, 251, 241)'   // teal-100
+                      ],
+                      borderWidth: 2,
+                      borderColor: '#ffffff'
+                    }]
+                  },
+                  options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: {
+                        position: 'bottom',
+                        labels: {
+                          padding: 10,
+                          font: { size: 11 }
+                        }
+                      },
+                      tooltip: {
+                        callbacks: {
+                          label: function(context) {
+                            return context.label + ': ' + context.parsed + '%';
+                          }
+                        }
+                      }
+                    },
+                    cutout: '60%'
+                  }
+                });
+              }
+
+              // Create Treemap for Ventilator Mode using D3
+              if (typeof d3 !== 'undefined') {
+                // Tiles are pooled and re-percentaged server-side (see
+                // ventModeTiles) so the areas sum to 100%.
+                const ventModeData = { name: "Modes", children: ventModeTiles };
+
+                const container = byId('ventModeTreemap');
+                // This card sits inside a collapsed section — and, for every
+                // non-default cohort, a hidden panel — so on first run
+                // clientWidth is 0, and a treemap laid out at zero width draws
+                // nothing. The donut beside it survives because Chart.js
+                // re-measures on resize; D3 has no equivalent, so the card just
+                // stayed blank forever once the section was expanded.
+                // Defer until the container actually has width, then redraw
+                // whenever it changes.
+                const drawVentTreemap = () => {
+                  if (!container) return;
+                  const width = container.clientWidth;
+                  if (!width) return;
+                  container.innerHTML = ''; // idempotent: safe to call repeatedly
+                  const height = 256;
+
+                  const colorScale = d3.scaleOrdinal()
+                    .domain([
+                      "Assist Control/Volume Control",
+                      "Pressure Regulated Volume Control",
+                      "Synchronized Intermittent Mandatory Ventilation",
+                      "Pressure Support Ventilation/CPAP",
+                      "Pressure Control Ventilation",
+                      "Other"
+                    ])
+                    .range([
+                      "rgb(20, 184, 166)",   // teal-500
+                      "rgb(45, 212, 191)",   // teal-400
+                      "rgb(94, 234, 212)",   // teal-300
+                      "rgb(153, 246, 228)",  // teal-200
+                      "rgb(204, 251, 241)",  // teal-100
+                      "rgb(240, 253, 250)"   // teal-50
+                    ]);
+
+                  // Select the resolved element, NOT '#ventModeTreemap'. Every id
+                  // in this component is suffixed with `-${uid}` so several cohort
+                  // panels can coexist on one page, so the bare id matches nothing —
+                  // and d3.select returns an empty selection that swallows every
+                  // chained .append() without error, leaving a blank card.
+                  const svg = d3.select(container)
+                    .append("svg")
+                    .attr("width", width)
+                    .attr("height", height);
+
+                  const root = d3.hierarchy(ventModeData)
+                    .sum(d => d.value)
+                    .sort((a, b) => b.value - a.value);
+
+                  d3.treemap()
+                    .size([width, height])
+                    .padding(3)
+                    .round(true)(root);
+
+                  const cell = svg.selectAll("g")
+                    .data(root.leaves())
+                    .enter().append("g")
+                    .attr("transform", d => `translate(${d.x0},${d.y0})`);
+
+                  cell.append("rect")
+                    .attr("width", d => d.x1 - d.x0)
+                    .attr("height", d => d.y1 - d.y0)
+                    .attr("fill", d => colorScale(d.data.name))
+                    .attr("stroke", "white")
+                    .attr("stroke-width", 3)
+                    .attr("rx", 6);
+
+                  // Rendered width of a candidate label at the 10px label size.
+                  // Measured off a hidden node rather than estimated from
+                  // character counts, so wrapping holds for any font the page
+                  // actually resolves.
+                  const measureText = (str) => {
+                    const probe = svg.append("text")
+                      .attr("visibility", "hidden")
+                      .attr("font-size", "10px")
+                      .attr("font-weight", "600")
+                      .text(str);
+                    const len = probe.node().getComputedTextLength();
+                    probe.remove();
+                    return len;
+                  };
+
+                  cell.each(function(d) {
+                    const cellWidth = d.x1 - d.x0;
+                    const cellHeight = d.y1 - d.y0;
+                    const cellArea = cellWidth * cellHeight;
+
+                    const group = d3.select(this);
+
+                    /**
+                     * Rotated label for tiles too narrow to hold a horizontal
+                     * one. Spells the mode out in full when it fits, and only
+                     * falls back to the abbreviation when it cannot.
+                     *
+                     * Rotated by -90deg, the axes swap: a line's LENGTH is
+                     * bounded by the tile's height, and the number of stacked
+                     * lines is bounded by its width. So a tall narrow tile can
+                     * carry a long name — just not many lines of it.
+                     */
+                    const labelVertically = () => {
+                      const LINE = 12;
+                      const maxLines = Math.floor((cellWidth - 8) / LINE);
+                      const maxLen = cellHeight - 12;
+                      const value = d.data.value + '%';
+
+                      // Greedy word wrap, measured rather than estimated.
+                      let lines = null;
+                      if (maxLines >= 2) {
+                        const wrapped = [];
+                        let current = '';
+                        for (const word of String(d.data.name).split(/[\s\/]+/)) {
+                          const next = current ? current + ' ' + word : word;
+                          if (current && measureText(next) > maxLen) {
+                            wrapped.push(current);
+                            current = word;
+                          } else {
+                            current = next;
+                          }
+                        }
+                        if (current) wrapped.push(current);
+                        // A single word longer than the tile is unwrappable, and
+                        // the value needs a line of its own.
+                        if (wrapped.every((l) => measureText(l) <= maxLen) && wrapped.length + 1 <= maxLines) {
+                          lines = wrapped.concat(value);
+                        }
+                      }
+                      if (!lines) lines = [(d.data.shortName || d.data.name) + ' ' + value];
+
+                      const rotated = group.append("g")
+                        .attr("transform", `translate(${cellWidth / 2}, ${cellHeight / 2}) rotate(-90)`);
+                      const start = -((lines.length - 1) * LINE) / 2;
+                      lines.forEach((line, i) => {
+                        rotated.append("text")
+                          .attr("x", 0)
+                          .attr("y", start + i * LINE)
+                          .attr("text-anchor", "middle")
+                          .attr("dominant-baseline", "central")
+                          .attr("fill", "#000000")
+                          .attr("font-size", "10px")
+                          .attr("font-weight", line === value ? "700" : "600")
+                          .text(line);
+                      });
+                    };
+
+                    // The pooled Other lands around 1% of the area — no
+                    // horizontal label fits at any readable size.
+                    if (cellWidth < 70 && cellHeight >= 48) {
+                      labelVertically();
+                      return;
+                    }
+
+                    if (cellArea > 2000) {
+                      const textGroup = group;
+                      const name = d.data.name;
+                      const words = name.split(/[\s\/]+/); // Split on spaces and slashes
+
+                      // For large boxes (like AC/VC), show multi-line text
+                      if (cellArea > 15000) {
+                        const lineHeight = 14;
+                        const numLines = Math.min(words.length, 3);
+                        const startY = cellHeight / 2 - ((numLines - 1) * lineHeight) / 2 - 15;
+
+                        // Split into lines
+                        let lines = [];
+                        if (words.length <= 3) {
+                          lines = words;
+                        } else {
+                          // Combine words to fit on 2-3 lines
+                          const midpoint = Math.ceil(words.length / 2);
+                          lines.push(words.slice(0, midpoint).join(' '));
+                          lines.push(words.slice(midpoint).join(' '));
+                        }
+
+                        lines.forEach((line, i) => {
+                          textGroup.append("text")
+                            .attr("x", cellWidth / 2)
+                            .attr("y", startY + i * lineHeight)
+                            .attr("text-anchor", "middle")
+                            .attr("fill", "#000000")
+                            .attr("font-size", "11px")
+                            .attr("font-weight", "600")
+                            .text(line);
+                        });
+
+                        textGroup.append("text")
+                          .attr("x", cellWidth / 2)
+                          .attr("y", cellHeight / 2 + 20)
+                          .attr("text-anchor", "middle")
+                          .attr("fill", "#000000")
+                          .attr("font-size", "18px")
+                          .attr("font-weight", "700")
+                          .text(d.data.value + '%');
+                      } else {
+                        // For smaller boxes, show abbreviated name
+                        textGroup.append("text")
+                          .attr("x", cellWidth / 2)
+                          .attr("y", cellHeight / 2 - 5)
+                          .attr("text-anchor", "middle")
+                          .attr("fill", "#000000")
+                          .attr("font-size", "11px")
+                          .attr("font-weight", "600")
+                          .text(d.data.shortName || d.data.name);
+
+                        textGroup.append("text")
+                          .attr("x", cellWidth / 2)
+                          .attr("y", cellHeight / 2 + 12)
+                          .attr("text-anchor", "middle")
+                          .attr("fill", "#000000")
+                          .attr("font-size", "16px")
+                          .attr("font-weight", "700")
+                          .text(d.data.value + '%');
+                      }
+
+                      // Measure what was actually drawn instead of guessing a
+                      // width threshold per mode: "Pressure Regulated" is wider
+                      // than its own tile at some card widths, and a name that
+                      // fits one cohort's tile overflows another's. If any line
+                      // spills past the tile, discard the horizontal label and
+                      // run the abbreviation up the tile instead.
+                      const spills = textGroup.selectAll("text").nodes()
+                        .some((n) => n.getComputedTextLength() > cellWidth - 8);
+                      if (spills && cellHeight >= 48) {
+                        textGroup.selectAll("text").remove();
+                        labelVertically();
+                      }
+                    }
+                  });
+                };
+
+                drawVentTreemap();
+                // Fires when the collapsible opens or the cohort panel is shown,
+                // which is the moment the container first has a usable width.
+                if (container && typeof ResizeObserver !== 'undefined') {
+                  new ResizeObserver(drawVentTreemap).observe(container);
+                }
+              }
+            }, 100);
+          }
+        }
+      });
+    });
+
+    // Helper function to parse count values
+    const parseCount = (str) => {
+      const match = str.match(/^[\d,]+/);
+      return match ? parseInt(match[0].replace(/,/g, '')) : 0;
+    };
+
+    // Encounter Types renders as static SSR bars (overlapping categories — no
+    // parts-of-whole chart), so no Chart.js setup for it here.
+
+    // Create Admission Types Donut Chart
+    const admissionCtx = byId('admissionTypesChart');
+    if (admissionCtx && typeof Chart !== 'undefined') {
+      // Get counts
+      const edCount = parseCount(admissionED);
+      const oshCount = parseCount(admissionOSH);
+      const electiveCount = parseCount(admissionElective);
+      const directCount = parseCount(admissionDirect);
+      const facilityCount = parseCount(admissionFacility);
+      const otherCount = parseCount(admissionOther);
+
+      // Calculate total
+      const totalAdmissions = edCount + oshCount + electiveCount + directCount + facilityCount + otherCount;
+
+      // Slices largest-first (matching the sorted legend); each category keeps
+      // its fixed rose-ramp color, so color follows the entity, not the rank.
+      const admissionSlices = [
+        { label: 'ED', count: edCount, color: 'rgb(136, 19, 55)' },
+        { label: 'OSH', count: oshCount, color: 'rgb(159, 18, 57)' },
+        { label: 'Elective', count: electiveCount, color: 'rgb(190, 18, 60)' },
+        { label: 'Direct', count: directCount, color: 'rgb(225, 29, 72)' },
+        { label: 'Facility', count: facilityCount, color: 'rgb(244, 63, 94)' },
+        { label: 'Other', count: otherCount, color: 'rgb(251, 113, 133)' }
+      ].sort((a, b) => b.count - a.count);
+
+      new Chart(admissionCtx, {
+        type: 'doughnut',
+        data: {
+          labels: admissionSlices.map(s => s.label),
+          datasets: [{
+            data: admissionSlices.map(s => s.count),
+            backgroundColor: admissionSlices.map(s => s.color),
+            borderWidth: 2,
+            borderColor: '#fff'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: {
+              display: false
+            },
+            datalabels: {
+              display: false
+            },
+            tooltip: {
+              enabled: true,
+              position: 'average',
+              padding: 10,
+              displayColors: true,
+              intersect: true,
+              callbacks: {
+                title: function(context) {
+                  return context[0].label;
+                },
+                label: function(context) {
+                  const count = context.parsed.toLocaleString();
+                  const pct = ((context.parsed / totalAdmissions) * 100).toFixed(1);
+                  return count + ' (' + pct + '%)';
+                }
+              }
+            }
+          },
+          cutout: '60%'
+        }
+      });
+    }
+
+    // Comorbidity data preparation
+    const parsePercentage = (str) => {
+      const match = str.match(/\(([^)]+)%\)/);
+      return match ? parseFloat(match[1]) : 0;
+    };
+
+    const allComorbidities = [
+      { name: 'CHF', value: parsePercentage(comorbCHF), full: 'Congestive Heart Failure' },
+      { name: 'Renal', value: parsePercentage(comorbRenal), full: 'Renal Disease' },
+      { name: 'Chronic Pulmonary', value: parsePercentage(comorbPulmonary), full: 'Chronic Pulmonary Disease' },
+      { name: 'Cerebrovascular', value: parsePercentage(comorbCerebrovascular), full: 'Cerebrovascular Disease' },
+      { name: 'Cancer', value: parsePercentage(comorbCancer), full: 'Cancer' },
+      { name: 'Metastatic', value: parsePercentage(comorbMetastatic), full: 'Metastatic Solid Tumor' },
+      { name: 'PVD', value: parsePercentage(comorbPVD), full: 'Peripheral Vascular Disease' },
+      { name: 'MI', value: parsePercentage(comorbMI), full: 'Myocardial Infarction' },
+      { name: 'Dementia', value: parsePercentage(comorbDementia), full: 'Dementia' },
+      { name: 'Liver', value: parsePercentage(comorbLiver), full: 'Mild Liver Disease' },
+      { name: 'Mod-Severe Liver', value: parsePercentage(comorbModLiver), full: 'Moderate-Severe Liver Disease' },
+      { name: 'Diabetes+Comp', value: parsePercentage(comorbDiabetesComp), full: 'Diabetes With Complications' },
+      { name: 'Diabetes', value: parsePercentage(comorbDiabetesUncomp), full: 'Diabetes Uncomplicated' },
+      { name: 'Hemiplegia', value: parsePercentage(comorbHemiplegia), full: 'Hemiplegia' },
+      { name: 'Connective', value: parsePercentage(comorbConnective), full: 'Connective Tissue Disease' },
+      { name: 'Peptic', value: parsePercentage(comorbPeptic), full: 'Peptic Ulcer Disease' },
+      { name: 'AIDS', value: parsePercentage(comorbAIDS), full: 'AIDS' }
+    ].sort((a, b) => b.value - a.value);
+
+    const top3Comorbidities = allComorbidities.slice(0, 3);
+
+    // For the compact view: top 3 with labels, rest as small blank bubbles
+    const compactViewData = allComorbidities.map((item, index) => ({
+      ...item,
+      isTop3: index < 3,
+      // Reduce size for non-top-3 items
+      value: index < 3 ? item.value : item.value * 0.3 // Make smaller bubbles 30% of their original size
+    }));
+
+    // Function to create bubble chart
+    const createBubbleChart = (svgId, data, width, height) => {
+      const svg = d3.select(`#${svgId}`);
+      svg.selectAll('*').remove(); // Clear existing content
+
+      // Use a larger size for packing, then we'll scale it to fit
+      const packSize = Math.min(width, height);
+      const pack = d3.pack()
+        .size([packSize, packSize])
+        .padding(1);
+
+      const root = d3.hierarchy({ children: data })
+        .sum(d => d.value);
+
+      const nodes = pack(root).leaves();
+
+      // Find the bounds of the packed circles
+      const bounds = {
+        minX: d3.min(nodes, d => d.x - d.r),
+        maxX: d3.max(nodes, d => d.x + d.r),
+        minY: d3.min(nodes, d => d.y - d.r),
+        maxY: d3.max(nodes, d => d.y + d.r)
+      };
+
+      const packedWidth = bounds.maxX - bounds.minX;
+      const packedHeight = bounds.maxY - bounds.minY;
+
+      // Calculate scale to fit with some padding (92% of available space for larger bubbles)
+      const scaleX = (width * 0.92) / packedWidth;
+      const scaleY = (height * 0.92) / packedHeight;
+      const scale = Math.min(scaleX, scaleY);
+
+      // Color scale using purple/indigo tones
+      const colorScale = d3.scaleOrdinal()
+        .domain(data.map(d => d.name))
+        .range([
+          'rgb(79, 70, 229)',    // indigo-600
+          'rgb(99, 102, 241)',   // indigo-500
+          'rgb(129, 140, 248)',  // indigo-400
+          'rgb(67, 56, 202)',    // indigo-700
+          'rgb(165, 180, 252)',  // indigo-300
+          'rgb(55, 48, 163)',    // indigo-800
+          'rgb(199, 210, 254)',  // indigo-200
+          'rgb(49, 46, 129)',    // indigo-900
+          'rgb(224, 231, 255)',  // indigo-100
+          'rgb(99, 102, 241)',   // indigo-500 (repeat)
+          'rgb(79, 70, 229)',    // indigo-600 (repeat)
+          'rgb(129, 140, 248)',  // indigo-400 (repeat)
+          'rgb(67, 56, 202)',    // indigo-700 (repeat)
+          'rgb(165, 180, 252)'   // indigo-300 (repeat)
+        ]);
+
+      // Center offset - shift down to use extra space at bottom
+      const offsetX = width / 2;
+      const offsetY = (height / 2) + 10; // Move down by 10px
+
+      // Center on the packed cluster's actual bounding box, not packSize/2 —
+      // the pack layout doesn't fill its size box symmetrically, so using its
+      // nominal center drifts the cluster toward one edge of the card.
+      const centerX = (bounds.minX + bounds.maxX) / 2;
+      const centerY = (bounds.minY + bounds.maxY) / 2;
+
+      const bubble = svg.selectAll('.bubble')
+        .data(nodes)
+        .enter()
+        .append('g')
+        .attr('class', 'bubble')
+        .attr('transform', d => {
+          const x = offsetX + (d.x - centerX) * scale;
+          const y = offsetY + (d.y - centerY) * scale;
+          return `translate(${x},${y})`;
+        });
+
+      bubble.append('circle')
+        .attr('r', d => d.r * scale)
+        .attr('fill', d => colorScale(d.data.name))
+        .attr('opacity', 0.85)
+        .attr('stroke', '#fff')
+        .attr('stroke-width', 2);
+
+      // Add text only for top 3 bubbles with wrapping support
+      bubble.each(function(d) {
+        if (d.data.isTop3) {
+          const fontSize = Math.min((d.r * scale) / 3.5, 14);
+          const percentFontSize = Math.min((d.r * scale) / 5, 11);
+
+          // Split name by spaces for wrapping
+          const words = d.data.name.split(' ');
+          const textGroup = d3.select(this);
+
+          if (words.length > 1) {
+            // Multi-word name - wrap to multiple lines
+            words.forEach((word, i) => {
+              textGroup.append('text')
+                .attr('text-anchor', 'middle')
+                .attr('dominant-baseline', 'middle')
+                .attr('dy', (i - (words.length - 1) / 2) * (fontSize + 2) - (percentFontSize + 5) / 2)
+                .attr('fill', '#000')
+                .attr('font-size', fontSize + 'px')
+                .attr('font-weight', '600')
+                .text(word);
+            });
+
+            // Percentage below wrapped text
+            textGroup.append('text')
+              .attr('text-anchor', 'middle')
+              .attr('dominant-baseline', 'middle')
+              .attr('dy', ((words.length - 1) / 2) * (fontSize + 2) + percentFontSize + 3)
+              .attr('fill', '#000')
+              .attr('font-size', percentFontSize + 'px')
+              .text(d.data.value.toFixed(1) + '%');
+          } else {
+            // Single word - no wrapping needed
+            textGroup.append('text')
+              .attr('text-anchor', 'middle')
+              .attr('dominant-baseline', 'middle')
+              .attr('fill', '#000')
+              .attr('font-size', fontSize + 'px')
+              .attr('font-weight', '600')
+              .text(d.data.name);
+
+            textGroup.append('text')
+              .attr('text-anchor', 'middle')
+              .attr('dominant-baseline', 'middle')
+              .attr('dy', fontSize + 5)
+              .attr('fill', '#000')
+              .attr('font-size', percentFontSize + 'px')
+              .text(d.data.value.toFixed(1) + '%');
+          }
+        }
+      });
+
+      // Add tooltip for all bubbles
+      bubble.append('title')
+        .text(d => `${d.data.full}: ${d.data.value.toFixed(1)}%`);
+    };
+
+    // Create initial bubble chart (all 14 comorbidities - top 3 with labels, rest blank and smaller)
+    if (typeof d3 !== 'undefined') {
+      const svg = byId('comorbidityBubbleChart');
+      if (svg) {
+        const width = svg.clientWidth || 300;
+        const height = 300; // Matches the svg max-height in the taller card
+        createBubbleChart('comorbidityBubbleChart-' + uid, compactViewData, width, height);
+      }
+    }
+
+    // Modal handling
+    const modal = byId('comorbiditiesModal');
+    const expandBtn = byId('expandComorbidities');
+    const closeBtn = byId('closeModal');
+
+    expandBtn && expandBtn.addEventListener('click', () => {
+      modal.classList.remove('hidden');
+      // Create full bubble chart with ALL labels visible using full names
+      if (typeof d3 !== 'undefined') {
+        const svg = byId('comorbidityBubbleChartFull');
+        if (svg) {
+          const width = svg.clientWidth || 800;
+          const height = 600;
+          // Mark all as top3 and use full names for the modal view
+          const allWithFullNames = allComorbidities.map(item => ({
+            ...item,
+            name: item.full,  // Use full name instead of abbreviation
+            isTop3: true
+          }));
+          createBubbleChart('comorbidityBubbleChartFull-' + uid, allWithFullNames, width, height);
+        }
+      }
+    });
+
+    closeBtn && closeBtn.addEventListener('click', () => {
+      modal.classList.add('hidden');
+    });
+
+    // Close modal on outside click
+    modal && modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.classList.add('hidden');
+      }
+    });
+
+    // Show/hide this cohort's panel based on the active cohort (window.CohortBus).
+    function showPanel(active) { root.classList.toggle('hidden', !active); }
+    if (window.CohortBus && typeof window.CohortBus.subscribe === 'function') {
+      window.CohortBus.subscribe((key) => showPanel(key === uid));
+    }
+  });
+</script>

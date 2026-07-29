@@ -1,7 +1,7 @@
 import { defineMiddleware } from 'astro:middleware';
 import { getSession } from './lib/session';
 
-const PROTECTED_ROUTES = ['/portal'];
+const PROTECTED_ROUTES = ['/portal', '/cohort_wip'];
 const ADMIN_ROUTES = ['/portal/admin'];
 const AUTH_PAGES = ['/auth/login', '/auth/pending', '/auth/complete-profile'];
 const API_ROUTES = ['/api/'];

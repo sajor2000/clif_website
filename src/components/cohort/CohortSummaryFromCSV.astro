@@ -4,7 +4,7 @@ import { readFile } from 'fs/promises';
 import { join } from 'path';
 
 // Read and parse the CSV file at build time
-const csvPath = join(process.cwd(), 'src', 'data', 'overall_1113.csv');
+const csvPath = join(process.cwd(), 'src', 'data', 'cohort_dash_1', 'overall_1113.csv');
 const csvContent = await readFile(csvPath, 'utf-8');
 const lines = csvContent.trim().split('\n');
 

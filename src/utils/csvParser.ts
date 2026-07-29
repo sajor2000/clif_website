@@ -1,6 +1,8 @@
 // CSV Parser Utility for Consortium Data
 // Transforms CSV data into a structured format for the dashboard
 
+import { parseCSVLine } from './csvLine';
+
 export interface SiteYearData {
   site: string;
   year: string;
@@ -10,6 +12,12 @@ export interface SiteYearData {
 export interface CharacteristicData {
   variable: string;
   sites: Map<string, Map<string, string>>; // site -> year -> value
+  /**
+   * Nesting level from the source CSV's leading indent (0 = top-level row,
+   * 1 = its children, ...). Optional: only parseCohortCSV sets it, and the
+   * name itself is always trimmed, so consumers that ignore it are unaffected.
+   */
+  depth?: number;
 }
 
 export interface ParsedConsortiumData {
@@ -122,31 +130,6 @@ export function parseConsortiumCSV(csvContent: string): ParsedConsortiumData {
     characteristics,
     siteYearData,
   };
-}
-
-/**
- * Parse a CSV line handling quoted values with commas
- */
-function parseCSVLine(line: string): string[] {
-  const result: string[] = [];
-  let current = '';
-  let inQuotes = false;
-
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-
-    if (char === '"') {
-      inQuotes = !inQuotes;
-    } else if (char === ',' && !inQuotes) {
-      result.push(current);
-      current = '';
-    } else {
-      current += char;
-    }
-  }
-
-  result.push(current);
-  return result;
 }
 
 /**

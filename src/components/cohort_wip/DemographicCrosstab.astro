@@ -1,0 +1,248 @@
+---
+/**
+ * Race x Ethnicity x Sex crosstab for a cohort.
+ *
+ * The export ships a two-header-row matrix: row 1 is the ethnicity group
+ * spanning three sex columns, row 2 is the sex within it, and the last row and
+ * column are margins.
+ *
+ * Counts are PATIENT-level, not encounter-level — the grand total matches
+ * "N: Unique patients" to within ~0.02% (the shortfall is patients with no
+ * demographics recorded), while the cohort has far more encounters than that.
+ * The heading says so, because every other number in this panel is per
+ * encounter and the two are easy to conflate.
+ *
+ * Rendered as a shaded table rather than a chart: 63 cells all carry meaning,
+ * and the reader wants to look values up as often as compare them. Shading is
+ * one hue, light to dark, so it reads as magnitude rather than category.
+ */
+import fs from 'node:fs';
+import path from 'node:path';
+
+interface Props {
+  cohort: string;
+}
+const { cohort } = Astro.props;
+
+const file = path.join(process.cwd(), 'src', 'data', 'cohorts', cohort, 'demographic_crosstab_race_ethnicity_sex.csv');
+const raw = fs.existsSync(file) ? fs.readFileSync(file, 'utf-8').trim() : '';
+const rows = raw ? raw.split('\n').map((l) => l.split(',')) : [];
+
+// Two header rows: ethnicity group, then sex within it. The final column is the
+// row margin; its second-row label is a pandas artifact ("Unnamed: N_level_1").
+const ethnicityRow = rows[0] ?? [];
+const sexRow = rows[1] ?? [];
+const bodyRows = rows.slice(2);
+
+interface Col {
+  index: number;
+  ethnicity: string;
+  sex: string;
+  isTotal: boolean;
+}
+const cols: Col[] = ethnicityRow
+  .map((eth, i) => ({
+    index: i,
+    ethnicity: eth.trim(),
+    sex: (sexRow[i] ?? '').trim(),
+    isTotal: eth.trim().toLowerCase() === 'total',
+  }))
+  .filter((c) => c.index > 0);
+
+// Group the data columns under their ethnicity so the header can span them.
+const dataCols = cols.filter((c) => !c.isTotal);
+const totalCol = cols.find((c) => c.isTotal);
+const groups: { ethnicity: string; cols: Col[] }[] = [];
+for (const c of dataCols) {
+  const last = groups[groups.length - 1];
+  if (last && last.ethnicity === c.ethnicity) last.cols.push(c);
+  else groups.push({ ethnicity: c.ethnicity, cols: [c] });
+}
+
+const num = (v: string | undefined) => {
+  const n = parseInt((v ?? '').replace(/[^0-9-]/g, ''), 10);
+  return Number.isFinite(n) ? n : 0;
+};
+
+const body = bodyRows.map((r) => ({
+  race: (r[0] ?? '').trim(),
+  isTotal: (r[0] ?? '').trim().toLowerCase() === 'total',
+  cells: dataCols.map((c) => num(r[c.index])),
+  total: totalCol ? num(r[totalCol.index]) : 0,
+}));
+
+const grandTotal = body.find((r) => r.isTotal)?.total ?? 0;
+
+/**
+ * Shade intensity 0..1 on a LOG scale. Counts span three orders of magnitude
+ * here (0 to ~235,000); on a linear ramp every cell but the largest two would
+ * read as empty, which would hide exactly the small-group detail this table
+ * exists to show.
+ */
+const maxCell = Math.max(1, ...body.filter((r) => !r.isTotal).flatMap((r) => r.cells));
+const shade = (n: number) => (n <= 0 ? 0 : Math.log(n + 1) / Math.log(maxCell + 1));
+
+/**
+ * Alpha ceiling for the darkest cell. Text stays dark at every step rather
+ * than flipping to white: measured against this ramp, white on the darkest
+ * cell is 3.04:1 (below AA) and 1.94:1 at a mid flip-point, while dark text is
+ * 4.83:1 at the darkest and better everywhere lighter. Raising this ceiling
+ * pushes the darkest cell below AA — re-check the contrast if you do.
+ */
+const MAX_ALPHA = 0.85;
+
+const pct = (n: number) => (grandTotal > 0 ? `${((n / grandTotal) * 100).toFixed(1)}%` : '');
+const fmt = (n: number) => n.toLocaleString();
+
+/**
+ * Download payload. Built here rather than scraped from the DOM so the file
+ * carries the real integers, not the thousands-separated display strings, and
+ * so em-dash placeholders come out as 0.
+ *
+ * The two header rows are flattened to one `<Ethnicity> — <Sex>` row, since a
+ * two-row header does not survive a CSV into a spreadsheet intact.
+ */
+const csvHeader = ['Race', ...dataCols.map((c) => `${c.ethnicity} - ${c.sex}`), 'Total'];
+const csvRows = body.map((r) => [r.race, ...r.cells.map(String), String(r.total)]);
+const csvText = [csvHeader, ...csvRows]
+  .map((row) => row.map((f) => (/[",\n]/.test(f) ? `"${f.replace(/"/g, '""')}"` : f)).join(','))
+  .join('\n');
+---
+
+{body.length > 0 && (
+  <div class="mb-8">
+    <button
+      class="collapsible-header collapsed w-full flex items-center justify-between bg-gray-50 hover:bg-gray-100 p-4 rounded-lg transition-colors duration-200 border border-gray-200"
+      data-target={`demographic-crosstab-${cohort}`}
+    >
+      <h3 class="text-xl font-bold text-gray-800">Race, Ethnicity &amp; Sex</h3>
+      <svg class="chevron w-6 h-6 text-gray-600 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+      </svg>
+    </button>
+
+    <div id={`demographic-crosstab-${cohort}`} class="collapsible-content collapsed mt-6">
+      <div class="mb-3 flex items-start justify-between gap-4">
+        <p class="text-sm text-gray-600">
+          Unique <span class="font-semibold">patients</span> by race, ethnicity and sex — {fmt(grandTotal)} in total.
+        </p>
+        <button
+          type="button"
+          class="crosstab-export flex shrink-0 items-center gap-2 rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-green-700"
+          data-cohort={cohort}
+          data-csv={csvText}
+        >
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          Export CSV
+        </button>
+      </div>
+
+      <div class="overflow-x-auto rounded-lg border border-gray-200">
+        <table class="crosstab w-full border-collapse text-sm">
+          <thead>
+            <tr class="bg-gray-50">
+              <th rowspan="2" class="sticky left-0 z-10 bg-gray-50 px-3 py-2 text-left font-semibold text-gray-700">Race</th>
+              {groups.map((g) => (
+                <th colspan={g.cols.length} class="border-l border-gray-200 px-3 py-2 text-center font-semibold text-gray-700">
+                  {g.ethnicity}
+                </th>
+              ))}
+              <th rowspan="2" class="border-l border-gray-300 px-3 py-2 text-right font-semibold text-gray-700">Total</th>
+            </tr>
+            <tr class="bg-gray-50">
+              {groups.flatMap((g) =>
+                g.cols.map((c, i) => (
+                  <th class:list={['px-3 py-1.5 text-right text-xs font-medium text-gray-500', i === 0 && 'border-l border-gray-200']}>
+                    {c.sex}
+                  </th>
+                ))
+              )}
+            </tr>
+          </thead>
+          <tbody>
+            {body.map((r) => (
+              <tr class:list={[r.isTotal && 'border-t-2 border-gray-300 font-semibold']}>
+                <td class="sticky left-0 z-10 bg-white px-3 py-2 text-left text-gray-800">{r.race}</td>
+                {r.cells.map((n, i) => {
+                  const s = r.isTotal ? 0 : shade(n);
+                  return (
+                    <td
+                      class:list={['px-3 py-2 text-right tabular-nums', dataCols[i].sex === 'Female' && 'border-l border-gray-200']}
+                      style={r.isTotal ? '' : `background-color: rgba(13, 148, 136, ${(s * MAX_ALPHA).toFixed(3)})`}
+                      title={n > 0 ? `${fmt(n)} patients — ${pct(n)} of the cohort` : 'None'}
+                    >
+                      {n > 0 ? fmt(n) : <span class="text-gray-300">—</span>}
+                    </td>
+                  );
+                })}
+                <td class="border-l border-gray-300 px-3 py-2 text-right tabular-nums text-gray-800">{fmt(r.total)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+)}
+
+<style>
+  /* Numbers must line up column-to-column for a table read as a grid. */
+  .crosstab td.tabular-nums,
+  .crosstab th {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Collapsible behaviour, repeated from CohortSummaryFromCSV rather than
+     inherited. Astro scopes styles per component, so the parent's rules compile
+     to `.collapsible-content[data-astro-cid-<parent>]` and never match this
+     component's markup — the section rendered permanently open. The toggle
+     SCRIPT does reach it, because it queries the panel root at runtime and this
+     markup is inside it; only the CSS needed restating. */
+  .collapsible-content {
+    max-height: 5000px;
+    overflow: hidden;
+    transition: max-height 0.5s ease-in-out, opacity 0.3s ease-in-out;
+    opacity: 1;
+  }
+
+  .collapsible-content.collapsed {
+    max-height: 0;
+    opacity: 0;
+    margin-top: 0 !important;
+  }
+
+  .collapsible-header {
+    cursor: pointer;
+  }
+
+  .collapsible-header .chevron {
+    transition: transform 0.3s ease-in-out;
+  }
+
+  .collapsible-header.collapsed .chevron {
+    transform: rotate(-90deg);
+  }
+</style>
+
+<script>
+  // Delegated so one listener serves every cohort's copy of this table.
+  // The CSV is carried on the button rather than rebuilt from the DOM, so the
+  // download holds real integers instead of "193,132" display strings.
+  document.addEventListener('click', (e) => {
+    const btn = (e.target as HTMLElement | null)?.closest?.('.crosstab-export') as HTMLElement | null;
+    if (!btn) return;
+    const csv = btn.dataset.csv;
+    if (!csv) return;
+    const cohort = btn.dataset.cohort || 'cohort';
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `clif-${cohort}-race-ethnicity-sex.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+</script>

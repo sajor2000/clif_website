@@ -5,7 +5,7 @@ import { join } from 'path';
 
 // Pre-generate all ECDF file paths at build time
 export const getStaticPaths: GetStaticPaths = async () => {
-  const ecdfBasePath = join(process.cwd(), 'src', 'data', 'ecdf');
+  const ecdfBasePath = join(process.cwd(), 'src', 'data', 'cohort_dash_1', 'ecdf');
   const categories = ['labs', 'respiratory_support', 'vitals'];
   const paths: { params: { path: string } }[] = [];
 
@@ -41,7 +41,7 @@ export const GET: APIRoute = async ({ params }) => {
     return new Response('Not found', { status: 404 });
   }
 
-  const filePath = join(process.cwd(), 'src', 'data', 'ecdf', sanitizedPath);
+  const filePath = join(process.cwd(), 'src', 'data', 'cohort_dash_1', 'ecdf', sanitizedPath);
 
   try {
     const content = await readFile(filePath, 'utf-8');

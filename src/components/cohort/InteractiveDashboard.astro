@@ -4,13 +4,13 @@ import { readFile } from 'fs/promises';
 import { join } from 'path';
 
 // Read and parse the detailed CSV file for Charts view
-const csvPath = join(process.cwd(), 'src', 'data', 'consortium_t1_by_year_site_1113.csv');
+const csvPath = join(process.cwd(), 'src', 'data', 'cohort_dash_1', 'consortium_t1_by_year_site_1113.csv');
 const csvContent = await readFile(csvPath, 'utf-8');
 const data = parseConsortiumCSV(csvContent);
 const groupedChars = groupCharacteristics(data);
 
 // Read the overall CSV file for Table view and Export
-const overallCsvPath = join(process.cwd(), 'src', 'data', 'overall_1113.csv');
+const overallCsvPath = join(process.cwd(), 'src', 'data', 'cohort_dash_1', 'overall_1113.csv');
 const overallCsvContent = await readFile(overallCsvPath, 'utf-8');
 
 // Helper to parse CSV line with quoted values
