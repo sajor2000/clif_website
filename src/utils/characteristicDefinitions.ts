@@ -122,11 +122,11 @@ export const CHARACTERISTIC_DEFINITIONS: Record<string, CharacteristicDefinition
   },
 
   'Total SOFA score, median [Q1, Q3]': {
-    text: 'Sequential Organ Failure Assessment, built from the worst component value in each scoring window.',
-    source: 'modules/sofa/calculator.py',
+    text: 'Sequential Organ Failure Assessment, scored once per hospitalization from the worst value of each organ component in the first 24 hours after ICU admission — not a daily score.',
+    source: 'generator.py:4744 (first_icu_in_dttm + 24h window, extremal_type=worst, fill_na_scores_with_zero); modules/sofa/calculator.py:991',
   },
   'Charlson Comorbidity Index, median [Q1, Q3]': {
-    text: 'Comorbidity index computed from the hospital diagnosis codes attached to the encounter.',
+    text: 'Comorbidity index computed from the hospital diagnosis codes attached to the hospitalization.',
     source: 'clifpy.utils.comorbidity.calculate_cci (generator.py:74)',
   },
   'CRRT, n (%)': {
@@ -134,11 +134,11 @@ export const CHARACTERISTIC_DEFINITIONS: Record<string, CharacteristicDefinition
     source: 'modules/tableone/generator.py:6068',
   },
   'ICU length of stay (days), median [Q1, Q3]': {
-    text: 'Median days spent in the ICU per encounter, with the interquartile range in brackets. Counts ICU time only, so it is shorter than the hospital stay and is undefined for encounters that never reached an ICU.',
+    text: 'Median days spent in the ICU per hospitalization. Counts ICU time only and is undefined for encounters that never reached an ICU.',
     source: 'modules/tableone/generator.py',
   },
   'Hospital length of stay (days), median [Q1, Q3]': {
-    text: 'Median days from admission to discharge per encounter, with the interquartile range in brackets. Measured on the stitched encounter block, so a readmission within 6 hours is one continuous stay.',
+    text: 'Median days from admission to discharge per hospitalization. A readmission within 6 hours is one continuous hospital stay.',
     source: 'modules/tableone/generator.py',
   },
   'P/F ratio (imputed), median [Q1, Q3]': {
@@ -184,16 +184,12 @@ export const DERIVED_DEFINITIONS: Record<string, CharacteristicDefinition> = {
     text: 'Encounters discharged as expired or to hospice, over all encounters in the selected cohort.',
     source: 'README.md — death_enc flag',
   },
-  '__DEMOGRAPHIC_SHARE__': {
-    text: 'Share of encounters in the selected cohort. Race, ethnicity and sex are as recorded in the source data; categories do not always sum to 100% because of Missing and Other.',
-    source: 'modules/tableone/generator.py',
-  },
   '__MEDIAN_AGE_TILE__': {
-    text: 'Median age at admission with the interquartile range in brackets. Pooled across sites.',
+    text: 'Median age at admission.',
     source: 'modules/tableone/generator.py',
   },
   '__ENCOUNTER_TYPES_CARD__': {
-    text: 'These four categories OVERLAP — one encounter can be an ICU stay AND receive advanced respiratory support AND receive vasopressors — so they do not sum to 100%, and they sum to more than the share of encounters that received any critical care.',
+    text: 'Categories can overlap. Eg — a hospitalization can include an ICU stay AND advanced respiratory support AND vasopressor support',
     source: 'README.md — per-encounter-block flags',
   },
 };
