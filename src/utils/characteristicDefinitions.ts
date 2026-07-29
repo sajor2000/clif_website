@@ -20,11 +20,11 @@ export interface CharacteristicDefinition {
 /** Exact-match definitions, keyed by CSV variable name. */
 export const CHARACTERISTIC_DEFINITIONS: Record<string, CharacteristicDefinition> = {
   'N: Encounter blocks': {
-    text: 'One row per hospitalization. Linked admissions are stitched together first: any two hospitalizations where discharge-to-next-admission is 6 hours or less are merged into one encounter block, so a patient readmitted within 6 hours counts once, not twice. Every other figure on this dashboard is computed at this level.',
+    text: 'One row per hospitalization. Linked admissions are stitched together first: any two hospitalizations where discharge-to-next-admission is 6 hours or less are merged into one hospitalization block, so a patient readmitted within 6 hours counts once, not twice. Every other figure on this dashboard is computed at this level.',
     source: 'generator.py:62 (clifpy stitch_encounters, 6-hour window)',
   },
   'N: Unique patients': {
-    text: 'Distinct patients behind the encounter blocks. Lower than the encounter count because one patient can be hospitalized more than once.',
+    text: 'Distinct patients behind the hospitalization blocks. Lower than the hospitalization count because one patient can be hospitalized more than once.',
     source: 'modules/tableone/generator.py',
   },
   'N: Hospitals': {
@@ -92,32 +92,32 @@ export const CHARACTERISTIC_DEFINITIONS: Record<string, CharacteristicDefinition
     source: 'modules/tableone/vfd_calculator.py',
   },
   '28-day NIDFD (NIPPV/HFNC encounters), n (%)': {
-    text: 'The count of encounters that received NIPPV, CPAP or high-flow nasal cannula at 30 L/min or more, shown as a share of all encounters in the cohort. This is the denominator for the median below — it is not itself a device-free-days figure.',
+    text: 'The count of hospitalizations that received NIPPV, CPAP or high-flow nasal cannula at 30 L/min or more, shown as a share of all hospitalizations in the cohort. This is the denominator for the median below — it is not itself a device-free-days figure.',
     source: 'modules/tableone/generator.py',
   },
   'NIDFD, median [Q1, Q3]': {
-    text: '28-day non-invasive device-free days, computed like VFD but counting time off non-invasive support. The denominator is ONLY encounters that received NIPPV or CPAP, or high-flow nasal cannula at 30 L/min or more — not every encounter on respiratory support. Invasively ventilated patients are covered by VFD instead, and an encounter that had both appears in both figures.',
+    text: '28-day non-invasive device-free days, computed like VFD but counting time off non-invasive support. The denominator is ONLY hospitalizations that received NIPPV or CPAP, or high-flow nasal cannula at 30 L/min or more — not every hospitalization on respiratory support. Invasively ventilated patients are covered by VFD instead, and a hospitalization that had both appears in both figures.',
     source: 'modules/tableone/generator.py',
   },
 
   'ICU encounters, n (%)': {
-    text: 'Encounters that ever had an ADT row whose location category contains "icu".',
+    text: 'Hospitalizations that ever had an ADT row whose location category contains "icu".',
     source: 'README.md — per-encounter-block flags',
   },
   'Advanced respiratory support, n (%)': {
-    text: 'Encounters that ever received IMV, NIPPV or CPAP — or high-flow nasal cannula at 30 L/min or more.',
+    text: 'Hospitalizations that ever received IMV, NIPPV or CPAP — or high-flow nasal cannula at 30 L/min or more.',
     source: 'README.md — per-encounter-block flags',
   },
   'Vasoactive support, n (%)': {
-    text: 'Encounters that ever received norepinephrine, epinephrine, phenylephrine, vasopressin, dopamine or angiotensin.',
+    text: 'Hospitalizations that ever received norepinephrine, epinephrine, phenylephrine, vasopressin, dopamine or angiotensin.',
     source: 'README.md — per-encounter-block flags',
   },
   'Other critically ill, n (%)': {
-    text: 'Encounters that died or were discharged to hospice WITHOUT ever touching an ICU, receiving vasoactive medications, or receiving advanced respiratory support — in effect, death in the ED or on the ward without escalation.',
+    text: 'Hospitalizations that died or were discharged to hospice WITHOUT ever touching an ICU, receiving vasoactive medications, or receiving advanced respiratory support — in effect, death in the ED or on the ward without escalation.',
     source: 'README.md — other_critically_ill flag',
   },
   'Ward only (survived, no critical care), n (%)': {
-    text: 'Encounters that touched a ward and never received critical care, and survived. The complement of the four categories above rather than another overlapping one.',
+    text: 'Hospitalizations that touched a ward and never received critical care, and survived. The complement of the four categories above rather than another overlapping one.',
     source: 'run_tableone_ward.py',
   },
 
@@ -130,11 +130,11 @@ export const CHARACTERISTIC_DEFINITIONS: Record<string, CharacteristicDefinition
     source: 'clifpy.utils.comorbidity.calculate_cci (generator.py:74)',
   },
   'CRRT, n (%)': {
-    text: 'Encounters that received continuous renal replacement therapy.',
+    text: 'Hospitalizations that received continuous renal replacement therapy.',
     source: 'modules/tableone/generator.py:6068',
   },
   'ICU length of stay (days), median [Q1, Q3]': {
-    text: 'Median days spent in the ICU per hospitalization. Counts ICU time only and is undefined for encounters that never reached an ICU.',
+    text: 'Median days spent in the ICU per hospitalization. Counts ICU time only and is undefined for hospitalizations that never reached an ICU.',
     source: 'modules/tableone/generator.py',
   },
   'Hospital length of stay (days), median [Q1, Q3]': {
@@ -161,19 +161,19 @@ export const DERIVED_DEFINITIONS: Record<string, CharacteristicDefinition> = {
     source: 'modules/tableone/ventilation_stats.py (generate_mode_proportions)',
   },
   '__VASO_DOSE_CARD__': {
-    text: 'Per-drug: the share of encounters that received it, and the median infusion dose across those encounters with the interquartile range. Doses are the median of each encounter\'s own median, so an encounter counts once regardless of how long it was infused.',
+    text: 'Per-drug: the share of hospitalizations that received it, and the median infusion dose across those hospitalizations with the interquartile range. Doses are the median of each hospitalization\'s own median, so a hospitalization counts once regardless of how long it was infused.',
     source: 'modules/tableone/generator.py:6211',
   },
   '__RESP_SECTION__': {
-    text: 'Everything in this section is limited to encounters that received invasive mechanical ventilation, and is measured from ventilation start rather than from admission.',
+    text: 'Everything in this section is limited to hospitalizations that received invasive mechanical ventilation, and is measured from ventilation start rather than from admission.',
     source: 'modules/tableone/generator.py',
   },
   '__VASO_SECTION__': {
-    text: 'Vasoactive medications given at any point during the encounter — norepinephrine, epinephrine, phenylephrine, vasopressin, dopamine or angiotensin. Percentages are of all encounters in the selected cohort.',
+    text: 'Vasoactive medications given at any point during the hospitalization — norepinephrine, epinephrine, phenylephrine, vasopressin, dopamine or angiotensin. Percentages are of all hospitalizations in the selected cohort.',
     source: 'README.md — vaso_support_enc flag',
   },
   '__ICU_STAY_TILE__': {
-    text: 'Hospitalizations with at least one ICU stay, taken from the ICU encounters row — encounters whose ADT record ever shows a location category containing "icu".',
+    text: 'Hospitalizations with at least one ICU stay, taken from the ICU hospitalizations row — hospitalizations whose ADT record ever shows a location category containing "icu".',
     source: 'README.md — icu_enc flag',
   },
   '__TIMESPAN_TILE__': {
@@ -181,7 +181,7 @@ export const DERIVED_DEFINITIONS: Record<string, CharacteristicDefinition> = {
     source: 'CohortSummaryFromCSV.astro (f.years)',
   },
   '__HOSPITAL_MORTALITY_TILE__': {
-    text: 'Encounters discharged as expired or to hospice, over all encounters in the selected cohort.',
+    text: 'Hospitalizations discharged as expired or to hospice, over all hospitalizations in the selected cohort.',
     source: 'README.md — death_enc flag',
   },
   '__MEDIAN_AGE_TILE__': {
@@ -200,7 +200,7 @@ export const DERIVED_DEFINITIONS: Record<string, CharacteristicDefinition> = {
  */
 export const PREFIX_DEFINITIONS: Record<string, CharacteristicDefinition> = {
   'Initial ventilator mode': {
-    text: 'The first ventilator mode recorded at or after ventilation start, one per IMV encounter. Encounters with no mode recorded in that window are counted as Missing rather than dropped.',
+    text: 'The first ventilator mode recorded at or after ventilation start, one per IMV hospitalization. Hospitalizations with no mode recorded in that window are counted as Missing rather than dropped.',
     source: 'modules/tableone/generator.py:2828',
   },
   'First location at IMV start': {
@@ -208,15 +208,15 @@ export const PREFIX_DEFINITIONS: Record<string, CharacteristicDefinition> = {
     source: 'modules/tableone/generator.py',
   },
   'Extubation outcome': {
-    text: 'How ventilation ended for each IMV encounter: extubated, died on the ventilator, discharged still ventilated, a failed attempt (an episode under 5 minutes), or unknown. Extubation is detected from the respiratory-support timeline — two consecutive readings on invasive ventilation followed by two consecutive readings off it — rather than from a recorded extubation event.',
+    text: 'How ventilation ended for each IMV hospitalization: extubated, died on the ventilator, discharged still ventilated, a failed attempt (an episode under 5 minutes), or unknown. Extubation is detected from the respiratory-support timeline — two consecutive readings on invasive ventilation followed by two consecutive readings off it — rather than from a recorded extubation event.',
     source: 'modules/tableone/extubation_calculator.py:245',
   },
   'First admission location': {
-    text: 'The ADT location category of the encounter’s first admission row.',
+    text: 'The ADT location category of the hospitalization’s first admission row.',
     source: 'modules/tableone/generator.py',
   },
   'Admission type': {
-    text: 'How the encounter began — ED, elective, direct, transfer from an outside hospital (OSH), from a facility, or other.',
+    text: 'How the hospitalization began — ED, elective, direct, transfer from an outside hospital (OSH), from a facility, or other.',
     source: 'modules/tableone/generator.py',
   },
 };
