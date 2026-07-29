@@ -80,7 +80,15 @@ const LABELS: Record<string, string> = {
   ventModePSV: 'Initial ventilator mode: pressure support/cpap',
   ventModePCV: 'Initial ventilator mode: pressure control',
   ventModePRVC: 'Initial ventilator mode: pressure-regulated volume control',
+  // The export ships one row per mCIDE mode value. `other` is its own upstream
+  // category, NOT a catch-all, so the four rare modes below are pooled into the
+  // treemap's Other tile. `Missing` is deliberately left out — no mode recorded
+  // is not a mode.
   ventModeOther: 'Initial ventilator mode: other',
+  ventModeAPRV: 'Initial ventilator mode: aprv',
+  ventModeBlowBy: 'Initial ventilator mode: blow by',
+  ventModeStandby: 'Initial ventilator mode: standby',
+  ventModeVolumeSupport: 'Initial ventilator mode: volume support',
   fio2Median: 'FiO2 (%), median [Q1, Q3]',
   peepMedian: 'PEEP (cmH2O), median [Q1, Q3]',
   rrMedian: 'Respiratory rate (breaths/min), median [Q1, Q3]',
@@ -425,12 +433,36 @@ const imvLocationED = d.imvLocationED;
 const imvLocationProcedural = d.imvLocationProcedural;
 const imvLocationWard = d.imvLocationWard;
 const imvLocationStepdown = d.imvLocationStepdown;
-const ventModeACV = d.ventModeACV;
-const ventModeSIMV = d.ventModeSIMV;
-const ventModePSV = d.ventModePSV;
-const ventModePCV = d.ventModePCV;
-const ventModePRVC = d.ventModePRVC;
-const ventModeOther = d.ventModeOther;
+/**
+ * Initial-ventilator-mode tiles for the treemap: the five named modes plus a
+ * pooled Other.
+ *
+ * Pooled on COUNTS, then re-percentaged over their own total, for the same
+ * reason the admission donut does it (see admissionCounts): the CSV's stated
+ * percentages use per-row denominators — sites that never report a mode are
+ * left out of that row's denominator — so they sum to ~103% here and cannot be
+ * added together. Recomputing makes each tile's area match its own label.
+ *
+ * `Missing` is excluded rather than pooled: it means no mode was charted, which
+ * is a data-coverage fact, not a ventilator setting.
+ */
+const ventModeCounts = [
+  { name: 'Assist Control/Volume Control', shortName: 'AC/VC', n: numOf(d.ventModeACV) },
+  { name: 'Pressure Regulated Volume Control', shortName: 'PRVC', n: numOf(d.ventModePRVC) },
+  { name: 'Synchronized Intermittent Mandatory Ventilation', shortName: 'SIMV', n: numOf(d.ventModeSIMV) },
+  { name: 'Pressure Support Ventilation/CPAP', shortName: 'PSV/CPAP', n: numOf(d.ventModePSV) },
+  { name: 'Pressure Control Ventilation', shortName: 'PCV', n: numOf(d.ventModePCV) },
+  {
+    name: 'Other',
+    shortName: 'Other',
+    n: numOf(d.ventModeOther) + numOf(d.ventModeAPRV) + numOf(d.ventModeBlowBy)
+      + numOf(d.ventModeStandby) + numOf(d.ventModeVolumeSupport),
+  },
+];
+const ventModeTotal = ventModeCounts.reduce((sum, m) => sum + m.n, 0);
+const ventModeTiles = ventModeCounts
+  .filter((m) => m.n > 0)
+  .map((m) => ({ name: m.name, shortName: m.shortName, value: parseFloat(pctOf(m.n, ventModeTotal)) }));
 const fio2Median = d.fio2Median;
 const peepMedian = d.peepMedian;
 const rrMedian = d.rrMedian;
@@ -763,13 +795,13 @@ const dopamineDose = d.dopamineDose;
                   {sepsisPicto ? (
                     <>
                       <span class="font-semibold text-rose-700">about 1 in {sepsisN}</span>
-                      encounters had at least one sepsis event
-                      <span class="text-gray-500"> ({extractPercentage(encountersWithSepsis)})</span>
+                      hospitalizations in this cohort had at least one sepsis event
+                      <span class="text-gray-500"> — {extractNumber(encountersWithSepsis)} of {totalEncounters.toLocaleString()} ({extractPercentage(encountersWithSepsis)})</span>
                     </>
                   ) : (
                     <>
                       <span class="font-semibold text-gray-900">{extractPercentage(encountersWithSepsis)}</span>
-                      of encounters had at least one sepsis event
+                      of the {totalEncounters.toLocaleString()} hospitalizations in this cohort had at least one sepsis event
                     </>
                   )}
                 </div>
@@ -1269,7 +1301,7 @@ const dopamineDose = d.dopamineDose;
   comorbPVD, comorbMI, comorbDementia, comorbLiver, comorbModLiver, comorbDiabetesComp, comorbDiabetesUncomp,
   comorbHemiplegia, comorbConnective, comorbPeptic, comorbAIDS,
   imvLocationICU, imvLocationED, imvLocationProcedural, imvLocationWard, imvLocationStepdown,
-  ventModeACV, ventModeSIMV, ventModePSV, ventModePCV, ventModePRVC, ventModeOther
+  ventModeTiles
 }}>
   document.addEventListener('DOMContentLoaded', () => {
     const root = document.getElementById('summary-' + uid);
@@ -1346,17 +1378,9 @@ const dopamineDose = d.dopamineDose;
 
               // Create Treemap for Ventilator Mode using D3
               if (typeof d3 !== 'undefined') {
-                const ventModeData = {
-                  name: "Modes",
-                  children: [
-                    { name: "Assist Control/Volume Control", shortName: "AC/VC", value: pctVal(ventModeACV) },
-                    { name: "Pressure Regulated Volume Control", shortName: "PRVC", value: pctVal(ventModePRVC) },
-                    { name: "Synchronized Intermittent Mandatory Ventilation", shortName: "SIMV", value: pctVal(ventModeSIMV) },
-                    { name: "Pressure Support Ventilation/CPAP", shortName: "PSV/CPAP", value: pctVal(ventModePSV) },
-                    { name: "Pressure Control Ventilation", shortName: "PCV", value: pctVal(ventModePCV) },
-                    { name: "Other", shortName: "Other", value: pctVal(ventModeOther) }
-                  ].filter((m) => m.value > 0)
-                };
+                // Tiles are pooled and re-percentaged server-side (see
+                // ventModeTiles) so the areas sum to 100%.
+                const ventModeData = { name: "Modes", children: ventModeTiles };
 
                 const container = byId('ventModeTreemap');
                 // This card sits inside a collapsed section — and, for every
@@ -1429,8 +1453,31 @@ const dopamineDose = d.dopamineDose;
                     const cellHeight = d.y1 - d.y0;
                     const cellArea = cellWidth * cellHeight;
 
+                    const group = d3.select(this);
+                    // Rotated fallback for tiles too narrow to hold a
+                    // horizontal label — the abbreviation runs up the tile
+                    // rather than overflowing into its neighbour. Named so both
+                    // the up-front check and the measured check below use it.
+                    const labelVertically = () => {
+                      group.append("text")
+                        .attr("transform", `translate(${cellWidth / 2}, ${cellHeight / 2}) rotate(-90)`)
+                        .attr("text-anchor", "middle")
+                        .attr("dominant-baseline", "central")
+                        .attr("fill", "#000000")
+                        .attr("font-size", "10px")
+                        .attr("font-weight", "700")
+                        .text((d.data.shortName || d.data.name) + ' ' + d.data.value + '%');
+                    };
+
+                    // The pooled Other lands around 1% of the area — no
+                    // horizontal label fits at any readable size.
+                    if (cellWidth < 70 && cellHeight >= 48) {
+                      labelVertically();
+                      return;
+                    }
+
                     if (cellArea > 2000) {
-                      const textGroup = d3.select(this);
+                      const textGroup = group;
                       const name = d.data.name;
                       const words = name.split(/[\s\/]+/); // Split on spaces and slashes
 
@@ -1489,6 +1536,19 @@ const dopamineDose = d.dopamineDose;
                           .attr("font-size", "16px")
                           .attr("font-weight", "700")
                           .text(d.data.value + '%');
+                      }
+
+                      // Measure what was actually drawn instead of guessing a
+                      // width threshold per mode: "Pressure Regulated" is wider
+                      // than its own tile at some card widths, and a name that
+                      // fits one cohort's tile overflows another's. If any line
+                      // spills past the tile, discard the horizontal label and
+                      // run the abbreviation up the tile instead.
+                      const spills = textGroup.selectAll("text").nodes()
+                        .some((n) => n.getComputedTextLength() > cellWidth - 8);
+                      if (spills && cellHeight >= 48) {
+                        textGroup.selectAll("text").remove();
+                        labelVertically();
                       }
                     }
                   });

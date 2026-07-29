@@ -88,7 +88,7 @@ export const CHARACTERISTIC_DEFINITIONS: Record<string, CharacteristicDefinition
     source: 'modules/tableone/generator.py:6170',
   },
   'VFD, median [Q1, Q3]': {
-    text: '28-day ventilator-free days. The window is ventilation start through day 27. Death inside the window scores 0; still ventilated at day 28 scores 0; never re-ventilated scores 28. Free days between a reintubation do NOT count, so this encodes mortality as well as ventilation duration.',
+    text: '28-day ventilator-free days. The window is ventilation start through day 27. Death inside the window scores 0; still ventilated at day 28 scores 0; never re-ventilated scores 28. Free days between a reintubation do NOT count.',
     source: 'modules/tableone/vfd_calculator.py',
   },
   '28-day NIDFD (NIPPV/HFNC encounters), n (%)': {
@@ -96,7 +96,7 @@ export const CHARACTERISTIC_DEFINITIONS: Record<string, CharacteristicDefinition
     source: 'modules/tableone/generator.py',
   },
   'NIDFD, median [Q1, Q3]': {
-    text: '28-day non-invasive device-free days, computed like VFD but counting time off non-invasive support. The denominator is ONLY hospitalizations that received NIPPV or CPAP, or high-flow nasal cannula at 30 L/min or more — not every hospitalization on respiratory support. Invasively ventilated patients are covered by VFD instead, and a hospitalization that had both appears in both figures.',
+    text: '28-day non-invasive device-free days, computed like VFD but counting time off non-invasive support (ONLY hospitalizations that received NIPPV or CPAP, or high-flow nasal cannula at 30 L/min or more) — not every hospitalization on respiratory support.',
     source: 'modules/tableone/generator.py',
   },
 
@@ -153,15 +153,15 @@ export const CHARACTERISTIC_DEFINITIONS: Record<string, CharacteristicDefinition
  */
 export const DERIVED_DEFINITIONS: Record<string, CharacteristicDefinition> = {
   '__VENT_SETTINGS_CARD__': {
-    text: 'Median ventilator settings over the first 24 hours of invasive ventilation, with the interquartile range beneath. Measured from ventilation start, not from admission.',
+    text: 'Median ventilator settings over the first 24 hours of invasive ventilation. Measured from ventilation start.',
     source: 'modules/tableone/ventilation_stats.py (first 24h window)',
   },
   '__VENT_MODE_CARD__': {
-    text: 'Share of ventilator observations in the first 24 hours of invasive ventilation falling in each mode — weighted by observations rather than by patient, so a patient with more frequent charting contributes more. Modes outside the five named groups are pooled as Other.',
-    source: 'modules/tableone/ventilation_stats.py (generate_mode_proportions)',
+    text: 'The first ventilator mode charted at or after ventilation start — one per invasively ventilated hospitalization. Other pools APRV, blow by, standby, volume support and the upstream "other" category. Hospitalizations with no mode charted are excluded.',
+    source: 'generator.py:2849 (first mode_category at/after vent_start_time, per encounter_block); denominator = on_vent encounters at generator.py:6109',
   },
   '__VASO_DOSE_CARD__': {
-    text: 'Per-drug: the share of hospitalizations that received it, and the median infusion dose across those hospitalizations with the interquartile range. Doses are the median of each hospitalization\'s own median, so a hospitalization counts once regardless of how long it was infused.',
+    text: 'Per-drug: the share of hospitalizations that received it, and the median infusion dose across those hospitalizations.',
     source: 'modules/tableone/generator.py:6211',
   },
   '__RESP_SECTION__': {
@@ -169,7 +169,7 @@ export const DERIVED_DEFINITIONS: Record<string, CharacteristicDefinition> = {
     source: 'modules/tableone/generator.py',
   },
   '__VASO_SECTION__': {
-    text: 'Vasoactive medications given at any point during the hospitalization — norepinephrine, epinephrine, phenylephrine, vasopressin, dopamine or angiotensin. Percentages are of all hospitalizations in the selected cohort.',
+    text: 'Vasopressor medications given at any point during the hospitalization. Percentages are of all hospitalizations in the selected cohort.',
     source: 'README.md — vaso_support_enc flag',
   },
   '__ICU_STAY_TILE__': {
