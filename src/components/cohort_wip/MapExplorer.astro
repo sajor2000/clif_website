@@ -2,60 +2,15 @@
 // CLIF Map Explorer - Interactive map showing consortium sites
 import { readFile } from 'fs/promises';
 import { join } from 'path';
-import fs from 'node:fs';
-import { parseCohortCSV, COHORTS, SUBCOHORTS, DEFAULT_COHORT } from '../../utils/cohortData';
+import { countsForCohort, COHORTS, SUBCOHORTS, DEFAULT_COHORT, type SiteCounts } from '../../utils/cohortData';
 
 // Read and parse the CSV file at build time
 const csvPath = join(process.cwd(), 'src', 'data', 'site_details.csv');
 const csvContent = await readFile(csvPath, 'utf-8');
 const lines = csvContent.trim().split('\n');
 
-// Refresh per-site encounter / patient / hospital counts from the new overall_ward
-// data (geography/lat-long still come from site_details.csv). The export uses site
-// codes; map them to the display names used in site_details.csv.
-const CODE_TO_NAME: Record<string, string> = {
-  Emory: 'Emory University',
-  JHU: 'Johns Hopkins University',
-  MIMIC: 'Harvard University / MIMIC-IV',
-  NU: 'Northwestern University',
-  OHSU: 'Oregon Health & Science University',
-  RUSH: 'Rush University',
-  UCMC: 'University of Chicago',
-  UCSF: 'University of California, San Francisco (UCSF)',
-  UMN: 'University of Minnesota',
-  UPenn: 'University of Pennsylvania',
-  Sunnybrook: 'University of Toronto',
-};
-/**
- * Per-site counts for every cohort, keyed by cohort then display name, so the
- * map can repaint when the cohort bus changes. Geography still comes from
- * site_details.csv — only the counts are cohort-dependent.
- *
- * A site missing from a cohort's export gets no entry at all rather than a
- * zero: the client greys that marker and says "no data in this cohort", which
- * is a different statement from "0 patients".
- */
-type SiteCounts = { hospitals: number; encounters: number; patients: number };
-function countsForCohort(key: string): Record<string, SiteCounts> {
-  const file = join(process.cwd(), 'src', 'data', 'cohorts', key, 'table_one_overall.csv');
-  const byYear = join(process.cwd(), 'src', 'data', 'cohorts', key, 'table_one_by_year.csv');
-  const path = fs.existsSync(file) ? file : byYear;
-  if (!fs.existsSync(path)) return {};
-  const parsed = parseCohortCSV(fs.readFileSync(path, 'utf-8'));
-  const num = (variable: string, site: string) => {
-    const row = parsed.characteristics.find((c) => c.variable.trim() === variable);
-    const v = row?.sites.get(site)?.get('Overall') || '';
-    return parseInt((v.match(/^[\d,]+/)?.[0] || '0').replace(/,/g, ''), 10) || 0;
-  };
-  const out: Record<string, SiteCounts> = {};
-  for (const [code, name] of Object.entries(CODE_TO_NAME)) {
-    const encounters = num('N: Encounter blocks', code);
-    const patients = num('N: Unique patients', code);
-    if (!encounters && !patients) continue; // site absent from this cohort
-    out[name] = { hospitals: num('N: Hospitals', code), encounters, patients };
-  }
-  return out;
-}
+// Per-site counts come from countsForCohort() in cohortData.ts (shared with
+// Summary Statistics). Geography/lat-long still come from site_details.csv.
 
 const cohortSiteCounts: Record<string, Record<string, SiteCounts>> = {};
 for (const c of COHORTS) cohortSiteCounts[c.key] = countsForCohort(c.key);

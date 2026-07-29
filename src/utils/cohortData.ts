@@ -12,6 +12,8 @@
 // Legacy files were `<site>_<year>` / `<site>__<metric>` (site first) — do NOT
 // route new files through src/utils/csvParser.ts's parseConsortiumCSV.
 
+import fs from 'node:fs';
+import path from 'node:path';
 import { parseCSVLine } from './csvLine';
 import type { ParsedConsortiumData, CharacteristicData } from './csvParser';
 
@@ -328,4 +330,64 @@ export function getAggregateValue(
   const char = data.characteristics.find((c) => c.variable.trim() === variable.trim());
   const allData = char?.sites.get(AGGREGATE_SITE);
   return allData?.get(year) ?? null;
+}
+
+/**
+ * Site codes mapped to the display names in src/data/site_details.csv (Site
+ * column). Used by Map Explorer and Summary Statistics so geography labels
+ * stay aligned with the roster file.
+ */
+export const SITE_CODE_TO_DETAILS_NAME: Record<string, string> = {
+  Emory: 'Emory University',
+  JHU: 'Johns Hopkins University',
+  MIMIC: 'Harvard University / MIMIC-IV',
+  NU: 'Northwestern University',
+  OHSU: 'Oregon Health & Science University',
+  RUSH: 'Rush University',
+  UCMC: 'University of Chicago',
+  UCSF: 'University of California, San Francisco (UCSF)',
+  UMN: 'University of Minnesota',
+  UPenn: 'University of Pennsylvania',
+  Sunnybrook: 'University of Toronto',
+};
+
+export type SiteCounts = { hospitals: number; encounters: number; patients: number };
+
+/**
+ * Per-site counts for a cohort, keyed by site_details.csv display name.
+ *
+ * A site missing from the cohort export gets no entry rather than a zero —
+ * "no data in this cohort" is different from "0 patients".
+ */
+export function countsForCohort(key: string): Record<string, SiteCounts> {
+  const cohortDir = path.join(process.cwd(), 'src', 'data', 'cohorts');
+  const overall = path.join(cohortDir, key, 'table_one_overall.csv');
+  const byYear = path.join(cohortDir, key, 'table_one_by_year.csv');
+  const csvPath = fs.existsSync(overall) ? overall : byYear;
+  if (!fs.existsSync(csvPath)) return {};
+
+  const parsed = parseCohortCSV(fs.readFileSync(csvPath, 'utf-8'));
+  const num = (variable: string, site: string) => {
+    const row = parsed.characteristics.find((c) => c.variable.trim() === variable);
+    const v = row?.sites.get(site)?.get('Overall') || '';
+    return parseInt((v.match(/^[\d,]+/)?.[0] || '0').replace(/,/g, ''), 10) || 0;
+  };
+
+  const out: Record<string, SiteCounts> = {};
+  for (const [code, name] of Object.entries(SITE_CODE_TO_DETAILS_NAME)) {
+    const encounters = num('N: Encounter blocks', code);
+    const patients = num('N: Unique patients', code);
+    if (!encounters && !patients) continue;
+    out[name] = { hospitals: num('N: Hospitals', code), encounters, patients };
+  }
+  return out;
+}
+
+/** Contributing sites for a cohort in SITE_ORDER, for display lists. */
+export function contributingSitesForCohort(key: string): { name: string; hospitals: number }[] {
+  const counts = countsForCohort(key);
+  return SITE_ORDER.filter((code) => code !== AGGREGATE_SITE)
+    .map((code) => SITE_CODE_TO_DETAILS_NAME[code])
+    .filter((name): name is string => !!name && !!counts[name])
+    .map((name) => ({ name, hospitals: counts[name].hospitals }));
 }
