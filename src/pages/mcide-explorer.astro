@@ -19,6 +19,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           </svg>
           <h1>mCIDE Explorer</h1>
           <span class="beta-badge">Beta</span>
+          {/* States which mCIDE the graph reflects. Without it, a reader coming
+              from the 3.0 change log finds values here that 3.0 has dropped
+              (e.g. glucose_serum) with nothing explaining the difference. */}
+          <span class="version-badge" title="This graph reflects the mCIDE as of CLIF 2.1">v2.1</span>
         </div>
 
         <!-- Search bar -->
@@ -229,6 +233,20 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     background: rgba(234, 179, 8, 0.15);
     color: #eab308;
     border: 1px solid rgba(234, 179, 8, 0.3);
+    align-self: center;
+  }
+
+  /* Version badge — same shape as the beta badge, neutral slate so it reads as
+     a fact about the data rather than a second status. */
+  .version-badge {
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    padding: 0.15rem 0.5rem;
+    border-radius: 9999px;
+    background: rgba(100, 116, 139, 0.15);
+    color: #64748b;
+    border: 1px solid rgba(100, 116, 139, 0.3);
     align-self: center;
   }
 

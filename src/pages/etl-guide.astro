@@ -289,6 +289,7 @@ const navigationSections = [
                       <li>• ADT represents the patient's <strong>physical location</strong>, NOT the patient "status"</li>
                       <li>• Procedural areas and operating rooms should be mapped to <code class="bg-white/20 px-1 rounded">Procedural</code></li>
                       <li>• Pre/Intra/Post-procedural and OR EHR data (e.g., anesthesia flowsheet records from Vitals, Scores, Respiratory Support) are not currently represented in CLIF</li>
+                      <li>• <code class="bg-white/20 px-1 rounded">location_type</code> represents the <strong>nursing capabilities of the unit</strong>, derived from ADT data alone — do NOT map it based on who the attending clinician or service is</li>
                     </ul>
                   </div>
 
@@ -302,7 +303,7 @@ const navigationSections = [
                         <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/adt/clif_adt_location_categories.csv" target="_blank" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_adt_location_categories.csv</a>
                       </div>
                       <div class="bg-white/10 p-3 rounded-lg">
-                        <p><strong class="text-blue-300">b. ICU Location Type Mapping:</strong> For ICU locations, map <code class="bg-white/20 px-1 rounded">location_name</code> to the appropriate <code class="bg-white/20 px-1 rounded">location_type</code></p>
+                        <p><strong class="text-blue-300">b. ICU Location Type Mapping:</strong> For ICU locations, map <code class="bg-white/20 px-1 rounded">location_name</code> to the appropriate <code class="bg-white/20 px-1 rounded">location_type</code>. The mapping should reflect the nursing capabilities of the unit, derived from ADT data alone — do not assign <code class="bg-white/20 px-1 rounded">location_type</code> based on who the attending clinician or service is</p>
                         <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/adt/clif_adt_location_type.csv" target="_blank" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_adt_location_type.csv</a>
                       </div>
                     </div>

@@ -1,7 +1,9 @@
 ---
 // src/components/layout/Navigation.astro
+import NotificationBell from '../portal/NotificationBell.astro';
+
 interface Props {
-  user?: { email: string; full_name: string | null; avatar_url?: string | null; role: string; is_approved: boolean } | null;
+  user?: { id?: string; email: string; full_name: string | null; avatar_url?: string | null; role: string; is_approved: boolean } | null;
 }
 
 const { user = null } = Astro.props;
@@ -107,6 +109,11 @@ const navItems = [
     >
     </div>
   </div>
+
+  <!-- Notifications bell (approved members only) -->
+  {user && user.is_approved && user.id && (
+    <NotificationBell userId={user.id} />
+  )}
 
   <!-- Members / User Menu -->
   {user ? (
@@ -233,6 +240,19 @@ const navItems = [
       <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
     </svg>
   </button>
+
+  <!-- Mobile notifications link (approved members only) -->
+  {user && user.is_approved && (
+    <a
+      href="/portal/notifications"
+      class="p-1.5 rounded-lg text-gray-700 hover:text-clif-burgundy hover:bg-gray-100 dark:text-white dark:hover:bg-neutral-700 transition-colors"
+      aria-label="Notifications"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="w-6 h-6">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
+      </svg>
+    </a>
+  )}
 
   <button
     id="mobile-menu-button"

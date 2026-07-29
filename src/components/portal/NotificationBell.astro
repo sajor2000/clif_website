@@ -1,0 +1,144 @@
+---
+import { listNotifications, unreadCount } from '../../lib/notifications';
+
+interface Props {
+  userId: string;
+}
+
+const { userId } = Astro.props;
+
+const [items, unread] = await Promise.all([
+  listNotifications(userId, 12),
+  unreadCount(userId),
+]);
+
+function timeAgo(iso: string): string {
+  const then = new Date(iso.includes('T') || iso.includes('Z') ? iso : iso.replace(' ', 'T') + 'Z').getTime();
+  const secs = Math.max(0, Math.floor((Date.now() - then) / 1000));
+  if (secs < 60) return 'just now';
+  const mins = Math.floor(secs / 60);
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 30) return `${days}d ago`;
+  return new Date(then).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+---
+
+<div class="relative" id="notif-bell-root">
+  <button
+    id="notif-bell-btn"
+    class="relative p-2 rounded-lg text-gray-700 hover:text-clif-burgundy hover:bg-gray-100 dark:text-gray-300 dark:hover:text-clif-burgundy dark:hover:bg-neutral-700 transition-colors"
+    aria-label="Notifications"
+    aria-haspopup="true"
+    aria-expanded="false"
+  >
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="w-6 h-6">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
+    </svg>
+    <span
+      id="notif-badge"
+      class={`absolute -top-0.5 -right-0.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-red-500 rounded-full ${unread > 0 ? '' : 'hidden'}`}
+    >{unread > 99 ? '99+' : unread}</span>
+  </button>
+
+  <!-- Dropdown -->
+  <div
+    id="notif-dropdown"
+    class="hidden absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-2rem)] bg-white dark:bg-neutral-800 rounded-lg shadow-lg border border-gray-200 dark:border-neutral-700 z-50"
+  >
+    <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-neutral-700">
+      <span class="text-sm font-semibold text-gray-900 dark:text-white">Notifications</span>
+      <button id="notif-mark-all" class="text-xs text-clif-burgundy hover:underline">Mark all read</button>
+    </div>
+
+    <div class="max-h-96 overflow-y-auto" id="notif-list">
+      {items.length === 0 ? (
+        <p class="px-4 py-8 text-sm text-center text-gray-500 dark:text-gray-400">You're all caught up.</p>
+      ) : (
+        items.map((n) => (
+          <a
+            href={n.link || '/portal/notifications'}
+            class={`notif-item block px-4 py-3 border-b border-gray-50 dark:border-neutral-700/60 hover:bg-gray-50 dark:hover:bg-neutral-700/50 transition-colors ${n.read_at ? '' : 'bg-clif-burgundy/[0.04] dark:bg-clif-burgundy/10'}`}
+            data-id={n.id}
+          >
+            <div class="flex items-start gap-2">
+              {!n.read_at && <span class="mt-1.5 w-2 h-2 rounded-full bg-clif-burgundy shrink-0" aria-hidden="true" />}
+              <div class={`min-w-0 ${n.read_at ? 'pl-4' : ''}`}>
+                <p class="text-sm font-medium text-gray-900 dark:text-gray-100 leading-snug">{n.title}</p>
+                {n.body && <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">{n.body}</p>}
+                <p class="text-[11px] text-gray-400 dark:text-gray-500 mt-1">{timeAgo(n.created_at)}</p>
+              </div>
+            </div>
+          </a>
+        ))
+      )}
+    </div>
+
+    <a href="/portal/notifications" class="block px-4 py-2.5 text-center text-xs font-medium text-clif-burgundy hover:bg-gray-50 dark:hover:bg-neutral-700/50 border-t border-gray-100 dark:border-neutral-700 rounded-b-lg">
+      View all notifications
+    </a>
+  </div>
+</div>
+
+<script is:inline>
+  (function () {
+    var root = document.getElementById('notif-bell-root');
+    if (!root) return;
+    var btn = document.getElementById('notif-bell-btn');
+    var dropdown = document.getElementById('notif-dropdown');
+    var badge = document.getElementById('notif-badge');
+
+    function close() {
+      dropdown.classList.add('hidden');
+      btn.setAttribute('aria-expanded', 'false');
+    }
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var open = dropdown.classList.toggle('hidden');
+      btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+    });
+    document.addEventListener('click', function (e) {
+      if (!root.contains(e.target)) close();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') close();
+    });
+
+    function clearBadge() {
+      if (badge) {
+        badge.classList.add('hidden');
+        badge.textContent = '0';
+      }
+    }
+
+    // Mark an item read (fire-and-forget) when the user clicks through to it.
+    document.querySelectorAll('.notif-item').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var id = el.getAttribute('data-id');
+        if (!id) return;
+        navigator.sendBeacon
+          ? navigator.sendBeacon('/api/notifications/mark-read', new Blob([JSON.stringify({ id: id })], { type: 'application/json' }))
+          : fetch('/api/notifications/mark-read', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id }), keepalive: true });
+      });
+    });
+
+    var markAll = document.getElementById('notif-mark-all');
+    if (markAll) {
+      markAll.addEventListener('click', async function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        await fetch('/api/notifications/mark-read', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ all: true }),
+        }).catch(function () {});
+        clearBadge();
+        document.querySelectorAll('#notif-list .notif-item').forEach(function (el) {
+          el.classList.remove('bg-clif-burgundy/[0.04]', 'dark:bg-clif-burgundy/10');
+        });
+      });
+    }
+  })();
+</script>

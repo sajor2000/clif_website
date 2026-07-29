@@ -1,0 +1,121 @@
+---
+export const prerender = false;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PortalNav from '../../components/portal/PortalNav.astro';
+import { listNotifications, unreadCount } from '../../lib/notifications';
+
+const profile = Astro.locals.user!;
+
+const [items, unread] = await Promise.all([
+  listNotifications(profile.id, 100),
+  unreadCount(profile.id),
+]);
+
+function timeAgo(iso: string): string {
+  const then = new Date(iso.includes('T') || iso.includes('Z') ? iso : iso.replace(' ', 'T') + 'Z').getTime();
+  const secs = Math.max(0, Math.floor((Date.now() - then) / 1000));
+  if (secs < 60) return 'just now';
+  const mins = Math.floor(secs / 60);
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 30) return `${days}d ago`;
+  return new Date(then).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+---
+
+<BaseLayout title="Notifications">
+  <div class="container mx-auto px-4 py-8">
+    <div class="flex flex-col lg:flex-row gap-8">
+      <aside class="lg:w-64 shrink-0">
+        <PortalNav currentPath={Astro.url.pathname} isAdmin={profile.role === 'admin'} />
+      </aside>
+
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center justify-between mb-6 gap-4">
+          <div>
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Notifications</h1>
+            <p class="text-gray-600 dark:text-gray-400 mt-1 text-sm">
+              {unread > 0 ? `${unread} unread` : 'No unread notifications'}
+            </p>
+          </div>
+          {items.length > 0 && (
+            <button
+              id="mark-all-btn"
+              class="text-sm font-medium text-clif-burgundy hover:text-clif-burgundy/80 whitespace-nowrap disabled:opacity-40 disabled:cursor-default"
+              disabled={unread === 0}
+            >
+              Mark all read
+            </button>
+          )}
+        </div>
+
+        {items.length === 0 ? (
+          <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 px-6 py-16 text-center">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.2" stroke="currentColor" class="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
+            </svg>
+            <p class="mt-4 text-gray-500 dark:text-gray-400">You have no notifications yet.</p>
+          </div>
+        ) : (
+          <ul id="notif-list" class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 divide-y divide-gray-100 dark:divide-neutral-700 overflow-hidden">
+            {items.map((n) => (
+              <li
+                class={`notif-row ${n.read_at ? '' : 'unread bg-clif-burgundy/[0.04] dark:bg-clif-burgundy/10'}`}
+                data-id={n.id}
+              >
+                <a
+                  href={n.link || '/portal/notifications'}
+                  class="flex items-start gap-3 px-6 py-4 hover:bg-gray-50 dark:hover:bg-neutral-700/40 transition-colors group"
+                >
+                  <span class={`mt-1.5 w-2.5 h-2.5 rounded-full shrink-0 ${n.read_at ? 'bg-transparent border border-gray-300 dark:border-neutral-600' : 'bg-clif-burgundy'}`} aria-hidden="true" />
+                  <div class="min-w-0 flex-1">
+                    <p class="text-sm font-medium text-gray-900 dark:text-gray-100 group-hover:text-clif-burgundy transition-colors">{n.title}</p>
+                    {n.body && <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{n.body}</p>}
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{timeAgo(n.created_at)}</p>
+                  </div>
+                </a>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  </div>
+
+  <script is:inline>
+    (function () {
+      // Mark an item read when clicked through.
+      document.querySelectorAll('.notif-row a').forEach(function (a) {
+        a.addEventListener('click', function () {
+          var row = a.closest('.notif-row');
+          var id = row && row.getAttribute('data-id');
+          if (!id) return;
+          var payload = JSON.stringify({ id: id });
+          navigator.sendBeacon
+            ? navigator.sendBeacon('/api/notifications/mark-read', new Blob([payload], { type: 'application/json' }))
+            : fetch('/api/notifications/mark-read', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, keepalive: true });
+        });
+      });
+
+      var markAll = document.getElementById('mark-all-btn');
+      if (markAll) {
+        markAll.addEventListener('click', async function () {
+          markAll.disabled = true;
+          await fetch('/api/notifications/mark-read', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ all: true }),
+          }).catch(function () {});
+          document.querySelectorAll('.notif-row.unread').forEach(function (row) {
+            row.classList.remove('unread', 'bg-clif-burgundy/[0.04]', 'dark:bg-clif-burgundy/10');
+            var dot = row.querySelector('span[aria-hidden="true"]');
+            if (dot) dot.className = 'mt-1.5 w-2.5 h-2.5 rounded-full shrink-0 bg-transparent border border-gray-300 dark:border-neutral-600';
+          });
+        });
+      }
+    })();
+  </script>
+</BaseLayout>
