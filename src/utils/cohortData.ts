@@ -218,6 +218,33 @@ export const PANEL_COHORTS = [
  * never double-counts in per-site rollups. `Overall` year columns are likewise
  * excluded from `siteYearData` (they are per-site all-years aggregates).
  */
+/**
+ * Is this column group a date-shifted year rather than a real one?
+ *
+ * MIMIC-IV de-identifies by shifting every patient's dates into the future by a
+ * random per-patient offset, so its admissions land in 2110-2211 rather than in
+ * the years they happened. Those are not dates: the shift is per patient and
+ * cannot be undone from an aggregate, and no two of MIMIC's "years" refer to
+ * the same real period. Left in, they add 102 empty columns for every other
+ * site, put 102 checkboxes in the year filter, and spread one site's 89,832
+ * hospitalizations across a century that never happened.
+ *
+ * MIMIC keeps its `Overall` column and so stays in every all-years view; it
+ * simply cannot be placed on a time axis. That is also how the previous export
+ * behaved — its window stopped at 2026, so the shifted columns were absent
+ * rather than filtered — which is why this is a guard, not a change.
+ *
+ * Only a group that already looks like a year is judged as one: `Overall` and
+ * any metric-named group pass through untouched.
+ */
+export function isShiftedYear(group: string, now = new Date()): boolean {
+  const g = group.trim();
+  if (!/^\d{4}$/.test(g)) return false;
+  const year = parseInt(g, 10);
+  // +1 for the year in progress at the time of a data drop.
+  return year < 1990 || year > now.getFullYear() + 1;
+}
+
 export function parseCohortCSV(csvContent: string): ParsedConsortiumData {
   const lines = csvContent.trim().split('\n');
   const headers = parseCSVLine(lines[0]);
@@ -236,6 +263,8 @@ export function parseCohortCSV(csvContent: string): ParsedConsortiumData {
       const year = header.slice(0, idx);
       const site = header.slice(idx + 2);
       if (!site || !year) return null;
+      // Date-shifted columns are dropped outright — see isShiftedYear.
+      if (isShiftedYear(year)) return null;
 
       if (site !== AGGREGATE_SITE) {
         allSitesSet.add(site);

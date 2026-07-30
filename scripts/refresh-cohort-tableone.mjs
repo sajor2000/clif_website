@@ -84,6 +84,56 @@ function splitGroup(text, group) {
   return emitCSV([outHeader, ...rows.slice(1).map((r) => keep.map((i) => r[i] ?? ''))]);
 }
 
+/**
+ * Drop columns whose group is not a real calendar year.
+ *
+ * MIMIC-IV de-identifies by shifting each patient's dates forward by a random
+ * per-patient offset, so its admissions land in 2110-2211. Those columns are
+ * dense for MIMIC and empty for all eleven other sites, and carrying them
+ * sextuples every by-year file (716KB against 122KB for the overall cohort)
+ * with a century that never happened. MIMIC keeps its `Overall` column and so
+ * remains in every all-years view.
+ *
+ * Mirrors isCalendarYear() in src/utils/cohortData.ts, which guards the parser
+ * for anything that reaches src/data/cohorts/ without passing through here.
+ * Keep the two in step.
+ */
+// Only a group that LOOKS like a year is judged as one. The ancillary files
+// group by metric — `count__Emory`, `cisatracurium_n__Emory` — and must pass
+// through untouched; an earlier version of this rule kept only calendar years
+// and so proposed emptying every one of them.
+const MAX_YEAR = new Date().getFullYear() + 1;
+function isShiftedYear(group) {
+  const g = group.trim();
+  if (!/^\d{4}$/.test(g)) return false;
+  const y = parseInt(g, 10);
+  return y < 1990 || y > MAX_YEAR;
+}
+
+/** Strip date-shifted columns, reporting what went. */
+function dropShiftedYears(text, label) {
+  const rows = parseCSV(text);
+  const header = rows[0];
+  const keep = [];
+  const dropped = new Set();
+  for (let i = 0; i < header.length; i++) {
+    const sep = header[i].indexOf('__');
+    if (i === 0 || sep === -1) {
+      keep.push(i);
+      continue;
+    }
+    const group = header[i].slice(0, sep);
+    if (isShiftedYear(group)) dropped.add(group);
+    else keep.push(i);
+  }
+  if (!dropped.size) return text;
+  console.log(
+    `  dropped ${dropped.size} date-shifted year column-group(s) from ${label} ` +
+      `(${[...dropped].sort()[0]}-${[...dropped].sort().pop()})`
+  );
+  return emitCSV(rows.map((r) => keep.map((i) => r[i] ?? '')));
+}
+
 // Where each cohort's files live inside the export.
 const SRC_DIR = {
   overall: 'overall/tableone',
@@ -182,6 +232,7 @@ for (const job of JOBS) {
   let out;
   try {
     out = job.group ? splitGroup(raw, job.group) : raw;
+    out = dropShiftedYears(out, job.dest);
   } catch (e) {
     console.error(`FAILED  ${job.dest}: ${e.message}`);
     process.exitCode = 1;

@@ -79,12 +79,13 @@ function deriveOverall(parsed: ParsedConsortiumData, injected: Injected = {}) {
   // export before them did, so the Table view has no timespan of its own.
   // Derive it from which year columns each site actually populates.
   //
-  // NOTE the scope: this is the by-year breakout only, which starts at 2022 —
-  // it is NOT the full span. The Overall aggregate reaches back to 2011, which
-  // is why the Data Timespan tile hardcodes that start (CohortSummaryFromCSV
-  // 'f.years'), and why this row can read 2022-2026 beside a tile saying
-  // 2011-2026. Restoring `Years` to the export would make both truthful and
-  // let this derivation go away.
+  // The by-year breakout now spans the same years as the Overall aggregate, so
+  // this row and the Data Timespan tile agree — they disagreed while the
+  // breakout began at 2022 and the tile hardcoded a 2011 start.
+  //
+  // MIMIC is the exception, and unavoidably so: its dates are shifted for
+  // de-identification (see isShiftedYear), so it populates no year column and
+  // this row can only read '-' for it, beside a real Overall count.
   const yearCols = parsed.allYears.filter((y) => /^\d{4}$/.test(y)).sort();
   const encRow = parsed.characteristics.find((c) => c.variable.trim() === 'N: Encounter blocks');
   if (encRow && yearCols.length) {
@@ -429,6 +430,39 @@ function withSuppressedMissing(parsed: ParsedConsortiumData, cohort: string) {
   return { parsed, injected, unresolved };
 }
 
+/**
+ * The year the data drop cuts off in, or null if the last year looks complete.
+ *
+ * Only ever the LATEST year, and only when it is far below the one before it.
+ * The early years are small too — 2011 has 5,726 hospitalizations against a
+ * 101,385 median — but for an entirely different reason: one site contributed
+ * that year, against ten in 2024. That is site coverage, which the Data
+ * Coverage banner and the per-site Years row already speak to, and calling it a
+ * partial year would be wrong.
+ *
+ * Derived rather than written down: the note used to name 2025, which this
+ * export shows is complete.
+ */
+function partialYearOf(parsed: ParsedConsortiumData): string | null {
+  const years = parsed.allYears.filter((y) => /^\d{4}$/.test(y)).sort();
+  if (years.length < 2) return null;
+
+  const enc = parsed.characteristics.find((c) => c.variable.trim() === 'N: Encounter blocks');
+  if (!enc) return null;
+  const total = (year: string) => {
+    const raw = enc.sites.get(AGGREGATE_SITE)?.get(year);
+    const m = (raw ?? '').match(/^\s*([\d,]+)/);
+    return m ? parseInt(m[1].replace(/,/g, ''), 10) : null;
+  };
+
+  const last = years[years.length - 1];
+  const previous = total(years[years.length - 2]);
+  const latest = total(last);
+  if (latest == null || previous == null || previous === 0) return null;
+
+  return latest < previous * 0.6 ? last : null;
+}
+
 /** Cells left back-calculable by MAX_WITHHELD_COUNT, reported once per build. */
 const unresolvedSuppressions: string[] = [];
 /** Percentages recomputed to match their own count, reported once per build. */
@@ -461,6 +495,8 @@ function loadCohort(key: string) {
     // difference of two rows, which no single row can express, and the client
     // already carries it in REBASED_BASIS.
     basis: inferDenominatorBasis(parsed, { skip: Object.keys(REBASED_ROWS) }),
+    // Null when the last year looks complete; the note then never shows.
+    partialYear: partialYearOf(parsed),
     parsed,
   };
 }
@@ -472,11 +508,12 @@ const cohortsPayload: Record<
     consortium: ReturnType<typeof toConsortiumJson>;
     overall: ReturnType<typeof deriveOverall>;
     basis: Record<string, string>;
+    partialYear: string | null;
   }
 > = {};
 for (const c of COHORTS) {
-  const { consortium, overall, basis } = loadCohort(c.key);
-  cohortsPayload[c.key] = { consortium, overall, basis };
+  const { consortium, overall, basis, partialYear } = loadCohort(c.key);
+  cohortsPayload[c.key] = { consortium, overall, basis, partialYear };
 }
 // Never silent: say which lone `<10` cells stayed back-calculable because the
 // only cell available to pair them with was too large to withhold.
@@ -1046,10 +1083,13 @@ const categories = Array.from(groupedChars.keys());
           <strong>Sites without data:</strong> <span id="missing-sites-list"></span>
         </p>
       </div>
-      <!-- Data Note - shown below chart only when 2025 data is included -->
-      <div id="year-2025-note" class="bg-amber-50 border-l-4 border-amber-400 p-3 rounded mt-4 hidden">
+      <!-- Shown below the chart only when the cut-off year is in the selection.
+           The year is filled in from the data, not written here: it was
+           hardcoded to 2025, which by this export is a COMPLETE year, so the
+           note disclaimed the wrong one and said nothing about 2026. -->
+      <div id="partial-year-note" class="bg-amber-50 border-l-4 border-amber-400 p-3 rounded mt-4 hidden">
         <p class="text-sm text-amber-800">
-          <strong>Note:</strong> 2025 data represents a partial year and is not directly comparable to complete annual data from previous years.
+          <strong>Note:</strong> <span id="partial-year-label"></span> data represents a partial year — the data drop ends mid-year — and is not directly comparable to complete annual data from previous years.
         </p>
       </div>
     </div>
@@ -1153,6 +1193,27 @@ const categories = Array.from(groupedChars.keys());
   // Per cohort: 'Propofol (during IMV)' is of the ventilated population in
   // every cohort, but that population is a different size in each.
   let denominatorBasis = COHORTS_DATA[activeCohort].basis || {};
+  // The year the data drop cuts off in, or null if the last year is complete.
+  let partialYear = COHORTS_DATA[activeCohort].partialYear || null;
+
+  /**
+   * Show the partial-year caveat only when that year is actually on screen.
+   *
+   * The year comes from the data. It was hardcoded to 2025 in five places,
+   * which this export shows is a complete year — so the note fired on every
+   * default view, disclaiming a year that needed no disclaimer, and stayed
+   * silent on 2026, which ends mid-year.
+   */
+  function updatePartialYearNote() {
+    const note = document.getElementById('partial-year-note');
+    if (!note) return;
+    const show = !!partialYear && selectedYears.includes(partialYear);
+    note.classList.toggle('hidden', !show);
+    if (show) {
+      const label = document.getElementById('partial-year-label');
+      if (label) label.textContent = partialYear;
+    }
+  }
 
   // Real data rows withheld from the dashboard entirely — sidebar, Table view
   // and CSV export. Distinct from the sidebar's headerPatterns, which lists
@@ -1316,6 +1377,7 @@ const categories = Array.from(groupedChars.keys());
     consortiumData = COHORTS_DATA[key].consortium;
     overallTableData = COHORTS_DATA[key].overall;
     denominatorBasis = COHORTS_DATA[key].basis || {};
+    partialYear = COHORTS_DATA[key].partialYear || null;
     // Keyed by row name only, so it cannot outlive the dataset it describes.
     hasValueCache.clear();
     selectedSites = [...consortiumData.allSites];
@@ -4055,15 +4117,7 @@ const categories = Array.from(groupedChars.keys());
     document.getElementById('custom-chart-container')?.classList.remove('hidden');
     document.getElementById('chart-instructions')?.classList.add('hidden');
 
-    // Show 2025 note only if 2025 is in selected years
-    const note2025 = document.getElementById('year-2025-note');
-    if (note2025) {
-      if (selectedYears.includes('2025')) {
-        note2025.classList.remove('hidden');
-      } else {
-        note2025.classList.add('hidden');
-      }
-    }
+    updatePartialYearNote();
 
     // Show missing sites note if some selected sites don't have data
     const missingSitesNote = document.getElementById('missing-sites-note');
@@ -4659,11 +4713,7 @@ const categories = Array.from(groupedChars.keys());
     document.getElementById('custom-chart-container')?.classList.remove('hidden');
     document.getElementById('chart-instructions')?.classList.add('hidden');
 
-    // Show 2025 note if applicable
-    const note2025 = document.getElementById('year-2025-note');
-    if (note2025) {
-      note2025.classList.toggle('hidden', !selectedYears.includes('2025'));
-    }
+    updatePartialYearNote();
 
     // Show missing sites note
     const missingSitesNote = document.getElementById('missing-sites-note');
@@ -5016,11 +5066,7 @@ const categories = Array.from(groupedChars.keys());
     document.getElementById('custom-chart-container')?.classList.remove('hidden');
     document.getElementById('chart-instructions')?.classList.add('hidden');
 
-    // Show 2025 note if applicable
-    const note2025 = document.getElementById('year-2025-note');
-    if (note2025) {
-      note2025.classList.toggle('hidden', !selectedYears.includes('2025'));
-    }
+    updatePartialYearNote();
 
     // Show missing sites note
     const missingSitesNote = document.getElementById('missing-sites-note');
@@ -5363,10 +5409,7 @@ const categories = Array.from(groupedChars.keys());
     document.getElementById('custom-chart-container')?.classList.remove('hidden');
     document.getElementById('chart-instructions')?.classList.add('hidden');
 
-    const note2025 = document.getElementById('year-2025-note');
-    if (note2025) {
-      note2025.classList.toggle('hidden', !selectedYears.includes('2025'));
-    }
+    updatePartialYearNote();
 
     const missingSitesNote = document.getElementById('missing-sites-note');
     const missingSitesList = document.getElementById('missing-sites-list');
@@ -5523,7 +5566,7 @@ const categories = Array.from(groupedChars.keys());
     document.getElementById('chart-instructions')?.classList.remove('hidden');
 
     // Hide all notes
-    document.getElementById('year-2025-note')?.classList.add('hidden');
+    document.getElementById('partial-year-note')?.classList.add('hidden');
     document.getElementById('missing-sites-note')?.classList.add('hidden');
 
     // Clear selected characteristic

@@ -119,11 +119,12 @@ function fieldsFor(key: string) {
   for (const [name, label] of Object.entries(LABELS)) {
     f[name] = (getAggregateValue(data, label, 'Overall') || '').replace(/^"|"$/g, '').trim();
   }
-  // The by-year breakout only starts in 2022, but the Overall aggregates
-  // include admissions back to 2011 — anchor the start there and take the
-  // end from the latest year column so it tracks future data drops.
+  // Read from the data at both ends. The start used to be hardcoded to 2011
+  // because the by-year breakout began at 2022 while the Overall aggregate
+  // reached back further; this export carries every year, so the columns can
+  // now speak for themselves and a cohort that starts later says so.
   const yrs = data.allYears.filter((y) => /^\d{4}$/.test(y)).sort();
-  f.years = yrs.length ? `2011-${yrs[yrs.length - 1]}` : '';
+  f.years = yrs.length ? `${yrs[0]}-${yrs[yrs.length - 1]}` : '';
   f.hasSofa = f.sofaScore ? '1' : '';
   f.hasVent = f.imvTotal ? '1' : '';
   return f;
