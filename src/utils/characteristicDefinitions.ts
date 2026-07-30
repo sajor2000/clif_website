@@ -20,11 +20,11 @@ export interface CharacteristicDefinition {
 /** Exact-match definitions, keyed by CSV variable name. */
 export const CHARACTERISTIC_DEFINITIONS: Record<string, CharacteristicDefinition> = {
   'N: Encounter blocks': {
-    text: 'One row per hospitalization. Linked admissions are stitched together first: any two hospitalizations where discharge-to-next-admission is 6 hours or less are merged into one hospitalization block, so a patient readmitted within 6 hours counts once, not twice. Every other figure on this dashboard is computed at this level.',
+    text: 'One row per hospitalization. Any two hospitalizations where discharge-to-next-admission is 6 hours or less are merged into one hospitalization, so a patient readmitted within 6 hours counts once, not twice.',
     source: 'generator.py:62 (clifpy stitch_encounters, 6-hour window)',
   },
   'N: Unique patients': {
-    text: 'Distinct patients behind the hospitalization blocks. Lower than the hospitalization count because one patient can be hospitalized more than once.',
+    text: 'Distinct patients behind the hospitalizations.',
     source: 'modules/tableone/generator.py',
   },
   'N: Hospitals': {
@@ -46,7 +46,11 @@ export const CHARACTERISTIC_DEFINITIONS: Record<string, CharacteristicDefinition
   },
 
   'Sepsis events (CDC ASE), n': {
-    text: 'Total CDC Adult Sepsis Events. Computed for every hospitalization in the cohort, NOT only ICU hospitalizations — a hospitalization can contribute more than one event.',
+    // Says what the CRITERIA require, not what the cohort contains. The
+    // previous wording — "computed for every hospitalization in the cohort,
+    // NOT only ICU hospitalizations" — is a useful correction under Overall
+    // and a contradiction under ICU, where every hospitalization is an ICU one.
+    text: 'Total CDC Adult Sepsis Events across the selected cohort. The criteria do not require an ICU stay — sepsis is identified from infection, organ dysfunction and treatment signals wherever they occur — and one hospitalization can contribute more than one event.',
     source: 'modules/tableone/generator.py:4510 (sepsis_events_by_sepsis_col)',
   },
   'Sepsis events per 100 encounters': {
@@ -54,7 +58,7 @@ export const CHARACTERISTIC_DEFINITIONS: Record<string, CharacteristicDefinition
     source: 'derived in InteractiveDashboard.astro (withRateRows)',
   },
   'Encounters with >=1 sepsis event, n (%)': {
-    text: 'Hospitalizations with at least one CDC Adult Sepsis Event, over all hospitalizations in the selected cohort — not restricted to ICU hospitalizations.',
+    text: 'Hospitalizations with at least one CDC Adult Sepsis Event, over all hospitalizations in the selected cohort. The criteria do not require an ICU stay.',
     source: 'modules/tableone/generator.py:4520',
   },
 
@@ -217,11 +221,51 @@ export const PREFIX_DEFINITIONS: Record<string, CharacteristicDefinition> = {
   },
 };
 
+/**
+ * The two medication blocks, which differ only in who is counted.
+ *
+ * Both read the SAME per-hospitalization flag: `<med>_flag` is 1 when that
+ * medication appears anywhere in the hospitalization's records
+ * (generator.py:3576 — group by encounter_block x med_category, pivot,
+ * `.notna()`). There is no time window on the drug.
+ *
+ * 'Medications during IMV' then filters the POPULATION to hospitalizations that
+ * were ever invasively ventilated (`df[df['on_vent'] == 1]`, generator.py:6254)
+ * and divides by that count. So it is not "given while intubated" — it is "given
+ * at some point, by someone who was ventilated at some point". For cisatracurium
+ * the distinction is immaterial, since 98.8% of everyone who receives it is
+ * ventilated; for propofol or fentanyl it is not, as either can be given for a
+ * procedure days before intubation or after extubation.
+ */
+export const MEDICATION_ROWS = new Set([
+  'Propofol',
+  'Midazolam',
+  'Lorazepam',
+  'Dexmedetomidine',
+  'Fentanyl',
+  'Cisatracurium',
+  'Rocuronium',
+]);
+
+export const MEDICATION_DEFINITION: CharacteristicDefinition = {
+  text: 'Hospitalizations where this medication appears anywhere in the record, as a share of every hospitalization in the cohort. It is an exposure flag: any administration at any point counts once, regardless of dose, duration, or when in the stay it was given.',
+  source: 'modules/tableone/generator.py:3576 (med_flags: encounter_block x med_category, .notna())',
+};
+
+export const MEDICATION_DURING_IMV_DEFINITION: CharacteristicDefinition = {
+  text: 'The same exposure flag as the medication rows above, counted only among hospitalizations that were invasively ventilated at some point, and divided by that ventilated count. Note what this does NOT say: the drug is not required to have been given while the patient was on the ventilator — only that both happened during the same hospitalization.',
+  source: "modules/tableone/generator.py:6254 (df[df['on_vent'] == 1], denominator N_imv)",
+};
+
 /** Definition for a characteristic, matching exact name then `<Prefix>:` stem. */
 export function definitionFor(name: string): CharacteristicDefinition | null {
   const trimmed = (name || '').trim();
   if (CHARACTERISTIC_DEFINITIONS[trimmed]) return CHARACTERISTIC_DEFINITIONS[trimmed];
   if (DERIVED_DEFINITIONS[trimmed]) return DERIVED_DEFINITIONS[trimmed];
+  // Checked before the medication set, so 'Propofol (during IMV)' does not
+  // resolve to the all-hospitalizations definition.
+  if (trimmed.endsWith('(during IMV)')) return MEDICATION_DURING_IMV_DEFINITION;
+  if (MEDICATION_ROWS.has(trimmed)) return MEDICATION_DEFINITION;
   const sep = trimmed.indexOf(':');
   if (sep > 0) {
     const prefix = trimmed.slice(0, sep);

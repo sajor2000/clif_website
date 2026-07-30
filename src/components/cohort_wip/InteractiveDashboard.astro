@@ -1,7 +1,7 @@
 ---
 import { groupCharacteristics, type ParsedConsortiumData } from '../../utils/csvParser';
 import { parseCohortCSV, COHORTS, DEFAULT_COHORT, AGGREGATE_SITE } from '../../utils/cohortData';
-import { CHARACTERISTIC_DEFINITIONS, PREFIX_DEFINITIONS } from '../../utils/characteristicDefinitions';
+import { CHARACTERISTIC_DEFINITIONS, PREFIX_DEFINITIONS, MEDICATION_ROWS, MEDICATION_DEFINITION, MEDICATION_DURING_IMV_DEFINITION } from '../../utils/characteristicDefinitions';
 import { inferDenominatorBasis } from '../../utils/denominatorBasis';
 import { applySiteExclusions, excludedSitesFor } from '../../utils/siteExclusions';
 import { withConsistentPercentages } from '../../utils/consistentPercentages';
@@ -582,8 +582,20 @@ const definitionsWithExclusions = Object.fromEntries(
     return [name, { ...def, text: `${def.text} ${excluded.map((e) => e.reason).join(' ')}` }];
   })
 );
-const definitionsJson = JSON.stringify({ exact: definitionsWithExclusions, prefix: PREFIX_DEFINITIONS });
+const definitionsJson = JSON.stringify({
+  exact: definitionsWithExclusions,
+  prefix: PREFIX_DEFINITIONS,
+  // Matched by rule rather than listed per drug: every medication row shares
+  // one definition, and every '(during IMV)' row shares another.
+  medications: [...MEDICATION_ROWS],
+  medication: MEDICATION_DEFINITION,
+  duringImv: MEDICATION_DURING_IMV_DEFINITION,
+});
 const displayNamesJson = JSON.stringify(DISPLAY_RENAMES);
+// The derived rate rows, so the client can tell a mean from a total. Their
+// values are bare numbers like '1.16', which the data-type sniffer reads as a
+// count — and a count is offered a pie chart.
+const rateRowsJson = JSON.stringify(RATE_ROWS.map((r) => r.name));
 
 const dataJson = JSON.stringify(cohortsPayload[DEFAULT_COHORT].consortium);
 const overallDataJson = JSON.stringify(overallData);
@@ -1215,6 +1227,7 @@ const categories = Array.from(groupedChars.keys());
 <script type="application/json" id="cohorts-json-data" set:html={cohortsJson} data-default={defaultCohort}></script>
 <script type="application/json" id="definitions-json-data" set:html={definitionsJson}></script>
 <script type="application/json" id="display-names-json-data" set:html={displayNamesJson}></script>
+<script type="application/json" id="rate-rows-json-data" set:html={rateRowsJson}></script>
 
 <script>
   // All cohorts' data; the active dataset is swapped when the cohort picker changes.
@@ -1276,6 +1289,20 @@ const categories = Array.from(groupedChars.keys());
    * the lookup key everywhere; only rendered text changes.
    */
   const DISPLAY_NAMES = JSON.parse(document.getElementById('display-names-json-data')?.textContent || '{}');
+
+  /**
+   * Rows that are a rate or a mean rather than a total.
+   *
+   * They cannot be added up, and so cannot be a share of anything: eleven site
+   * means of 'ICU episodes per ICU hospitalization' do not sum to a consortium
+   * total that each site owns a slice of. Charting them as a pie draws eleven
+   * near-equal wedges — 1.06 and 1.67 differ by 60%, but as a fraction of their
+   * own sum they are 8% and 13% — which says nothing and looks like it does.
+   */
+  const RATE_ROW_NAMES = new Set(
+    JSON.parse(document.getElementById('rate-rows-json-data')?.textContent || '[]')
+  );
+  const isRateRow = (char) => RATE_ROW_NAMES.has((char || '').trim());
   function displayCharacteristic(char) {
     const trimmed = (char || '').trim();
     return DISPLAY_NAMES[trimmed] || trimmed;
@@ -1314,6 +1341,11 @@ const categories = Array.from(groupedChars.keys());
   function definitionFor(name) {
     const trimmed = (name || '').trim();
     if (DEFINITIONS.exact[trimmed]) return DEFINITIONS.exact[trimmed];
+    // The medication rows, which are matched by rule rather than listed one by
+    // one — see characteristicDefinitions.ts. During-IMV first, so
+    // 'Propofol (during IMV)' does not resolve to the all-hospitalizations text.
+    if (trimmed.endsWith('(during IMV)') && DEFINITIONS.duringImv) return DEFINITIONS.duringImv;
+    if (DEFINITIONS.medications?.includes(trimmed) && DEFINITIONS.medication) return DEFINITIONS.medication;
     const sep = trimmed.indexOf(':');
     if (sep > 0 && DEFINITIONS.prefix[trimmed.slice(0, sep)]) return DEFINITIONS.prefix[trimmed.slice(0, sep)];
     // A group is selectable in its own right ('Initial ventilator mode'), and
@@ -2083,8 +2115,11 @@ const categories = Array.from(groupedChars.keys());
       types.push({ value: 'line', label: 'Line Chart' });
     }
 
-    // Pie: only for Count data grouped by Site (shows contribution to total)
-    if (dataType === 'count' && groupBy === 'site') {
+    // Pie: only where the slices are parts of a real whole — an additive count,
+    // split by site. A rate or a mean is neither additive nor a share of
+    // anything, however numeric it looks, so it is excluded even though the
+    // sniffer types it as a count.
+    if (dataType === 'count' && groupBy === 'site' && !isRateRow(selectedCharacteristic)) {
       types.push({ value: 'pie', label: 'Pie Chart' });
     }
 
@@ -2828,12 +2863,33 @@ const categories = Array.from(groupedChars.keys());
                            charTrimmed.includes('location at imv');
       const isMedian = charTrimmed.includes('median');
 
-      // Show denominator selector only for non-median respiratory support variables
-      // BUT NOT for "Invasive mechanical ventilation" itself (IMV/IMV = 100% is meaningless)
-      if (isRespSupport && !isMedian && !isIMVCountVariable) {
+      /**
+       * Rows whose population the export itself states — see denominatorBasis.
+       * Offering a denominator switch there can only move the number away from
+       * the one the Table view shows for the same row.
+       *
+       * It is most obviously wrong for the during-IMV medications. Cisatracurium
+       * is given during ventilation and almost nowhere else — Emory reports 555
+       * during IMV against 556 in total — so "% of Total Hospitalizations"
+       * redraws the plain Cisatracurium row from the Medications section, one
+       * chart pretending to be two, and the reading that actually distinguishes
+       * them (2.4% of ventilated patients) is the one it replaces.
+       */
+      const basisIsKnown = !!denominatorBasis[characteristic.trim()];
+
+      // Show the denominator selector only for non-median respiratory support
+      // variables whose population is genuinely open, and never for 'Invasive
+      // mechanical ventilation' itself (IMV/IMV = 100%).
+      if (isRespSupport && !isMedian && !isIMVCountVariable && !basisIsKnown) {
         respDenomSelector.classList.remove('hidden');
       } else {
         respDenomSelector.classList.add('hidden');
+        // A hidden radio still reports its value, and denominatorKeyFor honours
+        // an explicit 'hospitalizations' — so hiding without resetting would
+        // leave a previous click silently steering rows it is no longer
+        // offered for.
+        const imv = document.querySelector('input[name="resp-denominator"][value="imv"]');
+        if (imv) imv.checked = true;
       }
     }
 
