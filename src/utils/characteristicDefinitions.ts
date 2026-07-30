@@ -248,12 +248,12 @@ export const MEDICATION_ROWS = new Set([
 ]);
 
 export const MEDICATION_DEFINITION: CharacteristicDefinition = {
-  text: 'Hospitalizations where this medication appears anywhere in the record, as a share of every hospitalization in the cohort. It is an exposure flag: any administration at any point counts once, regardless of dose, duration, or when in the stay it was given.',
+  text: 'Hospitalizations where this medication appears anywhere in the record, as a share of every hospitalization in the cohort. Any administration at any point counts once, regardless of dose, duration, or when in the stay it was given.',
   source: 'modules/tableone/generator.py:3576 (med_flags: encounter_block x med_category, .notna())',
 };
 
 export const MEDICATION_DURING_IMV_DEFINITION: CharacteristicDefinition = {
-  text: 'The same exposure flag as the medication rows above, counted only among hospitalizations that were invasively ventilated at some point, and divided by that ventilated count. Note what this does NOT say: the drug is not required to have been given while the patient was on the ventilator — only that both happened during the same hospitalization.',
+  text: 'Counted only among hospitalizations that were invasively ventilated at some point, and divided by that ventilated count.',
   source: "modules/tableone/generator.py:6254 (df[df['on_vent'] == 1], denominator N_imv)",
 };
 
