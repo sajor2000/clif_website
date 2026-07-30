@@ -36,6 +36,16 @@ export default [
     },
   },
   {
+    // Tests run in node, not the browser: they read fixture CSVs off disk.
+    files: ['**/*.test.{js,mjs,cjs,ts}'],
+    languageOptions: {
+      globals: {
+        process: 'readonly',
+        console: 'readonly',
+      },
+    },
+  },
+  {
     files: ['scripts/**/*.{js,mjs,cjs,ts}'],
     languageOptions: {
       globals: {

@@ -1110,6 +1110,30 @@ const categories = Array.from(groupedChars.keys());
   }
 
   /**
+   * The inverse: a display name back to the CSV row that holds its data.
+   *
+   * Weights and denominators are written here under the name a reader knows
+   * them by — 'N: Hospitalizations' — but every lookup keys off the CSV name,
+   * and this export calls that row 'N: Encounter blocks'. Left unresolved the
+   * row is simply not found, the denominator comes out empty, and the chart
+   * reports "no data" for a characteristic whose numbers are right there.
+   *
+   * Prefers a row the active cohort actually has, so a name that needs no
+   * translation (and an export that goes back to shipping 'N: Hospitalizations')
+   * both still resolve.
+   */
+  const CSV_NAMES = Object.fromEntries(
+    Object.entries(DISPLAY_NAMES).map(([csvName, shown]) => [shown, csvName])
+  );
+  function dataKey(name) {
+    const trimmed = (name || '').trim();
+    const has = (k) => (consortiumData?.characteristics || []).some((c) => c.variable.trim() === k);
+    if (has(trimmed)) return trimmed;
+    const csvName = CSV_NAMES[trimmed];
+    return csvName && has(csvName) ? csvName : trimmed;
+  }
+
+  /**
    * How each characteristic is computed upstream, surfaced as a hover card.
    * Sourced from src/utils/characteristicDefinitions.ts, which transcribes the
    * CLIF-TableOne pipeline and cites the file each definition comes from.
@@ -1459,7 +1483,7 @@ const categories = Array.from(groupedChars.keys());
   // For all other median characteristics, use "N: Hospitalizations"
   function getWeight(siteYearData, characteristic) {
     const isAgeAtAdmission = characteristic.trim().toLowerCase().includes('age at admission');
-    const weightKey = isAgeAtAdmission ? 'N: Unique patients' : 'N: Hospitalizations';
+    const weightKey = dataKey(isAgeAtAdmission ? 'N: Unique patients' : 'N: Hospitalizations');
 
     // Try exact match first
     let weightValue = siteYearData.characteristics[weightKey];
@@ -1639,7 +1663,7 @@ const categories = Array.from(groupedChars.keys());
   // Demographics use "N: Unique patients", others use "N: Hospitalizations"
   // For respiratory support, can optionally use IMV count as denominator
   function getTotalDenominator(category, filteredData, customDenominatorKey = null) {
-    let denominatorKey = customDenominatorKey || (category === 'Demographics' ? 'N: Unique patients' : 'N: Hospitalizations');
+    let denominatorKey = dataKey(customDenominatorKey || (category === 'Demographics' ? 'N: Unique patients' : 'N: Hospitalizations'));
 
     let total = 0;
     filteredData.forEach(d => {
@@ -3602,7 +3626,7 @@ const categories = Array.from(groupedChars.keys());
               chartCounts[label] = parsed.count;
 
               // Determine denominator based on category and user selection
-              let denominatorKey = category === 'Demographics' ? 'N: Unique patients' : 'N: Hospitalizations';
+              let denominatorKey = dataKey(category === 'Demographics' ? 'N: Unique patients' : 'N: Hospitalizations');
 
               // Check if user selected IMV as denominator for respiratory support variables
               const respDenomSelector = document.querySelector('input[name="resp-denominator"]:checked');
@@ -3750,7 +3774,7 @@ const categories = Array.from(groupedChars.keys());
           chartCounts[label] += parsed.count;
 
           // Determine denominator based on category and user selection
-          let denominatorKey = category === 'Demographics' ? 'N: Unique patients' : 'N: Hospitalizations';
+          let denominatorKey = dataKey(category === 'Demographics' ? 'N: Unique patients' : 'N: Hospitalizations');
 
           // Check if user selected IMV as denominator for respiratory support variables
           const respDenomSelector = document.querySelector('input[name="resp-denominator"]:checked');
