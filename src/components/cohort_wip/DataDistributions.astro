@@ -1,6 +1,7 @@
 ---
 import { readFile, readdir } from 'fs/promises';
 import { join } from 'path';
+import { unitFor, isMissingUnit, categoriesFor, CATEGORY_DISPLAY_NAMES } from '../../utils/mcideUnits';
 
 // Cohort-aware ECDF: one folder per cohort under cohort_wip_ecdf/<cohort>/.
 const ecdfRoot = join(process.cwd(), 'src', 'data', 'cohort_wip_ecdf');
@@ -89,33 +90,42 @@ function formatParameterName(baseName: string, category: string): { displayName:
     'lpm_set': 'L/min',
   };
 
-  // Try to find matching stats entry by category name (without unit suffix)
-  // Remove common unit patterns from filename to match stats category
-  const unitPatterns = [
-    /_g_dL$/, /_mg_dL$/, /_mmol_L$/, /_U_L$/, /_ng_mL$/, /_mL$/, /_L$/,
-    /_10_3_µL$/, /_percent$/, /_cm$/, /_kg$/, /_c$/, /_mm_hour$/,
-    /_mEq_L$/, /_µg_dL$/, /_pg$/, /_fL$/, /_seconds$/, /_ratio$/
-  ];
+  /**
+   * Recover the category from the filename by matching it against the known
+   * categories, longest first — 'basophils_absolute_10_3_μL' -> 'basophils_absolute'.
+   *
+   * This used to strip a list of unit suffixes by regex, which failed in both
+   * directions. It missed real suffixes: '_pct' was not in the list, and the
+   * '_10_3_µL' pattern spells µ as MICRO SIGN (U+00B5) while the filenames use
+   * GREEK SMALL LETTER MU (U+03BC), so neither matched and the unit stayed in
+   * the name — 'Basophils Percent Pct', 'Basophils Absolute 10 3 Ml'. And it
+   * over-stripped: '_c$' and '_kg$' ate part of the category itself, turning
+   * 'temp_c' into 'temp' and 'weight_kg' into 'weight', which then missed the
+   * stats lookup. (That miss was accidentally load-bearing — falling through to
+   * the manual map is why those three vitals showed a real unit while the other
+   * six showed 'nan'.)
+   */
+  const known = categoriesFor(category);
+  const categoryName =
+    known.find((c) => baseName === c || baseName.startsWith(`${c}_`)) ?? baseName;
 
-  let categoryName = baseName;
-  for (const pattern of unitPatterns) {
-    categoryName = categoryName.replace(pattern, '');
-  }
+  // The unit comes from mCIDE, keyed by category — never from the export's own
+  // `reference_unit`, which is site-reported and inconsistent. See mcideUnits.ts.
+  let unit = unitFor(category, categoryName);
 
-  // Look up in stats data
-  const statsKey = `${category}/${categoryName}`;
-  const statsEntry = statsData[statsKey];
-  // Strip quotes from unit (some entries have "" as empty value)
-  const rawUnit = statsEntry?.unit || '';
-  let unit = rawUnit.replace(/^"+|"+$/g, '').trim();
-
-  // If no unit from stats, check manual mappings
+  // Anything mCIDE does not cover falls back to the export's string, still
+  // guarded against 'nan' and friends.
   if (!unit) {
-    unit = manualUnits[baseName] || manualUnits[categoryName] || '';
+    const statsEntry = statsData[`${category}/${categoryName}`];
+    const rawUnit = (statsEntry?.unit || '').replace(/^"+|"+$/g, '').trim();
+    if (!isMissingUnit(rawUnit)) unit = rawUnit;
   }
+  if (!unit) unit = manualUnits[baseName] || manualUnits[categoryName] || '';
 
-  // Format the category name for display
-  const nameParts = categoryName.split('_');
+  // Format the category name for display. A handful of categories carry their
+  // unit in the name itself and are spelled out here instead.
+  const override = CATEGORY_DISPLAY_NAMES[categoryName];
+  const nameParts = (override ?? categoryName).split('_');
   const formattedParts = nameParts.map(part => {
     const lowerPart = part.toLowerCase();
     if (abbreviations.includes(lowerPart)) {
@@ -124,7 +134,7 @@ function formatParameterName(baseName: string, category: string): { displayName:
     return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
   });
 
-  let displayName = formattedParts.join(' ');
+  let displayName = override ?? formattedParts.join(' ');
 
   // Add unit in parentheses if available and not empty
   if (unit && unit.trim() !== '') {
