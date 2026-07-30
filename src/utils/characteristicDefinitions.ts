@@ -36,6 +36,10 @@ export const CHARACTERISTIC_DEFINITIONS: Record<string, CharacteristicDefinition
     text: 'Total number of separate ICU stays. A new episode begins when the patient passes through ward, stepdown, L&D, hospice, psych, rehab or other between two ICU rows. Lateral ICU-to-ICU transfers and trips to procedural, radiology or dialysis stay within the same episode.',
     source: 'modules/tableone/generator.py:2275 (NEW_EPISODE_LOCS)',
   },
+  'ICU episodes per ICU hospitalization': {
+    text: 'Mean ICU episodes among hospitalizations that had at least one — so 1.00 means every ICU patient had a single continuous stay, and anything above it reflects patients returning to an ICU after time on a ward or other non-ICU unit. Divided by the ICU population rather than by the whole cohort, which would blend this with how many hospitalizations reach an ICU at all.',
+    source: 'derived in InteractiveDashboard.astro (withRateRows)',
+  },
   'Encounters with >=1 ICU episode, n (%)': {
     text: 'Hospitalizations with at least one ICU episode, as a share of all hospitalizations in the selected cohort.',
     source: 'modules/tableone/generator.py:2275',
@@ -47,7 +51,7 @@ export const CHARACTERISTIC_DEFINITIONS: Record<string, CharacteristicDefinition
   },
   'Sepsis events per 100 encounters': {
     text: 'Sepsis events divided by all hospitalizations in the cohort.',
-    source: 'derived in InteractiveDashboard.astro (withSepsisRate)',
+    source: 'derived in InteractiveDashboard.astro (withRateRows)',
   },
   'Encounters with >=1 sepsis event, n (%)': {
     text: 'Hospitalizations with at least one CDC Adult Sepsis Event, over all hospitalizations in the selected cohort — not restricted to ICU hospitalizations.',

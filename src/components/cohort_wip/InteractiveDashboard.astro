@@ -149,16 +149,16 @@ function deriveOverall(parsed: ParsedConsortiumData, injected: Injected = {}) {
 }
 
 /**
- * Add a rate row for sepsis events.
+ * Give a bare count row a denominator.
  *
- * The export ships `Sepsis events (CDC ASE), n` as a bare count with no
- * denominator — nearly every other row is `n (%)`. Charted per site that
- * measures hospital size as much as sepsis: UPenn shows 66,877 events against
- * Emory's 34,305, but per 100 encounters they are 33.8 and 34.0 — the same.
+ * The export ships a few totals with no denominator at all, while nearly every
+ * other row is `n (%)`. Charted per site, a total measures hospital size as
+ * much as the thing it counts: UPenn shows 66,877 sepsis events against Emory's
+ * 34,305, but per 100 hospitalizations they are 33.8 and 34.0 — the same.
  *
- * Injected into the parse so every consumer picks it up without knowing about
- * it: sidebar, charts, table and CSV export all read the same structures. The
- * raw count stays, since it is the numerator and real data.
+ * The derived row is injected into the parse so every consumer picks it up
+ * without knowing about it: sidebar, charts, table and CSV export all read the
+ * same structures. The raw count stays, since it is the numerator and real data.
  *
  * Values carry a decimal on purpose — the n < 10 privacy rule exempts
  * non-integers, and a rate is not a patient count.
@@ -167,32 +167,68 @@ const SEPSIS_EVENTS = 'Sepsis events (CDC ASE), n';
 const SEPSIS_RATE = 'Sepsis events per 100 encounters';
 const ENCOUNTERS = 'N: Encounter blocks';
 
-function withSepsisRate(parsed: ParsedConsortiumData): ParsedConsortiumData {
-  const events = parsed.characteristics.find((c) => c.variable.trim() === SEPSIS_EVENTS);
-  const encounters = parsed.characteristics.find((c) => c.variable.trim() === ENCOUNTERS);
-  if (!events || !encounters) return parsed;
+const ICU_EPISODES = 'ICU episodes, total n';
+const ICU_HOSPITALIZATIONS = 'Encounters with >=1 ICU episode, n (%)';
+const ICU_EPISODE_RATE = 'ICU episodes per ICU hospitalization';
+
+interface RateSpec {
+  /** Row name to create. */
+  name: string;
+  /** Row supplying the numerator; the derived row is placed just after it. */
+  numerator: string;
+  /** Row supplying the population. */
+  denominator: string;
+  /** 100 for a per-100 rate, 1 for a mean per unit. */
+  scale: number;
+  decimals: number;
+}
+
+const RATE_ROWS: RateSpec[] = [
+  { name: SEPSIS_RATE, numerator: SEPSIS_EVENTS, denominator: ENCOUNTERS, scale: 100, decimals: 1 },
+  // Episodes per ICU hospitalization, not per hospitalization: dividing by the
+  // whole cohort would blend how many patients reach an ICU with how many
+  // episodes each one has, and the first swamps the second. Against the ICU
+  // population it reads as a mean — 1.06 to 1.16 across ten sites, and 1.67 at
+  // UCSF, which the raw total hides completely.
+  {
+    name: ICU_EPISODE_RATE,
+    numerator: ICU_EPISODES,
+    denominator: ICU_HOSPITALIZATIONS,
+    scale: 1,
+    decimals: 2,
+  },
+];
+
+function withRateRows(parsed: ParsedConsortiumData, specs: RateSpec[] = RATE_ROWS): ParsedConsortiumData {
+  return specs.reduce(withRateRow, parsed);
+}
+
+function withRateRow(parsed: ParsedConsortiumData, spec: RateSpec): ParsedConsortiumData {
+  const numerator = parsed.characteristics.find((c) => c.variable.trim() === spec.numerator);
+  const denominator = parsed.characteristics.find((c) => c.variable.trim() === spec.denominator);
+  if (!numerator || !denominator) return parsed;
 
   const num = (v: string | undefined) => {
     const m = (v ?? '').match(/^\s*([\d,]+)/);
     return m ? parseInt(m[1].replace(/,/g, ''), 10) : null;
   };
+  const rate = (e: number, n: number) => ((e / n) * spec.scale).toFixed(spec.decimals);
 
   const sites = new Map<string, Map<string, string>>();
   const pooled = new Map<string, { e: number; n: number }>();
-  for (const [site, yearMap] of events.sites) {
+  for (const [site, yearMap] of numerator.sites) {
     // The consortium rate is pooled from the sites below rather than read off
-    // the export's own ALL column. A site withdrawn from the sepsis rows (see
-    // siteExclusions) has no events cell here, and pooling drops its
-    // encounters from the denominator at the same time — reading the ALL
-    // column would keep them and understate the rate by that site's whole
-    // share of the cohort.
+    // the export's own ALL column. A site withdrawn from these rows (see
+    // siteExclusions) has no numerator cell here, and pooling drops its
+    // denominator at the same time — reading the ALL column would keep it and
+    // understate the rate by that site's whole share of the cohort.
     if (site === AGGREGATE_SITE) continue;
     const out = new Map<string, string>();
     for (const [year, raw] of yearMap) {
       const e = num(raw);
-      const n = num(encounters.sites.get(site)?.get(year));
+      const n = num(denominator.sites.get(site)?.get(year));
       if (e != null && n) {
-        out.set(year, ((e / n) * 100).toFixed(1));
+        out.set(year, rate(e, n));
         const acc = pooled.get(year) ?? { e: 0, n: 0 };
         acc.e += e;
         acc.n += n;
@@ -205,20 +241,20 @@ function withSepsisRate(parsed: ParsedConsortiumData): ParsedConsortiumData {
 
   const aggregate = new Map<string, string>();
   for (const [year, { e, n }] of pooled) {
-    if (n > 0) aggregate.set(year, ((e / n) * 100).toFixed(1));
+    if (n > 0) aggregate.set(year, rate(e, n));
   }
   if (aggregate.size) sites.set(AGGREGATE_SITE, aggregate);
 
   // Placed directly after the raw count so the two read together.
   const characteristics = [...parsed.characteristics];
-  const at = characteristics.indexOf(events);
-  characteristics.splice(at + 1, 0, { variable: SEPSIS_RATE, sites, depth: events.depth ?? 0 });
+  const at = characteristics.indexOf(numerator);
+  characteristics.splice(at + 1, 0, { variable: spec.name, sites, depth: numerator.depth ?? 0 });
 
   const siteYearData = parsed.siteYearData.map((d) => {
     const v = sites.get(d.site)?.get(d.year);
     if (v == null) return d;
     const chars = new Map(d.characteristics);
-    chars.set(SEPSIS_RATE, v);
+    chars.set(spec.name, v);
     return { ...d, characteristics: chars };
   });
 
@@ -470,12 +506,12 @@ const percentRewrites: string[] = [];
 
 function loadCohort(key: string) {
   const csv = fs.readFileSync(path.join(cohortDir, key, 'table_one_by_year.csv'), 'utf-8');
-  // Exclusions come first: withSepsisRate then derives the per-100 rate from
-  // what survives, for the excluded site and for the consortium alike.
+  // Exclusions come first: the derived rates are then computed from what
+  // survives, for the excluded site and for the consortium alike.
   // Consistency runs last of the value-rewriting steps, so it sees the
   // percentages the re-basing already settled and leaves them alone.
   const consistent = withConsistentPercentages(
-    withRebasedDenominators(withSepsisRate(applySiteExclusions(parseCohortCSV(csv)))),
+    withRebasedDenominators(withRateRows(applySiteExclusions(parseCohortCSV(csv)))),
     { skip: Object.keys(REBASED_ROWS) }
   );
   percentRewrites.push(
