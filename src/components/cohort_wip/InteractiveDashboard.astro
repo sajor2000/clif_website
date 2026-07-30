@@ -2,6 +2,7 @@
 import { groupCharacteristics, type ParsedConsortiumData } from '../../utils/csvParser';
 import { parseCohortCSV, COHORTS, DEFAULT_COHORT, AGGREGATE_SITE } from '../../utils/cohortData';
 import { CHARACTERISTIC_DEFINITIONS, PREFIX_DEFINITIONS } from '../../utils/characteristicDefinitions';
+import { inferDenominatorBasis } from '../../utils/denominatorBasis';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -416,14 +417,34 @@ function loadCohort(key: string) {
     key
   );
   unresolvedSuppressions.push(...unresolved);
-  return { consortium: toConsortiumJson(parsed), overall: deriveOverall(parsed, injected), parsed };
+  return {
+    consortium: toConsortiumJson(parsed),
+    overall: deriveOverall(parsed, injected),
+    // Which population the export divided each row by, back-solved from its own
+    // arithmetic (see denominatorBasis.ts). The Charts view has to recompute
+    // percentages in order to pool a filtered subset of sites and years, and
+    // without this it divides everything by all hospitalizations — reporting
+    // Propofol during IMV at 9.0% where the Table view, reading the export's own
+    // cell, says 39.2%. The re-based rows are excluded: their denominator is a
+    // difference of two rows, which no single row can express, and the client
+    // already carries it in REBASED_BASIS.
+    basis: inferDenominatorBasis(parsed, { skip: Object.keys(REBASED_ROWS) }),
+    parsed,
+  };
 }
 
 // All cohorts' data (for client-side switching) + the default cohort for SSR.
-const cohortsPayload: Record<string, { consortium: ReturnType<typeof toConsortiumJson>; overall: ReturnType<typeof deriveOverall> }> = {};
+const cohortsPayload: Record<
+  string,
+  {
+    consortium: ReturnType<typeof toConsortiumJson>;
+    overall: ReturnType<typeof deriveOverall>;
+    basis: Record<string, string>;
+  }
+> = {};
 for (const c of COHORTS) {
-  const { consortium, overall } = loadCohort(c.key);
-  cohortsPayload[c.key] = { consortium, overall };
+  const { consortium, overall, basis } = loadCohort(c.key);
+  cohortsPayload[c.key] = { consortium, overall, basis };
 }
 // Never silent: say which lone `<10` cells stayed back-calculable because the
 // only cell available to pair them with was too large to withhold.
@@ -1078,6 +1099,10 @@ const categories = Array.from(groupedChars.keys());
   // `let` so a cohort switch can repoint them; kept as the same object shape.
   let consortiumData = COHORTS_DATA[activeCohort].consortium;
   let overallTableData = COHORTS_DATA[activeCohort].overall;
+  // Row name -> the row the export divided it by, back-solved at build time.
+  // Per cohort: 'Propofol (during IMV)' is of the ventilated population in
+  // every cohort, but that population is a different size in each.
+  let denominatorBasis = COHORTS_DATA[activeCohort].basis || {};
 
   // Real data rows withheld from the dashboard entirely — sidebar, Table view
   // and CSV export. Distinct from the sidebar's headerPatterns, which lists
@@ -1240,6 +1265,9 @@ const categories = Array.from(groupedChars.keys());
     activeCohort = key;
     consortiumData = COHORTS_DATA[key].consortium;
     overallTableData = COHORTS_DATA[key].overall;
+    denominatorBasis = COHORTS_DATA[key].basis || {};
+    // Keyed by row name only, so it cannot outlive the dataset it describes.
+    hasValueCache.clear();
     selectedSites = [...consortiumData.allSites];
     selectedYears = [...consortiumData.allYears];
     rebuildSiteCheckboxes();
@@ -1643,6 +1671,82 @@ const categories = Array.from(groupedChars.keys());
     return denom > 0 ? denom : null;
   }
 
+  /**
+   * The row a characteristic's percentage should be divided by.
+   *
+   * Precedence, strongest claim first:
+   *   1. REBASED_BASIS — a denominator that is a difference of two rows, which
+   *      no single row can express, so it can never be inferred.
+   *   2. The reader, asking for "% of Total Hospitalizations". The radio ships
+   *      checked on 'imv', so only the other value can have been clicked — a
+   *      deliberate request to see a respiratory row against the whole cohort,
+   *      and it outranks what the export happened to do.
+   *   3. denominatorBasis — back-solved from the export's own arithmetic at
+   *      build time. This is what makes the chart agree with the Table view.
+   *   4. The toggle's default, for respiratory rows (3) found no basis for.
+   *   5. Category default — unique patients for demographics, hospitalizations
+   *      for everything else.
+   *
+   * Returns null when REBASED_BASIS owns the row, since that basis is computed
+   * per site/year rather than named.
+   */
+  function denominatorKeyFor(characteristic, category) {
+    const trimmed = (characteristic || '').trim();
+    if (REBASED_BASIS[trimmed]) return null;
+
+    const charLower = trimmed.toLowerCase();
+    // IMV against itself is 100% by construction, so the toggle never applies.
+    const isIMVCountVariable = charLower.startsWith('invasive mechanical ventilation');
+    const isRespSupportVar = charLower.includes('mechanical ventilation') ||
+                             charLower.includes('imv') ||
+                             charLower.includes('fio2') ||
+                             charLower.includes('peep') ||
+                             charLower.includes('ventilator mode') ||
+                             charLower.includes('respiratory rate') ||
+                             charLower.includes('tidal volume') ||
+                             charLower.includes('location at imv');
+    const toggle = document.querySelector('input[name="resp-denominator"]:checked')?.value;
+
+    if (isRespSupportVar && !isIMVCountVariable && toggle === 'hospitalizations') {
+      return dataKey('N: Hospitalizations');
+    }
+
+    const inferred = denominatorBasis[trimmed];
+    if (inferred) return inferred;
+
+    if (isRespSupportVar && !isIMVCountVariable && toggle === 'imv') {
+      return dataKey('Invasive mechanical ventilation, n (%)');
+    }
+
+    return dataKey(category === 'Demographics' ? 'N: Unique patients' : 'N: Hospitalizations');
+  }
+
+  /**
+   * What the chart title says it divided by, e.g. "(% of IMV Hospitalizations)".
+   *
+   * A chart whose denominator differs from the Table view's has to say so, or
+   * the two views disagree in silence — which is how a 39.2% row came to be
+   * drawn at 9.0% with nothing on screen to suggest a different question was
+   * being answered.
+   */
+  function denominatorLabel(characteristic, category) {
+    const trimmed = (characteristic || '').trim();
+    const rebased = REBASED_BASIS[trimmed];
+    if (rebased) return rebased.label;
+
+    const key = denominatorKeyFor(trimmed, category);
+    if (!key) return 'Hospitalizations';
+    if (key === 'N: Unique patients') return 'Unique Patients';
+    if (key === dataKey('N: Hospitalizations')) return 'Hospitalizations';
+    if (key === 'Invasive mechanical ventilation, n (%)') return 'IMV Hospitalizations';
+    // Any other population is named by its own row. Drop the count suffix and
+    // the group prefix so it reads as a population and not as a table row:
+    // 'Extubation outcome: extubated' -> '% of extubated'.
+    const label = displayCharacteristic(key).replace(/,\s*n \(%.*\)$/, '');
+    const sep = label.indexOf(': ');
+    return sep > 0 ? label.slice(sep + 2) : label;
+  }
+
   // Determine which category a characteristic belongs to
   function getCategoryForCharacteristic(characteristic) {
     const variable = characteristic.trim();
@@ -1996,9 +2100,28 @@ const categories = Array.from(groupedChars.keys());
     };
 
     const charItem = document.createElement('button');
-    charItem.className = `characteristic-item w-full text-left ${indent ? 'pl-6 pr-4' : 'px-4'} py-2 text-sm text-gray-700 hover:bg-clif-burgundy hover:bg-opacity-10 hover:text-clif-burgundy transition-colors`;
-
     const consolidated = CONSOLIDATED[char];
+
+    // A row no site reports in any year can only ever produce the "no data"
+    // alert. It stays in the list — that nobody records it is itself worth
+    // seeing, and hiding it would quietly shorten the inventory — but it does
+    // not pretend to be clickable. Consolidated items front a whole family of
+    // rows and are checked by their own selectors, so they are left alone.
+    const dead = !consolidated && !hasAnyValue(char);
+    charItem.className =
+      `characteristic-item w-full text-left ${indent ? 'pl-6 pr-4' : 'px-4'} py-2 text-sm transition-colors ` +
+      (dead
+        ? 'text-gray-400 italic cursor-not-allowed'
+        : 'text-gray-700 hover:bg-clif-burgundy hover:bg-opacity-10 hover:text-clif-burgundy');
+
+    if (dead) {
+      charItem.dataset.characteristic = char;
+      charItem.textContent = displayCharacteristic(char);
+      charItem.disabled = true;
+      charItem.title = 'No site reports this in any year.';
+      return charItem;
+    }
+
     if (consolidated) {
       const [label, handler] = consolidated;
       charItem.dataset.characteristic = char;
@@ -2010,6 +2133,31 @@ const categories = Array.from(groupedChars.keys());
       charItem.addEventListener('click', () => selectCharacteristic(char, charItem)); // Pass original
     }
     return charItem;
+  }
+
+  /**
+   * Does any site, in any year, report a usable value for this row?
+   *
+   * Usable means the chart could plot it: a count, a percentage or a median.
+   * A cell suppressed to '<10' or 'n/s' is not — the row exists but nothing
+   * can be drawn from it — and neither is an empty cell.
+   */
+  const hasValueCache = new Map();
+  function hasAnyValue(char) {
+    const key = (char || '').trim();
+    if (hasValueCache.has(key)) return hasValueCache.get(key);
+
+    const found = consortiumData.siteYearData.some((d) => {
+      let v = d.characteristics[char];
+      if (v == null) {
+        const k = Object.keys(d.characteristics).find((n) => n.trim() === key);
+        v = k ? d.characteristics[k] : null;
+      }
+      return typeof v === 'string' && (valueHasIQR(v) || getNumeric(v) !== null);
+    });
+
+    hasValueCache.set(key, found);
+    return found;
   }
 
   function buildCategorySidebar() {
@@ -3625,30 +3773,12 @@ const categories = Array.from(groupedChars.keys());
             if (parsed) {
               chartCounts[label] = parsed.count;
 
-              // Determine denominator based on category and user selection
-              let denominatorKey = dataKey(category === 'Demographics' ? 'N: Unique patients' : 'N: Hospitalizations');
-
-              // Check if user selected IMV as denominator for respiratory support variables
-              const respDenomSelector = document.querySelector('input[name="resp-denominator"]:checked');
-              const useIMVDenom = respDenomSelector && respDenomSelector.value === 'imv';
-              const charLower = characteristic.trim().toLowerCase();
-              // Don't use IMV denominator for "Invasive mechanical ventilation" itself (IMV/IMV = 100% always)
-              const isIMVCountVariable = charLower.startsWith('invasive mechanical ventilation');
-              const isRespSupportVar = charLower.includes('mechanical ventilation') ||
-                                       charLower.includes('imv') ||
-                                       charLower.includes('fio2') ||
-                                       charLower.includes('peep') ||
-                                       charLower.includes('ventilator mode') ||
-                                       charLower.includes('respiratory rate') ||
-                                       charLower.includes('tidal volume') ||
-                                       charLower.includes('location at imv');
-
-              if (isRespSupportVar && useIMVDenom && !isIMVCountVariable) {
-                denominatorKey = 'Invasive mechanical ventilation, n (%)';
-              }
+              // The population this row's percentage is of — the export's own,
+              // where it could be recovered.
+              const denominatorKey = denominatorKeyFor(characteristic, category);
 
               // A re-based row carries its own denominator, so it never reaches
-              // the key-based lookup or the toggle above.
+              // the key-based lookup.
               const rebased = rebasedDenominator(characteristic, (rowName) => {
                 const r = consortiumData.characteristics.find(c =>
                   c.variable === rowName || c.variable.trim() === rowName
@@ -3773,27 +3903,9 @@ const categories = Array.from(groupedChars.keys());
           if (!chartCounts[label]) chartCounts[label] = 0;
           chartCounts[label] += parsed.count;
 
-          // Determine denominator based on category and user selection
-          let denominatorKey = dataKey(category === 'Demographics' ? 'N: Unique patients' : 'N: Hospitalizations');
-
-          // Check if user selected IMV as denominator for respiratory support variables
-          const respDenomSelector = document.querySelector('input[name="resp-denominator"]:checked');
-          const useIMVDenom = respDenomSelector && respDenomSelector.value === 'imv';
-          const charLower = characteristic.trim().toLowerCase();
-          // Don't use IMV denominator for "Invasive mechanical ventilation" itself (IMV/IMV = 100% always)
-          const isIMVCountVariable = charLower.startsWith('invasive mechanical ventilation');
-          const isRespSupportVar = charLower.includes('mechanical ventilation') ||
-                                   charLower.includes('imv') ||
-                                   charLower.includes('fio2') ||
-                                   charLower.includes('peep') ||
-                                   charLower.includes('ventilator mode') ||
-                                   charLower.includes('respiratory rate') ||
-                                   charLower.includes('tidal volume') ||
-                                   charLower.includes('location at imv');
-
-          if (isRespSupportVar && useIMVDenom && !isIMVCountVariable) {
-            denominatorKey = 'Invasive mechanical ventilation, n (%)';
-          }
+          // The population this row's percentage is of — the export's own,
+          // where it could be recovered.
+          const denominatorKey = denominatorKeyFor(characteristic, category);
 
           // Row-level lookup shared by both paths below: exact key first, then
           // the untrimmed variant the parse sometimes holds.
@@ -3924,34 +4036,10 @@ const categories = Array.from(groupedChars.keys());
       // Build main title - remove redundant ", n (%)" suffix since we'll add the denominator info
       let title = characteristic.replace(/, n \(%\)$/, '').replace(/, n$/, '');
 
-      // Add percentage indicator for categorical variables
+      // Name the population the percentage is of — the same resolution the
+      // arithmetic used, so the title can never drift from the number.
       if (isCategoricalPercentage) {
-        let denominatorType = category === 'Demographics' ? 'Unique Patients' : 'Hospitalizations';
-
-        // Check if IMV denominator was used for respiratory support
-        const respDenomSelector = document.querySelector('input[name="resp-denominator"]:checked');
-        const useIMVDenom = respDenomSelector && respDenomSelector.value === 'imv';
-        const charLower = characteristic.trim().toLowerCase();
-        // Don't use IMV denominator for "Invasive mechanical ventilation" itself (IMV/IMV = 100% always)
-        const isIMVCountVariable = charLower.startsWith('invasive mechanical ventilation');
-        const isRespSupportVar = charLower.includes('mechanical ventilation') ||
-                                 charLower.includes('imv') ||
-                                 charLower.includes('fio2') ||
-                                 charLower.includes('peep') ||
-                                 charLower.includes('ventilator mode') ||
-                                 charLower.includes('respiratory rate') ||
-                                 charLower.includes('tidal volume') ||
-                                 charLower.includes('location at imv');
-
-        if (isRespSupportVar && useIMVDenom && !isIMVCountVariable) {
-          denominatorType = 'IMV Hospitalizations';
-        }
-
-        // A re-based row states its own basis, whatever the toggle says.
-        const rebasedBasis = REBASED_BASIS[characteristic.trim()];
-        if (rebasedBasis) denominatorType = rebasedBasis.label;
-
-        title += ` (% of ${denominatorType})`;
+        title += ` (% of ${denominatorLabel(characteristic, category)})`;
       }
 
       // Add grouping
