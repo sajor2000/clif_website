@@ -29,6 +29,10 @@ export default [
       '@typescript-eslint': typescriptPlugin,
     },
     rules: {
+      // The base rule cannot read a TypeScript function type: it sees the
+      // parameter name in `(rowName: string) => boolean` as an unused variable.
+      // typescript-eslint's replacement understands the syntax and is on below.
+      'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': 'warn',
       '@typescript-eslint/no-explicit-any': 'warn',
       'no-console': 'warn',

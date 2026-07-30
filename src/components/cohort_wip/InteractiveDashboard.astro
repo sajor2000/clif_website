@@ -3,6 +3,7 @@ import { groupCharacteristics, type ParsedConsortiumData } from '../../utils/csv
 import { parseCohortCSV, COHORTS, DEFAULT_COHORT, AGGREGATE_SITE } from '../../utils/cohortData';
 import { CHARACTERISTIC_DEFINITIONS, PREFIX_DEFINITIONS } from '../../utils/characteristicDefinitions';
 import { inferDenominatorBasis } from '../../utils/denominatorBasis';
+import { applySiteExclusions, excludedSitesFor } from '../../utils/siteExclusions';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -175,16 +176,36 @@ function withSepsisRate(parsed: ParsedConsortiumData): ParsedConsortiumData {
   };
 
   const sites = new Map<string, Map<string, string>>();
+  const pooled = new Map<string, { e: number; n: number }>();
   for (const [site, yearMap] of events.sites) {
+    // The consortium rate is pooled from the sites below rather than read off
+    // the export's own ALL column. A site withdrawn from the sepsis rows (see
+    // siteExclusions) has no events cell here, and pooling drops its
+    // encounters from the denominator at the same time — reading the ALL
+    // column would keep them and understate the rate by that site's whole
+    // share of the cohort.
+    if (site === AGGREGATE_SITE) continue;
     const out = new Map<string, string>();
     for (const [year, raw] of yearMap) {
       const e = num(raw);
       const n = num(encounters.sites.get(site)?.get(year));
-      if (e != null && n) out.set(year, ((e / n) * 100).toFixed(1));
+      if (e != null && n) {
+        out.set(year, ((e / n) * 100).toFixed(1));
+        const acc = pooled.get(year) ?? { e: 0, n: 0 };
+        acc.e += e;
+        acc.n += n;
+        pooled.set(year, acc);
+      }
     }
     if (out.size) sites.set(site, out);
   }
   if (!sites.size) return parsed;
+
+  const aggregate = new Map<string, string>();
+  for (const [year, { e, n }] of pooled) {
+    if (n > 0) aggregate.set(year, ((e / n) * 100).toFixed(1));
+  }
+  if (aggregate.size) sites.set(AGGREGATE_SITE, aggregate);
 
   // Placed directly after the raw count so the two read together.
   const characteristics = [...parsed.characteristics];
@@ -412,8 +433,10 @@ const unresolvedSuppressions: string[] = [];
 
 function loadCohort(key: string) {
   const csv = fs.readFileSync(path.join(cohortDir, key, 'table_one_by_year.csv'), 'utf-8');
+  // Exclusions come first: withSepsisRate then derives the per-100 rate from
+  // what survives, for the excluded site and for the consortium alike.
   const { parsed, injected, unresolved } = withSuppressedMissing(
-    withRebasedDenominators(withSepsisRate(parseCohortCSV(csv))),
+    withRebasedDenominators(withSepsisRate(applySiteExclusions(parseCohortCSV(csv)))),
     key
   );
   unresolvedSuppressions.push(...unresolved);
@@ -459,7 +482,17 @@ if (unresolvedSuppressions.length) {
 const { parsed: data } = loadCohort(DEFAULT_COHORT);
 const groupedChars = groupCharacteristics(data);
 const overallData = cohortsPayload[DEFAULT_COHORT].overall;
-const definitionsJson = JSON.stringify({ exact: CHARACTERISTIC_DEFINITIONS, prefix: PREFIX_DEFINITIONS });
+// A withdrawn site changes what a row counts, so the row's definition has to
+// say so — read from SITE_EXCLUSIONS rather than restated, or the note and the
+// data could disagree about which sites are in.
+const definitionsWithExclusions = Object.fromEntries(
+  Object.entries(CHARACTERISTIC_DEFINITIONS).map(([name, def]) => {
+    const excluded = excludedSitesFor(name);
+    if (!excluded.length) return [name, def];
+    return [name, { ...def, text: `${def.text} ${excluded.map((e) => e.reason).join(' ')}` }];
+  })
+);
+const definitionsJson = JSON.stringify({ exact: definitionsWithExclusions, prefix: PREFIX_DEFINITIONS });
 const displayNamesJson = JSON.stringify(DISPLAY_RENAMES);
 
 const dataJson = JSON.stringify(cohortsPayload[DEFAULT_COHORT].consortium);

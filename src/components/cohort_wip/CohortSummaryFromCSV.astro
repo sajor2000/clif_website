@@ -3,7 +3,8 @@
 // and re-renders client-side when the cohort picker (window.CohortBus) changes.
 import fs from 'node:fs';
 import path from 'node:path';
-import { DEFAULT_COHORT, parseCohortCSV, getAggregateValue, contributingSitesForCohort } from '../../utils/cohortData';
+import { DEFAULT_COHORT, parseCohortCSV, getAggregateValue, contributingSitesForCohort, siteLabel } from '../../utils/cohortData';
+import { applySiteExclusions, excludedSitesFor } from '../../utils/siteExclusions';
 import InfoTip from './InfoTip.astro';
 import DemographicCrosstab from './DemographicCrosstab.astro';
 
@@ -110,7 +111,9 @@ const LABELS: Record<string, string> = {
 const cohortDir = path.join(process.cwd(), 'src', 'data', 'cohorts');
 function fieldsFor(key: string) {
   const csv = fs.readFileSync(path.join(cohortDir, key, 'table_one_by_year.csv'), 'utf-8');
-  const data = parseCohortCSV(csv);
+  // Same withdrawals the Explorer applies, so the two tabs cannot report
+  // different consortium sepsis figures.
+  const data = applySiteExclusions(parseCohortCSV(csv));
   const f: Record<string, string> = {};
   for (const [name, label] of Object.entries(LABELS)) {
     f[name] = (getAggregateValue(data, label, 'Overall') || '').replace(/^"|"$/g, '').trim();
@@ -142,6 +145,9 @@ const hasIcuLos = !!d.icuLOS;
 // -ward population. The rows stay in the CSV for the Explorer, where the
 // cohort is labelled on the axis.
 const suppressForWard = cohort === 'overall_ward';
+// Sites withdrawn from the sepsis rows, named on the card that reports their
+// consortium total. Empty when nothing is excluded, and the note disappears.
+const sepsisExcludedSites = excludedSitesFor(LABELS.sepsisEvents).map((e) => e.site);
 const hasTherapyTiles = !suppressForWard;
 
 // Existing template variable names, populated from the default cohort for SSR.
@@ -770,6 +776,15 @@ const dopamineDose = d.dopamineDose;
                 <span class="text-sm text-gray-600">sepsis events</span>
               </div>
               <div class="text-xs text-gray-500 mt-0.5">CDC Adult Sepsis Event criteria<InfoTip characteristic="Sepsis events (CDC ASE), n" /></div>
+              {/* The headline is a consortium total, so a site missing from it
+                  has to be named here — not only in the Explorer's row-level
+                  definition, which a reader of this card never opens. */}
+              {sepsisExcludedSites.length > 0 && (
+                <div class="text-xs text-amber-700 mt-1">
+                  Excludes {sepsisExcludedSites.map((s) => siteLabel(s)).join(', ')}
+                  <InfoTip characteristic="Sepsis events (CDC ASE), n" />
+                </div>
+              )}
               {/* Divider: the headline above is total EVENTS; below is the share
                   of ENCOUNTERS affected — two different denominators. */}
               {encountersWithSepsis && (
