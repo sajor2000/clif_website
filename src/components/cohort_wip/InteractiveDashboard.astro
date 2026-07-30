@@ -4083,8 +4083,21 @@ const categories = Array.from(groupedChars.keys());
     const subtitleEl = document.getElementById('custom-chart-subtitle');
 
     if (titleEl) {
-      // Build main title - remove redundant ", n (%)" suffix since we'll add the denominator info
-      let title = characteristic.replace(/, n \(%\)$/, '').replace(/, n$/, '');
+      // Strip the row's own count suffix — the title states the denominator
+      // itself, just below. The pattern has to cover the rows that name their
+      // basis in the suffix ('Extubation failure ≤48hr, n (% of extubated)')
+      // and not only the bare ', n (%)', or the title ends up saying it twice:
+      // "Extubation failure ≤48hr, n (% of extubated) (% of extubated)".
+      //
+      // Display name, not the CSV name, so the title matches the sidebar entry
+      // the reader clicked — 'N: Encounter blocks' is shown everywhere else as
+      // 'N: Hospitalizations'.
+      // Not anchored to the end, because the suffix is not always last:
+      // 'Vasopressors, n (%) (during IMV)' carries a trailing qualifier that
+      // has to survive.
+      let title = displayCharacteristic(characteristic)
+        .replace(/,\s*n\s*\(%[^)]*\)/, '')
+        .replace(/,\s*n$/, '');
 
       // Name the population the percentage is of — the same resolution the
       // arithmetic used, so the title can never drift from the number.
