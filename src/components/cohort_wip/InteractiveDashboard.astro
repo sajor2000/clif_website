@@ -4,6 +4,7 @@ import { parseCohortCSV, COHORTS, DEFAULT_COHORT, AGGREGATE_SITE } from '../../u
 import { CHARACTERISTIC_DEFINITIONS, PREFIX_DEFINITIONS } from '../../utils/characteristicDefinitions';
 import { inferDenominatorBasis } from '../../utils/denominatorBasis';
 import { applySiteExclusions, excludedSitesFor } from '../../utils/siteExclusions';
+import { withConsistentPercentages } from '../../utils/consistentPercentages';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -430,15 +431,23 @@ function withSuppressedMissing(parsed: ParsedConsortiumData, cohort: string) {
 
 /** Cells left back-calculable by MAX_WITHHELD_COUNT, reported once per build. */
 const unresolvedSuppressions: string[] = [];
+/** Percentages recomputed to match their own count, reported once per build. */
+const percentRewrites: string[] = [];
 
 function loadCohort(key: string) {
   const csv = fs.readFileSync(path.join(cohortDir, key, 'table_one_by_year.csv'), 'utf-8');
   // Exclusions come first: withSepsisRate then derives the per-100 rate from
   // what survives, for the excluded site and for the consortium alike.
-  const { parsed, injected, unresolved } = withSuppressedMissing(
+  // Consistency runs last of the value-rewriting steps, so it sees the
+  // percentages the re-basing already settled and leaves them alone.
+  const consistent = withConsistentPercentages(
     withRebasedDenominators(withSepsisRate(applySiteExclusions(parseCohortCSV(csv)))),
-    key
+    { skip: Object.keys(REBASED_ROWS) }
   );
+  percentRewrites.push(
+    ...consistent.rewrites.map((r) => `${key}: ${r.row} @ ${r.site}/${r.year}  ${r.was} -> ${r.now}`)
+  );
+  const { parsed, injected, unresolved } = withSuppressedMissing(consistent.parsed, key);
   unresolvedSuppressions.push(...unresolved);
   return {
     consortium: toConsortiumJson(parsed),
@@ -476,6 +485,14 @@ if (unresolvedSuppressions.length) {
     `[cohort_wip] ${unresolvedSuppressions.length} cell(s) left back-calculable ` +
       `(MAX_WITHHELD_COUNT=${MAX_WITHHELD_COUNT}):\n  ` +
       unresolvedSuppressions.join('\n  ')
+  );
+}
+// Likewise: a rewritten cell is a published number that changed, so say which.
+if (percentRewrites.length) {
+  console.info(
+    `[cohort_wip] ${percentRewrites.length} percentage(s) recomputed to match ` +
+      `their own count:\n  ` +
+      percentRewrites.join('\n  ')
   );
 }
 

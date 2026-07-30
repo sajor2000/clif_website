@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { DEFAULT_COHORT, parseCohortCSV, getAggregateValue, contributingSitesForCohort, siteLabel } from '../../utils/cohortData';
 import { applySiteExclusions, excludedSitesFor } from '../../utils/siteExclusions';
+import { withConsistentPercentages } from '../../utils/consistentPercentages';
 import InfoTip from './InfoTip.astro';
 import DemographicCrosstab from './DemographicCrosstab.astro';
 
@@ -111,9 +112,9 @@ const LABELS: Record<string, string> = {
 const cohortDir = path.join(process.cwd(), 'src', 'data', 'cohorts');
 function fieldsFor(key: string) {
   const csv = fs.readFileSync(path.join(cohortDir, key, 'table_one_by_year.csv'), 'utf-8');
-  // Same withdrawals the Explorer applies, so the two tabs cannot report
-  // different consortium sepsis figures.
-  const data = applySiteExclusions(parseCohortCSV(csv));
+  // Same withdrawals and the same percentage corrections the Explorer applies,
+  // so the two tabs cannot report different figures for one row.
+  const data = withConsistentPercentages(applySiteExclusions(parseCohortCSV(csv))).parsed;
   const f: Record<string, string> = {};
   for (const [name, label] of Object.entries(LABELS)) {
     f[name] = (getAggregateValue(data, label, 'Overall') || '').replace(/^"|"$/g, '').trim();
