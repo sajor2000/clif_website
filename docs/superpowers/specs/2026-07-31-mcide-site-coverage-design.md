@@ -30,7 +30,7 @@ t-SNE layout.
 | Site attribution | Named sites, public |
 | Numbers shown | None — presence only, no observation counts |
 | Source names | Not surfaced |
-| Surfacing | Detail panel, canvas encoding, and sidebar filter |
+| Surfacing | Detail panel, plus a provenance note in the sidebar |
 | Unsurveyed fields | Distinct third state, not folded into "0 sites" |
 
 ### Named sites, publicly
@@ -119,15 +119,27 @@ Site display names reuse `SITE_LABELS` and `SITE_ORDER` from
 `src/utils/cohortData.ts`, so the explorer names sites identically to the cohort
 dashboard.
 
-### Expected distribution
+### Placeholder tokens must not collide with real values
 
-Measured by dry run against the real data:
+Cells reading `nan`, `null`, `none`, `n/a`, `no_mapping`, or empty mean the site
+mapped nothing. Every token on that list must be one the mCIDE does not itself
+define, or genuine usage is discarded and the value renders as one no site
+populates.
+
+Two near-misses, both caught in implementation: `Unknown` is a real
+`race_category`, `ethnicity_category`, and `sex_category` value, and `NA` is a
+real `susceptibility_category` value. Neither is a placeholder here. A test
+asserts the token list and the mCIDE value set stay disjoint.
+
+### Distribution
+
+As built, against the real data:
 
 | State | Count |
 |---|---|
-| Observed at 1 or more sites | 1,084 |
-| Never surveyed | ~261 |
-| Surveyed, zero sites populate it | ~55 |
+| Observed at 1 or more sites | 1,099 |
+| Never surveyed | 261 |
+| Surveyed, zero sites populate it | 42 |
 
 The ~261 are `microbiology_susceptibility` (171), `microbiology_nonculture` (51),
 `ecmo_mcs` (20), `med_group` (13), `sex_category` (3), `hospital_type` (3).
@@ -149,41 +161,30 @@ Sites:  Not measured     This field wasn't collected in the May 2026 run
 
 Site chips show the short code, full institution name on hover.
 
-### Canvas encoding
+### Provenance note
 
-Node color already carries domain, so coverage rides on fill and opacity.
-Shading all 1,402 nodes by default would alter the look of a page built around a
-uniform glowing scatter, and would render 261 never-surveyed nodes as visually
-weak on arrival. It sits behind a **"Shade by site coverage"** switch, default
-**off** — the page opens exactly as it does today.
+A single line under the search bar, and the only coverage element in the
+sidebar:
 
-| Coverage | Rendering |
-|---|---|
-| 7–10 sites | solid, full opacity |
-| 4–6 sites | solid, ~60% |
-| 1–3 sites | solid, ~30% |
-| 0 sites, surveyed | hollow ring, no fill |
-| Not measured | dim neutral gray |
+```
+Site coverage          CLIF TableOne, May 2026 · 10 sites
+```
 
-The legend swaps from table colors to this scale while the toggle is on, so the
-canvas never shows an unexplained encoding.
+Without it a reader cannot tell whether a node's "0 of 10" is a 2026 fact or a
+live one. Its tooltip names the ten contributing sites.
 
-### Sidebar filter
+### Deliberately not built
 
-Three checkboxes — `Used by ≥1 site`, `Unused`, `Not measured` — all on by
-default. Unchecking the first and third isolates the ~55 dead values, which is
-the governance view in two clicks. This is the page's first filter control, so
-it is new markup; the legend is display-only today.
+Canvas shading by coverage and a sidebar filter for the three states were
+designed and built, then removed at the user's request: the sidebar is for
+searching, and coverage belongs on the concept you asked about rather than as
+a mode over the whole map. The canvas and stats bar are therefore untouched by
+this feature — every node renders exactly as before, and coverage appears only
+once a reader opens a concept.
 
-### Stats bar
-
-`All mCIDE concepts: 1402` becomes `1084 used · 55 unused · 261 not measured`
-when a filter is active, so counts are readable without turning on shading.
-
-### Provenance
-
-Sidebar line: `Coverage: CLIF TableOne run, May 2026 · 10 sites`. Without it a
-reader cannot tell whether "0 of 10" is a 2026 fact or a live one.
+Reinstating either means re-adding a control to the sidebar; the underlying
+per-node state (`covState`) is already attached to every node, so the data work
+would not need repeating.
 
 ### Version drift
 
@@ -217,9 +218,9 @@ That is where the branching lives, and it is testable without a browser.
 
 ### Done means
 
-Script run and counts diffed against 1,084 / ~55 / ~261; `npm run build` clean;
-page loaded with all three states rendering, the toggle changing the canvas, and
-the filter isolating the unused set.
+Script run and counts diffed against 1,099 / 42 / 261; `npm run build` clean;
+page loaded in a real browser with all three states rendering in the detail
+panel and the provenance note naming the run.
 
 ## Open item
 

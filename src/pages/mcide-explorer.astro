@@ -62,6 +62,16 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <span id="stats-count" class="stats-value">—</span>
       </div>
 
+      {/* Site coverage. Hidden until the data loads, so a failed fetch leaves
+          the explorer exactly as it was rather than showing dead controls. */}
+      {/* Provenance only. Without the run label a reader cannot tell whether
+          a node's "0 of 10" is a 2026 finding or a live one. Hidden until the
+          data loads, so a failed fetch claims nothing. */}
+      <div id="coverage-panel" style="display:none">
+        <span class="coverage-title">Site coverage</span>
+        <span id="coverage-run" class="coverage-run"></span>
+      </div>
+
       <!-- Search results -->
       <div id="results-container">
         <div id="results-list"></div>
@@ -144,6 +154,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           <span class="detail-label">Value:</span>
           <span id="detail-value" class="detail-value-mono"></span>
         </div>
+        <div class="detail-row" id="detail-coverage-row" style="display:none">
+          <span class="detail-label">Sites:</span>
+          <span id="detail-coverage" class="detail-value"></span>
+        </div>
+        <div id="detail-sites" class="detail-sites"></div>
+        <p id="detail-coverage-note" class="detail-note" style="display:none"></p>
+
         <div id="detail-synonyms-section" class="detail-section" style="display:none">
           <span class="detail-label">Synonyms:</span>
           <div id="detail-synonyms" class="detail-synonyms-list"></div>
@@ -687,6 +704,54 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     word-break: break-all;
   }
 
+  /* ===== Site coverage ===== */
+  .detail-sites {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin: 0.375rem 0 0;
+  }
+
+  .detail-sites:empty { margin: 0; }
+
+  .site-chip {
+    padding: 0.125rem 0.375rem;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 0.25rem;
+    font-size: 0.625rem;
+    color: #d1d5db;
+    cursor: default;
+  }
+
+  .detail-note {
+    margin: 0.375rem 0 0;
+    font-size: 0.675rem;
+    line-height: 1.4;
+    color: #9ca3af;
+  }
+
+  #coverage-panel {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .coverage-title {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #e5e7eb;
+  }
+
+  .coverage-run {
+    font-size: 0.625rem;
+    color: #6b7280;
+    text-align: right;
+  }
+
   /* ===== Mobile ===== */
   @media (max-width: 768px) {
     #sidebar {
@@ -708,6 +773,26 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
 <!-- Load force-graph from CDN (synchronous, must load before our script) -->
 <script is:inline src="https://unpkg.com/force-graph@1.47.2/dist/force-graph.min.js"></script>
+
+{/* Coverage state resolution, bundled so it can be unit tested rather than
+    living as untestable prose inside the inline script below. Module scripts
+    run before `load`, which is when the explorer boots, so this is always in
+    place by the time anything reads it. */}
+<script>
+  import {
+    coverageFor,
+    siteCodesFor,
+    describeCoverage,
+  } from '../utils/mcideCoverage';
+  import { siteLabel } from '../utils/siteNames';
+
+  (window as unknown as Record<string, unknown>).mcideCoverageApi = {
+    coverageFor,
+    siteCodesFor,
+    describeCoverage,
+    siteLabel,
+  };
+</script>
 
 <!-- Client-side explorer logic -->
 <script is:inline>
@@ -747,6 +832,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   var searchActive = false;
   var hoveredNode = null;
 
+  // ===== Site coverage state =====
+  // Resolved in init(), never here: this IIFE runs while the document parses,
+  // and the module that defines the API is deferred, so at this point it does
+  // not exist yet. Reading it now captures null for the life of the page.
+  var coverageApi = null;
+  var coverageData = null;          // null until loaded; the page works without it
+
   // ===== Show error visually =====
   function showError(msg) {
     console.error('[mCIDE Explorer]', msg);
@@ -770,10 +862,19 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       // Fetch data then set up
       Promise.all([
         fetch('/data/mcide/mcide_graph.json').then(function(r) { return r.json(); }),
-        fetch('/data/mcide/mcide_concepts.json').then(function(r) { return r.json(); })
+        fetch('/data/mcide/mcide_concepts.json').then(function(r) { return r.json(); }),
+        // Coverage is additive. If it fails to load the explorer must still
+        // work, so this resolves null rather than rejecting the whole batch.
+        fetch('/data/mcide/mcide_coverage.json')
+          .then(function(r) { return r.ok ? r.json() : null; })
+          .catch(function() { return null; })
       ]).then(function(results) {
         var graphData = results[0];
         var conceptsData = results[1];
+        coverageData = results[2];
+        // Deferred modules have run by now (init fires on window load).
+        coverageApi = window.mcideCoverageApi || null;
+        if (!coverageApi) console.warn('[mCIDE] coverage API missing — coverage UI disabled');
 
         console.log('[mCIDE] Graph nodes:', graphData.nodes.length, 'Concepts:', conceptsData.length);
 
@@ -806,12 +907,18 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
         console.log('[mCIDE] Processed nodes:', allNodes.length);
 
+        // Resolve each node's coverage once. Every later read — panel, tooltip,
+        // shading, filtering — is a property lookup rather than a repeated walk
+        // of measured_fields across 1,402 nodes on every canvas frame.
+        annotateCoverage();
+
         // Update stats
         var statsEl = document.getElementById('stats-count');
         if (statsEl) statsEl.textContent = allNodes.length.toLocaleString();
 
         // Build legend
         buildLegend();
+        setupCoverage();
 
         // Bind events immediately (search must work regardless of graph)
         bindEvents();
@@ -853,6 +960,82 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     console.log('[mCIDE] Legend built with', sortedDomains.length, 'domains');
   }
 
+  // ===== Site coverage =====
+
+  /** Attach each node's coverage state, once. */
+  function annotateCoverage() {
+    if (!coverageApi || !coverageData) return;
+    allNodes.forEach(function(node) {
+      var field = node.table && node.field ? node.table + '.' + node.field : '';
+      var cov = coverageApi.coverageFor(coverageData, node.id, field);
+      node.cov = cov;
+      node.covState = cov.state;
+      node.covSites = coverageApi.siteCodesFor(coverageData, node.id, field);
+    });
+  }
+
+  /** Name the run the coverage came from. No-op when the data is absent. */
+  function setupCoverage() {
+    if (!coverageApi || !coverageData) return;
+
+    var panel = document.getElementById('coverage-panel');
+    if (panel) panel.style.display = '';
+
+    var runEl = document.getElementById('coverage-run');
+    if (runEl) {
+      runEl.textContent = coverageData.run.label + ' · ' + coverageData.sites.length + ' sites';
+      runEl.title = 'Sites: ' + coverageData.sites.map(coverageApi.siteLabel).join(', ');
+    }
+  }
+
+  /** The coverage rows of the detail panel, in whichever of the three states. */
+  function renderCoverageDetail(node) {
+    var row = document.getElementById('detail-coverage-row');
+    var valueEl = document.getElementById('detail-coverage');
+    var sitesEl = document.getElementById('detail-sites');
+    var noteEl = document.getElementById('detail-coverage-note');
+    if (!row || !valueEl || !sitesEl || !noteEl) return;
+
+    var cov = node.cov;
+    if (!coverageApi || !coverageData || !cov) {
+      row.style.display = 'none';
+      sitesEl.innerHTML = '';
+      noteEl.style.display = 'none';
+      return;
+    }
+
+    row.style.display = '';
+    valueEl.textContent = coverageApi.describeCoverage(cov);
+    valueEl.style.color = cov.state === 'used' ? '#ffffff' : '#9ca3af';
+
+    if (cov.state === 'used') {
+      sitesEl.innerHTML = (node.covSites || []).map(function(code) {
+        return '<span class="site-chip" title="' + coverageApi.siteLabel(code) + '">' + code + '</span>';
+      }).join('');
+      noteEl.style.display = 'none';
+      return;
+    }
+
+    sitesEl.innerHTML = '';
+    noteEl.style.display = '';
+    // The distinction the whole feature turns on: nobody populates it, versus
+    // nobody was asked. Stated in words, not left to a number.
+    noteEl.textContent = cov.state === 'unused'
+      ? 'No site populated this value in the ' + coverageData.run.label + ' run.'
+      : 'This field was not collected in the ' + coverageData.run.label + ' run.';
+  }
+
+  /** One line of coverage for the hover tooltip. */
+  function coverageTooltipRow(node) {
+    if (!coverageApi || !coverageData || !node.cov) return '';
+    var text = coverageApi.describeCoverage(node.cov);
+    var color = node.covState === 'used' ? '#fff' : '#9ca3af';
+    var s = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">';
+    s += '<span style="color:#9ca3af;font-size:12px;">Sites:</span>';
+    s += '<span style="color:' + color + ';font-size:12px;">' + text + '</span></div>';
+    return s;
+  }
+
   // ===== Rich hover tooltip (table, domain, field, value) =====
   function buildTooltip(node) {
     if (!node || node.id === 'search-origin') return 'Search Origin';
@@ -876,6 +1059,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       s += '<span style="color:#9ca3af;font-size:12px;">Value:</span>';
       s += '<span style="color:#fff;font-size:12px;font-family:monospace;">' + value + '</span></div>';
     }
+    s += coverageTooltipRow(node);
     s += '<div style="border-top:1px solid rgba(255,255,255,0.1);padding-top:4px;margin-top:4px;">';
     s += '<code style="color:#6b7280;font-size:10px;word-break:break-all;">' + node.id + '</code></div></div>';
     return s;
@@ -1108,6 +1292,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     document.getElementById('detail-field').textContent = (node.field || '').replace(/_/g, ' ');
     document.getElementById('detail-value').textContent = (node.value || '').replace(/_/g, ' ');
     document.getElementById('detail-path').textContent = node.id;
+
+    renderCoverageDetail(node);
 
     // Synonyms
     var synSection = document.getElementById('detail-synonyms-section');
@@ -1348,6 +1534,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         table: node.table,
         field: node.field,
         value: node.value,
+        // Carried through, or the panel and tooltip go blank during a search.
+        cov: node.cov,
+        covState: node.covState,
+        covSites: node.covSites,
         x: node.x,
         y: node.y,
         fx: node.x,
