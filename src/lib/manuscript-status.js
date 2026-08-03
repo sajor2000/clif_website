@@ -30,21 +30,21 @@ export const MANUSCRIPT_STATUS_TAGS = {
     label: 'Pre-print',
     classes: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400',
   },
-  'manuscript-wip': {
-    label: 'Manuscript WIP',
-    classes: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
+  'code-run-complete': {
+    label: 'Code run complete',
+    classes: 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-400',
   },
   'code-released': {
     label: 'Code released',
     classes: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400',
   },
+  'manuscript-wip': {
+    label: 'Manuscript WIP',
+    classes: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
+  },
   'buddy-testing': {
     label: 'Buddy testing',
     classes: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
-  },
-  'code-run-complete': {
-    label: 'Code run complete',
-    classes: 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-400',
   },
   'code-under-development': {
     label: 'Code under development',
@@ -73,10 +73,10 @@ export const STATUS_PROGRESSION = [
   'not-started',
   'research-design',
   'code-under-development',
-  'code-run-complete',
   'buddy-testing',
-  'code-released',
   'manuscript-wip',
+  'code-released',
+  'code-run-complete',
   'pre-print',
   'under-review',
   'accepted',
