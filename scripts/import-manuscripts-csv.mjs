@@ -50,6 +50,7 @@ async function ensureTable(db) {
     cite TEXT,
     contributing_sites TEXT,
     validation_buddy TEXT,
+    lead_data_scientist TEXT,
     notes TEXT,
     sort_order INTEGER NOT NULL DEFAULT 0,
     updated_at TEXT,
@@ -111,6 +112,7 @@ async function main() {
       cite: clean(row['Cite']),
       contributing_sites: clean(row['Contributing Sites']),
       validation_buddy: clean(row['Validation buddy']),
+      lead_data_scientist: clean(row['Lead data scientist']),
       notes: clean(row['Notes']),
       sort_order: order,
     };
@@ -125,7 +127,8 @@ async function main() {
         sql: `UPDATE manuscripts SET
                 clif_version = ?, ats = ?, status = ?, github_repo = ?,
                 manuscript_link = ?, lead_authors = ?, journal = ?, cite = ?,
-                contributing_sites = ?, validation_buddy = ?, notes = ?,
+                contributing_sites = ?, validation_buddy = ?,
+                lead_data_scientist = ?, notes = ?,
                 sort_order = ?, updated_at = ?
               WHERE id = ?`,
         args: [
@@ -139,6 +142,7 @@ async function main() {
           fields.cite,
           fields.contributing_sites,
           fields.validation_buddy,
+          fields.lead_data_scientist,
           fields.notes,
           fields.sort_order,
           now,
@@ -152,8 +156,8 @@ async function main() {
         sql: `INSERT INTO manuscripts
                 (title, clif_version, ats, status, github_repo, manuscript_link,
                  lead_authors, journal, cite, contributing_sites,
-                 validation_buddy, notes, sort_order, updated_at)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                 validation_buddy, lead_data_scientist, notes, sort_order, updated_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         args: [
           title,
           fields.clif_version,
@@ -166,6 +170,7 @@ async function main() {
           fields.cite,
           fields.contributing_sites,
           fields.validation_buddy,
+          fields.lead_data_scientist,
           fields.notes,
           fields.sort_order,
           now,

@@ -17,6 +17,7 @@ export const TEXT_FIELDS = [
   'contributing_sites',
   'lead_site',
   'validation_buddy',
+  'lead_data_scientist',
   'notes',
 ] as const;
 
@@ -79,8 +80,9 @@ export const POST: APIRoute = async ({ locals, request }) => {
       sql: `INSERT INTO manuscripts
               (title, clif_version, ats, github_repo, manuscript_link,
                lead_authors, journal, cite, contributing_sites, lead_site,
-               validation_buddy, notes, status, sort_order, updated_at, updated_by)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+               validation_buddy, lead_data_scientist, notes, status, sort_order,
+               updated_at, updated_by)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [title, ...values, status, sortOrder, now, locals.user.id],
     });
   } catch (e: any) {

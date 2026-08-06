@@ -12,10 +12,13 @@ import {
   statusLabel,
   statusClasses,
 } from '../../lib/manuscript-status.js';
+import { isNamedOnManuscript } from '../../lib/manuscript-access';
+import { abbreviateSites, siteAliasMap } from '../../lib/site-abbreviations';
 
 const user = Astro.locals.user;
 const isAdmin = user?.role === 'admin';
-// Any approved member may add/edit manuscripts (deletion stays admin-only).
+// Any approved member may add/edit manuscripts. Deletion is limited to admins
+// and people named on the manuscript (lead author / lead data scientist).
 // Middleware already guarantees anyone viewing /portal/* is approved.
 const canEdit = Boolean(user?.is_approved);
 
@@ -74,11 +77,14 @@ const rows = manuscripts.map((m) => {
   const searchText = [
     m.title,
     m.lead_authors,
+    m.lead_data_scientist,
     m.journal,
     m.clif_version,
     m.ats,
     m.contributing_sites,
+    abbreviateSites(m.contributing_sites as string),
     m.lead_site,
+    abbreviateSites(m.lead_site as string),
     m.validation_buddy,
     m.notes,
     ...statusSlugs.map((s: string) => statusLabel(s)),
@@ -91,6 +97,7 @@ const rows = manuscripts.map((m) => {
     statusSlugs,
     latest: latestStatus(statusSlugs) as string | null,
     searchText,
+    canDelete: isAdmin || isNamedOnManuscript(user?.full_name, m),
   };
 });
 
@@ -124,10 +131,11 @@ const distinctValues = (vals: (string | null | undefined)[]): string[] => {
 };
 const colFilterOptions = {
   lead: distinctValues(rows.map((m) => m.lead_authors as string)),
+  lds: distinctValues(rows.map((m) => m.lead_data_scientist as string)),
   journal: distinctValues(rows.map((m) => m.journal as string)),
   ats: distinctValues(rows.map((m) => m.ats as string)),
-  leadsite: distinctValues(rows.map((m) => m.lead_site as string)),
-  csites: distinctValues(rows.map((m) => m.contributing_sites as string)),
+  leadsite: distinctValues(rows.map((m) => abbreviateSites(m.lead_site as string))),
+  csites: distinctValues(rows.map((m) => abbreviateSites(m.contributing_sites as string))),
   buddy: distinctValues(rows.map((m) => m.validation_buddy as string)),
 };
 
@@ -138,6 +146,7 @@ const editData = rows.map((m) => ({
   clif_version: m.clif_version ?? '',
   ats: m.ats ?? '',
   lead_authors: m.lead_authors ?? '',
+  lead_data_scientist: m.lead_data_scientist ?? '',
   journal: m.journal ?? '',
   contributing_sites: m.contributing_sites ?? '',
   lead_site: m.lead_site ?? '',
@@ -164,7 +173,7 @@ const filterCtrlClass =
         <PortalNav currentPath={Astro.url.pathname} isAdmin={isAdmin} />
       </aside>
 
-      <div class="flex-1 min-w-0">
+      <div id="tracker-main" class="flex-1 min-w-0">
         <div class="mb-6">
           <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Manuscript Tracker</h1>
           <p class="text-gray-600 dark:text-gray-400 mt-1">
@@ -206,6 +215,21 @@ const filterCtrlClass =
             <button id="tab-all" class="tab-btn px-5 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
               All Manuscripts
             </button>
+            <button
+              type="button"
+              id="tracker-expand"
+              class="ml-auto self-center shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-neutral-600 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-clif-burgundy hover:border-clif-burgundy dark:hover:text-clif-burgundy transition-colors"
+              aria-label="Expand to full screen"
+              title="Expand to full screen"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 expand-icon">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+              </svg>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 collapse-icon hidden">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 9V4.5M9 9H4.5M9 9 3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5 5.25 5.25" />
+              </svg>
+              <span class="expand-label">Expand</span>
+            </button>
           </div>
         </div>
 
@@ -241,12 +265,14 @@ const filterCtrlClass =
                       <th class="px-4 py-3 min-w-[18rem]" data-sort-key="title"><span class="th-label">Title</span><span class="sort-ind"></span></th>
                       <th class="px-4 py-3 whitespace-nowrap" data-sort-key="leadsite"><span class="th-label">Lead site</span><span class="sort-ind"></span></th>
                       <th class="px-4 py-3 whitespace-nowrap" data-sort-key="lead"><span class="th-label">Lead authors</span><span class="sort-ind"></span></th>
+                      <th class="px-4 py-3 whitespace-nowrap" data-sort-key="lds"><span class="th-label">Lead data scientist</span><span class="sort-ind"></span></th>
                       <th class="px-4 py-3" data-sort-key="status"><span class="th-label">Status</span><span class="sort-ind"></span></th>
                       <th class="px-4 py-3 whitespace-nowrap" data-sort-key="journal"><span class="th-label">Journal</span><span class="sort-ind"></span></th>
                       <th class="px-4 py-3 whitespace-nowrap" data-sort-key="ats"><span class="th-label">ATS</span><span class="sort-ind"></span></th>
                       <th class="px-4 py-3 whitespace-nowrap" data-sort-key="csites"><span class="th-label">Contributing sites</span><span class="sort-ind"></span></th>
                       <th class="px-4 py-3 whitespace-nowrap" data-sort-key="buddy"><span class="th-label">Validation buddy</span><span class="sort-ind"></span></th>
                       <th class="px-4 py-3 whitespace-nowrap" data-sort-key="github"><span class="th-label">GitHub</span><span class="sort-ind"></span></th>
+                      <th class="px-4 py-3 whitespace-nowrap" data-sort-key="mslink"><span class="th-label">Manuscript</span><span class="sort-ind"></span></th>
                       <th class="px-4 py-3 min-w-[12rem]" data-sort-key="notes"><span class="th-label">Notes</span><span class="sort-ind"></span></th>
                       <th class="px-4 py-3 whitespace-nowrap" data-sort-key="edited"><span class="th-label">Last edited</span><span class="sort-ind"></span></th>
                       {canEdit && <th class="px-4 py-3 whitespace-nowrap">Actions</th>}
@@ -265,6 +291,12 @@ const filterCtrlClass =
                         <select data-filter-attr="data-sort-lead" data-filter-mode="multi" class={filterCtrlClass} aria-label="Filter by lead author">
                           <option value="">All</option>
                           {colFilterOptions.lead.map((v) => <option value={v}>{v}</option>)}
+                        </select>
+                      </th>
+                      <th class="px-4 pb-3 font-normal normal-case">
+                        <select data-filter-attr="data-sort-lds" data-filter-mode="eq" class={filterCtrlClass} aria-label="Filter by lead data scientist">
+                          <option value="">All</option>
+                          {colFilterOptions.lds.map((v) => <option value={v}>{v}</option>)}
                         </select>
                       </th>
                       <th class="px-4 pb-3 font-normal normal-case">
@@ -305,6 +337,13 @@ const filterCtrlClass =
                         </select>
                       </th>
                       <th class="px-4 pb-3 font-normal normal-case">
+                        <select data-filter-attr="data-sort-mslink" data-filter-mode="github" class={filterCtrlClass} aria-label="Filter by manuscript link">
+                          <option value="">All</option>
+                          <option value="repo">Has link</option>
+                          <option value="none">No link</option>
+                        </select>
+                      </th>
+                      <th class="px-4 pb-3 font-normal normal-case">
                         <input type="text" data-filter-attr="data-sort-notes" data-filter-mode="text" placeholder="Filter notes…" class={filterCtrlClass} aria-label="Filter by notes" />
                       </th>
                       <th class="px-4 pb-3"></th>
@@ -321,13 +360,15 @@ const filterCtrlClass =
                         data-status={m.statusSlugs.join(',')}
                         data-sort-title={(m.title ?? '').toLowerCase()}
                         data-sort-lead={(m.lead_authors ?? '').toLowerCase()}
+                        data-sort-lds={(m.lead_data_scientist ?? '').toLowerCase()}
                         data-sort-status={m.latest ? STATUS_PROGRESSION.indexOf(m.latest) : -1}
                         data-sort-journal={(m.journal ?? '').toLowerCase()}
                         data-sort-ats={(m.ats ?? '').toLowerCase()}
-                        data-sort-leadsite={(m.lead_site ?? '').toLowerCase()}
-                        data-sort-csites={(m.contributing_sites ?? '').toLowerCase()}
+                        data-sort-leadsite={abbreviateSites(m.lead_site as string).toLowerCase()}
+                        data-sort-csites={abbreviateSites(m.contributing_sites as string).toLowerCase()}
                         data-sort-buddy={(m.validation_buddy ?? '').toLowerCase()}
                         data-sort-github={(m.github_repo ?? '').toLowerCase()}
+                        data-sort-mslink={(m.manuscript_link ?? '').toLowerCase()}
                         data-sort-notes={(m.notes ?? '').toLowerCase()}
                         data-sort-edited={m.updated_at ? Date.parse(m.updated_at as string) : 0}
                       >
@@ -345,8 +386,9 @@ const filterCtrlClass =
                             </span>
                           )}
                         </td>
-                        <td class="px-4 py-3 text-gray-700 dark:text-gray-300 whitespace-nowrap">{m.lead_site ?? '—'}</td>
-                        <td class="px-4 py-3 text-gray-700 dark:text-gray-300 whitespace-nowrap">{m.lead_authors ?? '—'}</td>
+                        <td class="px-4 py-3 text-gray-700 dark:text-gray-300 max-w-[14rem]" title={m.lead_site ?? undefined}>{m.lead_site ? abbreviateSites(m.lead_site as string) : '—'}</td>
+                        <td class="px-4 py-3 text-gray-700 dark:text-gray-300 max-w-[16rem]">{m.lead_authors ?? '—'}</td>
+                        <td class="px-4 py-3 text-gray-700 dark:text-gray-300 max-w-[14rem]">{m.lead_data_scientist ?? '—'}</td>
                         <td class="px-4 py-3">
                           {canEdit ? (
                             <select
@@ -369,13 +411,20 @@ const filterCtrlClass =
                             <span class="text-gray-400">—</span>
                           )}
                         </td>
-                        <td class="px-4 py-3 text-gray-700 dark:text-gray-300 whitespace-nowrap">{m.journal ?? '—'}</td>
+                        <td class="px-4 py-3 text-gray-700 dark:text-gray-300 max-w-[14rem]">{m.journal ?? '—'}</td>
                         <td class="px-4 py-3 text-gray-700 dark:text-gray-300 whitespace-nowrap">{m.ats ?? '—'}</td>
-                        <td class="px-4 py-3 text-gray-700 dark:text-gray-300">{m.contributing_sites ?? '—'}</td>
+                        <td class="px-4 py-3 text-gray-700 dark:text-gray-300 max-w-[16rem]" title={m.contributing_sites ?? undefined}>{m.contributing_sites ? abbreviateSites(m.contributing_sites as string) : '—'}</td>
                         <td class="px-4 py-3 text-gray-700 dark:text-gray-300 whitespace-nowrap">{m.validation_buddy ?? '—'}</td>
                         <td class="px-4 py-3 whitespace-nowrap">
                           {m.github_repo ? (
                             <a href={m.github_repo} target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:underline">Repo</a>
+                          ) : (
+                            <span class="text-gray-400">—</span>
+                          )}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap">
+                          {m.manuscript_link ? (
+                            <a href={m.manuscript_link} target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:underline">Link</a>
                           ) : (
                             <span class="text-gray-400">—</span>
                           )}
@@ -397,7 +446,7 @@ const filterCtrlClass =
                           <td class="px-4 py-3 whitespace-nowrap">
                             <div class="flex gap-3">
                               <button class="edit-manuscript-btn text-xs text-clif-burgundy hover:underline font-medium" data-id={m.id}>Edit</button>
-                              {isAdmin && (
+                              {m.canDelete && (
                                 <button class="delete-manuscript-btn text-xs text-red-600 dark:text-red-400 hover:underline" data-id={m.id} data-title={m.title}>Delete</button>
                               )}
                             </div>
@@ -463,6 +512,15 @@ const filterCtrlClass =
           <div>
             <label for="m-validation_buddy" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Validation buddy</label>
             <select id="m-validation_buddy" class={inputClass}>
+              <option value="">—</option>
+              {memberNames.map((name) => (
+                <option value={name}>{name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label for="m-lead_data_scientist" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Lead data scientist</label>
+            <select id="m-lead_data_scientist" class={inputClass}>
               <option value="">—</option>
               {memberNames.map((name) => (
                 <option value={name}>{name}</option>
@@ -551,7 +609,7 @@ const filterCtrlClass =
     </dialog>
   )}
 
-  <script is:inline define:vars={{ manuscripts: editData, canEdit, statusClassMap, statusEmptyClasses: STATUS_EMPTY_CLASSES }}>
+  <script is:inline define:vars={{ manuscripts: editData, canEdit, statusClassMap, statusEmptyClasses: STATUS_EMPTY_CLASSES, siteAliases: siteAliasMap() }}>
     document.addEventListener('DOMContentLoaded', function () {
       // ---- Sub-tabs (Add / Active / All) + per-column filters ----
       var table = document.getElementById('manuscripts-table');
@@ -742,8 +800,9 @@ const filterCtrlClass =
       var byId = {};
       manuscripts.forEach(function (m) { byId[m.id] = m; });
 
-      // lead_authors, contributing_sites, lead_site, validation_buddy and
-      // clif_version are handled separately as checkbox lists / dropdowns.
+      // lead_authors, contributing_sites, lead_site, validation_buddy,
+      // lead_data_scientist and clif_version are handled separately as
+      // checkbox lists / dropdowns.
       var TEXT_FIELDS = ['title', 'journal', 'ats',
         'github_repo', 'manuscript_link', 'cite', 'notes'];
 
@@ -754,8 +813,9 @@ const filterCtrlClass =
 
       // Check the boxes (class `cls`) whose value matches a name in the stored
       // comma-separated string; anything unmatched goes into the `otherId` input
-      // so existing free-text values are preserved.
-      function setChecklist(cls, otherId, raw) {
+      // so existing free-text values are preserved. `aliases` (optional) maps
+      // lowercased alternate spellings (site abbreviations) to checkbox values.
+      function setChecklist(cls, otherId, raw, aliases) {
         var boxes = form.querySelectorAll('.' + cls);
         var known = {};
         boxes.forEach(function (cb) { cb.checked = false; known[cb.value.toLowerCase()] = cb; });
@@ -763,7 +823,8 @@ const filterCtrlClass =
         String(raw || '').split(',').forEach(function (part) {
           var name = part.trim();
           if (!name) return;
-          var cb = known[name.toLowerCase()];
+          var key = name.toLowerCase();
+          var cb = known[key] || (aliases && aliases[key] ? known[aliases[key].toLowerCase()] : null);
           if (cb) cb.checked = true;
           else leftover.push(name);
         });
@@ -802,9 +863,12 @@ const filterCtrlClass =
         document.getElementById('m-id').value = data ? data.id : '';
         TEXT_FIELDS.forEach(function (f) { setField(f, data ? data[f] : ''); });
         setChecklist('m-lead-author', 'm-lead_authors_other', data ? data.lead_authors : '');
-        setChecklist('m-site', 'm-contributing_sites_other', data ? data.contributing_sites : '');
-        setSelectValue('m-lead_site', data ? data.lead_site : '');
+        setChecklist('m-site', 'm-contributing_sites_other', data ? data.contributing_sites : '', siteAliases);
+        var leadSiteVal = data ? data.lead_site : '';
+        var leadSiteAlias = leadSiteVal && siteAliases[leadSiteVal.trim().toLowerCase()];
+        setSelectValue('m-lead_site', leadSiteAlias || leadSiteVal);
         setSelectValue('m-validation_buddy', data ? data.validation_buddy : '');
+        setSelectValue('m-lead_data_scientist', data ? data.lead_data_scientist : '');
         setSelectValue('m-clif_version', data ? data.clif_version : '');
         var selected = data && data.status ? data.status : [];
         form.querySelectorAll('.m-status').forEach(function (cb) {
@@ -843,6 +907,8 @@ const filterCtrlClass =
         payload.lead_site = leadSiteEl ? leadSiteEl.value : '';
         var buddyEl = document.getElementById('m-validation_buddy');
         payload.validation_buddy = buddyEl ? buddyEl.value : '';
+        var ldsEl = document.getElementById('m-lead_data_scientist');
+        payload.lead_data_scientist = ldsEl ? ldsEl.value : '';
         var clifEl = document.getElementById('m-clif_version');
         payload.clif_version = clifEl ? clifEl.value : '';
         form.querySelectorAll('.m-status:checked').forEach(function (cb) {
@@ -882,5 +948,41 @@ const filterCtrlClass =
         });
       });
     });
+  </script>
+
+  <style>
+    /* Fullscreen presentation for the tracker: the fullscreened element gets a
+       black backdrop by default, so restore page colors and make it scroll. */
+    #tracker-main:fullscreen {
+      overflow-y: auto;
+      background: rgb(249 250 251); /* gray-50 */
+      padding: 1.5rem 2rem;
+    }
+    :global(.dark) #tracker-main:fullscreen {
+      background: rgb(23 23 23); /* neutral-900 */
+    }
+  </style>
+
+  <script is:inline>
+    (function () {
+      var main = document.getElementById('tracker-main');
+      var btn = document.getElementById('tracker-expand');
+      if (!main || !btn || !main.requestFullscreen) {
+        if (btn) btn.classList.add('hidden');
+        return;
+      }
+      btn.addEventListener('click', function () {
+        if (document.fullscreenElement) document.exitFullscreen();
+        else main.requestFullscreen();
+      });
+      document.addEventListener('fullscreenchange', function () {
+        var expanded = document.fullscreenElement === main;
+        btn.querySelector('.expand-icon').classList.toggle('hidden', expanded);
+        btn.querySelector('.collapse-icon').classList.toggle('hidden', !expanded);
+        btn.querySelector('.expand-label').textContent = expanded ? 'Exit' : 'Expand';
+        btn.title = expanded ? 'Exit full screen' : 'Expand to full screen';
+        btn.setAttribute('aria-label', btn.title);
+      });
+    })();
   </script>
 </BaseLayout>
