@@ -2117,6 +2117,11 @@ grepl('Vent', device_name, ignore.case = TRUE) &<br/>
                     <p class="text-sm mb-3">Verify device_category matches expected settings. If a hospitalization has respiratory settings typically used for IMV, device_category should not be a non-IMV device like Room Air, Face Mask, Nasal Cannula, etc.</p>
 
                     <div class="bg-white/10 p-3 rounded-lg mb-3">
+                      <p class="text-yellow-300 font-semibold text-sm mb-1">Note: Expect NAs outside IMV/NIPPV</p>
+                      <p class="text-xs">Most respiratory_support columns (mode_category and the ventilator settings/observations) only apply when <code class="bg-white/20 px-1 rounded">device_category</code> is <strong>IMV</strong> or <strong>NIPPV</strong>. For all other device categories, these columns will be mostly NA — this is expected and not a data quality problem. Simpler oxygen devices typically only populate <code class="bg-white/20 px-1 rounded">fio2_set</code> and/or <code class="bg-white/20 px-1 rounded">lpm_set</code> (see the tables below).</p>
+                    </div>
+
+                    <div class="bg-white/10 p-3 rounded-lg mb-3">
                       <p class="text-green-300 font-semibold mb-2 text-sm">Non-IMV Expected Settings:</p> 
                       <div class="overflow-x-auto">
                         <table class="text-xs w-full">
@@ -2173,13 +2178,19 @@ grepl('Vent', device_name, ignore.case = TRUE) &<br/>
                             </tr>
                             <tr class="border-b border-white/10">
                               <td class="py-1 pr-2">Trach Collar</td>
-                              <td class="py-1 pr-2">- or Blow By</td>
+                              <td class="py-1 pr-2">-</td>
                               <td class="py-1 pr-2">lpm_set, fio2_set</td>
                               <td class="py-1">No obs</td>
                             </tr>
-                            <tr>
+                            <tr class="border-b border-white/10">
                               <td class="py-1 pr-2">T-Piece</td>
-                              <td class="py-1 pr-2">- or Blow By</td>
+                              <td class="py-1 pr-2">-</td>
+                              <td class="py-1 pr-2">lpm_set or fio2_set (either one)</td>
+                              <td class="py-1">No obs</td>
+                            </tr>
+                            <tr>
+                              <td class="py-1 pr-2">Blow By</td>
+                              <td class="py-1 pr-2">-</td>
                               <td class="py-1 pr-2">lpm_set or fio2_set (either one)</td>
                               <td class="py-1">No obs</td>
                             </tr>

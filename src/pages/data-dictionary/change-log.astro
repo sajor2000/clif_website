@@ -344,7 +344,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            New mCIDE Values (17 updates · 240 new values) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Jun 30, 2026</span>
+            New mCIDE Values (19 updates · 241 new values) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Aug 6, 2026</span>
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -365,6 +365,18 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">mode_category (1)</td>
+                  <td class="px-4 py-3 text-sm"><code>respiratory_support.mode_category</code> added <code>avaps</code> (Average Volume Assured Pressure Support) as a new permissible value — an increasingly common NIPPV mode, distinct from invasive volume support.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/215" class="text-clif-burgundy hover:underline">Issue #215</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Aug 6, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">device_category (1)</td>
+                  <td class="px-4 py-3 text-sm"><code>respiratory_support.device_category</code> added <code>blow_by</code> as a new permissible value. Blow-by moved from mode to device: it was previously a <code>mode_category</code> value and is now represented as a device only (the corresponding mode drop is logged under Revisions).</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/231" class="text-clif-burgundy hover:underline">Issue #231</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Aug 6, 2026</td>
+                </tr>
                 <tr>
                   <td class="px-4 py-3 text-sm font-mono">lab_category (1)</td>
                   <td class="px-4 py-3 text-sm">Added <code>neuron_specific_enolase</code> (NSE) as a new <code>labs.lab_category</code> value — order category <code>misc</code>, specimen <code>plasma_blood</code></td>
@@ -441,8 +453,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   <td class="px-4 py-3 text-sm text-gray-500">May 13, 2026</td>
                 </tr>
                 <tr>
-                  <td class="px-4 py-3 text-sm font-mono">mode_category (2)</td>
-                  <td class="px-4 py-3 text-sm"><code>respiratory_support.mode_category</code> added <code>aprv</code> (airway pressure release ventilation) and <code>t_piece</code> as net-new permissible values. The acronym renames of the existing controlled-ventilation modes (<code>acvc</code>, <code>prvc</code>, <code>ps_or_cpap</code>) are logged separately under Revisions.</td>
+                  <td class="px-4 py-3 text-sm font-mono">mode_category (1)</td>
+                  <td class="px-4 py-3 text-sm"><code>respiratory_support.mode_category</code> added <code>aprv</code> (airway pressure release ventilation) as a net-new permissible value. (<code>t_piece</code> was initially added as a mode alongside it, but was later dropped in favor of device-only representation — see Revisions / <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/231" class="text-clif-burgundy hover:underline">Issue #231</a>.) The acronym renames of the existing controlled-ventilation modes (<code>acvc</code>, <code>prvc</code>, <code>ps_or_cpap</code>) are logged separately under Revisions.</td>
                   <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/201" class="text-clif-burgundy hover:underline">Issue #201</a></td>
                   <td class="px-4 py-3 text-sm text-gray-500">May 21, 2026</td>
                 </tr>
@@ -526,7 +538,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            Revisions (16 updates) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Jul 23, 2026</span>
+            Revisions (17 updates) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Aug 6, 2026</span>
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -547,6 +559,12 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">mode_category</td>
+                  <td class="px-4 py-3 text-sm"><code>respiratory_support.mode_category</code> dropped <code>t_piece</code> and <code>blow_by</code> as permissible mode values — both are now represented as devices only (<code>t_piece</code> device added under <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/62" class="text-clif-burgundy hover:underline">#62</a>, <code>blow_by</code> device added under <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/231" class="text-clif-burgundy hover:underline">#231</a>).</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/231" class="text-clif-burgundy hover:underline">Issue #231</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Aug 6, 2026</td>
+                </tr>
                 <tr>
                   <td class="px-4 py-3 text-sm font-mono">med_category (continuous)</td>
                   <td class="px-4 py-3 text-sm">Removed the duplicate <code>oxytocin</code> value from the <code>medication_admin_continuous.med_category</code> mCIDE — <code>pitocin</code> (the same drug) is the single retained category. Sites should map oxytocin infusions to <code>pitocin</code>.</td>
