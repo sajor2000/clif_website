@@ -280,10 +280,10 @@ const filterCtrlClass =
             {rows.length === 0 ? (
               <div class="p-8 text-center text-gray-500 dark:text-gray-400">No manuscripts tracked yet.</div>
             ) : (
-              <div class="overflow-x-auto">
+              <div class="overflow-auto max-h-[75vh]">
                 <table class="w-full text-sm" id="manuscripts-table">
-                  <thead>
-                    <tr class="bg-gray-50 dark:bg-neutral-700/50 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                  <thead class="sticky top-0 z-30">
+                    <tr class="bg-gray-50 dark:bg-neutral-700 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
                       <th class="px-4 py-3 min-w-[18rem]" data-sort-key="title"><span class="th-label">Title</span><span class="sort-ind"></span></th>
                       <th class="px-4 py-3 whitespace-nowrap" data-sort-key="leadsite"><span class="th-label">Lead site</span><span class="sort-ind"></span></th>
                       <th class="px-4 py-3 whitespace-nowrap" data-sort-key="leadauthor"><span class="th-label">Lead author</span><span class="sort-ind"></span></th>
@@ -300,24 +300,24 @@ const filterCtrlClass =
                       <th class="px-4 py-3 whitespace-nowrap" data-sort-key="edited"><span class="th-label">Last edited</span><span class="sort-ind"></span></th>
                       {canEdit && <th class="px-4 py-3 whitespace-nowrap">Actions</th>}
                     </tr>
-                    <tr class="bg-gray-50 dark:bg-neutral-700/50 border-t border-gray-200 dark:border-neutral-700 align-top">
+                    <tr class="bg-gray-50 dark:bg-neutral-700 border-t border-gray-200 dark:border-neutral-700 align-top">
                       <th class="px-4 pb-3 font-normal normal-case">
                         <input type="text" data-filter-attr="data-sort-title" data-filter-mode="text" placeholder="Filter title…" class={filterCtrlClass} aria-label="Filter by title" />
                       </th>
                       <th class="px-4 pb-3 font-normal normal-case">
-                        <select data-filter-attr="data-sort-leadsite" data-filter-mode="eq" class={filterCtrlClass} aria-label="Filter by lead site">
+                        <select data-filter-attr="data-sort-leadsite" data-filter-mode="multi" class={filterCtrlClass} aria-label="Filter by lead site">
                           <option value="">All</option>
                           {colFilterOptions.leadsite.map((v) => <option value={v}>{v}</option>)}
                         </select>
                       </th>
                       <th class="px-4 pb-3 font-normal normal-case">
-                        <select data-filter-attr="data-sort-leadauthor" data-filter-mode="eq" class={filterCtrlClass} aria-label="Filter by lead author">
+                        <select data-filter-attr="data-sort-leadauthor" data-filter-mode="multi" class={filterCtrlClass} aria-label="Filter by lead author">
                           <option value="">All</option>
                           {colFilterOptions.leadauthor.map((v) => <option value={v}>{v}</option>)}
                         </select>
                       </th>
                       <th class="px-4 pb-3 font-normal normal-case">
-                        <select data-filter-attr="data-sort-lds" data-filter-mode="eq" class={filterCtrlClass} aria-label="Filter by lead data scientist">
+                        <select data-filter-attr="data-sort-lds" data-filter-mode="multi" class={filterCtrlClass} aria-label="Filter by lead data scientist">
                           <option value="">All</option>
                           {colFilterOptions.lds.map((v) => <option value={v}>{v}</option>)}
                         </select>
@@ -382,7 +382,7 @@ const filterCtrlClass =
                   <tbody class="divide-y divide-gray-200 dark:divide-neutral-700">
                     {rows.map((m, i) => (
                       <tr
-                        class={`align-top hover:bg-gray-50 dark:hover:bg-neutral-700/30 transition-colors ${i % 2 === 0 ? '' : 'bg-gray-50/50 dark:bg-neutral-800/50'}`}
+                        class={`align-top hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors ${i % 2 === 0 ? 'bg-white dark:bg-neutral-800' : 'bg-gray-50 dark:bg-neutral-800'}`}
                         data-search-row
                         data-search-text={m.searchText}
                         data-published={m.statusSlugs.includes('published') ? '1' : '0'}
@@ -417,8 +417,8 @@ const filterCtrlClass =
                           )}
                         </td>
                         <td class="px-4 py-3 text-gray-700 dark:text-gray-300 max-w-[14rem]" title={m.lead_site ?? undefined}>{m.lead_site ? abbreviateSites(m.lead_site as string) : '—'}</td>
-                        <td class="px-4 py-3 text-gray-700 dark:text-gray-300 max-w-[14rem]" title={m.lead_author ?? undefined}>{m.lead_author ? abbrevName(m.lead_author as string) : '—'}</td>
-                        <td class="px-4 py-3 text-gray-700 dark:text-gray-300 max-w-[14rem]" title={m.lead_data_scientist ?? undefined}>{m.lead_data_scientist ? abbrevName(m.lead_data_scientist as string) : '—'}</td>
+                        <td class="px-4 py-3 text-gray-700 dark:text-gray-300 max-w-[14rem]" title={m.lead_author ?? undefined}>{m.lead_author ? abbrevNames(m.lead_author as string) : '—'}</td>
+                        <td class="px-4 py-3 text-gray-700 dark:text-gray-300 max-w-[14rem]" title={m.lead_data_scientist ?? undefined}>{m.lead_data_scientist ? abbrevNames(m.lead_data_scientist as string) : '—'}</td>
                         <td class="px-4 py-3 text-gray-700 dark:text-gray-300 max-w-[16rem]" title={m.lead_authors ?? undefined}>{m.lead_authors ? abbrevNames(m.lead_authors as string) : '—'}</td>
                         <td class="px-4 py-3">
                           {canEdit ? (
@@ -550,24 +550,6 @@ const filterCtrlClass =
             </select>
           </div>
           <div>
-            <label for="m-lead_author" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Lead author</label>
-            <select id="m-lead_author" class={inputClass}>
-              <option value="">—</option>
-              {memberNames.map((name) => (
-                <option value={name}>{name}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label for="m-lead_data_scientist" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Lead data scientist</label>
-            <select id="m-lead_data_scientist" class={inputClass}>
-              <option value="">—</option>
-              {memberNames.map((name) => (
-                <option value={name}>{name}</option>
-              ))}
-            </select>
-          </div>
-          <div>
             <label for="m-github_repo" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">GitHub repository</label>
             <input type="url" id="m-github_repo" class={inputClass} placeholder="https://github.com/…" />
           </div>
@@ -575,6 +557,36 @@ const filterCtrlClass =
             <label for="m-manuscript_link" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Manuscript link</label>
             <input type="url" id="m-manuscript_link" class={inputClass} placeholder="https://…" />
           </div>
+        </div>
+
+        <div>
+          <span class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Lead author(s)</span>
+          {memberNames.length > 0 && (
+            <div class="max-h-36 overflow-y-auto border border-gray-200 dark:border-neutral-600 rounded-lg p-3 flex flex-wrap gap-x-4 gap-y-2">
+              {memberNames.map((name) => (
+                <label class="inline-flex items-center gap-1.5 text-sm text-gray-700 dark:text-gray-300">
+                  <input type="checkbox" class="m-leadauthor w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy" value={name} />
+                  {name}
+                </label>
+              ))}
+            </div>
+          )}
+          <input type="text" id="m-lead_author_other" class={`${inputClass} mt-2`} placeholder="Other lead authors (comma-separated)" />
+        </div>
+
+        <div>
+          <span class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Lead data scientist(s)</span>
+          {memberNames.length > 0 && (
+            <div class="max-h-36 overflow-y-auto border border-gray-200 dark:border-neutral-600 rounded-lg p-3 flex flex-wrap gap-x-4 gap-y-2">
+              {memberNames.map((name) => (
+                <label class="inline-flex items-center gap-1.5 text-sm text-gray-700 dark:text-gray-300">
+                  <input type="checkbox" class="m-lds w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy" value={name} />
+                  {name}
+                </label>
+              ))}
+            </div>
+          )}
+          <input type="text" id="m-lead_data_scientist_other" class={`${inputClass} mt-2`} placeholder="Other lead data scientists (comma-separated)" />
         </div>
 
         <div>
@@ -593,13 +605,18 @@ const filterCtrlClass =
         </div>
 
         <div>
-          <label for="m-lead_site" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Lead site</label>
-          <select id="m-lead_site" class={inputClass}>
-            <option value="">—</option>
-            {siteNames.map((name) => (
-              <option value={name}>{name}</option>
-            ))}
-          </select>
+          <span class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Lead site(s)</span>
+          {siteNames.length > 0 && (
+            <div class="max-h-36 overflow-y-auto border border-gray-200 dark:border-neutral-600 rounded-lg p-3 flex flex-wrap gap-x-4 gap-y-2">
+              {siteNames.map((name) => (
+                <label class="inline-flex items-center gap-1.5 text-sm text-gray-700 dark:text-gray-300">
+                  <input type="checkbox" class="m-leadsite w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy" value={name} />
+                  {name}
+                </label>
+              ))}
+            </div>
+          )}
+          <input type="text" id="m-lead_site_other" class={`${inputClass} mt-2`} placeholder="Other lead sites (comma-separated)" />
         </div>
 
         <div>
@@ -840,9 +857,9 @@ const filterCtrlClass =
       var byId = {};
       manuscripts.forEach(function (m) { byId[m.id] = m; });
 
-      // lead_authors, contributing_sites, lead_site, validation_buddy,
-      // lead_data_scientist and clif_version are handled separately as
-      // checkbox lists / dropdowns.
+      // lead_authors, contributing_sites, lead_site, lead_author and
+      // lead_data_scientist are checkbox lists (multi-select, comma-joined);
+      // validation_buddy and clif_version stay single-value dropdowns.
       var TEXT_FIELDS = ['title', 'journal', 'ats',
         'github_repo', 'manuscript_link', 'cite', 'notes'];
 
@@ -904,12 +921,10 @@ const filterCtrlClass =
         TEXT_FIELDS.forEach(function (f) { setField(f, data ? data[f] : ''); });
         setChecklist('m-lead-author', 'm-lead_authors_other', data ? data.lead_authors : '');
         setChecklist('m-site', 'm-contributing_sites_other', data ? data.contributing_sites : '', siteAliases);
-        var leadSiteVal = data ? data.lead_site : '';
-        var leadSiteAlias = leadSiteVal && siteAliases[leadSiteVal.trim().toLowerCase()];
-        setSelectValue('m-lead_site', leadSiteAlias || leadSiteVal);
+        setChecklist('m-leadsite', 'm-lead_site_other', data ? data.lead_site : '', siteAliases);
+        setChecklist('m-leadauthor', 'm-lead_author_other', data ? data.lead_author : '');
+        setChecklist('m-lds', 'm-lead_data_scientist_other', data ? data.lead_data_scientist : '');
         setSelectValue('m-validation_buddy', data ? data.validation_buddy : '');
-        setSelectValue('m-lead_author', data ? data.lead_author : '');
-        setSelectValue('m-lead_data_scientist', data ? data.lead_data_scientist : '');
         setSelectValue('m-clif_version', data ? data.clif_version : '');
         var selected = data && data.status ? data.status : [];
         form.querySelectorAll('.m-status').forEach(function (cb) {
@@ -944,14 +959,11 @@ const filterCtrlClass =
         });
         payload.lead_authors = readChecklist('m-lead-author', 'm-lead_authors_other');
         payload.contributing_sites = readChecklist('m-site', 'm-contributing_sites_other');
-        var leadSiteEl = document.getElementById('m-lead_site');
-        payload.lead_site = leadSiteEl ? leadSiteEl.value : '';
+        payload.lead_site = readChecklist('m-leadsite', 'm-lead_site_other');
+        payload.lead_author = readChecklist('m-leadauthor', 'm-lead_author_other');
+        payload.lead_data_scientist = readChecklist('m-lds', 'm-lead_data_scientist_other');
         var buddyEl = document.getElementById('m-validation_buddy');
         payload.validation_buddy = buddyEl ? buddyEl.value : '';
-        var leadAuthorEl = document.getElementById('m-lead_author');
-        payload.lead_author = leadAuthorEl ? leadAuthorEl.value : '';
-        var ldsEl = document.getElementById('m-lead_data_scientist');
-        payload.lead_data_scientist = ldsEl ? ldsEl.value : '';
         var clifEl = document.getElementById('m-clif_version');
         payload.clif_version = clifEl ? clifEl.value : '';
         form.querySelectorAll('.m-status:checked').forEach(function (cb) {
@@ -1003,6 +1015,16 @@ const filterCtrlClass =
     }
     :global(.dark) #tracker-main:fullscreen {
       background: rgb(23 23 23); /* neutral-900 */
+    }
+
+    /* Frozen title column: cells take their row's (opaque) background so
+       scrolled columns pass underneath instead of showing through. */
+    #manuscripts-table th:first-child,
+    #manuscripts-table td:first-child {
+      position: sticky;
+      left: 0;
+      z-index: 10;
+      background-color: inherit;
     }
   </style>
 

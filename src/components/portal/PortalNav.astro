@@ -44,7 +44,6 @@ const portalItems = [
   { label: 'Letter of Support Tracker', href: '/portal/los-requests', icon: 'document', wip: false },
   { label: 'Manuscript Tracker', href: '/portal/status', icon: 'check-circle', wip: false },
   { label: 'Member Directory', href: '/portal/directory', icon: 'users', wip: false },
-  { label: 'Notifications', href: '/portal/notifications', icon: 'bell', wip: false },
   { label: 'Project Run Tracker', href: '/portal/project-runs', icon: 'check-circle', wip: false },
   { label: 'Secure Masking', href: '/portal/crypto', icon: 'lock', wip: false },
   { label: 'Site Details', href: '/portal/site-details', icon: 'building', wip: false },
@@ -119,14 +118,29 @@ function iconSvg(name: string): string {
           {item.href === '/portal' && taskCount > 0 && (
             <span class="admin-count ml-auto inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 text-[10px] font-bold text-white bg-clif-burgundy rounded-full" title={`${taskCount} pending task${taskCount === 1 ? '' : 's'}`}>{taskCount > 99 ? '99+' : taskCount}</span>
           )}
-          {item.href === '/portal/notifications' && unreadNotifs > 0 && (
-            <span class="admin-count ml-auto inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 text-[10px] font-bold text-white bg-red-500 rounded-full" title={`${unreadNotifs} unread notification${unreadNotifs === 1 ? '' : 's'}`}>{unreadNotifs > 99 ? '99+' : unreadNotifs}</span>
-          )}
         </a>
       </li>
     ))}
+    <li class="pt-2 mt-2 border-t border-gray-200 dark:border-neutral-700">
+      <a
+        href="/portal/notifications"
+        title="Notifications"
+        class={`nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+          isActive('/portal/notifications')
+            ? 'bg-clif-burgundy/10 text-clif-burgundy dark:bg-clif-burgundy/20'
+            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700'
+        }`}
+        aria-current={isActive('/portal/notifications') ? 'page' : undefined}
+      >
+        <span class="nav-icon shrink-0" set:html={iconSvg('bell')} />
+        <span class="nav-label">Notifications</span>
+        {unreadNotifs > 0 && (
+          <span class="admin-count ml-auto inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 text-[10px] font-bold text-white bg-red-500 rounded-full" title={`${unreadNotifs} unread notification${unreadNotifs === 1 ? '' : 's'}`}>{unreadNotifs > 99 ? '99+' : unreadNotifs}</span>
+        )}
+      </a>
+    </li>
     {isAdmin && (
-      <li class="pt-2 mt-2 border-t border-gray-200 dark:border-neutral-700">
+      <li>
         <a
           href="/portal/admin"
           title="Admin Panel"
