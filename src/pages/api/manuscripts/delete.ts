@@ -25,7 +25,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
   const db = getDb();
 
   const found = await db.execute({
-    sql: 'SELECT lead_authors, lead_data_scientist FROM manuscripts WHERE id = ?',
+    sql: 'SELECT lead_author, lead_authors, lead_data_scientist FROM manuscripts WHERE id = ?',
     args: [id],
   });
   if (found.rows.length === 0) {
@@ -37,7 +37,11 @@ export const POST: APIRoute = async ({ locals, request }) => {
 
   // Admins may delete anything; everyone else must be named on the manuscript
   // as a lead author or its lead data scientist.
-  const row = found.rows[0] as { lead_authors: string | null; lead_data_scientist: string | null };
+  const row = found.rows[0] as {
+    lead_author: string | null;
+    lead_authors: string | null;
+    lead_data_scientist: string | null;
+  };
   if (user.role !== 'admin' && !isNamedOnManuscript(user.full_name, row)) {
     return new Response(
       JSON.stringify({ error: 'Only admins or people named on the manuscript can delete it.' }),

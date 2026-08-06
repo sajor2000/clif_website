@@ -14,6 +14,25 @@ import {
 } from '../../lib/manuscript-status.js';
 import { isNamedOnManuscript } from '../../lib/manuscript-access';
 import { abbreviateSites, siteAliasMap } from '../../lib/site-abbreviations';
+import { parseName } from '../../lib/format-byline';
+
+// Row display: abbreviate first names ("William Parker" -> "W. Parker").
+// First tokens that are already initials ("J.C.") are kept as-is. Selects
+// (filters and the edit modal) keep full names.
+function abbrevName(full: string | null | undefined): string {
+  const { first, middleInitials, last } = parseName(full);
+  if (!first) return last;
+  const firstAbbrev = /\./.test(first) || first.length <= 2 ? first : `${first[0]}.`;
+  return [firstAbbrev, middleInitials, last].filter(Boolean).join(' ');
+}
+
+function abbrevNames(raw: string | null | undefined): string {
+  return String(raw ?? '')
+    .split(',')
+    .map((n) => abbrevName(n.trim()))
+    .filter(Boolean)
+    .join(', ');
+}
 
 const user = Astro.locals.user;
 const isAdmin = user?.role === 'admin';
@@ -76,6 +95,7 @@ const rows = manuscripts.map((m) => {
   // label) and still matches on any status tag the manuscript carries.
   const searchText = [
     m.title,
+    m.lead_author,
     m.lead_authors,
     m.lead_data_scientist,
     m.journal,
@@ -131,6 +151,7 @@ const distinctValues = (vals: (string | null | undefined)[]): string[] => {
 };
 const colFilterOptions = {
   lead: distinctValues(rows.map((m) => m.lead_authors as string)),
+  leadauthor: distinctValues(rows.map((m) => m.lead_author as string)),
   lds: distinctValues(rows.map((m) => m.lead_data_scientist as string)),
   journal: distinctValues(rows.map((m) => m.journal as string)),
   ats: distinctValues(rows.map((m) => m.ats as string)),
@@ -145,6 +166,7 @@ const editData = rows.map((m) => ({
   title: m.title ?? '',
   clif_version: m.clif_version ?? '',
   ats: m.ats ?? '',
+  lead_author: m.lead_author ?? '',
   lead_authors: m.lead_authors ?? '',
   lead_data_scientist: m.lead_data_scientist ?? '',
   journal: m.journal ?? '',
@@ -187,7 +209,7 @@ const filterCtrlClass =
             <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Manuscript progress</h2>
             <span class="text-xs text-gray-400 dark:text-gray-500">each row shows its furthest stage</span>
           </div>
-          <ol class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-11 gap-x-2 gap-y-4">
+          <ol class="grid grid-cols-4 sm:grid-cols-5 lg:grid-cols-7 gap-x-2 gap-y-4">
             {STATUS_PROGRESSION.map((slug, i) => (
               <li class="flex flex-col items-center text-center gap-1.5">
                 <span class={`flex items-center justify-center w-7 h-7 rounded-full text-[11px] font-bold shadow-sm ${statusClasses(slug)}`}>
@@ -264,8 +286,9 @@ const filterCtrlClass =
                     <tr class="bg-gray-50 dark:bg-neutral-700/50 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
                       <th class="px-4 py-3 min-w-[18rem]" data-sort-key="title"><span class="th-label">Title</span><span class="sort-ind"></span></th>
                       <th class="px-4 py-3 whitespace-nowrap" data-sort-key="leadsite"><span class="th-label">Lead site</span><span class="sort-ind"></span></th>
-                      <th class="px-4 py-3 whitespace-nowrap" data-sort-key="lead"><span class="th-label">Lead authors</span><span class="sort-ind"></span></th>
+                      <th class="px-4 py-3 whitespace-nowrap" data-sort-key="leadauthor"><span class="th-label">Lead author</span><span class="sort-ind"></span></th>
                       <th class="px-4 py-3 whitespace-nowrap" data-sort-key="lds"><span class="th-label">Lead data scientist</span><span class="sort-ind"></span></th>
+                      <th class="px-4 py-3 whitespace-nowrap" data-sort-key="lead"><span class="th-label">Authors</span><span class="sort-ind"></span></th>
                       <th class="px-4 py-3" data-sort-key="status"><span class="th-label">Status</span><span class="sort-ind"></span></th>
                       <th class="px-4 py-3 whitespace-nowrap" data-sort-key="journal"><span class="th-label">Journal</span><span class="sort-ind"></span></th>
                       <th class="px-4 py-3 whitespace-nowrap" data-sort-key="ats"><span class="th-label">ATS</span><span class="sort-ind"></span></th>
@@ -288,15 +311,21 @@ const filterCtrlClass =
                         </select>
                       </th>
                       <th class="px-4 pb-3 font-normal normal-case">
-                        <select data-filter-attr="data-sort-lead" data-filter-mode="multi" class={filterCtrlClass} aria-label="Filter by lead author">
+                        <select data-filter-attr="data-sort-leadauthor" data-filter-mode="eq" class={filterCtrlClass} aria-label="Filter by lead author">
                           <option value="">All</option>
-                          {colFilterOptions.lead.map((v) => <option value={v}>{v}</option>)}
+                          {colFilterOptions.leadauthor.map((v) => <option value={v}>{v}</option>)}
                         </select>
                       </th>
                       <th class="px-4 pb-3 font-normal normal-case">
                         <select data-filter-attr="data-sort-lds" data-filter-mode="eq" class={filterCtrlClass} aria-label="Filter by lead data scientist">
                           <option value="">All</option>
                           {colFilterOptions.lds.map((v) => <option value={v}>{v}</option>)}
+                        </select>
+                      </th>
+                      <th class="px-4 pb-3 font-normal normal-case">
+                        <select data-filter-attr="data-sort-lead" data-filter-mode="multi" class={filterCtrlClass} aria-label="Filter by author">
+                          <option value="">All</option>
+                          {colFilterOptions.lead.map((v) => <option value={v}>{v}</option>)}
                         </select>
                       </th>
                       <th class="px-4 pb-3 font-normal normal-case">
@@ -360,6 +389,7 @@ const filterCtrlClass =
                         data-status={m.statusSlugs.join(',')}
                         data-sort-title={(m.title ?? '').toLowerCase()}
                         data-sort-lead={(m.lead_authors ?? '').toLowerCase()}
+                        data-sort-leadauthor={(m.lead_author ?? '').toLowerCase()}
                         data-sort-lds={(m.lead_data_scientist ?? '').toLowerCase()}
                         data-sort-status={m.latest ? STATUS_PROGRESSION.indexOf(m.latest) : -1}
                         data-sort-journal={(m.journal ?? '').toLowerCase()}
@@ -387,8 +417,9 @@ const filterCtrlClass =
                           )}
                         </td>
                         <td class="px-4 py-3 text-gray-700 dark:text-gray-300 max-w-[14rem]" title={m.lead_site ?? undefined}>{m.lead_site ? abbreviateSites(m.lead_site as string) : '—'}</td>
-                        <td class="px-4 py-3 text-gray-700 dark:text-gray-300 max-w-[16rem]">{m.lead_authors ?? '—'}</td>
-                        <td class="px-4 py-3 text-gray-700 dark:text-gray-300 max-w-[14rem]">{m.lead_data_scientist ?? '—'}</td>
+                        <td class="px-4 py-3 text-gray-700 dark:text-gray-300 max-w-[14rem]" title={m.lead_author ?? undefined}>{m.lead_author ? abbrevName(m.lead_author as string) : '—'}</td>
+                        <td class="px-4 py-3 text-gray-700 dark:text-gray-300 max-w-[14rem]" title={m.lead_data_scientist ?? undefined}>{m.lead_data_scientist ? abbrevName(m.lead_data_scientist as string) : '—'}</td>
+                        <td class="px-4 py-3 text-gray-700 dark:text-gray-300 max-w-[16rem]" title={m.lead_authors ?? undefined}>{m.lead_authors ? abbrevNames(m.lead_authors as string) : '—'}</td>
                         <td class="px-4 py-3">
                           {canEdit ? (
                             <select
@@ -414,7 +445,7 @@ const filterCtrlClass =
                         <td class="px-4 py-3 text-gray-700 dark:text-gray-300 max-w-[14rem]">{m.journal ?? '—'}</td>
                         <td class="px-4 py-3 text-gray-700 dark:text-gray-300 whitespace-nowrap">{m.ats ?? '—'}</td>
                         <td class="px-4 py-3 text-gray-700 dark:text-gray-300 max-w-[16rem]" title={m.contributing_sites ?? undefined}>{m.contributing_sites ? abbreviateSites(m.contributing_sites as string) : '—'}</td>
-                        <td class="px-4 py-3 text-gray-700 dark:text-gray-300 whitespace-nowrap">{m.validation_buddy ?? '—'}</td>
+                        <td class="px-4 py-3 text-gray-700 dark:text-gray-300 whitespace-nowrap" title={m.validation_buddy ?? undefined}>{m.validation_buddy ? abbrevName(m.validation_buddy as string) : '—'}</td>
                         <td class="px-4 py-3 whitespace-nowrap">
                           {m.github_repo ? (
                             <a href={m.github_repo} target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:underline">Repo</a>
@@ -519,6 +550,15 @@ const filterCtrlClass =
             </select>
           </div>
           <div>
+            <label for="m-lead_author" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Lead author</label>
+            <select id="m-lead_author" class={inputClass}>
+              <option value="">—</option>
+              {memberNames.map((name) => (
+                <option value={name}>{name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
             <label for="m-lead_data_scientist" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Lead data scientist</label>
             <select id="m-lead_data_scientist" class={inputClass}>
               <option value="">—</option>
@@ -538,7 +578,7 @@ const filterCtrlClass =
         </div>
 
         <div>
-          <span class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Lead authors</span>
+          <span class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Authors</span>
           {memberNames.length > 0 && (
             <div class="max-h-36 overflow-y-auto border border-gray-200 dark:border-neutral-600 rounded-lg p-3 flex flex-wrap gap-x-4 gap-y-2">
               {memberNames.map((name) => (
@@ -868,6 +908,7 @@ const filterCtrlClass =
         var leadSiteAlias = leadSiteVal && siteAliases[leadSiteVal.trim().toLowerCase()];
         setSelectValue('m-lead_site', leadSiteAlias || leadSiteVal);
         setSelectValue('m-validation_buddy', data ? data.validation_buddy : '');
+        setSelectValue('m-lead_author', data ? data.lead_author : '');
         setSelectValue('m-lead_data_scientist', data ? data.lead_data_scientist : '');
         setSelectValue('m-clif_version', data ? data.clif_version : '');
         var selected = data && data.status ? data.status : [];
@@ -907,6 +948,8 @@ const filterCtrlClass =
         payload.lead_site = leadSiteEl ? leadSiteEl.value : '';
         var buddyEl = document.getElementById('m-validation_buddy');
         payload.validation_buddy = buddyEl ? buddyEl.value : '';
+        var leadAuthorEl = document.getElementById('m-lead_author');
+        payload.lead_author = leadAuthorEl ? leadAuthorEl.value : '';
         var ldsEl = document.getElementById('m-lead_data_scientist');
         payload.lead_data_scientist = ldsEl ? ldsEl.value : '';
         var clifEl = document.getElementById('m-clif_version');

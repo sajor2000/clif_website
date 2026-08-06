@@ -22,6 +22,18 @@ export const MANUSCRIPT_STATUS_TAGS = {
     label: 'Accepted',
     classes: 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400',
   },
+  rr: {
+    label: 'R&R',
+    classes: 'bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-400',
+  },
+  rerun: {
+    label: 'Rerun',
+    classes: 'bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-400',
+  },
+  'preparing-rr': {
+    label: 'Preparing R&R',
+    classes: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
+  },
   'under-review': {
     label: 'Under review',
     classes: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
@@ -79,6 +91,9 @@ export const STATUS_PROGRESSION = [
   'code-run-complete',
   'pre-print',
   'under-review',
+  'preparing-rr',
+  'rerun',
+  'rr',
   'accepted',
   'published',
 ];
@@ -111,6 +126,13 @@ const PHRASE_TO_SLUG = {
   'accepted': 'accepted',
   'under review': 'under-review',
   'in review': 'under-review',
+  'preparing r&r': 'preparing-rr',
+  'preparing rr': 'preparing-rr',
+  'r&r': 'rr',
+  'rr': 'rr',
+  'revise and resubmit': 'rr',
+  'rerun': 'rerun',
+  're run': 'rerun',
   'pre print': 'pre-print',
   'preprint': 'pre-print',
   'manuscript wip': 'manuscript-wip',
