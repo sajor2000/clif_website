@@ -36,6 +36,18 @@ try {
   error = e.message;
 }
 
+// Hospital-level rows (migrations/017). Separate try so the page still renders
+// sites if the hospitals table doesn't exist yet.
+let hospitals: any[] = [];
+try {
+  const hres = await db.execute(
+    'SELECT * FROM hospitals ORDER BY site_key, hospital_number, hospital_id_name'
+  );
+  hospitals = hres.rows.map((row) => ({ ...row }));
+} catch {
+  hospitals = [];
+}
+
 const badgeOn = 'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-400';
 const badgeOff = 'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-400 dark:bg-neutral-700 dark:text-gray-500';
 
@@ -106,6 +118,21 @@ const siteViewData = sites.map((s: any) => {
   };
 });
 
+const fmtNum = (v: any) => (v == null ? null : Number(v).toLocaleString('en-US'));
+const hospitalViewData = hospitals.map((h: any) => ({
+  ...h,
+  // Hospitals without a linked site (e.g. MIMIC) are admin-only
+  _canEdit: user?.role === 'admin' || (!!h.site_id && editableSiteIds.has(h.site_id as string)),
+  _lttv: h.lttv_proportion == null ? null : `${(Number(h.lttv_proportion) * 100).toFixed(1)}%`,
+  _ventHours: fmtNum(h.vent_patient_hours),
+  _ventPatients: fmtNum(h.vent_patients),
+  _ventEncounters: fmtNum(h.vent_encounters),
+}));
+const hospitalSiteKeys = [...new Set(hospitalViewData.map((h: any) => h.site_key as string))];
+const hospitalRegions = [
+  ...new Set(hospitalViewData.map((h: any) => h.region as string).filter(Boolean)),
+].sort();
+
 // Common classes to keep template clean
 const inputCls = 'edit-field w-full text-sm px-2 py-1.5 border border-gray-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-700 text-gray-900 dark:text-white';
 const labelCls = 'block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1';
@@ -119,6 +146,11 @@ const tdCls = 'px-3 py-2.5 text-gray-600 dark:text-gray-400 whitespace-nowrap';
 const tdCenter = 'px-3 py-2.5 text-center text-gray-900 dark:text-white';
 
 const editBtnCls = 'px-2.5 py-1 text-xs font-medium text-clif-burgundy border border-clif-burgundy/30 rounded-lg hover:bg-clif-burgundy/10 transition-colors';
+
+// Hospital edit fields use a distinct collector class so the site save JS
+// (which walks `.edit-field`) never picks them up.
+const hospInputCls = 'hosp-edit-field w-full text-sm px-2 py-1.5 border border-gray-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-700 text-gray-900 dark:text-white';
+const hospFilterCls = 'hosp-col-filter min-w-[52px] text-[11px] px-1 py-0.5 rounded border border-gray-300 dark:border-neutral-500 bg-white dark:bg-neutral-700 text-gray-700 dark:text-gray-300';
 
 // Serialize site data for client-side chart
 const sitesJson = JSON.stringify(siteViewData.map((s: any) => ({
@@ -135,7 +167,7 @@ const sitesJson = JSON.stringify(siteViewData.map((s: any) => ({
 })));
 ---
 
-<BaseLayout title="Site Details">
+<BaseLayout title="Hospital & Site Details">
   <div class="container mx-auto px-4 py-8">
     <div class="flex flex-col lg:flex-row gap-8">
       <aside class="lg:w-64 shrink-0">
@@ -146,8 +178,8 @@ const sitesJson = JSON.stringify(siteViewData.map((s: any) => ({
         <!-- Header -->
         <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Site Details</h1>
-            <p class="text-gray-600 dark:text-gray-400 mt-1">Institution metadata, IRB info, and data availability across consortium sites</p>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Hospital & Site Details</h1>
+            <p class="text-gray-600 dark:text-gray-400 mt-1">Institution metadata, IRB info, data availability, and hospital-level details across consortium sites</p>
           </div>
           {!error && siteViewData.length > 0 && (
             <div class="flex items-center gap-3 flex-wrap">
@@ -157,10 +189,15 @@ const sitesJson = JSON.stringify(siteViewData.map((s: any) => ({
                 placeholder="Search sites..."
                 class="hidden w-full sm:w-56 px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent"
               />
-              <span class="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">{siteViewData.length} sites</span>
+              <span class="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                {siteViewData.length} sites{hospitalViewData.length > 0 ? ` · ${hospitalViewData.length} hospitals` : ''}
+              </span>
               <div class="flex items-center border border-gray-300 dark:border-neutral-600 rounded-lg overflow-hidden ml-auto">
                 <button id="view-summary" class="px-3 py-1.5 text-xs font-medium bg-clif-burgundy text-white" title="Summary view">Summary</button>
-                <button id="view-table" class="px-3 py-1.5 text-xs font-medium bg-white dark:bg-neutral-700 text-gray-600 dark:text-gray-300" title="Table view">Table</button>
+                <button id="view-table" class="px-3 py-1.5 text-xs font-medium bg-white dark:bg-neutral-700 text-gray-600 dark:text-gray-300" title="Site table view">Sites</button>
+                {hospitalViewData.length > 0 && (
+                  <button id="view-hospitals" class="px-3 py-1.5 text-xs font-medium bg-white dark:bg-neutral-700 text-gray-600 dark:text-gray-300" title="Hospital table view">Hospitals</button>
+                )}
               </div>
             </div>
           )}
@@ -369,6 +406,106 @@ const sitesJson = JSON.stringify(siteViewData.map((s: any) => ({
           </div>
         )}
 
+        <!-- HOSPITALS VIEW (hidden by default) -->
+        {!error && hospitalViewData.length > 0 && (
+          <div id="hospital-table-wrap" class="hidden overflow-x-auto">
+            <table class="w-full text-sm border-collapse">
+              <thead>
+                <tr class="bg-gray-50 dark:bg-neutral-700">
+                  <th class="px-3 py-2.5 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase whitespace-nowrap sticky left-0 bg-gray-50 dark:bg-neutral-700">Site</th>
+                  <th class={thCls}>Hospital</th>
+                  <th class={thCls}>Full Name</th>
+                  <th class={thCls}>Type</th>
+                  <th class={thCls}>Region</th>
+                  <th class={thCls}>Zip</th>
+                  <th class={thCls}>CCN</th>
+                  <th class={thCls}>ADT ID</th>
+                  <th class={thCenter}>#</th>
+                  <th class={thCenter}># ICUs</th>
+                  <th class={thCenter}>ICU Beds</th>
+                  <th class={thCls}>RT Vent Protocol</th>
+                  <th class={thCenter}>LTTV %</th>
+                  <th class={thCenter}>Vent Hours</th>
+                  <th class={thCenter}>Vent Patients</th>
+                  <th class={thCenter}>Vent Encounters</th>
+                  <th class={thCls}>Last Updated</th>
+                  <th class={thCenter}></th>
+                </tr>
+                <tr class="bg-gray-100 dark:bg-neutral-600">
+                  <th class="px-2 py-1.5 sticky left-0 bg-gray-100 dark:bg-neutral-600">
+                    <select class={hospFilterCls} data-col="0">
+                      <option value="">All</option>
+                      {hospitalSiteKeys.map((k) => (
+                        <option value={k}>{k}</option>
+                      ))}
+                    </select>
+                  </th>
+                  <th class="px-2 py-1.5"></th>
+                  <th class="px-2 py-1.5"></th>
+                  <th class="px-2 py-1.5">
+                    <select class={hospFilterCls} data-col="3">
+                      <option value="">All</option>
+                      <option value="Academic">Academic</option>
+                      <option value="Community">Community</option>
+                    </select>
+                  </th>
+                  <th class="px-2 py-1.5">
+                    <select class={hospFilterCls} data-col="4">
+                      <option value="">All</option>
+                      {hospitalRegions.map((r) => (
+                        <option value={r}>{r}</option>
+                      ))}
+                    </select>
+                  </th>
+                  <th class="px-2 py-1.5"></th>
+                  <th class="px-2 py-1.5"></th>
+                  <th class="px-2 py-1.5"></th>
+                  <th class="px-2 py-1.5"></th>
+                  <th class="px-2 py-1.5"></th>
+                  <th class="px-2 py-1.5"></th>
+                  <th class="px-2 py-1.5"></th>
+                  <th class="px-2 py-1.5"></th>
+                  <th class="px-2 py-1.5"></th>
+                  <th class="px-2 py-1.5"></th>
+                  <th class="px-2 py-1.5"></th>
+                  <th class="px-2 py-1.5"></th>
+                  <th class="px-2 py-1.5"></th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-200 dark:divide-neutral-700">
+                {hospitalViewData.map((h: any) => (
+                  <tr class="hover:bg-gray-50 dark:hover:bg-neutral-700" data-hosp-row>
+                    <td class="px-3 py-2.5 font-semibold text-gray-900 dark:text-white whitespace-nowrap sticky left-0 bg-white dark:bg-neutral-800">{h.site_key}</td>
+                    <td class={tdCls}>{h.hospital_id_name}</td>
+                    <td class="px-3 py-2.5 text-gray-600 dark:text-gray-400 max-w-[280px]" title={h.hospital_full_name ?? ''}>{h.hospital_full_name ?? '—'}</td>
+                    <td class={tdCls}>{h.hospital_type ?? '—'}</td>
+                    <td class={tdCls}>{h.region ?? '—'}</td>
+                    <td class={tdCls}>{h.zipcode ?? '—'}</td>
+                    <td class={tdCls}>{h.ccn ?? '—'}</td>
+                    <td class={tdCls}>{h.hospital_id ?? '—'}</td>
+                    <td class={tdCenter}>{h.hospital_number ?? '—'}</td>
+                    <td class={tdCenter}>{h.num_icus ?? '—'}</td>
+                    <td class={tdCenter}>{h.icu_beds ?? '—'}</td>
+                    <td class="px-3 py-2.5 text-gray-600 dark:text-gray-400 max-w-[220px]" title={h.rt_vent_protocol ?? ''}>{h.rt_vent_protocol ?? '—'}</td>
+                    <td class={tdCenter}>{h._lttv ?? '—'}</td>
+                    <td class={tdCenter}>{h._ventHours ?? '—'}</td>
+                    <td class={tdCenter}>{h._ventPatients ?? '—'}</td>
+                    <td class={tdCenter}>{h._ventEncounters ?? '—'}</td>
+                    <td class={tdCls}>{h.updated_at ? new Date(h.updated_at + 'Z').toLocaleDateString() : '—'}</td>
+                    <td class="px-3 py-2.5 text-center whitespace-nowrap">
+                      {h._canEdit && (
+                        <button class={editBtnCls + ' edit-hosp-btn'} data-hospital-id={h.id}>
+                          Edit
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
         <!-- Edit panels (below table) -->
         {!error && siteViewData.filter((s: any) => s._canEdit).map((site: any) => (
           <div class="site-edit-form hidden mt-4 bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-5" data-site-id={site.id}>
@@ -539,6 +676,117 @@ const sitesJson = JSON.stringify(siteViewData.map((s: any) => ({
             </div>
           </div>
         ))}
+
+        <!-- Hospital edit panels (below table) -->
+        {!error && hospitalViewData.filter((h: any) => h._canEdit).map((h: any) => (
+          <div class="hosp-edit-form hidden mt-4 bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-5" data-hospital-id={h.id}>
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-bold text-gray-900 dark:text-white">
+                Editing: {h.hospital_id_name}
+                <span class="text-sm font-normal text-gray-500 dark:text-gray-400">({h.site_key})</span>
+              </h3>
+            </div>
+            <div class="space-y-4">
+              <!-- Row 1: Identity -->
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div class="col-span-2">
+                  <label class={labelCls}>Hospital Full Name</label>
+                  <input type="text" class={hospInputCls} data-field="hospital_full_name" value={h.hospital_full_name ?? ''} />
+                </div>
+                <div>
+                  <label class={labelCls}>Hospital Type</label>
+                  <select class={hospInputCls} data-field="hospital_type">
+                    <option value="">--</option>
+                    <option value="Academic" selected={h.hospital_type === 'Academic'}>Academic</option>
+                    <option value="Community" selected={h.hospital_type === 'Community'}>Community</option>
+                  </select>
+                </div>
+                <div>
+                  <label class={labelCls}>Region</label>
+                  <input type="text" class={hospInputCls} data-field="region" value={h.region ?? ''} />
+                </div>
+              </div>
+
+              <!-- Row 2: Identifiers -->
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div>
+                  <label class={labelCls}>Zipcode</label>
+                  <input type="text" class={hospInputCls} data-field="zipcode" value={h.zipcode ?? ''} />
+                </div>
+                <div>
+                  <label class={labelCls}>CCN</label>
+                  <input type="text" class={hospInputCls} data-field="ccn" value={h.ccn ?? ''} />
+                </div>
+                <div>
+                  <label class={labelCls}>hospital_id (ADT)</label>
+                  <input type="text" class={hospInputCls} data-field="hospital_id" value={h.hospital_id ?? ''} />
+                </div>
+                <div>
+                  <label class={labelCls}>Hospital #</label>
+                  <input type="number" class={hospInputCls} data-field="hospital_number" value={h.hospital_number ?? ''} />
+                </div>
+              </div>
+
+              <!-- Row 3: ICU capacity -->
+              <div class={sectionBorder}>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div>
+                    <label class={labelCls}># ICUs</label>
+                    <input type="number" class={hospInputCls} data-field="num_icus" value={h.num_icus ?? ''} />
+                  </div>
+                  <div>
+                    <label class={labelCls}>ICU Beds</label>
+                    <input type="text" class={hospInputCls} data-field="icu_beds" value={h.icu_beds ?? ''} />
+                  </div>
+                  <div class="col-span-2">
+                    <label class={labelCls}>RT-Driven Ventilator Protocol</label>
+                    <input type="text" class={hospInputCls} data-field="rt_vent_protocol" value={h.rt_vent_protocol ?? ''} placeholder="Yes / No / Unknown (+ caveats)" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Row 4: Ventilation stats -->
+              <div class={sectionBorder}>
+                <h4 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Ventilation Stats</h4>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div>
+                    <label class={labelCls}>LTTV Proportion (0–1)</label>
+                    <input type="number" step="0.001" min="0" max="1" class={hospInputCls} data-field="lttv_proportion" value={h.lttv_proportion ?? ''} />
+                  </div>
+                  <div>
+                    <label class={labelCls}>Total Vent Patient Hours</label>
+                    <input type="number" class={hospInputCls} data-field="vent_patient_hours" value={h.vent_patient_hours ?? ''} />
+                  </div>
+                  <div>
+                    <label class={labelCls}>Patients on Ventilator</label>
+                    <input type="number" class={hospInputCls} data-field="vent_patients" value={h.vent_patients ?? ''} />
+                  </div>
+                  <div>
+                    <label class={labelCls}>Encounters w/ Ventilator</label>
+                    <input type="number" class={hospInputCls} data-field="vent_encounters" value={h.vent_encounters ?? ''} />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Save / Cancel buttons -->
+              <div class="flex items-center gap-3 pt-2">
+                <button
+                  class="save-hosp-btn px-4 py-2 text-sm font-medium text-white bg-clif-burgundy rounded-lg transition-colors"
+                  data-hospital-id={h.id}
+                >
+                  Save Changes
+                </button>
+                <button
+                  class="cancel-hosp-btn px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-neutral-700 rounded-lg transition-colors"
+                  data-hospital-id={h.id}
+                >
+                  Cancel
+                </button>
+                <span class="hosp-save-status text-sm hidden" data-hospital-id={h.id}></span>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   </div>
@@ -552,37 +800,39 @@ const sitesJson = JSON.stringify(siteViewData.map((s: any) => ({
       var tableContainer = document.getElementById('site-table-wrap');
       var viewSummaryBtn = document.getElementById('view-summary');
       var viewTableBtn = document.getElementById('view-table');
+      var hospContainer = document.getElementById('hospital-table-wrap');
+      var viewHospBtn = document.getElementById('view-hospitals');
+      var hospRows = document.querySelectorAll('[data-hosp-row]');
       var currentView = 'summary';
 
       var activeBtnCls = 'px-3 py-1.5 text-xs font-medium bg-clif-burgundy text-white';
       var inactiveBtnCls = 'px-3 py-1.5 text-xs font-medium bg-white dark:bg-neutral-700 text-gray-600 dark:text-gray-300';
 
-      // View toggle
+      // View toggle: summary | table (sites) | hospitals
       function setView(view) {
         currentView = view;
         // Hide all edit panels when switching views
-        document.querySelectorAll('.site-edit-form').forEach(function(el) {
+        document.querySelectorAll('.site-edit-form, .hosp-edit-form').forEach(function(el) {
           el.classList.add('hidden');
         });
-        if (view === 'summary') {
-          if (summaryContainer) summaryContainer.classList.remove('hidden');
-          if (tableContainer) tableContainer.classList.add('hidden');
-          if (viewSummaryBtn) { viewSummaryBtn.className = activeBtnCls; }
-          if (viewTableBtn) { viewTableBtn.className = inactiveBtnCls; }
-          if (searchInput) searchInput.classList.add('hidden');
-        } else {
-          if (summaryContainer) summaryContainer.classList.add('hidden');
-          if (tableContainer) tableContainer.classList.remove('hidden');
-          if (viewTableBtn) { viewTableBtn.className = activeBtnCls; }
-          if (viewSummaryBtn) { viewSummaryBtn.className = inactiveBtnCls; }
-          if (searchInput) searchInput.classList.remove('hidden');
-        }
+        var showSummary = view === 'summary';
+        var showSites = view === 'table';
+        var showHosp = view === 'hospitals';
+        if (summaryContainer) summaryContainer.classList.toggle('hidden', !showSummary);
+        if (tableContainer) tableContainer.classList.toggle('hidden', !showSites);
+        if (hospContainer) hospContainer.classList.toggle('hidden', !showHosp);
+        if (viewSummaryBtn) { viewSummaryBtn.className = showSummary ? activeBtnCls : inactiveBtnCls; }
+        if (viewTableBtn) { viewTableBtn.className = showSites ? activeBtnCls : inactiveBtnCls; }
+        if (viewHospBtn) { viewHospBtn.className = showHosp ? activeBtnCls : inactiveBtnCls; }
+        if (searchInput) searchInput.classList.toggle('hidden', showSummary);
       }
       if (viewSummaryBtn) viewSummaryBtn.addEventListener('click', function() { setView('summary'); });
       if (viewTableBtn) viewTableBtn.addEventListener('click', function() { setView('table'); });
+      if (viewHospBtn) viewHospBtn.addEventListener('click', function() { setView('hospitals'); });
 
-      // Column filter state
+      // Column filter state (sites table uses contains-match, hospitals exact-match)
       var colFilters = {};
+      var hospColFilters = {};
 
       function matchesSearch(el, query) {
         if (!query) return true;
@@ -609,10 +859,27 @@ const sitesJson = JSON.stringify(siteViewData.map((s: any) => ({
         return true;
       }
 
+      // Exact-match filters for the hospitals table (short site keys like "NU"
+      // would otherwise substring-match other rows)
+      function matchesHospFilters(row) {
+        var cells = row.querySelectorAll('td');
+        for (var col in hospColFilters) {
+          var val = hospColFilters[col];
+          if (!val) continue;
+          var cell = cells[parseInt(col)];
+          if (!cell) continue;
+          if (cell.textContent.trim() !== val) return false;
+        }
+        return true;
+      }
+
       function applyFilters() {
         var query = searchInput ? searchInput.value.toLowerCase() : '';
         tableRows.forEach(function(row) {
           row.style.display = (matchesColFilters(row) && matchesSearch(row, query)) ? '' : 'none';
+        });
+        hospRows.forEach(function(row) {
+          row.style.display = (matchesHospFilters(row) && matchesSearch(row, query)) ? '' : 'none';
         });
       }
 
@@ -626,6 +893,13 @@ const sitesJson = JSON.stringify(siteViewData.map((s: any) => ({
         sel.addEventListener('change', function() {
           var col = this.getAttribute('data-col');
           colFilters[col] = this.value;
+          applyFilters();
+        });
+      });
+      document.querySelectorAll('.hosp-col-filter').forEach(function(sel) {
+        sel.addEventListener('change', function() {
+          var col = this.getAttribute('data-col');
+          hospColFilters[col] = this.value;
           applyFilters();
         });
       });
@@ -757,6 +1031,79 @@ const sitesJson = JSON.stringify(siteViewData.map((s: any) => ({
           } catch (err) {
             statusEl.textContent = 'Network error';
             statusEl.className = 'save-status text-sm text-red-600 dark:text-red-400';
+            statusEl.classList.remove('hidden');
+          }
+
+          this.disabled = false;
+          this.textContent = 'Save Changes';
+        });
+      });
+
+      // ---- Hospital edit flow (mirrors the site edit flow) ----
+      document.querySelectorAll('.edit-hosp-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var hospId = this.getAttribute('data-hospital-id');
+          document.querySelectorAll('.hosp-edit-form').forEach(function(el) {
+            el.classList.add('hidden');
+          });
+          var editForm = document.querySelector('.hosp-edit-form[data-hospital-id="' + hospId + '"]');
+          if (editForm) {
+            editForm.classList.remove('hidden');
+            editForm.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        });
+      });
+
+      document.querySelectorAll('.cancel-hosp-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var hospId = this.getAttribute('data-hospital-id');
+          var editForm = document.querySelector('.hosp-edit-form[data-hospital-id="' + hospId + '"]');
+          if (editForm) editForm.classList.add('hidden');
+        });
+      });
+
+      document.querySelectorAll('.save-hosp-btn').forEach(function(btn) {
+        btn.addEventListener('click', async function() {
+          var hospId = this.getAttribute('data-hospital-id');
+          var form = document.querySelector('.hosp-edit-form[data-hospital-id="' + hospId + '"]');
+          var statusEl = document.querySelector('.hosp-save-status[data-hospital-id="' + hospId + '"]');
+
+          var data = { hospitalId: hospId };
+          form.querySelectorAll('.hosp-edit-field').forEach(function(field) {
+            var fieldName = field.getAttribute('data-field');
+            if (!fieldName) return;
+            if (field.type === 'number') {
+              data[fieldName] = field.value ? Number(field.value) : null;
+            } else {
+              data[fieldName] = field.value || '';
+            }
+          });
+
+          this.disabled = true;
+          this.textContent = 'Saving...';
+          statusEl.classList.add('hidden');
+
+          try {
+            var res = await fetch('/api/hospitals/update', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(data),
+            });
+
+            if (res.ok) {
+              statusEl.textContent = 'Saved!';
+              statusEl.className = 'hosp-save-status text-sm text-green-600 dark:text-green-400';
+              statusEl.classList.remove('hidden');
+              setTimeout(function() { window.location.reload(); }, 800);
+            } else {
+              var errData = await res.json();
+              statusEl.textContent = errData.error || 'Failed to save';
+              statusEl.className = 'hosp-save-status text-sm text-red-600 dark:text-red-400';
+              statusEl.classList.remove('hidden');
+            }
+          } catch (err) {
+            statusEl.textContent = 'Network error';
+            statusEl.className = 'hosp-save-status text-sm text-red-600 dark:text-red-400';
             statusEl.classList.remove('hidden');
           }
 
