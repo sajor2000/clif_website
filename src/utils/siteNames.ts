@@ -25,6 +25,7 @@ export const SITE_LABELS: Record<string, string> = {
   RUSH: 'Rush University',
   UCSF: 'University of California San Francisco',
   UCMC: 'University of Chicago',
+  Michigan: 'University of Michigan',
   UMN: 'University of Minnesota',
   UPenn: 'University of Pennsylvania',
   // Sunnybrook Health Sciences Centre. Named "University of Toronto" to match
@@ -47,6 +48,7 @@ export const SITE_ORDER = [
   'RUSH',
   'UCSF',
   'UCMC',
+  'Michigan',
   'UMN',
   'UPenn',
   'Sunnybrook',
