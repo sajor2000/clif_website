@@ -54,10 +54,7 @@ const displayName = (name: string) => DISPLAY_RENAMES[name.trim()] ?? name;
 
 // Derive the Table view (characteristic x site, all-years "Overall" column) from
 // the same parse — headers are the site codes plus the ALL consortium aggregate.
-// `injected` maps a CSV row name to the sites whose cell this component
-// suppressed and how (see withSuppressedMissing), so the renderer can colour
-// those apart from the export's own `<10`s.
-function deriveOverall(parsed: ParsedConsortiumData, injected: Injected = {}) {
+function deriveOverall(parsed: ParsedConsortiumData) {
   // Aggregate first, matching the public dashboard's "Consortium Aggregate"
   // leading column; allSites is already in SITE_ORDER.
   const sites = [AGGREGATE_SITE, ...parsed.allSites];
@@ -72,7 +69,7 @@ function deriveOverall(parsed: ParsedConsortiumData, injected: Injected = {}) {
   // the CSV export all key off it. `label` is display-only: under a synthesized
   // header the group prefix is redundant, so 'Race: White' shows as 'White'
   // while still matching a search for "race".
-  const rows: { characteristic: string; label?: string; depth: number; values: Record<string, string>; synthetic?: boolean; injected?: Record<string, Suppression> }[] = [];
+  const rows: { characteristic: string; label?: string; depth: number; values: Record<string, string>; synthetic?: boolean }[] = [];
   const blank = Object.fromEntries(sites.map((s) => [s, '-']));
 
   // Neither the 07202026 nor the _aggregated export carries the `Years` row the
@@ -140,7 +137,6 @@ function deriveOverall(parsed: ParsedConsortiumData, injected: Injected = {}) {
       label: stripped || undefined,
       depth,
       values,
-      injected: injected[c.variable.trim()],
     });
     prevName = c.variable;
   }
@@ -348,123 +344,6 @@ function withRebasedDenominators(parsed: ParsedConsortiumData): ParsedConsortium
   return { ...parsed, siteYearData };
 }
 
-/**
- * Complementary suppression: stop a lone `<10` from being back-calculated.
- *
- * The export suppresses any cell under 10 to `<10`. In a group whose categories
- * partition the site's encounters, that is not enough on its own: if a site has
- * exactly ONE suppressed cell in the group, `site total - sum(published
- * categories)` recovers it exactly, so the suppression leaks the very number it
- * was meant to hide. Two or more suppressed cells are already safe — the
- * leftover is their sum, and neither can be isolated.
- *
- * So wherever a site has exactly one `<10` in a partition group, a second cell
- * is suppressed to make the leftover ambiguous. Two ways, in priority order:
- *
- *   1. FABRICATED — the group's Missing/na cell is blank (i.e. zero). Writing
- *      `<10` there costs nothing and is a true statement about a zero cell.
- *      This covers the large majority of cases.
- *   2. WITHHELD — no blank Missing cell, so the smallest published count in the
- *      group is withheld instead. This one hides real data, so it renders as
- *      `n/s` rather than `<10`: the protection is identical (the leftover is
- *      still a sum of two unknowns) without asserting a bound that would be
- *      false for a cell whose real value is 17, or 181.
- *
- * MAX_WITHHELD_COUNT caps case 2. Where the Missing bucket IS the `<10` cell,
- * the only candidate left is a headline category, and hiding UPenn's 64,197
- * women to protect a count under 10 costs far more than it saves. Those cells
- * are listed at build time and deliberately left back-calculable.
- *
- * Scoped to the `Overall` column, which is what the table shows. The by-year
- * columns behind the charts have the same property and are not touched.
- */
-const PARTITION_GROUPS = new Set([
-  'Race',
-  'Ethnicity',
-  'Sex',
-  'Admission type',
-  'First admission location',
-  'First location at IMV start',
-  'Initial ventilator mode',
-  'Extubation outcome',
-]);
-/** Category names that mean "no value recorded". '' is 'Initial ventilator mode:'. */
-const MISSING_CATEGORIES = new Set(['', 'missing', 'na', 'n/a', 'unknown']);
-const WITHHELD = 'n/s';
-const MAX_WITHHELD_COUNT = 500;
-
-type SuppressionKind = 'fabricated' | 'withheld';
-/** `was` is the cell's value before suppression — '' when nothing was reported. */
-type Suppression = { kind: SuppressionKind; was: string };
-type Injected = Record<string, Record<string, Suppression>>;
-
-function withSuppressedMissing(parsed: ParsedConsortiumData, cohort: string) {
-  const injected: Injected = {};
-  const unresolved: string[] = [];
-
-  const groups = new Map<string, ParsedConsortiumData['characteristics']>();
-  for (const c of parsed.characteristics) {
-    const m = c.variable.trim().match(/^([^:]+):(?:\s|$)/);
-    if (!m || !PARTITION_GROUPS.has(m[1])) continue;
-    if (!groups.has(m[1])) groups.set(m[1], []);
-    groups.get(m[1])!.push(c);
-  }
-
-  const countOf = (v: string) => {
-    const m = v.match(/^\s*([\d,]+)/);
-    return m ? parseInt(m[1].replace(/,/g, ''), 10) : null;
-  };
-  const categoryOf = (variable: string) =>
-    variable.slice(variable.indexOf(':') + 1).trim().toLowerCase();
-
-  for (const [group, rows] of groups) {
-    for (const site of [AGGREGATE_SITE, ...parsed.allSites]) {
-      const cells = rows.map((row) => ({ row, value: row.sites.get(site)?.get('Overall') ?? '' }));
-      if (cells.filter((c) => c.value === '<10').length !== 1) continue;
-
-      let target = cells.find(
-        (c) => c.value === '' && MISSING_CATEGORIES.has(categoryOf(c.row.variable))
-      );
-      let kind: SuppressionKind = 'fabricated';
-
-      if (!target) {
-        let smallest: (typeof cells)[number] | undefined;
-        let smallestN = Infinity;
-        for (const c of cells) {
-          if (c.value === '<10') continue;
-          const n = countOf(c.value);
-          // A zero is no cover: leftover = suppressed + 0 still names the
-          // suppressed cell. Only a cell with something in it hides anything.
-          if (n != null && n >= 1 && n < smallestN) {
-            smallest = c;
-            smallestN = n;
-          }
-        }
-        if (smallest && smallestN <= MAX_WITHHELD_COUNT) {
-          target = smallest;
-          kind = 'withheld';
-        } else if (smallest) {
-          unresolved.push(`${cohort}/${group}/${site}: would hide ${categoryOf(smallest.row.variable)}=${smallestN}`);
-          continue;
-        }
-      }
-
-      if (!target) {
-        unresolved.push(`${cohort}/${group}/${site}: no candidate cell`);
-        continue;
-      }
-
-      let years = target.row.sites.get(site);
-      if (!years) {
-        years = new Map();
-        target.row.sites.set(site, years);
-      }
-      (injected[target.row.variable.trim()] ??= {})[site] = { kind, was: target.value };
-      years.set('Overall', kind === 'fabricated' ? '<10' : WITHHELD);
-    }
-  }
-  return { parsed, injected, unresolved };
-}
 
 /**
  * The year the data drop cuts off in, or null if the last year looks complete.
@@ -499,8 +378,6 @@ function partialYearOf(parsed: ParsedConsortiumData): string | null {
   return latest < previous * 0.6 ? last : null;
 }
 
-/** Cells left back-calculable by MAX_WITHHELD_COUNT, reported once per build. */
-const unresolvedSuppressions: string[] = [];
 /** Percentages recomputed to match their own count, reported once per build. */
 const percentRewrites: string[] = [];
 
@@ -517,11 +394,10 @@ function loadCohort(key: string) {
   percentRewrites.push(
     ...consistent.rewrites.map((r) => `${key}: ${r.row} @ ${r.site}/${r.year}  ${r.was} -> ${r.now}`)
   );
-  const { parsed, injected, unresolved } = withSuppressedMissing(consistent.parsed, key);
-  unresolvedSuppressions.push(...unresolved);
+  const parsed = consistent.parsed;
   return {
     consortium: toConsortiumJson(parsed),
-    overall: deriveOverall(parsed, injected),
+    overall: deriveOverall(parsed),
     // Which population the export divided each row by, back-solved from its own
     // arithmetic (see denominatorBasis.ts). The Charts view has to recompute
     // percentages in order to pool a filtered subset of sites and years, and
@@ -550,15 +426,6 @@ const cohortsPayload: Record<
 for (const c of COHORTS) {
   const { consortium, overall, basis, partialYear } = loadCohort(c.key);
   cohortsPayload[c.key] = { consortium, overall, basis, partialYear };
-}
-// Never silent: say which lone `<10` cells stayed back-calculable because the
-// only cell available to pair them with was too large to withhold.
-if (unresolvedSuppressions.length) {
-  console.info(
-    `[cohort_wip] ${unresolvedSuppressions.length} cell(s) left back-calculable ` +
-      `(MAX_WITHHELD_COUNT=${MAX_WITHHELD_COUNT}):\n  ` +
-      unresolvedSuppressions.join('\n  ')
-  );
 }
 // Likewise: a rewritten cell is a published number that changed, so say which.
 if (percentRewrites.length) {
@@ -615,7 +482,10 @@ const categories = Array.from(groupedChars.keys());
     </p>
     <div class="bg-blue-50 border-l-4 border-blue-400 p-3 rounded">
       <p class="text-sm text-blue-800">
-        <strong>Privacy Notice:</strong> To protect patient privacy, characteristics with values where n &lt; 10 are automatically excluded from display and export.
+        <strong>Note:</strong> To protect patient privacy, values with n &lt; 10 are shown as "-" and excluded from export.
+        Sub-categories may therefore not add up exactly to their parent totals &mdash; small counts are suppressed,
+        rare categories are combined into "other" (see each row's <svg class="inline w-3.5 h-3.5 align-text-top" viewBox="0 0 20 20" fill="currentColor" aria-label="info icon"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg> for what it covers),
+        and some unknown or missing categories are not displayed.
       </p>
     </div>
   </div>
@@ -1199,9 +1069,6 @@ const categories = Array.from(groupedChars.keys());
       </button>
     </div>
 
-    <!-- TEMPORARY (review aid): count of cells blanked by the n < 10 rule. -->
-    <div id="small-n-count" class="mb-2 text-sm font-medium"></div>
-
     <!-- Data Table -->
     <div class="table-scroll overflow-x-auto max-h-[600px] overflow-y-auto">
       <table id="data-table" class="w-full border-collapse">
@@ -1274,14 +1141,6 @@ const categories = Array.from(groupedChars.keys());
   ];
   const isHiddenCharacteristic = (char) => HIDDEN_CHARACTERISTICS.includes((char || '').trim());
 
-  /**
-   * TEMPORARY (review aid): print the pre-suppression value beside every amber
-   * cell, so a reviewer can see whether a count existed and how large it was.
-   *
-   * This publishes the numbers the suppression exists to hide. Set to false
-   * before this table is shown to anyone outside the consortium review.
-   */
-  const REVEAL_SUPPRESSED_VALUES = true;
 
   /**
    * Display-only renames, from the frontmatter's DISPLAY_RENAMES — one map for
@@ -5815,8 +5674,6 @@ const categories = Array.from(groupedChars.keys());
 
     // Populate table body
     tbody.innerHTML = '';
-    let smallNCount = 0;
-    let injectedCount = 0;
 
     // Apply search filter. Matches the display name too, so a renamed row is
     // findable by what the table actually shows ('Admission type: na' answers
@@ -5882,37 +5739,13 @@ const categories = Array.from(groupedChars.keys());
         let html = `<td class="px-4 py-3 text-sm ${nameWeight} sticky left-0 bg-white" style="padding-left:${namePad}rem">${esc(row.label || displayCharacteristic(characteristic))}${badgeless[i] ? '' : badgeHtml(defs[i])}</td>`;
         headers.forEach(header => {
           const rawValue = row.values[header] || '-';
-          // TEMPORARY (review aid): outline every suppressed cell so the rule
-          // can be audited. Three sources:
-          //   1. hasSmallN() — the dashboard's own rule, blanks the value here.
-          //   2. the literal '<10' the export already ships pre-suppressed.
-          //   3. withSuppressedMissing() — a second cell suppressed here to
-          //      block back-calculation of 1 or 2. Amber, not red, so a reviewer
-          //      can tell a reported small count from a defensive one.
-          // Empty cells ('-') are NOT flagged: those are sites with no data for
-          // the row, not suppressions. Delete the class + counter to revert.
-          const blankedHere = !isMetadataCharacteristic(row.characteristic) && hasSmallN(rawValue);
-          const sup = row.injected && row.injected[header];
-          const kind = sup && sup.kind;
-          const suppressed = blankedHere || rawValue.trim() === '<10' || rawValue.trim() === 'n/s';
-          if (suppressed) kind ? injectedCount++ : smallNCount++;
-          // TEMPORARY (review aid): an amber cell also shows, in parentheses,
-          // what the export actually had there — a count, or 'no count' when the
-          // cell was empty and the `<10` is fabricated. This DEFEATS the
-          // suppression and must be removed before the table is published; see
-          // REVEAL_SUPPRESSED_VALUES.
-          const shownWas = REVEAL_SUPPRESSED_VALUES && sup
-            ? ` (${(sup.was.match(/^\s*[\d,]+/) || ['no count'])[0].trim()})`
-            : '';
-          const value = blankedHere ? '-' : rawValue + shownWas;
-          const cls = suppressed ? (kind ? ' small-n-cell derived-cell' : ' small-n-cell') : '';
-          const tip = !suppressed ? ''
-            : kind === 'fabricated'
-              ? ' title="No count was reported here. Shown as &lt;10 so the group&apos;s one suppressed cell cannot be recovered by subtraction."'
-              : kind === 'withheld'
-                ? ` title="Withheld so the group&apos;s suppressed cell cannot be recovered by subtraction. Reported value: ${esc(sup.was)}"`
-                : ' title="Suppressed: n < 10"';
-          html += `<td class="px-4 py-3 text-sm text-gray-700${cls}"${tip}>${esc(value)}</td>`;
+          // Suppressed small counts (the dashboard's n < 10 rule and the
+          // export's own literal '<10') render as '-', indistinguishable from
+          // a site with no data for the row.
+          const suppressed = (!isMetadataCharacteristic(row.characteristic) && hasSmallN(rawValue)) ||
+            rawValue.trim() === '<10' || rawValue.trim() === 'n/s';
+          const value = suppressed ? '-' : rawValue;
+          html += `<td class="px-4 py-3 text-sm text-gray-700">${esc(value)}</td>`;
         });
 
         tr.innerHTML = html;
@@ -5934,18 +5767,6 @@ const categories = Array.from(groupedChars.keys());
     positionDefTips();
     document.querySelector('.table-scroll')?.addEventListener('scroll', positionDefTips, { passive: true });
 
-    // TEMPORARY (review aid): report how many visible cells the rule blanked.
-    const smallNReadout = document.getElementById('small-n-count');
-    if (smallNReadout) {
-      const parts = [];
-      if (smallNCount) {
-        parts.push(`<span class="text-red-700">${smallNCount.toLocaleString()} cell${smallNCount === 1 ? '' : 's'} suppressed for n < 10 — outlined in red</span>`);
-      }
-      if (injectedCount) {
-        parts.push(`<span class="text-amber-700">${injectedCount.toLocaleString()} further cell${injectedCount === 1 ? '' : 's'} suppressed to block back-calculation (<code>n/s</code> = a reported count withheld) — outlined in amber${REVEAL_SUPPRESSED_VALUES ? ', with the pre-suppression value in parentheses (review only — remove before publishing)' : ''}</span>`);
-      }
-      smallNReadout.innerHTML = parts.join('<span class="text-gray-400"> · </span>');
-    }
   }
 
   function exportToCSV() {
@@ -6013,8 +5834,7 @@ const categories = Array.from(groupedChars.keys());
 
   /* Definition hover card.
      :global() is REQUIRED — these nodes are built in JS via innerHTML and so
-     never receive Astro's data-astro-cid-* scope attribute (the same trap as
-     .small-n-cell below).
+     never receive Astro's data-astro-cid-* scope attribute.
      Shown on hover AND focus so it is reachable by keyboard; the icon carries
      an aria-label with the same text, so screen readers get it without the
      hover layer. */
@@ -6093,28 +5913,6 @@ const categories = Array.from(groupedChars.keys());
     display: block;
   }
 
-  /* TEMPORARY (review aid): mark small-n cells in the table.
-     `outline` rather than `border` so the boxes add no width and the column
-     grid stays put.
-     :global() is REQUIRED — these <td>s are built in JS via innerHTML, so they
-     never receive Astro's data-astro-cid-* scope attribute and a scoped
-     selector silently matches nothing. */
-  #data-table :global(td.small-n-cell) {
-    outline: 2px solid #dc2626;
-    outline-offset: -2px;
-    background: #fef2f2;
-    color: #b91c1c;
-    text-align: center;
-  }
-
-  /* A `<10` this component fabricated, not one the export reported — amber so a
-     reviewer can tell a genuine small count from a defensive blank. Wins on
-     source order, so it must stay after the red rule above. */
-  #data-table :global(td.small-n-cell.derived-cell) {
-    outline-color: #d97706;
-    background: #fffbeb;
-    color: #b45309;
-  }
 
   @keyframes fadeIn {
     from {
