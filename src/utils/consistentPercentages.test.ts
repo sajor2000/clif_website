@@ -20,12 +20,14 @@ describe('percentage consistency', () => {
     const before = parse('overall');
     const { parsed: after, rewrites } = withConsistentPercentages(before, { skip: REBASED });
 
-    // 5,247 of Emory's 76,757 unique patients is 6.8%, not 7.0%.
-    expect(row(before, 'Ethnicity: Other')!.sites.get('Emory')!.get('Overall')).toBe('5,247 (7.0%)');
-    expect(row(after, 'Ethnicity: Other')!.sites.get('Emory')!.get('Overall')).toBe('5,247 (6.8%)');
+    // The folded Race: Other row (preprocessing rule 2i sums four categories,
+    // each pre-rounded) states 18.2% at RUSH/2018 where its own count over the
+    // group's denominator gives 18.3%.
+    expect(row(before, 'Race: Other')!.sites.get('RUSH')!.get('2018')).toBe('1,375 (18.2%)');
+    expect(row(after, 'Race: Other')!.sites.get('RUSH')!.get('2018')).toBe('1,375 (18.3%)');
 
-    const r = rewrites.find((x) => x.row === 'Ethnicity: Other' && x.site === 'Emory' && x.year === 'Overall');
-    expect(r).toMatchObject({ was: '5,247 (7.0%)', now: '5,247 (6.8%)' });
+    const r = rewrites.find((x) => x.row === 'Race: Other' && x.site === 'RUSH' && x.year === '2018');
+    expect(r).toMatchObject({ was: '1,375 (18.2%)', now: '1,375 (18.3%)' });
   });
 
   it('never touches the count', () => {
@@ -95,8 +97,11 @@ describe('percentage consistency', () => {
   it('reports every change rather than making it quietly', () => {
     const { rewrites } = withConsistentPercentages(parse('overall'), { skip: REBASED });
     expect(rewrites.length).toBeGreaterThan(0);
-    // Only the pooled residual rows need correcting.
-    expect([...new Set(rewrites.map((r) => r.row))].every((n) => /: Other$/.test(n))).toBe(true);
+    // Only residual rows need correcting: the export's pooled `Race: Other`
+    // family, plus the preprocessing folds' `: other` rows (whose percentages
+    // are recomputed from an anchor row and can drift a rounding step on the
+    // per-row-denominator ALL column).
+    expect([...new Set(rewrites.map((r) => r.row))].every((n) => /: other$/i.test(n))).toBe(true);
     for (const r of rewrites) expect(r.was).not.toBe(r.now);
   });
 });

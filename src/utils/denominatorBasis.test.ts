@@ -39,10 +39,10 @@ describe('inferDenominatorBasis', () => {
     // in the chart when everything is divided by hospitalizations.
     expect(basis['Propofol (during IMV)']).toBe('Invasive mechanical ventilation, n (%)');
     expect(basis['Vasopressors, n (%) (during IMV)']).toBe('Invasive mechanical ventilation, n (%)');
-    expect(basis['Extubation outcome: extubated']).toBe('Invasive mechanical ventilation, n (%)');
+    expect(basis['Terminal IMV outcome: discharged not on IMV']).toBe('Invasive mechanical ventilation, n (%)');
 
     // Extubated patients — a population that is itself a percentage row.
-    expect(basis['Extubation failure ≤48hr, n (% of extubated)']).toBe('Extubation outcome: extubated');
+    expect(basis['Extubation failure ≤48hr, n (% of extubated)']).toBe('Terminal IMV outcome: discharged not on IMV');
 
     // Unique patients, not hospitalizations, for demographics.
     expect(basis['Race: White']).toBe('N: Unique patients');
@@ -89,18 +89,20 @@ describe('inferDenominatorBasis', () => {
   });
 
   it('gives a sparse row its group\'s denominator, when the group agrees', () => {
-    const { parsed } = basisFor('overall');
-    const IMV = 'Invasive mechanical ventilation, n (%)';
-    // One site reports this at 3.3%; a single claim cannot single out a
-    // population, so the evidence pass leaves it alone and its ten siblings
-    // carry the answer.
-    const sparse = 'First location at IMV start: radiology';
+    // The category tails that used to supply sparse rows are folded into
+    // `other` at preprocessing time (src/data/processing.md), so the live
+    // sparse case is now Ethnicity: Missing in the icu cohort: one site
+    // reports it, and a single claim cannot single out a population, so the
+    // evidence pass leaves it alone and its siblings carry the answer.
+    const { parsed } = basisFor('icu');
+    const POP = 'N: Unique patients';
+    const sparse = 'Ethnicity: Missing';
     const measured = inferDenominatorBasis(parsed, { skip: REBASED, inherit: false });
     const inherited = inferDenominatorBasis(parsed, { skip: REBASED });
 
     expect(measured[sparse]).toBeUndefined();
-    expect(measured['First location at IMV start: icu']).toBe(IMV);
-    expect(inherited[sparse]).toBe(IMV);
+    expect(measured['Ethnicity: Non-Hispanic']).toBe(POP);
+    expect(inherited[sparse]).toBe(POP);
   });
 
   it('claims no basis on evidence too thin to distinguish populations', () => {

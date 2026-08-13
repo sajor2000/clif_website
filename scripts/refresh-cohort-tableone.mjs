@@ -19,14 +19,14 @@
  * of them, so every file under src/data/cohorts/ is now derived here and the
  * split-provenance problem is gone.
  *
- * THREE TRANSFORMS
- * 1. copy  — same column shape, destination just has a different filename.
- * 2. split — a `<a>_vs_<b>` table_one holds two cohorts side by side as
- *            `a__<Site>` and `b__<Site>`. Take one group's columns and rewrite
- *            the prefix to `Overall__`, the shape the components expect.
- * 3. suffix — sub-cohorts get their own ancillary files in the export, named
- *            `<base>_<group>.csv` (e.g. sofa_mortality_summary_icu.csv). No
- *            column surgery needed; they are copied like any other file.
+ * ONE TRANSFORM
+ * copy — same column shape, destination just has a different filename (plus
+ *        dropShiftedYears() column filtering on the way through).
+ *
+ * Sub-cohort splits (advanced_resp__icu, vaso__ed_ward, ...) were removed in
+ * Aug 2026 along with their `_vs_` split transform: the dashboard dropped its
+ * third-level picker (SUBCOHORTS is empty in src/utils/cohortData.ts) and the
+ * data was deleted rather than shipped unread. See src/data/processing.md.
  */
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, statSync } from 'node:fs';
 import { join, dirname } from 'node:path';
@@ -64,25 +64,6 @@ function emitField(v) {
   return /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
 }
 const emitCSV = (rows) => rows.map((r) => r.map(emitField).join(',')).join('\n') + '\n';
-
-/** Keep the Variable column plus every `<group>__<Site>` column, renaming the
- *  group to Overall. Throws if the group is absent — a silent empty file is
- *  exactly the failure mode this script exists to prevent. */
-function splitGroup(text, group) {
-  const rows = parseCSV(text);
-  const header = rows[0];
-  const keep = [0];
-  const outHeader = [header[0]];
-  for (let i = 1; i < header.length; i++) {
-    const sep = header[i].indexOf('__');
-    if (sep === -1) continue;
-    if (header[i].slice(0, sep) !== group) continue;
-    keep.push(i);
-    outHeader.push(`Overall__${header[i].slice(sep + 2)}`);
-  }
-  if (keep.length === 1) throw new Error(`no columns for group "${group}"`);
-  return emitCSV([outHeader, ...rows.slice(1).map((r) => keep.map((i) => r[i] ?? ''))]);
-}
 
 /**
  * Drop columns whose group is not a real calendar year.
@@ -144,17 +125,6 @@ const SRC_DIR = {
   deaths: 'strata/deaths/tableone',
 };
 
-// Sub-cohorts read their parent's directory; ancillary files carry a suffix and
-// table_one comes out of a side-by-side comparison file.
-const SUBS = {
-  vaso__icu: { parent: 'vaso', suffix: '_icu', from: 'table_one_vaso_icu_vs_no_icu.csv', group: 'icu' },
-  vaso__no_icu: { parent: 'vaso', suffix: '_no_icu', from: 'table_one_vaso_icu_vs_no_icu.csv', group: 'no_icu' },
-  vaso__ed_icu: { parent: 'vaso', suffix: '_ed_icu', from: 'table_one_vaso_ed_icu_vs_ed_ward.csv', group: 'ed_icu' },
-  vaso__ed_ward: { parent: 'vaso', suffix: '_ed_ward', from: 'table_one_vaso_ed_icu_vs_ed_ward.csv', group: 'ed_ward' },
-  advanced_resp__icu: { parent: 'advanced_resp', suffix: '_icu', from: 'table_one_advanced_resp_icu_vs_no_icu.csv', group: 'icu' },
-  advanced_resp__no_icu: { parent: 'advanced_resp', suffix: '_no_icu', from: 'table_one_advanced_resp_icu_vs_no_icu.csv', group: 'no_icu' },
-};
-
 // Ancillary files: destination name -> export basename. Same for every cohort
 // that has them; a cohort simply lacking one is reported, not fatal.
 const ANCILLARY = {
@@ -197,18 +167,6 @@ for (const [cohort, dir] of Object.entries(SRC_DIR)) {
   }
 }
 
-// Sub-cohorts.
-for (const [cohort, cfg] of Object.entries(SUBS)) {
-  const dir = SRC_DIR[cfg.parent];
-  JOBS.push({ src: `${dir}/${cfg.from}`, dest: `${cohort}/table_one_by_year.csv`, group: cfg.group });
-  for (const file of currentFiles(cohort)) {
-    const base = ANCILLARY[file];
-    if (!base) continue;
-    const suffixed = base.replace(/\.csv$/, `${cfg.suffix}.csv`);
-    JOBS.push({ src: `${dir}/${suffixed}`, dest: `${cohort}/${file}` });
-  }
-}
-
 /** Site codes appearing in a `<group>__<Site>` header row. */
 const sitesOf = (text) => {
   const header = parseCSV(text)[0] || [];
@@ -231,8 +189,7 @@ for (const job of JOBS) {
   const raw = readFileSync(srcPath, 'utf-8');
   let out;
   try {
-    out = job.group ? splitGroup(raw, job.group) : raw;
-    out = dropShiftedYears(out, job.dest);
+    out = dropShiftedYears(raw, job.dest);
   } catch (e) {
     console.error(`FAILED  ${job.dest}: ${e.message}`);
     process.exitCode = 1;

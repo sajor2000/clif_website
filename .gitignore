@@ -71,8 +71,10 @@ CLIF Consortium Internal Tracker - *.csv
 # are committed; regenerate them with
 #   node scripts/refresh-cohort-tableone.mjs
 #   python3 scripts/refresh-cohort-ecdf.py
+# _aggregated* covers every export variant (_aggregated, _aggregated_new,
+# _aggregated_old, ...): raw exports never enter the repo, only derived data.
 src/data/07202026/
-src/data/_aggregated/
+src/data/_aggregated*/
 
 # Local-only output from scripts/ (e.g. the mCIDE off-schema report)
 scripts/.out/

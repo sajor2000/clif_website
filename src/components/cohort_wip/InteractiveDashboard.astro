@@ -1383,7 +1383,10 @@ const categories = Array.from(groupedChars.keys());
 
   /** Info affordance for a characteristic, or '' when it has no definition. */
   function definitionBadge(name) {
-    const def = definitionFor(name);
+    return badgeHtml(definitionFor(name));
+  }
+  /** The badge markup itself, from an already-resolved definition (or null). */
+  function badgeHtml(def) {
     if (!def) return '';
     return `<span class="def-info" tabindex="0" role="note" aria-label="Definition: ${esc(def.text)}">
       <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
@@ -5815,18 +5818,55 @@ const categories = Array.from(groupedChars.keys());
     let smallNCount = 0;
     let injectedCount = 0;
 
-    data.forEach(row => {
+    // Apply search filter. Matches the display name too, so a renamed row is
+    // findable by what the table actually shows ('Admission type: na' answers
+    // to "missing") as well as by its CSV name.
+    const visibleRows = data.filter(row =>
+      !isHiddenCharacteristic(row.characteristic) && (
+        row.characteristic.toLowerCase().includes(searchTerm) ||
+        displayCharacteristic(row.characteristic).toLowerCase().includes(searchTerm) ||
+        Object.values(row.values).some(v => v.toLowerCase().includes(searchTerm))
+      )
+    );
+
+    // A definition shared by a whole group lives on the group heading, not on
+    // every child. Data-driven, no case list:
+    //   1. a heading with no definition of its own adopts the one that ALL of
+    //      its children resolve to (the medication blocks: the heading carries
+    //      nothing while every med row shares one text);
+    //   2. a child whose definition text matches its nearest ancestor's shows
+    //      no badge (the prefix groups — Race, Admission type, Terminal IMV
+    //      outcome, ... — resolve the synthetic heading and every child to the
+    //      same text).
+    const defs = visibleRows.map(row => definitionFor(row.characteristic));
+    visibleRows.forEach((row, i) => {
+      if (defs[i]) return;
+      const d0 = row.depth || 0;
+      let shared = null;
+      let uniform = false;
+      for (let j = i + 1; j < visibleRows.length && (visibleRows[j].depth || 0) > d0; j++) {
+        const t = defs[j] && defs[j].text;
+        if (!t || (shared && t !== shared.text)) { shared = null; break; }
+        if (!shared) shared = defs[j];
+        uniform = true;
+      }
+      if (uniform && shared) defs[i] = shared;
+    });
+    const badgeless = new Array(visibleRows.length).fill(false);
+    const ancestors = [];
+    visibleRows.forEach((row, i) => {
+      const d = row.depth || 0;
+      while (ancestors.length && ancestors[ancestors.length - 1].depth >= d) ancestors.pop();
+      const anc = ancestors[ancestors.length - 1];
+      if (anc && defs[i] && anc.text === defs[i].text) badgeless[i] = true;
+      // Def-less intermediate rows pass their ancestor's text through, so a
+      // grandchild still compares against the heading that actually shows it.
+      ancestors.push({ depth: d, text: defs[i] ? defs[i].text : (anc ? anc.text : null) });
+    });
+
+    visibleRows.forEach((row, i) => {
       const characteristic = row.characteristic;
-      if (isHiddenCharacteristic(characteristic)) return;
-
-      // Apply search filter. Matches the display name too, so a renamed row is
-      // findable by what the table actually shows ('Admission type: na' answers
-      // to "missing") as well as by its CSV name.
-      const matchesSearch = characteristic.toLowerCase().includes(searchTerm) ||
-        displayCharacteristic(characteristic).toLowerCase().includes(searchTerm) ||
-        Object.values(row.values).some(v => v.toLowerCase().includes(searchTerm));
-
-      if (matchesSearch) {
+      {
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-gray-50';
 
@@ -5839,7 +5879,7 @@ const categories = Array.from(groupedChars.keys());
         const namePad = 1 + depth * 1.25;
         // row.label drops the redundant group prefix; row.characteristic (the
         // full name) is what search and export still use.
-        let html = `<td class="px-4 py-3 text-sm ${nameWeight} sticky left-0 bg-white" style="padding-left:${namePad}rem">${esc(row.label || displayCharacteristic(characteristic))}${definitionBadge(characteristic)}</td>`;
+        let html = `<td class="px-4 py-3 text-sm ${nameWeight} sticky left-0 bg-white" style="padding-left:${namePad}rem">${esc(row.label || displayCharacteristic(characteristic))}${badgeless[i] ? '' : badgeHtml(defs[i])}</td>`;
         headers.forEach(header => {
           const rawValue = row.values[header] || '-';
           // TEMPORARY (review aid): outline every suppressed cell so the rule

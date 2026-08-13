@@ -18,6 +18,13 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import InfoTip from './InfoTip.astro';
+
+// The preprocessing step (scripts/preprocess-aggregated.mjs) folds four race
+// categories into the "Other" row; the tooltip says which, since the folded
+// row is otherwise indistinguishable from the export's own "Other".
+const OTHER_RACE_TIP =
+  'Includes other race categories like American Indian or Alaska Native, Native Hawaiian, etc.';
 
 interface Props {
   cohort: string;
@@ -164,7 +171,13 @@ const csvText = [csvHeader, ...csvRows]
           <tbody>
             {body.map((r) => (
               <tr class:list={[r.isTotal && 'border-t-2 border-gray-300 font-semibold']}>
-                <td class="sticky left-0 z-10 bg-white px-3 py-2 text-left text-gray-800">{r.race}</td>
+                {/* hover/focus-within z bump: each sticky label cell is its own
+                    stacking context at z-10, so an open InfoTip card would
+                    otherwise paint UNDER the later rows' sticky cells. */}
+                <td class="sticky left-0 z-10 bg-white px-3 py-2 text-left text-gray-800 hover:z-30 focus-within:z-30">
+                  {r.race}
+                  {r.race === 'Other' && <InfoTip text={OTHER_RACE_TIP} />}
+                </td>
                 {r.cells.map((n, i) => {
                   const s = r.isTotal ? 0 : shade(n);
                   return (

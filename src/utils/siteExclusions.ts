@@ -31,28 +31,18 @@ export interface SiteExclusion {
 }
 
 /**
- * The exclusions in force.
+ * The exclusions in force. Currently none.
  *
- * JHU / sepsis: the export puts JHU at 30,163,122 CDC Adult Sepsis Events
- * against a 25,208 median across the other ten sites — roughly a thousandfold,
- * in every cohort and every year, and enough on its own to make the consortium
- * total 30.5M where the other ten sites sum to 307,600. A count that large is
- * not a case mix, it is a counting error upstream, and left in it dominates
- * every sepsis figure the dashboard reports.
- *
- * Scoped to sepsis rows only: JHU's other data is unaffected, and the site is
- * still counted everywhere else.
+ * Precedent for the shape this takes — JHU / sepsis, retired Aug 2026: the
+ * previous export put JHU at 30,163,122 CDC Adult Sepsis Events against a
+ * 25,208 median across the other ten sites — a thousandfold counting error
+ * upstream, excluded here so it could not dominate every sepsis figure the
+ * dashboard reported. The 2026-08 export fixed the pipeline (JHU now reports
+ * 118,933 events, in family with its peers), so the exclusion was removed.
+ * When the next broken pipeline shows up, declare it like that one was:
+ * per site AND per row, with the reason.
  */
-export const SITE_EXCLUSIONS: SiteExclusion[] = [
-  {
-    site: 'JHU',
-    matches: (name) => /sepsis/i.test(name),
-    reason:
-      'Johns Hopkins is excluded from sepsis measures: its Adult Sepsis Event ' +
-      'count is roughly a thousandfold above every other site, which is a ' +
-      'counting error upstream rather than a difference in case mix.',
-  },
-];
+export const SITE_EXCLUSIONS: SiteExclusion[] = [];
 
 /** Sites withdrawn from a given row, for callers that need to say so. */
 export function excludedSitesFor(

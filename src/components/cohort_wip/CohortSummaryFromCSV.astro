@@ -3,7 +3,7 @@
 // and re-renders client-side when the cohort picker (window.CohortBus) changes.
 import fs from 'node:fs';
 import path from 'node:path';
-import { DEFAULT_COHORT, parseCohortCSV, getAggregateValue, contributingSitesForCohort, siteLabel } from '../../utils/cohortData';
+import { DEFAULT_COHORT, parseCohortCSV, getAggregateValue, getCohort, contributingSitesForCohort, siteLabel } from '../../utils/cohortData';
 import { applySiteExclusions, excludedSitesFor } from '../../utils/siteExclusions';
 import { withConsistentPercentages } from '../../utils/consistentPercentages';
 import InfoTip from './InfoTip.astro';
@@ -137,15 +137,23 @@ const uid = cohort;
 const d = fieldsFor(cohort);
 const contributingSites = contributingSitesForCohort(cohort);
 const isDefault = cohort === DEFAULT_COHORT;
+// Cohort-definition wording surfaces as InfoTips on the patient and
+// hospitalization rail tiles — patient-framed on the patient count,
+// hospitalization-framed on the hospitalization count. Only cohorts that
+// declare the fields get an icon (InfoTip renders nothing without text).
+const cohortTooltip = getCohort(cohort)?.tooltip;
+const cohortPatientTooltip = getCohort(cohort)?.patientTooltip;
 // Availability flags -> conditionally render cards a cohort has no data for.
 const hasVent = d.hasVent === '1';
 const hasSofa = d.hasSofa === '1';
 const hasIcuLos = !!d.icuLOS;
-// Not an availability flag — a deliberate suppression. Overall (ward) DOES
-// carry CRRT, vasopressor and sepsis rows, but its denominator is ~81%
-// non-ICU, so those rates read as consortium-wide when they describe a mostly
-// -ward population. The rows stay in the CSV for the Explorer, where the
-// cohort is labelled on the axis.
+// Not an availability flag — a deliberate suppression. The ward cohort DOES
+// carry CRRT and vasopressor rows, but its denominator is ~81% non-ICU, so
+// those rates read as consortium-wide when they describe a mostly-ward
+// population. The rows stay in the CSV for the Explorer, where the cohort is
+// labelled on the axis. Sepsis is shown even here (Aug 2026 decision): CDC
+// Adult Sepsis Events are defined hospital-wide, so the ward denominator is
+// the right one for them.
 const suppressForWard = cohort === 'overall_ward';
 // Sites withdrawn from the sepsis rows, named on the card that reports their
 // consortium total. Empty when nothing is excluded, and the note disappears.
@@ -203,18 +211,20 @@ const crrt = d.crrt;
 // tile is gated on its own value rather than assuming the block is present.
 const icuEpisodes = d.icuEpisodes;
 const encountersWithIcuEpisode = d.encountersWithIcuEpisode;
-// Blanked rather than gated at the card: every downstream conditional — the
-// card itself, the column wrapper, hasClinicalCourse — keys off these, so
-// emptying them collapses the layout correctly with no extra flags.
+// Sepsis renders in two places, mutually exclusive by cohort: the ward cohort
+// puts the share in the demographics strip (it has no other Clinical Course
+// content, so the card stood alone there), every other cohort keeps the full
+// card below. `sepsisEvents` is blanked for ward so the card and
+// hasClinicalCourse both switch off there.
 const sepsisEvents = suppressForWard ? '' : d.sepsisEvents;
-const encountersWithSepsis = suppressForWard ? '' : d.encountersWithSepsis;
+const encountersWithSepsis = d.encountersWithSepsis;
 const timeToExtubation = d.timeToExtubation;
 const vfdEncounters = d.vfdEncounters;
 const vfdMedian = d.vfdMedian;
 const nidfdEncounters = d.nidfdEncounters;
 const nidfdMedian = d.nidfdMedian;
 const hasClinicalCourse = !!(
-  icuEpisodes || encountersWithIcuEpisode || sepsisEvents || encountersWithSepsis ||
+  icuEpisodes || encountersWithIcuEpisode || sepsisEvents ||
   timeToExtubation || vfdEncounters || nidfdEncounters
 );
 
@@ -506,16 +516,21 @@ const dopamineDose = d.dopamineDose;
       <div class="flex-none w-64 flex flex-col gap-3">
         <div class="bg-gradient-to-br from-slate-600 to-slate-700 text-white px-4 py-2 rounded-lg shadow min-w-full grow flex flex-col justify-center">
           <div class="text-xl font-bold">{extractNumber(uniquePatients)}</div>
-          <div class="text-xs opacity-90">Unique Patients</div>
+          <div class="text-xs opacity-90">Unique Patients{cohortPatientTooltip && <InfoTip text={cohortPatientTooltip} />}</div>
         </div>
         <div class="bg-gradient-to-br from-slate-600 to-slate-700 text-white px-4 py-2 rounded-lg shadow min-w-full grow flex flex-col justify-center">
           <div class="text-xl font-bold">{extractNumber(encounterBlocks)}</div>
-          <div class="text-xs opacity-90">Total Hospitalizations</div>
+          <div class="text-xs opacity-90">Total Hospitalizations{cohortTooltip && <InfoTip text={cohortTooltip} />}</div>
         </div>
+        {/* Ward cohort: the ICU-stay count already lives in the Encounter
+            Types card (n= under "ICU encounters"), so this tile carries the
+            sepsis summary instead — placed after Hospital Mortality below. */}
+        {!suppressForWard && (
         <div class="bg-gradient-to-br from-slate-600 to-slate-700 text-white px-4 py-2 rounded-lg shadow min-w-full grow flex flex-col justify-center">
           <div class="text-xl font-bold">{extractNumber(icuEncounters)}</div>
           <div class="text-xs opacity-90">Hospitalizations with an ICU stay</div>
         </div>
+        )}
         {/* Sites and hospitals share one tile: the site count is the roster
             behind the hospital count, so the two read together. */}
         <div class="bg-gradient-to-br from-slate-600 to-slate-700 text-white px-4 py-2 rounded-lg shadow min-w-full grow flex items-stretch gap-3">
@@ -536,6 +551,15 @@ const dopamineDose = d.dopamineDose;
           <div class="text-xl font-bold">{extractPercentage(hospitalMortality)}</div>
           <div class="text-xs opacity-90">Hospital Mortality</div>
         </div>
+        {suppressForWard && d.sepsisEvents && (
+        <div class="bg-gradient-to-br from-slate-600 to-slate-700 text-white px-4 py-2 rounded-lg shadow min-w-full grow flex flex-col justify-center">
+          <div class="text-xl font-bold">{extractNumber(d.sepsisEvents)}</div>
+          <div class="text-xs opacity-90">Sepsis Events (CDC ASE criteria)<InfoTip characteristic="Sepsis events (CDC ASE), n" /></div>
+          {encountersWithSepsis && (
+            <div class="text-[10px] opacity-75 mt-0.5">{extractPercentage(encountersWithSepsis)} of hospitalizations had at least one sepsis event</div>
+          )}
+        </div>
+        )}
         {hasVent && (
         <div class="bg-gradient-to-br from-clif-burgundy to-clif-burgundy-dark text-white px-4 py-3 rounded-lg shadow min-w-full grow flex items-center gap-3">
           <div>

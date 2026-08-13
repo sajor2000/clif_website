@@ -19,6 +19,37 @@ export interface CharacteristicDefinition {
 
 /** Exact-match definitions, keyed by CSV variable name. */
 export const CHARACTERISTIC_DEFINITIONS: Record<string, CharacteristicDefinition> = {
+  // The preprocessing folds (scripts/preprocess-aggregated.mjs, documented in
+  // src/data/processing.md) collapse each group's rare categories into one
+  // `other` row. Each folded row says what it covers; suppressed (<10)
+  // component cells contribute 0, so folded counts are lower bounds. Exact
+  // keys, so they win over the group's shared prefix definition — which is
+  // also what keeps the badge ON these rows while their siblings defer to the
+  // group heading.
+  'Race: Other': {
+    text: 'Includes other race categories like American Indian or Alaska Native, Native Hawaiian, etc.',
+    source: 'scripts/preprocess-aggregated.mjs (rule 2i, src/data/processing.md)',
+  },
+  'First admission location: other': {
+    text: 'Includes other admission locations like stepdown, rehab, radiology, labor & delivery, hospice, psych, dialysis, etc.',
+    source: 'scripts/preprocess-aggregated.mjs (rule 2a, src/data/processing.md)',
+  },
+  'Admission type: other': {
+    text: 'Includes other admission types like elective admissions.',
+    source: 'scripts/preprocess-aggregated.mjs (rule 2b, src/data/processing.md)',
+  },
+  'First location at IMV start: other': {
+    text: 'Includes other locations like stepdown, rehab, radiology, labor & delivery, hospice, dialysis, etc.',
+    source: 'scripts/preprocess-aggregated.mjs (rule 2c, src/data/processing.md)',
+  },
+  'Initial ventilator mode: other': {
+    text: 'Includes other ventilator modes like APRV, blow by, volume support, standby, etc.',
+    source: 'scripts/preprocess-aggregated.mjs (rule 2d, src/data/processing.md)',
+  },
+  'Terminal IMV outcome: other': {
+    text: 'Includes other outcomes like failed extubation attempts (IMV episodes under 5 minutes).',
+    source: 'scripts/preprocess-aggregated.mjs (rules 2e-2f, src/data/processing.md)',
+  },
   'N: Encounter blocks': {
     text: 'One row per hospitalization. Any two hospitalizations where discharge-to-next-admission is 6 hours or less are merged into one hospitalization, so a patient readmitted within 6 hours counts once, not twice.',
     source: 'generator.py:62 (clifpy stitch_encounters, 6-hour window)',
@@ -207,8 +238,8 @@ export const PREFIX_DEFINITIONS: Record<string, CharacteristicDefinition> = {
     text: 'The ADT location the patient occupied when invasive ventilation began — where they were intubated, not where they were admitted.',
     source: 'modules/tableone/generator.py',
   },
-  'Extubation outcome': {
-    text: 'How ventilation ended for each IMV hospitalization: extubated, died on the ventilator, discharged still ventilated, a failed attempt (an episode under 5 minutes), or unknown. Extubation is detected from the respiratory-support timeline — two consecutive readings on invasive ventilation followed by two consecutive readings off it — rather than from a recorded extubation event.',
+  'Terminal IMV outcome': {
+    text: 'How ventilation ended for each IMV hospitalization: discharged not on IMV (successfully extubated), dead (died on the ventilator), discharge on IMV (discharged still ventilated), or other (a failed attempt — an episode under 5 minutes — or unknown). Extubation is detected from the respiratory-support timeline — two consecutive readings on invasive ventilation followed by two consecutive readings off it — rather than from a recorded extubation event.',
     source: 'modules/tableone/extubation_calculator.py:245',
   },
   'First admission location': {
