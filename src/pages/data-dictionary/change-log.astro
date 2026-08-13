@@ -344,7 +344,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            New mCIDE Values (19 updates · 241 new values) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Aug 6, 2026</span>
+            New mCIDE Values (20 updates · 243 new values) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Aug 13, 2026</span>
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -365,6 +365,12 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">assessment_category (2)</td>
+                  <td class="px-4 py-3 text-sm"><code>patient_assessments.assessment_category</code> added 2 new values for physical- and occupational-therapy discharge recommendations: <code>pt_discharge_recommend</code> and <code>ot_discharge_recommend</code>. Sourced from structured flowsheet data where sites have it; permissible values per recommendation to be categorized once a few sites' data is in.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/232" class="text-clif-burgundy hover:underline">Issue #232</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Aug 13, 2026</td>
+                </tr>
                 <tr>
                   <td class="px-4 py-3 text-sm font-mono">mode_category (1)</td>
                   <td class="px-4 py-3 text-sm"><code>respiratory_support.mode_category</code> added <code>avaps</code> (Average Volume Assured Pressure Support) as a new permissible value — an increasingly common NIPPV mode, distinct from invasive volume support.</td>
