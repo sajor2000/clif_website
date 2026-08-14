@@ -1,5 +1,7 @@
 ---
 export const prerender = true;
+import fs from 'node:fs';
+import path from 'node:path';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import CohortSummaryFromCSV from '../components/cohort/CohortSummaryFromCSV.astro';
 import InteractiveDashboard from '../components/cohort/InteractiveDashboard.astro';
@@ -7,16 +9,74 @@ import HourlyTrends from '../components/cohort/HourlyTrends.astro';
 import DataDistributions from '../components/cohort/DataDistributions.astro';
 import MapExplorer from '../components/cohort/MapExplorer.astro';
 import CTAButton from '../components/shared/CTAButton.astro';
+import { COHORTS, VISIBLE_COHORTS, VISIBLE_GROUPS, SUBCOHORTS, PANEL_COHORTS, DEFAULT_COHORT, AGGREGATE_SITE, SITE_LABELS, SITE_ORDER, getCohort, parseCohortCSV, getAggregateValue } from '../utils/cohortData';
+
+// Labels for the level-1 group buttons. Only groups that still have a visible
+// cohort are rendered, so hiding every cohort in a group removes its button.
+const GROUP_LABELS: Record<string, string> = {
+  overall: 'Other',
+  critically_ill: 'Critically ill',
+};
+
+// Build per-cohort headline numbers (unique patients / encounter blocks / hospitals)
+// for the hero + picker. Read the cohort's summary source at build time.
+// Sub-cohorts (advanced_resp/vaso splits) reuse the parent's CohortDef but read
+// their own Overall-shaped table_one and inherit the parent's tab availability.
+const cohortDir = path.join(process.cwd(), 'src', 'data', 'cohorts');
+function headlineFor(key: string) {
+  const sub = SUBCOHORTS.find((s) => s.key === key);
+  const def = getCohort(sub ? sub.parent : key);
+  const file = !sub && def.hasOverallFile ? 'table_one_overall.csv' : 'table_one_by_year.csv';
+  const csv = fs.readFileSync(path.join(cohortDir, key, file), 'utf-8');
+  const data = parseCohortCSV(csv);
+  const num = (v: string | null) => (v ? v.replace(/^"|"$/g, '').replace(/\s*\(.*$/, '').trim() : '—');
+  return {
+    key,
+    label: sub ? `${def.label} — ${sub.label}` : def.label,
+    group: sub ? 'critically_ill' : def.group,
+    hasHourly: def.hasHourly,
+    hasSofa: def.hasSofa,
+    // Derived from disk rather than declared, so it cannot drift from what the
+    // Distributions tab can actually load. Sub-cohorts have no ECDF folder of
+    // their own and fall back to the parent, matching DataDistributions.
+    // The ward cohort has none at all: the upstream ward pipeline
+    // (run_tableone_ward.py) emits table_one only — no bins, and no entry in
+    // the ECDF generator's STRATUM_WINDOW_TYPE map.
+    hasDistributions: fs.existsSync(
+      path.join(process.cwd(), 'src', 'data', 'cohort_ecdf', sub ? sub.parent : key)
+    ),
+    patients: num(getAggregateValue(data, 'N: Unique patients')),
+    encounters: num(getAggregateValue(data, 'N: Encounter blocks')),
+    hospitals: num(getAggregateValue(data, 'N: Hospitals')),
+  };
+}
+const cohortHeadlines = Object.fromEntries(PANEL_COHORTS.map((k) => [k, headlineFor(k)]));
+// The hero states the dashboard's overall scope and stays fixed — it is NOT
+// rewired by the cohort bus, so it always reads from the default cohort.
+const heroStats = cohortHeadlines[DEFAULT_COHORT];
+// Meta description derives from the same headline numbers as the hero so it
+// can never drift from what the page shows at the next data refresh.
+const metaDescription =
+  `Explore aggregated critically ill patient data from the CLIF Consortium - ` +
+  `${heroStats.patients} unique patients, ${heroStats.encounters} hospitalizations across ` +
+  `${heroStats.hospitals} hospitals in ${SITE_ORDER.filter((s) => s !== AGGREGATE_SITE).length} participating institutions.`;
+// Sub-group options per parent for the 3rd-level picker (data for the client).
+const subsByParent = Object.fromEntries(
+  VISIBLE_COHORTS.filter((c) => SUBCOHORTS.some((s) => s.parent === c.key)).map((c) => [
+    c.key,
+    SUBCOHORTS.filter((s) => s.parent === c.key).map((s) => ({ key: s.key, label: s.label })),
+  ])
+);
 ---
 
 <BaseLayout
   title="CLIF Consortium - Cohort Dashboard"
-  description="Explore aggregated Critically Ill patient data from the CLIF Consortium - 808,749 unique patients, 933,058 ICU encounters across 62 hospitals in 12 participating institutions."
+  description={metaDescription}
 >
   <!-- Chart.js CDN -->
-  <script is:inline src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script is:inline src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" integrity="sha384-9nhczxUqK87bcKHh20fSQcTGD4qq5GhayNYSYWqwBkINBhOfQLg/P5HG5lF1urn4" crossorigin="anonymous"></script>
   <!-- Chart.js Datalabels Plugin -->
-  <script is:inline src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+  <script is:inline src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js" integrity="sha384-y49Zu59jZHJL/PLKgZPv3k2WI9c0Yp3pWB76V8OBVCb0QBKS8l4Ff3YslzHVX76Y" crossorigin="anonymous"></script>
   <!-- Register Datalabels Plugin -->
   <script is:inline>
     if (typeof Chart !== 'undefined' && typeof ChartDataLabels !== 'undefined') {
@@ -54,37 +114,148 @@ import CTAButton from '../components/shared/CTAButton.astro';
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
   </script>
 
+  <!-- D3 (used by the cohort summary charts) -->
+  {/* Pinned on jsDelivr rather than d3js.org/d3.v7.min.js: SRI needs an
+      immutable target (v7 is a moving alias), and it saves a third origin. */}
+  <script is:inline src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js" integrity="sha384-CjloA8y00+1SDAUkjs099PVfnY2KmDC2BZnws9kh8D/lX1s46w6EPhpXdqMfjK6i" crossorigin="anonymous"></script>
+
   <!-- Leaflet CSS and JS for Map -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
   <script is:inline src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
   <div class="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-    <div class="container mx-auto px-4 py-8 max-w-7xl">
+    {/* Trying the production cohort page's width (max-w-7xl = 1280px) for the
+        cleaner centered look; swap back to max-w-[1800px] to go wide again. */}
+    <div class="mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-7xl">
       <!-- Enhanced Hero Section -->
-      <div class="text-center mb-12 animate-fade-in">
+      <div class="relative text-center mb-12 animate-fade-in">
+        {/* Freshness + schema metadata as a corner chip: costs no vertical
+            space. Hidden on small screens where it would collide with the h1. */}
+        <div class="absolute top-0 right-0 hidden md:flex items-center gap-4 text-xs text-gray-500">
+          <span class="flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+            </svg>
+            Last updated: August 2026
+          </span>
+          <a
+            href="/data-dictionary/data-dictionary-2.1.0"
+            class="flex items-center gap-1.5 hover:text-clif-burgundy transition-colors"
+            title="View the CLIF 2.1.0 data dictionary"
+          >
+            <svg class="w-3.5 h-3.5 text-clif-burgundy" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+              <path d="M10 2c-4.418 0-8 1.343-8 3s3.582 3 8 3 8-1.343 8-3-3.582-3-8-3z"/>
+              <path d="M2 7.5V10c0 1.657 3.582 3 8 3s8-1.343 8-3V7.5c-1.73 1.13-4.72 1.75-8 1.75S3.73 8.63 2 7.5z"/>
+              <path d="M2 12.5V15c0 1.657 3.582 3 8 3s8-1.343 8-3v-2.5c-1.73 1.13-4.72 1.75-8 1.75s-6.27-.62-8-1.75z"/>
+            </svg>
+            Built on CLIF v2.1
+          </a>
+        </div>
         <h1 class="text-4xl md:text-5xl font-bold text-clif-burgundy mb-4 bg-clip-text text-transparent bg-gradient-to-r from-clif-burgundy to-clif-burgundy-dark">
           CLIF Cohort Dashboard
         </h1>
-        <p class="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto mb-6">
-          Insights from <span class="font-semibold text-clif-burgundy">808,749</span> unique critically ill patients
-          across <span class="font-semibold text-clif-burgundy">62</span> hospitals in
-          <span class="font-semibold text-clif-burgundy">12</span> participating institutions
+        {/* whitespace-nowrap + no max-width: the sentence is short enough to own
+            one line at desktop widths; it re-wraps naturally on small screens. */}
+        <p class="text-lg md:text-xl text-gray-600 mx-auto mb-6 md:whitespace-nowrap">
+          Insights from <span class="font-semibold text-clif-burgundy">{heroStats.patients}</span> unique
+          {/* The definition lives on the hero's own "critically ill" wording; the
+              trigger is a sibling of the phrase so the underline stops at the text. */}
+          <span
+            id="hero-cohort-label"
+            class="text-blue-600 hover:text-blue-800 underline decoration-dotted underline-offset-2 cursor-help"
+          >critically ill patients</span><button
+            id="critically-ill-trigger"
+            type="button"
+            class="text-blue-600 hover:text-blue-800 align-middle ml-0.5 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+            aria-label="How is “critically ill” defined?"
+            title="How is “critically ill” defined?"
+          ><svg class="w-4 h-4 inline-block" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"
+            ><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg
+          ></button>
+          across <span class="font-semibold text-clif-burgundy">{heroStats.encounters}</span> hospitalizations
+          from <span class="font-semibold text-clif-burgundy">{heroStats.hospitals}</span> hospitals
         </p>
-        <div class="inline-flex items-center gap-6 text-sm text-gray-600 bg-white px-6 py-3 rounded-full shadow-sm">
-          <span class="flex items-center gap-2">
-            <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-            </svg>
-            Last updated: November 2025
-          </span>
-        </div>
       </div>
+
+      <!-- Per-cohort headline data + cohort event bus -->
+      {/* Site display names + column order for the inline chart/table scripts.
+          Site CODES stay the data keys; these are labels only. */}
+      <script is:inline set:html={`window.__SITE_LABELS__ = ${JSON.stringify(SITE_LABELS)}; window.__SITE_ORDER__ = ${JSON.stringify(SITE_ORDER)}; window.siteLabel = function (c) { return (window.__SITE_LABELS__ || {})[c] || c; }; window.compareSites = function (a, b) { var o = window.__SITE_ORDER__ || [], ia = o.indexOf(a), ib = o.indexOf(b); if (ia === -1 && ib === -1) return String(a).localeCompare(String(b)); if (ia === -1) return 1; if (ib === -1) return -1; return ia - ib; };`}></script>
+      <script is:inline set:html={`window.__COHORT_HEADLINES__ = ${JSON.stringify(cohortHeadlines)}; window.__DEFAULT_COHORT__ = ${JSON.stringify(DEFAULT_COHORT)}; window.__SUBS_BY_PARENT__ = ${JSON.stringify(subsByParent)};`}></script>
+      <script is:inline>
+        (function () {
+          const H = window.__COHORT_HEADLINES__ || {};
+          window.CohortBus = {
+            current: window.__DEFAULT_COHORT__ || 'overall',
+            _subs: [],
+            headline: function (key) { return H[key] || {}; },
+            subscribe: function (fn) { this._subs.push(fn); try { fn(this.current); } catch (e) {} },
+            set: function (key) {
+              if (!H[key] || key === this.current) { this.current = key; }
+              this.current = key;
+              this._subs.forEach(function (fn) { try { fn(key); } catch (e) {} });
+            },
+          };
+        })();
+      </script>
+
+      {/* Shown when a chart/map library failed to arrive from its CDN, so a
+          visitor on a blocking network sees an explanation instead of blank
+          boxes. Checked on window load, when all script fetches have settled. */}
+      <div id="cdn-fallback-note" class="hidden bg-amber-50 border-l-4 border-amber-400 p-3 rounded mb-8">
+        <p class="text-sm font-semibold text-amber-800">Some interactive charts could not be loaded.</p>
+        <p class="text-sm text-amber-800 mt-1">
+          Your network may be blocking the content delivery services this page uses
+          (cdn.jsdelivr.net, unpkg.com). The data tables still work without them.
+        </p>
+      </div>
+      <script is:inline>
+        window.addEventListener('load', function () {
+          if (typeof Chart === 'undefined' || typeof d3 === 'undefined' || typeof L === 'undefined') {
+            document.getElementById('cdn-fallback-note')?.classList.remove('hidden');
+          }
+        });
+      </script>
 
       <!-- Tabbed Dashboard Section -->
       <section class="mb-16">
-        <!-- Tab Navigation -->
+        <!-- Tab Navigation (cohort picker rides in the same band, left of the
+             tabs: burgundy-tinted so it reads as a control, not another tab,
+             and global so every tab keeps access to it) -->
         <div class="flex justify-center mb-8">
-          <div class="inline-flex bg-gray-100 rounded-lg p-1 shadow-sm overflow-x-auto">
+          <div class="inline-flex items-stretch bg-gray-100 rounded-lg p-1 shadow-sm overflow-x-auto">
+            {/* One dropdown for every cohort. Overall used to be a separate
+                level-1 button; it is an option here instead. The optgroups keep
+                the distinction that button carried — Overall is all
+                hospitalizations, the rest are critically ill — without spending
+                a second control on it. */}
+            <span id="cohort-type-wrap">
+              <select
+                id="cohort-type-select"
+                aria-label="Cohort"
+                class="h-full cursor-pointer border-0 rounded-md px-3 py-3 text-xs md:text-base font-semibold bg-clif-burgundy/10 text-clif-burgundy focus:outline-none focus:ring-2 focus:ring-clif-burgundy/40"
+              >
+                {VISIBLE_GROUPS.length > 1
+                  ? VISIBLE_GROUPS.map((g) => (
+                      <optgroup label={GROUP_LABELS[g]}>
+                        {VISIBLE_COHORTS.filter((c) => c.group === g).map((c) => (
+                          <option value={c.key} selected={c.key === DEFAULT_COHORT}>{c.label}</option>
+                        ))}
+                      </optgroup>
+                    ))
+                  : VISIBLE_COHORTS.map((c) => <option value={c.key} selected={c.key === DEFAULT_COHORT}>{c.label}</option>)}
+              </select>
+            </span>
+            <span id="cohort-sub-wrap" class="hidden">
+              <select
+                id="cohort-sub-select"
+                aria-label="Sub-cohort"
+                class="h-full cursor-pointer border-0 rounded-md px-3 py-3 text-xs md:text-base font-semibold bg-clif-burgundy/10 text-clif-burgundy focus:outline-none focus:ring-2 focus:ring-clif-burgundy/40 ml-1"
+              >
+                <!-- populated by JS based on the selected type -->
+              </select>
+            </span>
+            <div class="w-px self-stretch bg-gray-300 mx-2 my-1"></div>
             <button
               id="tab-summary"
               class="px-4 py-3 text-xs md:text-base font-semibold rounded-md transition-all duration-200 bg-clif-burgundy text-white shadow-md whitespace-nowrap"
@@ -120,24 +291,7 @@ import CTAButton from '../components/shared/CTAButton.astro';
 
         <!-- Tab Content: Summary Statistics -->
         <div id="content-summary" class="tab-content">
-          <div class="text-center mb-8">
-            <h2 class="text-3xl font-bold text-gray-800 mb-3">Summary Statistics</h2>
-            <p class="text-lg text-gray-600">
-              Quick overview of the CLIF consortium
-              <button
-                id="critically-ill-trigger"
-                class="text-blue-600 hover:text-blue-800 underline decoration-dotted underline-offset-2 cursor-help inline-flex items-center gap-0.5"
-              >
-                critically ill
-                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
-                </svg>
-              </button>
-              patient cohort characteristics
-            </p>
-          </div>
-
-          <CohortSummaryFromCSV />
+          {PANEL_COHORTS.map((k) => <CohortSummaryFromCSV cohort={k} />)}
         </div>
 
         <!-- Tab Content: Interactive Data Explorer -->
@@ -174,7 +328,7 @@ import CTAButton from '../components/shared/CTAButton.astro';
               <div>
                 <h3 class="text-lg font-semibold text-gray-900 mb-3">Data Source</h3>
                 <p class="text-gray-700 text-sm">
-                  This dashboard presents aggregated, de-identified data from the CLIF Consortium spanning 2011-2025. All data has been standardized according to CLIF data format specifications and undergoes rigorous quality assurance processes. <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF-MIMIC" target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:underline font-medium">MIMIC IV data</a> is included for benchmarking purposes.
+                  This dashboard presents aggregated, de-identified data from the CLIF Consortium spanning 2011-2026. All data has been standardized according to CLIF data format specifications and undergoes rigorous quality assurance processes. <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF-MIMIC" target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:underline font-medium">MIMIC IV data</a> is included for benchmarking purposes.
                 </p>
               </div>
             </div>
@@ -257,13 +411,13 @@ import CTAButton from '../components/shared/CTAButton.astro';
           <svg class="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
           </svg>
-          <span class="text-gray-700"><strong class="text-gray-900">Advanced respiratory support:</strong> Mechanical ventilation or similar interventions</span>
+          <span class="text-gray-700"><strong class="text-gray-900">Advanced respiratory support:</strong> Invasive mechanical ventilation, NIPPV (BiPAP), CPAP, or high-flow nasal cannula at &ge;30 L/min</span>
         </li>
         <li class="flex items-start gap-3">
           <svg class="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
           </svg>
-          <span class="text-gray-700"><strong class="text-gray-900">Vasoactive support:</strong> Vasopressor medications to maintain blood pressure</span>
+          <span class="text-gray-700"><strong class="text-gray-900">Vasopressor support:</strong> Continuous vasopressor infusion (norepinephrine, epinephrine, phenylephrine, vasopressin, dopamine, or angiotensin II)</span>
         </li>
         <li class="flex items-start gap-3">
           <svg class="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
@@ -278,140 +432,38 @@ import CTAButton from '../components/shared/CTAButton.astro';
   <!-- Tab Switching Script -->
   <script is:inline>
     document.addEventListener('DOMContentLoaded', () => {
-      const tabSummary = document.getElementById('tab-summary');
-      const tabExplorer = document.getElementById('tab-explorer');
-      const tabHourly = document.getElementById('tab-hourly');
-      const tabDistributions = document.getElementById('tab-distributions');
-      const tabMap = document.getElementById('tab-map');
-      const contentSummary = document.getElementById('content-summary');
-      const contentExplorer = document.getElementById('content-explorer');
-      const contentHourly = document.getElementById('content-hourly');
-      const contentDistributions = document.getElementById('content-distributions');
-      const contentMap = document.getElementById('content-map');
-
-      function switchToSummary() {
-        // Update button styles
-        tabSummary?.classList.add('bg-clif-burgundy', 'text-white', 'shadow-md');
-        tabSummary?.classList.remove('text-gray-700', 'hover:text-gray-900');
-        tabExplorer?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
-        tabExplorer?.classList.add('text-gray-700', 'hover:text-gray-900');
-        tabHourly?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
-        tabHourly?.classList.add('text-gray-700', 'hover:text-gray-900');
-        tabDistributions?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
-        tabDistributions?.classList.add('text-gray-700', 'hover:text-gray-900');
-        tabMap?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
-        tabMap?.classList.add('text-gray-700', 'hover:text-gray-900');
-
-        // Show/hide content
-        contentSummary?.classList.remove('hidden');
-        contentExplorer?.classList.add('hidden');
-        contentHourly?.classList.add('hidden');
-        contentDistributions?.classList.add('hidden');
-        contentMap?.classList.add('hidden');
-      }
-
-      function switchToExplorer() {
-        // Update button styles
-        tabExplorer?.classList.add('bg-clif-burgundy', 'text-white', 'shadow-md');
-        tabExplorer?.classList.remove('text-gray-700', 'hover:text-gray-900');
-        tabSummary?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
-        tabSummary?.classList.add('text-gray-700', 'hover:text-gray-900');
-        tabHourly?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
-        tabHourly?.classList.add('text-gray-700', 'hover:text-gray-900');
-        tabDistributions?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
-        tabDistributions?.classList.add('text-gray-700', 'hover:text-gray-900');
-        tabMap?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
-        tabMap?.classList.add('text-gray-700', 'hover:text-gray-900');
-
-        // Show/hide content
-        contentExplorer?.classList.remove('hidden');
-        contentSummary?.classList.add('hidden');
-        contentHourly?.classList.add('hidden');
-        contentDistributions?.classList.add('hidden');
-        contentMap?.classList.add('hidden');
-      }
-
-      function switchToHourly() {
-        // Update button styles
-        tabHourly?.classList.add('bg-clif-burgundy', 'text-white', 'shadow-md');
-        tabHourly?.classList.remove('text-gray-700', 'hover:text-gray-900');
-        tabSummary?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
-        tabSummary?.classList.add('text-gray-700', 'hover:text-gray-900');
-        tabExplorer?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
-        tabExplorer?.classList.add('text-gray-700', 'hover:text-gray-900');
-        tabDistributions?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
-        tabDistributions?.classList.add('text-gray-700', 'hover:text-gray-900');
-        tabMap?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
-        tabMap?.classList.add('text-gray-700', 'hover:text-gray-900');
-
-        // Show/hide content
-        contentHourly?.classList.remove('hidden');
-        contentSummary?.classList.add('hidden');
-        contentExplorer?.classList.add('hidden');
-        contentDistributions?.classList.add('hidden');
-        contentMap?.classList.add('hidden');
-      }
-
-      function switchToDistributions() {
-        // Update button styles
-        tabDistributions?.classList.add('bg-clif-burgundy', 'text-white', 'shadow-md');
-        tabDistributions?.classList.remove('text-gray-700', 'hover:text-gray-900');
-        tabSummary?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
-        tabSummary?.classList.add('text-gray-700', 'hover:text-gray-900');
-        tabExplorer?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
-        tabExplorer?.classList.add('text-gray-700', 'hover:text-gray-900');
-        tabHourly?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
-        tabHourly?.classList.add('text-gray-700', 'hover:text-gray-900');
-        tabMap?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
-        tabMap?.classList.add('text-gray-700', 'hover:text-gray-900');
-
-        // Show/hide content
-        contentDistributions?.classList.remove('hidden');
-        contentSummary?.classList.add('hidden');
-        contentExplorer?.classList.add('hidden');
-        contentHourly?.classList.add('hidden');
-        contentMap?.classList.add('hidden');
-      }
-
-      function switchToMap() {
-        // Update button styles
-        tabMap?.classList.add('bg-clif-burgundy', 'text-white', 'shadow-md');
-        tabMap?.classList.remove('text-gray-700', 'hover:text-gray-900');
-        tabSummary?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
-        tabSummary?.classList.add('text-gray-700', 'hover:text-gray-900');
-        tabExplorer?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
-        tabExplorer?.classList.add('text-gray-700', 'hover:text-gray-900');
-        tabHourly?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
-        tabHourly?.classList.add('text-gray-700', 'hover:text-gray-900');
-        tabDistributions?.classList.remove('bg-clif-burgundy', 'text-white', 'shadow-md');
-        tabDistributions?.classList.add('text-gray-700', 'hover:text-gray-900');
-
-        // Show/hide content
-        contentMap?.classList.remove('hidden');
-        contentSummary?.classList.add('hidden');
-        contentExplorer?.classList.add('hidden');
-        contentHourly?.classList.add('hidden');
-        contentDistributions?.classList.add('hidden');
-
-        // Trigger map resize after showing (fixes Leaflet display issues)
-        setTimeout(() => {
-          if (window.L && window.L.map) {
-            const maps = document.querySelectorAll('#map');
-            maps.forEach(mapElement => {
-              if (mapElement._leaflet_id) {
-                const mapInstance = mapElement._leaflet_map || L.map(mapElement);
-                mapInstance.invalidateSize();
-              }
-            });
+      // Generic tab controller: one active tab at a time.
+      const TABS = ['summary', 'explorer', 'hourly', 'distributions', 'map'];
+      function activateTab(name) {
+        TABS.forEach((t) => {
+          const btn = document.getElementById('tab-' + t);
+          const content = document.getElementById('content-' + t);
+          const on = t === name;
+          if (btn) {
+            btn.classList.toggle('bg-clif-burgundy', on);
+            btn.classList.toggle('text-white', on);
+            btn.classList.toggle('shadow-md', on);
+            btn.classList.toggle('text-gray-700', !on);
+            btn.classList.toggle('hover:text-gray-900', !on);
           }
-        }, 100);
+          if (content) content.classList.toggle('hidden', !on);
+        });
+        // Leaflet needs a resize once its container becomes visible.
+        if (name === 'map') {
+          setTimeout(() => {
+            if (window.L && window.L.map) {
+              document.querySelectorAll('#map').forEach((el) => {
+                if (el._leaflet_id) (el._leaflet_map || L.map(el)).invalidateSize();
+              });
+            }
+          }, 100);
+        }
       }
+      TABS.forEach((t) => document.getElementById('tab-' + t)?.addEventListener('click', () => activateTab(t)));
 
-      tabSummary?.addEventListener('click', switchToSummary);
-      tabExplorer?.addEventListener('click', switchToExplorer);
-      tabHourly?.addEventListener('click', switchToHourly);
-      tabDistributions?.addEventListener('click', switchToDistributions);
-      tabMap?.addEventListener('click', switchToMap);
+      // The cohort picker lives in another script block and needs to move off a
+      // tab that a cohort switch has just hidden.
+      window.__activateTab = activateTab;
 
       // Critically ill modal
       const criticallyIllTrigger = document.getElementById('critically-ill-trigger');
@@ -430,6 +482,12 @@ import CTAButton from '../components/shared/CTAButton.astro';
       }
 
       criticallyIllTrigger?.addEventListener('click', openModal);
+      // The phrase is styled as a definition link, so it opens the modal too —
+      // the marker beside it should not be the only hit target. Listener sits on
+      // the span itself, so the bus rewriting its textContent doesn't remove it.
+      document.getElementById('hero-cohort-label')?.addEventListener('click', (e) => {
+        if (e.currentTarget.classList.contains('cursor-help')) openModal();
+      });
       modalBackdrop?.addEventListener('click', closeModal);
       modalClose?.addEventListener('click', closeModal);
 
@@ -437,6 +495,72 @@ import CTAButton from '../components/shared/CTAButton.astro';
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') closeModal();
       });
+    });
+  </script>
+
+  <!-- Cohort Picker wiring -->
+  <script is:inline>
+    document.addEventListener('DOMContentLoaded', () => {
+      const Bus = window.CohortBus;
+      if (!Bus) return;
+      const typeSelect = document.getElementById('cohort-type-select');
+      const subWrap = document.getElementById('cohort-sub-wrap');
+      const subSelect = document.getElementById('cohort-sub-select');
+      const tabHourly = document.getElementById('tab-hourly');
+      const tabDistributions = document.getElementById('tab-distributions');
+      const SUBS = window.__SUBS_BY_PARENT__ || {};
+
+      function parentOf(key) { return key && key.indexOf('__') > -1 ? key.split('__')[0] : key; }
+
+      // Show/populate the sub-group selector when the active type has ICU/ED
+      // splits. Driven purely by the SUBS lookup now that there is no group
+      // control — a cohort without splits simply has no entry.
+      function paintSubSelect(current) {
+        const type = parentOf(current);
+        const subs = SUBS[type];
+        if (!subs || !subs.length) {
+          subWrap?.classList.add('hidden');
+          return;
+        }
+        let html = `<option value="${type}">All</option>`;
+        subs.forEach((s) => { html += `<option value="${s.key}">${s.label}</option>`; });
+        if (subSelect) { subSelect.innerHTML = html; subSelect.value = current; }
+        subWrap?.classList.remove('hidden');
+      }
+
+      // Tab gating + selectors react to cohort changes.
+      Bus.subscribe((key) => {
+        const h = Bus.headline(key);
+        const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+        // The hero is deliberately static (rendered from DEFAULT_COHORT at build
+        // time) — it frames the dashboard as a whole, not the current selection.
+        // The summary subtitle no longer needs a name span: the picker itself
+        // sits inline in the sentence and shows the selection.
+        // Hourly and Distributions only apply to cohorts that ship that data.
+        // The ward cohort has neither — its upstream pipeline emits table_one
+        // only — so both tabs disappear rather than opening on an empty state.
+        if (tabHourly) tabHourly.classList.toggle('hidden', !h.hasHourly);
+        if (tabDistributions) tabDistributions.classList.toggle('hidden', !h.hasDistributions);
+
+        // Hiding the button is not enough: if that tab is the one currently
+        // open, its panel stays on screen with no way back to it. Fall back to
+        // Summary, which every cohort has.
+        const openHidden = [
+          [tabHourly, 'hourly'],
+          [tabDistributions, 'distributions'],
+        ].some(([btn, name]) =>
+          btn && btn.classList.contains('hidden') &&
+          !document.getElementById('content-' + name)?.classList.contains('hidden')
+        );
+        if (openHidden && typeof window.__activateTab === 'function') window.__activateTab('summary');
+
+        if (typeSelect) typeSelect.value = parentOf(key);
+        paintSubSelect(key);
+      });
+
+      // Changing type resets to the "All" subgroup (the base cohort key).
+      typeSelect?.addEventListener('change', (e) => Bus.set(e.target.value));
+      subSelect?.addEventListener('change', (e) => Bus.set(e.target.value));
     });
   </script>
 

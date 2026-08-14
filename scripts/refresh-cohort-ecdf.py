@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Regenerate src/data/cohort_wip_ecdf/ from the _aggregated export's bins.
+Regenerate src/data/cohort_ecdf/ from the _aggregated export's bins.
 
     python3 scripts/refresh-cohort-ecdf.py [--dry-run]
 
@@ -39,7 +39,7 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parent.parent
 RAW = ROOT / "src" / "data" / "_aggregated"
-OUT = ROOT / "src" / "data" / "cohort_wip_ecdf"
+OUT = ROOT / "src" / "data" / "cohort_ecdf"
 
 # Cohort key -> directory holding that cohort's bins, and the suffix used by
 # stats/collection_statistics*.csv. nippv_hfnc has bins in the export but no

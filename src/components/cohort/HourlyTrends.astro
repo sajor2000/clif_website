@@ -1,65 +1,10 @@
 ---
-import { readFile } from 'fs/promises';
-import { join } from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
+import { COHORTS, DEFAULT_COHORT, parseCohortCSV, siteLabel, compareSites, SITE_LABELS } from '../../utils/cohortData';
 
-// Read all hourly CSV files
-const medicationsPath = join(process.cwd(), 'src', 'data', 'cohort_dash_1', 'hourly', 'medications_hourly_by_site_1121.csv');
-const pressurePath = join(process.cwd(), 'src', 'data', 'cohort_dash_1', 'hourly', 'pressure_control_hourly_by_site_1121.csv');
-const tidalVolumePath = join(process.cwd(), 'src', 'data', 'cohort_dash_1', 'hourly', 'tidal_volume_hourly_by_site_1121.csv');
-
-const medicationsContent = await readFile(medicationsPath, 'utf-8');
-const pressureContent = await readFile(pressurePath, 'utf-8');
-const tidalVolumeContent = await readFile(tidalVolumePath, 'utf-8');
-
-// Parse medications CSV (format: site__medication_metric)
-function parseMedicationsCSV(content: string) {
-  const lines = content.trim().split('\n');
-  const headers = lines[0].split(',');
-
-  const sites = new Set<string>();
-  const medications = new Set<string>();
-
-  headers.slice(1).forEach(header => {
-    const match = header.match(/^(.+?)__(.+?)_(n|pct)$/);
-    if (match) {
-      const [, site, med] = match;
-      sites.add(site);
-      medications.add(med);
-    }
-  });
-
-  return {
-    sites: Array.from(sites).sort(),
-    medications: Array.from(medications).sort(),
-    headers,
-    lines: lines.slice(1)
-  };
-}
-
-// Parse respiratory CSV (format: site__metric)
-function parseRespiratoryCSV(content: string) {
-  const lines = content.trim().split('\n');
-  const headers = lines[0].split(',');
-
-  const sites = new Set<string>();
-
-  headers.slice(1).forEach(header => {
-    const match = header.match(/^(.+?)__/);
-    if (match) {
-      sites.add(match[1]);
-    }
-  });
-
-  return {
-    sites: Array.from(sites).sort(),
-    headers,
-    lines: lines.slice(1)
-  };
-}
-
-const medicationsData = parseMedicationsCSV(medicationsContent);
-const pressureData = parseRespiratoryCSV(pressureContent);
-const tidalVolumeData = parseRespiratoryCSV(tidalVolumeContent);
+const cohortDir = path.join(process.cwd(), 'src', 'data', 'cohorts');
+const HOURLY_COHORTS = COHORTS.filter((c) => c.hasHourly);
 
 // Medication categories for grouping
 const medicationCategories = {
@@ -68,44 +13,90 @@ const medicationCategories = {
   'Neuromuscular Blockers': ['vecuronium', 'rocuronium', 'cisatracurium']
 };
 
-// IMV encounter weights by site (from overall CSV - "Invasive mechanical ventilation, n (%)" row)
-// Used for weighted aggregation across sites
-const imvWeights: Record<string, number> = {
-  'emory': 14674,
-  'jhu': 37457,
-  'nu': 32464,       // Northwestern
-  'ohsu': 16925,
-  'rush': 13504,
-  'ucsf': 21335,
-  'ucmc': 18240,     // University of Chicago
-  'umich': 24913,    // University of Michigan
-  'umn': 45350,      // University of Minnesota
-  'upenn': 46999,
-  'utoronto': 8193,
-  'mimic_iv': 35139
-};
+function readIf(p: string): string | null {
+  return fs.existsSync(p) ? fs.readFileSync(p, 'utf-8') : null;
+}
 
-// Convert to JSON for client-side use
-const dataJson = JSON.stringify({
-  medications: {
-    sites: medicationsData.sites,
-    items: medicationsData.medications,
-    headers: medicationsData.headers,
-    lines: medicationsData.lines,
-    categories: medicationCategories
-  },
-  pressure_control: {
-    sites: pressureData.sites,
-    headers: pressureData.headers,
-    lines: pressureData.lines
-  },
-  tidal_volume: {
-    sites: tidalVolumeData.sites,
-    headers: tidalVolumeData.headers,
-    lines: tidalVolumeData.lines
-  },
-  imvWeights: imvWeights
-});
+// New medications headers are metric-first (`<med>_<n|pct>__<Site>`, incl __ALL).
+// Rename to the old site-first shape (`<Site>__<med>_<metric>`) so the existing
+// client column-reconstruction works unchanged; line values stay in place.
+function transformMedications(content: string) {
+  const lines = content.trim().split('\n');
+  const headers = lines[0].split(',');
+  const sites = new Set<string>();
+  const meds = new Set<string>();
+  const newHeaders = headers.map((h, i) => {
+    if (i === 0) return 'hour';
+    const m = h.trim().match(/^(.+)_(n|pct)__(.+)$/);
+    if (!m) return h;
+    const [, med, metric, site] = m;
+    if (site !== 'ALL') { sites.add(site); meds.add(med); }
+    return `${site}__${med}_${metric}`;
+  });
+  return { sites: Array.from(sites).sort(compareSites), medications: Array.from(meds).sort(), headers: newHeaders, lines: lines.slice(1) };
+}
+
+// New respiratory headers are `<stat>__<Site>` (median/q25/q75). Rename to the old
+// `<Site>__<stat>` shape (client only reads `<site>__median`).
+function transformRespiratory(content: string) {
+  const lines = content.trim().split('\n');
+  const headers = lines[0].split(',');
+  const sites = new Set<string>();
+  const newHeaders = headers.map((h, i) => {
+    if (i === 0) return 'hour';
+    const m = h.trim().match(/^(.+?)__(.+)$/);
+    if (!m) return h;
+    const [, stat, site] = m;
+    if (site !== 'ALL') sites.add(site);
+    return `${site}__${stat}`;
+  });
+  return { sites: Array.from(sites).sort(compareSites), headers: newHeaders, lines: lines.slice(1) };
+}
+
+// Per-site IMV n from the cohort's table_one (weights for the aggregate median line).
+function imvWeightsFor(key: string): Record<string, number> {
+  const csv = readIf(path.join(cohortDir, key, 'table_one_by_year.csv'));
+  const w: Record<string, number> = {};
+  if (!csv) return w;
+  const parsed = parseCohortCSV(csv);
+  const row = parsed.characteristics.find((c) => c.variable.trim() === 'Invasive mechanical ventilation, n (%)');
+  if (row) {
+    for (const [site, ym] of row.sites) {
+      if (site === 'ALL') continue;
+      const v = ym.get('Overall') || '';
+      const n = parseInt((v.match(/^[\d,]+/)?.[0] || '0').replace(/,/g, ''), 10);
+      if (n) w[site] = n;
+    }
+  }
+  return w;
+}
+
+function payloadFor(key: string) {
+  const meds = transformMedications(fs.readFileSync(path.join(cohortDir, key, 'medications_hourly_data.csv'), 'utf-8'));
+  const pcsv = readIf(path.join(cohortDir, key, 'pressure_control_hourly.csv'));
+  const tcsv = readIf(path.join(cohortDir, key, 'tidal_volume_hourly.csv'));
+  const pressure = pcsv ? transformRespiratory(pcsv) : null;
+  const tidal = tcsv ? transformRespiratory(tcsv) : null;
+  return {
+    medications: { sites: meds.sites, items: meds.medications, headers: meds.headers, lines: meds.lines, categories: medicationCategories },
+    pressure_control: pressure ? { sites: pressure.sites, headers: pressure.headers, lines: pressure.lines } : null,
+    tidal_volume: tidal ? { sites: tidal.sites, headers: tidal.headers, lines: tidal.lines } : null,
+    imvWeights: imvWeightsFor(key),
+    hasRespiratory: !!pressure,
+  };
+}
+
+const cohortsPayload: Record<string, ReturnType<typeof payloadFor>> = {};
+for (const c of HOURLY_COHORTS) cohortsPayload[c.key] = payloadFor(c.key);
+// overall_ward has no hourly data, so the SSR default is the first hourly cohort.
+const defaultHourlyCohort = cohortsPayload[DEFAULT_COHORT] ? DEFAULT_COHORT : HOURLY_COHORTS[0].key;
+
+const dataJson = JSON.stringify(cohortsPayload[defaultHourlyCohort]);
+const cohortsJson = JSON.stringify(cohortsPayload);
+const defaultCohort = defaultHourlyCohort;
+
+// Template still reads these for SSR of the site checkboxes / header counts.
+const medicationsData = cohortsPayload[defaultHourlyCohort].medications;
 ---
 
 <div class="hourly-trends bg-white rounded-2xl shadow-xl p-6 md:p-8">
@@ -113,7 +104,7 @@ const dataJson = JSON.stringify({
   <div class="mb-8">
     <h2 class="text-3xl font-bold text-gray-800 mb-2">Hourly Trends</h2>
     <p class="text-gray-600 mb-3">
-      Explore medication and respiratory support patterns over the first 7 days of ICU admission across {medicationsData.sites.length} institutions.
+      Explore medication and respiratory support patterns over the first 7 days of ICU admission across <span id="hourly-institution-count">{medicationsData.sites.length}</span> institutions.
     </p>
     <div id="hourly-medication-note" class="bg-blue-50 border-l-4 border-blue-400 p-3 rounded">
       <p class="text-sm text-blue-800 mb-2">
@@ -183,7 +174,7 @@ const dataJson = JSON.stringify({
                   class="hourly-site-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy"
                   value={site}
                 />
-                <span class="ml-2 text-sm text-gray-700">{site.toUpperCase()}</span>
+                <span class="ml-2 text-sm text-gray-700">{siteLabel(site)}</span>
               </label>
             ))}
           </div>
@@ -236,10 +227,14 @@ const dataJson = JSON.stringify({
 
 <!-- JSON data storage -->
 <script type="application/json" id="hourly-data" set:html={dataJson}></script>
+<script type="application/json" id="hourly-cohorts-data" set:html={cohortsJson} data-default={defaultCohort}></script>
 
 <script>
-  // Parse data from JSON
-  const hourlyData = JSON.parse(document.getElementById('hourly-data').textContent);
+  // All hourly cohorts; the active dataset is swapped when the cohort picker changes.
+  const HOURLY_COHORTS_DATA = JSON.parse(document.getElementById('hourly-cohorts-data').textContent);
+  const DEFAULT_HOURLY = document.getElementById('hourly-cohorts-data').getAttribute('data-default');
+  let activeCohort = (window.CohortBus && window.CohortBus.current && HOURLY_COHORTS_DATA[window.CohortBus.current]) ? window.CohortBus.current : DEFAULT_HOURLY;
+  let hourlyData = HOURLY_COHORTS_DATA[activeCohort];
 
   // Medication categories mapping (category value -> display name and medications)
   const medicationCategoryMap = {
@@ -268,6 +263,7 @@ const dataJson = JSON.stringify({
   // These colors are unique to sites and NOT used by any other chart elements
   const siteColors = {
     'emory':    'rgba(165, 42, 42, 0.8)',     // brown
+    'mimic':    'rgba(0, 114, 178, 0.8)',     // blue
     'jhu':      'rgba(0, 114, 178, 0.8)',     // blue
     'mimic_iv': 'rgba(249, 115, 22, 0.8)',    // orange (legacy)
     'nu':       'rgba(0, 158, 115, 0.8)',     // teal-green
@@ -350,7 +346,60 @@ const dataJson = JSON.stringify({
     initializeFilters();
     // Initialize medications dropdown for default category (vasopressors)
     handleCategoryChange(selectedMainCategory);
+    rebuildHourlySiteCheckboxes();
+    updateSiteFilterText();
+    applyRespiratoryAvailability();
+    // React to the global cohort picker (window.CohortBus).
+    if (window.CohortBus && typeof window.CohortBus.subscribe === 'function') {
+      window.CohortBus.subscribe((key) => { const eff = HOURLY_COHORTS_DATA[key] ? key : key.split('__')[0]; if (HOURLY_COHORTS_DATA[eff] && eff !== activeCohort) reloadHourlyCohort(eff); });
+    }
   });
+
+  // Rebuild the site checkbox list from the active cohort's sites (keeps "All Sites").
+  function rebuildHourlySiteCheckboxes() {
+    const container = document.querySelector('#hourly-site-filter-dropdown .p-2');
+    if (!container) return;
+    const cbClass = 'hourly-site-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy';
+    let html = `<label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer border-b border-gray-200 mb-1"><input type="checkbox" id="hourly-site-all" class="w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy" checked /><span class="ml-2 text-sm text-gray-700 font-semibold">All Sites (Aggregated)</span></label>`;
+    for (const site of (hourlyData.medications.sites || [])) {
+      html += `<label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer"><input type="checkbox" class="${cbClass}" value="${site}" /><span class="ml-2 text-sm text-gray-700">${window.siteLabel(site)}</span></label>`;
+    }
+    container.innerHTML = html;
+  }
+
+  // Disable pressure/tidal categories for cohorts that ship no respiratory CSVs.
+  function applyRespiratoryAvailability() {
+    const catSelect = document.getElementById('hourly-category-select');
+    if (!catSelect) return;
+    Array.from(catSelect.options).forEach(opt => {
+      if (opt.value === 'pressure_control' || opt.value === 'tidal_volume') {
+        opt.disabled = !hourlyData.hasRespiratory;
+      }
+    });
+  }
+
+  // Swap the active cohort's dataset and re-render.
+  function reloadHourlyCohort(key) {
+    if (!HOURLY_COHORTS_DATA[key]) return;
+    activeCohort = key;
+    hourlyData = HOURLY_COHORTS_DATA[key];
+    selectedSites = ['all'];
+    rebuildHourlySiteCheckboxes();
+    updateSiteFilterText();
+    applyRespiratoryAvailability();
+    // Keep the intro sentence's count in step with the active cohort.
+    const instCount = document.getElementById('hourly-institution-count');
+    if (instCount) instCount.textContent = String((hourlyData.medications.sites || []).length);
+    const catSelect = document.getElementById('hourly-category-select');
+    // If a respiratory category is active but unavailable here, fall back to vasopressors.
+    if (!hourlyData.hasRespiratory && (selectedMainCategory === 'pressure_control' || selectedMainCategory === 'tidal_volume')) {
+      selectedMainCategory = 'vasopressors';
+      if (catSelect) catSelect.value = 'vasopressors';
+      handleCategoryChange('vasopressors'); // calls updateChart
+      return;
+    }
+    updateChart();
+  }
 
   function initializeFilters() {
     // Site filter dropdown
@@ -364,25 +413,20 @@ const dataJson = JSON.stringify({
       siteDropdown?.classList.toggle('hidden');
     });
 
-    // "All Sites" checkbox handling - can be combined with individual sites
-    siteAllCheckbox?.addEventListener('change', (e) => {
+    // Delegated change handling so rebuilt checkboxes (after a cohort switch) still work.
+    siteDropdown?.addEventListener('change', (e) => {
+      const t = e.target;
+      if (!t.classList || !(t.id === 'hourly-site-all' || t.classList.contains('hourly-site-checkbox'))) return;
       updateSelectedSites();
       updateSiteFilterText();
       updateChart();
     });
 
-    // Individual site checkbox handling - can be combined with "All Sites"
-    siteCheckboxes.forEach(checkbox => {
-      checkbox.addEventListener('change', (e) => {
-        updateSelectedSites();
-        updateSiteFilterText();
-        updateChart();
-      });
-    });
-
     function updateSelectedSites() {
-      const allChecked = siteAllCheckbox?.checked || false;
-      const checkedSites = Array.from(siteCheckboxes)
+      const allCb = document.getElementById('hourly-site-all');
+      const cbs = document.querySelectorAll('.hourly-site-checkbox');
+      const allChecked = allCb?.checked || false;
+      const checkedSites = Array.from(cbs)
         .filter(cb => cb.checked)
         .map(cb => cb.value);
 
@@ -395,7 +439,7 @@ const dataJson = JSON.stringify({
 
       // If nothing selected, default to "All Sites"
       if (selectedSites.length === 0) {
-        if (siteAllCheckbox) siteAllCheckbox.checked = true;
+        if (allCb) allCb.checked = true;
         selectedSites = ['all'];
       }
     }
@@ -434,14 +478,14 @@ const dataJson = JSON.stringify({
       textEl.textContent = 'All Sites (Aggregated)';
     } else if (hasAll && individualSites.length > 0) {
       if (individualSites.length <= 2) {
-        textEl.textContent = `All Sites, ${individualSites.map(s => s.toUpperCase()).join(', ')}`;
+        textEl.textContent = `All Sites, ${individualSites.map(s => window.siteLabel(s)).join(', ')}`;
       } else {
         textEl.textContent = `All Sites, ${individualSites.length} sites`;
       }
     } else if (individualSites.length === 1) {
-      textEl.textContent = individualSites[0].toUpperCase();
+      textEl.textContent = window.siteLabel(individualSites[0]);
     } else if (individualSites.length <= 3) {
-      textEl.textContent = individualSites.map(s => s.toUpperCase()).join(', ');
+      textEl.textContent = individualSites.map(s => window.siteLabel(s)).join(', ');
     } else {
       textEl.textContent = `${individualSites.length} sites selected`;
     }
@@ -461,6 +505,7 @@ const dataJson = JSON.stringify({
   }
 
   function updateMedicationChart() {
+    if (typeof Chart === 'undefined') return;
     // Get the category info
     const categoryInfo = medicationCategoryMap[selectedMainCategory];
     const categoryName = categoryInfo.name;
@@ -486,7 +531,7 @@ const dataJson = JSON.stringify({
     if (hasAllForTitle && individualSitesForTitle.length === 0) {
       titleText = `${categoryName}${medLabel} - Count (All Sites)`;
     } else if (individualSitesForTitle.length === 1 && !hasAllForTitle) {
-      titleText = `${categoryName}${medLabel} - Count (${individualSitesForTitle[0].toUpperCase()})`;
+      titleText = `${categoryName}${medLabel} - Count (${window.siteLabel(individualSitesForTitle[0])})`;
     } else {
       // Multiple sites selected - don't include site info in title
       titleText = `${categoryName}${medLabel} - Count`;
@@ -682,9 +727,9 @@ const dataJson = JSON.stringify({
 
       // Add individual site lines
       individualSites.forEach(site => {
-        const color = siteColors[site] || 'rgba(100, 100, 100, 0.8)';
+        const color = siteColors[site.toLowerCase()] || 'rgba(100, 100, 100, 0.8)';
         datasets.push({
-          label: site.toUpperCase(),
+          label: window.siteLabel(site),
           data: hourDataMap.map(row => {
             let sum = 0;
             medications.forEach(med => {
@@ -703,9 +748,9 @@ const dataJson = JSON.stringify({
     } else {
       // Only individual sites selected: show line per site
       individualSites.forEach(site => {
-        const color = siteColors[site] || 'rgba(100, 100, 100, 0.8)';
+        const color = siteColors[site.toLowerCase()] || 'rgba(100, 100, 100, 0.8)';
         datasets.push({
-          label: site.toUpperCase(),
+          label: window.siteLabel(site),
           data: hourDataMap.map(row => {
             let sum = 0;
             medications.forEach(med => {
@@ -727,6 +772,7 @@ const dataJson = JSON.stringify({
   }
 
   function updateRespiratoryChart() {
+    if (typeof Chart === 'undefined') return;
     // Get the respiratory data based on category
     const respiratoryData = selectedMainCategory === 'pressure_control' ?
       hourlyData.pressure_control : hourlyData.tidal_volume;
@@ -746,7 +792,7 @@ const dataJson = JSON.stringify({
     if (hasAll && individualSites.length === 0) {
       titleText = `${categoryLabel} - Median Values (All Sites)`;
     } else if (individualSites.length === 1 && !hasAll) {
-      titleText = `${categoryLabel} - Median Values (${individualSites[0].toUpperCase()})`;
+      titleText = `${categoryLabel} - Median Values (${window.siteLabel(individualSites[0])})`;
     } else {
       // Multiple sites selected - don't include site info in title
       titleText = `${categoryLabel} - Median Values`;
@@ -898,9 +944,9 @@ const dataJson = JSON.stringify({
 
     // Add individual site lines
     individualSites.forEach(site => {
-      const color = siteColors[site] || 'rgba(100, 100, 100, 0.8)';
+      const color = siteColors[site.toLowerCase()] || 'rgba(100, 100, 100, 0.8)';
       datasets.push({
-        label: site.toUpperCase(),
+        label: window.siteLabel(site),
         data: hourDataMap.map(row => row[site]),
         borderColor: color,
         backgroundColor: color.replace('0.8', '0.1'),
@@ -963,12 +1009,12 @@ const dataJson = JSON.stringify({
 
     legend.innerHTML = '';
     sites.forEach(site => {
-      const color = siteColors[site] || 'rgba(100, 100, 100, 0.8)';
+      const color = siteColors[site.toLowerCase()] || 'rgba(100, 100, 100, 0.8)';
       const item = document.createElement('div');
       item.className = 'flex items-center gap-2';
       item.innerHTML = `
         <div class="w-4 h-4 rounded" style="background-color: ${color}"></div>
-        <span class="text-sm text-gray-700">${site.toUpperCase()}</span>
+        <span class="text-sm text-gray-700">${window.siteLabel(site)}</span>
       `;
       legend.appendChild(item);
     });
@@ -991,12 +1037,12 @@ const dataJson = JSON.stringify({
 
     // Add individual sites
     individualSites.forEach(site => {
-      const color = siteColors[site] || 'rgba(100, 100, 100, 0.8)';
+      const color = siteColors[site.toLowerCase()] || 'rgba(100, 100, 100, 0.8)';
       const item = document.createElement('div');
       item.className = 'flex items-center gap-2';
       item.innerHTML = `
         <div class="w-4 h-4 rounded" style="background-color: ${color}"></div>
-        <span class="text-sm text-gray-700">${site.toUpperCase()}</span>
+        <span class="text-sm text-gray-700">${window.siteLabel(site)}</span>
       `;
       legend.appendChild(item);
     });

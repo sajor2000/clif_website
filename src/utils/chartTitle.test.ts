@@ -8,7 +8,7 @@
  * while the pattern only knew the bare ', n (%)'.
  *
  * The title builder lives in the client script inside
- * src/components/cohort_wip/InteractiveDashboard.astro and cannot be imported,
+ * src/components/cohort/InteractiveDashboard.astro and cannot be imported,
  * so it is restated here. Keep the two in step.
  */
 import { describe, it, expect } from 'vitest';

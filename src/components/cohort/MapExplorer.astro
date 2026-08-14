@@ -2,11 +2,22 @@
 // CLIF Map Explorer - Interactive map showing consortium sites
 import { readFile } from 'fs/promises';
 import { join } from 'path';
+import { countsForCohort, COHORTS, SUBCOHORTS, DEFAULT_COHORT, type SiteCounts } from '../../utils/cohortData';
 
 // Read and parse the CSV file at build time
 const csvPath = join(process.cwd(), 'src', 'data', 'site_details.csv');
 const csvContent = await readFile(csvPath, 'utf-8');
 const lines = csvContent.trim().split('\n');
+
+// Per-site counts come from countsForCohort() in cohortData.ts (shared with
+// Summary Statistics). Geography/lat-long still come from site_details.csv.
+
+const cohortSiteCounts: Record<string, Record<string, SiteCounts>> = {};
+for (const c of COHORTS) cohortSiteCounts[c.key] = countsForCohort(c.key);
+for (const s of SUBCOHORTS) cohortSiteCounts[s.key] = countsForCohort(s.key);
+
+// SSR still renders the default cohort so the markup is never empty.
+const freshCounts = cohortSiteCounts[DEFAULT_COHORT] || {};
 
 // Parse CSV helper function
 function parseCSVLine(line: string): string[] {
@@ -49,15 +60,17 @@ for (let i = 1; i < lines.length; i++) {
     const latStr = values[2].trim().replace(/−/g, '-');
     const lonStr = values[3].trim().replace(/−/g, '-');
 
+    const name = values[0].trim();
+    const fresh = freshCounts[name];
     const site: SiteData = {
-      name: values[0].trim(),
+      name,
       location: values[1].trim(),
       latitude: parseFloat(latStr),
       longitude: parseFloat(lonStr),
       dataReady: values[4].trim().toLowerCase() === 'yes',
-      hospitals: values[5].trim() ? parseInt(values[5].trim().replace(/,/g, '')) : 0,
-      encounters: values[6].trim() ? parseInt(values[6].trim().replace(/,/g, '')) : 0,
-      patients: values[7].trim() ? parseInt(values[7].trim().replace(/,/g, '')) : 0,
+      hospitals: fresh ? fresh.hospitals : (values[5].trim() ? parseInt(values[5].trim().replace(/,/g, '')) : 0),
+      encounters: fresh ? fresh.encounters : (values[6].trim() ? parseInt(values[6].trim().replace(/,/g, '')) : 0),
+      patients: fresh ? fresh.patients : (values[7].trim() ? parseInt(values[7].trim().replace(/,/g, '')) : 0),
     };
     sites.push(site);
   }
@@ -65,6 +78,8 @@ for (let i = 1; i < lines.length; i++) {
 
 // Serialize sites data for client-side use
 const sitesJSON = JSON.stringify(sites);
+const cohortCountsJSON = JSON.stringify(cohortSiteCounts);
+const defaultCohortKey = DEFAULT_COHORT;
 ---
 
 <div class="map-explorer">
@@ -79,14 +94,20 @@ const sitesJSON = JSON.stringify(sites);
 
     <!-- Legend - Embedded in bottom left -->
     <div class="absolute bottom-8 left-6 bg-white/95 backdrop-blur-sm px-4 py-3 rounded-lg shadow-lg z-[1000]">
+      {/* Three states — see markerHtml(). "Active, no data in this cohort" is
+          NOT the same as "upcoming", and greying both alike misstated it. */}
       <div class="flex flex-col gap-2">
         <div class="flex items-center gap-2">
           <div class="w-3 h-3 bg-clif-burgundy rounded-full border border-white shadow-sm"></div>
-          <span class="text-xs font-medium text-gray-700">Active Sites</span>
+          <span class="text-xs font-medium text-gray-700">In this cohort</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="w-3 h-3 rounded-full bg-white border-2 border-clif-burgundy shadow-sm"></div>
+          <span class="text-xs font-medium text-gray-700">Active site, not in this cohort</span>
         </div>
         <div class="flex items-center gap-2">
           <div class="w-3 h-3 bg-gray-400 rounded-full border border-white shadow-sm"></div>
-          <span class="text-xs font-medium text-gray-700">Upcoming Sites</span>
+          <span class="text-xs font-medium text-gray-700">Upcoming site</span>
         </div>
       </div>
     </div>
@@ -100,7 +121,7 @@ const sitesJSON = JSON.stringify(sites);
             <svg class="w-3.5 h-3.5 text-clif-burgundy" fill="currentColor" viewBox="0 0 20 20">
               <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/>
             </svg>
-            <div class="text-lg font-bold text-clif-burgundy">{sites.length}</div>
+            <div id="map-stat-institutions" class="text-lg font-bold text-clif-burgundy">{sites.length}</div>
           </div>
           <div class="text-[9px] text-gray-600 font-medium uppercase tracking-wide">Institutions</div>
         </div>
@@ -111,9 +132,12 @@ const sitesJSON = JSON.stringify(sites);
             <svg class="w-3.5 h-3.5 text-clif-burgundy" fill="currentColor" viewBox="0 0 20 20">
               <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
             </svg>
-            <div class="text-lg font-bold text-clif-burgundy">{sites.filter(s => s.dataReady).length}</div>
+            <div id="map-stat-active" class="text-lg font-bold text-clif-burgundy">{Object.keys(freshCounts).length}</div>
           </div>
-          <div class="text-[9px] text-gray-600 font-medium uppercase tracking-wide">Active Sites</div>
+          {/* Not "Active Sites": that is a fixed property of a site (12 of the
+              15 institutions are active) and does not vary by cohort. This
+              counts the sites contributing data to the SELECTED cohort. */}
+          <div class="text-[9px] text-gray-600 font-medium uppercase tracking-wide">Sites in Cohort</div>
         </div>
 
         <!-- Total Hospitals -->
@@ -122,7 +146,7 @@ const sitesJSON = JSON.stringify(sites);
             <svg class="w-3.5 h-3.5 text-clif-burgundy" fill="currentColor" viewBox="0 0 20 20">
               <path fill-rule="evenodd" d="M3 6a3 3 0 013-3h10a1 1 0 01.8 1.6L14.25 8l2.55 3.4A1 1 0 0116 13H6a1 1 0 00-1 1v3a1 1 0 11-2 0V6z" clip-rule="evenodd"/>
             </svg>
-            <div class="text-lg font-bold text-clif-burgundy">{sites.reduce((sum, s) => sum + s.hospitals, 0)}</div>
+            <div id="map-stat-hospitals" class="text-lg font-bold text-clif-burgundy">{sites.reduce((sum, s) => sum + s.hospitals, 0)}</div>
           </div>
           <div class="text-[9px] text-gray-600 font-medium uppercase tracking-wide">Hospitals</div>
         </div>
@@ -133,7 +157,7 @@ const sitesJSON = JSON.stringify(sites);
             <svg class="w-3.5 h-3.5 text-clif-burgundy" fill="currentColor" viewBox="0 0 20 20">
               <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
             </svg>
-            <div class="text-lg font-bold text-clif-burgundy">{sites.reduce((sum, s) => sum + s.patients, 0).toLocaleString()}</div>
+            <div id="map-stat-patients" class="text-lg font-bold text-clif-burgundy">{sites.reduce((sum, s) => sum + s.patients, 0).toLocaleString()}</div>
           </div>
           <div class="text-[9px] text-gray-600 font-medium uppercase tracking-wide">Patients</div>
         </div>
@@ -220,14 +244,119 @@ const sitesJSON = JSON.stringify(sites);
     background-color: #e5e7eb;
     color: #374151;
   }
+
+  /* An active site with nothing in the selected cohort. Distinct from "Coming
+     Soon" — the site contributes, just not to this cohort. */
+  :global(.site-popup .no-cohort-data) {
+    color: #6b7280;
+    font-size: 13px;
+    font-style: italic;
+    padding: 8px 0;
+  }
 </style>
 
-<script define:vars={{ sitesJSON }}>
+<script define:vars={{ sitesJSON, cohortCountsJSON, defaultCohortKey }}>
   // Parse sites data
   const sites = JSON.parse(sitesJSON);
 
+  // Per-cohort per-site counts; geography above is cohort-independent.
+  const COHORT_COUNTS = JSON.parse(cohortCountsJSON);
+  let activeCohort = defaultCohortKey;
+
   // Store map instance globally
   let mapInstance = null;
+  // Markers are kept by site name so a cohort change repaints in place rather
+  // than tearing down and rebuilding the map (which would drop the viewport).
+  const markersByName = {};
+
+  /** Counts for a site in the active cohort, or null when it has none. */
+  function countsFor(siteName) {
+    const forCohort = COHORT_COUNTS[activeCohort] || {};
+    return forCohort[siteName] || null;
+  }
+
+  function popupHtml(site) {
+    const counts = countsFor(site.name);
+    let html = `
+        <div class="site-popup">
+          <h4>${site.name}</h4>
+          <div class="location">${site.location}</div>
+    `;
+    if (site.dataReady && counts) {
+      html += `
+          <div class="stats">
+            <div class="stat-row">
+              <span class="stat-label">Hospitals:</span>
+              <span class="stat-value">${counts.hospitals.toLocaleString()}</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Patients:</span>
+              <span class="stat-value">${counts.patients.toLocaleString()}</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Hospitalizations:</span>
+              <span class="stat-value">${counts.encounters.toLocaleString()}</span>
+            </div>
+          </div>
+          <div class="status-badge status-active">Active</div>
+      `;
+    } else if (site.dataReady) {
+      // Active site with nothing in THIS cohort — say so rather than showing
+      // another cohort's numbers or a misleading zero.
+      html += `<div class="no-cohort-data">No data in this cohort</div>
+               <div class="status-badge status-upcoming">Active site</div>`;
+    } else {
+      html += `<div class="status-badge status-upcoming">Coming Soon</div>`;
+    }
+    return html + `</div>`;
+  }
+
+  /**
+   * Three states, because "contributes to this cohort" and "is an active CLIF
+   * site" are different facts. A site can be active and still have no data in
+   * the selected cohort — painting it the same grey as an upcoming site said
+   * something false about its membership.
+   *   solid burgundy  — contributes to the selected cohort
+   *   hollow burgundy — active site, no data in this cohort
+   *   solid grey      — upcoming, not yet contributing anywhere
+   */
+  function markerHtml(site) {
+    const base = 'width: 24px; height: 24px; border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.3);';
+    if (site.dataReady && countsFor(site.name)) {
+      return `<div style="${base} background-color: #8B1538; border: 3px solid white;"></div>`;
+    }
+    if (site.dataReady) {
+      return `<div style="${base} background-color: white; border: 3px solid #8B1538; opacity: 0.85;"></div>`;
+    }
+    return `<div style="${base} background-color: #9ca3af; border: 3px solid white; opacity: 0.55;"></div>`;
+  }
+
+  /** Repaint every marker, its popup, and the corner totals for activeCohort. */
+  function paintCohort() {
+    const forCohort = COHORT_COUNTS[activeCohort] || {};
+    sites.forEach((site) => {
+      const marker = markersByName[site.name];
+      if (!marker) return;
+      marker.setIcon(L.divIcon({
+        className: 'custom-marker',
+        html: markerHtml(site),
+        iconSize: [24, 24],
+        iconAnchor: [12, 12],
+      }));
+      marker.setPopupContent(popupHtml(site));
+    });
+
+    const contributing = sites.filter((s) => forCohort[s.name]);
+    const set = (id, value) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
+    };
+    // Institutions stays the roster size — it is not cohort-dependent. The
+    // other three describe the selected cohort.
+    set('map-stat-active', String(contributing.length));
+    set('map-stat-hospitals', String(contributing.reduce((sum, s) => sum + forCohort[s.name].hospitals, 0)));
+    set('map-stat-patients', contributing.reduce((sum, s) => sum + forCohort[s.name].patients, 0).toLocaleString());
+  }
 
   // Initialize map function
   function initializeMap() {
@@ -278,54 +407,23 @@ const sitesJSON = JSON.stringify(sites);
     );
     mapInstance.setMaxBounds(maxBounds);
 
-    // Add markers for each site
+    // Add markers for each site. Content comes from the paint helpers so the
+    // first render and every cohort change go through identical code.
     sites.forEach(site => {
-      const markerColor = site.dataReady ? '#8B1538' : '#9ca3af'; // burgundy for active, gray for upcoming
-
-      // Create custom icon
-      const markerIcon = L.divIcon({
-        className: 'custom-marker',
-        html: `<div style="background-color: ${markerColor}; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"></div>`,
-        iconSize: [24, 24],
-        iconAnchor: [12, 12],
-      });
-
-      // Create popup content
-      let popupContent = `
-        <div class="site-popup">
-          <h4>${site.name}</h4>
-          <div class="location">${site.location}</div>
-      `;
-
-      if (site.dataReady) {
-        popupContent += `
-          <div class="stats">
-            <div class="stat-row">
-              <span class="stat-label">Hospitals:</span>
-              <span class="stat-value">${site.hospitals.toLocaleString()}</span>
-            </div>
-            <div class="stat-row">
-              <span class="stat-label">Patients:</span>
-              <span class="stat-value">${site.patients.toLocaleString()}</span>
-            </div>
-            <div class="stat-row">
-              <span class="stat-label">Hospitalizations:</span>
-              <span class="stat-value">${site.encounters.toLocaleString()}</span>
-            </div>
-          </div>
-          <div class="status-badge status-active">Active</div>
-        `;
-      } else {
-        popupContent += `<div class="status-badge status-upcoming">Coming Soon</div>`;
-      }
-
-      popupContent += `</div>`;
-
-      // Add marker to map
-      L.marker([site.latitude, site.longitude], { icon: markerIcon })
+      const marker = L.marker([site.latitude, site.longitude], {
+        icon: L.divIcon({
+          className: 'custom-marker',
+          html: markerHtml(site),
+          iconSize: [24, 24],
+          iconAnchor: [12, 12],
+        }),
+      })
         .addTo(mapInstance)
-        .bindPopup(popupContent);
+        .bindPopup(popupHtml(site));
+      markersByName[site.name] = marker;
     });
+
+    paintCohort();
 
     // Force map to refresh its size
     setTimeout(() => {
@@ -337,6 +435,18 @@ const sitesJSON = JSON.stringify(sites);
   document.addEventListener('DOMContentLoaded', () => {
     // Delay initialization to ensure the tab content is ready
     setTimeout(initializeMap, 300);
+
+    // Follow the cohort picker. Sub-cohorts (advanced_resp__icu, ...) have
+    // their own counts; anything unknown falls back to its parent so the map
+    // never silently keeps another cohort's numbers.
+    if (window.CohortBus && typeof window.CohortBus.subscribe === 'function') {
+      window.CohortBus.subscribe((key) => {
+        const effective = COHORT_COUNTS[key] ? key : String(key).split('__')[0];
+        if (!COHORT_COUNTS[effective] || effective === activeCohort) return;
+        activeCohort = effective;
+        if (mapInstance) paintCohort();
+      });
+    }
   });
 
   // Re-initialize map when Map Explorer tab becomes visible

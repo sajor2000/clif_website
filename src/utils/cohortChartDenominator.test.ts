@@ -1,5 +1,5 @@
 /**
- * Guards the one assumption every recomputed percentage on the cohort_wip
+ * Guards the one assumption every recomputed percentage on the cohort
  * dashboard rests on: that the row it divides by can actually be found.
  *
  * The Charts view does not reuse the export's `(%)` text — it sums counts per
@@ -21,7 +21,7 @@ import { parseCohortCSV, VISIBLE_COHORTS } from './cohortData';
 
 /**
  * Mirrors DISPLAY_RENAMES and dataKey() in
- * src/components/cohort_wip/InteractiveDashboard.astro — the client script
+ * src/components/cohort/InteractiveDashboard.astro — the client script
  * lives inside a .astro file and cannot be imported, so the resolver is
  * restated here. Keep the two in step.
  */

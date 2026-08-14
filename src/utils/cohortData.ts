@@ -331,6 +331,7 @@ export const SITE_CODE_TO_DETAILS_NAME: Record<string, string> = {
   Emory: 'Emory University',
   JHU: 'Johns Hopkins University',
   MIMIC: 'Harvard University / MIMIC-IV',
+  Michigan: 'University of Michigan',
   NU: 'Northwestern University',
   OHSU: 'Oregon Health & Science University',
   RUSH: 'Rush University',

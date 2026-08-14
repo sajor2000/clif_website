@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { unitFor, isMissingUnit, categoriesFor, LAB_UNITS } from './mcideUnits';
 
-const ECDF = path.join(process.cwd(), 'src', 'data', 'cohort_wip_ecdf');
+const ECDF = path.join(process.cwd(), 'src', 'data', 'cohort_ecdf');
 const COHORTS = ['overall', 'icu', 'advanced_resp', 'vaso', 'deaths'];
 const TYPES = ['labs', 'vitals', 'respiratory_support'];
 

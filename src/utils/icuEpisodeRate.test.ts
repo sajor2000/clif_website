@@ -2,7 +2,7 @@
  * Guards the inputs to the derived `ICU episodes per ICU hospitalization` row.
  *
  * The row is built in the frontmatter of
- * src/components/cohort_wip/InteractiveDashboard.astro (withRateRows) and so
+ * src/components/cohort/InteractiveDashboard.astro (withRateRows) and so
  * cannot be imported. What is worth pinning is not the arithmetic but the two
  * facts about the export it rests on: that its denominator exists, and that the
  * two rows which could serve as that denominator agree.

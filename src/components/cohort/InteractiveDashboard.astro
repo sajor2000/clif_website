@@ -1,98 +1,473 @@
 ---
-import { parseConsortiumCSV, groupCharacteristics } from '../../utils/csvParser';
-import { readFile } from 'fs/promises';
-import { join } from 'path';
+import { groupCharacteristics, type ParsedConsortiumData } from '../../utils/csvParser';
+import { parseCohortCSV, COHORTS, DEFAULT_COHORT, AGGREGATE_SITE } from '../../utils/cohortData';
+import { CHARACTERISTIC_DEFINITIONS, PREFIX_DEFINITIONS, MEDICATION_ROWS, MEDICATION_DEFINITION, MEDICATION_DURING_IMV_DEFINITION } from '../../utils/characteristicDefinitions';
+import { inferDenominatorBasis } from '../../utils/denominatorBasis';
+import { applySiteExclusions, excludedSitesFor } from '../../utils/siteExclusions';
+import { withConsistentPercentages } from '../../utils/consistentPercentages';
+import fs from 'node:fs';
+import path from 'node:path';
 
-// Read and parse the detailed CSV file for Charts view
-const csvPath = join(process.cwd(), 'src', 'data', 'cohort_dash_1', 'consortium_t1_by_year_site_1113.csv');
-const csvContent = await readFile(csvPath, 'utf-8');
-const data = parseConsortiumCSV(csvContent);
-const groupedChars = groupCharacteristics(data);
+const cohortDir = path.join(process.cwd(), 'src', 'data', 'cohorts');
 
-// Read the overall CSV file for Table view and Export
-const overallCsvPath = join(process.cwd(), 'src', 'data', 'cohort_dash_1', 'overall_1113.csv');
-const overallCsvContent = await readFile(overallCsvPath, 'utf-8');
+// Serialize a ParsedConsortiumData for the Charts view.
+function toConsortiumJson(parsed: ParsedConsortiumData) {
+  return {
+    allSites: parsed.allSites,
+    allYears: parsed.allYears,
+    characteristics: parsed.characteristics.map((c) => ({
+      variable: c.variable,
+      sites: Object.fromEntries(
+        Array.from(c.sites.entries()).map(([site, yearMap]) => [site, Object.fromEntries(yearMap)])
+      ),
+    })),
+    siteYearData: parsed.siteYearData.map((d) => ({
+      site: d.site,
+      year: d.year,
+      characteristics: Object.fromEntries(d.characteristics),
+    })),
+  };
+}
 
-// Helper to parse CSV line with quoted values
-function parseCSVLineHelper(line: string, preserveFirstColumnSpaces: boolean = false): string[] {
-  const result: string[] = [];
-  let current = '';
-  let inQuotes = false;
+/**
+ * Display-only renames. The CSV name stays the lookup key everywhere — it is
+ * how rows are found in the parsed data, how weights and denominators are
+ * resolved, and what MISSING_SUPPRESSION keys off — so only rendered text
+ * changes. Serialized to the client so the table, the charts and the CSV export
+ * all read one map.
+ *
+ * "Encounter block" is the pipeline's internal term for a hospitalization; the
+ * previous export called this row 'N: Hospitalizations', which is also what the
+ * public /cohort dashboard shows. `Admission type: na` is that group's
+ * missing-value bucket and reads as 'Missing', matching the sibling
+ * `First admission location: Missing` row.
+ */
+const DISPLAY_RENAMES: Record<string, string> = {
+  'N: Encounter blocks': 'N: Hospitalizations',
+  'Admission type: na': 'Admission type: Missing',
+  // Re-based by withRebasedDenominators — the label has to say so, or two rows
+  // in this section silently carry a different denominator from their siblings.
+  'Intubated ≤24hr of admission, n (%)': 'Intubated ≤24hr of admission, n (% of IMV)',
+  'Reintubation (≥2 IMV episodes), n (%)': 'Reintubation (≥2 IMV episodes), n (% of IMV)',
+};
+const displayName = (name: string) => DISPLAY_RENAMES[name.trim()] ?? name;
 
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
+// Derive the Table view (characteristic x site, all-years "Overall" column) from
+// the same parse — headers are the site codes plus the ALL consortium aggregate.
+function deriveOverall(parsed: ParsedConsortiumData) {
+  // Aggregate first, matching the public dashboard's "Consortium Aggregate"
+  // leading column; allSites is already in SITE_ORDER.
+  const sites = [AGGREGATE_SITE, ...parsed.allSites];
 
-    if (char === '"') {
-      inQuotes = !inQuotes;
-    } else if (char === ',' && !inQuotes) {
-      // For first column (index 0), preserve leading spaces if requested
-      if (preserveFirstColumnSpaces && result.length === 0) {
-        result.push(current.replace(/^"|"$/g, '')); // Remove quotes but keep spaces
-      } else {
-        result.push(current.trim());
+  // Some groups ship as a run of `Prefix: value` children with no header row of
+  // their own — Race, Sex, Ethnicity, Admission type, First admission location,
+  // First location at IMV start, Initial ventilator mode, Extubation outcome.
+  // (Others, like 'Encounter Types', do carry a real header.) Synthesize the
+  // missing parent so every indented run reads under a heading. Marked
+  // `synthetic` so the CSV export can leave these invented rows out.
+  // `characteristic` stays the full CSV name — search, the hidden-row check and
+  // the CSV export all key off it. `label` is display-only: under a synthesized
+  // header the group prefix is redundant, so 'Race: White' shows as 'White'
+  // while still matching a search for "race".
+  const rows: { characteristic: string; label?: string; depth: number; values: Record<string, string>; synthetic?: boolean }[] = [];
+  const blank = Object.fromEntries(sites.map((s) => [s, '-']));
+
+  // Neither the 07202026 nor the _aggregated export carries the `Years` row the
+  // export before them did, so the Table view has no timespan of its own.
+  // Derive it from which year columns each site actually populates.
+  //
+  // The by-year breakout now spans the same years as the Overall aggregate, so
+  // this row and the Data Timespan tile agree — they disagreed while the
+  // breakout began at 2022 and the tile hardcoded a 2011 start.
+  //
+  // MIMIC is the exception, and unavoidably so: its dates are shifted for
+  // de-identification (see isShiftedYear), so it populates no year column and
+  // this row can only read '-' for it, beside a real Overall count.
+  const yearCols = parsed.allYears.filter((y) => /^\d{4}$/.test(y)).sort();
+  const encRow = parsed.characteristics.find((c) => c.variable.trim() === 'N: Encounter blocks');
+  if (encRow && yearCols.length) {
+    const span: Record<string, string> = {};
+    for (const s of sites) {
+      const have = yearCols.filter((y) => {
+        const v = encRow.sites.get(s)?.get(y);
+        return v != null && v.trim() !== '' && v.trim() !== '-';
+      });
+      span[s] = have.length ? `${have[0]}-${have[have.length - 1]}` : '-';
+    }
+    rows.push({ characteristic: 'Years', depth: 0, values: span, synthetic: true });
+  }
+  let currentGroup: string | null = null;
+  let prevName: string | null = null;
+  // Header once per group per file. The sub-cohort exports append a few
+  // stragglers ('First admission location: psych', 'Initial ventilator mode:
+  // volume support', ...) after the medications block instead of merging them
+  // with their siblings, which would otherwise emit the same header twice.
+  const headed = new Set<string>();
+
+  for (const c of parsed.characteristics) {
+    const depth = c.depth ?? 0;
+    // `(?:\s|$)` not just ': ' — one row is 'Initial ventilator mode:' with an
+    // empty category, and treating it as a non-member would split the run and
+    // emit a second header for the rest of the modes.
+    const prefixMatch = depth > 0 ? c.variable.match(/^([^:]+):(?:\s|$)/) : null;
+    const prefix = prefixMatch ? prefixMatch[1] : null;
+
+    if (prefix !== currentGroup) {
+      currentGroup = prefix;
+      // `prevName !== prefix` leaves an existing real header alone.
+      if (prefix && prevName !== prefix && !headed.has(prefix)) {
+        headed.add(prefix);
+        rows.push({ characteristic: prefix, depth: Math.max(0, depth - 1), values: { ...blank }, synthetic: true });
       }
-      current = '';
-    } else {
-      current += char;
-    }
-  }
-
-  // Handle last field
-  if (preserveFirstColumnSpaces && result.length === 0) {
-    result.push(current.replace(/^"|"$/g, ''));
-  } else {
-    result.push(current.trim());
-  }
-  return result;
-}
-
-// Parse overall CSV into simple format
-function parseOverallCSV(content: string) {
-  const lines = content.trim().split('\n');
-  const headers = parseCSVLineHelper(lines[0]);
-
-  const tableData: Array<{ characteristic: string; values: Record<string, string> }> = [];
-
-  for (let i = 1; i < lines.length; i++) { // Start from row 1 to include Years row
-    const values = parseCSVLineHelper(lines[i]);
-    const characteristic = values[0];
-
-    if (!characteristic) continue;
-
-    const row: Record<string, string> = {};
-    for (let j = 1; j < headers.length && j < values.length; j++) {
-      row[headers[j]] = values[j] || '-';
     }
 
-    tableData.push({ characteristic, values: row });
+    const values: Record<string, string> = {};
+    for (const s of sites) {
+      const v = c.sites.get(s)?.get('Overall');
+      values[s] = v && v !== '' ? v : '-';
+    }
+    // Drop the prefix once the group has a header. Falls back to the full name
+    // when nothing follows the colon ('Initial ventilator mode:' has an empty
+    // category) so the row never renders blank. Stripped off the *display* name,
+    // so a renamed row ('Admission type: na') shows its new label ('Missing').
+    const shown = displayName(c.variable);
+    const stripped = prefix && headed.has(prefix) ? shown.slice(prefix.length + 1).trim() : '';
+    rows.push({
+      characteristic: c.variable,
+      label: stripped || undefined,
+      depth,
+      values,
+    });
+    prevName = c.variable;
   }
 
-  return { headers: headers.slice(1), data: tableData }; // Skip "Characteristics" column header
+  return { headers: sites, data: rows };
 }
 
-const overallData = parseOverallCSV(overallCsvContent);
+/**
+ * Give a bare count row a denominator.
+ *
+ * The export ships a few totals with no denominator at all, while nearly every
+ * other row is `n (%)`. Charted per site, a total measures hospital size as
+ * much as the thing it counts: UPenn shows 66,877 sepsis events against Emory's
+ * 34,305, but per 100 hospitalizations they are 33.8 and 34.0 — the same.
+ *
+ * The derived row is injected into the parse so every consumer picks it up
+ * without knowing about it: sidebar, charts, table and CSV export all read the
+ * same structures. The raw count stays, since it is the numerator and real data.
+ *
+ * Values carry a decimal on purpose — the n < 10 privacy rule exempts
+ * non-integers, and a rate is not a patient count.
+ */
+const SEPSIS_EVENTS = 'Sepsis events (CDC ASE), n';
+const SEPSIS_RATE = 'Sepsis events per 100 encounters';
+const ENCOUNTERS = 'N: Encounter blocks';
 
-// Convert to JSON for client-side use
-const dataJson = JSON.stringify({
-  allSites: data.allSites,
-  allYears: data.allYears,
-  characteristics: data.characteristics.map(c => ({
-    variable: c.variable,
-    sites: Object.fromEntries(
-      Array.from(c.sites.entries()).map(([site, yearMap]) => [
-        site,
-        Object.fromEntries(yearMap)
-      ])
-    )
-  })),
-  siteYearData: data.siteYearData.map(d => ({
-    site: d.site,
-    year: d.year,
-    characteristics: Object.fromEntries(d.characteristics)
-  }))
+const ICU_EPISODES = 'ICU episodes, total n';
+const ICU_HOSPITALIZATIONS = 'Encounters with >=1 ICU episode, n (%)';
+const ICU_EPISODE_RATE = 'ICU episodes per ICU hospitalization';
+
+interface RateSpec {
+  /** Row name to create. */
+  name: string;
+  /** Row supplying the numerator; the derived row is placed just after it. */
+  numerator: string;
+  /** Row supplying the population. */
+  denominator: string;
+  /** 100 for a per-100 rate, 1 for a mean per unit. */
+  scale: number;
+  decimals: number;
+}
+
+const RATE_ROWS: RateSpec[] = [
+  { name: SEPSIS_RATE, numerator: SEPSIS_EVENTS, denominator: ENCOUNTERS, scale: 100, decimals: 1 },
+  // Episodes per ICU hospitalization, not per hospitalization: dividing by the
+  // whole cohort would blend how many patients reach an ICU with how many
+  // episodes each one has, and the first swamps the second. Against the ICU
+  // population it reads as a mean — 1.06 to 1.16 across ten sites, and 1.67 at
+  // UCSF, which the raw total hides completely.
+  {
+    name: ICU_EPISODE_RATE,
+    numerator: ICU_EPISODES,
+    denominator: ICU_HOSPITALIZATIONS,
+    scale: 1,
+    decimals: 2,
+  },
+];
+
+function withRateRows(parsed: ParsedConsortiumData, specs: RateSpec[] = RATE_ROWS): ParsedConsortiumData {
+  return specs.reduce(withRateRow, parsed);
+}
+
+function withRateRow(parsed: ParsedConsortiumData, spec: RateSpec): ParsedConsortiumData {
+  const numerator = parsed.characteristics.find((c) => c.variable.trim() === spec.numerator);
+  const denominator = parsed.characteristics.find((c) => c.variable.trim() === spec.denominator);
+  if (!numerator || !denominator) return parsed;
+
+  const num = (v: string | undefined) => {
+    const m = (v ?? '').match(/^\s*([\d,]+)/);
+    return m ? parseInt(m[1].replace(/,/g, ''), 10) : null;
+  };
+  const rate = (e: number, n: number) => ((e / n) * spec.scale).toFixed(spec.decimals);
+
+  const sites = new Map<string, Map<string, string>>();
+  const pooled = new Map<string, { e: number; n: number }>();
+  for (const [site, yearMap] of numerator.sites) {
+    // The consortium rate is pooled from the sites below rather than read off
+    // the export's own ALL column. A site withdrawn from these rows (see
+    // siteExclusions) has no numerator cell here, and pooling drops its
+    // denominator at the same time — reading the ALL column would keep it and
+    // understate the rate by that site's whole share of the cohort.
+    if (site === AGGREGATE_SITE) continue;
+    const out = new Map<string, string>();
+    for (const [year, raw] of yearMap) {
+      const e = num(raw);
+      const n = num(denominator.sites.get(site)?.get(year));
+      if (e != null && n) {
+        out.set(year, rate(e, n));
+        const acc = pooled.get(year) ?? { e: 0, n: 0 };
+        acc.e += e;
+        acc.n += n;
+        pooled.set(year, acc);
+      }
+    }
+    if (out.size) sites.set(site, out);
+  }
+  if (!sites.size) return parsed;
+
+  const aggregate = new Map<string, string>();
+  for (const [year, { e, n }] of pooled) {
+    if (n > 0) aggregate.set(year, rate(e, n));
+  }
+  if (aggregate.size) sites.set(AGGREGATE_SITE, aggregate);
+
+  // Placed directly after the raw count so the two read together.
+  const characteristics = [...parsed.characteristics];
+  const at = characteristics.indexOf(numerator);
+  characteristics.splice(at + 1, 0, { variable: spec.name, sites, depth: numerator.depth ?? 0 });
+
+  const siteYearData = parsed.siteYearData.map((d) => {
+    const v = sites.get(d.site)?.get(d.year);
+    if (v == null) return d;
+    const chars = new Map(d.characteristics);
+    chars.set(spec.name, v);
+    return { ...d, characteristics: chars };
+  });
+
+  return { ...parsed, characteristics, siteYearData };
+}
+
+/**
+ * Re-base two respiratory rows onto the population that can actually appear in
+ * their numerator.
+ *
+ * The export divides both by N_enc — every hospitalization in the cohort — but
+ * neither numerator can come from outside the ventilated population:
+ *
+ *   Intubated <=24hr   requires an IMV episode AND `pre_admission_imv == 0`
+ *                      (extubation_calculator.py:237), so the 95,445 patients
+ *                      already ventilated on arrival are excluded from the
+ *                      numerator while still sitting in the denominator.
+ *   Reintubation       requires >=2 IMV episodes, so it is undefined for
+ *                      anyone never ventilated.
+ *
+ * Against N_enc, "intubated early" reads 4.9% and mostly reports how few of a
+ * site's admissions are ever ventilated — case mix, not timing. Re-based it is
+ * 26.2%, and comparable across sites. The section already does this for
+ * `Extubation failure <=48hr, n (% of extubated)`; these two rows are the
+ * stragglers.
+ *
+ * Rewrites the stated percentage in place, per site and per year, so the table,
+ * the CSV export and the charts all read one number. The count is untouched —
+ * it is real data — and DISPLAY_RENAMES carries the new denominator into the
+ * row label, following the export's own `(% of extubated)` convention.
+ *
+ * Cells whose numerator or denominator is suppressed or absent are left exactly
+ * as the export wrote them: a corrected percentage is not worth inventing a
+ * denominator for.
+ */
+const IMV_ROW = 'Invasive mechanical ventilation, n (%)';
+const PRE_ADMIT_IMV_ROW = 'Pre-admit IMV (excluded from time-to-extubation), n (%)';
+const REBASED_ROWS: Record<string, { of: string; less?: string }> = {
+  'Intubated ≤24hr of admission, n (%)': { of: IMV_ROW, less: PRE_ADMIT_IMV_ROW },
+  'Reintubation (≥2 IMV episodes), n (%)': { of: IMV_ROW },
+};
+
+function withRebasedDenominators(parsed: ParsedConsortiumData): ParsedConsortiumData {
+  const row = (name: string) => parsed.characteristics.find((c) => c.variable.trim() === name);
+  const count = (v: string | undefined) => {
+    const m = (v ?? '').match(/^\s*([\d,]+)/);
+    return m ? parseInt(m[1].replace(/,/g, ''), 10) : null;
+  };
+
+  const imv = row(IMV_ROW);
+  if (!imv) return parsed;
+
+  // site -> year -> corrected cell, so siteYearData can be patched in step two.
+  const rewritten = new Map<string, Map<string, string>>();
+
+  for (const [name, basis] of Object.entries(REBASED_ROWS)) {
+    const target = row(name);
+    if (!target) continue;
+    const source = basis.of === IMV_ROW ? imv : row(basis.of);
+    if (!source) continue;
+
+    for (const [site, years] of target.sites) {
+      for (const [year, raw] of years) {
+        const n = count(raw);
+        const base = count(source.sites.get(site)?.get(year));
+        if (n == null || base == null) continue;
+        const exclude = basis.less ? count(row(basis.less)?.sites.get(site)?.get(year)) ?? 0 : 0;
+        const denom = base - exclude;
+        if (denom <= 0) continue;
+        const cell = `${n.toLocaleString()} (${((n / denom) * 100).toFixed(1)}%)`;
+        years.set(year, cell);
+        ((rewritten.get(name) ?? rewritten.set(name, new Map()).get(name))!).set(`${site} ${year}`, cell);
+      }
+    }
+  }
+  if (!rewritten.size) return parsed;
+
+  const siteYearData = parsed.siteYearData.map((d) => {
+    let chars: Map<string, string> | null = null;
+    for (const [name, cells] of rewritten) {
+      const cell = cells.get(`${d.site} ${d.year}`);
+      if (cell == null) continue;
+      chars ??= new Map(d.characteristics);
+      // The parse may hold the row under its untrimmed name.
+      const key = [...chars.keys()].find((k) => k.trim() === name) ?? name;
+      chars.set(key, cell);
+    }
+    return chars ? { ...d, characteristics: chars } : d;
+  });
+
+  return { ...parsed, siteYearData };
+}
+
+
+/**
+ * The year the data drop cuts off in, or null if the last year looks complete.
+ *
+ * Only ever the LATEST year, and only when it is far below the one before it.
+ * The early years are small too — 2011 has 5,726 hospitalizations against a
+ * 101,385 median — but for an entirely different reason: one site contributed
+ * that year, against ten in 2024. That is site coverage, which the Data
+ * Coverage banner and the per-site Years row already speak to, and calling it a
+ * partial year would be wrong.
+ *
+ * Derived rather than written down: the note used to name 2025, which this
+ * export shows is complete.
+ */
+function partialYearOf(parsed: ParsedConsortiumData): string | null {
+  const years = parsed.allYears.filter((y) => /^\d{4}$/.test(y)).sort();
+  if (years.length < 2) return null;
+
+  const enc = parsed.characteristics.find((c) => c.variable.trim() === 'N: Encounter blocks');
+  if (!enc) return null;
+  const total = (year: string) => {
+    const raw = enc.sites.get(AGGREGATE_SITE)?.get(year);
+    const m = (raw ?? '').match(/^\s*([\d,]+)/);
+    return m ? parseInt(m[1].replace(/,/g, ''), 10) : null;
+  };
+
+  const last = years[years.length - 1];
+  const previous = total(years[years.length - 2]);
+  const latest = total(last);
+  if (latest == null || previous == null || previous === 0) return null;
+
+  return latest < previous * 0.6 ? last : null;
+}
+
+/** Percentages recomputed to match their own count, reported once per build. */
+const percentRewrites: string[] = [];
+
+function loadCohort(key: string) {
+  const csv = fs.readFileSync(path.join(cohortDir, key, 'table_one_by_year.csv'), 'utf-8');
+  // Exclusions come first: the derived rates are then computed from what
+  // survives, for the excluded site and for the consortium alike.
+  // Consistency runs last of the value-rewriting steps, so it sees the
+  // percentages the re-basing already settled and leaves them alone.
+  const consistent = withConsistentPercentages(
+    withRebasedDenominators(withRateRows(applySiteExclusions(parseCohortCSV(csv)))),
+    { skip: Object.keys(REBASED_ROWS) }
+  );
+  percentRewrites.push(
+    ...consistent.rewrites.map((r) => `${key}: ${r.row} @ ${r.site}/${r.year}  ${r.was} -> ${r.now}`)
+  );
+  const parsed = consistent.parsed;
+  return {
+    consortium: toConsortiumJson(parsed),
+    overall: deriveOverall(parsed),
+    // Which population the export divided each row by, back-solved from its own
+    // arithmetic (see denominatorBasis.ts). The Charts view has to recompute
+    // percentages in order to pool a filtered subset of sites and years, and
+    // without this it divides everything by all hospitalizations — reporting
+    // Propofol during IMV at 9.0% where the Table view, reading the export's own
+    // cell, says 39.2%. The re-based rows are excluded: their denominator is a
+    // difference of two rows, which no single row can express, and the client
+    // already carries it in REBASED_BASIS.
+    basis: inferDenominatorBasis(parsed, { skip: Object.keys(REBASED_ROWS) }),
+    // Null when the last year looks complete; the note then never shows.
+    partialYear: partialYearOf(parsed),
+    parsed,
+  };
+}
+
+// All cohorts' data (for client-side switching) + the default cohort for SSR.
+const cohortsPayload: Record<
+  string,
+  {
+    consortium: ReturnType<typeof toConsortiumJson>;
+    overall: ReturnType<typeof deriveOverall>;
+    basis: Record<string, string>;
+    partialYear: string | null;
+  }
+> = {};
+for (const c of COHORTS) {
+  const { consortium, overall, basis, partialYear } = loadCohort(c.key);
+  cohortsPayload[c.key] = { consortium, overall, basis, partialYear };
+}
+// Likewise: a rewritten cell is a published number that changed, so say which.
+if (percentRewrites.length) {
+  console.info(
+    `[cohort_wip] ${percentRewrites.length} percentage(s) recomputed to match ` +
+      `their own count:\n  ` +
+      percentRewrites.join('\n  ')
+  );
+}
+
+const { parsed: data } = loadCohort(DEFAULT_COHORT);
+const groupedChars = groupCharacteristics(data);
+const overallData = cohortsPayload[DEFAULT_COHORT].overall;
+// A withdrawn site changes what a row counts, so the row's definition has to
+// say so — read from SITE_EXCLUSIONS rather than restated, or the note and the
+// data could disagree about which sites are in.
+const definitionsWithExclusions = Object.fromEntries(
+  Object.entries(CHARACTERISTIC_DEFINITIONS).map(([name, def]) => {
+    const excluded = excludedSitesFor(name);
+    if (!excluded.length) return [name, def];
+    return [name, { ...def, text: `${def.text} ${excluded.map((e) => e.reason).join(' ')}` }];
+  })
+);
+const definitionsJson = JSON.stringify({
+  exact: definitionsWithExclusions,
+  prefix: PREFIX_DEFINITIONS,
+  // Matched by rule rather than listed per drug: every medication row shares
+  // one definition, and every '(during IMV)' row shares another.
+  medications: [...MEDICATION_ROWS],
+  medication: MEDICATION_DEFINITION,
+  duringImv: MEDICATION_DURING_IMV_DEFINITION,
 });
+const displayNamesJson = JSON.stringify(DISPLAY_RENAMES);
+// The derived rate rows, so the client can tell a mean from a total. Their
+// values are bare numbers like '1.16', which the data-type sniffer reads as a
+// count — and a count is offered a pie chart.
+const rateRowsJson = JSON.stringify(RATE_ROWS.map((r) => r.name));
 
+const dataJson = JSON.stringify(cohortsPayload[DEFAULT_COHORT].consortium);
 const overallDataJson = JSON.stringify(overallData);
+const cohortsJson = JSON.stringify(cohortsPayload);
+const defaultCohort = DEFAULT_COHORT;
 
 const categories = Array.from(groupedChars.keys());
 ---
@@ -102,12 +477,15 @@ const categories = Array.from(groupedChars.keys());
   <div class="mb-8">
     <h2 class="text-3xl font-bold text-gray-800 mb-2">Interactive Data Explorer</h2>
     <p class="text-gray-600 mb-3">
-      Explore consortium data across {data.allSites.length} institutions and {data.allYears.length} years.
+      Explore consortium data across <span id="explorer-institution-count">{data.allSites.length}</span> institutions and <span id="explorer-year-count">{data.allYears.length}</span> years.
       Use the filters below to customize your view.
     </p>
     <div class="bg-blue-50 border-l-4 border-blue-400 p-3 rounded">
       <p class="text-sm text-blue-800">
-        <strong>Privacy Notice:</strong> To protect patient privacy, characteristics with values where n &lt; 10 are automatically excluded from display and export.
+        <strong>Note:</strong> To protect patient privacy, values with n &lt; 10 are shown as "-" and excluded from export.
+        Sub-categories may therefore not add up exactly to their parent totals &mdash; small counts are suppressed,
+        rare categories are combined into "other" (see each row's <svg class="inline w-3.5 h-3.5 align-text-top" viewBox="0 0 20 20" fill="currentColor" aria-label="info icon"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg> for what it covers),
+        and some unknown or missing categories are not displayed.
       </p>
     </div>
   </div>
@@ -228,7 +606,7 @@ const categories = Array.from(groupedChars.keys());
     <!-- Data coverage note - always visible -->
     <div class="bg-blue-50 border-l-4 border-blue-400 p-3 rounded">
       <p class="text-sm text-blue-800">
-        <strong>Data Coverage:</strong> Sites have varying data coverage periods (e.g., some sites have data from 2011-2025, others from 2018-2024).
+        <strong>Data Coverage:</strong> Sites have varying data coverage periods.
         Use the <strong>Table</strong> view to see years covered for each site, then select appropriate sites and years for valid comparisons.
       </p>
     </div>
@@ -595,12 +973,14 @@ const categories = Array.from(groupedChars.keys());
             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
               <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
             </svg>
-            <span>Selected: <strong id="selected-characteristic-name"></strong></span>
+            <span>Selected: <strong id="selected-characteristic-name"></strong><span id="selected-characteristic-def"></span></span>
           </div>
         </div>
       </div>
 
     <!-- Chart Display Area -->
+    <!-- Inline notice area — replaces the old blocking alert() dialogs -->
+    <div id="chart-notice" class="hidden bg-amber-50 border-l-4 border-amber-400 p-3 rounded mb-4"></div>
     <div id="custom-chart-container" class="bg-white rounded-lg p-6 border-2 border-gray-200 hidden">
       <div class="flex items-center justify-between mb-2">
         <div class="flex-1">
@@ -623,10 +1003,13 @@ const categories = Array.from(groupedChars.keys());
           <strong>Sites without data:</strong> <span id="missing-sites-list"></span>
         </p>
       </div>
-      <!-- Data Note - shown below chart only when 2025 data is included -->
-      <div id="year-2025-note" class="bg-amber-50 border-l-4 border-amber-400 p-3 rounded mt-4 hidden">
+      <!-- Shown below the chart only when the cut-off year is in the selection.
+           The year is filled in from the data, not written here: it was
+           hardcoded to 2025, which by this export is a COMPLETE year, so the
+           note disclaimed the wrong one and said nothing about 2026. -->
+      <div id="partial-year-note" class="bg-amber-50 border-l-4 border-amber-400 p-3 rounded mt-4 hidden">
         <p class="text-sm text-amber-800">
-          <strong>Note:</strong> 2025 data represents a partial year and is not directly comparable to complete annual data from previous years.
+          <strong>Note:</strong> <span id="partial-year-label"></span> data represents a partial year — the data drop ends mid-year — and is not directly comparable to complete annual data from previous years.
         </p>
       </div>
     </div>
@@ -659,6 +1042,23 @@ const categories = Array.from(groupedChars.keys());
         />
       </div>
 
+      <!-- Expand / collapse: the table is 10+ site columns wide, so the
+           600px-tall card clips it badly on a laptop. -->
+      <button
+        id="table-expand"
+        type="button"
+        aria-pressed="false"
+        class="flex items-center gap-2 px-4 py-2 mr-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors whitespace-nowrap"
+      >
+        <svg class="expand-icon w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-5v4m0-4h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5"/>
+        </svg>
+        <svg class="collapse-icon w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9V5m0 4H5m4 0L4 4m11 5h4m-4 0V5m0 4l5-5M9 15v4m0-4H5m4 0l-5 5m11-5h4m-4 0v4m0-4l5 5"/>
+        </svg>
+        <span class="expand-label">Expand</span>
+      </button>
+
       <!-- Export Button -->
       <button
         id="export-data"
@@ -672,7 +1072,7 @@ const categories = Array.from(groupedChars.keys());
     </div>
 
     <!-- Data Table -->
-    <div class="overflow-x-auto max-h-[600px] overflow-y-auto">
+    <div class="table-scroll overflow-x-auto max-h-[600px] overflow-y-auto">
       <table id="data-table" class="w-full border-collapse">
         <thead class="bg-clif-burgundy text-white sticky top-0 z-10">
           <tr>
@@ -693,11 +1093,167 @@ const categories = Array.from(groupedChars.keys());
 <!-- JSON data storage -->
 <script type="application/json" id="consortium-json-data" set:html={dataJson}></script>
 <script type="application/json" id="overall-json-data" set:html={overallDataJson}></script>
+<script type="application/json" id="cohorts-json-data" set:html={cohortsJson} data-default={defaultCohort}></script>
+<script type="application/json" id="definitions-json-data" set:html={definitionsJson}></script>
+<script type="application/json" id="display-names-json-data" set:html={displayNamesJson}></script>
+<script type="application/json" id="rate-rows-json-data" set:html={rateRowsJson}></script>
 
 <script>
-  // Parse data from JSON script tags
-  const consortiumData = JSON.parse(document.getElementById('consortium-json-data').textContent);
-  const overallTableData = JSON.parse(document.getElementById('overall-json-data').textContent);
+  // All cohorts' data; the active dataset is swapped when the cohort picker changes.
+  const COHORTS_DATA = JSON.parse(document.getElementById('cohorts-json-data').textContent);
+  const DEFAULT_COHORT_KEY = document.getElementById('cohorts-json-data').getAttribute('data-default') || Object.keys(COHORTS_DATA)[0];
+  let activeCohort = (window.CohortBus && window.CohortBus.current && COHORTS_DATA[window.CohortBus.current]) ? window.CohortBus.current : DEFAULT_COHORT_KEY;
+
+  // `let` so a cohort switch can repoint them; kept as the same object shape.
+  let consortiumData = COHORTS_DATA[activeCohort].consortium;
+  let overallTableData = COHORTS_DATA[activeCohort].overall;
+  // Row name -> the row the export divided it by, back-solved at build time.
+  // Per cohort: 'Propofol (during IMV)' is of the ventilated population in
+  // every cohort, but that population is a different size in each.
+  let denominatorBasis = COHORTS_DATA[activeCohort].basis || {};
+  // The year the data drop cuts off in, or null if the last year is complete.
+  let partialYear = COHORTS_DATA[activeCohort].partialYear || null;
+
+  /**
+   * Show the partial-year caveat only when that year is actually on screen.
+   *
+   * The year comes from the data. It was hardcoded to 2025 in five places,
+   * which this export shows is a complete year — so the note fired on every
+   * default view, disclaiming a year that needed no disclaimer, and stayed
+   * silent on 2026, which ends mid-year.
+   */
+  function updatePartialYearNote() {
+    const note = document.getElementById('partial-year-note');
+    if (!note) return;
+    const show = !!partialYear && selectedYears.includes(partialYear);
+    note.classList.toggle('hidden', !show);
+    if (show) {
+      const label = document.getElementById('partial-year-label');
+      if (label) label.textContent = partialYear;
+    }
+  }
+
+  // Real data rows withheld from the dashboard entirely — sidebar, Table view
+  // and CSV export. Distinct from the sidebar's headerPatterns, which lists
+  // rows that carry no value at all. The rows stay in the source CSV.
+  const HIDDEN_CHARACTERISTICS = [
+    'Pre-admit IMV (excluded from time-to-extubation), n (%)',
+    'Encounters with >=1 sepsis event, n (%)',
+    'Encounters with >=1 ICU episode, n (%)'
+  ];
+  const isHiddenCharacteristic = (char) => HIDDEN_CHARACTERISTICS.includes((char || '').trim());
+
+
+  /**
+   * Display-only renames, from the frontmatter's DISPLAY_RENAMES — one map for
+   * the table labels, the chart titles and the CSV export. The CSV name stays
+   * the lookup key everywhere; only rendered text changes.
+   */
+  const DISPLAY_NAMES = JSON.parse(document.getElementById('display-names-json-data')?.textContent || '{}');
+
+  /**
+   * Rows that are a rate or a mean rather than a total.
+   *
+   * They cannot be added up, and so cannot be a share of anything: eleven site
+   * means of 'ICU episodes per ICU hospitalization' do not sum to a consortium
+   * total that each site owns a slice of. Charting them as a pie draws eleven
+   * near-equal wedges — 1.06 and 1.67 differ by 60%, but as a fraction of their
+   * own sum they are 8% and 13% — which says nothing and looks like it does.
+   */
+  const RATE_ROW_NAMES = new Set(
+    JSON.parse(document.getElementById('rate-rows-json-data')?.textContent || '[]')
+  );
+  const isRateRow = (char) => RATE_ROW_NAMES.has((char || '').trim());
+  function displayCharacteristic(char) {
+    const trimmed = (char || '').trim();
+    return DISPLAY_NAMES[trimmed] || trimmed;
+  }
+
+  /**
+   * The inverse: a display name back to the CSV row that holds its data.
+   *
+   * Weights and denominators are written here under the name a reader knows
+   * them by — 'N: Hospitalizations' — but every lookup keys off the CSV name,
+   * and this export calls that row 'N: Encounter blocks'. Left unresolved the
+   * row is simply not found, the denominator comes out empty, and the chart
+   * reports "no data" for a characteristic whose numbers are right there.
+   *
+   * Prefers a row the active cohort actually has, so a name that needs no
+   * translation (and an export that goes back to shipping 'N: Hospitalizations')
+   * both still resolve.
+   */
+  const CSV_NAMES = Object.fromEntries(
+    Object.entries(DISPLAY_NAMES).map(([csvName, shown]) => [shown, csvName])
+  );
+  function dataKey(name) {
+    const trimmed = (name || '').trim();
+    const has = (k) => (consortiumData?.characteristics || []).some((c) => c.variable.trim() === k);
+    if (has(trimmed)) return trimmed;
+    const csvName = CSV_NAMES[trimmed];
+    return csvName && has(csvName) ? csvName : trimmed;
+  }
+
+  /**
+   * How each characteristic is computed upstream, surfaced as a hover card.
+   * Sourced from src/utils/characteristicDefinitions.ts, which transcribes the
+   * CLIF-TableOne pipeline and cites the file each definition comes from.
+   */
+  const DEFINITIONS = JSON.parse(document.getElementById('definitions-json-data')?.textContent || '{"exact":{},"prefix":{}}');
+  function definitionFor(name) {
+    const trimmed = (name || '').trim();
+    if (DEFINITIONS.exact[trimmed]) return DEFINITIONS.exact[trimmed];
+    // The medication rows, which are matched by rule rather than listed one by
+    // one — see characteristicDefinitions.ts. During-IMV first, so
+    // 'Propofol (during IMV)' does not resolve to the all-hospitalizations text.
+    if (trimmed.endsWith('(during IMV)') && DEFINITIONS.duringImv) return DEFINITIONS.duringImv;
+    if (DEFINITIONS.medications?.includes(trimmed) && DEFINITIONS.medication) return DEFINITIONS.medication;
+    const sep = trimmed.indexOf(':');
+    if (sep > 0 && DEFINITIONS.prefix[trimmed.slice(0, sep)]) return DEFINITIONS.prefix[trimmed.slice(0, sep)];
+    // A group is selectable in its own right ('Initial ventilator mode'), and
+    // carries no colon — so match the bare name against the prefix map too, or
+    // the group that defines every child row would itself explain nothing.
+    if (DEFINITIONS.prefix[trimmed]) return DEFINITIONS.prefix[trimmed];
+    return null;
+  }
+
+  /**
+   * HTML-escape a value bound for innerHTML. The table's own cells need this as
+   * much as any attribute does: '<10' and 'l&d' are both invalid markup, and
+   * while browsers recover from them, stricter parsers drop the whole cell.
+   */
+  const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+  /**
+   * Point the "Selected:" line at a characteristic — name AND definition
+   * together.
+   *
+   * Every selection path must go through this. The group paths (Race, Sex,
+   * 'First location at IMV start', ...) used to set only the name and leave the
+   * PREVIOUS selection's badge in the DOM, so picking one of them showed
+   * whatever definition happened to be there before.
+   */
+  function showSelectedCharacteristic(name) {
+    const display = document.getElementById('selected-characteristic-display');
+    const nameEl = document.getElementById('selected-characteristic-name');
+    if (!display || !nameEl) return;
+    nameEl.textContent = displayCharacteristic(name);
+    const defEl = document.getElementById('selected-characteristic-def');
+    if (defEl) defEl.innerHTML = definitionBadge(name);
+    display.classList.remove('hidden');
+  }
+
+  /** Info affordance for a characteristic, or '' when it has no definition. */
+  function definitionBadge(name) {
+    return badgeHtml(definitionFor(name));
+  }
+  /** The badge markup itself, from an already-resolved definition (or null). */
+  function badgeHtml(def) {
+    if (!def) return '';
+    return `<span class="def-info" tabindex="0" role="note" aria-label="Definition: ${esc(def.text)}">
+      <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+      <span class="def-tip"><span class="def-tip-text">${esc(def.text)}</span></span>
+    </span>`;
+  }
 
   // State management
   let selectedSites = [...consortiumData.allSites];
@@ -712,56 +1268,99 @@ const categories = Array.from(groupedChars.keys());
     initializeFilters();
     initializeViewToggle();
     initializeExport();
+    // Sync filter checkboxes to the active cohort, then render.
+    rebuildSiteCheckboxes();
+    rebuildYearCheckboxes();
     updateDashboard();
+    // React to the global cohort picker (window.CohortBus).
+    if (window.CohortBus && typeof window.CohortBus.subscribe === 'function') {
+      window.CohortBus.subscribe((key) => { const eff = COHORTS_DATA[key] ? key : key.split('__')[0]; if (COHORTS_DATA[eff] && eff !== activeCohort) reloadCohort(eff); });
+    }
   });
 
+  const SITE_CB_CLASS = 'site-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy';
+  const YEAR_CB_CLASS = 'year-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy';
+
+  // Rebuild the site checkbox list from consortiumData.allSites (keeps #site-all).
+  function rebuildSiteCheckboxes() {
+    const container = document.querySelector('#site-filter-dropdown .p-2');
+    if (!container) return;
+    let html = `<label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer"><input type="checkbox" id="site-all" class="${SITE_CB_CLASS}" checked /><span class="ml-2 text-sm text-gray-700 font-semibold">All Sites</span></label>`;
+    for (const site of consortiumData.allSites) {
+      html += `<label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer"><input type="checkbox" class="${SITE_CB_CLASS}" value="${site}" checked /><span class="ml-2 text-sm text-gray-700">${window.siteLabel(site)}</span></label>`;
+    }
+    container.innerHTML = html;
+  }
+
+  // Rebuild the year checkbox list from consortiumData.allYears (keeps #year-all).
+  function rebuildYearCheckboxes() {
+    const container = document.querySelector('#year-filter-dropdown .p-2');
+    if (!container) return;
+    let html = `<label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer"><input type="checkbox" id="year-all" class="${YEAR_CB_CLASS}" checked /><span class="ml-2 text-sm text-gray-700 font-semibold">All Years</span></label>`;
+    for (const year of consortiumData.allYears) {
+      html += `<label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer"><input type="checkbox" class="${YEAR_CB_CLASS}" value="${year}" checked /><span class="ml-2 text-sm text-gray-700">${year}</span></label>`;
+    }
+    container.innerHTML = html;
+  }
+
+  // Swap the active cohort's dataset and re-render the explorer.
+  function reloadCohort(key) {
+    activeCohort = key;
+    consortiumData = COHORTS_DATA[key].consortium;
+    overallTableData = COHORTS_DATA[key].overall;
+    denominatorBasis = COHORTS_DATA[key].basis || {};
+    partialYear = COHORTS_DATA[key].partialYear || null;
+    // Keyed by row name only, so it cannot outlive the dataset it describes.
+    hasValueCache.clear();
+    selectedSites = [...consortiumData.allSites];
+    selectedYears = [...consortiumData.allYears];
+    rebuildSiteCheckboxes();
+    rebuildYearCheckboxes();
+    const siteText = document.getElementById('site-filter-text');
+    if (siteText) siteText.textContent = 'All Sites';
+    const yearText = document.getElementById('year-filter-text');
+    if (yearText) yearText.textContent = 'All Years';
+    // Keep the intro sentence's counts in step with the active cohort.
+    const instCount = document.getElementById('explorer-institution-count');
+    if (instCount) instCount.textContent = String(consortiumData.allSites.length);
+    const yearCount = document.getElementById('explorer-year-count');
+    if (yearCount) yearCount.textContent = String(consortiumData.allYears.length);
+    if (typeof buildCategorySidebar === 'function') buildCategorySidebar();
+    updateDashboard();
+  }
+
   function initializeFilters() {
-    // Site filter
     const siteToggle = document.getElementById('site-filter-toggle');
     const siteDropdown = document.getElementById('site-filter-dropdown');
-    const siteAll = document.getElementById('site-all');
-    const siteCheckboxes = document.querySelectorAll('.site-checkbox:not(#site-all)');
-
     siteToggle?.addEventListener('click', (e) => {
       e.stopPropagation();
       siteDropdown?.classList.toggle('hidden');
       document.getElementById('year-filter-dropdown')?.classList.add('hidden');
     });
-
-    siteAll?.addEventListener('change', (e) => {
-      const checked = e.target.checked;
-      siteCheckboxes.forEach(cb => cb.checked = checked);
+    // Event delegation so current AND rebuilt checkboxes both work.
+    siteDropdown?.addEventListener('change', (e) => {
+      const t = e.target;
+      if (!t.classList || !t.classList.contains('site-checkbox')) return;
+      if (t.id === 'site-all') {
+        siteDropdown.querySelectorAll('.site-checkbox:not(#site-all)').forEach(cb => { cb.checked = t.checked; });
+      }
       updateSelectedSites();
     });
 
-    siteCheckboxes.forEach(cb => {
-      cb.addEventListener('change', () => {
-        updateSelectedSites();
-      });
-    });
-
-    // Year filter
     const yearToggle = document.getElementById('year-filter-toggle');
     const yearDropdown = document.getElementById('year-filter-dropdown');
-    const yearAll = document.getElementById('year-all');
-    const yearCheckboxes = document.querySelectorAll('.year-checkbox:not(#year-all)');
-
     yearToggle?.addEventListener('click', (e) => {
       e.stopPropagation();
       yearDropdown?.classList.toggle('hidden');
       document.getElementById('site-filter-dropdown')?.classList.add('hidden');
     });
-
-    yearAll?.addEventListener('change', (e) => {
-      const checked = e.target.checked;
-      yearCheckboxes.forEach(cb => cb.checked = checked);
+    yearDropdown?.addEventListener('change', (e) => {
+      const t = e.target;
+      if (!t.classList || !t.classList.contains('year-checkbox')) return;
+      if (t.id === 'year-all') {
+        yearDropdown.querySelectorAll('.year-checkbox:not(#year-all)').forEach(cb => { cb.checked = t.checked; });
+      }
       updateSelectedYears();
-    });
-
-    yearCheckboxes.forEach(cb => {
-      cb.addEventListener('change', () => {
-        updateSelectedYears();
-      });
     });
 
     // Close dropdowns when clicking outside
@@ -786,9 +1385,9 @@ const categories = Array.from(groupedChars.keys());
     if (selectedSites.length === consortiumData.allSites.length) {
       text = 'All Sites';
     } else if (selectedSites.length === 1) {
-      text = selectedSites[0];
+      text = window.siteLabel(selectedSites[0]);
     } else if (selectedSites.length <= 3) {
-      text = selectedSites.join(', ');
+      text = selectedSites.map(s => window.siteLabel(s)).join(', ');
     } else {
       text = `${selectedSites.length} Sites`;
     }
@@ -849,6 +1448,35 @@ const categories = Array.from(groupedChars.keys());
       chartsView?.classList.add('hidden');
       updateTable();
     });
+
+    // Expand the table to fill the viewport. Body scroll is locked while
+    // expanded so the wheel drives the table's own scroller, not the page
+    // behind the overlay.
+    const expandBtn = document.getElementById('table-expand');
+    function setTableExpanded(expanded) {
+      if (!tableView || !expandBtn) return;
+      tableView.classList.toggle('table-expanded', expanded);
+      document.body.style.overflow = expanded ? 'hidden' : '';
+      expandBtn.setAttribute('aria-pressed', String(expanded));
+      expandBtn.querySelector('.expand-icon')?.classList.toggle('hidden', expanded);
+      expandBtn.querySelector('.collapse-icon')?.classList.toggle('hidden', !expanded);
+      const label = expandBtn.querySelector('.expand-label');
+      if (label) label.textContent = expanded ? 'Exit full screen' : 'Expand';
+    }
+
+    expandBtn?.addEventListener('click', () => {
+      setTableExpanded(!tableView?.classList.contains('table-expanded'));
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && tableView?.classList.contains('table-expanded')) {
+        setTableExpanded(false);
+      }
+    });
+
+    // Switching back to Charts hides #table-view, which would otherwise leave
+    // the overlay class and the body scroll lock behind.
+    chartsBtn?.addEventListener('click', () => setTableExpanded(false));
 
     // Table search
     const searchInput = document.getElementById('table-search');
@@ -932,7 +1560,7 @@ const categories = Array.from(groupedChars.keys());
   // For all other median characteristics, use "N: Hospitalizations"
   function getWeight(siteYearData, characteristic) {
     const isAgeAtAdmission = characteristic.trim().toLowerCase().includes('age at admission');
-    const weightKey = isAgeAtAdmission ? 'N: Unique patients' : 'N: Hospitalizations';
+    const weightKey = dataKey(isAgeAtAdmission ? 'N: Unique patients' : 'N: Hospitalizations');
 
     // Try exact match first
     let weightValue = siteYearData.characteristics[weightKey];
@@ -990,7 +1618,12 @@ const categories = Array.from(groupedChars.keys());
     return lower === 'years' ||
            lower === 'n: hospitalizations' ||
            lower === 'n: unique patients' ||
-           lower === 'n: hospitals';
+           lower === 'n: hospitals' ||
+           // Not a patient count — millions of ventilator hours can never
+           // identify anyone, so the n < 10 rule must not blank it. Median /
+           // IQR measures are already exempt via valueHasIQR; this one is a
+           // bare number, so it needs naming.
+           lower === 'ventilator hours (millions)';
   }
 
   // Check if a value has n < 10 (for privacy protection)
@@ -1001,10 +1634,20 @@ const categories = Array.from(groupedChars.keys());
     if (valueHasIQR(value)) return false;
 
     // Extract the first numeric value (before parentheses or brackets)
-    const numericMatch = value.match(/^\s*([\d,]+)/);
+    const numericMatch = value.match(/^\s*([\d,]+)(\.\d+)?/);
     if (numericMatch) {
+      // A patient count is a whole number. Decimals are derived measures —
+      // "2.58" million ventilator hours, a standalone rate — and the n < 10
+      // rule doesn't apply to them. Without this the old pattern read "2.58"
+      // as n = 2 and blanked every site's ventilator hours while leaving the
+      // consortium total (29) visible.
+      if (numericMatch[2]) return false;
       const num = parseInt(numericMatch[1].replace(/,/g, ''), 10);
-      return num < 10;
+      // A reported zero is not a small count — it identifies nobody, and
+      // blanking it throws away a real finding: UCSF is 100% ICU, so its
+      // 'Other critically ill = 0' is exactly right, and reading '-' there
+      // (outlined as if suppressed) says the opposite.
+      return num > 0 && num < 10;
     }
 
     return false;
@@ -1034,6 +1677,125 @@ const categories = Array.from(groupedChars.keys());
     return null;
   }
 
+  /**
+   * Rows whose percentage is re-based off the ventilated population rather than
+   * all hospitalizations — the server does the same for the table and the CSV
+   * export (see withRebasedDenominators). Kept in sync with that map.
+   *
+   * This is a property of the metric, not a user preference, so it takes
+   * precedence over the respiratory denominator toggle: neither numerator can
+   * come from outside the IMV population, and `Intubated ≤24hr` additionally
+   * excludes patients already ventilated on arrival.
+   */
+  const REBASED_BASIS = {
+    'Intubated ≤24hr of admission, n (%)': {
+      of: 'Invasive mechanical ventilation, n (%)',
+      less: 'Pre-admit IMV (excluded from time-to-extubation), n (%)',
+      label: 'IMV Hospitalizations excl. pre-admit',
+    },
+    'Reintubation (≥2 IMV episodes), n (%)': {
+      of: 'Invasive mechanical ventilation, n (%)',
+      label: 'IMV Hospitalizations',
+    },
+  };
+
+  /** Leading count of a `12,345 (6.7%)` cell, or null when suppressed/absent. */
+  function cellCount(value) {
+    const m = String(value ?? '').match(/^\s*([\d,]+)/);
+    return m ? parseInt(m[1].replace(/,/g, ''), 10) : null;
+  }
+
+  /**
+   * Denominator for a re-based row, or null when the row is not re-based or the
+   * basis cells are unavailable. `lookup(rowName)` must return that row's cell
+   * for the SAME site and year as the numerator.
+   */
+  function rebasedDenominator(characteristic, lookup) {
+    const basis = REBASED_BASIS[(characteristic || '').trim()];
+    if (!basis) return null;
+    const base = cellCount(lookup(basis.of));
+    if (base == null) return null;
+    const less = basis.less ? cellCount(lookup(basis.less)) ?? 0 : 0;
+    const denom = base - less;
+    return denom > 0 ? denom : null;
+  }
+
+  /**
+   * The row a characteristic's percentage should be divided by.
+   *
+   * Precedence, strongest claim first:
+   *   1. REBASED_BASIS — a denominator that is a difference of two rows, which
+   *      no single row can express, so it can never be inferred.
+   *   2. The reader, asking for "% of Total Hospitalizations". The radio ships
+   *      checked on 'imv', so only the other value can have been clicked — a
+   *      deliberate request to see a respiratory row against the whole cohort,
+   *      and it outranks what the export happened to do.
+   *   3. denominatorBasis — back-solved from the export's own arithmetic at
+   *      build time. This is what makes the chart agree with the Table view.
+   *   4. The toggle's default, for respiratory rows (3) found no basis for.
+   *   5. Category default — unique patients for demographics, hospitalizations
+   *      for everything else.
+   *
+   * Returns null when REBASED_BASIS owns the row, since that basis is computed
+   * per site/year rather than named.
+   */
+  function denominatorKeyFor(characteristic, category) {
+    const trimmed = (characteristic || '').trim();
+    if (REBASED_BASIS[trimmed]) return null;
+
+    const charLower = trimmed.toLowerCase();
+    // IMV against itself is 100% by construction, so the toggle never applies.
+    const isIMVCountVariable = charLower.startsWith('invasive mechanical ventilation');
+    const isRespSupportVar = charLower.includes('mechanical ventilation') ||
+                             charLower.includes('imv') ||
+                             charLower.includes('fio2') ||
+                             charLower.includes('peep') ||
+                             charLower.includes('ventilator mode') ||
+                             charLower.includes('respiratory rate') ||
+                             charLower.includes('tidal volume') ||
+                             charLower.includes('location at imv');
+    const toggle = document.querySelector('input[name="resp-denominator"]:checked')?.value;
+
+    if (isRespSupportVar && !isIMVCountVariable && toggle === 'hospitalizations') {
+      return dataKey('N: Hospitalizations');
+    }
+
+    const inferred = denominatorBasis[trimmed];
+    if (inferred) return inferred;
+
+    if (isRespSupportVar && !isIMVCountVariable && toggle === 'imv') {
+      return dataKey('Invasive mechanical ventilation, n (%)');
+    }
+
+    return dataKey(category === 'Demographics' ? 'N: Unique patients' : 'N: Hospitalizations');
+  }
+
+  /**
+   * What the chart title says it divided by, e.g. "(% of IMV Hospitalizations)".
+   *
+   * A chart whose denominator differs from the Table view's has to say so, or
+   * the two views disagree in silence — which is how a 39.2% row came to be
+   * drawn at 9.0% with nothing on screen to suggest a different question was
+   * being answered.
+   */
+  function denominatorLabel(characteristic, category) {
+    const trimmed = (characteristic || '').trim();
+    const rebased = REBASED_BASIS[trimmed];
+    if (rebased) return rebased.label;
+
+    const key = denominatorKeyFor(trimmed, category);
+    if (!key) return 'Hospitalizations';
+    if (key === 'N: Unique patients') return 'Unique Patients';
+    if (key === dataKey('N: Hospitalizations')) return 'Hospitalizations';
+    if (key === 'Invasive mechanical ventilation, n (%)') return 'IMV Hospitalizations';
+    // Any other population is named by its own row. Drop the count suffix and
+    // the group prefix so it reads as a population and not as a table row:
+    // 'Extubation outcome: extubated' -> '% of extubated'.
+    const label = displayCharacteristic(key).replace(/,\s*n \(%.*\)$/, '');
+    const sep = label.indexOf(': ');
+    return sep > 0 ? label.slice(sep + 2) : label;
+  }
+
   // Determine which category a characteristic belongs to
   function getCategoryForCharacteristic(characteristic) {
     const variable = characteristic.trim();
@@ -1054,7 +1816,7 @@ const categories = Array.from(groupedChars.keys());
   // Demographics use "N: Unique patients", others use "N: Hospitalizations"
   // For respiratory support, can optionally use IMV count as denominator
   function getTotalDenominator(category, filteredData, customDenominatorKey = null) {
-    let denominatorKey = customDenominatorKey || (category === 'Demographics' ? 'N: Unique patients' : 'N: Hospitalizations');
+    let denominatorKey = dataKey(customDenominatorKey || (category === 'Demographics' ? 'N: Unique patients' : 'N: Hospitalizations'));
 
     let total = 0;
     filteredData.forEach(d => {
@@ -1170,12 +1932,17 @@ const categories = Array.from(groupedChars.keys());
        selectedCharacteristic === '__FIRST_ADMISSION_LOCATION_CONSOLIDATED__' ||
        selectedCharacteristic === '__ENCOUNTER_TYPE_CONSOLIDATED__');
 
-    // For consolidated multi-type items, offer stacked vs grouped bar options
+    // For consolidated multi-type items, offer stacked vs grouped bar options.
+    // Exception: encounter-type categories OVERLAP (one encounter can be ICU +
+    // vaso + advanced resp), so a 100%-stacked chart would fabricate a
+    // partition out of double-counted encounters — grouped bars only.
     if (isConsolidatedMultiType) {
-      const types = [
-        { value: 'stacked', label: 'Stacked' },
-        { value: 'grouped', label: 'Bar' }
-      ];
+      const types = selectedCharacteristic === '__ENCOUNTER_TYPE_CONSOLIDATED__'
+        ? [{ value: 'grouped', label: 'Bar' }]
+        : [
+            { value: 'stacked', label: 'Stacked' },
+            { value: 'grouped', label: 'Bar' }
+          ];
 
       // Line chart: only for Year grouping (temporal trends)
       if (groupBy === 'year') {
@@ -1217,8 +1984,11 @@ const categories = Array.from(groupedChars.keys());
       types.push({ value: 'line', label: 'Line Chart' });
     }
 
-    // Pie: only for Count data grouped by Site (shows contribution to total)
-    if (dataType === 'count' && groupBy === 'site') {
+    // Pie: only where the slices are parts of a real whole — an additive count,
+    // split by site. A rate or a mean is neither additive nor a share of
+    // anything, however numeric it looks, so it is excluded even though the
+    // sniffer types it as a count.
+    if (dataType === 'count' && groupBy === 'site' && !isRateRow(selectedCharacteristic)) {
       types.push({ value: 'pie', label: 'Pie Chart' });
     }
 
@@ -1322,6 +2092,126 @@ const categories = Array.from(groupedChars.keys());
     }
   }
 
+  /**
+   * Sidebar row order: alphabetical, except that a summary score leads the
+   * list of individual rows it sits with. Matched by prefix so the ', median
+   * [Q1, Q3]' suffix does not have to be repeated here.
+   *
+   * The tie-break is `<`/`>` rather than localeCompare on purpose — that is
+   * what Array.sort() does by default, and some rows carry the CSV's leading
+   * indent, which locale collation would ignore and reorder.
+   */
+  const PINNED_FIRST = ['Charlson Comorbidity Index'];
+  function compareSidebarItems(a, b) {
+    const rank = (s) => {
+      const i = PINNED_FIRST.findIndex(p => s.trim().startsWith(p));
+      return i === -1 ? Number.MAX_SAFE_INTEGER : i;
+    };
+    const ra = rank(a);
+    const rb = rank(b);
+    if (ra !== rb) return ra - rb;
+    return a < b ? -1 : a > b ? 1 : 0;
+  }
+
+  /**
+   * Does this characteristic belong to Respiratory Support?
+   *
+   * The export has no category column, so the vocabulary is matched by name.
+   * Covers intubation/extubation events, ventilator settings and exposure, and
+   * both device-free-day endpoints — VFD (invasive) and NIDFD (NIPPV/HFNC).
+   * 'tubat' is deliberate: it catches intubated / intubation / reintubation /
+   * extubation / extubated in one token.
+   */
+  function isRespiratoryCharacteristic(char) {
+    const lower = char.toLowerCase();
+    return [
+      'mechanical ventilation', 'ventilator hours', 'imv', 'tubat',
+      'fio2', 'peep', 'respiratory rate', 'tidal volume', 'vfd', 'nidfd'
+    ].some(token => lower.includes(token));
+  }
+
+  /**
+   * Build one sidebar row. `indent` is set for rows inside a subcategory so
+   * they sit under the subsection header.
+   *
+   * A `__*_CONSOLIDATED__` marker stands in for a family of CSV rows (one per
+   * location / mode / race / ...) that the dashboard renders as a single item
+   * driven by its own type selector, so it gets a label and a dedicated
+   * handler instead of the generic selectCharacteristic.
+   */
+  function createCharacteristicItem(char, indent) {
+    const CONSOLIDATED = {
+      '__IMV_LOCATION_CONSOLIDATED__': ['First location at IMV start', selectIMVLocationCharacteristic],
+      '__VENT_MODE_CONSOLIDATED__': ['Initial ventilator mode', selectVentModeCharacteristic],
+      '__ETHNICITY_CONSOLIDATED__': ['Ethnicity', selectEthnicityCharacteristic],
+      '__RACE_CONSOLIDATED__': ['Race', selectRaceCharacteristic],
+      '__SEX_CONSOLIDATED__': ['Sex', selectSexCharacteristic],
+      '__ADMISSION_TYPE_CONSOLIDATED__': ['Admission type', selectAdmissionTypeCharacteristic],
+      '__FIRST_ADMISSION_LOCATION_CONSOLIDATED__': ['First admission location', selectFirstAdmissionLocationCharacteristic],
+      '__ENCOUNTER_TYPE_CONSOLIDATED__': ['Encounter type', selectEncounterTypeCharacteristic]
+    };
+
+    const charItem = document.createElement('button');
+    const consolidated = CONSOLIDATED[char];
+
+    // A row no site reports in any year can only ever produce the "no data"
+    // alert. It stays in the list — that nobody records it is itself worth
+    // seeing, and hiding it would quietly shorten the inventory — but it does
+    // not pretend to be clickable. Consolidated items front a whole family of
+    // rows and are checked by their own selectors, so they are left alone.
+    const dead = !consolidated && !hasAnyValue(char);
+    charItem.className =
+      `characteristic-item w-full text-left ${indent ? 'pl-6 pr-4' : 'px-4'} py-2 text-sm transition-colors ` +
+      (dead
+        ? 'text-gray-400 italic cursor-not-allowed'
+        : 'text-gray-700 hover:bg-clif-burgundy hover:bg-opacity-10 hover:text-clif-burgundy');
+
+    if (dead) {
+      charItem.dataset.characteristic = char;
+      charItem.textContent = displayCharacteristic(char);
+      charItem.disabled = true;
+      charItem.title = 'No site reports this in any year.';
+      return charItem;
+    }
+
+    if (consolidated) {
+      const [label, handler] = consolidated;
+      charItem.dataset.characteristic = char;
+      charItem.textContent = label;
+      charItem.addEventListener('click', () => handler(charItem));
+    } else {
+      charItem.dataset.characteristic = char; // Keep original with spaces for data lookup
+      charItem.textContent = displayCharacteristic(char);
+      charItem.addEventListener('click', () => selectCharacteristic(char, charItem)); // Pass original
+    }
+    return charItem;
+  }
+
+  /**
+   * Does any site, in any year, report a usable value for this row?
+   *
+   * Usable means the chart could plot it: a count, a percentage or a median.
+   * A cell suppressed to '<10' or 'n/s' is not — the row exists but nothing
+   * can be drawn from it — and neither is an empty cell.
+   */
+  const hasValueCache = new Map();
+  function hasAnyValue(char) {
+    const key = (char || '').trim();
+    if (hasValueCache.has(key)) return hasValueCache.get(key);
+
+    const found = consortiumData.siteYearData.some((d) => {
+      let v = d.characteristics[char];
+      if (v == null) {
+        const k = Object.keys(d.characteristics).find((n) => n.trim() === key);
+        v = k ? d.characteristics[k] : null;
+      }
+      return typeof v === 'string' && (valueHasIQR(v) || getNumeric(v) !== null);
+    });
+
+    hasValueCache.set(key, found);
+    return found;
+  }
+
   function buildCategorySidebar() {
     // Use ALL data for sidebar, not filtered data
     // The sidebar should show all available characteristics regardless of filter selection
@@ -1332,16 +2222,21 @@ const categories = Array.from(groupedChars.keys());
     const headerPatterns = [
       'Neuromuscular blocking agents, n (%)',
       'Sedatives and analgesics, n (%)',
+      'Neuromuscular blocking agents, n (%) (during IMV)',
+      'Sedatives and analgesics, n (%) (during IMV)',
       'SOFA Scores',
       'Comorbidities, n (%)',
-      'Encounter Types',
-      'Vasopressor encounters, n (%)'
+      'Encounter Types'
     ];
 
     allData.forEach(d => {
       Object.keys(d.characteristics).forEach(char => {
-        // Skip if it's a header/placeholder row
-        if (!headerPatterns.includes(char.trim())) {
+        // Skip header/placeholder rows ('Medications during IMV (N=...)'
+        // embeds a cohort-specific N, so match it by prefix).
+        const trimmed = char.trim();
+        if (!headerPatterns.includes(trimmed) &&
+            !isHiddenCharacteristic(trimmed) &&
+            !trimmed.startsWith('Medications during IMV')) {
           characteristics.add(char);
         }
       });
@@ -1358,6 +2253,8 @@ const categories = Array.from(groupedChars.keys());
           'Encounter Types': []
         }
       },
+      'ICU Episodes': { items: [], subcategories: {} },
+      'Sepsis Events': { items: [], subcategories: {} },
       'Clinical Outcomes': { items: [], subcategories: {} },
       'Comorbidities': { items: [], subcategories: {} },
       'Severity Scores': {
@@ -1366,9 +2263,24 @@ const categories = Array.from(groupedChars.keys());
           'SOFA Scores': []
         }
       },
-      'Respiratory Support': { items: [], subcategories: {} },
+      'Respiratory Support': {
+        items: [],
+        subcategories: {
+          'Ventilator settings': [],
+          'Extubation': [],
+          'Free days': []
+        }
+      },
       'Renal Support': { items: [], subcategories: {} },
       'Medications': {
+        items: [],
+        subcategories: {
+          'Neuromuscular blocking agents': [],
+          'Sedatives and analgesics': [],
+          'Vasopressors': []
+        }
+      },
+      'Medications during IMV': {
         items: [],
         subcategories: {
           'Neuromuscular blocking agents': [],
@@ -1461,11 +2373,14 @@ const categories = Array.from(groupedChars.keys());
         }
         categorized = true; // Don't add to sidebar - we'll add a consolidated entry
       }
-      // Encounter Information - handle encounter types specially for consolidated dropdown
+      // Encounter Information - handle encounter types specially for consolidated dropdown.
+      // 'Ward only' is an encounter type too, present in the Overall (ward)
+      // export alone — and the only one that does NOT overlap the others.
       else if (charTrimmed.includes('ICU encounters') ||
                charTrimmed.includes('Advanced respiratory support') ||
                charTrimmed.includes('Vasoactive support') ||
-               charTrimmed.includes('Other critically ill')) {
+               charTrimmed.includes('Other critically ill') ||
+               charTrimmed.startsWith('Ward only')) {
         // Extract the encounter type name
         const encType = charTrimmed.replace(', n (%)', '').trim();
         if (encType) {
@@ -1484,6 +2399,18 @@ const categories = Array.from(groupedChars.keys());
         categories['Clinical Outcomes'].items.push(charTrimmed);
         categorized = true;
       }
+      // ICU burden and sepsis: a total count plus the share of encounters
+      // affected. Two denominators, so they get a section each rather than
+      // sharing one. Note 'ICU encounters' (an encounter TYPE) is matched
+      // earlier and is not one of these.
+      else if (charTrimmed.includes('ICU episode')) {
+        categories['ICU Episodes'].items.push(charTrimmed);
+        categorized = true;
+      }
+      else if (/sepsis/i.test(charTrimmed)) {
+        categories['Sepsis Events'].items.push(charTrimmed);
+        categorized = true;
+      }
       // Comorbidities
       else if (charTrimmed.includes('Charlson') ||
                charTrimmed.includes('Comorbidities') ||
@@ -1497,6 +2424,7 @@ const categories = Array.from(groupedChars.keys());
                charTrimmed.includes('Myocardial') ||
                charTrimmed.includes('Dementia') ||
                charTrimmed.includes('Liver Disease') ||
+               charTrimmed.includes('Diabetes') ||
                charTrimmed.includes('Hemiplegia') ||
                charTrimmed.includes('Connective Tissue') ||
                charTrimmed.includes('Peptic Ulcer') ||
@@ -1529,14 +2457,33 @@ const categories = Array.from(groupedChars.keys());
         }
         categorized = true; // Don't add to sidebar - we'll add a consolidated entry
       }
-      // Other Respiratory Support items
-      else if (charTrimmed.includes('mechanical ventilation') ||
-               charTrimmed.includes('IMV') ||
-               charTrimmed.includes('FiO2') ||
-               charTrimmed.includes('PEEP') ||
-               charTrimmed.includes('Respiratory rate') ||
-               charTrimmed.includes('Tidal volume')) {
-        categories['Respiratory Support'].items.push(charTrimmed);
+      // Other Respiratory Support items. Only the vent settings get their own
+      // subsection — every other row stays at top level, since a collapsible
+      // over two or three rows hid more than it organized.
+      // The '(during IMV)' suffix marks medication rows from the IMV block —
+      // those belong to the 'Medications during IMV' rules below, not here,
+      // despite the 'IMV'.
+      else if (!charTrimmed.endsWith('(during IMV)') &&
+               isRespiratoryCharacteristic(charTrimmed)) {
+        const isSetting = charTrimmed.includes('FiO2') || charTrimmed.includes('PEEP') ||
+                          charTrimmed.includes('Respiratory rate') || charTrimmed.includes('Tidal volume');
+        // Anchored, not a bare substring: 'Pre-admit IMV (excluded from
+        // time-to-extubation)' names extubation only in a parenthetical and is
+        // an intubation row. Reintubation lives here too — it is the failure
+        // mode of the extubation it follows.
+        const isExtubation = /^(extubation|reintubation|time to (?:extubation|reintubation))/i.test(charTrimmed);
+        // Device-free-day endpoints: VFD is invasive ventilation, NIDFD is
+        // NIPPV/HFNC. Each is a count row (the denominator) plus a median.
+        const isFreeDays = /vfd|nidfd/i.test(charTrimmed);
+        if (isSetting) {
+          categories['Respiratory Support'].subcategories['Ventilator settings'].push(charTrimmed);
+        } else if (isExtubation) {
+          categories['Respiratory Support'].subcategories['Extubation'].push(charTrimmed);
+        } else if (isFreeDays) {
+          categories['Respiratory Support'].subcategories['Free days'].push(charTrimmed);
+        } else {
+          categories['Respiratory Support'].items.push(charTrimmed);
+        }
         categorized = true;
       }
       // Renal Support
@@ -1544,28 +2491,47 @@ const categories = Array.from(groupedChars.keys());
         categories['Renal Support'].items.push(charTrimmed);
         categorized = true;
       }
-      // Medications with subcategories
+      // Medications with subcategories. The CSV carries two parallel blocks
+      // with identical drug names: top-level rows (% of ALL encounters) and
+      // the 'Medications during IMV' block (% of IMV encounters). The parser
+      // disambiguates the latter with a '(during IMV)' suffix — route on it.
       else if (charTrimmed.includes('Cisatracurium') ||
-               charTrimmed.includes('Rocuronium')) {
-        categories['Medications'].subcategories['Neuromuscular blocking agents'].push(charTrimmed);
-        categorized = true;
-      }
-      else if (charTrimmed.includes('Propofol') ||
+               charTrimmed.includes('Rocuronium') ||
+               charTrimmed.includes('Propofol') ||
                charTrimmed.includes('Midazolam') ||
                charTrimmed.includes('Lorazepam') ||
                charTrimmed.includes('Dexmedetomidine') ||
-               charTrimmed.includes('Fentanyl')) {
-        categories['Medications'].subcategories['Sedatives and analgesics'].push(charTrimmed);
-        categorized = true;
-      }
-      // Vasopressors - moved from Cardiovascular Support to Medications
-      else if (charTrimmed.includes('Norepinephrine') ||
+               charTrimmed.includes('Fentanyl') ||
+               charTrimmed.includes('Norepinephrine') ||
                charTrimmed.includes('Epinephrine') ||
                charTrimmed.includes('Phenylephrine') ||
                charTrimmed.includes('Vasopressin') ||
                charTrimmed.includes('Dopamine') ||
                charTrimmed.includes('Dobutamine')) {
-        categories['Medications'].subcategories['Vasopressors'].push(charTrimmed);
+        const duringIMV = charTrimmed.endsWith('(during IMV)');
+        const catName = duringIMV ? 'Medications during IMV' : 'Medications';
+        let subName;
+        if (charTrimmed.includes('Cisatracurium') || charTrimmed.includes('Rocuronium')) {
+          subName = 'Neuromuscular blocking agents';
+        } else if (charTrimmed.includes('Propofol') || charTrimmed.includes('Midazolam') ||
+                   charTrimmed.includes('Lorazepam') || charTrimmed.includes('Dexmedetomidine') ||
+                   charTrimmed.includes('Fentanyl')) {
+          subName = 'Sedatives and analgesics';
+        } else {
+          subName = 'Vasopressors';
+        }
+        categories[catName].subcategories[subName].push(charOriginal);
+        categorized = true;
+      }
+      // The IMV block's 'Vasopressors, n (%)' subheader carries a value
+      // (any vasopressor, % of IMV encounters) — keep it as an item.
+      else if (charTrimmed === 'Vasopressors, n (%) (during IMV)') {
+        categories['Medications during IMV'].items.push(charOriginal);
+        categorized = true;
+      }
+      // Any-vasopressor aggregate over all encounters.
+      else if (charTrimmed === 'Vasopressor encounters, n (%)') {
+        categories['Medications'].items.push(charOriginal);
         categorized = true;
       }
       else if (charTrimmed.startsWith('N:')) {
@@ -1591,7 +2557,7 @@ const categories = Array.from(groupedChars.keys());
       // Sort mode types alphabetically
       ventModeTypes.sort();
       // Add a special marker for the consolidated entry
-      categories['Respiratory Support'].items.push('__VENT_MODE_CONSOLIDATED__');
+      categories['Respiratory Support'].subcategories['Ventilator settings'].push('__VENT_MODE_CONSOLIDATED__');
     }
 
     // Add consolidated "Ethnicity" entry if we have ethnicity types
@@ -1638,7 +2604,7 @@ const categories = Array.from(groupedChars.keys());
 
     Object.entries(categories).forEach(([categoryName, categoryData]) => {
       const hasItems = categoryData.items.length > 0;
-      const hasSubcategories = Object.keys(categoryData.subcategories).length > 0;
+      const hasSubcategories = Object.values(categoryData.subcategories).some(items => items.length > 0);
 
       if (!hasItems && !hasSubcategories) return; // Skip empty categories
 
@@ -1661,63 +2627,8 @@ const categories = Array.from(groupedChars.keys());
       charList.style.display = 'none'; // Start collapsed
 
       // Add top-level items first
-      categoryData.items.sort().forEach(char => {
-        const charItem = document.createElement('button');
-        charItem.className = 'characteristic-item w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-clif-burgundy hover:bg-opacity-10 hover:text-clif-burgundy transition-colors';
-
-        // Handle consolidated IMV location entry specially
-        if (char === '__IMV_LOCATION_CONSOLIDATED__') {
-          charItem.dataset.characteristic = '__IMV_LOCATION_CONSOLIDATED__';
-          charItem.textContent = 'First location at IMV start';
-          charItem.addEventListener('click', () => selectIMVLocationCharacteristic(charItem));
-        }
-        // Handle consolidated ventilator mode entry specially
-        else if (char === '__VENT_MODE_CONSOLIDATED__') {
-          charItem.dataset.characteristic = '__VENT_MODE_CONSOLIDATED__';
-          charItem.textContent = 'Initial ventilator mode';
-          charItem.addEventListener('click', () => selectVentModeCharacteristic(charItem));
-        }
-        // Handle consolidated ethnicity entry specially
-        else if (char === '__ETHNICITY_CONSOLIDATED__') {
-          charItem.dataset.characteristic = '__ETHNICITY_CONSOLIDATED__';
-          charItem.textContent = 'Ethnicity';
-          charItem.addEventListener('click', () => selectEthnicityCharacteristic(charItem));
-        }
-        // Handle consolidated race entry specially
-        else if (char === '__RACE_CONSOLIDATED__') {
-          charItem.dataset.characteristic = '__RACE_CONSOLIDATED__';
-          charItem.textContent = 'Race';
-          charItem.addEventListener('click', () => selectRaceCharacteristic(charItem));
-        }
-        // Handle consolidated sex entry specially
-        else if (char === '__SEX_CONSOLIDATED__') {
-          charItem.dataset.characteristic = '__SEX_CONSOLIDATED__';
-          charItem.textContent = 'Sex';
-          charItem.addEventListener('click', () => selectSexCharacteristic(charItem));
-        }
-        // Handle consolidated admission type entry specially
-        else if (char === '__ADMISSION_TYPE_CONSOLIDATED__') {
-          charItem.dataset.characteristic = '__ADMISSION_TYPE_CONSOLIDATED__';
-          charItem.textContent = 'Admission type';
-          charItem.addEventListener('click', () => selectAdmissionTypeCharacteristic(charItem));
-        }
-        // Handle consolidated first admission location entry specially
-        else if (char === '__FIRST_ADMISSION_LOCATION_CONSOLIDATED__') {
-          charItem.dataset.characteristic = '__FIRST_ADMISSION_LOCATION_CONSOLIDATED__';
-          charItem.textContent = 'First admission location';
-          charItem.addEventListener('click', () => selectFirstAdmissionLocationCharacteristic(charItem));
-        }
-        // Handle consolidated encounter type entry specially
-        else if (char === '__ENCOUNTER_TYPE_CONSOLIDATED__') {
-          charItem.dataset.characteristic = '__ENCOUNTER_TYPE_CONSOLIDATED__';
-          charItem.textContent = 'Encounter type';
-          charItem.addEventListener('click', () => selectEncounterTypeCharacteristic(charItem));
-        } else {
-          charItem.dataset.characteristic = char; // Keep original with spaces for data lookup
-          charItem.textContent = char.trim(); // Display trimmed version
-          charItem.addEventListener('click', () => selectCharacteristic(char, charItem)); // Pass original
-        }
-        charList.appendChild(charItem);
+      categoryData.items.sort(compareSidebarItems).forEach(char => {
+        charList.appendChild(createCharacteristicItem(char, false));
       });
 
       // Add subcategories
@@ -1743,13 +2654,8 @@ const categories = Array.from(groupedChars.keys());
         subItemsList.className = 'subcategory-items';
         subItemsList.style.display = 'none'; // Start collapsed
 
-        subItems.sort().forEach(char => {
-          const charItem = document.createElement('button');
-          charItem.className = 'characteristic-item w-full text-left pl-6 pr-4 py-2 text-sm text-gray-700 hover:bg-clif-burgundy hover:bg-opacity-10 hover:text-clif-burgundy transition-colors';
-          charItem.dataset.characteristic = char;
-          charItem.textContent = char.trim();
-          charItem.addEventListener('click', () => selectCharacteristic(char, charItem));
-          subItemsList.appendChild(charItem);
+        subItems.sort(compareSidebarItems).forEach(char => {
+          subItemsList.appendChild(createCharacteristicItem(char, true));
         });
 
         // Set initial subcategory chevron to collapsed state
@@ -1804,13 +2710,7 @@ const categories = Array.from(groupedChars.keys());
     // Highlight selected item
     element.classList.add('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
 
-    // Show selected characteristic
-    const display = document.getElementById('selected-characteristic-display');
-    const nameEl = document.getElementById('selected-characteristic-name');
-    if (display && nameEl) {
-      nameEl.textContent = characteristic.trim(); // Display trimmed version
-      display.classList.remove('hidden');
-    }
+    showSelectedCharacteristic(characteristic);
 
     // Show/hide respiratory support denominator selector
     const respDenomSelector = document.getElementById('resp-denominator-selector');
@@ -1832,12 +2732,33 @@ const categories = Array.from(groupedChars.keys());
                            charTrimmed.includes('location at imv');
       const isMedian = charTrimmed.includes('median');
 
-      // Show denominator selector only for non-median respiratory support variables
-      // BUT NOT for "Invasive mechanical ventilation" itself (IMV/IMV = 100% is meaningless)
-      if (isRespSupport && !isMedian && !isIMVCountVariable) {
+      /**
+       * Rows whose population the export itself states — see denominatorBasis.
+       * Offering a denominator switch there can only move the number away from
+       * the one the Table view shows for the same row.
+       *
+       * It is most obviously wrong for the during-IMV medications. Cisatracurium
+       * is given during ventilation and almost nowhere else — Emory reports 555
+       * during IMV against 556 in total — so "% of Total Hospitalizations"
+       * redraws the plain Cisatracurium row from the Medications section, one
+       * chart pretending to be two, and the reading that actually distinguishes
+       * them (2.4% of ventilated patients) is the one it replaces.
+       */
+      const basisIsKnown = !!denominatorBasis[characteristic.trim()];
+
+      // Show the denominator selector only for non-median respiratory support
+      // variables whose population is genuinely open, and never for 'Invasive
+      // mechanical ventilation' itself (IMV/IMV = 100%).
+      if (isRespSupport && !isMedian && !isIMVCountVariable && !basisIsKnown) {
         respDenomSelector.classList.remove('hidden');
       } else {
         respDenomSelector.classList.add('hidden');
+        // A hidden radio still reports its value, and denominatorKeyFor honours
+        // an explicit 'hospitalizations' — so hiding without resetting would
+        // leave a previous click silently steering rows it is no longer
+        // offered for.
+        const imv = document.querySelector('input[name="resp-denominator"][value="imv"]');
+        if (imv) imv.checked = true;
       }
     }
 
@@ -1888,13 +2809,7 @@ const categories = Array.from(groupedChars.keys());
     // Highlight selected item
     element.classList.add('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
 
-    // Show selected characteristic
-    const display = document.getElementById('selected-characteristic-display');
-    const nameEl = document.getElementById('selected-characteristic-name');
-    if (display && nameEl) {
-      nameEl.textContent = 'First location at IMV start';
-      display.classList.remove('hidden');
-    }
+    showSelectedCharacteristic('First location at IMV start');
 
     // Show location type selector and populate checkboxes
     const locationSelector = document.getElementById('location-type-selector');
@@ -2044,13 +2959,7 @@ const categories = Array.from(groupedChars.keys());
     // Highlight selected item
     element.classList.add('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
 
-    // Show selected characteristic
-    const display = document.getElementById('selected-characteristic-display');
-    const nameEl = document.getElementById('selected-characteristic-name');
-    if (display && nameEl) {
-      nameEl.textContent = 'Initial ventilator mode';
-      display.classList.remove('hidden');
-    }
+    showSelectedCharacteristic('Initial ventilator mode');
 
     // Hide location type selector (it's for IMV location, not vent modes)
     const locationSelector = document.getElementById('location-type-selector');
@@ -2211,13 +3120,7 @@ const categories = Array.from(groupedChars.keys());
     });
     element.classList.add('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
 
-    // Show selected characteristic
-    const display = document.getElementById('selected-characteristic-display');
-    const nameEl = document.getElementById('selected-characteristic-name');
-    if (display && nameEl) {
-      nameEl.textContent = 'Ethnicity';
-      display.classList.remove('hidden');
-    }
+    showSelectedCharacteristic('Ethnicity');
 
     // Hide other selectors
     document.getElementById('location-type-selector')?.classList.add('hidden');
@@ -2298,12 +3201,7 @@ const categories = Array.from(groupedChars.keys());
     });
     element.classList.add('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
 
-    const display = document.getElementById('selected-characteristic-display');
-    const nameEl = document.getElementById('selected-characteristic-name');
-    if (display && nameEl) {
-      nameEl.textContent = 'Race';
-      display.classList.remove('hidden');
-    }
+    showSelectedCharacteristic('Race');
 
     // Hide other selectors
     document.getElementById('location-type-selector')?.classList.add('hidden');
@@ -2383,12 +3281,7 @@ const categories = Array.from(groupedChars.keys());
     });
     element.classList.add('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
 
-    const display = document.getElementById('selected-characteristic-display');
-    const nameEl = document.getElementById('selected-characteristic-name');
-    if (display && nameEl) {
-      nameEl.textContent = 'Sex';
-      display.classList.remove('hidden');
-    }
+    showSelectedCharacteristic('Sex');
 
     // Hide other selectors
     document.getElementById('location-type-selector')?.classList.add('hidden');
@@ -2483,12 +3376,7 @@ const categories = Array.from(groupedChars.keys());
     });
     element.classList.add('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
 
-    const display = document.getElementById('selected-characteristic-display');
-    const nameEl = document.getElementById('selected-characteristic-name');
-    if (display && nameEl) {
-      nameEl.textContent = 'Admission type';
-      display.classList.remove('hidden');
-    }
+    showSelectedCharacteristic('Admission type');
 
     // Hide other selectors
     document.getElementById('location-type-selector')?.classList.add('hidden');
@@ -2571,12 +3459,7 @@ const categories = Array.from(groupedChars.keys());
     });
     element.classList.add('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
 
-    const display = document.getElementById('selected-characteristic-display');
-    const nameEl = document.getElementById('selected-characteristic-name');
-    if (display && nameEl) {
-      nameEl.textContent = 'First admission location';
-      display.classList.remove('hidden');
-    }
+    showSelectedCharacteristic('First admission location');
 
     // Hide other selectors
     document.getElementById('location-type-selector')?.classList.add('hidden');
@@ -2659,12 +3542,7 @@ const categories = Array.from(groupedChars.keys());
     });
     element.classList.add('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
 
-    const display = document.getElementById('selected-characteristic-display');
-    const nameEl = document.getElementById('selected-characteristic-name');
-    if (display && nameEl) {
-      nameEl.textContent = 'Encounter type';
-      display.classList.remove('hidden');
-    }
+    showSelectedCharacteristic('Encounter type');
 
     // Hide other selectors
     document.getElementById('location-type-selector')?.classList.add('hidden');
@@ -2754,6 +3632,19 @@ const categories = Array.from(groupedChars.keys());
         }
       });
 
+      // Subcategories start collapsed, so a match inside one would stay hidden
+      // even though the category expanded — expand the ones that match and
+      // hide the ones that don't.
+      category.querySelectorAll('.subcategory-section').forEach(sub => {
+        const subMatches = Array.from(sub.querySelectorAll('.characteristic-item'))
+          .some(char => char.style.display !== 'none');
+        sub.style.display = subMatches ? 'block' : 'none';
+        if (term && subMatches) {
+          sub.querySelector('.subcategory-items').style.display = 'block';
+          sub.querySelector('.sub-chevron').style.transform = 'rotate(0deg)';
+        }
+      });
+
       // Show/hide category based on whether it has visible characteristics
       category.style.display = hasVisibleChar ? 'block' : 'none';
 
@@ -2767,20 +3658,47 @@ const categories = Array.from(groupedChars.keys());
     });
   }
 
+  // Inline replacement for the old alert() dialogs: renders the message above
+  // the chart area instead of blocking the page with a native dialog.
+  function showChartNotice(...lines) {
+    const el = document.getElementById('chart-notice');
+    if (!el) return;
+    el.innerHTML = '';
+    lines.forEach((line, i) => {
+      const p = document.createElement('p');
+      p.className = 'text-sm text-amber-800' + (i === 0 ? ' font-semibold' : ' mt-1');
+      p.textContent = line;
+      el.appendChild(p);
+    });
+    el.classList.remove('hidden');
+  }
+
+  function hideChartNotice() {
+    document.getElementById('chart-notice')?.classList.add('hidden');
+  }
+
   function generateCustomChart() {
+    hideChartNotice();
+    if (typeof Chart === 'undefined') {
+      showChartNotice(
+        'Charts could not be loaded.',
+        'Your network may be blocking cdn.jsdelivr.net — the Table view still works without it.'
+      );
+      return;
+    }
     const chartType = document.getElementById('chart-type-select')?.value;
     let characteristic = selectedCharacteristic;
     const groupBy = document.getElementById('chart-xaxis-select')?.value;
 
     if (!characteristic) {
-      alert('Please select a characteristic from the sidebar to visualize.');
+      showChartNotice('Please select a characteristic from the sidebar to visualize.');
       return;
     }
 
     // Handle IMV location consolidated selection
     if (characteristic === '__IMV_LOCATION_CONSOLIDATED__') {
       if (selectedLocationTypes.length === 0) {
-        alert('Please select at least one location type.');
+        showChartNotice('Please select at least one location type.');
         return;
       }
 
@@ -2792,7 +3710,7 @@ const categories = Array.from(groupedChars.keys());
     // Handle ventilator mode consolidated selection
     if (characteristic === '__VENT_MODE_CONSOLIDATED__') {
       if (selectedVentModeTypes.length === 0) {
-        alert('Please select at least one ventilator mode type.');
+        showChartNotice('Please select at least one ventilator mode type.');
         return;
       }
 
@@ -2804,7 +3722,7 @@ const categories = Array.from(groupedChars.keys());
     // Handle ethnicity consolidated selection
     if (characteristic === '__ETHNICITY_CONSOLIDATED__') {
       if (selectedEthnicityTypes.length === 0) {
-        alert('Please select at least one ethnicity type.');
+        showChartNotice('Please select at least one ethnicity type.');
         return;
       }
       generateStackedDemographicChart(chartType, groupBy, selectedEthnicityTypes, ethnicityCharacteristics, 'Ethnicity');
@@ -2814,7 +3732,7 @@ const categories = Array.from(groupedChars.keys());
     // Handle race consolidated selection
     if (characteristic === '__RACE_CONSOLIDATED__') {
       if (selectedRaceTypes.length === 0) {
-        alert('Please select at least one race type.');
+        showChartNotice('Please select at least one race type.');
         return;
       }
       generateStackedDemographicChart(chartType, groupBy, selectedRaceTypes, raceCharacteristics, 'Race');
@@ -2824,7 +3742,7 @@ const categories = Array.from(groupedChars.keys());
     // Handle sex consolidated selection
     if (characteristic === '__SEX_CONSOLIDATED__') {
       if (selectedSexTypes.length === 0) {
-        alert('Please select at least one sex type.');
+        showChartNotice('Please select at least one sex type.');
         return;
       }
       generateStackedDemographicChart(chartType, groupBy, selectedSexTypes, sexCharacteristics, 'Sex');
@@ -2834,7 +3752,7 @@ const categories = Array.from(groupedChars.keys());
     // Handle admission type consolidated selection
     if (characteristic === '__ADMISSION_TYPE_CONSOLIDATED__') {
       if (selectedAdmissionTypes.length === 0) {
-        alert('Please select at least one admission type.');
+        showChartNotice('Please select at least one admission type.');
         return;
       }
       generateStackedDemographicChart(chartType, groupBy, selectedAdmissionTypes, admissionTypeCharacteristics, 'Admission Type');
@@ -2844,7 +3762,7 @@ const categories = Array.from(groupedChars.keys());
     // Handle first admission location consolidated selection
     if (characteristic === '__FIRST_ADMISSION_LOCATION_CONSOLIDATED__') {
       if (selectedFirstAdmissionLocationTypes.length === 0) {
-        alert('Please select at least one location type.');
+        showChartNotice('Please select at least one location type.');
         return;
       }
       generateStackedDemographicChart(chartType, groupBy, selectedFirstAdmissionLocationTypes, firstAdmissionLocationCharacteristics, 'First Admission Location');
@@ -2854,7 +3772,7 @@ const categories = Array.from(groupedChars.keys());
     // Handle encounter type consolidated selection
     if (characteristic === '__ENCOUNTER_TYPE_CONSOLIDATED__') {
       if (selectedEncounterTypes.length === 0) {
-        alert('Please select at least one encounter type.');
+        showChartNotice('Please select at least one encounter type.');
         return;
       }
       generateStackedDemographicChart(chartType, groupBy, selectedEncounterTypes, encounterTypeCharacteristics, 'Encounter Type');
@@ -2935,7 +3853,7 @@ const categories = Array.from(groupedChars.keys());
             return;
           }
 
-          const label = site;
+          const label = window.siteLabel(site);
 
           if (isMedianChar) {
             const medianIQR = extractMedianAndIQR(overallValue);
@@ -2955,40 +3873,35 @@ const categories = Array.from(groupedChars.keys());
             if (parsed) {
               chartCounts[label] = parsed.count;
 
-              // Determine denominator based on category and user selection
-              let denominatorKey = category === 'Demographics' ? 'N: Unique patients' : 'N: Hospitalizations';
+              // The population this row's percentage is of — the export's own,
+              // where it could be recovered.
+              const denominatorKey = denominatorKeyFor(characteristic, category);
 
-              // Check if user selected IMV as denominator for respiratory support variables
-              const respDenomSelector = document.querySelector('input[name="resp-denominator"]:checked');
-              const useIMVDenom = respDenomSelector && respDenomSelector.value === 'imv';
-              const charLower = characteristic.trim().toLowerCase();
-              // Don't use IMV denominator for "Invasive mechanical ventilation" itself (IMV/IMV = 100% always)
-              const isIMVCountVariable = charLower.startsWith('invasive mechanical ventilation');
-              const isRespSupportVar = charLower.includes('mechanical ventilation') ||
-                                       charLower.includes('imv') ||
-                                       charLower.includes('fio2') ||
-                                       charLower.includes('peep') ||
-                                       charLower.includes('ventilator mode') ||
-                                       charLower.includes('respiratory rate') ||
-                                       charLower.includes('tidal volume') ||
-                                       charLower.includes('location at imv');
+              // A re-based row carries its own denominator, so it never reaches
+              // the key-based lookup.
+              const rebased = rebasedDenominator(characteristic, (rowName) => {
+                const r = consortiumData.characteristics.find(c =>
+                  c.variable === rowName || c.variable.trim() === rowName
+                );
+                return r && r.sites[site] ? r.sites[site]['Overall'] : null;
+              });
 
-              if (isRespSupportVar && useIMVDenom && !isIMVCountVariable) {
-                denominatorKey = 'Invasive mechanical ventilation, n (%)';
-              }
+              if (rebased != null) {
+                groupDenominators[label] = rebased;
+              } else {
+                const denomCharData = consortiumData.characteristics.find(c =>
+                  c.variable === denominatorKey || c.variable.trim() === denominatorKey
+                );
 
-              const denomCharData = consortiumData.characteristics.find(c =>
-                c.variable === denominatorKey || c.variable.trim() === denominatorKey
-              );
-
-              if (denomCharData && denomCharData.sites[site]) {
-                const denomOverallValue = denomCharData.sites[site]['Overall'];
-                if (denomOverallValue) {
-                  // Handle both formats: "315,193 (30.6%)" and plain numbers
-                  const numMatch = denomOverallValue.match(/^\s*([\d,]+)/);
-                  if (numMatch) {
-                    const denominator = parseInt(numMatch[1].replace(/,/g, ''), 10);
-                    groupDenominators[label] = denominator;
+                if (denomCharData && denomCharData.sites[site]) {
+                  const denomOverallValue = denomCharData.sites[site]['Overall'];
+                  if (denomOverallValue) {
+                    // Handle both formats: "315,193 (30.6%)" and plain numbers
+                    const numMatch = denomOverallValue.match(/^\s*([\d,]+)/);
+                    if (numMatch) {
+                      const denominator = parseInt(numMatch[1].replace(/,/g, ''), 10);
+                      groupDenominators[label] = denominator;
+                    }
                   }
                 }
               }
@@ -3051,7 +3964,7 @@ const categories = Array.from(groupedChars.keys());
 
       let label;
       if (groupBy === 'site') {
-        label = d.site;
+        label = window.siteLabel(d.site);
       } else {
         label = d.year;
       }
@@ -3090,41 +4003,28 @@ const categories = Array.from(groupedChars.keys());
           if (!chartCounts[label]) chartCounts[label] = 0;
           chartCounts[label] += parsed.count;
 
-          // Determine denominator based on category and user selection
-          let denominatorKey = category === 'Demographics' ? 'N: Unique patients' : 'N: Hospitalizations';
+          // The population this row's percentage is of — the export's own,
+          // where it could be recovered.
+          const denominatorKey = denominatorKeyFor(characteristic, category);
 
-          // Check if user selected IMV as denominator for respiratory support variables
-          const respDenomSelector = document.querySelector('input[name="resp-denominator"]:checked');
-          const useIMVDenom = respDenomSelector && respDenomSelector.value === 'imv';
-          const charLower = characteristic.trim().toLowerCase();
-          // Don't use IMV denominator for "Invasive mechanical ventilation" itself (IMV/IMV = 100% always)
-          const isIMVCountVariable = charLower.startsWith('invasive mechanical ventilation');
-          const isRespSupportVar = charLower.includes('mechanical ventilation') ||
-                                   charLower.includes('imv') ||
-                                   charLower.includes('fio2') ||
-                                   charLower.includes('peep') ||
-                                   charLower.includes('ventilator mode') ||
-                                   charLower.includes('respiratory rate') ||
-                                   charLower.includes('tidal volume') ||
-                                   charLower.includes('location at imv');
+          // Row-level lookup shared by both paths below: exact key first, then
+          // the untrimmed variant the parse sometimes holds.
+          const cellFor = (rowName) => {
+            const direct = d.characteristics[rowName];
+            if (direct) return direct;
+            const key = Object.keys(d.characteristics).find((k) => k.trim() === rowName);
+            return key ? d.characteristics[key] : null;
+          };
 
-          if (isRespSupportVar && useIMVDenom && !isIMVCountVariable) {
-            denominatorKey = 'Invasive mechanical ventilation, n (%)';
-          }
+          // A re-based row carries its own denominator, so it never reaches the
+          // key-based lookup or the toggle above.
+          const rebased = rebasedDenominator(characteristic, cellFor);
+          let denominatorValue = rebased == null ? cellFor(denominatorKey) : null;
 
-          let denominatorValue = d.characteristics[denominatorKey];
-
-          // Try trimmed match if exact match fails
-          if (!denominatorValue) {
-            const charKey = Object.keys(d.characteristics).find(key =>
-              key.trim() === denominatorKey
-            );
-            if (charKey) {
-              denominatorValue = d.characteristics[charKey];
-            }
-          }
-
-          if (denominatorValue) {
+          if (rebased != null) {
+            if (!groupDenominators[label]) groupDenominators[label] = 0;
+            groupDenominators[label] += rebased;
+          } else if (denominatorValue) {
             const numMatch = denominatorValue.match(/^\s*([\d,]+)/);
             if (numMatch) {
               const denominator = parseInt(numMatch[1].replace(/,/g, ''), 10);
@@ -3192,7 +4092,10 @@ const categories = Array.from(groupedChars.keys());
     }
 
     if (Object.keys(chartData).length === 0) {
-      alert(`No data available for "${characteristic}" with the selected filters.\n\nPossible reasons:\n- Not all sites/years have this data point\n- Values may be suppressed for privacy (n < 10)\n- Try selecting different sites or years`);
+      showChartNotice(
+        `No data available for "${displayCharacteristic(characteristic)}" with the selected filters.`,
+        'Not every site or year collects this measure, and small counts are suppressed for privacy — try selecting different sites or years.'
+      );
       return;
     }
 
@@ -3205,15 +4108,7 @@ const categories = Array.from(groupedChars.keys());
     document.getElementById('custom-chart-container')?.classList.remove('hidden');
     document.getElementById('chart-instructions')?.classList.add('hidden');
 
-    // Show 2025 note only if 2025 is in selected years
-    const note2025 = document.getElementById('year-2025-note');
-    if (note2025) {
-      if (selectedYears.includes('2025')) {
-        note2025.classList.remove('hidden');
-      } else {
-        note2025.classList.add('hidden');
-      }
-    }
+    updatePartialYearNote();
 
     // Show missing sites note if some selected sites don't have data
     const missingSitesNote = document.getElementById('missing-sites-note');
@@ -3221,7 +4116,7 @@ const categories = Array.from(groupedChars.keys());
     if (missingSitesNote && missingSitesList) {
       const missingSites = selectedSites.filter(site => !sitesWithData.has(site));
       if (missingSites.length > 0) {
-        missingSitesList.textContent = missingSites.map(s => s.toUpperCase()).join(', ');
+        missingSitesList.textContent = missingSites.map(s => window.siteLabel(s)).join(', ');
         missingSitesNote.classList.remove('hidden');
       } else {
         missingSitesNote.classList.add('hidden');
@@ -3233,33 +4128,26 @@ const categories = Array.from(groupedChars.keys());
     const subtitleEl = document.getElementById('custom-chart-subtitle');
 
     if (titleEl) {
-      // Build main title - remove redundant ", n (%)" suffix since we'll add the denominator info
-      let title = characteristic.replace(/, n \(%\)$/, '').replace(/, n$/, '');
+      // Strip the row's own count suffix — the title states the denominator
+      // itself, just below. The pattern has to cover the rows that name their
+      // basis in the suffix ('Extubation failure ≤48hr, n (% of extubated)')
+      // and not only the bare ', n (%)', or the title ends up saying it twice:
+      // "Extubation failure ≤48hr, n (% of extubated) (% of extubated)".
+      //
+      // Display name, not the CSV name, so the title matches the sidebar entry
+      // the reader clicked — 'N: Encounter blocks' is shown everywhere else as
+      // 'N: Hospitalizations'.
+      // Not anchored to the end, because the suffix is not always last:
+      // 'Vasopressors, n (%) (during IMV)' carries a trailing qualifier that
+      // has to survive.
+      let title = displayCharacteristic(characteristic)
+        .replace(/,\s*n\s*\(%[^)]*\)/, '')
+        .replace(/,\s*n$/, '');
 
-      // Add percentage indicator for categorical variables
+      // Name the population the percentage is of — the same resolution the
+      // arithmetic used, so the title can never drift from the number.
       if (isCategoricalPercentage) {
-        let denominatorType = category === 'Demographics' ? 'Unique Patients' : 'Hospitalizations';
-
-        // Check if IMV denominator was used for respiratory support
-        const respDenomSelector = document.querySelector('input[name="resp-denominator"]:checked');
-        const useIMVDenom = respDenomSelector && respDenomSelector.value === 'imv';
-        const charLower = characteristic.trim().toLowerCase();
-        // Don't use IMV denominator for "Invasive mechanical ventilation" itself (IMV/IMV = 100% always)
-        const isIMVCountVariable = charLower.startsWith('invasive mechanical ventilation');
-        const isRespSupportVar = charLower.includes('mechanical ventilation') ||
-                                 charLower.includes('imv') ||
-                                 charLower.includes('fio2') ||
-                                 charLower.includes('peep') ||
-                                 charLower.includes('ventilator mode') ||
-                                 charLower.includes('respiratory rate') ||
-                                 charLower.includes('tidal volume') ||
-                                 charLower.includes('location at imv');
-
-        if (isRespSupportVar && useIMVDenom && !isIMVCountVariable) {
-          denominatorType = 'IMV Hospitalizations';
-        }
-
-        title += ` (% of ${denominatorType})`;
+        title += ` (% of ${denominatorLabel(characteristic, category)})`;
       }
 
       // Add grouping
@@ -3275,9 +4163,9 @@ const categories = Array.from(groupedChars.keys());
 
       // Sites info
       if (selectedSites.length === 1) {
-        subtitle += `Site: ${selectedSites[0]}`;
+        subtitle += `Site: ${window.siteLabel(selectedSites[0])}`;
       } else if (selectedSites.length <= 3) {
-        subtitle += `Sites: ${selectedSites.join(', ')}`;
+        subtitle += `Sites: ${selectedSites.map(s => window.siteLabel(s)).join(', ')}`;
       } else if (selectedSites.length === consortiumData.allSites.length) {
         subtitle += `Sites: All (${selectedSites.length})`;
       } else {
@@ -3314,7 +4202,7 @@ const categories = Array.from(groupedChars.keys());
 
     // Sort labels: alphabetically for sites, numerically for years
     if (groupBy === 'site') {
-      labels.sort((a, b) => a.localeCompare(b));
+      labels.sort(compareSiteLabels);
     } else {
       labels.sort((a, b) => parseInt(a) - parseInt(b));
     }
@@ -3432,7 +4320,7 @@ const categories = Array.from(groupedChars.keys());
         const config = {
           type: 'scatter',
           data: {
-            labels: labels,
+            labels: labels.map((l) => window.siteLabel(l)),
             datasets: [
               {
                 label: 'Median [IQR]',
@@ -3473,7 +4361,7 @@ const categories = Array.from(groupedChars.keys());
             scales: {
               x: {
                 type: 'category',
-                labels: labels,
+                labels: labels.map((l) => window.siteLabel(l)),
                 grid: {
                   display: true
                 }
@@ -3483,7 +4371,7 @@ const categories = Array.from(groupedChars.keys());
                 max: yAxisMax, // SOFA components are 0-4, others scale to fit Q3 values
                 title: {
                   display: true,
-                  text: characteristic.replace(/, median \[Q1, Q3\]/, '').replace(/ median \[Q1, Q3\]/, '')
+                  text: displayCharacteristic(characteristic).replace(/, median \[Q1, Q3\]/, '').replace(/ median \[Q1, Q3\]/, '')
                 }
               }
             }
@@ -3501,9 +4389,9 @@ const categories = Array.from(groupedChars.keys());
       const config = {
         type: chartType,
         data: {
-          labels: labels,
+          labels: labels.map((l) => window.siteLabel(l)),
           datasets: [{
-            label: characteristic,
+            label: displayCharacteristic(characteristic),
             data: sortedData,
             backgroundColor: colors.background,
             borderColor: colors.border,
@@ -3567,19 +4455,22 @@ const categories = Array.from(groupedChars.keys());
               callbacks: {
                 label: function(context) {
                   const labelName = context.label || '';
+                  // Chart labels are display names; data maps stay keyed by
+                  // site code, so look up via the closure's code array.
+                  const rawLabel = labels[context.dataIndex] ?? labelName;
                   const value = context.parsed.y !== undefined ? context.parsed.y : context.parsed;
 
-                  if (isMedianChar && iqrData[labelName]) {
+                  if (isMedianChar && iqrData[rawLabel]) {
                     // For median characteristics, show weighted median and IQR range
-                    const minQ1 = iqrData[labelName].minQ1;
-                    const maxQ3 = iqrData[labelName].maxQ3;
+                    const minQ1 = iqrData[rawLabel].minQ1;
+                    const maxQ3 = iqrData[rawLabel].maxQ3;
                     return [
                       `${labelName}: ${value.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}`,
                       `IQR: [${minQ1.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}, ${maxQ3.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}]`
                     ];
                   } else if (isCategoricalPercentage) {
                     // For categorical percentage variables, show both percentage and count
-                    const count = chartCounts[labelName];
+                    const count = chartCounts[rawLabel];
                     return [
                       `${labelName}: ${value.toFixed(1)}%`,
                       `n = ${count ? count.toLocaleString() : 'N/A'}`
@@ -3594,13 +4485,13 @@ const categories = Array.from(groupedChars.keys());
 
                     // For Population variables, show contextual info based on grouping
                     if (isPopulationVariable) {
-                      if (groupBy === 'year' && siteCountsPerGroup[labelName]) {
+                      if (groupBy === 'year' && siteCountsPerGroup[rawLabel]) {
                         // Show site count when grouped by year
-                        const siteCount = siteCountsPerGroup[labelName].size;
+                        const siteCount = siteCountsPerGroup[rawLabel].size;
                         return [label, `(${siteCount} site${siteCount !== 1 ? 's' : ''})`];
-                      } else if (groupBy === 'site' && yearsPerGroup[labelName]) {
+                      } else if (groupBy === 'site' && yearsPerGroup[rawLabel]) {
                         // Show year range when grouped by site
-                        const years = Array.from(yearsPerGroup[labelName]).sort();
+                        const years = Array.from(yearsPerGroup[rawLabel]).sort();
                         const yearRange = years.length === 1 ? years[0] : `${years[0]}-${years[years.length - 1]}`;
                         return [label, `(${yearRange})`];
                       }
@@ -3803,7 +4694,7 @@ const categories = Array.from(groupedChars.keys());
     });
 
     if (allLabels.size === 0) {
-      alert('No data available for the selected filters.');
+      showChartNotice('No data available for the selected filters.');
       return;
     }
 
@@ -3816,11 +4707,7 @@ const categories = Array.from(groupedChars.keys());
     document.getElementById('custom-chart-container')?.classList.remove('hidden');
     document.getElementById('chart-instructions')?.classList.add('hidden');
 
-    // Show 2025 note if applicable
-    const note2025 = document.getElementById('year-2025-note');
-    if (note2025) {
-      note2025.classList.toggle('hidden', !selectedYears.includes('2025'));
-    }
+    updatePartialYearNote();
 
     // Show missing sites note
     const missingSitesNote = document.getElementById('missing-sites-note');
@@ -3828,7 +4715,7 @@ const categories = Array.from(groupedChars.keys());
     if (missingSitesNote && missingSitesList) {
       const missingSites = selectedSites.filter(site => !sitesWithData.has(site));
       if (missingSites.length > 0) {
-        missingSitesList.textContent = missingSites.map(s => s.toUpperCase()).join(', ');
+        missingSitesList.textContent = missingSites.map(s => window.siteLabel(s)).join(', ');
         missingSitesNote.classList.remove('hidden');
       } else {
         missingSitesNote.classList.add('hidden');
@@ -3863,7 +4750,7 @@ const categories = Array.from(groupedChars.keys());
       if (selectedSites.length === consortiumData.allSites.length) {
         subtitle += `Sites: All (${selectedSites.length})`;
       } else if (selectedSites.length <= 3) {
-        subtitle += `Sites: ${selectedSites.join(', ')}`;
+        subtitle += `Sites: ${selectedSites.map(s => window.siteLabel(s)).join(', ')}`;
       } else {
         subtitle += `Sites: ${selectedSites.length} selected`;
       }
@@ -3881,7 +4768,7 @@ const categories = Array.from(groupedChars.keys());
     // Sort labels
     let labels = Array.from(allLabels);
     if (groupBy === 'site') {
-      labels.sort((a, b) => a.localeCompare(b));
+      labels.sort(compareSiteLabels);
     } else {
       labels.sort((a, b) => parseInt(a) - parseInt(b));
     }
@@ -3919,7 +4806,7 @@ const categories = Array.from(groupedChars.keys());
       const config = {
         type: isLineChart ? 'line' : 'bar',
         data: {
-          labels: labels,
+          labels: labels.map((l) => window.siteLabel(l)),
           datasets: chartDatasets,
           totalCounts: totalCountsArray // Store for tooltip access
         },
@@ -4160,7 +5047,7 @@ const categories = Array.from(groupedChars.keys());
     });
 
     if (allLabels.size === 0) {
-      alert('No data available for the selected filters.');
+      showChartNotice('No data available for the selected filters.');
       return;
     }
 
@@ -4173,11 +5060,7 @@ const categories = Array.from(groupedChars.keys());
     document.getElementById('custom-chart-container')?.classList.remove('hidden');
     document.getElementById('chart-instructions')?.classList.add('hidden');
 
-    // Show 2025 note if applicable
-    const note2025 = document.getElementById('year-2025-note');
-    if (note2025) {
-      note2025.classList.toggle('hidden', !selectedYears.includes('2025'));
-    }
+    updatePartialYearNote();
 
     // Show missing sites note
     const missingSitesNote = document.getElementById('missing-sites-note');
@@ -4185,7 +5068,7 @@ const categories = Array.from(groupedChars.keys());
     if (missingSitesNote && missingSitesList) {
       const missingSites = selectedSites.filter(site => !sitesWithData.has(site));
       if (missingSites.length > 0) {
-        missingSitesList.textContent = missingSites.map(s => s.toUpperCase()).join(', ');
+        missingSitesList.textContent = missingSites.map(s => window.siteLabel(s)).join(', ');
         missingSitesNote.classList.remove('hidden');
       } else {
         missingSitesNote.classList.add('hidden');
@@ -4221,7 +5104,7 @@ const categories = Array.from(groupedChars.keys());
       if (selectedSites.length === consortiumData.allSites.length) {
         subtitle += `Sites: All (${selectedSites.length})`;
       } else if (selectedSites.length <= 3) {
-        subtitle += `Sites: ${selectedSites.join(', ')}`;
+        subtitle += `Sites: ${selectedSites.map(s => window.siteLabel(s)).join(', ')}`;
       } else {
         subtitle += `Sites: ${selectedSites.length} selected`;
       }
@@ -4239,7 +5122,7 @@ const categories = Array.from(groupedChars.keys());
     // Sort labels
     let labels = Array.from(allLabels);
     if (groupBy === 'site') {
-      labels.sort((a, b) => a.localeCompare(b));
+      labels.sort(compareSiteLabels);
     } else {
       labels.sort((a, b) => parseInt(a) - parseInt(b));
     }
@@ -4277,7 +5160,7 @@ const categories = Array.from(groupedChars.keys());
       const config = {
         type: isLineChart ? 'line' : 'bar',
         data: {
-          labels: labels,
+          labels: labels.map((l) => window.siteLabel(l)),
           datasets: chartDatasets,
           totalCounts: totalCountsArray // Store for tooltip access
         },
@@ -4424,13 +5307,44 @@ const categories = Array.from(groupedChars.keys());
       });
     });
 
+    // Encounter-type categories OVERLAP, so the sum above double-counts
+    // encounters (an encounter can be ICU + vaso + advanced resp at once).
+    // Use the real denominator instead — 'N: Encounter blocks' per site/year —
+    // so each bar reads as a true % of that site's/year's encounters.
+    if (demographicName === 'Encounter Type') {
+      const N_VAR = 'N: Encounter blocks';
+      const parseN = (v) => {
+        const n = parseInt(String(v ?? '').replace(/[",]/g, ''), 10);
+        return isNaN(n) ? 0 : n;
+      };
+      Array.from(allLabels).forEach(label => { totalCountsPerLabel[label] = 0; });
+      if (useOverallColumns) {
+        const nChar = consortiumData.characteristics.find(c => c.variable.trim() === N_VAR);
+        if (nChar) {
+          selectedSites.forEach(site => {
+            if (allLabels.has(site)) totalCountsPerLabel[site] = parseN(nChar.sites[site]?.['Overall']);
+          });
+        }
+      } else {
+        filteredData.forEach(d => {
+          let v = d.characteristics[N_VAR];
+          if (!v) {
+            const k = Object.keys(d.characteristics).find(key => key.trim() === N_VAR);
+            if (k) v = d.characteristics[k];
+          }
+          const label = groupBy === 'site' ? d.site : d.year;
+          if (allLabels.has(label)) totalCountsPerLabel[label] += parseN(v);
+        });
+      }
+    }
+
     // Build datasets
     const datasets = [];
 
     // Get sorted labels first (needed for single-type site coloring)
     let sortedLabels = Array.from(allLabels);
     if (groupBy === 'site') {
-      sortedLabels.sort((a, b) => a.localeCompare(b));
+      sortedLabels.sort(compareSiteLabels);
     } else {
       sortedLabels.sort((a, b) => parseInt(a) - parseInt(b));
     }
@@ -4478,7 +5392,7 @@ const categories = Array.from(groupedChars.keys());
     });
 
     if (allLabels.size === 0) {
-      alert('No data available for the selected filters.');
+      showChartNotice('No data available for the selected filters.');
       return;
     }
 
@@ -4489,17 +5403,14 @@ const categories = Array.from(groupedChars.keys());
     document.getElementById('custom-chart-container')?.classList.remove('hidden');
     document.getElementById('chart-instructions')?.classList.add('hidden');
 
-    const note2025 = document.getElementById('year-2025-note');
-    if (note2025) {
-      note2025.classList.toggle('hidden', !selectedYears.includes('2025'));
-    }
+    updatePartialYearNote();
 
     const missingSitesNote = document.getElementById('missing-sites-note');
     const missingSitesList = document.getElementById('missing-sites-list');
     if (missingSitesNote && missingSitesList) {
       const missingSites = selectedSites.filter(site => !sitesWithData.has(site));
       if (missingSites.length > 0) {
-        missingSitesList.textContent = missingSites.map(s => s.toUpperCase()).join(', ');
+        missingSitesList.textContent = missingSites.map(s => window.siteLabel(s)).join(', ');
         missingSitesNote.classList.remove('hidden');
       } else {
         missingSitesNote.classList.add('hidden');
@@ -4529,7 +5440,7 @@ const categories = Array.from(groupedChars.keys());
       if (selectedSites.length === consortiumData.allSites.length) {
         subtitle += `Sites: All (${selectedSites.length})`;
       } else if (selectedSites.length <= 3) {
-        subtitle += `Sites: ${selectedSites.join(', ')}`;
+        subtitle += `Sites: ${selectedSites.map(s => window.siteLabel(s)).join(', ')}`;
       } else {
         subtitle += `Sites: ${selectedSites.length} selected`;
       }
@@ -4577,7 +5488,7 @@ const categories = Array.from(groupedChars.keys());
       const config = {
         type: isLineChart ? 'line' : 'bar',
         data: {
-          labels: labels,
+          labels: labels.map((l) => window.siteLabel(l)),
           datasets: chartDatasets,
           totalCounts: totalCountsArray
         },
@@ -4649,7 +5560,7 @@ const categories = Array.from(groupedChars.keys());
     document.getElementById('chart-instructions')?.classList.remove('hidden');
 
     // Hide all notes
-    document.getElementById('year-2025-note')?.classList.add('hidden');
+    document.getElementById('partial-year-note')?.classList.add('hidden');
     document.getElementById('missing-sites-note')?.classList.add('hidden');
 
     // Clear selected characteristic
@@ -4689,21 +5600,50 @@ const categories = Array.from(groupedChars.keys());
     }
   }
 
-  // Site-specific colors for consistent visualization across all charts
-  // These colors are unique to sites and NOT used by any other chart elements
+  // Site-specific colors for consistent visualization across all charts.
+  // Each site wears its university's brand color; where a primary would
+  // collide with another site's (the navy and maroon clusters), the school's
+  // secondary brand color is used instead:
+  //   Emory Blue #012169 · MIT gray #8A8B8C (MIMIC) · Hopkins Spirit Blue
+  //   #68ACE5 · Northwestern Purple #4E2A84 · OHSU blue #5D98CA · Rush green
+  //   #006747 · Chicago Maroon #800000 · UCSF teal #18A3AC · Gopher Gold
+  //   #FFCC33 · Penn Red #990000 · Sunnybrook blue #005EB8 (shown as Toronto)
   const SITE_COLORS = {
-    'emory':    'rgba(165, 42, 42, 0.7)',     // brown
-    'jhu':      'rgba(0, 114, 178, 0.7)',     // blue
-    'nu':       'rgba(0, 158, 115, 0.7)',     // teal-green
-    'ohsu':     'rgba(230, 159, 0, 0.7)',     // golden yellow
-    'rush':     'rgba(128, 0, 128, 0.7)',     // purple
-    'ucmc':     'rgba(86, 180, 233, 0.7)',    // sky blue
-    'ucsf':     'rgba(240, 128, 128, 0.7)',   // light coral/pink
-    'umich':    'rgba(105, 105, 105, 0.7)',   // dim gray
-    'umn':      'rgba(0, 128, 0, 0.7)',       // green
-    'upenn':    'rgba(255, 127, 14, 0.7)',    // orange
-    'utoronto': 'rgba(139, 0, 0, 0.7)',       // dark red
+    'emory':    'rgba(1, 33, 105, 0.7)',
+    'mimic':    'rgba(138, 139, 140, 0.7)',
+    'jhu':      'rgba(104, 172, 229, 0.7)',
+    'nu':       'rgba(78, 42, 132, 0.7)',
+    'ohsu':     'rgba(93, 152, 202, 0.7)',
+    'rush':     'rgba(0, 103, 71, 0.7)',
+    'ucmc':     'rgba(128, 0, 0, 0.7)',
+    'ucsf':     'rgba(24, 163, 172, 0.7)',
+    'umn':      'rgba(255, 204, 51, 0.7)',
+    'upenn':    'rgba(153, 0, 0, 0.7)',
+    'utoronto': 'rgba(0, 94, 184, 0.7)',
+    // The 07/2026 data drop labels charts with SITE_LABELS display names
+    // instead of the short codes above — alias them to the same colors.
+    'emory university':                        'rgba(1, 33, 105, 0.7)',
+    'mimic iv':                                'rgba(138, 139, 140, 0.7)',
+    'johns hopkins university':                'rgba(104, 172, 229, 0.7)',
+    'northwestern university':                 'rgba(78, 42, 132, 0.7)',
+    'oregon health & science university':      'rgba(93, 152, 202, 0.7)',
+    'rush university':                         'rgba(0, 103, 71, 0.7)',
+    'university of chicago':                   'rgba(128, 0, 0, 0.7)',
+    'university of california san francisco':  'rgba(24, 163, 172, 0.7)',
+    'university of minnesota':                 'rgba(255, 204, 51, 0.7)',
+    'university of pennsylvania':              'rgba(153, 0, 0, 0.7)',
+    'university of toronto':                   'rgba(0, 94, 184, 0.7)',
   };
+
+  // Site label comparator: alphabetical, except MIMIC always sorts last —
+  // it's the public benchmark dataset, not a consortium site, so it reads
+  // as the comparison column at the end of every by-site chart.
+  function compareSiteLabels(a, b) {
+    const aMimic = a.toLowerCase().startsWith('mimic');
+    const bMimic = b.toLowerCase().startsWith('mimic');
+    if (aMimic !== bMimic) return aMimic ? 1 : -1;
+    return a.localeCompare(b);
+  }
 
   function getSiteColor(siteName, opacity = 0.7) {
     const normalizedSite = siteName.toLowerCase().trim();
@@ -4769,46 +5709,123 @@ const categories = Array.from(groupedChars.keys());
     // Build table headers - Characteristic + all site columns
     thead.innerHTML = `
       <th class="px-4 py-3 text-left font-semibold sticky left-0 bg-clif-burgundy z-10">Characteristic</th>
-      ${headers.map(header => `<th class="px-3 py-3 text-left font-semibold text-xs min-w-[100px] max-w-[150px]" style="word-wrap: break-word; white-space: normal;">${header}</th>`).join('')}
+      ${headers.map(header => `<th class="px-3 py-3 text-left font-semibold text-xs min-w-[100px] max-w-[150px]" style="word-wrap: break-word; white-space: normal;">${window.siteLabel(header)}</th>`).join('')}
     `;
 
     // Populate table body
     tbody.innerHTML = '';
 
-    data.forEach(row => {
+    // Apply search filter. Matches the display name too, so a renamed row is
+    // findable by what the table actually shows ('Admission type: na' answers
+    // to "missing") as well as by its CSV name.
+    const visibleRows = data.filter(row =>
+      !isHiddenCharacteristic(row.characteristic) && (
+        row.characteristic.toLowerCase().includes(searchTerm) ||
+        displayCharacteristic(row.characteristic).toLowerCase().includes(searchTerm) ||
+        Object.values(row.values).some(v => v.toLowerCase().includes(searchTerm))
+      )
+    );
+
+    // A definition shared by a whole group lives on the group heading, not on
+    // every child. Data-driven, no case list:
+    //   1. a heading with no definition of its own adopts the one that ALL of
+    //      its children resolve to (the medication blocks: the heading carries
+    //      nothing while every med row shares one text);
+    //   2. a child whose definition text matches its nearest ancestor's shows
+    //      no badge (the prefix groups — Race, Admission type, Terminal IMV
+    //      outcome, ... — resolve the synthetic heading and every child to the
+    //      same text).
+    const defs = visibleRows.map(row => definitionFor(row.characteristic));
+    visibleRows.forEach((row, i) => {
+      if (defs[i]) return;
+      const d0 = row.depth || 0;
+      let shared = null;
+      let uniform = false;
+      for (let j = i + 1; j < visibleRows.length && (visibleRows[j].depth || 0) > d0; j++) {
+        const t = defs[j] && defs[j].text;
+        if (!t || (shared && t !== shared.text)) { shared = null; break; }
+        if (!shared) shared = defs[j];
+        uniform = true;
+      }
+      if (uniform && shared) defs[i] = shared;
+    });
+    const badgeless = new Array(visibleRows.length).fill(false);
+    const ancestors = [];
+    visibleRows.forEach((row, i) => {
+      const d = row.depth || 0;
+      while (ancestors.length && ancestors[ancestors.length - 1].depth >= d) ancestors.pop();
+      const anc = ancestors[ancestors.length - 1];
+      if (anc && defs[i] && anc.text === defs[i].text) badgeless[i] = true;
+      // Def-less intermediate rows pass their ancestor's text through, so a
+      // grandchild still compares against the heading that actually shows it.
+      ancestors.push({ depth: d, text: defs[i] ? defs[i].text : (anc ? anc.text : null) });
+    });
+
+    visibleRows.forEach((row, i) => {
       const characteristic = row.characteristic;
-
-      // Apply search filter
-      const matchesSearch = characteristic.toLowerCase().includes(searchTerm) ||
-        Object.values(row.values).some(v => v.toLowerCase().includes(searchTerm));
-
-      if (matchesSearch) {
+      {
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-gray-50';
 
-        let html = `<td class="px-4 py-3 text-sm text-gray-700 font-medium sticky left-0 bg-white">${characteristic}</td>`;
+        // Render the CSV's own hierarchy: top-level rows bold, children
+        // progressively lighter and indented. Padding is inline rather than a
+        // Tailwind class because the depth is only known at runtime and
+        // Tailwind cannot see a template-built class name.
+        const depth = row.depth || 0;
+        const nameWeight = depth === 0 ? 'font-bold text-gray-900' : 'font-normal text-gray-600';
+        const namePad = 1 + depth * 1.25;
+        // row.label drops the redundant group prefix; row.characteristic (the
+        // full name) is what search and export still use.
+        let html = `<td class="px-4 py-3 text-sm ${nameWeight} sticky left-0 bg-white" style="padding-left:${namePad}rem">${esc(row.label || displayCharacteristic(characteristic))}${badgeless[i] ? '' : badgeHtml(defs[i])}</td>`;
         headers.forEach(header => {
           const rawValue = row.values[header] || '-';
-          const value = (!isMetadataCharacteristic(row.characteristic) && hasSmallN(rawValue)) ? '-' : rawValue;
-          html += `<td class="px-4 py-3 text-sm text-gray-700">${value}</td>`;
+          // Suppressed small counts (the dashboard's n < 10 rule and the
+          // export's own literal '<10') render as '-', indistinguishable from
+          // a site with no data for the row.
+          const suppressed = (!isMetadataCharacteristic(row.characteristic) && hasSmallN(rawValue)) ||
+            rawValue.trim() === '<10' || rawValue.trim() === 'n/s';
+          const value = suppressed ? '-' : rawValue;
+          html += `<td class="px-4 py-3 text-sm text-gray-700">${esc(value)}</td>`;
         });
 
         tr.innerHTML = html;
         tbody.appendChild(tr);
       }
     });
+
+    // Flip the definition card upward for icons with no room below them, so it
+    // is never clipped by the table's own scroll container. Measured after the
+    // rows are in the DOM; re-run on scroll because "near the bottom" moves.
+    const positionDefTips = () => {
+      const scroller = document.querySelector('.table-scroll');
+      if (!scroller) return;
+      const limit = scroller.getBoundingClientRect().bottom - 160;
+      tbody.querySelectorAll('.def-info').forEach((el) => {
+        el.classList.toggle('def-above', el.getBoundingClientRect().top > limit);
+      });
+    };
+    positionDefTips();
+    document.querySelector('.table-scroll')?.addEventListener('scroll', positionDefTips, { passive: true });
+
   }
 
   function exportToCSV() {
     // Use overall data for CSV export
     const { headers, data } = overallTableData;
 
-    // Build CSV header
-    let csv = 'Characteristic,' + headers.join(',') + '\n';
+    // Build CSV header — display names, matching the on-screen table and the
+    // public dashboard's export. `headers` stays the key for row lookups below.
+    let csv = 'Characteristic,' + headers.map(h => `"${window.siteLabel(h)}"`).join(',') + '\n';
 
     // Build CSV rows
     data.forEach(row => {
-      const characteristic = `"${row.characteristic}"`;
+      if (isHiddenCharacteristic(row.characteristic)) return;
+      // Synthetic group headers are a display aid; exporting invented all-'-'
+      // rows would not match the source CSV.
+      if (row.synthetic) return;
+      // Export the display name too, so a downloaded file matches what the
+      // table showed. The source CSV under src/data keeps its own wording.
+      const characteristic = `"${displayCharacteristic(row.characteristic)}"`;
       const values = headers.map(header => {
         const rawValue = row.values[header] || '-';
         return `"${(!isMetadataCharacteristic(row.characteristic) && hasSmallN(rawValue)) ? '-' : rawValue}"`;
@@ -4820,7 +5837,7 @@ const categories = Array.from(groupedChars.keys());
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `clif-overall-data-${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = `clif-${activeCohort}-data-${new Date().toISOString().split('T')[0]}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -4832,6 +5849,110 @@ const categories = Array.from(groupedChars.keys());
   .interactive-dashboard {
     animation: fadeIn 0.5s ease-in;
   }
+
+  /* Expanded table view: lift #table-view out of the card and fill the
+     viewport. A fixed overlay rather than the Fullscreen API — it keeps the
+     search box and Export button reachable, and behaves the same when the
+     page is embedded. The scroll container gives up its 600px cap and takes
+     the leftover height instead. */
+  #table-view.table-expanded {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    background: #fff;
+    padding: 1.5rem;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  #table-view.table-expanded .table-scroll {
+    max-height: none;
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* Definition hover card.
+     :global() is REQUIRED — these nodes are built in JS via innerHTML and so
+     never receive Astro's data-astro-cid-* scope attribute.
+     Shown on hover AND focus so it is reachable by keyboard; the icon carries
+     an aria-label with the same text, so screen readers get it without the
+     hover layer. */
+  #data-table :global(.def-info),
+  :global(#selected-characteristic-def .def-info) {
+    position: relative;
+    display: inline-flex;
+    margin-left: 0.3rem;
+    vertical-align: text-top;
+    color: #9ca3af;
+    cursor: help;
+  }
+
+  #data-table :global(.def-info svg),
+  :global(#selected-characteristic-def .def-info svg) {
+    width: 0.85em;
+    height: 0.85em;
+  }
+
+  #data-table :global(.def-info:hover),
+  #data-table :global(.def-info:focus),
+  :global(#selected-characteristic-def .def-info:hover),
+  :global(#selected-characteristic-def .def-info:focus) {
+    color: #7c2d3a;
+    outline: none;
+  }
+
+  /* Sits BELOW the icon by default. The table body is a scroll container, so
+     an absolutely-positioned card is clipped by it — and above-the-icon
+     clipped the very first rows, which are the most-hovered ones. Rows close
+     to the bottom get .def-above from updateTable() and flip back up. */
+  #data-table :global(.def-info .def-tip),
+  :global(#selected-characteristic-def .def-tip) {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    z-index: 70;
+    display: none;
+    width: 20rem;
+    max-width: 70vw;
+    padding: 0.6rem 0.7rem;
+    border-radius: 0.5rem;
+    background: #1f2937;
+    color: #f9fafb;
+    font-size: 0.75rem;
+    font-weight: 400;
+    line-height: 1.45;
+    text-align: left;
+    white-space: normal;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  }
+
+  /* Near the bottom of the scroller there is no room below — flip up. */
+  #data-table :global(.def-info.def-above .def-tip) {
+    top: auto;
+    bottom: calc(100% + 8px);
+  }
+
+  /* The label column is `position: sticky`, and sticky ALWAYS opens a stacking
+     context — so the card's own z-index is trapped inside its row, and every
+     row below it painted on top (the card rendered, but its text was hidden
+     behind the following rows). Lift the cell holding the open card above its
+     siblings. 9, not 70: it has to beat the other rows (auto = 0) while staying
+     under the sticky header (z-10), which would otherwise be covered when a
+     near-bottom card flips upward. :focus-within keeps the keyboard path
+     working, since the icon is focusable. */
+  #data-table :global(tbody td:first-child:hover),
+  #data-table :global(tbody td:first-child:focus-within) {
+    z-index: 9;
+  }
+
+  #data-table :global(.def-info:hover .def-tip),
+  #data-table :global(.def-info:focus .def-tip),
+  :global(#selected-characteristic-def .def-info:hover .def-tip),
+  :global(#selected-characteristic-def .def-info:focus .def-tip) {
+    display: block;
+  }
+
 
   @keyframes fadeIn {
     from {

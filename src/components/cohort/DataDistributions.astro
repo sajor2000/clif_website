@@ -1,13 +1,17 @@
 ---
 import { readFile, readdir } from 'fs/promises';
 import { join } from 'path';
+import { unitFor, isMissingUnit, categoriesFor, CATEGORY_DISPLAY_NAMES } from '../../utils/mcideUnits';
 
-// Read ECDF data from all categories
-const ecdfBasePath = join(process.cwd(), 'src', 'data', 'cohort_dash_1', 'ecdf');
+// Cohort-aware ECDF: one folder per cohort under cohort_ecdf/<cohort>/.
+const ecdfRoot = join(process.cwd(), 'src', 'data', 'cohort_ecdf');
+const DIST_COHORTS = ['overall', 'icu', 'advanced_resp', 'vaso', 'deaths'];
+const DEFAULT_DIST = 'overall';
 
-// Read stats file for metadata
-const statsPath = join(ecdfBasePath, 'collection_stats_by_site.csv');
-const statsContent = await readFile(statsPath, 'utf-8');
+// Reassigned per cohort during the build loop (formatParameterName + readECDFFiles
+// close over these).
+let currentBase = join(ecdfRoot, DEFAULT_DIST);
+let statsData: Record<string, { unit: string; sites: Record<string, number> }> = {};
 
 // Parse stats CSV to get observation counts and units
 function parseStatsCSV(content: string) {
@@ -44,8 +48,6 @@ function parseStatsCSV(content: string) {
 
   return stats;
 }
-
-const statsData = parseStatsCSV(statsContent);
 
 // Helper function to format parameter name cleanly
 function formatParameterName(baseName: string, category: string): { displayName: string; unit: string } {
@@ -88,33 +90,42 @@ function formatParameterName(baseName: string, category: string): { displayName:
     'lpm_set': 'L/min',
   };
 
-  // Try to find matching stats entry by category name (without unit suffix)
-  // Remove common unit patterns from filename to match stats category
-  const unitPatterns = [
-    /_g_dL$/, /_mg_dL$/, /_mmol_L$/, /_U_L$/, /_ng_mL$/, /_mL$/, /_L$/,
-    /_10_3_µL$/, /_percent$/, /_cm$/, /_kg$/, /_c$/, /_mm_hour$/,
-    /_mEq_L$/, /_µg_dL$/, /_pg$/, /_fL$/, /_seconds$/, /_ratio$/
-  ];
+  /**
+   * Recover the category from the filename by matching it against the known
+   * categories, longest first — 'basophils_absolute_10_3_μL' -> 'basophils_absolute'.
+   *
+   * This used to strip a list of unit suffixes by regex, which failed in both
+   * directions. It missed real suffixes: '_pct' was not in the list, and the
+   * '_10_3_µL' pattern spells µ as MICRO SIGN (U+00B5) while the filenames use
+   * GREEK SMALL LETTER MU (U+03BC), so neither matched and the unit stayed in
+   * the name — 'Basophils Percent Pct', 'Basophils Absolute 10 3 Ml'. And it
+   * over-stripped: '_c$' and '_kg$' ate part of the category itself, turning
+   * 'temp_c' into 'temp' and 'weight_kg' into 'weight', which then missed the
+   * stats lookup. (That miss was accidentally load-bearing — falling through to
+   * the manual map is why those three vitals showed a real unit while the other
+   * six showed 'nan'.)
+   */
+  const known = categoriesFor(category);
+  const categoryName =
+    known.find((c) => baseName === c || baseName.startsWith(`${c}_`)) ?? baseName;
 
-  let categoryName = baseName;
-  for (const pattern of unitPatterns) {
-    categoryName = categoryName.replace(pattern, '');
-  }
+  // The unit comes from mCIDE, keyed by category — never from the export's own
+  // `reference_unit`, which is site-reported and inconsistent. See mcideUnits.ts.
+  let unit = unitFor(category, categoryName);
 
-  // Look up in stats data
-  const statsKey = `${category}/${categoryName}`;
-  const statsEntry = statsData[statsKey];
-  // Strip quotes from unit (some entries have "" as empty value)
-  const rawUnit = statsEntry?.unit || '';
-  let unit = rawUnit.replace(/^"+|"+$/g, '').trim();
-
-  // If no unit from stats, check manual mappings
+  // Anything mCIDE does not cover falls back to the export's string, still
+  // guarded against 'nan' and friends.
   if (!unit) {
-    unit = manualUnits[baseName] || manualUnits[categoryName] || '';
+    const statsEntry = statsData[`${category}/${categoryName}`];
+    const rawUnit = (statsEntry?.unit || '').replace(/^"+|"+$/g, '').trim();
+    if (!isMissingUnit(rawUnit)) unit = rawUnit;
   }
+  if (!unit) unit = manualUnits[baseName] || manualUnits[categoryName] || '';
 
-  // Format the category name for display
-  const nameParts = categoryName.split('_');
+  // Format the category name for display. A handful of categories carry their
+  // unit in the name itself and are spelled out here instead.
+  const override = CATEGORY_DISPLAY_NAMES[categoryName];
+  const nameParts = (override ?? categoryName).split('_');
   const formattedParts = nameParts.map(part => {
     const lowerPart = part.toLowerCase();
     if (abbreviations.includes(lowerPart)) {
@@ -123,7 +134,7 @@ function formatParameterName(baseName: string, category: string): { displayName:
     return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
   });
 
-  let displayName = formattedParts.join(' ');
+  let displayName = override ?? formattedParts.join(' ');
 
   // Add unit in parentheses if available and not empty
   if (unit && unit.trim() !== '') {
@@ -135,8 +146,13 @@ function formatParameterName(baseName: string, category: string): { displayName:
 
 // Read ECDF files from each category
 async function readECDFFiles(category: string) {
-  const categoryPath = join(ecdfBasePath, category);
-  const files = await readdir(categoryPath);
+  const categoryPath = join(currentBase, category);
+  let files: string[];
+  try {
+    files = await readdir(categoryPath);
+  } catch {
+    return [];
+  }
   const ecdfFiles: { name: string; displayName: string; unit: string }[] = [];
 
   for (const file of files) {
@@ -150,46 +166,38 @@ async function readECDFFiles(category: string) {
   return ecdfFiles.sort((a, b) => a.displayName.localeCompare(b.displayName));
 }
 
-const labFiles = await readECDFFiles('labs');
-const respiratoryFiles = await readECDFFiles('respiratory_support');
-const vitalFiles = await readECDFFiles('vitals');
-
-// Get all available sites by scanning all ECDF files
-async function getAllSites() {
-  const allSites = new Set<string>();
-  const categories = ['labs', 'respiratory_support', 'vitals'];
-
-  for (const category of categories) {
-    const categoryPath = join(ecdfBasePath, category);
-    const files = await readdir(categoryPath);
-
-    for (const file of files) {
-      if (file.endsWith('.csv')) {
-        const filePath = join(categoryPath, file);
-        const content = await readFile(filePath, 'utf-8');
-        const headers = content.split('\n')[0].split(',');
-        headers
-          .filter(h => h.endsWith('_probability'))
-          .map(h => h.replace('_probability', ''))
-          .forEach(site => allSites.add(site));
-      }
-    }
+// Build a parameter manifest per cohort (readdir + stats-derived display names).
+// Cheap enough for per-request SSR: readdir per category + one stats file per cohort
+// (no per-file content reads — the site list is derived client-side per parameter).
+async function buildCohortDist(cohort: string) {
+  currentBase = join(ecdfRoot, cohort);
+  let sc = '';
+  try {
+    sc = await readFile(join(currentBase, 'collection_stats_by_site.csv'), 'utf-8');
+  } catch {
+    sc = '';
   }
-
-  return Array.from(allSites).sort();
+  statsData = sc ? parseStatsCSV(sc) : {};
+  const [labs, respiratory_support, vitals] = await Promise.all([
+    readECDFFiles('labs'),
+    readECDFFiles('respiratory_support'),
+    readECDFFiles('vitals'),
+  ]);
+  return { labs, respiratory_support, vitals };
 }
 
-const availableSites = await getAllSites();
+const cohortsDist: Record<string, { labs: any[]; respiratory_support: any[]; vitals: any[] }> = {};
+for (const c of DIST_COHORTS) cohortsDist[c] = await buildCohortDist(c);
 
-// Prepare data for client-side
-const categoriesData = {
-  labs: labFiles,
-  respiratory_support: respiratoryFiles,
-  vitals: vitalFiles
-};
+// SSR default cohort for the initial accordion render.
+const def = cohortsDist[DEFAULT_DIST];
+const labFiles = def.labs;
+const respiratoryFiles = def.respiratory_support;
+const vitalFiles = def.vitals;
 
-const categoriesJson = JSON.stringify(categoriesData);
-const sitesJson = JSON.stringify(availableSites);
+const cohortsDistJson = JSON.stringify(cohortsDist);
+const defaultDistCohort = DEFAULT_DIST;
+const categoriesJson = JSON.stringify({ labs: labFiles, respiratory_support: respiratoryFiles, vitals: vitalFiles });
 ---
 
 <div class="data-distributions bg-white rounded-2xl shadow-xl p-6 md:p-8">
@@ -198,6 +206,17 @@ const sitesJson = JSON.stringify(availableSites);
     <h2 class="text-3xl font-bold text-gray-800 mb-2">Data Distributions</h2>
     <p class="text-gray-600 mb-3">
       Compare lab values, vital signs, and respiratory parameters across institutions using histograms and empirical cumulative distribution functions (ECDF).
+    </p>
+    {/* "ALL measurements" below begs the question: measured when? The upstream
+        ECDF pipeline collects each cohort over a different observation window
+        (STRATUM_WINDOW_TYPE in modules/ecdf/generator.py), so the same
+        parameter means different things across cohorts. Set per cohort by
+        applyDistCohort(). */}
+    <p id="dist-window-note" class="mb-3 flex items-start gap-1.5 text-sm text-gray-700">
+      <svg class="mt-0.5 h-4 w-4 shrink-0 text-gray-400" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+      </svg>
+      <span><span class="font-semibold">Measurement window:</span> <span id="dist-window-text"></span></span>
     </p>
     <div class="bg-gray-50 border-l-4 border-gray-400 p-4 rounded mb-3">
       <p class="font-semibold text-gray-700 mb-2">How to interpret the chart:</p>
@@ -221,6 +240,13 @@ const sitesJson = JSON.stringify(availableSites);
     </div>
   </div>
 
+  <!-- Empty state for cohorts with no distribution data (e.g. Overall/ward) -->
+  <div id="distribution-no-cohort" class="hidden bg-gray-50 border border-gray-200 rounded-lg p-8 text-center text-gray-500">
+    No distribution data is available for this cohort. Select a critically-ill cohort
+    (Critically Ill, ICU, Advanced respiratory, Vasopressor, or Deaths) to view distributions.
+  </div>
+
+  <div id="distribution-main">
   <!-- Site Selection (dynamic based on selected variable) -->
   <div class="mb-6">
     <label class="block text-sm font-semibold text-gray-700 mb-2">
@@ -322,6 +348,10 @@ const sitesJson = JSON.stringify(availableSites);
     <!-- Right Content Area - Chart -->
     <div class="flex-1">
       <!-- Chart Container -->
+      <!-- Inline notice area — replaces the old blocking alert() dialogs -->
+      <div id="distribution-notice" class="hidden bg-amber-50 border-l-4 border-amber-400 p-3 rounded mb-4">
+        <p class="text-sm font-semibold text-amber-800">Failed to load distribution data. Please try again.</p>
+      </div>
       <div id="distribution-chart-container" class="bg-white rounded-lg p-6 border-2 border-gray-200 hidden">
         <div class="flex items-center justify-between mb-4">
           <div>
@@ -376,11 +406,12 @@ const sitesJson = JSON.stringify(availableSites);
       </div>
     </div>
   </div>
+  </div>
 </div>
 
 <!-- JSON Data -->
 <script type="application/json" id="categories-data" set:html={categoriesJson}></script>
-<script type="application/json" id="sites-data" set:html={sitesJson}></script>
+<script type="application/json" id="cohorts-dist-data" set:html={cohortsDistJson} data-default={defaultDistCohort}></script>
 
 <script>
   // State
@@ -390,10 +421,16 @@ const sitesJson = JSON.stringify(availableSites);
   let ecdfCache: Record<string, any> = {};
   let availableSitesForParameter: string[] = [];
 
+  // Cohort-aware distributions: per-cohort parameter manifest + the active cohort.
+  const COHORTS_DIST = JSON.parse(document.getElementById('cohorts-dist-data').textContent);
+  const DEFAULT_DIST = document.getElementById('cohorts-dist-data').getAttribute('data-default');
+  let distCohort = (window.CohortBus && window.CohortBus.current && COHORTS_DIST[window.CohortBus.current]) ? window.CohortBus.current : DEFAULT_DIST;
+
   // Site-specific colors for consistent visualization across all charts
   // These colors are unique to sites and NOT used by any other chart elements
   const SITE_COLORS: Record<string, { bg: string; border: string; line: string }> = {
     'emory':    { bg: 'rgba(165, 42, 42, 0.35)', border: 'rgba(165, 42, 42, 1)', line: 'rgba(165, 42, 42, 1)' },     // brown
+    'mimic':    { bg: 'rgba(0, 114, 178, 0.35)', border: 'rgba(0, 114, 178, 1)', line: 'rgba(0, 114, 178, 1)' },     // blue
     'jhu':      { bg: 'rgba(0, 114, 178, 0.35)', border: 'rgba(0, 114, 178, 1)', line: 'rgba(0, 114, 178, 1)' },     // blue
     'nu':       { bg: 'rgba(0, 158, 115, 0.35)', border: 'rgba(0, 158, 115, 1)', line: 'rgba(0, 158, 115, 1)' },     // teal-green
     'ohsu':     { bg: 'rgba(230, 159, 0, 0.35)', border: 'rgba(230, 159, 0, 1)', line: 'rgba(230, 159, 0, 1)' },     // golden yellow
@@ -446,76 +483,121 @@ const sitesJson = JSON.stringify(availableSites);
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    initializeCategoryAccordion();
-    initializeParameterSelection();
+    initializeAccordionDelegation();
+    renderParams(distCohort);
     initializeSearch();
     initializeClearButton();
+    applyDistCohort(distCohort, true);
+    // React to the global cohort picker.
+    if (window.CohortBus && typeof window.CohortBus.subscribe === 'function') {
+      window.CohortBus.subscribe((key) => applyDistCohort(COHORTS_DIST[key] ? key : key.split('__')[0], false));
+    }
   });
 
-  function initializeCategoryAccordion() {
-    const headers = document.querySelectorAll('.category-header');
-
-    headers.forEach(header => {
-      header.addEventListener('click', () => {
+  // Delegated accordion + parameter selection so rebuilt param lists keep working.
+  function initializeAccordionDelegation() {
+    const container = document.getElementById('distribution-categories');
+    if (!container) return;
+    container.addEventListener('click', async (e) => {
+      const target = e.target as HTMLElement;
+      const header = target.closest('.category-header') as HTMLElement | null;
+      if (header) {
         const category = header.getAttribute('data-category');
-        const list = document.querySelector(`.parameter-list[data-category="${category}"]`);
-        const chevron = header.querySelector('.chevron');
-
-        if (list?.classList.contains('hidden')) {
-          // Collapse all others
-          document.querySelectorAll('.parameter-list').forEach(l => l.classList.add('hidden'));
-          document.querySelectorAll('.chevron').forEach(c => (c as HTMLElement).style.transform = 'rotate(-90deg)');
-
-          // Expand this one
+        const list = container.querySelector(`.parameter-list[data-category="${category}"]`);
+        const chevron = header.querySelector('.chevron') as HTMLElement | null;
+        const isHidden = list?.classList.contains('hidden');
+        container.querySelectorAll('.parameter-list').forEach(l => l.classList.add('hidden'));
+        container.querySelectorAll('.chevron').forEach(c => (c as HTMLElement).style.transform = 'rotate(-90deg)');
+        if (isHidden && list) {
           list.classList.remove('hidden');
-          if (chevron) (chevron as HTMLElement).style.transform = 'rotate(0deg)';
-        } else {
-          list?.classList.add('hidden');
-          if (chevron) (chevron as HTMLElement).style.transform = 'rotate(-90deg)';
+          if (chevron) chevron.style.transform = 'rotate(0deg)';
         }
-      });
-
-      // Set initial chevron state
-      const chevron = header.querySelector('.chevron');
-      if (chevron) (chevron as HTMLElement).style.transform = 'rotate(-90deg)';
+        return;
+      }
+      const item = target.closest('.parameter-item') as HTMLElement | null;
+      if (item) {
+        const category = item.getAttribute('data-category')!;
+        const parameter = item.getAttribute('data-parameter')!;
+        container.querySelectorAll('.parameter-item').forEach(i =>
+          i.classList.remove('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold'));
+        item.classList.add('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
+        selectedParameter = { category, name: parameter };
+        await loadParameterAndUpdateSites(category, parameter);
+      }
     });
   }
 
-  function initializeParameterSelection() {
-    const items = document.querySelectorAll('.parameter-item');
+  // Rebuild the parameter lists + header counts from a cohort's manifest.
+  function renderParams(cohort: string) {
+    const data = COHORTS_DIST[cohort];
+    if (!data) return;
+    const cats: [string, string][] = [['labs', 'Labs'], ['respiratory_support', 'Respiratory Support'], ['vitals', 'Vitals']];
+    for (const [cat, label] of cats) {
+      const items = data[cat] || [];
+      const header = document.querySelector(`.category-header[data-category="${cat}"] span`);
+      if (header) header.textContent = `${label} (${items.length})`;
+      const list = document.querySelector(`.parameter-list[data-category="${cat}"]`);
+      if (list) {
+        list.classList.add('hidden');
+        list.innerHTML = items.map((f: any) =>
+          `<button class="parameter-item w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-clif-burgundy hover:bg-opacity-10 hover:text-clif-burgundy transition-colors" data-category="${cat}" data-parameter="${f.name}">${f.displayName}</button>`
+        ).join('');
+      }
+      const chev = document.querySelector(`.category-header[data-category="${cat}"] .chevron`) as HTMLElement | null;
+      if (chev) chev.style.transform = 'rotate(-90deg)';
+    }
+  }
 
-    items.forEach(item => {
-      item.addEventListener('click', async () => {
-        const category = item.getAttribute('data-category')!;
-        const parameter = item.getAttribute('data-parameter')!;
+  // Switch the distribution cohort: repoint fetches, rebuild params, reset the chart.
+  // Cohorts without distribution data (e.g. Overall/ward) show an empty-state message.
+  /**
+   * Observation window per cohort, mirroring STRATUM_WINDOW_TYPE in the
+   * upstream ECDF pipeline (CLIF-TableOne modules/ecdf/generator.py). Cohorts
+   * absent from that map fall back to ICU windows, as they do upstream.
+   */
+  const DIST_WINDOWS: Record<string, string> = {
+    overall: 'the ICU stay (ICU admission to ICU discharge).',
+    icu: 'the ICU stay (ICU admission to ICU discharge).',
+    deaths: 'the ICU stay (ICU admission to ICU discharge).',
+    vaso: 'first vasopressor administration through hospital discharge.',
+    advanced_resp: 'first advanced respiratory support device (IMV, NIPPV, CPAP or HFNC) through hospital discharge.',
+  };
 
-        // Update selection state
-        document.querySelectorAll('.parameter-item').forEach(i => {
-          i.classList.remove('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
-        });
-        item.classList.add('bg-clif-burgundy', 'bg-opacity-20', 'text-clif-burgundy', 'font-semibold');
-
-        selectedParameter = { category, name: parameter };
-
-        // Load the ECDF data and extract available sites
-        await loadParameterAndUpdateSites(category, parameter);
-      });
-    });
+  function applyDistCohort(cohort: string, initial: boolean) {
+    const windowText = document.getElementById('dist-window-text');
+    if (windowText) {
+      windowText.textContent = `all measurements recorded during ${DIST_WINDOWS[cohort] || DIST_WINDOWS.icu}`;
+    }
+    const hasDist = !!COHORTS_DIST[cohort];
+    const noData = document.getElementById('distribution-no-cohort');
+    const main = document.getElementById('distribution-main');
+    if (!hasDist) {
+      noData?.classList.remove('hidden');
+      main?.classList.add('hidden');
+      return;
+    }
+    noData?.classList.add('hidden');
+    main?.classList.remove('hidden');
+    if (!initial && cohort === distCohort) return;
+    distCohort = cohort;
+    renderParams(cohort);
+    if (typeof clearChart === 'function') clearChart();
   }
 
   async function loadParameterAndUpdateSites(category: string, parameter: string) {
-    const cacheKey = `${category}/${parameter}`;
+    document.getElementById('distribution-notice')?.classList.add('hidden');
+    const cacheKey = `${distCohort}/${category}/${parameter}`;
 
     // Fetch ECDF data if not cached
     if (!ecdfCache[cacheKey]) {
       try {
-        const response = await fetch(`/api/ecdf/${category}/${parameter}.csv`);
+        const response = await fetch(`/api/ecdf/${distCohort}/${category}/${parameter}.csv`);
         if (!response.ok) throw new Error('Failed to load data');
         const csvText = await response.text();
         ecdfCache[cacheKey] = parseECDFCSV(csvText);
       } catch (error) {
         console.error('Error loading ECDF data:', error);
-        alert('Failed to load distribution data. Please try again.');
+        document.getElementById('distribution-notice')?.classList.remove('hidden');
         return;
       }
     }
@@ -527,7 +609,7 @@ const sitesJson = JSON.stringify(availableSites);
       Object.keys(row.sites).forEach(site => sitesInData.add(site));
     });
 
-    availableSitesForParameter = Array.from(sitesInData).sort();
+    availableSitesForParameter = Array.from(sitesInData).sort(window.compareSites);
 
     // Exclude sites with known bad data for specific parameters
     // Note: Site names are extracted from CSV columns like "emory_probability" -> "emory"
@@ -594,8 +676,8 @@ const sitesJson = JSON.stringify(availableSites);
       });
 
       const span = document.createElement('span');
-      span.className = 'ml-2 text-sm font-medium text-gray-700 uppercase';
-      span.textContent = site.replace('_', ' ');
+      span.className = 'ml-2 text-sm font-medium text-gray-700';
+      span.textContent = window.siteLabel ? window.siteLabel(site) : site.replace('_', ' ');
 
       label.appendChild(checkbox);
       label.appendChild(span);
@@ -652,20 +734,21 @@ const sitesJson = JSON.stringify(availableSites);
 
   async function loadAndRenderChart() {
     if (!selectedParameter || selectedSites.length === 0) return;
+    document.getElementById('distribution-notice')?.classList.add('hidden');
 
     const { category, name } = selectedParameter;
-    const cacheKey = `${category}/${name}`;
+    const cacheKey = `${distCohort}/${category}/${name}`;
 
     // Fetch ECDF data if not cached
     if (!ecdfCache[cacheKey]) {
       try {
-        const response = await fetch(`/api/ecdf/${category}/${name}.csv`);
+        const response = await fetch(`/api/ecdf/${distCohort}/${category}/${name}.csv`);
         if (!response.ok) throw new Error('Failed to load data');
         const csvText = await response.text();
         ecdfCache[cacheKey] = parseECDFCSV(csvText);
       } catch (error) {
         console.error('Error loading ECDF data:', error);
-        alert('Failed to load distribution data. Please try again.');
+        document.getElementById('distribution-notice')?.classList.remove('hidden');
         return;
       }
     }
@@ -719,7 +802,7 @@ const sitesJson = JSON.stringify(availableSites);
 
     document.getElementById('distribution-chart-title')!.textContent = displayName;
     document.getElementById('distribution-chart-subtitle')!.textContent =
-      `Comparing ${selectedSites.length} site${selectedSites.length > 1 ? 's' : ''}: ${selectedSites.map(s => s.toUpperCase().replace('_', ' ')).join(', ')}`;
+      `Comparing ${selectedSites.length} site${selectedSites.length > 1 ? 's' : ''}: ${selectedSites.map(s => window.siteLabel(s)).join(', ')}`;
 
     // Compute histogram bins from ECDF data
     const histogramDatasets: any[] = [];
@@ -792,7 +875,7 @@ const sitesJson = JSON.stringify(availableSites);
       // Histogram dataset
       histogramDatasets.push({
         type: 'bar',
-        label: `${site.toUpperCase().replace('_', ' ')}`,
+        label: `${window.siteLabel(site)}`,
         data: histogramBins,
         backgroundColor: color.bg,
         borderColor: color.border,
@@ -806,7 +889,7 @@ const sitesJson = JSON.stringify(availableSites);
       // ECDF line dataset (hidden from legend via filter - bar entry is enough)
       ecdfDatasets.push({
         type: 'line',
-        label: `${site.toUpperCase().replace('_', ' ')} ECDF`,
+        label: `${window.siteLabel(site)} ECDF`,
         data: siteEcdf.map(p => ({ x: p.x, y: p.y * 100 })),
         borderColor: color.line,
         borderWidth: 2,
@@ -950,7 +1033,7 @@ const sitesJson = JSON.stringify(availableSites);
 
                 html += `<div style="display: flex; align-items: center; gap: 6px; margin: 2px 0;">
                   <span style="display: inline-block; width: 10px; height: 10px; background: ${color}; border-radius: 2px;"></span>
-                  <span>${site.toUpperCase().replace('_', ' ')} ECDF: ${ecdfValue.toFixed(1)}%</span>
+                  <span>${window.siteLabel(site)} ECDF: ${ecdfValue.toFixed(1)}%</span>
                 </div>`;
               });
 
@@ -991,7 +1074,7 @@ const sitesJson = JSON.stringify(availableSites);
         row.innerHTML = `
           <td class="px-4 py-2 border border-gray-200">
             <span class="inline-block w-3 h-3 rounded-full mr-2" style="background-color: ${color.border}"></span>
-            ${site.toUpperCase().replace('_', ' ')}
+            ${window.siteLabel(site)}
           </td>
           <td class="px-4 py-2 text-right border border-gray-200 font-mono text-xs">${formatValue(min)}</td>
           <td class="px-4 py-2 text-right border border-gray-200 font-mono text-xs">${formatValue(p25)}</td>
