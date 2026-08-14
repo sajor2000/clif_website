@@ -13,7 +13,12 @@ export default defineConfig({
     // Error monitoring
     sentry({}),
     tailwind(),
-    sitemap(),
+    sitemap({
+      // Gated and machine-only routes stay out of the public sitemap — they
+      // all bounce to login (or are JSON), and listing them just advertises
+      // the portal's URL structure to crawlers.
+      filter: (page) => !/\/(portal|auth|api)\//.test(page),
+    }),
     compress({
       CSS: true,
       HTML: {

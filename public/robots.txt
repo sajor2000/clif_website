@@ -7,10 +7,12 @@ Allow: /
 # Sitemap location
 Sitemap: https://clif-consortium.org/sitemap-index.xml
 
-# Prevent crawling of admin pages if they exist in the future
+# Members-only and machine-only routes — these redirect to login (or serve
+# JSON) and should not be crawled or indexed.
 User-agent: *
-Disallow: /admin/
-Disallow: /dashboard/
+Disallow: /portal/
+Disallow: /auth/
+Disallow: /api/
 
 # Allow all bots to all files
 User-agent: *
