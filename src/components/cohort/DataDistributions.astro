@@ -808,29 +808,38 @@ const categoriesJson = JSON.stringify({ labs: labFiles, respiratory_support: res
     const histogramDatasets: any[] = [];
     const ecdfDatasets: any[] = [];
 
-    // Determine value range - cut off at where ECDF reaches 100%
+    // Determine the display window from the sites' own distributions: the
+    // p0.5–p99.5 span across the selected sites, so every site's core sits
+    // fully inside the axis. Raw min/max would let single-site data-entry
+    // artifacts (1,028 kg weights, pH 9.0, SpO2 8%) stretch the axis and
+    // squash the real distribution into a couple of bars — and the previous
+    // min-of-site-maxima rule had the opposite flaw, clipping legitimately
+    // wider sites to whichever site's data ended earliest. The extreme tails
+    // remain in the CSVs; they are just not what the axis is scaled to.
     const allValues = ecdfData.map(d => d.value);
-    const minVal = Math.min(...allValues);
-    const rawMaxVal = Math.max(...allValues);
-
-    // Find where ECDF reaches 100% for each site (the max value with data)
-    let maxValForDisplay = rawMaxVal;
+    const rawMin = Math.min(...allValues);
+    const rawMax = Math.max(...allValues);
+    let minVal = Infinity;
+    let maxValForDisplay = -Infinity;
     selectedSites.forEach(site => {
       const siteEcdf = ecdfData
         .filter(d => d.sites[site] !== undefined)
         .map(d => ({ x: d.value, y: d.sites[site] }))
         .sort((a, b) => a.x - b.x);
-
-      if (siteEcdf.length > 0) {
-        // Find the first point where ECDF reaches 100% (or very close to it)
-        const max100 = siteEcdf.find(p => p.y >= 0.9999)?.x || siteEcdf[siteEcdf.length - 1].x;
-        maxValForDisplay = Math.min(maxValForDisplay, max100 * 1.02); // Add 2% padding
-      }
+      if (siteEcdf.length === 0) return;
+      const lo = getPercentileFromECDF(siteEcdf, 0.5);
+      const hi = getPercentileFromECDF(siteEcdf, 99.5);
+      if (lo !== null) minVal = Math.min(minVal, lo);
+      if (hi !== null) maxValForDisplay = Math.max(maxValForDisplay, hi);
     });
-
-    // Ensure we show at least some range even if all values are identical
-    if (maxValForDisplay <= minVal) {
-      maxValForDisplay = rawMaxVal;
+    if (!isFinite(minVal) || !isFinite(maxValForDisplay) || maxValForDisplay <= minVal) {
+      minVal = rawMin;
+      maxValForDisplay = rawMax;
+    } else {
+      // 2% padding so the edge bars are not clipped, without re-admitting the tails.
+      const pad = (maxValForDisplay - minVal) * 0.02;
+      minVal = Math.max(rawMin, minVal - pad);
+      maxValForDisplay = Math.min(rawMax, maxValForDisplay + pad);
     }
 
     const range = maxValForDisplay - minVal;
