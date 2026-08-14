@@ -296,6 +296,30 @@ const STEPS = [
     },
   },
   {
+    // The export indents the four initial-ventilator-settings medians at the
+    // same depth as the `Initial ventilator mode:` categories above them, so
+    // the Table view renders them as apparent children of that group (their
+    // names carry no `Prefix:` stem, so no header of their own is synthesized).
+    // They are standalone first-24h settings rows — de-indent to depth 0, so
+    // they read like their neighbour `Time to extubation`.
+    name: 'vent-settings: de-indent from under Initial ventilator mode',
+    apply(rows) {
+      const SETTINGS = [
+        'FiO2 (%), median [Q1, Q3]',
+        'PEEP (cmH2O), median [Q1, Q3]',
+        'Respiratory rate (breaths/min), median [Q1, Q3]',
+        'Tidal volume (mL), median [Q1, Q3]',
+      ];
+      let n = 0;
+      const out = rows.map((r) => {
+        if (!/^\s/.test(r[0]) || !SETTINGS.includes(r[0].trim())) return r;
+        n++;
+        return [r[0].trim(), ...r.slice(1)];
+      });
+      return { rows: out, note: n ? `${n} settings row(s) de-indented` : 'no settings rows' };
+    },
+  },
+  {
     // MIMIC's de-identification shifts dates (~2110-2211). Its own cell keeps
     // the shifted range — that is what MIMIC's data really says — but the
     // consortium min-max must not read "2011-2211", so each __ALL recomputes
