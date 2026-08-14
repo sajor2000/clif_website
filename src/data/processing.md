@@ -11,9 +11,8 @@ pushes raw data or silently resurrects removed slices.
 | `src/data/_aggregated_new/` | **ignored** | Raw export as delivered (drop new exports here) |
 | `src/data/_aggregated/` | **ignored** | Preprocessed export — the only input the refresh scripts read |
 | `src/data/_aggregated_old/` | **ignored** | Previous export, kept for diffing |
-| `src/data/cohorts/` | tracked | Derived table_one + ancillary CSVs → `/cohort_wip` |
-| `src/data/cohort_wip_ecdf/` | tracked | Derived ECDF CSVs → `/cohort_wip` Distributions tab |
-| `src/data/cohort_dash_1/` | tracked | Frozen older dataset → public `/cohort` page (NOT refreshed by this pipeline) |
+| `src/data/cohorts/` | tracked | Derived table_one + ancillary CSVs → `/cohort` |
+| `src/data/cohort_ecdf/` | tracked | Derived ECDF CSVs → `/cohort` Distributions tab |
 
 `.gitignore` covers `src/data/_aggregated*/` — **raw exports must never be
 committed**; only derived, preprocessed CSVs enter the repo. `git status`
@@ -35,12 +34,12 @@ should never show anything under an `_aggregated` name.
    node scripts/refresh-cohort-tableone.mjs --dry-run   # inspect first
    node scripts/refresh-cohort-tableone.mjs             # writes src/data/cohorts/
    python3 scripts/refresh-cohort-ecdf.py --dry-run
-   python3 scripts/refresh-cohort-ecdf.py               # writes src/data/cohort_wip_ecdf/
+   python3 scripts/refresh-cohort-ecdf.py               # writes src/data/cohort_ecdf/
    ```
    Both scripts fail loudly on missing sources/sites — that is the point;
    do not paper over a MISSING SOURCE error.
 4. **Verify**: diff the derived dirs (site columns all present, row counts
-   plausible), `npm run build`, spot-check `/cohort_wip`.
+   plausible), `npm run build`, spot-check `/cohort`.
 5. **Commit** only the derived dirs (+ any script changes). Never `git add`
    an `_aggregated*` path.
 
@@ -150,6 +149,56 @@ into the export's own `Race: Other` row (the fold list includes `Other`
 itself so the counts sum into one row). Kept: White, Black or African
 American, Asian, Other.
 
+### Step 3 — Michigan batching repair (2026-08-14)
+
+Michigan ran TableOne in batches after out-of-memory failures: their
+`table_one_*` and `sofa_mortality_summary` files cover **2023–2024 only**
+(17,135 critically-ill encounter blocks), while their `strobe_counts.csv` and
+`upset_data.csv` were computed on the full multi-year database (66,799).
+The two file families describe different cohorts, so publishing both broke the
+consortium totals (STROBE/UpSet `__ALL` = 1,284,771 vs the table_one headline
+of 1,235,107). Implemented in `scripts/preprocess-aggregated.mjs`
+(`transformStrobe` / `transformUpset` / `transformSofa`):
+
+- **Rule 3a — Michigan dropped from strobe_counts and upset_data**
+  (`DROP_SITES`), and every `__ALL` recomputed from the surviving sites
+  (precedent: the deaths cohort omits OHSU/UCMC/UCSF the same way). The
+  strobe consortium total is now 1,217,972 = 1,235,107 − 17,135, i.e.
+  self-consistently ex-Michigan. Re-include Michigan by clearing `DROP_SITES`
+  once they re-run TableOne over their full range.
+- **Rule 3b — strobe `*_pct` rows' `__ALL` pooled, not summed**: recomputed as
+  numerator/denominator from the file's own recomputed count `__ALL`s
+  (`STROBE_PCT_ROWS` maps each pct row to its count rows). The raw export
+  sums site percentages, producing values like `sepsis_vaso_pct__ALL = 408`.
+- **Rule 3c — SOFA split-row merge**: the upstream merge appended Michigan's
+  rows under integer score labels (`0`) instead of merging with the
+  float-labelled block (`0.0`), yielding 47 rows for 24 scores with two
+  conflicting `__ALL`s each. Rows are merged on the numeric score (per-site
+  cells are disjoint; a genuine conflict fails loudly), and every `__ALL` is
+  recomputed: counts summed, `mortality_rate_percent__ALL` pooled as
+  deaths/encounters, 95% CI as the normal approximation on the pooled rate
+  (matches the per-site CI formula in the export). This also fixes the raw
+  export's summed-percentage `__ALL` (up to 800% in the deaths stratum,
+  where every site is definitionally 100%). Michigan's SOFA rows sit on the
+  same 2023–24 denominator as their table_one, so they are kept.
+
+Note: `strobe_counts.csv`, `upset_data.csv`, and `sofa_mortality_summary.csv`
+are currently consumed only by `CohortOutcomes.astro`, which is not rendered
+anywhere — these rules keep the tracked data correct for when it is wired up.
+
+### Step 4 — MIMIC date-shift Years repair (2026-08-14)
+
+MIMIC's de-identification shifts dates by ~a century (its `Years` cell reads
+`2110-2211`), which poisoned the consortium min-max: the table_one `Years`
+`__ALL` cell read `2011-2211`. Implemented in `preprocess-aggregated.mjs`
+(STEPS: "years: recompute __ALL without date-shifted sites"): each column
+group's `__ALL` in the `Years` row is recomputed from the sites whose range
+starts in the past (start year ≤ current year); MIMIC's own site cell keeps
+its shifted range — that is what MIMIC's data really says. The consortium
+cell now reads `2011-2026`. (MIMIC's encounters also appear in no real year
+column, so time-series tabs inherently exclude it — that is a property of
+date-shifted data, not of this rule.)
+
 ## Refresh history
 
 - **2026-08**: new export received as `_aggregated_new`; same file shapes and
@@ -170,7 +219,7 @@ American, Asian, Other.
     hospitalizations", with the full wording ("Inpatient hospitalizations with
     a ward stay at any point during the hospitalization") as a tooltip on the
     option and the picker control (`src/utils/cohortData.ts`,
-    `src/pages/cohort_wip.astro`).
+    `src/pages/cohort.astro`).
   - Tests updated for the fold/rename: sparse-denominator test retargeted to
     `Race: unknown` in the icu cohort (the folded location tails were the old
     sparse rows), and the consistency invariant accepts lowercase `: other`

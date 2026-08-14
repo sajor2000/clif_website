@@ -295,6 +295,41 @@ const STEPS = [
       return { rows: out, note: dropped ? `${dropped} Other row(s) dropped` : 'no Other rows' };
     },
   },
+  {
+    // MIMIC's de-identification shifts dates (~2110-2211). Its own cell keeps
+    // the shifted range — that is what MIMIC's data really says — but the
+    // consortium min-max must not read "2011-2211", so each __ALL recomputes
+    // from the sites whose range starts in the past.
+    name: 'years: recompute __ALL without date-shifted sites',
+    apply(rows) {
+      const header = rows[0];
+      const row = rows.find((r) => r[0].trim() === 'Years');
+      if (!row) return { rows, note: 'no Years row' };
+      const nowYear = new Date().getFullYear();
+      const groups = new Map(); // column group -> { sites: [idx...], all: idx }
+      header.forEach((h, i) => {
+        const m = h.match(/^(.*)__(.*)$/);
+        if (!m) return;
+        const g = groups.get(m[1]) ?? { sites: [], all: -1 };
+        if (m[2] === 'ALL') g.all = i;
+        else g.sites.push(i);
+        groups.set(m[1], g);
+      });
+      let recomputed = 0;
+      for (const g of groups.values()) {
+        if (g.all === -1) continue;
+        const spans = g.sites
+          .map((i) => (row[i] ?? '').trim().match(/^(\d{4})-(\d{4})$/))
+          .filter(Boolean)
+          .map((m) => [Number(m[1]), Number(m[2])])
+          .filter(([start]) => start <= nowYear);
+        if (spans.length === 0) continue;
+        row[g.all] = `${Math.min(...spans.map((s) => s[0]))}-${Math.max(...spans.map((s) => s[1]))}`;
+        recomputed++;
+      }
+      return { rows, note: `${recomputed} Years __ALL recomputed` };
+    },
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -370,6 +405,159 @@ function transformCrosstab(rows, file) {
 }
 
 // ---------------------------------------------------------------------------
+// Michigan batching repair (decided 2026-08-14, see src/data/processing.md).
+// Michigan ran TableOne in batches after OOM failures: their table_one and
+// SOFA files cover 2023-2024 only, while their strobe_counts and upset_data
+// were computed on the full multi-year database (66,799 critically-ill
+// encounter blocks vs table_one's 17,135). The two file families therefore
+// describe different cohorts, so Michigan's column is dropped from
+// strobe_counts/upset_data (precedent: the deaths cohort omits OHSU/UCMC/UCSF
+// the same way) and every __ALL is recomputed from the surviving sites.
+//
+// Michigan's SOFA rows DO sit on the same 2023-24 denominator as their
+// table_one and are kept — but the upstream merge appended them under integer
+// score labels ("0") instead of merging with the float-labelled block ("0.0").
+// transformSofa canonicalises the score key, merges the split rows, and
+// recomputes every __ALL: counts by summing sites, mortality by pooling
+// deaths/encounters — which also repairs the pre-existing summed-percentage
+// __ALL bug (rates up to 800% in the deaths stratum).
+// ---------------------------------------------------------------------------
+
+const DROP_SITES = ['Michigan'];
+
+// Numerator/denominator row pairs for strobe *_pct rows. The __ALL percentage
+// is pooled from the recomputed count __ALLs — never summed across sites.
+const STROBE_PCT_ROWS = {
+  sepsis_incidence_pct: ['sepsis_encounters', '5_all_critically_ill'],
+  sepsis_icu_pct: ['sepsis_icu_encounters', '1_icu_encounters'],
+  sepsis_advanced_resp_pct: ['sepsis_advanced_resp_encounters', '2_advanced_resp_support_hospitalizations'],
+  sepsis_vaso_pct: ['sepsis_vaso_encounters', '3_vasoactive_hospitalizations'],
+  sepsis_other_ci_pct: ['sepsis_other_ci_encounters', '4_other_critically_ill'],
+};
+
+const cellNum = (v) => {
+  const t = (v ?? '').trim();
+  if (t === '') return null;
+  const n = Number(t.replace(/,/g, ''));
+  if (Number.isNaN(n)) throw new Error(`unparseable numeric cell "${v}"`);
+  return n;
+};
+
+/** Drop the `<prefix>__<site>` columns for DROP_SITES and return the header
+ *  indices of the surviving per-site columns and the __ALL column. */
+function dropSiteColumns(rows, prefix, file) {
+  const header = rows[0];
+  // Not every file carries the dropped site (overall_ward's pipeline never
+  // included Michigan) — dropping is conditional, recomputing __ALL is not.
+  const dropIdx = new Set(
+    header.map((h, i) => (DROP_SITES.some((s) => h === `${prefix}__${s}`) ? i : -1)).filter((i) => i >= 0)
+  );
+  const out = rows.map((r) => r.filter((_, i) => !dropIdx.has(i)));
+  const siteIdx = out[0]
+    .map((h, i) => (h.startsWith(`${prefix}__`) && h !== `${prefix}__ALL` ? i : -1))
+    .filter((i) => i >= 0);
+  const allIdx = out[0].indexOf(`${prefix}__ALL`);
+  if (allIdx === -1) throw new Error(`no ${prefix}__ALL column in ${file}`);
+  return { rows: out, siteIdx, allIdx };
+}
+
+function transformStrobe(rows, file) {
+  const { rows: out, siteIdx, allIdx } = dropSiteColumns(rows, 'count_value', file);
+  const sums = new Map();
+  for (const r of out.slice(1)) {
+    const name = r[0].trim();
+    if (name.endsWith('_pct')) continue;
+    const sum = siteIdx.reduce((s, i) => s + (cellNum(r[i]) ?? 0), 0);
+    sums.set(name, sum);
+    r[allIdx] = String(sum);
+  }
+  for (const r of out.slice(1)) {
+    const name = r[0].trim();
+    if (!name.endsWith('_pct')) continue;
+    const pair = STROBE_PCT_ROWS[name];
+    if (!pair) throw new Error(`no numerator/denominator mapping for strobe row "${name}" in ${file}`);
+    const [num, den] = pair.map((n) => {
+      if (!sums.has(n)) throw new Error(`strobe row "${n}" (needed by "${name}") missing in ${file}`);
+      return sums.get(n);
+    });
+    r[allIdx] = den > 0 ? ((num / den) * 100).toFixed(1) : '';
+  }
+  return out;
+}
+
+function transformUpset(rows, file) {
+  const { rows: out, siteIdx, allIdx } = dropSiteColumns(rows, 'n', file);
+  for (const r of out.slice(1)) {
+    r[allIdx] = String(siteIdx.reduce((s, i) => s + (cellNum(r[i]) ?? 0), 0));
+  }
+  return out;
+}
+
+const SOFA_COUNT_METRICS = ['total_encounters', 'n_encounters', 'n_deaths'];
+
+function transformSofa(rows, file) {
+  const header = rows[0];
+  // metric -> { sites: [idx...], all: idx }
+  const metrics = new Map();
+  for (let c = 1; c < header.length; c++) {
+    const m = header[c].match(/^(.*)__([^_].*)$/);
+    if (!m) throw new Error(`unrecognised column "${header[c]}" in ${file}`);
+    const entry = metrics.get(m[1]) ?? { sites: [], all: -1 };
+    if (m[2] === 'ALL') entry.all = c;
+    else entry.sites.push(c);
+    metrics.set(m[1], entry);
+  }
+  for (const need of [...SOFA_COUNT_METRICS, 'mortality_rate_percent', 'ci_lower_95', 'ci_upper_95', 'ci_margin_95']) {
+    if (!metrics.has(need) || metrics.get(need).all === -1) {
+      throw new Error(`metric "${need}" (with __ALL) missing in ${file}`);
+    }
+  }
+
+  // Merge rows that share a numeric score ("0.0" and "0" are the same row
+  // split by the upstream merge; their per-site cells are disjoint).
+  const byScore = new Map();
+  for (const r of rows.slice(1)) {
+    const k = Number(r[0]);
+    if (Number.isNaN(k)) throw new Error(`non-numeric sofa_score "${r[0]}" in ${file}`);
+    const acc = byScore.get(k);
+    if (!acc) {
+      byScore.set(k, [...r]);
+      continue;
+    }
+    for (let c = 1; c < header.length; c++) {
+      if (header[c].endsWith('__ALL')) continue; // recomputed below
+      const a = (acc[c] ?? '').trim();
+      const b = (r[c] ?? '').trim();
+      if (a !== '' && b !== '' && a !== b) {
+        throw new Error(`conflicting values for sofa_score ${k}, column "${header[c]}" in ${file}: "${a}" vs "${b}"`);
+      }
+      if (a === '') acc[c] = b;
+    }
+  }
+
+  const out = [header];
+  for (const k of [...byScore.keys()].sort((a, b) => a - b)) {
+    const r = byScore.get(k);
+    r[0] = k.toFixed(1);
+    const sums = {};
+    for (const name of SOFA_COUNT_METRICS) {
+      const { sites, all } = metrics.get(name);
+      sums[name] = sites.reduce((s, i) => s + (cellNum(r[i]) ?? 0), 0);
+      r[all] = String(sums[name]);
+    }
+    const p = sums.n_encounters > 0 ? sums.n_deaths / sums.n_encounters : 0;
+    const rate = p * 100;
+    const margin = sums.n_encounters > 0 ? 1.96 * Math.sqrt((p * (1 - p)) / sums.n_encounters) * 100 : 0;
+    r[metrics.get('mortality_rate_percent').all] = rate.toFixed(2);
+    r[metrics.get('ci_lower_95').all] = Math.max(0, rate - margin).toFixed(2);
+    r[metrics.get('ci_upper_95').all] = Math.min(100, rate + margin).toFixed(2);
+    r[metrics.get('ci_margin_95').all] = margin.toFixed(2);
+    out.push(r);
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------------------
 // CSV I/O (RFC-4180 emit, quoting only when required — keeps diffs minimal)
 // ---------------------------------------------------------------------------
 
@@ -419,6 +607,26 @@ function main() {
     const out = transformCrosstab(parse(raw, { relax_column_count: true }), rel);
     if (!DRY) writeFileSync(join(OUT, rel), emitCSV(out));
     console.log(`  ${rel}: ${out.length - 4} race rows + Other, unknown columns dropped, totals recomputed`);
+  }
+
+  const special = [
+    ['**/strobe_counts.csv', transformStrobe, `dropped ${DROP_SITES.join('/')}, __ALL recomputed (pcts pooled)`],
+    ['**/upset_data.csv', transformUpset, `dropped ${DROP_SITES.join('/')}, n__ALL recomputed`],
+    ['**/sofa_mortality_summary*.csv', transformSofa, 'split score rows merged, __ALL recomputed (mortality pooled)'],
+  ];
+  for (const [pattern, transform, note] of special) {
+    // Only the roots the cohort refresh consumes — the export also carries a
+    // stray single-site tableone/ dir with a different column scheme.
+    const files = globSync(pattern, { cwd: SRC })
+      .filter((f) => /^(overall|overall_ward|strata)\//.test(f))
+      .sort();
+    console.log(`${DRY ? '[dry-run] ' : ''}${files.length} ${pattern} files to process`);
+    for (const rel of files) {
+      const raw = readFileSync(join(SRC, rel), 'utf-8');
+      const out = transform(parse(raw, { relax_column_count: true }), rel);
+      if (!DRY) writeFileSync(join(OUT, rel), emitCSV(out));
+      console.log(`  ${rel}: ${note}`);
+    }
   }
 
   console.log(DRY ? '\nDry run only — nothing written.' : `\nWrote ${relative(ROOT, OUT)}`);
