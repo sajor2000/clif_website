@@ -183,14 +183,22 @@ of 1,235,107). Implemented in `scripts/preprocess-aggregated.mjs`
   same 2023–24 denominator as their table_one, so they are kept.
 
 Note: as of 2026-08-14, `strobe_counts.csv`, `upset_data.csv`,
-`sofa_mortality_summary.csv`, `code_status_combined_summary.csv`, and
-`mortality_rates.csv` are **no longer tracked** under `src/data/cohorts/`:
+`sofa_mortality_summary.csv`, `code_status_combined_summary.csv`,
+`mortality_rates.csv`, and the `comorbidities_per_1000_*` pair are **no
+longer tracked** under `src/data/cohorts/`:
 their only reader (`CohortOutcomes.astro`) was dead code that never rendered,
 and several carried literal sub-10 counts, which the tracked, public data
 must not (this repo is public — the table_ones suppress to `<10`). The rules
 above still repair `_aggregated` locally, so re-tracking them — with n<10
 suppression added — is a one-line change in `refresh-cohort-tableone.mjs`
 (`ANCILLARY`) when an outcomes view actually ships.
+
+Before re-tracking `comorbidities_per_1000_*`, resolve the denominator
+question upstream: the export divides by hospitalizations *with diagnosis
+codes* (MIMIC: 42,782) while table_one counts all encounter blocks (MIMIC:
+89,832), so the same condition reads 31.0% vs 14.8% — a legitimate methods
+difference, but it must be labelled or reconciled before either number is
+published beside the other.
 
 ### Step 4 — MIMIC date-shift Years repair (2026-08-14)
 

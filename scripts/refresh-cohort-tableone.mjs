@@ -128,12 +128,11 @@ const SRC_DIR = {
 // Ancillary files: destination name -> export basename. Same for every cohort
 // that has them; a cohort simply lacking one is reported, not fatal.
 const ANCILLARY = {
-  'comorbidities_per_1000_hospitalizations.csv': 'comorbidities_per_1000_hospitalizations.csv',
-  'comorbidities_per_1000_hospitalizations_summary.csv': 'comorbidities_per_1000_hospitalizations_summary.csv',
   'demographic_crosstab_race_ethnicity_sex.csv': 'demographic_crosstab_race_ethnicity_sex.csv',
   'medications_hourly_data.csv': 'medications_hourly_data.csv',
   // sofa_mortality_summary / strobe_counts / upset_data /
-  // code_status_combined_summary / mortality_rates were untracked in Aug 2026:
+  // code_status_combined_summary / mortality_rates / comorbidities_per_1000_*
+  // were untracked in Aug 2026:
   // nothing rendered them (their only reader, CohortOutcomes.astro, was never
   // wired up) and several carried literal sub-10 counts, which the tracked,
   // public data must not (the table_ones suppress to "<10"). Re-add here —
