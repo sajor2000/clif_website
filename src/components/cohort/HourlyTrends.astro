@@ -1,102 +1,17 @@
 ---
-import fs from 'node:fs';
-import path from 'node:path';
-import { COHORTS, DEFAULT_COHORT, parseCohortCSV, siteLabel, compareSites, SITE_LABELS } from '../../utils/cohortData';
+import { siteLabel } from '../../utils/cohortData';
+import { getHourlyData } from '../../utils/hourlyPayload';
 
-const cohortDir = path.join(process.cwd(), 'src', 'data', 'cohorts');
-const HOURLY_COHORTS = COHORTS.filter((c) => c.hasHourly);
+// The heavy per-cohort payloads live behind the prerendered
+// /api/hourly-data/[cohort].json endpoint (built from the same
+// getHourlyData() call, so the two can never disagree); the client fetches
+// a cohort's data on first Hourly-tab activation.
+const { payloads, defaultKey } = getHourlyData();
 
-// Medication categories for grouping
-const medicationCategories = {
-  'Vasopressors': ['norepinephrine', 'epinephrine', 'phenylephrine', 'vasopressin', 'dopamine'],
-  'Sedatives & Analgesics': ['propofol', 'midazolam', 'lorazepam', 'dexmedetomidine', 'fentanyl'],
-  'Neuromuscular Blockers': ['vecuronium', 'rocuronium', 'cisatracurium']
-};
-
-function readIf(p: string): string | null {
-  return fs.existsSync(p) ? fs.readFileSync(p, 'utf-8') : null;
-}
-
-// New medications headers are metric-first (`<med>_<n|pct>__<Site>`, incl __ALL).
-// Rename to the old site-first shape (`<Site>__<med>_<metric>`) so the existing
-// client column-reconstruction works unchanged; line values stay in place.
-function transformMedications(content: string) {
-  const lines = content.trim().split('\n');
-  const headers = lines[0].split(',');
-  const sites = new Set<string>();
-  const meds = new Set<string>();
-  const newHeaders = headers.map((h, i) => {
-    if (i === 0) return 'hour';
-    const m = h.trim().match(/^(.+)_(n|pct)__(.+)$/);
-    if (!m) return h;
-    const [, med, metric, site] = m;
-    if (site !== 'ALL') { sites.add(site); meds.add(med); }
-    return `${site}__${med}_${metric}`;
-  });
-  return { sites: Array.from(sites).sort(compareSites), medications: Array.from(meds).sort(), headers: newHeaders, lines: lines.slice(1) };
-}
-
-// New respiratory headers are `<stat>__<Site>` (median/q25/q75). Rename to the old
-// `<Site>__<stat>` shape (client only reads `<site>__median`).
-function transformRespiratory(content: string) {
-  const lines = content.trim().split('\n');
-  const headers = lines[0].split(',');
-  const sites = new Set<string>();
-  const newHeaders = headers.map((h, i) => {
-    if (i === 0) return 'hour';
-    const m = h.trim().match(/^(.+?)__(.+)$/);
-    if (!m) return h;
-    const [, stat, site] = m;
-    if (site !== 'ALL') sites.add(site);
-    return `${site}__${stat}`;
-  });
-  return { sites: Array.from(sites).sort(compareSites), headers: newHeaders, lines: lines.slice(1) };
-}
-
-// Per-site IMV n from the cohort's table_one (weights for the aggregate median line).
-function imvWeightsFor(key: string): Record<string, number> {
-  const csv = readIf(path.join(cohortDir, key, 'table_one_by_year.csv'));
-  const w: Record<string, number> = {};
-  if (!csv) return w;
-  const parsed = parseCohortCSV(csv);
-  const row = parsed.characteristics.find((c) => c.variable.trim() === 'Invasive mechanical ventilation, n (%)');
-  if (row) {
-    for (const [site, ym] of row.sites) {
-      if (site === 'ALL') continue;
-      const v = ym.get('Overall') || '';
-      const n = parseInt((v.match(/^[\d,]+/)?.[0] || '0').replace(/,/g, ''), 10);
-      if (n) w[site] = n;
-    }
-  }
-  return w;
-}
-
-function payloadFor(key: string) {
-  const meds = transformMedications(fs.readFileSync(path.join(cohortDir, key, 'medications_hourly_data.csv'), 'utf-8'));
-  const pcsv = readIf(path.join(cohortDir, key, 'pressure_control_hourly.csv'));
-  const tcsv = readIf(path.join(cohortDir, key, 'tidal_volume_hourly.csv'));
-  const pressure = pcsv ? transformRespiratory(pcsv) : null;
-  const tidal = tcsv ? transformRespiratory(tcsv) : null;
-  return {
-    medications: { sites: meds.sites, items: meds.medications, headers: meds.headers, lines: meds.lines, categories: medicationCategories },
-    pressure_control: pressure ? { sites: pressure.sites, headers: pressure.headers, lines: pressure.lines } : null,
-    tidal_volume: tidal ? { sites: tidal.sites, headers: tidal.headers, lines: tidal.lines } : null,
-    imvWeights: imvWeightsFor(key),
-    hasRespiratory: !!pressure,
-  };
-}
-
-const cohortsPayload: Record<string, ReturnType<typeof payloadFor>> = {};
-for (const c of HOURLY_COHORTS) cohortsPayload[c.key] = payloadFor(c.key);
-// overall_ward has no hourly data, so the SSR default is the first hourly cohort.
-const defaultHourlyCohort = cohortsPayload[DEFAULT_COHORT] ? DEFAULT_COHORT : HOURLY_COHORTS[0].key;
-
-const dataJson = JSON.stringify(cohortsPayload[defaultHourlyCohort]);
-const cohortsJson = JSON.stringify(cohortsPayload);
-const defaultCohort = defaultHourlyCohort;
+const hourlyMetaJson = JSON.stringify({ default: defaultKey, cohorts: Object.keys(payloads) });
 
 // Template still reads these for SSR of the site checkboxes / header counts.
-const medicationsData = cohortsPayload[defaultHourlyCohort].medications;
+const medicationsData = payloads[defaultKey].medications;
 ---
 
 <div class="hourly-trends bg-white rounded-2xl shadow-xl p-6 md:p-8">
@@ -214,6 +129,8 @@ const medicationsData = cohortsPayload[defaultHourlyCohort].medications;
     <div class="mb-4">
       <h3 id="hourly-chart-title" class="text-lg font-bold text-gray-800"></h3>
     </div>
+    <!-- Inline notice for loading / failed data fetches -->
+    <div id="hourly-notice" class="hidden bg-amber-50 border-l-4 border-amber-400 p-3 rounded mb-4 text-sm font-semibold text-amber-800"></div>
     <div class="relative" style="height: 500px;">
       <canvas id="hourly-chart"></canvas>
     </div>
@@ -225,16 +142,29 @@ const medicationsData = cohortsPayload[defaultHourlyCohort].medications;
   </div>
 </div>
 
-<!-- JSON data storage -->
-<script type="application/json" id="hourly-data" set:html={dataJson}></script>
-<script type="application/json" id="hourly-cohorts-data" set:html={cohortsJson} data-default={defaultCohort}></script>
+<!-- JSON data storage (meta only — cohort payloads are fetched on demand) -->
+<script type="application/json" id="hourly-meta" set:html={hourlyMetaJson}></script>
 
 <script>
-  // All hourly cohorts; the active dataset is swapped when the cohort picker changes.
-  const HOURLY_COHORTS_DATA = JSON.parse(document.getElementById('hourly-cohorts-data').textContent);
-  const DEFAULT_HOURLY = document.getElementById('hourly-cohorts-data').getAttribute('data-default');
-  let activeCohort = (window.CohortBus && window.CohortBus.current && HOURLY_COHORTS_DATA[window.CohortBus.current]) ? window.CohortBus.current : DEFAULT_HOURLY;
-  let hourlyData = HOURLY_COHORTS_DATA[activeCohort];
+  // Hourly payloads are fetched from the prerendered /api/hourly-data
+  // endpoint on first Hourly-tab activation (and cached here) instead of
+  // being inlined into the page.
+  const HOURLY_META = JSON.parse(document.getElementById('hourly-meta').textContent);
+  const HOURLY_KEYS = HOURLY_META.cohorts || [];
+  const HOURLY_COHORTS_DATA = {};
+  const DEFAULT_HOURLY = HOURLY_META.default || HOURLY_KEYS[0];
+  let activeCohort = (window.CohortBus && window.CohortBus.current && HOURLY_KEYS.includes(window.CohortBus.current)) ? window.CohortBus.current : DEFAULT_HOURLY;
+  // Null until the first payload arrives — render entry points guard on it.
+  let hourlyData = null;
+
+  async function ensureHourlyData(key) {
+    if (!HOURLY_COHORTS_DATA[key]) {
+      const response = await fetch(`/api/hourly-data/${key}.json`);
+      if (!response.ok) throw new Error(`hourly data ${key}: HTTP ${response.status}`);
+      HOURLY_COHORTS_DATA[key] = await response.json();
+    }
+    return HOURLY_COHORTS_DATA[key];
+  }
 
   // Medication categories mapping (category value -> display name and medications)
   const medicationCategoryMap = {
@@ -342,21 +272,72 @@ const medicationsData = cohortsPayload[defaultHourlyCohort].medications;
   }
 
   // Initialize
-  document.addEventListener('DOMContentLoaded', () => {
-    initializeFilters();
+  // Lazy bootstrap: the payload is fetched on first Hourly-tab activation.
+  let hourlyReady = false;
+  let hourlyLoading = false;
+
+  function showHourlyNotice(text) {
+    const el = document.getElementById('hourly-notice');
+    if (!el) return;
+    el.textContent = text;
+    el.classList.remove('hidden');
+  }
+
+  async function initHourly() {
+    if (hourlyReady || hourlyLoading) return;
+    hourlyLoading = true;
+    showHourlyNotice('Loading hourly data…');
+    try {
+      await ensureHourlyData(activeCohort);
+    } catch (e) {
+      console.error('Hourly data failed to load:', e);
+      hourlyLoading = false;
+      showHourlyNotice('Hourly data could not be loaded. Check your connection and re-open this tab to try again.');
+      return;
+    }
+    hourlyLoading = false;
+    hourlyReady = true;
+    document.getElementById('hourly-notice')?.classList.add('hidden');
+    hourlyData = HOURLY_COHORTS_DATA[activeCohort];
     // Initialize medications dropdown for default category (vasopressors)
     handleCategoryChange(selectedMainCategory);
     rebuildHourlySiteCheckboxes();
     updateSiteFilterText();
     applyRespiratoryAvailability();
-    // React to the global cohort picker (window.CohortBus).
+    const instCount = document.getElementById('hourly-institution-count');
+    if (instCount) instCount.textContent = String((hourlyData.medications.sites || []).length);
+    updateChart();
+  }
+
+  document.addEventListener('clif:tab', (e) => {
+    if (e.detail === 'hourly') initHourly();
+  });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    initializeFilters();
+    // React to the global cohort picker (window.CohortBus). Before the first
+    // tab activation only the key is tracked; initHourly fetches it later.
     if (window.CohortBus && typeof window.CohortBus.subscribe === 'function') {
-      window.CohortBus.subscribe((key) => { const eff = HOURLY_COHORTS_DATA[key] ? key : key.split('__')[0]; if (HOURLY_COHORTS_DATA[eff] && eff !== activeCohort) reloadHourlyCohort(eff); });
+      window.CohortBus.subscribe((key) => {
+        const eff = HOURLY_KEYS.includes(key) ? key : key.split('__')[0];
+        if (!HOURLY_KEYS.includes(eff) || eff === activeCohort) return;
+        if (!hourlyReady) {
+          activeCohort = eff;
+          return;
+        }
+        ensureHourlyData(eff)
+          .then(() => reloadHourlyCohort(eff))
+          .catch((e) => {
+            console.error('Hourly data failed to load:', e);
+            showHourlyNotice('Data for this cohort could not be loaded. Check your connection and try again.');
+          });
+      });
     }
   });
 
   // Rebuild the site checkbox list from the active cohort's sites (keeps "All Sites").
   function rebuildHourlySiteCheckboxes() {
+    if (!hourlyData) return; // data not fetched yet
     const container = document.querySelector('#hourly-site-filter-dropdown .p-2');
     if (!container) return;
     const cbClass = 'hourly-site-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy';
@@ -369,6 +350,7 @@ const medicationsData = cohortsPayload[defaultHourlyCohort].medications;
 
   // Disable pressure/tidal categories for cohorts that ship no respiratory CSVs.
   function applyRespiratoryAvailability() {
+    if (!hourlyData) return; // data not fetched yet
     const catSelect = document.getElementById('hourly-category-select');
     if (!catSelect) return;
     Array.from(catSelect.options).forEach(opt => {
@@ -492,6 +474,7 @@ const medicationsData = cohortsPayload[defaultHourlyCohort].medications;
   }
 
   function updateChart() {
+    if (!hourlyData) return; // data not fetched yet
     // Destroy existing chart
     if (chart) {
       chart.destroy();

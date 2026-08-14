@@ -448,6 +448,9 @@ const subsByParent = Object.fromEntries(
           }
           if (content) content.classList.toggle('hidden', !on);
         });
+        // Tell tab components they just became visible — the Explorer and
+        // Hourly Trends fetch their (heavy) data on first activation.
+        document.dispatchEvent(new CustomEvent('clif:tab', { detail: name }));
         // Leaflet needs a resize once its container becomes visible.
         if (name === 'map') {
           setTimeout(() => {
