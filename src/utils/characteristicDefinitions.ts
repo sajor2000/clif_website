@@ -46,7 +46,7 @@ export const CHARACTERISTIC_DEFINITIONS: Record<string, CharacteristicDefinition
     text: 'Includes other ventilator modes like APRV, blow by, volume support, standby, etc.',
     source: 'scripts/preprocess-aggregated.mjs (rule 2d, src/data/processing.md)',
   },
-  'Extubation outcome: other': {
+  'IMV outcome: other': {
     text: 'Includes other outcomes like discharges without a charted extubation and failed extubation attempts (IMV episodes under 5 minutes).',
     source: 'scripts/preprocess-aggregated.mjs (rules 2e-2f, src/data/processing.md)',
   },
@@ -238,7 +238,7 @@ export const PREFIX_DEFINITIONS: Record<string, CharacteristicDefinition> = {
     text: 'The ADT location the patient occupied when invasive ventilation began — where they were intubated, not where they were admitted.',
     source: 'modules/tableone/generator.py',
   },
-  'Extubation outcome': {
+  'IMV outcome': {
     text: 'Whether a charted extubation was found for each IMV hospitalization. Extubation is inferred from the respiratory-support timeline — an invasive-ventilation reading followed by two consecutive readings off it — not from a recorded extubation event, and the status reflects the first ventilation episode, so a later reintubation does not change it. "No extubation recorded" therefore means the charting shows none, not that the patient left the hospital on a ventilator.',
     source: 'modules/tableone/extubation_calculator.py:245',
   },

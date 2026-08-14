@@ -124,9 +124,10 @@ simply ended, with true vent-facility discharges an unquantifiable subset.
 At ~21% of IMV hospitalizations it read as a clinical claim ("discharge on
 IMV") the data cannot support.
 
-**Rule 2f — honest row labels** (after 2e): the group keeps the export's own
-`Extubation outcome:` name; `death_on_imv` → `died, no extubation recorded`,
-`extubated` and `other` keep their names. Values untouched — rename only.
+**Rule 2f — honest labels** (after 2e): the group becomes `IMV outcome:` —
+the rows describe how the IMV course resolved, not only extubation;
+`death_on_imv` → `died, no extubation recorded`, `extubated` and `other`
+keep their names. Values untouched — rename only.
 (The earlier rename to `Terminal IMV outcome` / `discharged not on IMV` /
 `discharge on IMV` was retired 2026-08-14: the status is classified from the
 FIRST real ventilation episode, so it is not terminal — a patient extubated

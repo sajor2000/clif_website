@@ -268,7 +268,7 @@ const STEPS = [
     apply(rows) {
       const { rows: out, renamed } = relabelRowGroup(rows, {
         oldPrefix: 'Extubation outcome: ',
-        newPrefix: 'Extubation outcome: ',
+        newPrefix: 'IMV outcome: ',
         labels: {
           death_on_imv: 'died, no extubation recorded',
           // `extubated` keeps the export's own truthful word.
