@@ -27,8 +27,8 @@ const {
 const user = Astro.locals?.user ?? null;
 
 // Generate absolute URLs for meta tags
-const canonicalURL = new URL(Astro.url.pathname, Astro.site || 'https://clif-consortium.org');
-const imageURL = new URL(image, Astro.site || 'https://clif-consortium.org');
+const canonicalURL = new URL(Astro.url.pathname, Astro.site || 'https://clif-icu.com');
+const imageURL = new URL(image, Astro.site || 'https://clif-icu.com');
 
 // Don't show breadcrumbs on homepage
 const isHomepage = Astro.url.pathname === '/';
@@ -110,8 +110,8 @@ const shouldShowBreadcrumbs = showBreadcrumbs && !isHomepage;
         "@context": "https://schema.org",
         "@type": "Organization",
         "name": "CLIF Consortium",
-        "url": "https://clif-consortium.org",
-        "logo": "https://clif-consortium.org/images/clif_logo.png",
+        "url": "https://clif-icu.com",
+        "logo": "https://clif-icu.com/images/clif_logo.png",
         "description": "Common Longitudinal ICU data Format - Standardized framework for critical care research",
         "sameAs": ["https://github.com/Common-Longitudinal-ICU-data-Format/CLIF"]
       }

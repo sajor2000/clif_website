@@ -6,7 +6,7 @@ import sentry from '@sentry/astro';
 import vercel from '@astrojs/vercel';
 
 export default defineConfig({
-  site: 'https://clif-consortium.org',
+  site: 'https://clif-icu.com',
   output: 'server',
   adapter: vercel(),
   integrations: [
