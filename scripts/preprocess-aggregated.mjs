@@ -239,11 +239,17 @@ const STEPS = [
     },
   },
   {
-    name: 'extubation-outcome: fold unknown/failed_attempt into other',
+    name: 'extubation-outcome: fold unknown/failed_attempt/discharged_on_imv into other',
     apply(rows, file) {
       const { rows: out, folded } = foldRowGroup(rows, {
         matchPrefix: 'Extubation outcome: ',
-        fold: ['unknown', 'failed_attempt'],
+        // `discharged_on_imv` folds too (decided 2026-08-14): extubation is
+        // inferred from a charting pattern, so that bucket is "survived to
+        // discharge with no charted extubation" — mostly charting that simply
+        // ended, with true vent-facility discharges an unquantifiable subset.
+        // At 21% of IMV hospitalizations it reads as a clinical claim it
+        // cannot support, so it joins the documentation buckets in `other`.
+        fold: ['unknown', 'failed_attempt', 'discharged_on_imv'],
         into: 'other',
         file,
       });
@@ -252,15 +258,20 @@ const STEPS = [
   },
   {
     // Runs after the fold above, so `other` is already assembled.
-    name: 'extubation-outcome: rename to Terminal IMV outcome',
+    //
+    // The group KEEPS the export's own name — an earlier rename to
+    // "Terminal IMV outcome" overclaimed: the status is classified from the
+    // first real ventilation episode (extubation_calculator.py:245), so a
+    // patient extubated once and later reintubated and dying on the vent
+    // still reads `extubated`, and "terminal" it is not.
+    name: 'extubation-outcome: honest row labels',
     apply(rows) {
       const { rows: out, renamed } = relabelRowGroup(rows, {
         oldPrefix: 'Extubation outcome: ',
-        newPrefix: 'Terminal IMV outcome: ',
+        newPrefix: 'Extubation outcome: ',
         labels: {
-          extubated: 'discharged not on IMV',
-          death_on_imv: 'dead',
-          discharged_on_imv: 'discharge on IMV',
+          death_on_imv: 'died, no extubation recorded',
+          // `extubated` keeps the export's own truthful word.
         },
       });
       return { rows: out, note: renamed ? `${renamed} rows renamed` : 'no extubation rows' };

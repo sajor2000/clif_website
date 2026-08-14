@@ -114,16 +114,26 @@ every other label (`elective`, `other`, `na`, ...) into
 `Initial ventilator mode: ` row) into `Initial ventilator mode: other`.
 
 **Rule 2e — Extubation outcome** (fold-list: only the named labels fold, so
-an unexpected new label stays visible): fold `unknown` and `failed_attempt`
-into `Extubation outcome: other`; `extubated`, `death_on_imv`,
-`discharged_on_imv` stay.
+an unexpected new label stays visible): fold `unknown`, `failed_attempt`,
+and `discharged_on_imv` into `Extubation outcome: other`; `extubated` and
+`death_on_imv` stay. `discharged_on_imv` joined the fold on 2026-08-14:
+upstream extubation is inferred from a charting pattern (an IMV row followed
+by two consecutive non-IMV rows — extubation_calculator.py), so that bucket
+is "survived to discharge with no charted extubation" — mostly charting that
+simply ended, with true vent-facility discharges an unquantifiable subset.
+At ~21% of IMV hospitalizations it read as a clinical claim ("discharge on
+IMV") the data cannot support.
 
-**Rule 2f — rename to Terminal IMV outcome** (after 2e): the group becomes
-`Terminal IMV outcome:` with labels `extubated` → `discharged not on IMV`,
-`death_on_imv` → `dead`, `discharged_on_imv` → `discharge on IMV`; `other`
-keeps its name. Values untouched — rename only. The matching tooltip key in
-`src/utils/characteristicDefinitions.ts` (`PREFIX_DEFINITIONS`) was renamed
-with it; `denominatorBasis.ts` needs nothing (label-agnostic back-solver).
+**Rule 2f — honest row labels** (after 2e): the group keeps the export's own
+`Extubation outcome:` name; `death_on_imv` → `died, no extubation recorded`,
+`extubated` and `other` keep their names. Values untouched — rename only.
+(The earlier rename to `Terminal IMV outcome` / `discharged not on IMV` /
+`discharge on IMV` was retired 2026-08-14: the status is classified from the
+FIRST real ventilation episode, so it is not terminal — a patient extubated
+once and later dying on the vent reads `extubated` — and "discharge on IMV"
+asserted a discharge-time vent status that is not measured.) The matching
+tooltip keys in `src/utils/characteristicDefinitions.ts` moved with it;
+`denominatorBasis.ts` needs nothing (label-agnostic back-solver).
 
 **Rule 2g — Race/Ethnicity/Sex crosstab**
 (`demographic_crosstab_race_ethnicity_sex.csv`, one per cohort; plain patient

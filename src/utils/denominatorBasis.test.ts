@@ -39,10 +39,10 @@ describe('inferDenominatorBasis', () => {
     // in the chart when everything is divided by hospitalizations.
     expect(basis['Propofol (during IMV)']).toBe('Invasive mechanical ventilation, n (%)');
     expect(basis['Vasopressors, n (%) (during IMV)']).toBe('Invasive mechanical ventilation, n (%)');
-    expect(basis['Terminal IMV outcome: discharged not on IMV']).toBe('Invasive mechanical ventilation, n (%)');
+    expect(basis['Extubation outcome: extubated']).toBe('Invasive mechanical ventilation, n (%)');
 
     // Extubated patients — a population that is itself a percentage row.
-    expect(basis['Extubation failure ≤48hr, n (% of extubated)']).toBe('Terminal IMV outcome: discharged not on IMV');
+    expect(basis['Extubation failure ≤48hr, n (% of extubated)']).toBe('Extubation outcome: extubated');
 
     // Unique patients, not hospitalizations, for demographics.
     expect(basis['Race: White']).toBe('N: Unique patients');
