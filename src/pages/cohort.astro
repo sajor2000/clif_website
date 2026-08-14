@@ -35,7 +35,6 @@ function headlineFor(key: string) {
     label: sub ? `${def.label} — ${sub.label}` : def.label,
     group: sub ? 'critically_ill' : def.group,
     hasHourly: def.hasHourly,
-    hasSofa: def.hasSofa,
     // Derived from disk rather than declared, so it cannot drift from what the
     // Distributions tab can actually load. Sub-cohorts have no ECDF folder of
     // their own and fall back to the parent, matching DataDistributions.

@@ -182,9 +182,15 @@ of 1,235,107). Implemented in `scripts/preprocess-aggregated.mjs`
   where every site is definitionally 100%). Michigan's SOFA rows sit on the
   same 2023–24 denominator as their table_one, so they are kept.
 
-Note: `strobe_counts.csv`, `upset_data.csv`, and `sofa_mortality_summary.csv`
-are currently consumed only by `CohortOutcomes.astro`, which is not rendered
-anywhere — these rules keep the tracked data correct for when it is wired up.
+Note: as of 2026-08-14, `strobe_counts.csv`, `upset_data.csv`,
+`sofa_mortality_summary.csv`, `code_status_combined_summary.csv`, and
+`mortality_rates.csv` are **no longer tracked** under `src/data/cohorts/`:
+their only reader (`CohortOutcomes.astro`) was dead code that never rendered,
+and several carried literal sub-10 counts, which the tracked, public data
+must not (this repo is public — the table_ones suppress to `<10`). The rules
+above still repair `_aggregated` locally, so re-tracking them — with n<10
+suppression added — is a one-line change in `refresh-cohort-tableone.mjs`
+(`ANCILLARY`) when an outcomes view actually ships.
 
 ### Step 4 — MIMIC date-shift Years repair (2026-08-14)
 

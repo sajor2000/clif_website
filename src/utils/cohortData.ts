@@ -40,8 +40,6 @@ export interface CohortDef {
   hasOverallFile: boolean;
   /** Has medications_hourly_data.csv */
   hasHourly: boolean;
-  /** Has sofa_mortality_summary.csv */
-  hasSofa: boolean;
   /**
    * Withheld from the picker while its numbers are still being verified. The
    * definition and its CSVs stay in place — flip this off to restore it.
@@ -62,7 +60,6 @@ export const COHORTS: CohortDef[] = [
     group: 'overall',
     hasOverallFile: true,
     hasHourly: false,
-    hasSofa: false,
   },
   {
     key: 'overall',
@@ -73,7 +70,6 @@ export const COHORTS: CohortDef[] = [
     group: 'critically_ill',
     hasOverallFile: true,
     hasHourly: true,
-    hasSofa: true,
   },
   {
     key: 'icu',
@@ -81,7 +77,6 @@ export const COHORTS: CohortDef[] = [
     group: 'critically_ill',
     hasOverallFile: false,
     hasHourly: true,
-    hasSofa: true,
   },
   {
     key: 'advanced_resp',
@@ -89,7 +84,6 @@ export const COHORTS: CohortDef[] = [
     group: 'critically_ill',
     hasOverallFile: false,
     hasHourly: true,
-    hasSofa: true,
   },
   {
     key: 'vaso',
@@ -97,7 +91,6 @@ export const COHORTS: CohortDef[] = [
     group: 'critically_ill',
     hasOverallFile: false,
     hasHourly: true,
-    hasSofa: true,
   },
   {
     key: 'deaths',
@@ -105,7 +98,6 @@ export const COHORTS: CohortDef[] = [
     group: 'critically_ill',
     hasOverallFile: false,
     hasHourly: true,
-    hasSofa: true,
   },
 ];
 

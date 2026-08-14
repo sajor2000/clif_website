@@ -132,11 +132,14 @@ const ANCILLARY = {
   'comorbidities_per_1000_hospitalizations_summary.csv': 'comorbidities_per_1000_hospitalizations_summary.csv',
   'demographic_crosstab_race_ethnicity_sex.csv': 'demographic_crosstab_race_ethnicity_sex.csv',
   'medications_hourly_data.csv': 'medications_hourly_data.csv',
-  'sofa_mortality_summary.csv': 'sofa_mortality_summary.csv',
-  'mortality_rates.csv': 'mortality_rates.csv',
-  'strobe_counts.csv': 'strobe_counts.csv',
-  'upset_data.csv': 'upset_data.csv',
-  'code_status_combined_summary.csv': 'code_status_combined_summary.csv',
+  // sofa_mortality_summary / strobe_counts / upset_data /
+  // code_status_combined_summary / mortality_rates were untracked in Aug 2026:
+  // nothing rendered them (their only reader, CohortOutcomes.astro, was never
+  // wired up) and several carried literal sub-10 counts, which the tracked,
+  // public data must not (the table_ones suppress to "<10"). Re-add here —
+  // with n<10 suppression — if an outcomes view ships. The preprocessing
+  // repairs (Steps 3-4 in src/data/processing.md) still run on _aggregated,
+  // so the local derivation stays correct in the meantime.
   // Renamed in the _aggregated export; same columns (hour_bin + <stat>__<Site>).
   'pressure_control_hourly.csv': 'pressure_control_pressure_control_mode.csv',
   'tidal_volume_hourly.csv': 'tidal_volume_volume_control_modes.csv',
