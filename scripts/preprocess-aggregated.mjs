@@ -298,12 +298,23 @@ const STEPS = [
     // them. Sex: Other is 190 patients consortium-wide (0.0%);
     // Ethnicity: Other (~11% of encounters) is dropped by product decision —
     // the remaining rows are Non-Hispanic / Hispanic only.
-    name: 'demographics: drop Other rows',
+    // The Unknown/Missing rows joined the list 2026-08-17: the export already
+    // omits them from the overall/overall_ward table_ones, so the strata
+    // showed rows the "All" cohort hid — dropping them here makes every
+    // cohort read the same (and matches the crosstab's rule 2g treatment).
+    name: 'demographics: drop Other/Unknown/Missing rows',
     apply(rows) {
-      const DROP = ['Sex: Other', 'Ethnicity: Other'];
+      const DROP = [
+        'Sex: Other',
+        'Ethnicity: Other',
+        'Sex: Unknown',
+        'Sex: Missing',
+        'Ethnicity: Unknown',
+        'Ethnicity: Missing',
+      ];
       const out = rows.filter((r) => !DROP.includes(r[0].trim()));
       const dropped = rows.length - out.length;
-      return { rows: out, note: dropped ? `${dropped} Other row(s) dropped` : 'no Other rows' };
+      return { rows: out, note: dropped ? `${dropped} demographic row(s) dropped` : 'no droppable demographic rows' };
     },
   },
   {

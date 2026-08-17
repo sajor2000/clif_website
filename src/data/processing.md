@@ -147,11 +147,17 @@ Total row from the surviving cells. The dashboard's crosstab
 (`DemographicCrosstab.astro`) carries a tooltip on the `Other` row naming the
 folded categories.
 
-**Rule 2h — Sex: Other and Ethnicity: Other dropped**: both rows are removed
-from all table_ones. Dropped rather than folded — there is no sibling
+**Rule 2h — Sex and Ethnicity Other/Unknown/Missing dropped**: `Sex: Other`,
+`Ethnicity: Other`, and the `Unknown`/`Missing` rows of both groups are
+removed from all table_ones. Dropped rather than folded — there is no sibling
 category to absorb them. `Sex: Other` is 190 patients consortium-wide (0.0%);
 `Ethnicity: Other` is ~11% of encounters and was dropped by product decision
-(2026-08-13), leaving Non-Hispanic / Hispanic as the ethnicity rows.
+(2026-08-13), leaving Non-Hispanic / Hispanic as the ethnicity rows. The
+`Unknown`/`Missing` rows joined the drop list 2026-08-17: the export already
+omits them from the overall and overall_ward table_ones but ships them in the
+four strata, so the strata showed rows the "All" cohort hid — dropping them
+in preprocessing makes every cohort read the same (and matches the crosstab's
+rule 2g treatment of its Unknown columns).
 
 **Rule 2i — Race tail folded into Other (table_ones)**: mirrors rule 2g in
 the table_ones — `Race: american indian or alaska native`,
@@ -226,6 +232,13 @@ date-shifted data, not of this rule.)
 
 ## Refresh history
 
+- **2026-08-17 (later same day)**: rule 2h extended to drop
+  `Sex/Ethnicity: Unknown` and `Missing` from all table_ones — the strata
+  files carried them while the overall files never did, so the dashboard
+  showed them in every cohort except "All Critically Ill". Data re-derived
+  (only those 4 rows × 4 strata changed); the denominator-basis sparse-row
+  test now synthesizes its sparse case, since no shipped row sits below the
+  evidence bar any more.
 - **2026-08-17**: rerun aggregation (12-site roster). UCMC's deaths-stratum
   results, absent from every earlier export, are now included — deaths gains
   UCMC across table_one, medications, crosstab, and all bins/ECDFs; the other

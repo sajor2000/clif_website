@@ -89,14 +89,18 @@ describe('inferDenominatorBasis', () => {
   });
 
   it('gives a sparse row its group\'s denominator, when the group agrees', () => {
-    // The category tails that used to supply sparse rows are folded into
-    // `other` at preprocessing time (src/data/processing.md), so the live
-    // sparse case is now Ethnicity: Missing in the icu cohort: one site
-    // reports it, and a single claim cannot single out a population, so the
-    // evidence pass leaves it alone and its siblings carry the answer.
+    // Preprocessing folds or drops every row that used to sit below the
+    // evidence bar (src/data/processing.md rules 2a–2h — the last live case,
+    // Ethnicity: Missing, was dropped 2026-08-17), so the sparse case is
+    // synthesized: Ethnicity: Hispanic thinned to a single site. One claim
+    // cannot single out a population, so the evidence pass must leave it
+    // alone and its sibling carries the answer.
     const { parsed } = basisFor('icu');
     const POP = 'N: Unique patients';
-    const sparse = 'Ethnicity: Missing';
+    const sparse = 'Ethnicity: Hispanic';
+    const row = parsed.characteristics.find((c) => c.variable.trim() === sparse)!;
+    const keep = parsed.allSites.find((s) => cellCount(row.sites.get(s)?.get('Overall')) != null)!;
+    for (const site of [...row.sites.keys()]) if (site !== keep) row.sites.delete(site);
     const measured = inferDenominatorBasis(parsed, { skip: REBASED, inherit: false });
     const inherited = inferDenominatorBasis(parsed, { skip: REBASED });
 
