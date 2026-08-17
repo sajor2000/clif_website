@@ -226,6 +226,16 @@ date-shifted data, not of this rule.)
 
 ## Refresh history
 
+- **2026-08-17**: rerun aggregation (12-site roster). UCMC's deaths-stratum
+  results, absent from every earlier export, are now included — deaths gains
+  UCMC across table_one, medications, crosstab, and all bins/ECDFs; the other
+  cohorts pick up the rerun's refreshed numbers. An earlier same-day upload
+  had regenerated the deaths files *without* UCMC — always verify the target
+  stratum actually contains a newly-announced site before refreshing. The
+  Michigan int/float SOFA split (rule 3c) now affects every stratum's
+  `sofa_mortality_summary` (not just deaths) and the crosstab `Unknown`
+  columns (rule 2g) appear in all cohorts; both repairs applied cleanly with
+  no script changes.
 - **2026-08**: new export received as `_aggregated_new`; same file shapes and
   site roster (11 sites + ALL) as the previous export, plus one added parquet
   (`strata/vaso/bins/respiratory_support/pressure_control_set_ed_ward.parquet`).
