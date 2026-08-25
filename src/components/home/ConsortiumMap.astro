@@ -87,8 +87,11 @@ const sitesJSON = JSON.stringify(sites);
     <!-- Stats Bar -->
     <div class="flex justify-center gap-6 sm:gap-10 mt-5">
       <div class="text-center">
+        <!-- "Sites", not "Institutions": this counts rows on the map (contributing
+             plus Coming Soon), which is a different roster from the team page's
+             institution list. -->
         <div class="text-2xl font-bold text-clif-burgundy">{totalInstitutions}</div>
-        <div class="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">Institutions</div>
+        <div class="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">Sites</div>
       </div>
       <div class="text-center">
         <div class="text-2xl font-bold text-clif-burgundy">{totalHospitals}</div>
