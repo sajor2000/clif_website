@@ -34,6 +34,18 @@ export interface CohortDef {
   tooltip?: string;
   /** Patient-framed variant of `tooltip`, for tiles that count patients rather than hospitalizations */
   patientTooltip?: string;
+  /**
+   * Population phrase in the /cohort hero sentence ("Insights from N unique
+   * <noun> ..."). Omit for the critically-ill strata: each is a subset of that
+   * union, so the default wording already describes them.
+   */
+  noun?: string;
+  /**
+   * One line under the hero explaining a cohort whose scope differs from the
+   * default in a way the numbers alone do not convey. A `{sites}` token is
+   * replaced with the cohort's contributing-site count at build time.
+   */
+  description?: string;
   /** Top-level grouping for the two-level picker */
   group: CohortGroup;
   /** Has a standalone table_one_overall.csv (else derive summary from the by-year Overall block) */
@@ -57,6 +69,12 @@ export const COHORTS: CohortDef[] = [
     label: 'Ward-stay hospitalizations',
     tooltip: 'Inpatient hospitalizations with a ward stay at any point during the hospitalization',
     patientTooltip: 'Unique patients with at least one inpatient hospitalization that included a ward stay',
+    // This cohort is not a subset of the critically ill one — it is a larger
+    // population drawn from fewer sites, so patients rise while sites fall.
+    // The contrast against the default cohort is what makes that legible.
+    noun: 'adult inpatients',
+    description:
+      '{sites} CLIF sites contribute complete acute care data — every adult admitted to an inpatient ward, not only those who became critically ill.',
     group: 'overall',
     hasOverallFile: true,
     hasHourly: false,
