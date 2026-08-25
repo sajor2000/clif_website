@@ -11,6 +11,7 @@ export const SITE_ABBREVIATIONS: Record<string, string> = {
   'Northwestern University': 'NU',
   'Oregon Health & Science University': 'OHSU',
   'Rush University': 'Rush',
+  'Stanford University': 'Stanford',
   'University of California San Francisco': 'UCSF',
   'University of Chicago': 'UCMC',
   'University of Colorado': 'UColorado',

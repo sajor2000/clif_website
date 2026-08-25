@@ -1,44 +1,8 @@
 ---
 // Interactive Consortium Map - Shows CLIF sites with institution logos
-import { readFile } from 'fs/promises';
-import { join } from 'path';
+import { loadSiteDetails, siteTotals, type SiteDetail } from '../../utils/siteDetails';
 
-// Read and parse the CSV file at build time
-const csvPath = join(process.cwd(), 'src', 'data', 'site_details.csv');
-const csvContent = await readFile(csvPath, 'utf-8');
-const lines = csvContent.trim().split('\n');
-
-// Parse CSV helper
-function parseCSVLine(line: string): string[] {
-  const result: string[] = [];
-  let current = '';
-  let inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-    if (char === '"') {
-      inQuotes = !inQuotes;
-    } else if (char === ',' && !inQuotes) {
-      result.push(current);
-      current = '';
-    } else {
-      current += char;
-    }
-  }
-  result.push(current);
-  return result;
-}
-
-interface SiteData {
-  name: string;
-  location: string;
-  latitude: number;
-  longitude: number;
-  dataReady: boolean;
-  hospitals: number;
-  encounters: number;
-  patients: number;
-  logoFile: string | null;
-}
+type SiteData = SiteDetail & { logoFile: string | null };
 
 // Logo mapping: site name substring → logo filename
 const logoMap: Record<string, string> = {
@@ -57,6 +21,7 @@ const logoMap: Record<string, string> = {
   'Harvard': 'harvard.png',
   'University of Colorado': 'cu.png',
   'Yale': 'yale.png',
+  'Stanford': 'stanford.png',
 };
 
 function findLogo(siteName: string): string | null {
@@ -66,32 +31,11 @@ function findLogo(siteName: string): string | null {
   return null;
 }
 
-const sites: SiteData[] = [];
-for (let i = 1; i < lines.length; i++) {
-  const values = parseCSVLine(lines[i]);
-  if (values.length >= 8) {
-    const latStr = values[2].trim().replace(/−/g, '-');
-    const lonStr = values[3].trim().replace(/−/g, '-');
-    const name = values[0].trim();
-    sites.push({
-      name,
-      location: values[1].trim(),
-      latitude: parseFloat(latStr),
-      longitude: parseFloat(lonStr),
-      dataReady: values[4].trim().toLowerCase() === 'yes',
-      hospitals: values[5].trim() ? parseInt(values[5].trim().replace(/,/g, '')) : 0,
-      encounters: values[6].trim() ? parseInt(values[6].trim().replace(/,/g, '')) : 0,
-      patients: values[7].trim() ? parseInt(values[7].trim().replace(/,/g, '')) : 0,
-      logoFile: findLogo(name),
-    });
-  }
-}
+const details = loadSiteDetails();
+const sites: SiteData[] = details.map((s) => ({ ...s, logoFile: findLogo(s.name) }));
 
-const totalInstitutions = sites.length;
-const activeSites = sites.filter(s => s.dataReady).length;
-const upcomingSites = sites.filter(s => !s.dataReady).length;
-const totalHospitals = sites.reduce((sum, s) => sum + s.hospitals, 0);
-const totalPatients = sites.reduce((sum, s) => sum + s.patients, 0);
+const totals = siteTotals(details);
+const { institutions: totalInstitutions, activeSites, upcomingSites, hospitals: totalHospitals, patients: totalPatients } = totals;
 
 const sitesJSON = JSON.stringify(sites);
 ---
@@ -209,9 +153,12 @@ const sitesJSON = JSON.stringify(sites);
     position: relative;
     z-index: 1;
     transition: transform 0.2s ease;
+    /* Per-site logo nudge (see logoNudges), composed with the hover scale below
+       so a nudged logo still grows on hover. */
+    transform: translate(var(--logo-dx, 0px), var(--logo-dy, 0px));
   }
   :global(.logo-marker:hover .logo-box) {
-    transform: scale(1.2);
+    transform: translate(var(--logo-dx, 0px), var(--logo-dy, 0px)) scale(1.2);
   }
   :global(.logo-marker .logo-box img) {
     height: 80px;
@@ -399,12 +346,32 @@ const sitesJSON = JSON.stringify(sites);
       'University of Pennsylvania': [0.5, -0.5],
       'Johns Hopkins University': [-0.5, -0.5],
       'Yale University': [0, 2.2],
+      // Stanford is 34 miles from UCSF — about 3px at this zoom — so its marker
+      // has to move a long way to clear the UCSF logo, the same license the
+      // Chicago trio above takes. This is the north-west-most placement that
+      // works: east far enough that the pushpin clears UCSF's right edge, south
+      // far enough that the wordmark clears its bottom, and no further. Due
+      // south would be the Pacific; this lands just inland of Monterey Bay.
+      'Stanford University': [-1.12, 2.84],
     };
 
     // Per-site pin nudge in pixels [x, y] (negative x = west, positive y = south).
     // Lets us shift just the pin without moving the institution logo.
     const pinNudges = {
       'Yale University': [-70, 0],
+      // The wordmark is pinned east by the UCSF collision, but the pin itself
+      // can drift back toward the Peninsula: it is far narrower than the
+      // wordmark, so it clears UCSF long before the wordmark would. West and up
+      // until it is a few pixels off UCSF's "F".
+      'Stanford University': [-9, -9],
+    };
+
+    // Per-site logo nudge in pixels [x, y], the mirror of pinNudges: shifts the
+    // wordmark without moving the pin.
+    const logoNudges = {
+      // Close the gap the pin's lift opened up, so the needle tip touches the
+      // wordmark again. Capped by UCSF's logo just above it.
+      'Stanford University': [0, -8],
     };
 
     // Custom logo sizes: [height, maxWidth] in px
@@ -425,6 +392,7 @@ const sitesJSON = JSON.stringify(sites);
       'Harvard University / MIMIC-IV':             [70, 100],
       'University of Colorado':                    [60, 100],
       'Yale University':                           [40, 180],
+      'Stanford University':                       [22, 110],
     };
 
     // Add markers
@@ -476,8 +444,10 @@ const sitesJSON = JSON.stringify(sites);
       const [baseH, baseW] = logoSizes[site.name] || [70, 140];
       const logoH = Math.round(baseH * sizeScale);
       const logoW = Math.round(baseW * sizeScale);
+      const [logoDX, logoDY] = (logoNudges[site.name] || [0, 0]).map((n) => Math.round(n * sizeScale));
+      const logoVars = (logoDX || logoDY) ? `--logo-dx:${logoDX}px;--logo-dy:${logoDY}px;` : '';
       const inner = site.logoFile
-        ? `<div class="logo-box"><img src="/images/logos/sites/${site.logoFile}" alt="${site.name}" style="height:${logoH}px;max-width:${logoW}px;" /></div>`
+        ? `<div class="logo-box" style="${logoVars}"><img src="/images/logos/sites/${site.logoFile}" alt="${site.name}" style="height:${logoH}px;max-width:${logoW}px;" /></div>`
         : `<div class="text-fallback">${site.name.charAt(0)}</div>`;
 
       if (!site.dataReady) {
