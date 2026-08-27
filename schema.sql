@@ -124,7 +124,12 @@ CREATE TABLE IF NOT EXISTS manuscripts (
   cite TEXT,
   contributing_sites TEXT,
   lead_site TEXT,
+  lead_author TEXT,
+  lead_data_scientist TEXT,
   validation_buddy TEXT,
+  -- Single canonical slug from src/lib/manuscript-priority.js, or NULL when
+  -- the manuscript has not been triaged.
+  priority TEXT,
   notes TEXT,
   sort_order INTEGER NOT NULL DEFAULT 0,
   updated_at TEXT,

@@ -12,6 +12,14 @@ import {
   statusLabel,
   statusClasses,
 } from '../../lib/manuscript-status.js';
+import {
+  PRIORITY_ORDER,
+  PRIORITY_EMPTY_CLASSES,
+  normalizePriority,
+  priorityLabel,
+  priorityClasses,
+  priorityRank,
+} from '../../lib/manuscript-priority.js';
 import { isNamedOnManuscript } from '../../lib/manuscript-access';
 import { abbreviateSites, siteAliasMap } from '../../lib/site-abbreviations';
 import { parseName } from '../../lib/format-byline';
@@ -90,6 +98,9 @@ try {
 // Precompute the canonical status slugs for rendering chips + client editing.
 const rows = manuscripts.map((m) => {
   const statusSlugs = normalizeStatus(m.status as string | null);
+  // Stored values predating the column, or hand-edited ones, resolve to null
+  // rather than rendering an unknown chip.
+  const prioritySlug = normalizePriority(m.priority as string | null);
   // Precomputed lowercase haystack for the search box. Built server-side so it
   // isn't polluted by the inline status <select> options (which contain every
   // label) and still matches on any status tag the manuscript carries.
@@ -108,6 +119,7 @@ const rows = manuscripts.map((m) => {
     m.validation_buddy,
     m.notes,
     ...statusSlugs.map((s: string) => statusLabel(s)),
+    prioritySlug ? priorityLabel(prioritySlug) : null,
   ]
     .filter(Boolean)
     .join(' ')
@@ -115,6 +127,7 @@ const rows = manuscripts.map((m) => {
   return {
     ...m,
     statusSlugs,
+    prioritySlug,
     latest: latestStatus(statusSlugs) as string | null,
     searchText,
     canDelete: isAdmin || isNamedOnManuscript(user?.full_name, m),
@@ -128,6 +141,13 @@ for (const slug of Object.keys(MANUSCRIPT_STATUS_TAGS)) {
   statusClassMap[slug] = statusClasses(slug);
 }
 const STATUS_EMPTY_CLASSES = 'bg-gray-100 text-gray-600 dark:bg-neutral-700 dark:text-gray-400';
+
+// Same trick for priority, so the inline priority dropdown can recolor itself.
+const priorityClassMap: Record<string, string> = {};
+for (const slug of PRIORITY_ORDER) priorityClassMap[slug] = priorityClasses(slug);
+const priorityOptions = PRIORITY_ORDER.map((slug) => ({ slug, label: priorityLabel(slug) }));
+const priorityRanks: Record<string, number> = { _unset: priorityRank(null) };
+for (const slug of PRIORITY_ORDER) priorityRanks[slug] = priorityRank(slug);
 
 // Status tag options for the admin add/edit form (in canonical order).
 const statusOptions = Object.entries(MANUSCRIPT_STATUS_TAGS).map(([slug, t]) => ({
@@ -173,6 +193,7 @@ const editData = rows.map((m) => ({
   contributing_sites: m.contributing_sites ?? '',
   lead_site: m.lead_site ?? '',
   validation_buddy: m.validation_buddy ?? '',
+  priority: m.prioritySlug ?? '',
   github_repo: m.github_repo ?? '',
   manuscript_link: m.manuscript_link ?? '',
   cite: m.cite ?? '',
@@ -285,6 +306,7 @@ const filterCtrlClass =
                   <thead class="sticky top-0 z-30">
                     <tr class="bg-gray-50 dark:bg-neutral-700 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
                       <th class="px-4 py-3 min-w-[18rem]" data-sort-key="title"><span class="th-label">Title</span><span class="sort-ind"></span></th>
+                      <th class="px-4 py-3 whitespace-nowrap" data-sort-key="priority"><span class="th-label">Priority</span><span class="sort-ind"></span></th>
                       <th class="px-4 py-3 whitespace-nowrap" data-sort-key="leadsite"><span class="th-label">Lead site</span><span class="sort-ind"></span></th>
                       <th class="px-4 py-3 whitespace-nowrap" data-sort-key="leadauthor"><span class="th-label">Lead author</span><span class="sort-ind"></span></th>
                       <th class="px-4 py-3 whitespace-nowrap" data-sort-key="lds"><span class="th-label">Lead data scientist</span><span class="sort-ind"></span></th>
@@ -303,6 +325,16 @@ const filterCtrlClass =
                     <tr class="bg-gray-50 dark:bg-neutral-700 border-t border-gray-200 dark:border-neutral-700 align-top">
                       <th class="px-4 pb-3 font-normal normal-case">
                         <input type="text" data-filter-attr="data-sort-title" data-filter-mode="text" placeholder="Filter title…" class={filterCtrlClass} aria-label="Filter by title" />
+                      </th>
+                      <th class="px-4 pb-3 font-normal normal-case">
+                        {/* Filters on data-priority (the slug) rather than
+                            data-sort-priority (a numeric rank), so "Not set"
+                            is expressible as its own option. */}
+                        <select data-filter-attr="data-priority" data-filter-mode="eq" class={filterCtrlClass} aria-label="Filter by priority">
+                          <option value="">All</option>
+                          {priorityOptions.map((opt) => <option value={opt.slug}>{opt.label}</option>)}
+                          <option value="none">Not set</option>
+                        </select>
                       </th>
                       <th class="px-4 pb-3 font-normal normal-case">
                         <select data-filter-attr="data-sort-leadsite" data-filter-mode="multi" class={filterCtrlClass} aria-label="Filter by lead site">
@@ -392,6 +424,8 @@ const filterCtrlClass =
                         data-sort-leadauthor={(m.lead_author ?? '').toLowerCase()}
                         data-sort-lds={(m.lead_data_scientist ?? '').toLowerCase()}
                         data-sort-status={m.latest ? STATUS_PROGRESSION.indexOf(m.latest) : -1}
+                        data-priority={m.prioritySlug ?? 'none'}
+                        data-sort-priority={priorityRank(m.prioritySlug)}
                         data-sort-journal={(m.journal ?? '').toLowerCase()}
                         data-sort-ats={(m.ats ?? '').toLowerCase()}
                         data-sort-leadsite={abbreviateSites(m.lead_site as string).toLowerCase()}
@@ -414,6 +448,26 @@ const filterCtrlClass =
                             <span class="inline-flex items-center align-middle ml-1.5 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-clif-burgundy/10 text-clif-burgundy dark:bg-clif-burgundy/20 whitespace-nowrap" title="CLIF version">
                               v{String(m.clif_version).replace(/\.0$/, '')}
                             </span>
+                          )}
+                        </td>
+                        <td class="px-4 py-3">
+                          {canEdit ? (
+                            <select
+                              class={`priority-select w-28 max-w-full truncate cursor-pointer rounded-full text-xs font-medium pl-2.5 pr-7 py-1 border-0 focus:outline-none focus:ring-2 focus:ring-clif-burgundy ${m.prioritySlug ? priorityClasses(m.prioritySlug) : PRIORITY_EMPTY_CLASSES}`}
+                              data-id={m.id}
+                              aria-label="Priority"
+                            >
+                              <option value="">—</option>
+                              {PRIORITY_ORDER.map((slug) => (
+                                <option value={slug} selected={m.prioritySlug === slug}>{priorityLabel(slug)}</option>
+                              ))}
+                            </select>
+                          ) : m.prioritySlug ? (
+                            <span class={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${priorityClasses(m.prioritySlug)}`}>
+                              {priorityLabel(m.prioritySlug)}
+                            </span>
+                          ) : (
+                            <span class="text-gray-400">—</span>
                           )}
                         </td>
                         <td class="px-4 py-3 text-gray-700 dark:text-gray-300 max-w-[14rem]" title={m.lead_site ?? undefined}>{m.lead_site ? abbreviateSites(m.lead_site as string) : '—'}</td>
@@ -541,6 +595,15 @@ const filterCtrlClass =
             <input type="text" id="m-ats" class={inputClass} placeholder="e.g. ATS 2026" />
           </div>
           <div>
+            <label for="m-priority" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Priority</label>
+            <select id="m-priority" class={inputClass}>
+              <option value="">—</option>
+              {priorityOptions.map((opt) => (
+                <option value={opt.slug}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+          <div>
             <label for="m-validation_buddy" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Validation buddy</label>
             <select id="m-validation_buddy" class={inputClass}>
               <option value="">—</option>
@@ -666,7 +729,7 @@ const filterCtrlClass =
     </dialog>
   )}
 
-  <script is:inline define:vars={{ manuscripts: editData, canEdit, statusClassMap, statusEmptyClasses: STATUS_EMPTY_CLASSES, siteAliases: siteAliasMap() }}>
+  <script is:inline define:vars={{ manuscripts: editData, canEdit, statusClassMap, statusEmptyClasses: STATUS_EMPTY_CLASSES, priorityClassMap, priorityEmptyClasses: PRIORITY_EMPTY_CLASSES, priorityRanks, siteAliases: siteAliasMap() }}>
     document.addEventListener('DOMContentLoaded', function () {
       // ---- Sub-tabs (Add / Active / All) + per-column filters ----
       var table = document.getElementById('manuscripts-table');
@@ -819,6 +882,38 @@ const filterCtrlClass =
       if (!canEdit) return;
 
       // ---- Inline status dropdown (quick-edit without opening the modal) ----
+      // ---- Inline priority dropdown ----
+      var PRIORITY_SELECT_BASE = 'priority-select w-28 max-w-full truncate cursor-pointer rounded-full text-xs font-medium pl-2.5 pr-7 py-1 border-0 focus:outline-none focus:ring-2 focus:ring-clif-burgundy';
+      document.querySelectorAll('.priority-select').forEach(function (sel) {
+        var prev = sel.value;
+        sel.addEventListener('change', async function () {
+          var slug = this.value;
+          this.disabled = true;
+          var res = await fetch('/api/manuscripts/update-priority', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: this.dataset.id, priority: slug }),
+          });
+          if (res.ok) {
+            this.className = PRIORITY_SELECT_BASE + ' ' + (slug ? (priorityClassMap[slug] || priorityEmptyClasses) : priorityEmptyClasses);
+            var row = this.closest('[data-search-row]');
+            // Keep the column filter and the sort key honest after an edit.
+            if (row) {
+              row.setAttribute('data-priority', slug || 'none');
+              row.setAttribute('data-sort-priority', String(priorityRanks[slug] != null ? priorityRanks[slug] : priorityRanks._unset));
+            }
+            prev = slug;
+            applyFilters();
+            this.disabled = false;
+          } else {
+            var data = await res.json().catch(function () { return {}; });
+            alert(data.error || 'Failed to update priority');
+            this.value = prev; // revert
+            this.disabled = false;
+          }
+        });
+      });
+
       var STATUS_SELECT_BASE = 'status-select w-40 max-w-full truncate cursor-pointer rounded-full text-xs font-medium pl-2.5 pr-7 py-1 border-0 focus:outline-none focus:ring-2 focus:ring-clif-burgundy';
       document.querySelectorAll('.status-select').forEach(function (sel) {
         var prev = sel.value;
@@ -924,6 +1019,7 @@ const filterCtrlClass =
         setChecklist('m-leadsite', 'm-lead_site_other', data ? data.lead_site : '', siteAliases);
         setChecklist('m-leadauthor', 'm-lead_author_other', data ? data.lead_author : '');
         setChecklist('m-lds', 'm-lead_data_scientist_other', data ? data.lead_data_scientist : '');
+        setSelectValue('m-priority', data ? data.priority : '');
         setSelectValue('m-validation_buddy', data ? data.validation_buddy : '');
         setSelectValue('m-clif_version', data ? data.clif_version : '');
         var selected = data && data.status ? data.status : [];
@@ -962,6 +1058,8 @@ const filterCtrlClass =
         payload.lead_site = readChecklist('m-leadsite', 'm-lead_site_other');
         payload.lead_author = readChecklist('m-leadauthor', 'm-lead_author_other');
         payload.lead_data_scientist = readChecklist('m-lds', 'm-lead_data_scientist_other');
+        var priorityEl = document.getElementById('m-priority');
+        payload.priority = priorityEl ? priorityEl.value : '';
         var buddyEl = document.getElementById('m-validation_buddy');
         payload.validation_buddy = buddyEl ? buddyEl.value : '';
         var clifEl = document.getElementById('m-clif_version');

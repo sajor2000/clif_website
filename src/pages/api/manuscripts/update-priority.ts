@@ -2,8 +2,11 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { getDb } from '../../../lib/turso';
-import { serializeStatus, serializePriority, TEXT_FIELDS } from './create';
+import { serializePriority } from './create';
 
+// Quick priority-only update for the inline dropdown on the Manuscript Tracker.
+// Mirrors update-status.ts: touches ONLY the priority column so triaging a row
+// from the table cannot clobber fields the editor never opened.
 export const POST: APIRoute = async ({ locals, request }) => {
   if (!locals.user?.is_approved) {
     return new Response(JSON.stringify({ error: 'Forbidden' }), {
@@ -14,24 +17,15 @@ export const POST: APIRoute = async ({ locals, request }) => {
 
   const body = await request.json();
   const id = typeof body.id === 'string' ? body.id : '';
-  const title = typeof body.title === 'string' ? body.title.trim() : '';
   if (!id) {
     return new Response(JSON.stringify({ error: 'id is required.' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     });
   }
-  if (!title) {
-    return new Response(JSON.stringify({ error: 'Title is required.' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
 
-  let status: string | null;
   let priority: string | null;
   try {
-    status = serializeStatus(body.status);
     priority = serializePriority(body.priority);
   } catch (e: any) {
     return new Response(JSON.stringify({ error: e.message }), {
@@ -40,26 +34,15 @@ export const POST: APIRoute = async ({ locals, request }) => {
     });
   }
 
-  const values = TEXT_FIELDS.map((f) => {
-    const v = body[f];
-    return typeof v === 'string' && v.trim() ? v.trim() : null;
-  });
-
   const db = getDb();
   const now = new Date().toISOString();
-
   try {
-    const setCols = ['title = ?', ...TEXT_FIELDS.map((f) => `${f} = ?`)].join(', ');
     await db.execute({
-      sql: `UPDATE manuscripts SET ${setCols}, status = ?, priority = ?, updated_at = ?, updated_by = ?
-            WHERE id = ?`,
-      args: [title, ...values, status, priority, now, locals.user.id, id],
+      sql: 'UPDATE manuscripts SET priority = ?, updated_at = ?, updated_by = ? WHERE id = ?',
+      args: [priority, now, locals.user.id, id],
     });
   } catch (e: any) {
-    const msg = /UNIQUE/.test(e.message)
-      ? 'A manuscript with that title already exists.'
-      : e.message;
-    return new Response(JSON.stringify({ error: msg }), {
+    return new Response(JSON.stringify({ error: e.message }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     });

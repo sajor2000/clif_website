@@ -3,6 +3,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { getDb } from '../../../lib/turso';
 import { isKnownStatus } from '../../../lib/manuscript-status.js';
+import { isKnownPriority } from '../../../lib/manuscript-priority.js';
 
 // Optional free-text fields accepted from the admin form, in column order.
 // Re-used by update.ts so the two endpoints stay in sync.
@@ -21,6 +22,19 @@ export const TEXT_FIELDS = [
   'lead_data_scientist',
   'notes',
 ] as const;
+
+/**
+ * Validate the single priority slug. Unlike status this is not a list — a
+ * manuscript has one priority or none — and an empty value clears it rather
+ * than being rejected.
+ */
+export function serializePriority(priority: unknown): string | null {
+  if (priority == null || priority === '') return null;
+  if (typeof priority !== 'string' || !isKnownPriority(priority)) {
+    throw new Error(`Invalid priority: ${String(priority)}`);
+  }
+  return priority;
+}
 
 /** Validate the status array and join to the stored comma-separated form. */
 export function serializeStatus(status: unknown): string | null {
@@ -54,8 +68,10 @@ export const POST: APIRoute = async ({ locals, request }) => {
   }
 
   let status: string | null;
+  let priority: string | null;
   try {
     status = serializeStatus(body.status);
+    priority = serializePriority(body.priority);
   } catch (e: any) {
     return new Response(JSON.stringify({ error: e.message }), {
       status: 400,
@@ -82,9 +98,9 @@ export const POST: APIRoute = async ({ locals, request }) => {
               (title, clif_version, ats, github_repo, manuscript_link,
                lead_authors, journal, cite, contributing_sites, lead_site,
                validation_buddy, lead_author, lead_data_scientist, notes, status,
-               sort_order, updated_at, updated_by)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      args: [title, ...values, status, sortOrder, now, locals.user.id],
+               priority, sort_order, updated_at, updated_by)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [title, ...values, status, priority, sortOrder, now, locals.user.id],
     });
   } catch (e: any) {
     const msg = /UNIQUE/.test(e.message)
