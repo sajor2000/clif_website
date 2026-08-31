@@ -298,6 +298,17 @@ const filterCtrlClass =
         ) : (
           <div id="panel-table" class="tab-panel">
           <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 overflow-hidden">
+            <div class="p-3 border-b border-gray-200 dark:border-neutral-700 text-xs text-gray-500 dark:text-gray-400 flex items-center justify-between gap-3">
+              <span><span id="manuscripts-count">{rows.length}</span> {rows.length === 1 ? 'manuscript' : 'manuscripts'}</span>
+              <button
+                type="button"
+                id="reset-filters"
+                class="hidden px-3 py-1.5 rounded-lg text-xs font-medium text-clif-burgundy border border-clif-burgundy/40 hover:bg-clif-burgundy/5 dark:hover:bg-clif-burgundy/10 focus:outline-none focus:ring-2 focus:ring-clif-burgundy transition-colors whitespace-nowrap"
+              >
+                Reset filters
+              </button>
+            </div>
+
             {rows.length === 0 ? (
               <div class="p-8 text-center text-gray-500 dark:text-gray-400">No manuscripts tracked yet.</div>
             ) : (
@@ -548,16 +559,6 @@ const filterCtrlClass =
               No manuscripts match this view.
             </div>
 
-            <div class="p-3 border-t border-gray-200 dark:border-neutral-700 text-xs text-gray-500 dark:text-gray-400 flex items-center justify-between gap-3">
-              <span><span id="manuscripts-count">{rows.length}</span> {rows.length === 1 ? 'manuscript' : 'manuscripts'}</span>
-              <button
-                type="button"
-                id="reset-filters"
-                class="hidden px-3 py-1.5 rounded-lg text-xs font-medium text-clif-burgundy border border-clif-burgundy/40 hover:bg-clif-burgundy/5 dark:hover:bg-clif-burgundy/10 focus:outline-none focus:ring-2 focus:ring-clif-burgundy transition-colors whitespace-nowrap"
-              >
-                Reset filters
-              </button>
-            </div>
           </div>
           </div>
         )}
