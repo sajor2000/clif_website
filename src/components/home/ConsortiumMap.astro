@@ -38,6 +38,12 @@ const totals = siteTotals(details);
 const { institutions: totalInstitutions, activeSites, upcomingSites, hospitals: totalHospitals, patients: totalPatients } = totals;
 
 const sitesJSON = JSON.stringify(sites);
+
+// CARTO now watermarks basemap tiles served to unauthenticated callers, so the
+// key is required for the map to draw cleanly. It is inlined into client JS by
+// design (PUBLIC_ prefix) — basemap keys are public tokens, scoped by the domain
+// registered with CARTO, not secrets. Missing key still renders, just watermarked.
+const cartoKey = import.meta.env.PUBLIC_CARTO_KEY ?? '';
 ---
 
 <section class="mb-16 px-4 relative z-0">
@@ -277,11 +283,17 @@ const sitesJSON = JSON.stringify(sites);
   }
 </style>
 
-<script define:vars={{ sitesJSON }}>
+<script define:vars={{ sitesJSON, cartoKey }}>
   const sites = JSON.parse(sitesJSON);
 
-  const LIGHT_TILES = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
-  const DARK_TILES = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+  // CARTO documents the key on the bare host, not the a/b/c/d subdomains, so the
+  // {s} placeholder is gone. Sharding was an HTTP/1.1 connection-limit trick and
+  // buys nothing over HTTP/2 anyway.
+  const tiles = (style) =>
+    `https://basemaps.cartocdn.com/${style}/{z}/{x}/{y}{r}.png` + (cartoKey ? `?key=${cartoKey}` : '');
+
+  const LIGHT_TILES = tiles('light_all');
+  const DARK_TILES = tiles('dark_all');
   const ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
 
   let map = null;
@@ -337,7 +349,6 @@ const sitesJSON = JSON.stringify(sites);
     tileLayer = L.tileLayer(isDarkMode() ? DARK_TILES : LIGHT_TILES, {
       attribution: ATTRIBUTION,
       maxZoom: 18,
-      subdomains: 'abcd',
     }).addTo(map);
 
     // Offset overlapping sites (Chicago cluster, Boston cluster)
@@ -514,7 +525,6 @@ const sitesJSON = JSON.stringify(sites);
       tileLayer = L.tileLayer(dark ? DARK_TILES : LIGHT_TILES, {
         attribution: ATTRIBUTION,
         maxZoom: 18,
-        subdomains: 'abcd',
       }).addTo(map);
     });
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
