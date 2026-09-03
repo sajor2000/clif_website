@@ -971,6 +971,19 @@ const navigationSections = [
                   <div>
                     <h5 class="text-xl font-semibold mb-3">Step 3: Apply Mappings</h5>
                     <p class="text-sm">Join the mapping files created in Step 1 to add <code class="bg-white/20 px-1 rounded">lab_order_category</code> and <code class="bg-white/20 px-1 rounded">lab_category</code> columns.</p>
+                    <div class="bg-blue-500/20 p-3 rounded-lg border border-blue-400/30 text-sm mt-3">
+                      <p class="text-blue-300 font-semibold mb-2">Multi-value cells:</p>
+                      <p class="mb-2">In <code class="bg-white/20 px-1 rounded">clif_lab_categories.csv</code>, an analyte valid for more than one panel or specimen lists them slash-delimited — <code class="bg-white/20 px-1 rounded">potassium</code> shows <code class="bg-white/20 px-1 rounded">bmp/poc</code>. That list is what the analyte <em>permits</em>, not what a given result <em>is</em>.</p>
+                      <p><strong>Emit one CLIF row per lab result</strong> and resolve each cell to the single applicable value. Never create a row per slash-separated value.</p>
+                    </div>
+                    <div class="bg-white/10 p-3 rounded-lg text-sm mt-3">
+                      <p class="mb-2">Point-of-care example — POC results can differ in accuracy from the central lab, so the panel keeps them separable without a separate <code class="bg-white/20 px-1 rounded">lab_category</code>:</p>
+                      <ul class="space-y-1 text-xs">
+                        <li>• Potassium off a BMP → <code class="bg-white/20 px-1 rounded">lab_category = potassium</code>, <code class="bg-white/20 px-1 rounded">lab_order_category = bmp</code></li>
+                        <li>• POC / iSTAT potassium → <code class="bg-white/20 px-1 rounded">lab_category = potassium</code>, <code class="bg-white/20 px-1 rounded">lab_order_category = poc</code></li>
+                      </ul>
+                      <p class="mt-2 text-xs text-gray-300">Also applies to bicarbonate, creatinine, glucose, hematocrit, lactate, and sodium.</p>
+                    </div>
                   </div>
 
                   <!-- Step 4 -->
@@ -981,6 +994,10 @@ const navigationSections = [
                       <p>Blood, Plasma, Serum samples</p>
                       <p class="text-red-300 font-semibold mt-2 mb-1">Exclude:</p>
                       <p>Urine and other fluid specimens</p>
+                    </div>
+                    <div class="bg-blue-500/20 p-3 rounded-lg border border-blue-400/30 text-sm mt-3">
+                      <p class="text-blue-300 font-semibold mb-2">Blood specimens:</p>
+                      <p>For mapping purposes, we use <code class="bg-white/20 px-1 rounded">plasma_blood</code> as a broad category encompassing whole blood, plasma, and serum, while recognizing that individual labs may be performed using different blood components. Sites do not need to distinguish serum from plasma from whole blood — all three map to <code class="bg-white/20 px-1 rounded">plasma_blood</code>.</p>
                     </div>
                   </div>
 

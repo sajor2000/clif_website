@@ -544,7 +544,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            Revisions (17 updates) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Aug 6, 2026</span>
+            Revisions (18 updates) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Sep 3, 2026</span>
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -565,6 +565,12 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">labs.lab_order_category</td>
+                  <td class="px-4 py-3 text-sm">In the <code>clif_lab_categories.csv</code> mCIDE, an analyte valid for more than one panel or specimen now lists those values <strong>slash-delimited</strong> rather than comma-separated (<code>bmp/poc</code>, <code>lft/peritoneal_fluid_panel/pleural_fluid_panel</code>) — the file keeps one row per <code>lab_category</code> instead of expanding to one row per combination. The list is what the analyte permits, not what a result is: sites emit one CLIF row per lab result and resolve each cell to the single applicable value. Point-of-care results stay separable through <code>lab_order_category = poc</code> rather than a separate <code>lab_category</code> — a potassium off a BMP is <code>potassium</code> + <code>bmp</code>, a POC potassium is <code>potassium</code> + <code>poc</code>.</td>
+                  <td class="px-4 py-3 text-sm text-gray-500">&mdash;</td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Sep 3, 2026</td>
+                </tr>
                 <tr>
                   <td class="px-4 py-3 text-sm font-mono">mode_category</td>
                   <td class="px-4 py-3 text-sm"><code>respiratory_support.mode_category</code> dropped <code>t_piece</code> and <code>blow_by</code> as permissible mode values — both are now represented as devices only (<code>t_piece</code> device added under <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/62" class="text-clif-burgundy hover:underline">#62</a>, <code>blow_by</code> device added under <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/231" class="text-clif-burgundy hover:underline">#231</a>).</td>
