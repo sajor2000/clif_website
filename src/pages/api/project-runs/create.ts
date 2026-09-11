@@ -4,6 +4,7 @@ import type { APIRoute } from 'astro';
 import { getDb } from '../../../lib/turso';
 import { notifyProjectRunReady } from '../../../lib/notify-project-run';
 import { notifySlackProjectRun } from '../../../lib/slack';
+import { isDeadlineAhead, isValidDate } from '../../../lib/project-run-deadline';
 
 // Allowed purpose categories. Kept here and re-used by update.ts so the two
 // endpoints stay in sync.
@@ -61,6 +62,7 @@ export function parseProjectRunFields(body: any): { fields: ProjectRunFields } |
 
   const results_deadline = str(body.results_deadline);
   if (!results_deadline) return { error: 'Deadline to upload results to Box is required.' };
+  if (!isValidDate(results_deadline)) return { error: 'Invalid Box upload deadline.' };
 
   const clif_version = str(body.clif_version);
   if (!clif_version) return { error: 'CLIF version is required.' };
@@ -114,6 +116,14 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
     });
   }
   const f = parsed.fields;
+  // A new run is open, so it can't start with a deadline that already passed
+  // (the nightly auto-close job would close it straight away).
+  if (!isDeadlineAhead(f.results_deadline)) {
+    return new Response(JSON.stringify({ error: 'The Box upload deadline must be today or later.' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 
   const db = getDb();
   const now = new Date().toISOString();

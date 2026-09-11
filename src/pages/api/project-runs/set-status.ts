@@ -2,6 +2,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { getDb } from '../../../lib/turso';
+import { isDeadlineAhead, isValidDate } from '../../../lib/project-run-deadline';
 
 /**
  * Open/close a project run and nothing else.
@@ -12,32 +13,33 @@ import { getDb } from '../../../lib/turso';
  * rewrites every field, which would both reject a status-only payload and let a
  * stale edit form clobber concurrent changes to unrelated columns.
  *
+ * Reopening must come with a new Box upload deadline of today or later. Runs
+ * close automatically once their deadline passes (/auto-close), so reopening
+ * without moving the deadline would just be undone the next night. The rule is
+ * that an open run always has a deadline ahead of it.
+ *
  * Same permission rule as /update: the run's creator, or an admin.
  */
 export const POST: APIRoute = async ({ locals, request }) => {
   const user = locals.user;
   if (!user || !user.is_approved) {
-    return new Response(JSON.stringify({ error: 'Forbidden' }), {
-      status: 403,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return json({ error: 'Forbidden' }, 403);
   }
 
-  const body = await request.json();
+  const body = await request.json().catch(() => ({}));
   const projectId = typeof body.projectId === 'string' ? body.projectId : '';
   if (!projectId) {
-    return new Response(JSON.stringify({ error: 'projectId is required.' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return json({ error: 'projectId is required.' }, 400);
   }
   if (body.status !== 'open' && body.status !== 'closed') {
-    return new Response(JSON.stringify({ error: "status must be 'open' or 'closed'." }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return json({ error: "status must be 'open' or 'closed'." }, 400);
   }
   const status = body.status;
+
+  const deadline = typeof body.results_deadline === 'string' ? body.results_deadline.trim() : '';
+  if (status === 'open' && !(isValidDate(deadline) && isDeadlineAhead(deadline))) {
+    return json({ error: 'Reopening a run needs a new Box upload deadline of today or later.' }, 400);
+  }
 
   const db = getDb();
 
@@ -46,25 +48,30 @@ export const POST: APIRoute = async ({ locals, request }) => {
     args: [projectId],
   });
   if (existing.rows.length === 0) {
-    return new Response(JSON.stringify({ error: 'Not found.' }), {
-      status: 404,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return json({ error: 'Not found.' }, 404);
   }
   if (user.role !== 'admin' && existing.rows[0].created_by !== user.id) {
-    return new Response(JSON.stringify({ error: 'Forbidden' }), {
-      status: 403,
-      headers: { 'Content-Type': 'application/json' },
+    return json({ error: 'Forbidden' }, 403);
+  }
+
+  if (status === 'open') {
+    await db.execute({
+      sql: "UPDATE project_runs SET status = 'open', results_deadline = ?, updated_at = datetime('now') WHERE id = ?",
+      args: [deadline, projectId],
+    });
+  } else {
+    await db.execute({
+      sql: "UPDATE project_runs SET status = 'closed', updated_at = datetime('now') WHERE id = ?",
+      args: [projectId],
     });
   }
 
-  await db.execute({
-    sql: "UPDATE project_runs SET status = ?, updated_at = datetime('now') WHERE id = ?",
-    args: [status, projectId],
-  });
+  return json({ ok: true, status });
+};
 
-  return new Response(JSON.stringify({ ok: true, status }), {
-    status: 200,
+function json(data: unknown, status = 200): Response {
+  return new Response(JSON.stringify(data), {
+    status,
     headers: { 'Content-Type': 'application/json' },
   });
-};
+}

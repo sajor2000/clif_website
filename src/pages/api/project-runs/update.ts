@@ -3,6 +3,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { getDb } from '../../../lib/turso';
 import { parseProjectRunFields } from './create';
+import { isDeadlineAhead } from '../../../lib/project-run-deadline';
 
 // The request creator or an admin can edit a project run request.
 export const POST: APIRoute = async ({ locals, request }) => {
@@ -32,6 +33,16 @@ export const POST: APIRoute = async ({ locals, request }) => {
   }
   const f = parsed.fields;
   const status = body.status === 'closed' ? 'closed' : 'open';
+  // An open run always has a deadline ahead of it; otherwise the nightly
+  // auto-close job would just close it again (see /set-status).
+  if (status === 'open' && !isDeadlineAhead(f.results_deadline)) {
+    return new Response(
+      JSON.stringify({
+        error: 'An open run needs a Box upload deadline of today or later. Pick a new deadline, or mark the run closed.',
+      }),
+      { status: 400, headers: { 'Content-Type': 'application/json' } },
+    );
+  }
 
   const db = getDb();
 

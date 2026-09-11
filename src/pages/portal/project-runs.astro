@@ -4,6 +4,7 @@ export const prerender = false;
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PortalNav from '../../components/portal/PortalNav.astro';
 import { getDb } from '../../lib/turso';
+import { todayInConsortiumTz } from '../../lib/project-run-deadline';
 
 const user = Astro.locals.user!;
 const isAdmin = user.role === 'admin';
@@ -88,6 +89,8 @@ const PURPOSE_LABELS: Record<string, string> = {
 const PURPOSE_OPTIONS = Object.entries(PURPOSE_LABELS).map(([value, label]) => ({ value, label }));
 // Must match CLIF_VERSIONS in src/pages/api/project-runs/create.ts.
 const CLIF_VERSIONS = ['2.0', '2.1', '3.0'];
+// Earliest deadline a new or reopened run may have (the server enforces it too).
+const today = todayInConsortiumTz();
 ---
 
 <BaseLayout title="Project Run Tracker">
@@ -106,6 +109,7 @@ const CLIF_VERSIONS = ['2.0', '2.1', '3.0'];
           <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
             Anyone can file a request. Each site's checkbox is updated by that site's data editor (or an admin).
             If a project doesn't apply to a site, that site's data editor, the run's requester, or an admin can mark it N/A.
+            Runs close automatically once their Box upload deadline has passed.
           </p>
         </div>
 
@@ -198,7 +202,7 @@ const CLIF_VERSIONS = ['2.0', '2.1', '3.0'];
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label for="pr-deadline" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Deadline to upload results to Box <span class="text-red-500">*</span></label>
-                <input type="date" id="pr-deadline" required
+                <input type="date" id="pr-deadline" required min={today}
                   class="w-full sm:w-auto px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent" />
               </div>
               <div>
@@ -248,8 +252,8 @@ const CLIF_VERSIONS = ['2.0', '2.1', '3.0'];
               const naSuffix = naCount > 0 ? ` · ${naCount} N/A` : '';
               const isClosed = p.status === 'closed';
               // A run drops out of the Active tab once its deadline is behind
-              // it, but stays fully editable (unlike Closed) so a late site can
-              // still check its box. Extending the deadline brings it back.
+              // it. The nightly /api/project-runs/auto-close job then closes it;
+              // this badge covers the hours between the deadline and that run.
               const deadlinePassed =
                 !isClosed && !!p.results_deadline && isDeadlinePassed(p.results_deadline as string);
               const manage = canManage(p);
@@ -365,7 +369,8 @@ const CLIF_VERSIONS = ['2.0', '2.1', '3.0'];
                                 <strong class="block mb-1">Reopening this run</strong>
                                 Requests for runs open again — sites can submit new data for this project.
                                 Members will see it in their pending tasks again, and sites that still owe a
-                                run can be notified about it.
+                                run can be notified about it. You'll be asked for a new Box upload deadline;
+                                the run closes again automatically once that deadline passes.
                               </>
                             ) : (
                               <>
@@ -373,6 +378,7 @@ const CLIF_VERSIONS = ['2.0', '2.1', '3.0'];
                                 Requests for runs are closed — sites are no longer submitting new data for
                                 this project. Members will also stop seeing it in their pending tasks, and
                                 will no longer be notified that a run is still pending at their site.
+                                Runs also close on their own once their Box upload deadline passes.
                               </>
                             )}
                           </span>
@@ -384,6 +390,23 @@ const CLIF_VERSIONS = ['2.0', '2.1', '3.0'];
                       </div>
                     )}
                   </div>
+
+                  {/* Reopen (hidden until "Reopen run" is clicked): a reopened run
+                      needs a new deadline of today or later, or the nightly
+                      auto-close job would just close it again. */}
+                  {manage && isClosed && (
+                    <form class="reopen-form hidden mt-3 rounded-lg border border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-900/40 px-4 py-3" data-project-id={p.id}>
+                      <div class="flex flex-wrap items-end gap-3">
+                        <div>
+                          <label class="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">New Box upload deadline <span class="text-red-500">*</span></label>
+                          <input type="date" class="reopen-deadline px-3 py-1.5 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" min={today} required />
+                        </div>
+                        <button type="submit" class="reopen-submit bg-clif-burgundy hover:bg-clif-burgundy/90 text-white font-medium py-1.5 px-3 rounded-lg text-xs transition-colors">Reopen run</button>
+                        <button type="button" class="reopen-cancel text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 underline">Cancel</button>
+                      </div>
+                      <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">The run will close again automatically once this deadline passes.</p>
+                    </form>
+                  )}
 
                   {/* Specific instructions — highlighted so sites can't miss them */}
                   {p.instructions && (
@@ -724,10 +747,16 @@ const CLIF_VERSIONS = ['2.0', '2.1', '3.0'];
         btn.addEventListener('click', async function () {
           var pid = this.getAttribute('data-project-id');
           var next = this.getAttribute('data-next');
-          var msg = next === 'closed'
-            ? 'Close this project run?\n\nRequests for runs will be closed — sites can no longer submit new data for this project. Members will stop seeing it in their pending tasks and will no longer be notified that a run is pending at their site.'
-            : 'Reopen this project run?\n\nSites can submit new data again, and it will return to members\' pending tasks.';
-          if (!confirm(msg)) return;
+          // Reopening goes through the inline form, which asks for a new deadline.
+          if (next === 'open') {
+            var rf = document.querySelector('.reopen-form[data-project-id="' + pid + '"]');
+            if (rf) {
+              rf.classList.toggle('hidden');
+              if (!rf.classList.contains('hidden')) rf.querySelector('.reopen-deadline').focus();
+            }
+            return;
+          }
+          if (!confirm('Close this project run?\n\nRequests for runs will be closed — sites can no longer submit new data for this project. Members will stop seeing it in their pending tasks and will no longer be notified that a run is pending at their site.')) return;
           var self = this;
           var original = self.textContent;
           self.disabled = true;
@@ -745,6 +774,36 @@ const CLIF_VERSIONS = ['2.0', '2.1', '3.0'];
             self.textContent = original;
             self.disabled = false;
           }
+        });
+      });
+
+      // Reopen with a new deadline
+      document.querySelectorAll('.reopen-form').forEach(function (f) {
+        f.querySelector('.reopen-cancel').addEventListener('click', function () {
+          f.classList.add('hidden');
+        });
+        f.addEventListener('submit', async function (e) {
+          e.preventDefault();
+          var btn = f.querySelector('.reopen-submit');
+          btn.disabled = true;
+          btn.textContent = 'Reopening...';
+          var res = await fetch('/api/project-runs/set-status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              projectId: f.getAttribute('data-project-id'),
+              status: 'open',
+              results_deadline: f.querySelector('.reopen-deadline').value,
+            }),
+          });
+          if (res.ok) {
+            window.location.reload();
+            return;
+          }
+          var err = await res.json().catch(function () { return {}; });
+          alert(err.error || 'Failed to reopen.');
+          btn.disabled = false;
+          btn.textContent = 'Reopen run';
         });
       });
 
