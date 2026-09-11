@@ -132,14 +132,18 @@ export async function computePendingTasks(user: TaskUser): Promise<PendingTask[]
       const totalSites =
         Number((await db.execute('SELECT COUNT(*) AS c FROM site_details')).rows[0].c) || 0;
 
-      // How many sites have run each project (for the info task's progress line).
-      const ranByProject = new Map<string, number>();
+      // How many sites have run each project, and how many are N/A (they leave
+      // the denominator), for the info task's progress line.
+      const progressByProject = new Map<string, { ran: number; na: number }>();
       const ranRes = await db.execute(
-        'SELECT project_id, COUNT(*) AS c FROM project_run_sites WHERE has_run = 1 GROUP BY project_id',
+        `SELECT project_id, SUM(has_run = 1) AS ran, SUM(not_applicable = 1) AS na
+         FROM project_run_sites GROUP BY project_id`,
       );
-      for (const r of ranRes.rows as any[]) ranByProject.set(r.project_id as string, Number(r.c));
+      for (const r of ranRes.rows as any[]) {
+        progressByProject.set(r.project_id as string, { ran: Number(r.ran) || 0, na: Number(r.na) || 0 });
+      }
 
-      // Which of THIS member's sites still owe which project.
+      // Which of THIS member's sites still owe which project (N/A sites don't).
       const owedByProject = new Map<string, { site_id: string; site_name: string }[]>();
       if (siteIds.length > 0) {
         const placeholders = siteIds.map(() => '?').join(', ');
@@ -148,7 +152,8 @@ export async function computePendingTasks(user: TaskUser): Promise<PendingTask[]
                 FROM project_runs p
                 CROSS JOIN site_details sd
                 LEFT JOIN project_run_sites prs ON prs.project_id = p.id AND prs.site_id = sd.id
-                WHERE p.status = 'open' AND sd.id IN (${placeholders}) AND COALESCE(prs.has_run, 0) = 0`,
+                WHERE p.status = 'open' AND sd.id IN (${placeholders})
+                  AND COALESCE(prs.has_run, 0) = 0 AND COALESCE(prs.not_applicable, 0) = 0`,
           args: siteIds,
         });
         for (const r of res.rows as any[]) {
@@ -183,13 +188,13 @@ export async function computePendingTasks(user: TaskUser): Promise<PendingTask[]
         } else {
           // Awareness only: shown to members with no actionable stake in this run
           // (not a site editor, or their sites already ran it).
-          const ran = ranByProject.get(projectId) ?? 0;
+          const { ran, na } = progressByProject.get(projectId) ?? { ran: 0, na: 0 };
           tasks.push({
             key: `run_project_info:${projectId}`,
             kind: 'run_project',
             title: `Open project run: ${title}`,
             detail: [
-              `${ran}/${totalSites} sites have run this`,
+              `${ran}/${totalSites - na} sites have run this`,
               deadline
                 ? isPast(deadline)
                   ? `overdue ${formatDate(deadline)}`

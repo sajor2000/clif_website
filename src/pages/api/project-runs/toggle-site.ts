@@ -45,11 +45,18 @@ export const POST: APIRoute = async ({ locals, request }) => {
 
   const now = new Date().toISOString();
 
+  // Ran and N/A are mutually exclusive (see /set-site-na): checking the box
+  // clears any N/A on the site.
   await db.execute({
     sql: `INSERT INTO project_run_sites (project_id, site_id, has_run, updated_at, updated_by)
           VALUES (?, ?, ?, ?, ?)
           ON CONFLICT(project_id, site_id)
-          DO UPDATE SET has_run = excluded.has_run, updated_at = excluded.updated_at, updated_by = excluded.updated_by`,
+          DO UPDATE SET
+            has_run = excluded.has_run,
+            not_applicable = CASE WHEN excluded.has_run = 1 THEN 0 ELSE not_applicable END,
+            na_reason = CASE WHEN excluded.has_run = 1 THEN NULL ELSE na_reason END,
+            updated_at = excluded.updated_at,
+            updated_by = excluded.updated_by`,
     args: [projectId, siteId, hasRun, now, user.id],
   });
 

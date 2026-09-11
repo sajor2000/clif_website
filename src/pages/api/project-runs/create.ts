@@ -9,6 +9,10 @@ import { notifySlackProjectRun } from '../../../lib/slack';
 // endpoints stay in sync.
 export const PURPOSES = ['grant', 'conference', 'journal', 'other'] as const;
 
+// CLIF versions a project run can be built on. Mirrored by the dropdowns in
+// src/pages/portal/project-runs.astro.
+export const CLIF_VERSIONS = ['2.0', '2.1', '3.0'] as const;
+
 export interface ProjectRunFields {
   title: string;
   repo_url: string;
@@ -18,6 +22,7 @@ export interface ProjectRunFields {
   purpose: string;
   purpose_detail: string;
   results_deadline: string;
+  clif_version: string;
   prelim_shared: number;
   prelim_link: string | null;
 }
@@ -57,6 +62,12 @@ export function parseProjectRunFields(body: any): { fields: ProjectRunFields } |
   const results_deadline = str(body.results_deadline);
   if (!results_deadline) return { error: 'Deadline to upload results to Box is required.' };
 
+  const clif_version = str(body.clif_version);
+  if (!clif_version) return { error: 'CLIF version is required.' };
+  if (!(CLIF_VERSIONS as readonly string[]).includes(clif_version)) {
+    return { error: 'Invalid CLIF version.' };
+  }
+
   // Sharing preliminary results is a prerequisite for requesting a consortium run.
   const prelim_shared = body.prelim_shared ? 1 : 0;
   if (!prelim_shared) {
@@ -77,6 +88,7 @@ export function parseProjectRunFields(body: any): { fields: ProjectRunFields } |
       purpose,
       purpose_detail,
       results_deadline,
+      clif_version,
       prelim_shared,
       prelim_link: prelim_link || null,
     },
@@ -112,9 +124,9 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
   const insertRes = await db.execute({
     sql: `INSERT INTO project_runs
             (title, repo_url, box_folder_url, prelim_shared, prelim_link, description, instructions,
-             purpose, purpose_detail, results_deadline, status, created_by, created_at, updated_at,
-             project_number)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?, ?, ?,
+             purpose, purpose_detail, results_deadline, clif_version, status, created_by, created_at,
+             updated_at, project_number)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?, ?, ?,
                   (SELECT COALESCE(MAX(project_number), 0) + 1 FROM project_runs))
           RETURNING id, project_number`,
     args: [
@@ -128,6 +140,7 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
       f.purpose,
       f.purpose_detail,
       f.results_deadline,
+      f.clif_version,
       user.id,
       now,
       now,

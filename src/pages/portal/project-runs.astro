@@ -12,6 +12,9 @@ const db = getDb();
 let projects: any[] = [];
 let sites: any[] = [];
 const runMap: Record<string, Set<string>> = {};
+// Sites marked N/A per project -> their (possibly empty) reason. N/A sites are
+// not owed the run and drop out of the "N / M sites" denominator.
+const naMap: Record<string, Map<string, string>> = {};
 let editableSiteIds = new Set<string>();
 let error: string | null = null;
 
@@ -32,11 +35,18 @@ try {
   const sitesResult = await db.execute('SELECT id, site_name, institution FROM site_details ORDER BY site_name');
   sites = sitesResult.rows as any[];
 
-  const statusResult = await db.execute('SELECT project_id, site_id FROM project_run_sites WHERE has_run = 1');
+  const statusResult = await db.execute(
+    'SELECT project_id, site_id, has_run, not_applicable, na_reason FROM project_run_sites WHERE has_run = 1 OR not_applicable = 1',
+  );
   for (const row of statusResult.rows as any[]) {
     const pid = row.project_id as string;
-    if (!runMap[pid]) runMap[pid] = new Set();
-    runMap[pid].add(row.site_id as string);
+    if (Number(row.has_run) === 1) {
+      if (!runMap[pid]) runMap[pid] = new Set();
+      runMap[pid].add(row.site_id as string);
+    } else {
+      if (!naMap[pid]) naMap[pid] = new Map();
+      naMap[pid].set(row.site_id as string, (row.na_reason as string | null) || '');
+    }
   }
 
   if (isAdmin) {
@@ -76,6 +86,8 @@ const PURPOSE_LABELS: Record<string, string> = {
   other: 'Exploratory / Other',
 };
 const PURPOSE_OPTIONS = Object.entries(PURPOSE_LABELS).map(([value, label]) => ({ value, label }));
+// Must match CLIF_VERSIONS in src/pages/api/project-runs/create.ts.
+const CLIF_VERSIONS = ['2.0', '2.1', '3.0'];
 ---
 
 <BaseLayout title="Project Run Tracker">
@@ -93,6 +105,7 @@ const PURPOSE_OPTIONS = Object.entries(PURPOSE_LABELS).map(([value, label]) => (
           </p>
           <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
             Anyone can file a request. Each site's checkbox is updated by that site's data editor (or an admin).
+            If a project doesn't apply to a site, that site's data editor, the run's requester, or an admin can mark it N/A.
           </p>
         </div>
 
@@ -182,10 +195,22 @@ const PURPOSE_OPTIONS = Object.entries(PURPOSE_LABELS).map(([value, label]) => (
                   class="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent" />
               </div>
             </div>
-            <div>
-              <label for="pr-deadline" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Deadline to upload results to Box <span class="text-red-500">*</span></label>
-              <input type="date" id="pr-deadline" required
-                class="w-full sm:w-auto px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent" />
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label for="pr-deadline" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Deadline to upload results to Box <span class="text-red-500">*</span></label>
+                <input type="date" id="pr-deadline" required
+                  class="w-full sm:w-auto px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent" />
+              </div>
+              <div>
+                <label for="pr-clif-version" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">CLIF version <span class="text-red-500">*</span></label>
+                <select id="pr-clif-version" required
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent">
+                  <option value="" disabled selected>Select the CLIF version this runs on…</option>
+                  {CLIF_VERSIONS.map((v) => (
+                    <option value={v}>CLIF {v}</option>
+                  ))}
+                </select>
+              </div>
             </div>
             <div class="flex items-center gap-2 pt-1">
               <input type="checkbox" id="pr-notify" class="w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy" />
@@ -217,6 +242,10 @@ const PURPOSE_OPTIONS = Object.entries(PURPOSE_LABELS).map(([value, label]) => (
             {projects.map((p) => {
               const ranSites = runMap[p.id as string] || new Set();
               const ranCount = ranSites.size;
+              const naSites = naMap[p.id as string] || new Map();
+              const naCount = naSites.size;
+              const applicableCount = sites.length - naCount;
+              const naSuffix = naCount > 0 ? ` · ${naCount} N/A` : '';
               const isClosed = p.status === 'closed';
               // A run drops out of the Active tab once its deadline is behind
               // it, but stays fully editable (unlike Closed) so a late site can
@@ -248,6 +277,9 @@ const PURPOSE_OPTIONS = Object.entries(PURPOSE_LABELS).map(([value, label]) => (
                         {p.purpose && PURPOSE_LABELS[p.purpose as string] && (
                           <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-clif-burgundy/10 text-clif-burgundy dark:bg-clif-burgundy/20">{PURPOSE_LABELS[p.purpose as string]}</span>
                         )}
+                        {p.clif_version && (
+                          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-300">CLIF {p.clif_version}</span>
+                        )}
                         {Number(p.prelim_shared) === 1 ? (
                           <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">Prelim results shared</span>
                         ) : (
@@ -256,7 +288,7 @@ const PURPOSE_OPTIONS = Object.entries(PURPOSE_LABELS).map(([value, label]) => (
                       </div>
                       {/* Stays visible while collapsed — enough to scan without opening. */}
                       <div class="flex flex-wrap gap-x-4 gap-y-1 mt-1.5 text-xs text-gray-500 dark:text-gray-400">
-                        <span class="ran-summary">{ranCount} / {sites.length} sites have run this</span>
+                        <span class="ran-summary">{ranCount} / {applicableCount} sites have run this{naSuffix}</span>
                         {p.results_deadline && (
                           <span class={deadlinePassed ? 'text-red-500 dark:text-red-400 font-medium' : ''}>
                             Box upload deadline: {formatDeadline(p.results_deadline as string)}
@@ -380,9 +412,20 @@ const PURPOSE_OPTIONS = Object.entries(PURPOSE_LABELS).map(([value, label]) => (
                         </select>
                         <input type="text" class="edit-purpose-detail w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" value={p.purpose_detail || ''} placeholder="Purpose detail (grant name, conference, journal)" required />
                       </div>
-                      <div>
-                        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Deadline to upload results to Box</label>
-                        <input type="date" class="edit-deadline px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" value={p.results_deadline || ''} required />
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Deadline to upload results to Box</label>
+                          <input type="date" class="edit-deadline px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" value={p.results_deadline || ''} required />
+                        </div>
+                        <div>
+                          <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">CLIF version</label>
+                          <select class="edit-clif-version w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" required>
+                            <option value="" disabled selected={!p.clif_version}>Select a CLIF version…</option>
+                            {CLIF_VERSIONS.map((v) => (
+                              <option value={v} selected={p.clif_version === v}>CLIF {v}</option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
                       <div class="flex items-center gap-2">
                         <input type="checkbox" class="edit-prelim w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy" checked={Number(p.prelim_shared) === 1} />
@@ -404,7 +447,7 @@ const PURPOSE_OPTIONS = Object.entries(PURPOSE_LABELS).map(([value, label]) => (
                   <div class="mt-4 pt-4 border-t border-gray-100 dark:border-neutral-700">
                     <div class="flex items-center justify-between mb-3">
                       <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Sites that have run this</h4>
-                      <span class="ran-count text-xs text-gray-500 dark:text-gray-400">{ranCount} / {sites.length} sites</span>
+                      <span class="ran-count text-xs text-gray-500 dark:text-gray-400">{ranCount} / {applicableCount} sites{naSuffix}</span>
                     </div>
                     {sites.length === 0 ? (
                       <p class="text-xs text-gray-400 dark:text-gray-500 italic">No sites on record.</p>
@@ -412,11 +455,16 @@ const PURPOSE_OPTIONS = Object.entries(PURPOSE_LABELS).map(([value, label]) => (
                       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-2">
                         {sites.map((s) => {
                           const checked = ranSites.has(s.id as string);
+                          const isNa = naSites.has(s.id as string);
+                          const naReason = naSites.get(s.id as string) || '';
                           const editable = !isClosed && editableSiteIds.has(s.id as string);
+                          // N/A can also be set by the run's requester, not only
+                          // the site's editor. A site that has run it can't be N/A.
+                          const canSetNa = !isClosed && (editable || canManage(p));
                           // The creator (or an admin) can nudge a site that hasn't run yet.
                           const canNudge = !isClosed && !checked && canManage(p);
                           return (
-                            <div class="flex items-center gap-2 min-w-0">
+                            <div class="site-row flex items-center gap-2 min-w-0" data-na={isNa ? 'true' : 'false'}>
                               <label class={`flex items-center gap-2 text-sm min-w-0 flex-1 ${editable ? 'cursor-pointer text-gray-700 dark:text-gray-300' : 'text-gray-500 dark:text-gray-400'}`}
                                 title={editable ? '' : "Only this site's data editor (or an admin) can change this"}>
                                 <input
@@ -425,15 +473,32 @@ const PURPOSE_OPTIONS = Object.entries(PURPOSE_LABELS).map(([value, label]) => (
                                   class="site-run-checkbox w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy disabled:opacity-50"
                                   data-project-id={p.id}
                                   data-site-id={s.id}
+                                  data-editable={editable ? 'true' : 'false'}
                                   checked={checked}
-                                  disabled={!editable}
+                                  disabled={!editable || isNa}
                                 />
-                                <span class="truncate">{s.site_name}</span>
+                                <span class="min-w-0">
+                                  <span class="flex items-center gap-1.5 min-w-0">
+                                    <span class="truncate">{s.site_name}</span>
+                                    <span class={`na-badge shrink-0 px-1.5 py-px rounded text-[10px] font-semibold bg-gray-100 text-gray-600 dark:bg-neutral-700 dark:text-gray-300 ${isNa ? '' : 'hidden'}`}>N/A</span>
+                                  </span>
+                                  <span class={`na-reason block truncate text-[11px] text-gray-400 dark:text-gray-500 ${isNa && naReason ? '' : 'hidden'}`}>{naReason}</span>
+                                </span>
                               </label>
+                              {canSetNa && (
+                                <button
+                                  type="button"
+                                  class={`na-btn shrink-0 text-[11px] font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:underline ${checked ? 'hidden' : ''}`}
+                                  data-project-id={p.id}
+                                  data-site-id={s.id}
+                                  data-site-name={s.site_name}
+                                  title={`Mark whether this project applies to ${s.site_name}`}
+                                >{isNa ? 'Undo N/A' : 'Mark N/A'}</button>
+                              )}
                               {canNudge && (
                                 <button
                                   type="button"
-                                  class="nudge-site-btn shrink-0 text-[11px] font-medium text-clif-burgundy hover:text-clif-burgundy/80 hover:underline"
+                                  class={`nudge-site-btn shrink-0 text-[11px] font-medium text-clif-burgundy hover:text-clif-burgundy/80 hover:underline ${isNa ? 'hidden' : ''}`}
                                   data-project-id={p.id}
                                   data-site-id={s.id}
                                   data-site-name={s.site_name}
@@ -542,6 +607,7 @@ const PURPOSE_OPTIONS = Object.entries(PURPOSE_LABELS).map(([value, label]) => (
               purpose: document.getElementById('pr-purpose').value,
               purpose_detail: document.getElementById('pr-purpose-detail').value,
               results_deadline: document.getElementById('pr-deadline').value,
+              clif_version: document.getElementById('pr-clif-version').value,
               prelim_shared: document.getElementById('pr-prelim').checked,
               prelim_link: document.getElementById('pr-prelim-link').value,
               notify_all: document.getElementById('pr-notify').checked,
@@ -609,6 +675,7 @@ const PURPOSE_OPTIONS = Object.entries(PURPOSE_LABELS).map(([value, label]) => (
               purpose: this.querySelector('.edit-purpose').value,
               purpose_detail: this.querySelector('.edit-purpose-detail').value,
               results_deadline: this.querySelector('.edit-deadline').value,
+              clif_version: this.querySelector('.edit-clif-version').value,
               prelim_shared: this.querySelector('.edit-prelim').checked,
               prelim_link: this.querySelector('.edit-prelim-link').value,
               status: this.querySelector('.edit-closed').checked ? 'closed' : 'open',
@@ -703,16 +770,23 @@ const PURPOSE_OPTIONS = Object.entries(PURPOSE_LABELS).map(([value, label]) => (
       // Lets a site toggle update in place instead of reloading — a reload
       // would bounce the user back to the default Create tab and re-collapse
       // every card.
+      // N/A sites leave the denominator and are listed separately.
       function refreshRanCounts(card) {
         if (!card) return;
-        var boxes = card.querySelectorAll('.site-run-checkbox');
-        var total = boxes.length;
+        var total = 0;
         var count = 0;
-        boxes.forEach(function (b) { if (b.checked) count++; });
+        var na = 0;
+        card.querySelectorAll('.site-row').forEach(function (row) {
+          if (row.getAttribute('data-na') === 'true') { na++; return; }
+          total++;
+          var b = row.querySelector('.site-run-checkbox');
+          if (b && b.checked) count++;
+        });
+        var suffix = na > 0 ? ' · ' + na + ' N/A' : '';
         var summary = card.querySelector('.ran-summary');
-        if (summary) summary.textContent = count + ' / ' + total + ' sites have run this';
+        if (summary) summary.textContent = count + ' / ' + total + ' sites have run this' + suffix;
         var header = card.querySelector('.ran-count');
-        if (header) header.textContent = count + ' / ' + total + ' sites';
+        if (header) header.textContent = count + ' / ' + total + ' sites' + suffix;
       }
 
       // Per-site run checkboxes
@@ -731,11 +805,72 @@ const PURPOSE_OPTIONS = Object.entries(PURPOSE_LABELS).map(([value, label]) => (
           });
           if (res.ok) {
             self.disabled = false;
+            // A site that has run the project can't also be N/A.
+            var naBtn = self.closest('.site-row').querySelector('.na-btn');
+            if (naBtn) naBtn.classList.toggle('hidden', self.checked);
             refreshRanCounts(self.closest('.project-card'));
           } else {
             var data = await res.json();
             alert(data.error || 'Failed to update');
             self.checked = !self.checked;
+            self.disabled = false;
+          }
+        });
+      });
+
+      // "Mark N/A" / "Undo N/A" — the project doesn't apply to this site. Updated
+      // in place (no reload) for the same reason as the checkboxes above.
+      document.querySelectorAll('.na-btn').forEach(function (btn) {
+        btn.addEventListener('click', async function () {
+          var self = this;
+          var row = self.closest('.site-row');
+          var siteName = self.getAttribute('data-site-name') || 'this site';
+          var makeNa = row.getAttribute('data-na') !== 'true';
+          var reason = '';
+          if (makeNa) {
+            reason = prompt(
+              'Mark ' + siteName + ' as N/A for this run? It will no longer count as owing it.\n\n' +
+              "Optional: why doesn't this project apply to " + siteName + '?',
+              ''
+            );
+            if (reason === null) return;
+          } else if (!confirm('Undo N/A for ' + siteName + '? It will count as owing this run again.')) {
+            return;
+          }
+          self.disabled = true;
+          try {
+            var res = await fetch('/api/project-runs/set-site-na', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                projectId: self.getAttribute('data-project-id'),
+                siteId: self.getAttribute('data-site-id'),
+                notApplicable: makeNa,
+                reason: reason,
+              }),
+            });
+            var data = await res.json().catch(function () { return {}; });
+            if (!res.ok) {
+              alert(data.error || 'Failed to update');
+              return;
+            }
+            row.setAttribute('data-na', makeNa ? 'true' : 'false');
+            var box = row.querySelector('.site-run-checkbox');
+            if (box) {
+              if (makeNa) box.checked = false;
+              box.disabled = makeNa || box.getAttribute('data-editable') !== 'true';
+            }
+            row.querySelector('.na-badge').classList.toggle('hidden', !makeNa);
+            var reasonEl = row.querySelector('.na-reason');
+            reasonEl.textContent = (makeNa && data.reason) || '';
+            reasonEl.classList.toggle('hidden', !(makeNa && data.reason));
+            var remind = row.querySelector('.nudge-site-btn');
+            if (remind) remind.classList.toggle('hidden', makeNa);
+            self.textContent = makeNa ? 'Undo N/A' : 'Mark N/A';
+            refreshRanCounts(row.closest('.project-card'));
+          } catch (e) {
+            alert('Failed to update');
+          } finally {
             self.disabled = false;
           }
         });
