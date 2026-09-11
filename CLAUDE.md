@@ -157,9 +157,11 @@ change to **every** place that mirrors it, and **always recount**:
 2. **Markdown doc** — `src/content/clif-data-dictionary-<version>.md` (intro text
    AND the rendered "Example" tables; keep example column headers in sync with
    the schema).
-3. **Page table groupings** — the `betaTableNames` / `alphaTableNames` /
-   `conceptTableNames` arrays in `src/pages/data-dictionary/data-dictionary-<version>.astro`
-   (a table's maturity status is set by which array it lives in).
+3. **Table groupings** — for 2.1 and 3.0, the version's `beta` / `alpha` /
+   `concept` / `futureProposed` arrays in `src/data/clif-tables.ts` (a table's
+   maturity status is set by which array it lives in). Both the data dictionary
+   page and the portal's project-run "tables sites need" picker read these. The
+   2.0 page still keeps its `betaTableNames` / `conceptTableNames` arrays inline.
 4. **ERD** — `public/images/data-dictionary/clif_erd_<version>.html` (node `cols`,
    the node `"m"` maturity field, and the `REFS` relationship edges).
 5. **POC list** — `src/data/table-poc.json` (one entry per table).

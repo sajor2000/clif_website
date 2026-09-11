@@ -6,6 +6,7 @@ import HelpChat from '../../components/HelpChat.astro';
 import fs from 'node:fs';
 import path from 'node:path';
 import MarkdownIt from 'markdown-it';
+import { CLIF_TABLES } from '../../data/clif-tables';
 
 // Read the DDL file at build time
 const ddlPath = path.join(process.cwd(), 'src/content/v-2-1-0-ddl.sql');
@@ -66,17 +67,9 @@ function parseAllTables(ddl) {
 
 const allTables = parseAllTables(ddlContent);
 
-// For sidebar: split into Beta and Concept tables by name (as before)
-const betaTableNames = [
-  'adt', 'code_status', 'crrt_therapy', 'hospitalization',
-  'hospital_diagnosis', 'labs', 'medication_admin_continuous', 'medication_admin_intermittent',
-  'microbiology_culture', 'microbiology_susceptibility', 'patient',
-  'patient_assessments', 'patient_procedures', 'position', 'respiratory_support', 'vitals'
-];
-const conceptTableNames = [
-  'clinical_trial', 'ecmo_mcs', 'intake_output', 'invasive_hemodynamics', 'key_icu_orders', 'medication_orders', 'microbiology_nonculture', 'patient_diagnosis', 'place_based_index',
-  'provider', 'therapy_details', 'transfusion'
-];
+// For sidebar: split into Beta and Concept tables by name. The groupings live
+// in src/data/clif-tables.ts, shared with the project run tracker.
+const { beta: betaTableNames, concept: conceptTableNames } = CLIF_TABLES['2.1'];
 const betaTables = allTables
   .filter(t => betaTableNames.includes(t.name))
   .sort((a, b) => a.name.localeCompare(b.name));;

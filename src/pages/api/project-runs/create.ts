@@ -5,14 +5,11 @@ import { getDb } from '../../../lib/turso';
 import { notifyProjectRunReady } from '../../../lib/notify-project-run';
 import { notifySlackProjectRun } from '../../../lib/slack';
 import { isDeadlineAhead, isValidDate } from '../../../lib/project-run-deadline';
+import { PROJECT_RUN_VERSIONS, runnableTables } from '../../../data/clif-tables';
 
 // Allowed purpose categories. Kept here and re-used by update.ts so the two
 // endpoints stay in sync.
 export const PURPOSES = ['grant', 'conference', 'journal', 'other'] as const;
-
-// CLIF versions a project run can be built on. Mirrored by the dropdowns in
-// src/pages/portal/project-runs.astro.
-export const CLIF_VERSIONS = ['2.0', '2.1', '3.0'] as const;
 
 export interface ProjectRunFields {
   title: string;
@@ -24,6 +21,7 @@ export interface ProjectRunFields {
   purpose_detail: string;
   results_deadline: string;
   clif_version: string;
+  required_tables: string[];
   prelim_shared: number;
   prelim_link: string | null;
 }
@@ -66,9 +64,20 @@ export function parseProjectRunFields(body: any): { fields: ProjectRunFields } |
 
   const clif_version = str(body.clif_version);
   if (!clif_version) return { error: 'CLIF version is required.' };
-  if (!(CLIF_VERSIONS as readonly string[]).includes(clif_version)) {
+  if (!(PROJECT_RUN_VERSIONS as readonly string[]).includes(clif_version)) {
     return { error: 'Invalid CLIF version.' };
   }
+
+  // Tables sites need: at least one, each a runnable table of this version.
+  // Stored in picker order so the card lists them consistently.
+  const allowedTables = runnableTables(clif_version);
+  const pickedTables: string[] = Array.isArray(body.required_tables)
+    ? body.required_tables.filter((t: unknown): t is string => typeof t === 'string')
+    : [];
+  const unknownTable = pickedTables.find((t) => !allowedTables.includes(t));
+  if (unknownTable) return { error: `"${unknownTable}" is not a CLIF ${clif_version} table.` };
+  const required_tables = allowedTables.filter((t) => pickedTables.includes(t));
+  if (required_tables.length === 0) return { error: 'Select at least one table sites need to have.' };
 
   // Sharing preliminary results is a prerequisite for requesting a consortium run.
   const prelim_shared = body.prelim_shared ? 1 : 0;
@@ -91,6 +100,7 @@ export function parseProjectRunFields(body: any): { fields: ProjectRunFields } |
       purpose_detail,
       results_deadline,
       clif_version,
+      required_tables,
       prelim_shared,
       prelim_link: prelim_link || null,
     },
@@ -134,9 +144,9 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
   const insertRes = await db.execute({
     sql: `INSERT INTO project_runs
             (title, repo_url, box_folder_url, prelim_shared, prelim_link, description, instructions,
-             purpose, purpose_detail, results_deadline, clif_version, status, created_by, created_at,
-             updated_at, project_number)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?, ?, ?,
+             purpose, purpose_detail, results_deadline, clif_version, required_tables, status,
+             created_by, created_at, updated_at, project_number)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?, ?, ?,
                   (SELECT COALESCE(MAX(project_number), 0) + 1 FROM project_runs))
           RETURNING id, project_number`,
     args: [
@@ -151,6 +161,7 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
       f.purpose_detail,
       f.results_deadline,
       f.clif_version,
+      JSON.stringify(f.required_tables),
       user.id,
       now,
       now,

@@ -6,6 +6,7 @@ import HelpChat from '../../components/HelpChat.astro';
 import fs from 'node:fs';
 import path from 'node:path';
 import MarkdownIt from 'markdown-it';
+import { CLIF_TABLES } from '../../data/clif-tables';
 
 // Read the DDL file at build time
 const ddlPath = path.join(process.cwd(), 'src/content/v-3-0-0-ddl.sql');
@@ -66,24 +67,16 @@ function parseAllTables(ddl) {
 
 const allTables = parseAllTables(ddlContent);
 
-// For sidebar: split into Beta and Concept tables by name (as before)
-const betaTableNames = [
-  'adt', 'code_status', 'hospitalization',
-  'hospital_diagnosis', 'labs', 'medication_admin_continuous', 'medication_admin_intermittent',
-  'microbiology_culture', 'microbiology_susceptibility', 'patient',
-  'patient_assessments', 'patient_procedures', 'position', 'respiratory_support', 'vitals'
-];
-const alphaTableNames = [
-  'clinical_notes_facts', 'consult_orders', 'input', 'invasive_hemodynamics', 'mcs',
-  'medication_orders', 'microbiology_nonculture', 'misc_icu_orders', 'model_registry', 'output', 'patient_diagnosis', 'renal_replacement_therapy', 'scores'
-];
-const conceptTableNames = [
-  'airway', 'clinical_trial', 'drain', 'ed_encounter', 'line', 'patient_attributes', 'place_based_index',
-  'provider', 'radiology', 'transfusion'
-];
+// For sidebar: split into Beta / Alpha / Concept tables by name. The groupings
+// live in src/data/clif-tables.ts, shared with the project run tracker.
 // Future Proposed tables: listed by name/description only — schema is hidden
 // because the consortium has not committed to a structure for these yet.
-const futureProposedTableNames = ['therapy_details', 'validated_diagnosis'];
+const {
+  beta: betaTableNames,
+  alpha: alphaTableNames,
+  concept: conceptTableNames,
+  futureProposed: futureProposedTableNames,
+} = CLIF_TABLES['3.0'];
 const betaTables = allTables
   .filter(t => betaTableNames.includes(t.name))
   .sort((a, b) => a.name.localeCompare(b.name));;

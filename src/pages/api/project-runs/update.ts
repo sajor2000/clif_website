@@ -67,7 +67,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
     sql: `UPDATE project_runs SET
             title = ?, repo_url = ?, box_folder_url = ?, prelim_shared = ?,
             prelim_link = ?, description = ?, instructions = ?, purpose = ?, purpose_detail = ?,
-            results_deadline = ?, clif_version = ?, status = ?, updated_at = ?
+            results_deadline = ?, clif_version = ?, required_tables = ?, status = ?, updated_at = ?
           WHERE id = ?`,
     args: [
       f.title,
@@ -81,6 +81,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
       f.purpose_detail,
       f.results_deadline,
       f.clif_version,
+      JSON.stringify(f.required_tables),
       status,
       new Date().toISOString(),
       projectId,

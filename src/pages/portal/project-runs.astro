@@ -5,6 +5,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import PortalNav from '../../components/portal/PortalNav.astro';
 import { getDb } from '../../lib/turso';
 import { todayInConsortiumTz } from '../../lib/project-run-deadline';
+import { PROJECT_RUN_VERSIONS } from '../../data/clif-tables';
+import RequiredTablesPicker from '../../components/portal/RequiredTablesPicker.astro';
 
 const user = Astro.locals.user!;
 const isAdmin = user.role === 'admin';
@@ -87,8 +89,18 @@ const PURPOSE_LABELS: Record<string, string> = {
   other: 'Exploratory / Other',
 };
 const PURPOSE_OPTIONS = Object.entries(PURPOSE_LABELS).map(([value, label]) => ({ value, label }));
-// Must match CLIF_VERSIONS in src/pages/api/project-runs/create.ts.
-const CLIF_VERSIONS = ['2.0', '2.1', '3.0'];
+const CLIF_VERSIONS = PROJECT_RUN_VERSIONS;
+
+// required_tables is a JSON array of table names (NULL on runs that predate it).
+function parseTables(value: unknown): string[] {
+  if (typeof value !== 'string') return [];
+  try {
+    const arr = JSON.parse(value);
+    return Array.isArray(arr) ? arr.filter((t) => typeof t === 'string') : [];
+  } catch {
+    return [];
+  }
+}
 // Earliest deadline a new or reopened run may have (the server enforces it too).
 const today = todayInConsortiumTz();
 ---
@@ -216,6 +228,7 @@ const today = todayInConsortiumTz();
                 </select>
               </div>
             </div>
+            <RequiredTablesPicker />
             <div class="flex items-center gap-2 pt-1">
               <input type="checkbox" id="pr-notify" class="w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy" />
               <label for="pr-notify" class="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -250,6 +263,7 @@ const today = todayInConsortiumTz();
               const naCount = naSites.size;
               const applicableCount = sites.length - naCount;
               const naSuffix = naCount > 0 ? ` · ${naCount} N/A` : '';
+              const requiredTables = parseTables(p.required_tables);
               const isClosed = p.status === 'closed';
               // A run drops out of the Active tab once its deadline is behind
               // it. The nightly /api/project-runs/auto-close job then closes it;
@@ -416,6 +430,20 @@ const today = todayInConsortiumTz();
                     </div>
                   )}
 
+                  {/* Tables a site must have to run this project */}
+                  {requiredTables.length > 0 && (
+                    <div class="mt-3">
+                      <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5">
+                        Tables sites need{p.clif_version ? ` (CLIF ${p.clif_version})` : ''}
+                      </p>
+                      <div class="flex flex-wrap gap-1.5">
+                        {requiredTables.map((t) => (
+                          <code class="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-neutral-700 text-xs text-gray-700 dark:text-gray-200">{t}</code>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Edit form (hidden) */}
                   {manage && (
                     <form class="project-edit-form hidden mt-4 pt-4 border-t border-gray-100 dark:border-neutral-700 space-y-3" data-project-id={p.id}>
@@ -450,6 +478,7 @@ const today = todayInConsortiumTz();
                           </select>
                         </div>
                       </div>
+                      <RequiredTablesPicker current={p.clif_version as string | null} selected={requiredTables} />
                       <div class="flex items-center gap-2">
                         <input type="checkbox" class="edit-prelim w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy" checked={Number(p.prelim_shared) === 1} />
                         <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Preliminary results shared</label>
@@ -607,8 +636,53 @@ const today = todayInConsortiumTz();
         });
       }
 
+      // === "Tables sites need" picker (RequiredTablesPicker) ===
+      // Show only the checklist for the form's selected CLIF version; only its
+      // checked tables are submitted.
+      function showTablesFor(root, version) {
+        if (!root) return;
+        root.querySelectorAll('.tables-picker').forEach(function (g) {
+          g.classList.toggle('hidden', g.getAttribute('data-version') !== version);
+        });
+        var empty = root.querySelector('.tables-picker-empty');
+        if (empty) empty.classList.toggle('hidden', !!version);
+      }
+      function selectedTables(root) {
+        if (!root) return [];
+        return Array.prototype.map.call(
+          root.querySelectorAll('.tables-picker:not(.hidden) .table-cb:checked'),
+          function (cb) { return cb.value; }
+        );
+      }
+      function wireTablesPicker(formEl, versionSelect) {
+        if (!formEl || !versionSelect) return;
+        var root = formEl.querySelector('.tables-picker-root');
+        versionSelect.addEventListener('change', function () { showTablesFor(root, this.value); });
+        // A browser may restore the select's value on back/forward navigation.
+        if (versionSelect.value) showTablesFor(root, versionSelect.value);
+      }
+      // Each collapsible group: "Select all" / "Clear", and a live "N selected"
+      // count in its header so picks stay visible while it is collapsed.
+      document.querySelectorAll('.tables-group').forEach(function (group) {
+        var boxes = group.querySelectorAll('.table-cb');
+        var countEl = group.querySelector('.tables-group-count');
+        function refreshCount() {
+          var n = 0;
+          boxes.forEach(function (cb) { if (cb.checked) n++; });
+          if (countEl) countEl.textContent = n > 0 ? n + ' selected' : '';
+        }
+        function setAll(checked) {
+          boxes.forEach(function (cb) { cb.checked = checked; });
+          refreshCount();
+        }
+        boxes.forEach(function (cb) { cb.addEventListener('change', refreshCount); });
+        group.querySelector('.tables-group-all').addEventListener('click', function () { setAll(true); });
+        group.querySelector('.tables-group-none').addEventListener('click', function () { setAll(false); });
+      });
+
       // Create request
       var form = document.getElementById('create-project-form');
+      wireTablesPicker(form, document.getElementById('pr-clif-version'));
       if (form) {
         form.addEventListener('submit', async function (e) {
           e.preventDefault();
@@ -631,6 +705,7 @@ const today = todayInConsortiumTz();
               purpose_detail: document.getElementById('pr-purpose-detail').value,
               results_deadline: document.getElementById('pr-deadline').value,
               clif_version: document.getElementById('pr-clif-version').value,
+              required_tables: selectedTables(form.querySelector('.tables-picker-root')),
               prelim_shared: document.getElementById('pr-prelim').checked,
               prelim_link: document.getElementById('pr-prelim-link').value,
               notify_all: document.getElementById('pr-notify').checked,
@@ -676,6 +751,11 @@ const today = todayInConsortiumTz();
         cb.addEventListener('change', sync);
       });
 
+      // Each edit form's tables picker follows its own CLIF version select.
+      document.querySelectorAll('.project-edit-form').forEach(function (f) {
+        wireTablesPicker(f, f.querySelector('.edit-clif-version'));
+      });
+
       // Save edits
       document.querySelectorAll('.project-edit-form').forEach(function (f) {
         f.addEventListener('submit', async function (e) {
@@ -699,6 +779,7 @@ const today = todayInConsortiumTz();
               purpose_detail: this.querySelector('.edit-purpose-detail').value,
               results_deadline: this.querySelector('.edit-deadline').value,
               clif_version: this.querySelector('.edit-clif-version').value,
+              required_tables: selectedTables(this.querySelector('.tables-picker-root')),
               prelim_shared: this.querySelector('.edit-prelim').checked,
               prelim_link: this.querySelector('.edit-prelim-link').value,
               status: this.querySelector('.edit-closed').checked ? 'closed' : 'open',
