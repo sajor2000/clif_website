@@ -344,7 +344,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            New mCIDE Values (20 updates · 243 new values) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Aug 13, 2026</span>
+            New mCIDE Values (22 updates · 245 new values) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Sep 11, 2026</span>
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -365,6 +365,18 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">lab_category (2)</td>
+                  <td class="px-4 py-3 text-sm">Added <code>po2_ecmo_pre</code> and <code>po2_ecmo_post</code> as new <code>labs.lab_category</code> values for pre- and post-oxygenator PO2 drawn from the ECMO circuit — reference unit <code>mmhg</code>, order category <code>blood_gas</code>, specimen <code>plasma_blood</code>. The post-oxygenator value reflects circuit oxygenation, not the patient's arterial PO2, and commonly runs far above physiologic range.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/203" class="text-clif-burgundy hover:underline">Issue #203</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Sep 11, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">lab_order_category (1)</td>
+                  <td class="px-4 py-3 text-sm">Added <code>fingerstick</code> as a new <code>labs.lab_order_category</code> for bedside capillary glucometer testing, split out of <code>poc</code> so fingerstick glucose stays distinguishable from analyzer (iSTAT / blood gas) glucose. <code>glucose</code> now permits <code>bmp/fingerstick/peritoneal_fluid_panel/pleural_fluid_panel/poc</code>: a fingerstick glucose is <code>glucose</code> + <code>fingerstick</code>; an iSTAT glucose stays <code>glucose</code> + <code>poc</code>.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/203" class="text-clif-burgundy hover:underline">Issue #203</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Sep 11, 2026</td>
+                </tr>
                 <tr>
                   <td class="px-4 py-3 text-sm font-mono">assessment_category (2)</td>
                   <td class="px-4 py-3 text-sm"><code>patient_assessments.assessment_category</code> added 2 new values for physical- and occupational-therapy discharge recommendations: <code>pt_discharge_recommend</code> and <code>ot_discharge_recommend</code>. Sourced from structured flowsheet data where sites have it; permissible values per recommendation to be categorized once a few sites' data is in.</td>
@@ -508,9 +520,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   <td class="px-4 py-3 text-sm text-gray-500">Jun 2, 2026</td>
                 </tr>
                 <tr>
-                  <td class="px-4 py-3 text-sm font-mono">lab_category (56)</td>
+                  <td class="px-4 py-3 text-sm font-mono">lab_category (55)</td>
                   <td class="px-4 py-3 text-sm">
-                    Added 56 new <code>labs.lab_category</code> values for fluid panels, urine studies, and additional systemic labs. Fluid-panel and source-specific labs are now <strong>de-prefixed</strong> — the analyte name lives in <code>lab_category</code> and the fluid source in <code>lab_specimen_category</code> (so e.g. <code>ldh</code> covers serum, pleural, and peritoneal LDH), and the panel in <code>lab_order_category</code>:
+                    Added 55 new <code>labs.lab_category</code> values for fluid panels, urine studies, and additional systemic labs. Fluid-panel and source-specific labs are now <strong>de-prefixed</strong> — the analyte name lives in <code>lab_category</code> and the fluid source in <code>lab_specimen_category</code> (so e.g. <code>ldh</code> covers serum, pleural, and peritoneal LDH), and the panel in <code>lab_order_category</code>:
                     <ul class="list-disc pl-5 my-2 space-y-1">
                       <li><strong>Fluid panels — BAL / pleural / peritoneal</strong> (15): <code>ada</code>, <code>amylase</code>, <code>bilirubin</code>, <code>cholesterol</code>, <code>hematocrit_percent</code>, <code>lipase</code>, <code>macrophages_percent</code>, <code>mesothelial</code>, <code>other_absolute</code>, <code>plasma_absolute</code>, <code>protein</code>, <code>rbc</code>, <code>rbc_absolute</code>, <code>toxic_granulation</code>, <code>wbc_absolute</code></li>
                       <li><strong>Cardiac</strong> (3): <code>bnp</code>, <code>nt_pro_bnp</code>, <code>ckmb</code></li>
@@ -520,7 +532,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                       <li><strong>Urine chemistry</strong> (2): <code>albumin_to_creatinine_ratio</code>, <code>protein_to_creatinine_ratio</code></li>
                       <li><strong>Thyroid</strong> (3): <code>free_t3</code>, <code>free_t4</code>, <code>tsh</code></li>
                       <li><strong>Coagulation</strong> (2): <code>d_dimer</code>, <code>fibrinogen</code></li>
-                      <li><strong>POC / bedside</strong> (3): <code>co2</code>, <code>glucose</code> (replaces both <code>glucose_fingerstick</code> and <code>glucose_serum</code>), <code>hematocrit</code></li>
+                      <li><strong>POC / bedside</strong> (2): <code>glucose</code> (replaces both <code>glucose_fingerstick</code> and <code>glucose_serum</code>), <code>hematocrit</code></li>
                       <li><strong>Mixed-venous blood gas</strong> (1): <code>po2_mixed_venous</code></li>
                       <li><strong>Misc</strong> (1): <code>triglycerides</code></li>
                     </ul>
@@ -544,7 +556,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            Revisions (18 updates) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Sep 3, 2026</span>
+            Revisions (20 updates) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Sep 11, 2026</span>
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -565,6 +577,18 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">labs.lab_category (bicarbonate)</td>
+                  <td class="px-4 py-3 text-sm">Reworked how CO2-family results map. The draft 3.0 <code>co2</code> category (point-of-care total CO2) is dropped and is not a permissible <code>lab_category</code>. <code>bicarbonate</code> now permits <code>blood_gas/bmp/poc</code>: HCO3⁻ off an ABG or VBG maps to <code>bicarbonate</code> with <code>lab_order_category = blood_gas</code> (previously BMP-only, "not from ABG/VBG"), a POC HCO3⁻ maps with <code>poc</code>, and a metabolic-panel "CO2" is still bicarbonate. Do <strong>not</strong> map total CO2 (tCO2, e.g. iSTAT TCO2) at all, and map pCO2 to <code>pco2_arterial</code> / <code>pco2_venous</code>, never to bicarbonate. The ambiguous name examples <code>CO2</code>, <code>CARBON DIOXIDE</code>, and <code>POC CO2</code> were removed from the mCIDE for the same reason.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/203" class="text-clif-burgundy hover:underline">Issue #203</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Sep 11, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">labs.reference_unit</td>
+                  <td class="px-4 py-3 text-sm">Normalized the micro sign in the <code>clif_lab_categories.csv</code> <code>reference_unit</code> column to ASCII <code>u</code>: <code>10^3/µl</code> &rarr; <code>10^3/ul</code>, <code>cells/µl</code> &rarr; <code>cells/ul</code>, <code>µg/ml</code> &rarr; <code>ug/ml</code> (17 rows, e.g. <code>wbc</code>, <code>platelet_count</code>, <code>d_dimer</code>). The file mixed two look-alike codepoints (U+00B5 and U+03BC), and <code>reference_unit</code> is matched by exact string, so sites should emit the ASCII spelling.</td>
+                  <td class="px-4 py-3 text-sm text-gray-500">&mdash;</td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Sep 9, 2026</td>
+                </tr>
                 <tr>
                   <td class="px-4 py-3 text-sm font-mono">labs.lab_order_category</td>
                   <td class="px-4 py-3 text-sm">In the <code>clif_lab_categories.csv</code> mCIDE, an analyte valid for more than one panel or specimen now lists those values <strong>slash-delimited</strong> rather than comma-separated (<code>bmp/poc</code>, <code>lft/peritoneal_fluid_panel/pleural_fluid_panel</code>) — the file keeps one row per <code>lab_category</code> instead of expanding to one row per combination. The list is what the analyte permits, not what a result is: sites emit one CLIF row per lab result and resolve each cell to the single applicable value. Point-of-care results stay separable through <code>lab_order_category = poc</code> rather than a separate <code>lab_category</code> — a potassium off a BMP is <code>potassium</code> + <code>bmp</code>, a POC potassium is <code>potassium</code> + <code>poc</code>.</td>

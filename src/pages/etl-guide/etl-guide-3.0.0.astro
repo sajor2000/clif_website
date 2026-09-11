@@ -952,11 +952,11 @@ const navigationSections = [
                     <div class="space-y-3 text-sm">
                       <div class="bg-white/10 p-3 rounded-lg">
                         <p><strong class="text-blue-300">a. Lab Order Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">lab_order_name</code> to <code class="bg-white/20 px-1 rounded">lab_order_category</code></p>
-                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/labs/clif_labs_order_categories.csv" target="_blank" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_labs_order_categories.csv</a>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/labs/clif_labs_order_categories.csv" target="_blank" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_labs_order_categories.csv</a>
                       </div>
                       <div class="bg-white/10 p-3 rounded-lg">
                         <p><strong class="text-blue-300">b. Lab Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">lab_name</code> to <code class="bg-white/20 px-1 rounded">lab_category</code></p>
-                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/labs/clif_lab_categories.csv" target="_blank" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_lab_categories.csv</a>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/labs/clif_lab_categories.csv" target="_blank" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_lab_categories.csv</a>
                       </div>
                     </div>
                   </div>
@@ -982,7 +982,16 @@ const navigationSections = [
                         <li>• Potassium off a BMP → <code class="bg-white/20 px-1 rounded">lab_category = potassium</code>, <code class="bg-white/20 px-1 rounded">lab_order_category = bmp</code></li>
                         <li>• POC / iSTAT potassium → <code class="bg-white/20 px-1 rounded">lab_category = potassium</code>, <code class="bg-white/20 px-1 rounded">lab_order_category = poc</code></li>
                       </ul>
-                      <p class="mt-2 text-xs text-gray-300">Also applies to bicarbonate, creatinine, glucose, hematocrit, lactate, and sodium.</p>
+                      <p class="mt-2 text-xs text-gray-300">Also applies to bicarbonate, creatinine, glucose, hematocrit, lactate, and sodium. Fingerstick glucometer glucose has its own panel: <code class="bg-white/20 px-1 rounded">glucose</code> + <code class="bg-white/20 px-1 rounded">fingerstick</code>, not <code class="bg-white/20 px-1 rounded">poc</code>.</p>
+                    </div>
+                    <div class="bg-white/10 p-3 rounded-lg text-sm mt-3">
+                      <p class="mb-2">Bicarbonate vs. CO2:</p>
+                      <ul class="space-y-1 text-xs">
+                        <li>• BMP bicarbonate (often reported as "CO2") → <code class="bg-white/20 px-1 rounded">bicarbonate</code> + <code class="bg-white/20 px-1 rounded">bmp</code></li>
+                        <li>• HCO3⁻ off an ABG / VBG → <code class="bg-white/20 px-1 rounded">bicarbonate</code> + <code class="bg-white/20 px-1 rounded">blood_gas</code>; POC HCO3⁻ → <code class="bg-white/20 px-1 rounded">bicarbonate</code> + <code class="bg-white/20 px-1 rounded">poc</code></li>
+                        <li>• pCO2 → <code class="bg-white/20 px-1 rounded">pco2_arterial</code> / <code class="bg-white/20 px-1 rounded">pco2_venous</code>, never bicarbonate</li>
+                        <li>• Total CO2 (tCO2, e.g. iSTAT TCO2) → do not map</li>
+                      </ul>
                     </div>
                   </div>
 
@@ -1029,7 +1038,7 @@ const navigationSections = [
                     </div>
                     <div class="bg-white/10 p-3 rounded-lg text-sm">
                       <p>Reference units for each lab category:</p>
-                      <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/labs/clif_lab_categories.csv" target="_blank" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_lab_categories.csv (reference_unit column)</a>
+                      <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/labs/clif_lab_categories.csv" target="_blank" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_lab_categories.csv (reference_unit column)</a>
                     </div>
                   </div>
 
