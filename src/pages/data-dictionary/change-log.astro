@@ -586,7 +586,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 <tr>
                   <td class="px-4 py-3 text-sm font-mono">labs.reference_unit</td>
                   <td class="px-4 py-3 text-sm">Normalized the micro sign in the <code>clif_lab_categories.csv</code> <code>reference_unit</code> column to ASCII <code>u</code>: <code>10^3/µl</code> &rarr; <code>10^3/ul</code>, <code>cells/µl</code> &rarr; <code>cells/ul</code>, <code>µg/ml</code> &rarr; <code>ug/ml</code> (17 rows, e.g. <code>wbc</code>, <code>platelet_count</code>, <code>d_dimer</code>). The file mixed two look-alike codepoints (U+00B5 and U+03BC), and <code>reference_unit</code> is matched by exact string, so sites should emit the ASCII spelling.</td>
-                  <td class="px-4 py-3 text-sm text-gray-500">&mdash;</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/203" class="text-clif-burgundy hover:underline">Issue #203</a></td>
                   <td class="px-4 py-3 text-sm text-gray-500">Sep 9, 2026</td>
                 </tr>
                 <tr>
