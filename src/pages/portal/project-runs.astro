@@ -755,17 +755,26 @@ const today = todayInConsortiumTz();
         syncCreateKind();
       }
 
-      // Tagging a run for ATS fills in an empty purpose as the conference.
-      var atsBox = document.getElementById('pr-ats');
-      if (atsBox) {
-        atsBox.addEventListener('change', function () {
-          if (!atsBox.checked) return;
-          var purpose = document.getElementById('pr-purpose');
-          var detail = document.getElementById('pr-purpose-detail');
-          if (purpose && !purpose.value) purpose.value = 'conference';
-          if (detail && !detail.value.trim()) detail.value = atsBox.value;
+      // Ticking an ATS box sets the purpose to Conference / Abstract and the
+      // detail to the conference name. Unticking clears them again, unless the
+      // requester has since changed them.
+      function wireAtsAutofill(box, purpose, detail) {
+        if (!box || !purpose || !detail) return;
+        box.addEventListener('change', function () {
+          if (box.checked) {
+            purpose.value = 'conference';
+            detail.value = box.value;
+          } else if (purpose.value === 'conference' && detail.value.trim() === box.value) {
+            purpose.value = '';
+            detail.value = '';
+          }
         });
       }
+      var atsBox = document.getElementById('pr-ats');
+      wireAtsAutofill(atsBox, document.getElementById('pr-purpose'), document.getElementById('pr-purpose-detail'));
+      document.querySelectorAll('.project-edit-form').forEach(function (f) {
+        wireAtsAutofill(f.querySelector('.edit-ats'), f.querySelector('.edit-purpose'), f.querySelector('.edit-purpose-detail'));
+      });
 
       // Toggle preliminary-results link field on the create form. The link is
       // required only when the "results shared" box is checked.
