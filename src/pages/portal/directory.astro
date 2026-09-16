@@ -4,8 +4,10 @@ export const prerender = false;
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PortalNav from '../../components/portal/PortalNav.astro';
 import { getDb } from '../../lib/turso';
+import { availableFields } from '../../lib/member-export';
 
 const user = Astro.locals.user;
+const exportFields = availableFields(user?.role === 'admin');
 
 const db = getDb();
 let members: any[] = [];
@@ -68,7 +70,175 @@ try {
               <span class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
                 <span id="member-count">{members.length}</span> of {members.length}
               </span>
+              <button
+                id="export-toggle"
+                type="button"
+                aria-expanded="false"
+                aria-controls="export-panel"
+                class="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-clif-burgundy bg-white dark:bg-neutral-800 border border-clif-burgundy/40 hover:bg-clif-burgundy/5 rounded-lg whitespace-nowrap"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
+                </svg>
+                Download
+              </button>
             </div>
+
+            <form
+              id="export-panel"
+              method="post"
+              action="/api/members/export"
+              hidden
+              class="mb-6 bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-5 space-y-5 text-sm"
+            >
+              <fieldset>
+                <legend class="font-semibold text-gray-900 dark:text-white mb-2">Format</legend>
+                <div class="flex flex-wrap gap-4 text-gray-700 dark:text-gray-300">
+                  <label class="inline-flex items-center gap-2">
+                    <input type="radio" name="format" value="xlsx" checked class="accent-clif-burgundy" /> Excel (.xlsx)
+                  </label>
+                  <label class="inline-flex items-center gap-2">
+                    <input type="radio" name="format" value="csv" class="accent-clif-burgundy" /> CSV
+                  </label>
+                </div>
+              </fieldset>
+
+              <fieldset>
+                <legend class="font-semibold text-gray-900 dark:text-white mb-2">Information</legend>
+                <label class="inline-flex items-center gap-2 mb-2 font-medium text-gray-900 dark:text-white">
+                  <input type="checkbox" id="fields-all" checked class="accent-clif-burgundy" /> All information
+                </label>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-1.5 pl-6 text-gray-700 dark:text-gray-300">
+                  {exportFields.map((f) => (
+                    <label class="inline-flex items-center gap-2">
+                      <input type="checkbox" name="fields" value={f.key} checked class="field-box accent-clif-burgundy" />
+                      {f.label}
+                      {f.private && <span class="text-xs text-gray-400">(admin only)</span>}
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+
+              <fieldset>
+                <legend class="font-semibold text-gray-900 dark:text-white mb-2">Members</legend>
+                <div class="flex flex-wrap gap-4 text-gray-700 dark:text-gray-300">
+                  <label class="inline-flex items-center gap-2">
+                    <input type="radio" name="scope" value="all" checked class="accent-clif-burgundy" /> All members ({members.length})
+                  </label>
+                  <label class="inline-flex items-center gap-2">
+                    <input type="radio" name="scope" value="selected" class="accent-clif-burgundy" /> Choose members
+                  </label>
+                </div>
+
+                <div id="member-picker" hidden class="mt-3 border border-gray-200 dark:border-neutral-700 rounded-lg">
+                  <div class="flex flex-wrap items-center gap-2 p-2 border-b border-gray-200 dark:border-neutral-700">
+                    <input
+                      id="picker-search"
+                      type="search"
+                      placeholder="Filter members…"
+                      autocomplete="off"
+                      class="flex-1 min-w-[10rem] px-3 py-1.5 bg-white dark:bg-neutral-800 border border-gray-300 dark:border-neutral-600 rounded text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-clif-burgundy/40"
+                    />
+                    <button type="button" id="picker-select-shown" class="px-2 py-1 text-clif-burgundy hover:underline">Select shown</button>
+                    <button type="button" id="picker-clear" class="px-2 py-1 text-gray-500 hover:underline">Clear</button>
+                    <span class="text-xs text-gray-500 dark:text-gray-400"><span id="picker-count">0</span> selected</span>
+                  </div>
+                  <div id="picker-list" class="max-h-64 overflow-y-auto p-2 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-gray-700 dark:text-gray-300">
+                    {members.map((member: any) => (
+                      <label
+                        class="picker-item inline-flex items-center gap-2 min-w-0"
+                        data-search={[member.full_name, member.work_email || member.email, member.institution].filter(Boolean).join(' ').toLowerCase()}
+                      >
+                        <input type="checkbox" name="ids" value={String(member.id)} class="member-box accent-clif-burgundy" />
+                        <span class="truncate">
+                          {member.full_name || member.work_email || member.email}
+                          {member.institution && <span class="text-gray-400"> · {member.institution}</span>}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </fieldset>
+
+              <div class="flex items-center gap-3">
+                <button
+                  id="export-submit"
+                  type="submit"
+                  class="inline-flex items-center justify-center px-4 py-2 font-medium text-white bg-clif-burgundy hover:bg-clif-burgundy/90 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Download
+                </button>
+                <span id="export-hint" class="text-xs text-gray-500 dark:text-gray-400"></span>
+              </div>
+            </form>
+
+            <script is:inline>
+              (function () {
+                var form = document.getElementById('export-panel');
+                var toggle = document.getElementById('export-toggle');
+                if (!form || !toggle) return;
+                var allFields = document.getElementById('fields-all');
+                var fieldBoxes = Array.prototype.slice.call(form.querySelectorAll('.field-box'));
+                var picker = document.getElementById('member-picker');
+                var pickerSearch = document.getElementById('picker-search');
+                var items = Array.prototype.slice.call(form.querySelectorAll('.picker-item'));
+                var memberBoxes = Array.prototype.slice.call(form.querySelectorAll('.member-box'));
+                var pickerCount = document.getElementById('picker-count');
+                var submit = document.getElementById('export-submit');
+                var hint = document.getElementById('export-hint');
+
+                toggle.addEventListener('click', function () {
+                  form.hidden = !form.hidden;
+                  toggle.setAttribute('aria-expanded', String(!form.hidden));
+                });
+
+                function scope() {
+                  var checked = form.querySelector('input[name="scope"]:checked');
+                  return checked ? checked.value : 'all';
+                }
+
+                function refresh() {
+                  var nFields = fieldBoxes.filter(function (b) { return b.checked; }).length;
+                  allFields.checked = nFields === fieldBoxes.length;
+                  allFields.indeterminate = nFields > 0 && nFields < fieldBoxes.length;
+                  var nMembers = memberBoxes.filter(function (b) { return b.checked; }).length;
+                  pickerCount.textContent = String(nMembers);
+                  var selecting = scope() === 'selected';
+                  picker.hidden = !selecting;
+                  // Unchecked-scope ids must not be posted.
+                  memberBoxes.forEach(function (b) { b.disabled = !selecting; });
+                  var msg = nFields === 0 ? 'Pick at least one field.' : selecting && nMembers === 0 ? 'Pick at least one member.' : '';
+                  hint.textContent = msg;
+                  submit.disabled = msg !== '';
+                }
+
+                allFields.addEventListener('change', function () {
+                  fieldBoxes.forEach(function (b) { b.checked = allFields.checked; });
+                  refresh();
+                });
+
+                pickerSearch.addEventListener('input', function () {
+                  var q = pickerSearch.value.trim().toLowerCase();
+                  items.forEach(function (item) {
+                    item.classList.toggle('hidden', q !== '' && (item.getAttribute('data-search') || '').indexOf(q) === -1);
+                  });
+                });
+
+                document.getElementById('picker-select-shown').addEventListener('click', function () {
+                  items.forEach(function (item) {
+                    if (!item.classList.contains('hidden')) item.querySelector('input').checked = true;
+                  });
+                  refresh();
+                });
+                document.getElementById('picker-clear').addEventListener('click', function () {
+                  memberBoxes.forEach(function (b) { b.checked = false; });
+                  refresh();
+                });
+
+                form.addEventListener('change', refresh);
+                refresh();
+              })();
+            </script>
 
             <div id="member-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {members.map((member: any) => {
