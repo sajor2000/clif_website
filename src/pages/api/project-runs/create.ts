@@ -2,9 +2,9 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { getDb } from '../../../lib/turso';
-import { notifyProjectRunReady } from '../../../lib/notify-project-run';
-import { notifySlackProjectRun } from '../../../lib/slack';
+import { announceProjectRun } from '../../../lib/notify-project-run';
 import { isDeadlineAhead, isValidDate } from '../../../lib/project-run-deadline';
+import { parseConference } from '../../../lib/project-run-status';
 import { PROJECT_RUN_VERSIONS, runnableTables } from '../../../data/clif-tables';
 
 // Allowed purpose categories. Kept here and re-used by update.ts so the two
@@ -13,8 +13,8 @@ export const PURPOSES = ['grant', 'conference', 'journal', 'other'] as const;
 
 export interface ProjectRunFields {
   title: string;
-  repo_url: string;
-  box_folder_url: string;
+  repo_url: string | null;
+  box_folder_url: string | null;
   description: string;
   instructions: string;
   purpose: string;
@@ -27,21 +27,27 @@ export interface ProjectRunFields {
 }
 
 /**
- * Validate the request body for a project run. Every field is required; the
- * preliminary-results link is required only when prelim_shared is checked.
+ * Validate the request body for a project run. In 'full' mode (a run sites can
+ * act on) every field is required, including shared preliminary results and a
+ * link to them. In 'upcoming' mode the repo, Box folder and preliminary results
+ * may still be missing; /launch re-checks them in full mode.
  * Returns the cleaned fields, or an error string for a 400 response.
  */
-export function parseProjectRunFields(body: any): { fields: ProjectRunFields } | { error: string } {
+export function parseProjectRunFields(
+  body: any,
+  mode: 'full' | 'upcoming' = 'full',
+): { fields: ProjectRunFields } | { error: string } {
   const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
+  const full = mode === 'full';
 
   const title = str(body.title);
   if (!title) return { error: 'Project title is required.' };
 
   const repo_url = str(body.repo_url);
-  if (!repo_url) return { error: 'Project repo is required.' };
+  if (!repo_url && full) return { error: 'Project repo is required.' };
 
   const box_folder_url = str(body.box_folder_url);
-  if (!box_folder_url) return { error: 'Box folder is required.' };
+  if (!box_folder_url && full) return { error: 'Box folder is required.' };
 
   const description = str(body.description);
   if (!description) return { error: 'Brief description is required.' };
@@ -79,21 +85,22 @@ export function parseProjectRunFields(body: any): { fields: ProjectRunFields } |
   const required_tables = allowedTables.filter((t) => pickedTables.includes(t));
   if (required_tables.length === 0) return { error: 'Select at least one table sites need to have.' };
 
-  // Sharing preliminary results is a prerequisite for requesting a consortium run.
+  // Sharing preliminary results is a prerequisite for a run sites can act on.
   const prelim_shared = body.prelim_shared ? 1 : 0;
-  if (!prelim_shared) {
+  if (!prelim_shared && full) {
     return { error: 'You must share the preliminary project results before requesting a consortium run.' };
   }
-  const prelim_link = str(body.prelim_link);
-  if (!prelim_link) {
+  // A link only means something alongside the "shared" box.
+  const prelim_link = prelim_shared ? str(body.prelim_link) : '';
+  if (!prelim_link && full) {
     return { error: 'A link to the preliminary results is required.' };
   }
 
   return {
     fields: {
       title,
-      repo_url,
-      box_folder_url,
+      repo_url: repo_url || null,
+      box_folder_url: box_folder_url || null,
       description,
       instructions,
       purpose,
@@ -118,7 +125,8 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
   }
 
   const body = await request.json();
-  const parsed = parseProjectRunFields(body);
+  const status = body.status === 'upcoming' ? 'upcoming' : 'open';
+  const parsed = parseProjectRunFields(body, status === 'upcoming' ? 'upcoming' : 'full');
   if ('error' in parsed) {
     return new Response(JSON.stringify({ error: parsed.error }), {
       status: 400,
@@ -126,8 +134,9 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
     });
   }
   const f = parsed.fields;
-  // A new run is open, so it can't start with a deadline that already passed
-  // (the nightly auto-close job would close it straight away).
+  // A new run can't start with a deadline that already passed (the nightly
+  // auto-close job would close an open one straight away, and /launch would
+  // reject an upcoming one).
   if (!isDeadlineAhead(f.results_deadline)) {
     return new Response(JSON.stringify({ error: 'The Box upload deadline must be today or later.' }), {
       status: 400,
@@ -144,9 +153,9 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
   const insertRes = await db.execute({
     sql: `INSERT INTO project_runs
             (title, repo_url, box_folder_url, prelim_shared, prelim_link, description, instructions,
-             purpose, purpose_detail, results_deadline, clif_version, required_tables, status,
+             purpose, purpose_detail, results_deadline, clif_version, required_tables, conference, status,
              created_by, created_at, updated_at, project_number)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?, ?, ?,
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                   (SELECT COALESCE(MAX(project_number), 0) + 1 FROM project_runs))
           RETURNING id, project_number`,
     args: [
@@ -162,33 +171,19 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
       f.results_deadline,
       f.clif_version,
       JSON.stringify(f.required_tables),
+      parseConference(body.conference),
+      status,
       user.id,
       now,
       now,
     ],
   });
 
-  // Optionally notify every approved member that a new run is ready. Fire-and-forget
-  // so a mail hiccup never blocks request creation.
+  // An upcoming run is announced when it launches, not now.
   const newId = insertRes.rows[0]?.id as string | undefined;
-  if (newId && body.notify_all) {
-    notifyProjectRunReady(newId, url.origin, { excludeUserId: user.id }).catch(() => {});
+  if (newId && status === 'open') {
+    announceProjectRun(newId, { origin: url.origin, notifyAll: !!body.notify_all, requester: user }).catch(() => {});
   }
-
-  // Announce every new request in Slack, regardless of notify_all: a channel
-  // post is opt-in to read, unlike mailing all approved members. No-ops when
-  // SLACK_WEBHOOK_URL is unset, and never blocks creation.
-  const newNumber = insertRes.rows[0]?.project_number;
-  notifySlackProjectRun({
-    projectNumber: newNumber == null ? null : Number(newNumber),
-    title: f.title,
-    description: f.description,
-    purpose: f.purpose,
-    purposeDetail: f.purpose_detail,
-    deadline: f.results_deadline,
-    requestedBy: user.full_name || user.email || null,
-    projectUrl: `${url.origin}/portal/project-runs`,
-  }).catch(() => {});
 
   return new Response(JSON.stringify({ success: true }), {
     status: 200,

@@ -4,6 +4,7 @@ import type { APIRoute } from 'astro';
 import { getDb } from '../../../lib/turso';
 import { parseProjectRunFields } from './create';
 import { isDeadlineAhead } from '../../../lib/project-run-deadline';
+import { parseConference, toProjectRunStatus } from '../../../lib/project-run-status';
 
 // The request creator or an admin can edit a project run request.
 export const POST: APIRoute = async ({ locals, request }) => {
@@ -24,7 +25,34 @@ export const POST: APIRoute = async ({ locals, request }) => {
     });
   }
 
-  const parsed = parseProjectRunFields(body);
+  const db = getDb();
+
+  const existing = await db.execute({
+    sql: 'SELECT created_by, status, conference FROM project_runs WHERE id = ?',
+    args: [projectId],
+  });
+  if (existing.rows.length === 0) {
+    return new Response(JSON.stringify({ error: 'Not found.' }), {
+      status: 404,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+  const run = existing.rows[0];
+  if (user.role !== 'admin' && run.created_by !== user.id) {
+    return new Response(JSON.stringify({ error: 'Forbidden' }), {
+      status: 403,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  // Editing never launches a run: an upcoming run stays upcoming (that's
+  // /launch's job). Otherwise the form's "closed" box picks open or closed.
+  const status =
+    toProjectRunStatus(run.status) === 'upcoming' ? 'upcoming' : body.status === 'closed' ? 'closed' : 'open';
+
+  // Only a run sites can act on needs every field; an upcoming or closed run
+  // may still lack its repo, Box folder or preliminary results.
+  const parsed = parseProjectRunFields(body, status === 'open' ? 'full' : 'upcoming');
   if ('error' in parsed) {
     return new Response(JSON.stringify({ error: parsed.error }), {
       status: 400,
@@ -32,7 +60,6 @@ export const POST: APIRoute = async ({ locals, request }) => {
     });
   }
   const f = parsed.fields;
-  const status = body.status === 'closed' ? 'closed' : 'open';
   // An open run always has a deadline ahead of it; otherwise the nightly
   // auto-close job would just close it again (see /set-status).
   if (status === 'open' && !isDeadlineAhead(f.results_deadline)) {
@@ -44,30 +71,11 @@ export const POST: APIRoute = async ({ locals, request }) => {
     );
   }
 
-  const db = getDb();
-
-  const existing = await db.execute({
-    sql: 'SELECT created_by FROM project_runs WHERE id = ?',
-    args: [projectId],
-  });
-  if (existing.rows.length === 0) {
-    return new Response(JSON.stringify({ error: 'Not found.' }), {
-      status: 404,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-  if (user.role !== 'admin' && existing.rows[0].created_by !== user.id) {
-    return new Response(JSON.stringify({ error: 'Forbidden' }), {
-      status: 403,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-
   await db.execute({
     sql: `UPDATE project_runs SET
             title = ?, repo_url = ?, box_folder_url = ?, prelim_shared = ?,
             prelim_link = ?, description = ?, instructions = ?, purpose = ?, purpose_detail = ?,
-            results_deadline = ?, clif_version = ?, required_tables = ?, status = ?, updated_at = ?
+            results_deadline = ?, clif_version = ?, required_tables = ?, conference = ?, status = ?, updated_at = ?
           WHERE id = ?`,
     args: [
       f.title,
@@ -82,6 +90,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
       f.results_deadline,
       f.clif_version,
       JSON.stringify(f.required_tables),
+      parseConference(body.conference, run.conference),
       status,
       new Date().toISOString(),
       projectId,

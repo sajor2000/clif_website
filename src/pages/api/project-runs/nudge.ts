@@ -24,13 +24,16 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
   const db = getDb();
 
   const runRes = await db.execute({
-    sql: 'SELECT id, title, results_deadline, created_by FROM project_runs WHERE id = ?',
+    sql: 'SELECT id, title, results_deadline, created_by, status FROM project_runs WHERE id = ?',
     args: [projectId],
   });
   if (runRes.rows.length === 0) {
     return json({ error: 'Project run not found.' }, 404);
   }
   const run = runRes.rows[0];
+  if (run.status === 'upcoming') {
+    return json({ error: "Sites can't act on this run until it launches." }, 400);
+  }
 
   // Only the creator or an admin may nudge sites for this run.
   if (user.role !== 'admin' && run.created_by !== user.id) {

@@ -18,6 +18,8 @@ import { isDeadlineAhead, isValidDate } from '../../../lib/project-run-deadline'
  * without moving the deadline would just be undone the next night. The rule is
  * that an open run always has a deadline ahead of it.
  *
+ * An upcoming run can be closed here (cancelled) but not opened; see /launch.
+ *
  * Same permission rule as /update: the run's creator, or an admin.
  */
 export const POST: APIRoute = async ({ locals, request }) => {
@@ -44,14 +46,30 @@ export const POST: APIRoute = async ({ locals, request }) => {
   const db = getDb();
 
   const existing = await db.execute({
-    sql: 'SELECT created_by FROM project_runs WHERE id = ?',
+    sql: 'SELECT created_by, status, repo_url, box_folder_url, prelim_shared, prelim_link FROM project_runs WHERE id = ?',
     args: [projectId],
   });
   if (existing.rows.length === 0) {
     return json({ error: 'Not found.' }, 404);
   }
-  if (user.role !== 'admin' && existing.rows[0].created_by !== user.id) {
+  const run = existing.rows[0];
+  if (user.role !== 'admin' && run.created_by !== user.id) {
     return json({ error: 'Forbidden' }, 403);
+  }
+
+  if (status === 'open') {
+    // Opening an upcoming run is /launch's job — it runs the full checks and
+    // announces the run.
+    if (run.status === 'upcoming') {
+      return json({ error: 'Use Launch run to open an upcoming run.' }, 400);
+    }
+    // A run closed before it launched may still lack what sites need.
+    if (!run.repo_url || !run.box_folder_url || !run.prelim_shared || !run.prelim_link) {
+      return json(
+        { error: 'This run is missing its repo, Box folder or preliminary results. Edit the run to add them.' },
+        400,
+      );
+    }
   }
 
   if (status === 'open') {

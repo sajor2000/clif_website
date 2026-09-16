@@ -7,6 +7,7 @@ import { getDb } from '../../lib/turso';
 import { todayInConsortiumTz } from '../../lib/project-run-deadline';
 import { PROJECT_RUN_VERSIONS } from '../../data/clif-tables';
 import RequiredTablesPicker from '../../components/portal/RequiredTablesPicker.astro';
+import { CURRENT_ATS, STATUS_BADGE, toProjectRunStatus } from '../../lib/project-run-status';
 
 const user = Astro.locals.user!;
 const isAdmin = user.role === 'admin';
@@ -122,6 +123,7 @@ const today = todayInConsortiumTz();
             Anyone can file a request. Each site's checkbox is updated by that site's data editor (or an admin).
             If a project doesn't apply to a site, that site's data editor, the run's requester, or an admin can mark it N/A.
             Runs close automatically once their Box upload deadline has passed.
+            A run can be logged as <strong class="font-medium">upcoming</strong> before its repo, Box folder and preliminary results exist; sites can act on it once it's launched.
           </p>
         </div>
 
@@ -131,33 +133,71 @@ const today = todayInConsortiumTz();
           </div>
         )}
 
-        {/* Tabs */}
+        {/* Tabs. Every tab but Create filters the same list of run cards. */}
         <div class="mb-6">
-          <div class="flex border-b border-gray-200 dark:border-neutral-700">
-            <button id="tab-create" class="tab-btn px-5 py-3 text-sm font-medium border-b-2 border-clif-burgundy text-clif-burgundy transition-colors">
-              Create a Run Request
+          <div class="flex overflow-x-auto border-b border-gray-200 dark:border-neutral-700">
+            <button id="tab-create" class="tab-btn shrink-0 whitespace-nowrap px-5 py-3 text-sm font-medium border-b-2 border-clif-burgundy text-clif-burgundy transition-colors">
+              Create a Project Run
             </button>
-            <button id="tab-active" class="tab-btn px-5 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
-              Active Project Runs
+            <button class="tab-btn shrink-0 whitespace-nowrap px-5 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors" data-filter="active" data-empty="No active project runs.">
+              Active Runs
             </button>
-            <button id="tab-all" class="tab-btn px-5 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
-              All Runs
+            <button class="tab-btn shrink-0 whitespace-nowrap px-5 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors" data-filter="upcoming" data-empty="No upcoming project runs.">
+              All Upcoming
+            </button>
+            <button class="tab-btn shrink-0 whitespace-nowrap px-5 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors" data-filter="ats" data-empty={`No ${CURRENT_ATS} project runs yet.`}>
+              Upcoming {CURRENT_ATS}
+            </button>
+            <button class="tab-btn shrink-0 whitespace-nowrap px-5 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors" data-filter="all" data-empty="No project run requests yet.">
+              All Projects
             </button>
           </div>
         </div>
 
-        {/* Tab: Create a Run Request */}
+        {/* Tab: Create a Project Run */}
         <div id="panel-create" class="tab-panel">
         <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6 mb-8">
           <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">New Project Run Request</h2>
           <form id="create-project-form" class="space-y-4">
+            {/* Ready now vs upcoming. An upcoming run may skip the repo, Box
+                folder and preliminary results until it launches. */}
+            <fieldset>
+              <legend class="block text-sm font-semibold text-gray-900 dark:text-white mb-2">Run status <span class="text-red-500">*</span></legend>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <label class="flex items-start gap-3 p-4 rounded-lg border-2 border-gray-200 dark:border-neutral-600 cursor-pointer transition-colors hover:border-clif-burgundy/50 has-[:checked]:border-clif-burgundy has-[:checked]:bg-clif-burgundy/5 dark:has-[:checked]:bg-clif-burgundy/15">
+                  <input type="radio" name="pr-kind" value="open" checked class="mt-0.5 w-4 h-4 shrink-0 accent-clif-burgundy" />
+                  <span>
+                    <span class="block text-sm font-semibold text-gray-900 dark:text-white">Ready</span>
+                    <span class="block text-xs text-gray-600 dark:text-gray-400 mt-0.5">Sites can start now. All fields required.</span>
+                  </span>
+                </label>
+                <label class="flex items-start gap-3 p-4 rounded-lg border-2 border-gray-200 dark:border-neutral-600 cursor-pointer transition-colors hover:border-clif-burgundy/50 has-[:checked]:border-clif-burgundy has-[:checked]:bg-clif-burgundy/5 dark:has-[:checked]:bg-clif-burgundy/15">
+                  <input type="radio" name="pr-kind" value="upcoming" class="mt-0.5 w-4 h-4 shrink-0 accent-clif-burgundy" />
+                  <span>
+                    <span class="block text-sm font-semibold text-gray-900 dark:text-white">Upcoming</span>
+                    <span class="block text-xs text-gray-600 dark:text-gray-400 mt-0.5">Planned, not ready yet. Repo, Box and prelim results can wait until launch.</span>
+                  </span>
+                </label>
+              </div>
+            </fieldset>
+            <fieldset>
+              <legend class="block text-sm font-semibold text-gray-900 dark:text-white mb-2">Conference</legend>
+              <label class="flex items-start gap-3 p-4 rounded-lg border-2 border-gray-200 dark:border-neutral-600 cursor-pointer transition-colors hover:border-clif-burgundy/50 has-[:checked]:border-clif-burgundy has-[:checked]:bg-clif-burgundy/5 dark:has-[:checked]:bg-clif-burgundy/15">
+                <input type="checkbox" id="pr-ats" value={CURRENT_ATS} class="mt-0.5 w-4 h-4 shrink-0 accent-clif-burgundy" />
+                <span>
+                  <span class="block text-sm font-semibold text-gray-900 dark:text-white">{CURRENT_ATS}</span>
+                  <span class="block text-xs text-gray-600 dark:text-gray-400 mt-0.5">Tag this run for {CURRENT_ATS}. It will be listed under the {CURRENT_ATS} tab.</span>
+                </span>
+              </label>
+            </fieldset>
             {/* Prerequisite: preliminary results must be shared before a run can be requested */}
             <div class="rounded-lg border-l-4 border-clif-burgundy bg-clif-burgundy/5 dark:bg-clif-burgundy/10 px-4 py-3 space-y-2">
               <label class="flex items-start gap-2 cursor-pointer">
-                <input type="checkbox" id="pr-prelim" required class="mt-0.5 w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy" />
+                <input type="checkbox" id="pr-prelim" required class="ready-required mt-0.5 w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy" />
                 <span class="text-sm font-medium text-gray-800 dark:text-gray-200">
-                  I have shared the preliminary project results <span class="text-red-500">*</span>
-                  <span class="block text-xs font-normal text-gray-500 dark:text-gray-400 mt-0.5">Required — a consortium run can only be requested after preliminary results have been shared.</span>
+                  I have shared the preliminary project results <span class="ready-mark text-red-500">*</span> <span class="upcoming-mark hidden text-xs font-normal text-gray-400 dark:text-gray-500">(optional for upcoming)</span>
+                  <span class="ready-mark block text-xs font-normal text-gray-500 dark:text-gray-400 mt-0.5">Required — a consortium run can only be requested after preliminary results have been shared.</span>
+                  <span class="upcoming-mark hidden block text-xs font-normal text-gray-500 dark:text-gray-400 mt-0.5">Required when you launch the run.</span>
                 </span>
               </label>
               <div id="pr-prelim-link-field" class="hidden">
@@ -173,14 +213,14 @@ const today = todayInConsortiumTz();
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label for="pr-repo" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Project Repo <span class="text-red-500">*</span></label>
+                <label for="pr-repo" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Project Repo <span class="ready-mark text-red-500">*</span> <span class="upcoming-mark hidden text-xs font-normal text-gray-400 dark:text-gray-500">(optional for upcoming)</span></label>
                 <input type="url" id="pr-repo" required placeholder="https://github.com/..."
-                  class="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent" />
+                  class="ready-required w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent" />
               </div>
               <div>
-                <label for="pr-box" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Box Folder <span class="text-red-500">*</span></label>
+                <label for="pr-box" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Box Folder <span class="ready-mark text-red-500">*</span> <span class="upcoming-mark hidden text-xs font-normal text-gray-400 dark:text-gray-500">(optional for upcoming)</span></label>
                 <input type="url" id="pr-box" required placeholder="https://uchicago.box.com/..."
-                  class="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent" />
+                  class="ready-required w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent" />
               </div>
             </div>
             <div>
@@ -229,7 +269,7 @@ const today = todayInConsortiumTz();
               </div>
             </div>
             <RequiredTablesPicker />
-            <div class="flex items-center gap-2 pt-1">
+            <div id="pr-notify-row" class="flex items-center gap-2 pt-1">
               <input type="checkbox" id="pr-notify" class="w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy" />
               <label for="pr-notify" class="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Notify all members that this project run is ready
@@ -245,7 +285,7 @@ const today = todayInConsortiumTz();
         </div>
         </div>
 
-        {/* Tab: Active Project Runs / All Runs (one panel; JS filters cards by status) */}
+        {/* Run tabs share one panel; JS filters the cards (see showRuns). */}
         <div id="panel-runs" class="tab-panel hidden">
         {projects.length === 0 ? (
           <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6 text-center text-gray-500 dark:text-gray-400 text-sm">
@@ -253,8 +293,7 @@ const today = todayInConsortiumTz();
           </div>
         ) : (
           <div class="space-y-4">
-            <div id="no-active-msg" class="hidden bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6 text-center text-gray-500 dark:text-gray-400 text-sm">
-              No active project runs.
+            <div id="runs-empty-msg" class="hidden bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6 text-center text-gray-500 dark:text-gray-400 text-sm">
             </div>
             {projects.map((p) => {
               const ranSites = runMap[p.id as string] || new Set();
@@ -264,15 +303,19 @@ const today = todayInConsortiumTz();
               const applicableCount = sites.length - naCount;
               const naSuffix = naCount > 0 ? ` · ${naCount} N/A` : '';
               const requiredTables = parseTables(p.required_tables);
-              const isClosed = p.status === 'closed';
+              const status = toProjectRunStatus(p.status);
+              const isClosed = status === 'closed';
+              const isUpcoming = status === 'upcoming';
+              const badge = STATUS_BADGE[status];
               // A run drops out of the Active tab once its deadline is behind
               // it. The nightly /api/project-runs/auto-close job then closes it;
               // this badge covers the hours between the deadline and that run.
+              // On an upcoming run it flags that launching needs a new deadline.
               const deadlinePassed =
                 !isClosed && !!p.results_deadline && isDeadlinePassed(p.results_deadline as string);
               const manage = canManage(p);
               return (
-                <div class="project-card bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700" data-project={p.id} data-status={p.status} data-deadline-passed={deadlinePassed ? 'true' : 'false'}>
+                <div class="project-card bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700" data-project={p.id} data-status={status} data-conference={p.conference || ''} data-deadline-passed={deadlinePassed ? 'true' : 'false'}>
                   {/* Collapsed by default: the summary carries the number, title,
                       badges and a one-line status. Detail lives in the body. */}
                   <details class="group">
@@ -286,8 +329,9 @@ const today = todayInConsortiumTz();
                           <span class="shrink-0 text-base font-semibold text-gray-400 dark:text-gray-500 tabular-nums">{p.project_number}.</span>
                         )}
                         <h3 class="text-base font-semibold text-gray-900 dark:text-white">{p.title}</h3>
-                        {isClosed && (
-                          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-neutral-700 dark:text-gray-400">Closed</span>
+                        <span class={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${badge.classes}`}>{badge.label}</span>
+                        {p.conference && (
+                          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border border-clif-burgundy/40 text-clif-burgundy dark:border-clif-burgundy/60 dark:text-red-300">{p.conference}</span>
                         )}
                         {deadlinePassed && (
                           <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">Deadline passed</span>
@@ -306,7 +350,11 @@ const today = todayInConsortiumTz();
                       </div>
                       {/* Stays visible while collapsed — enough to scan without opening. */}
                       <div class="flex flex-wrap gap-x-4 gap-y-1 mt-1.5 text-xs text-gray-500 dark:text-gray-400">
-                        <span class="ran-summary">{ranCount} / {applicableCount} sites have run this{naSuffix}</span>
+                        {isUpcoming ? (
+                          <span>Not launched yet</span>
+                        ) : (
+                          <span class="ran-summary">{ranCount} / {applicableCount} sites have run this{naSuffix}</span>
+                        )}
                         {p.results_deadline && (
                           <span class={deadlinePassed ? 'text-red-500 dark:text-red-400 font-medium' : ''}>
                             Box upload deadline: {formatDeadline(p.results_deadline as string)}
@@ -341,7 +389,26 @@ const today = todayInConsortiumTz();
                       </div>
                     </div>
 
-                    {manage && (
+                    {manage && isUpcoming && (
+                      <div class="flex items-center gap-3 shrink-0">
+                        <button
+                          type="button"
+                          class="launch-project-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold shadow-sm bg-clif-burgundy text-white hover:bg-clif-burgundy/90 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-clif-burgundy/50"
+                          data-project-id={p.id}
+                          title="Fill in the remaining details and open this run to sites"
+                        >
+                          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M12 5l7 7-7 7" />
+                          </svg>
+                          Launch run
+                        </button>
+                        <span class="w-px h-4 bg-gray-200 dark:bg-neutral-600" aria-hidden="true"></span>
+                        <button class="edit-project-btn text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline" data-project-id={p.id}>Edit</button>
+                        <button class="status-project-btn text-xs text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 underline" data-project-id={p.id} data-next="closed" title="Close this run without launching it">Close</button>
+                        <button class="delete-project-btn text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 underline" data-project-id={p.id}>Delete</button>
+                      </div>
+                    )}
+                    {manage && !isUpcoming && (
                       <div class="flex items-center gap-3 shrink-0">
                         {/* Close button and its info marker share one hover group, so
                             the explanation appears whenever the pointer is on either.
@@ -446,11 +513,16 @@ const today = todayInConsortiumTz();
 
                   {/* Edit form (hidden) */}
                   {manage && (
-                    <form class="project-edit-form hidden mt-4 pt-4 border-t border-gray-100 dark:border-neutral-700 space-y-3" data-project-id={p.id}>
+                    <form class="project-edit-form hidden mt-4 pt-4 border-t border-gray-100 dark:border-neutral-700 space-y-3" data-project-id={p.id} data-mode="edit" data-upcoming={isUpcoming ? 'true' : 'false'}>
+                      {isUpcoming && (
+                        <p class="launch-only hidden text-sm text-gray-700 dark:text-gray-300">
+                          <strong class="font-semibold">Launch this run.</strong> Every field is required now, including the repo, Box folder and preliminary results, and the Box upload deadline must be today or later.
+                        </p>
+                      )}
                       <input type="text" class="edit-title w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" value={p.title} placeholder="Title" required />
                       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <input type="url" class="edit-repo w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" value={p.repo_url || ''} placeholder="Repo URL" required />
-                        <input type="url" class="edit-box w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" value={p.box_folder_url || ''} placeholder="Box folder URL" required />
+                        <input type="url" class="edit-repo w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" value={p.repo_url || ''} placeholder="Repo URL" required={!isUpcoming} />
+                        <input type="url" class="edit-box w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" value={p.box_folder_url || ''} placeholder="Box folder URL" required={!isUpcoming} />
                       </div>
                       <textarea class="edit-description w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" rows="2" placeholder="Brief description" required>{p.description || ''}</textarea>
                       <textarea class="edit-instructions w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" rows="4" placeholder="Specific instructions to run" required>{p.instructions || ''}</textarea>
@@ -484,10 +556,23 @@ const today = todayInConsortiumTz();
                         <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Preliminary results shared</label>
                       </div>
                       <input type="url" class="edit-prelim-link w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" value={p.prelim_link || ''} placeholder="Link to preliminary results" />
-                      <div class="flex items-center gap-2">
-                        <input type="checkbox" class="edit-closed w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy" checked={isClosed} />
-                        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Mark as closed</label>
-                      </div>
+                      <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" class="edit-ats w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy" value={p.conference || CURRENT_ATS} checked={!!p.conference} />
+                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">This run is for {p.conference || CURRENT_ATS}</span>
+                      </label>
+                      {!isUpcoming && (
+                        <div class="flex items-center gap-2">
+                          <input type="checkbox" class="edit-closed w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy" checked={isClosed} />
+                          <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Mark as closed</label>
+                        </div>
+                      )}
+                      {isUpcoming && (
+                        <label class="launch-only hidden flex items-center gap-2 cursor-pointer">
+                          <input type="checkbox" class="edit-notify w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy" />
+                          <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Notify all members that this project run is ready</span>
+                          <span class="text-xs text-gray-400 dark:text-gray-500">(emails every approved member)</span>
+                        </label>
+                      )}
                       <div class="flex gap-2">
                         <button type="submit" class="save-project-btn bg-clif-burgundy hover:bg-clif-burgundy/90 text-white font-medium py-1.5 px-3 rounded-lg text-xs transition-colors">Save</button>
                         <button type="button" class="cancel-edit-btn text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 underline" data-project-id={p.id}>Cancel</button>
@@ -495,7 +580,12 @@ const today = todayInConsortiumTz();
                     </form>
                   )}
 
-                  {/* Per-site checklist */}
+                  {/* Per-site checklist — only once a run is launched */}
+                  {isUpcoming ? (
+                    <p class="mt-4 pt-4 border-t border-gray-100 dark:border-neutral-700 text-sm text-gray-500 dark:text-gray-400">
+                      Sites can start once this run launches.
+                    </p>
+                  ) : (
                   <div class="mt-4 pt-4 border-t border-gray-100 dark:border-neutral-700">
                     <div class="flex items-center justify-between mb-3">
                       <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Sites that have run this</h4>
@@ -563,6 +653,7 @@ const today = todayInConsortiumTz();
                       </div>
                     )}
                   </div>
+                  )}
                     </div>
                   </details>
                 </div>
@@ -577,16 +668,16 @@ const today = todayInConsortiumTz();
 
   <script is:inline>
     document.addEventListener('DOMContentLoaded', function () {
-      // === Sub-tabs: Create / Active Project Runs / All Runs ===
+      // === Sub-tabs: Create, then run lists filtered by data-filter ===
       var tabCreate = document.getElementById('tab-create');
-      var tabActive = document.getElementById('tab-active');
-      var tabAll = document.getElementById('tab-all');
+      var runTabs = Array.prototype.slice.call(document.querySelectorAll('.tab-btn[data-filter]'));
       var panelCreate = document.getElementById('panel-create');
       var panelRuns = document.getElementById('panel-runs');
-      var noActiveMsg = document.getElementById('no-active-msg');
+      var emptyMsg = document.getElementById('runs-empty-msg');
+      var atsTag = document.getElementById('pr-ats') ? document.getElementById('pr-ats').value : '';
 
       function setActiveTab(btn) {
-        [tabCreate, tabActive, tabAll].forEach(function (b) {
+        [tabCreate].concat(runTabs).forEach(function (b) {
           if (!b) return;
           b.classList.remove('border-clif-burgundy', 'text-clif-burgundy');
           b.classList.add('border-transparent', 'text-gray-500', 'dark:text-gray-400');
@@ -601,27 +692,80 @@ const today = todayInConsortiumTz();
         if (panelRuns) panelRuns.classList.add('hidden');
       }
 
-      function showRuns(activeOnly, btn) {
+      // active:   open and still within its deadline
+      // upcoming: logged but not launched
+      // ats:      tagged for the current ATS, whatever its status
+      // all:      everything
+      function matches(card, filter) {
+        var status = card.getAttribute('data-status');
+        if (filter === 'active') return status === 'open' && card.getAttribute('data-deadline-passed') !== 'true';
+        if (filter === 'upcoming') return status === 'upcoming';
+        if (filter === 'ats') return !!atsTag && card.getAttribute('data-conference') === atsTag;
+        return true;
+      }
+
+      function showRuns(btn) {
+        var filter = btn.getAttribute('data-filter');
         setActiveTab(btn);
         if (panelCreate) panelCreate.classList.add('hidden');
         if (panelRuns) panelRuns.classList.remove('hidden');
         var visible = 0;
         document.querySelectorAll('.project-card').forEach(function (c) {
-          // "Active" means still open AND still within its deadline. Both kinds
-          // remain listed under All Runs.
-          var inactive =
-            c.getAttribute('data-status') === 'closed' ||
-            c.getAttribute('data-deadline-passed') === 'true';
-          var hide = activeOnly && inactive;
-          c.classList.toggle('hidden', hide);
-          if (!hide) visible++;
+          var show = matches(c, filter);
+          c.classList.toggle('hidden', !show);
+          if (show) visible++;
         });
-        if (noActiveMsg) noActiveMsg.classList.toggle('hidden', !(activeOnly && visible === 0));
+        if (emptyMsg) {
+          emptyMsg.textContent = btn.getAttribute('data-empty') || '';
+          emptyMsg.classList.toggle('hidden', visible !== 0);
+        }
       }
 
       if (tabCreate) tabCreate.addEventListener('click', showCreate);
-      if (tabActive) tabActive.addEventListener('click', function () { showRuns(true, tabActive); });
-      if (tabAll) tabAll.addEventListener('click', function () { showRuns(false, tabAll); });
+      runTabs.forEach(function (b) {
+        b.addEventListener('click', function () { showRuns(b); });
+      });
+
+      // === Create form: "Ready" vs "Upcoming" ===
+      // Upcoming drops the required flag from the repo, Box folder and
+      // preliminary-results fields, and hides the notify option (members are
+      // told when the run launches).
+      var createForm = document.getElementById('create-project-form');
+      function createKind() {
+        var r = document.querySelector('input[name="pr-kind"]:checked');
+        return r ? r.value : 'open';
+      }
+      function syncCreateKind() {
+        if (!createForm) return;
+        var upcoming = createKind() === 'upcoming';
+        createForm.querySelectorAll('.ready-required').forEach(function (el) { el.required = !upcoming; });
+        createForm.querySelectorAll('.ready-mark').forEach(function (el) { el.classList.toggle('hidden', upcoming); });
+        createForm.querySelectorAll('.upcoming-mark').forEach(function (el) { el.classList.toggle('hidden', !upcoming); });
+        var link = document.getElementById('pr-prelim-link');
+        if (link) link.required = !upcoming && document.getElementById('pr-prelim').checked;
+        var notifyRow = document.getElementById('pr-notify-row');
+        if (notifyRow) notifyRow.classList.toggle('hidden', upcoming);
+        var btn = document.getElementById('pr-create-btn');
+        if (btn && !btn.disabled) btn.textContent = upcoming ? 'Save Upcoming Run' : 'Submit Request';
+      }
+      if (createForm) {
+        createForm.querySelectorAll('input[name="pr-kind"]').forEach(function (r) {
+          r.addEventListener('change', syncCreateKind);
+        });
+        syncCreateKind();
+      }
+
+      // Tagging a run for ATS fills in an empty purpose as the conference.
+      var atsBox = document.getElementById('pr-ats');
+      if (atsBox) {
+        atsBox.addEventListener('change', function () {
+          if (!atsBox.checked) return;
+          var purpose = document.getElementById('pr-purpose');
+          var detail = document.getElementById('pr-purpose-detail');
+          if (purpose && !purpose.value) purpose.value = 'conference';
+          if (detail && !detail.value.trim()) detail.value = atsBox.value;
+        });
+      }
 
       // Toggle preliminary-results link field on the create form. The link is
       // required only when the "results shared" box is checked.
@@ -631,7 +775,7 @@ const today = todayInConsortiumTz();
       if (prelim && prelimField && prelimLink) {
         prelim.addEventListener('change', function () {
           prelimField.classList.toggle('hidden', !this.checked);
-          prelimLink.required = this.checked;
+          prelimLink.required = this.checked && createKind() !== 'upcoming';
           if (!this.checked) prelimLink.value = '';
         });
       }
@@ -688,8 +832,9 @@ const today = todayInConsortiumTz();
           e.preventDefault();
           var btn = document.getElementById('pr-create-btn');
           var errorEl = document.getElementById('pr-create-error');
+          var upcoming = createKind() === 'upcoming';
           btn.disabled = true;
-          btn.textContent = 'Submitting...';
+          btn.textContent = upcoming ? 'Saving...' : 'Submitting...';
           errorEl.classList.add('hidden');
 
           var res = await fetch('/api/project-runs/create', {
@@ -708,7 +853,9 @@ const today = todayInConsortiumTz();
               required_tables: selectedTables(form.querySelector('.tables-picker-root')),
               prelim_shared: document.getElementById('pr-prelim').checked,
               prelim_link: document.getElementById('pr-prelim-link').value,
-              notify_all: document.getElementById('pr-notify').checked,
+              notify_all: !upcoming && document.getElementById('pr-notify').checked,
+              status: upcoming ? 'upcoming' : 'open',
+              conference: atsBox && atsBox.checked ? atsBox.value : '',
             }),
           });
 
@@ -719,36 +866,55 @@ const today = todayInConsortiumTz();
             errorEl.textContent = data.error || 'Failed to submit request';
             errorEl.classList.remove('hidden');
             btn.disabled = false;
-            btn.textContent = 'Submit Request';
+            syncCreateKind();
           }
         });
       }
 
-      // Edit toggles
+      // === Edit / Launch ===
+      // Both open the card's edit form. Launch mode (upcoming runs only)
+      // requires every field, offers to notify members, and posts to /launch.
+      function editFormFor(pid) {
+        return document.querySelector('.project-edit-form[data-project-id="' + pid + '"]');
+      }
+      function syncEditRequired(f) {
+        var strict = f.getAttribute('data-upcoming') !== 'true' || f.getAttribute('data-mode') === 'launch';
+        var cb = f.querySelector('.edit-prelim');
+        f.querySelector('.edit-repo').required = strict;
+        f.querySelector('.edit-box').required = strict;
+        cb.required = strict;
+        f.querySelector('.edit-prelim-link').required = cb.checked && strict;
+      }
+      function openEditForm(pid, mode) {
+        var f = editFormFor(pid);
+        if (!f) return;
+        // Clicking the same button again closes the form.
+        if (!f.classList.contains('hidden') && f.getAttribute('data-mode') === mode) {
+          f.classList.add('hidden');
+          return;
+        }
+        f.setAttribute('data-mode', mode);
+        f.querySelectorAll('.launch-only').forEach(function (el) { el.classList.toggle('hidden', mode !== 'launch'); });
+        f.querySelector('.save-project-btn').textContent = mode === 'launch' ? 'Launch run' : 'Save';
+        syncEditRequired(f);
+        f.classList.remove('hidden');
+        if (mode === 'launch') f.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
       document.querySelectorAll('.edit-project-btn').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-          var pid = this.getAttribute('data-project-id');
-          var f = document.querySelector('.project-edit-form[data-project-id="' + pid + '"]');
-          if (f) f.classList.toggle('hidden');
-        });
+        btn.addEventListener('click', function () { openEditForm(this.getAttribute('data-project-id'), 'edit'); });
+      });
+      document.querySelectorAll('.launch-project-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () { openEditForm(this.getAttribute('data-project-id'), 'launch'); });
       });
       document.querySelectorAll('.cancel-edit-btn').forEach(function (btn) {
         btn.addEventListener('click', function () {
-          var pid = this.getAttribute('data-project-id');
-          var f = document.querySelector('.project-edit-form[data-project-id="' + pid + '"]');
+          var f = editFormFor(this.getAttribute('data-project-id'));
           if (f) f.classList.add('hidden');
         });
       });
-
-      // On each edit form, the preliminary-results link is required only when
-      // its "results shared" box is checked.
       document.querySelectorAll('.project-edit-form').forEach(function (f) {
-        var cb = f.querySelector('.edit-prelim');
-        var link = f.querySelector('.edit-prelim-link');
-        if (!cb || !link) return;
-        var sync = function () { link.required = cb.checked; };
-        sync();
-        cb.addEventListener('change', sync);
+        f.querySelector('.edit-prelim').addEventListener('change', function () { syncEditRequired(f); });
+        syncEditRequired(f);
       });
 
       // Each edit form's tables picker follows its own CLIF version select.
@@ -761,11 +927,15 @@ const today = todayInConsortiumTz();
         f.addEventListener('submit', async function (e) {
           e.preventDefault();
           var pid = this.getAttribute('data-project-id');
+          var launching = this.getAttribute('data-mode') === 'launch';
           var saveBtn = this.querySelector('.save-project-btn');
+          var closedBox = this.querySelector('.edit-closed');
+          var atsEdit = this.querySelector('.edit-ats');
+          var notifyEdit = this.querySelector('.edit-notify');
           saveBtn.disabled = true;
-          saveBtn.textContent = 'Saving...';
+          saveBtn.textContent = launching ? 'Launching...' : 'Saving...';
 
-          var res = await fetch('/api/project-runs/update', {
+          var res = await fetch(launching ? '/api/project-runs/launch' : '/api/project-runs/update', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -782,7 +952,9 @@ const today = todayInConsortiumTz();
               required_tables: selectedTables(this.querySelector('.tables-picker-root')),
               prelim_shared: this.querySelector('.edit-prelim').checked,
               prelim_link: this.querySelector('.edit-prelim-link').value,
-              status: this.querySelector('.edit-closed').checked ? 'closed' : 'open',
+              status: closedBox && closedBox.checked ? 'closed' : 'open',
+              conference: atsEdit && atsEdit.checked ? atsEdit.value : '',
+              notify_all: launching && !!notifyEdit && notifyEdit.checked,
             }),
           });
 
@@ -790,9 +962,9 @@ const today = todayInConsortiumTz();
             window.location.reload();
           } else {
             var data = await res.json();
-            alert(data.error || 'Failed to save');
+            alert(data.error || (launching ? 'Failed to launch' : 'Failed to save'));
             saveBtn.disabled = false;
-            saveBtn.textContent = 'Save';
+            saveBtn.textContent = launching ? 'Launch run' : 'Save';
           }
         });
       });

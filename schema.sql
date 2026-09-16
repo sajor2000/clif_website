@@ -257,7 +257,8 @@ CREATE TABLE IF NOT EXISTS project_runs (
   purpose TEXT,
   purpose_detail TEXT,
   results_deadline TEXT,
-  status TEXT NOT NULL DEFAULT 'open',
+  conference TEXT,
+  status TEXT NOT NULL DEFAULT 'open', -- upcoming | open | closed
   created_by TEXT NOT NULL REFERENCES users(id),
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))

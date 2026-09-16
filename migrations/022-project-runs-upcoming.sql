@@ -1,0 +1,11 @@
+-- Apply once:  node --env-file=.env scripts/apply-migration.mjs migrations/022-project-runs-upcoming.sql
+--
+-- Upcoming project runs and conference tags.
+--
+-- project_runs.status gains a third value, 'upcoming' (free TEXT, no schema
+-- change): a run logged before its repo, Box folder and preliminary results
+-- exist. It launches to 'open' via /api/project-runs/launch.
+--
+-- conference tags a run for a conference, e.g. 'ATS 2026' (CURRENT_ATS in
+-- src/lib/project-run-status.ts). NULL for untagged runs.
+ALTER TABLE project_runs ADD COLUMN conference TEXT;

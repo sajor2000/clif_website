@@ -27,6 +27,8 @@ export interface ProjectRunSlackInput {
   purpose: string | null;
   purposeDetail: string | null;
   deadline: string | null;
+  /** Conference tag, e.g. 'ATS 2026'. */
+  conference?: string | null;
   requestedBy: string | null;
   projectUrl: string;
 }
@@ -82,6 +84,7 @@ export function buildProjectRunSlackMessage(r: ProjectRunSlackInput): Record<str
   if (label) {
     bits.push(escapeSlack(label + (r.purposeDetail ? ` — ${r.purposeDetail}` : '')));
   }
+  if (r.conference) bits.push(`*${escapeSlack(r.conference)}*`);
   if (r.deadline) bits.push(`Box upload deadline *${formatDeadline(r.deadline)}*`);
   if (bits.length) {
     blocks.push({ type: 'context', elements: [{ type: 'mrkdwn', text: bits.join('  ·  ') }] });

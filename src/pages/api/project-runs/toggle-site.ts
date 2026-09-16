@@ -29,6 +29,23 @@ export const POST: APIRoute = async ({ locals, request }) => {
 
   const db = getDb();
 
+  const runRes = await db.execute({
+    sql: 'SELECT status FROM project_runs WHERE id = ?',
+    args: [projectId],
+  });
+  if (runRes.rows.length === 0) {
+    return new Response(JSON.stringify({ error: 'Project run not found.' }), {
+      status: 404,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+  if (runRes.rows[0].status === 'upcoming') {
+    return new Response(JSON.stringify({ error: "Sites can't act on this run until it launches." }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
   // Authorization: admin or assigned editor for this site.
   if (user.role !== 'admin') {
     const editor = await db.execute({

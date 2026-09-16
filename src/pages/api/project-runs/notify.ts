@@ -26,7 +26,7 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
 
   const db = getDb();
   const existing = await db.execute({
-    sql: 'SELECT created_by FROM project_runs WHERE id = ?',
+    sql: 'SELECT created_by, status FROM project_runs WHERE id = ?',
     args: [projectId],
   });
   if (existing.rows.length === 0) {
@@ -38,6 +38,14 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
   if (user.role !== 'admin' && existing.rows[0].created_by !== user.id) {
     return new Response(JSON.stringify({ error: 'Forbidden' }), {
       status: 403,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  // Launching an upcoming run is what tells members it's ready.
+  if (existing.rows[0].status === 'upcoming') {
+    return new Response(JSON.stringify({ error: 'Launch this run before notifying members.' }), {
+      status: 400,
       headers: { 'Content-Type': 'application/json' },
     });
   }
