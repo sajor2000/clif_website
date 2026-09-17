@@ -524,7 +524,8 @@ try {
           if (res.ok) {
             window.location.reload();
           } else {
-            alert('Failed to remove member');
+            var data = await res.json().catch(function() { return {}; });
+            alert(data.error || 'Failed to remove member');
             this.disabled = false;
             this.textContent = 'Remove';
           }
@@ -577,7 +578,8 @@ try {
             var card = document.querySelector('[data-user-card="' + userId + '"]');
             if (card) card.remove();
           } else {
-            alert('Failed to reject user');
+            var data = await res.json().catch(function() { return {}; });
+            alert(data.error || 'Failed to reject user');
             this.disabled = false;
             this.textContent = 'Reject';
           }
