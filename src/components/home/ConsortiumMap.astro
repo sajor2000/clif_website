@@ -309,9 +309,13 @@ const cartoKey = import.meta.env.PUBLIC_CARTO_KEY ?? '';
       <div class="tt-location">${site.location}</div>`;
 
     if (site.dataReady) {
-      html += `<div class="tt-stats">
-        ${site.hospitals} hospital${site.hospitals !== 1 ? 's' : ''} &middot; ${site.patients.toLocaleString()} patients
-      </div>`;
+      // A site can be active before its counts land in site_details.csv; showing
+      // "0 hospitals · 0 patients" would read as a data error, so omit the line.
+      if (site.hospitals || site.patients) {
+        html += `<div class="tt-stats">
+          ${site.hospitals} hospital${site.hospitals !== 1 ? 's' : ''} &middot; ${site.patients.toLocaleString()} patients
+        </div>`;
+      }
       html += `<div style="margin-top:6px"><span class="tt-badge active">Active</span></div>`;
     } else {
       html += `<div style="margin-top:4px"><span class="tt-badge upcoming">Coming Soon</span></div>`;
