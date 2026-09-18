@@ -134,9 +134,10 @@ const defaultCohortKey = DEFAULT_COHORT;
             </svg>
             <div id="map-stat-active" class="text-lg font-bold text-clif-burgundy">{Object.keys(freshCounts).length}</div>
           </div>
-          {/* Not "Active Sites": that is a fixed property of a site (12 of the
-              15 institutions are active) and does not vary by cohort. This
-              counts the sites contributing data to the SELECTED cohort. */}
+          {/* Not "Active Sites": whether a site is active is a fixed property
+              of the roster (site_details.csv) and does not vary by cohort. This
+              counts the sites contributing data to the SELECTED cohort, which
+              is why it can read lower than the roster's active count. */}
           <div class="text-[9px] text-gray-600 font-medium uppercase tracking-wide">Sites in Cohort</div>
         </div>
 

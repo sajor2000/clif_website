@@ -18,6 +18,7 @@ export const AGGREGATE_SITE = 'ALL';
  */
 export const SITE_LABELS: Record<string, string> = {
   ALL: 'Consortium Aggregate',
+  Cornell: 'Cornell University',
   Emory: 'Emory University',
   JHU: 'Johns Hopkins University',
   NU: 'Northwestern University',
@@ -41,6 +42,7 @@ export const SITE_LABELS: Record<string, string> = {
  */
 export const SITE_ORDER = [
   'ALL',
+  'Cornell',
   'Emory',
   'JHU',
   'NU',

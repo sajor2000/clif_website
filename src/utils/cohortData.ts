@@ -338,6 +338,7 @@ export function getAggregateValue(
  * stay aligned with the roster file.
  */
 export const SITE_CODE_TO_DETAILS_NAME: Record<string, string> = {
+  Cornell: 'Cornell University',
   Emory: 'Emory University',
   JHU: 'Johns Hopkins University',
   MIMIC: 'Harvard University / MIMIC-IV',
