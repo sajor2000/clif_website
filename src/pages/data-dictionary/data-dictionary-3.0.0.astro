@@ -80,6 +80,11 @@ const {
 const betaTables = allTables
   .filter(t => betaTableNames.includes(t.name))
   .sort((a, b) => a.name.localeCompare(b.name));;
+
+// Beta tables are stable enough to drop the "Unstable" overlay, except these
+// two: the medication schemas are still moving. Alpha and Concept tables carry
+// the overlay unconditionally.
+const UNSTABLE_BETA_TABLES = ['medication_admin_continuous', 'medication_admin_intermittent'];
 const alphaTables = allTables
   .filter(t => alphaTableNames.includes(t.name))
   .sort((a, b) => a.name.localeCompare(b.name));
@@ -289,7 +294,9 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
                   <div class="prose mb-4" set:html={md.render(intro)} />
                 )}
                 <div class="table-wrapper relative overflow-visible rounded-lg shadow-sm border border-gray-200 my-6">
-                  <img src="/images/icons/unstable.png" alt="Unstable" class="absolute -top-8 -right-8 w-32 rotate-[15deg] pointer-events-none select-none z-40" />
+                  {UNSTABLE_BETA_TABLES.includes(table.name) && (
+                    <img src="/images/icons/unstable.png" alt="Unstable" class="absolute -top-8 -right-8 w-32 rotate-[15deg] pointer-events-none select-none z-40" />
+                  )}
                   <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50 sticky top-0 z-10">
                       <tr>
