@@ -16,7 +16,11 @@ try {
     `SELECT id, full_name, degrees, affiliation, institution, work_email, email
      FROM users
      WHERE is_approved = 1
-     ORDER BY full_name`
+       AND LOWER(email) != ?
+     ORDER BY full_name`,
+    // The shared consortium admin login isn't a person; the consortium is
+    // credited as a group author instead (see CLIF_CONSORTIUM_AUTHOR).
+    ['clifconsortium@gmail.com']
   );
   members = result.rows.map((r: any) => ({
     id: r.id,
@@ -107,6 +111,15 @@ try {
                 <div id="bb-selected-list" class="flex-1 overflow-y-auto p-3 space-y-2">
                   <p id="bb-selected-empty" class="text-sm text-gray-500 dark:text-gray-400 italic">Tick members on the left to add them here. Drag to reorder.</p>
                 </div>
+                <footer class="p-3 border-t border-gray-200 dark:border-neutral-700">
+                  <label class="flex items-start gap-2 text-sm">
+                    <input id="bb-consortium" type="checkbox" class="mt-0.5" checked autocomplete="off" />
+                    <span class="min-w-0">
+                      <span class="block font-medium text-gray-900 dark:text-white">The Common Longitudinal ICU data Format (CLIF) Consortium</span>
+                      <span class="block text-xs text-gray-500 dark:text-gray-400">Group author</span>
+                    </span>
+                  </label>
+                </footer>
               </section>
 
               {/* Output */}
@@ -153,6 +166,7 @@ try {
       buildAffiliationRegistry,
       format,
       renderFull,
+      CLIF_CONSORTIUM_AUTHOR,
       type AuthorInput,
       type FormatId,
     } from '../../lib/format-byline';
@@ -180,6 +194,7 @@ try {
     const state = {
       selected: [] as SelectionEntry[],
       formatId: 'vancouver' as FormatId,
+      creditConsortium: true,
     };
 
     const pickerList = document.getElementById('bb-picker-list')!;
@@ -350,7 +365,8 @@ try {
       });
 
       const registry = buildAffiliationRegistry(authors);
-      const formatted = format(state.formatId, authors, registry);
+      const byline = state.creditConsortium ? [...authors, CLIF_CONSORTIUM_AUTHOR] : authors;
+      const formatted = format(state.formatId, byline, registry);
       previewEl.textContent = renderFull(formatted);
 
       const warnings: string[] = [];
@@ -463,6 +479,11 @@ try {
           renderPreview();
         }
       });
+    });
+
+    document.getElementById('bb-consortium')!.addEventListener('change', (e) => {
+      state.creditConsortium = (e.target as HTMLInputElement).checked;
+      renderPreview();
     });
 
     // Search

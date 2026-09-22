@@ -17,7 +17,18 @@ export interface AuthorInput {
   affiliationsIncluded?: number[];
   // Public-facing email when the user is the corresponding author.
   email?: string | null;
+  // Group author (e.g. the CLIF Consortium): `full_name` is emitted verbatim,
+  // with no name parsing, degrees, or affiliation numbers.
+  isGroup?: boolean;
 }
+
+export const CLIF_CONSORTIUM_AUTHOR: AuthorInput = {
+  id: 'clif-consortium-group',
+  full_name: 'The Common Longitudinal ICU data Format (CLIF) Consortium',
+  degrees: null,
+  affiliation: null,
+  isGroup: true,
+};
 
 const SUPERSCRIPT_DIGITS = ['⁰', '¹', '²', '³', '⁴', '⁵', '⁶', '⁷', '⁸', '⁹'];
 
@@ -222,6 +233,7 @@ export function formatVancouver(
   opts: FormatOptions = {}
 ): FormattedByline {
   const segments = authors.map((a) => {
+    if (a.isGroup) return a.full_name || '';
     const { first, middleInitials, last } = parseName(a.full_name);
     const namePart = [first, middleInitials, last].filter(Boolean).join(' ');
     const sup = superscriptList(registry.byAuthor[a.id] || []);
@@ -256,6 +268,7 @@ export function formatAmaJama(
   opts: FormatOptions = {}
 ): FormattedByline {
   const segments = authors.map((a) => {
+    if (a.isGroup) return a.full_name || '';
     const { first, middleInitials, last } = parseName(a.full_name);
     const namePart = [first, middleInitials, last].filter(Boolean).join(' ');
     const deg = (a.degrees || '').trim();
@@ -293,6 +306,7 @@ export function formatNlm(
   opts: FormatOptions = {}
 ): FormattedByline {
   const segments = authors.map((a) => {
+    if (a.isGroup) return a.full_name || '';
     const { last } = parseName(a.full_name);
     const initials = nameInitialsRunTogether(a.full_name);
     const namePart = [last, initials].filter(Boolean).join(' ');
