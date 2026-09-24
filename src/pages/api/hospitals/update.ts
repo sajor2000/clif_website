@@ -59,8 +59,20 @@ export const POST: APIRoute = async ({ locals, request }) => {
 
   const num = (v: unknown) => (v != null && v !== '' ? Number(v) : null);
 
-  await db.execute({
-    sql: `UPDATE hospitals SET
+  // The row's identity (unique per site_key) — blank rows are seeded for new
+  // sites, so this is required as soon as anyone saves the row.
+  const name = String(body.hospital_id_name ?? '').trim();
+  if (!name) {
+    return new Response(JSON.stringify({ error: 'Hospital name is required' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  try {
+    await db.execute({
+      sql: `UPDATE hospitals SET
+      hospital_id_name = ?,
       hospital_full_name = ?,
       hospital_id = ?,
       hospital_number = ?,
@@ -78,25 +90,36 @@ export const POST: APIRoute = async ({ locals, request }) => {
       updated_at = datetime('now'),
       updated_by = ?
     WHERE id = ?`,
-    args: [
-      body.hospital_full_name || null,
-      body.hospital_id || null,
-      num(body.hospital_number),
-      body.ccn || null,
-      body.zipcode || null,
-      body.hospital_type || null,
-      body.rt_vent_protocol || null,
-      num(body.num_icus),
-      body.icu_beds || null,
-      body.region || null,
-      num(body.lttv_proportion),
-      num(body.vent_patient_hours),
-      num(body.vent_patients),
-      num(body.vent_encounters),
-      user.id,
-      hospitalId,
-    ],
-  });
+      args: [
+        name,
+        body.hospital_full_name || null,
+        body.hospital_id || null,
+        num(body.hospital_number),
+        body.ccn || null,
+        body.zipcode || null,
+        body.hospital_type || null,
+        body.rt_vent_protocol || null,
+        num(body.num_icus),
+        body.icu_beds || null,
+        body.region || null,
+        num(body.lttv_proportion),
+        num(body.vent_patient_hours),
+        num(body.vent_patients),
+        num(body.vent_encounters),
+        user.id,
+        hospitalId,
+      ],
+    });
+  } catch (e: any) {
+    // idx_hospitals_site_name keeps (site_key, hospital_id_name) unique.
+    if (String(e?.message || '').includes('UNIQUE constraint failed')) {
+      return new Response(
+        JSON.stringify({ error: `This site already has a hospital named "${name}"` }),
+        { status: 409, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+    throw e;
+  }
 
   return new Response(JSON.stringify({ success: true }), {
     status: 200,

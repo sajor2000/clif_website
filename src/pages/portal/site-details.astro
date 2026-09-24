@@ -128,6 +128,10 @@ const hospitalViewData = hospitals.map((h: any) => ({
   _ventPatients: fmtNum(h.vent_patients),
   _ventEncounters: fmtNum(h.vent_encounters),
 }));
+// Sites this user may add a hospital row to (admins: all; editors: their own).
+const editableSites = siteViewData
+  .filter((s: any) => s._canEdit)
+  .map((s: any) => ({ id: s.id as string, site_name: s.site_name as string }));
 const hospitalSiteKeys = [...new Set(hospitalViewData.map((h: any) => h.site_key as string))];
 const hospitalRegions = [
   ...new Set(hospitalViewData.map((h: any) => h.region as string).filter(Boolean)),
@@ -195,7 +199,7 @@ const sitesJson = JSON.stringify(siteViewData.map((s: any) => ({
               <div class="flex items-center border border-gray-300 dark:border-neutral-600 rounded-lg overflow-hidden ml-auto">
                 <button id="view-summary" class="px-3 py-1.5 text-xs font-medium bg-clif-burgundy text-white" title="Summary view">Summary</button>
                 <button id="view-table" class="px-3 py-1.5 text-xs font-medium bg-white dark:bg-neutral-700 text-gray-600 dark:text-gray-300" title="Site table view">Sites</button>
-                {hospitalViewData.length > 0 && (
+                {(hospitalViewData.length > 0 || editableSites.length > 0) && (
                   <button id="view-hospitals" class="px-3 py-1.5 text-xs font-medium bg-white dark:bg-neutral-700 text-gray-600 dark:text-gray-300" title="Hospital table view">Hospitals</button>
                 )}
               </div>
@@ -406,6 +410,24 @@ const sitesJson = JSON.stringify(siteViewData.map((s: any) => ({
           </div>
         )}
 
+        <!-- Add-a-hospital bar: shown with the hospitals view, for admins and
+             site editors. A site with no hospitals yet starts its first row here. -->
+        {!error && editableSites.length > 0 && (
+          <div id="add-hosp-wrap" class="hidden flex flex-wrap items-center gap-2 mb-3">
+            {editableSites.length > 1 && (
+              <select id="add-hosp-site" class="text-sm px-2 py-1.5 border border-gray-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-700 text-gray-900 dark:text-white">
+                {editableSites.map((s: any) => (
+                  <option value={s.id}>{s.site_name}</option>
+                ))}
+              </select>
+            )}
+            <button id="add-hosp-btn" class={editBtnCls} data-only-site={editableSites.length === 1 ? editableSites[0].id : ''}>
+              + Add hospital
+            </button>
+            <span id="add-hosp-status" class="hidden text-sm"></span>
+          </div>
+        )}
+
         <!-- HOSPITALS VIEW (hidden by default) -->
         {!error && hospitalViewData.length > 0 && (
           <div id="hospital-table-wrap" class="hidden overflow-x-auto">
@@ -476,7 +498,7 @@ const sitesJson = JSON.stringify(siteViewData.map((s: any) => ({
                 {hospitalViewData.map((h: any) => (
                   <tr class="hover:bg-gray-50 dark:hover:bg-neutral-700" data-hosp-row>
                     <td class="px-3 py-2.5 font-semibold text-gray-900 dark:text-white whitespace-nowrap sticky left-0 bg-white dark:bg-neutral-800">{h.site_key}</td>
-                    <td class={tdCls}>{h.hospital_id_name}</td>
+                    <td class={tdCls}>{h.hospital_id_name || '—'}</td>
                     <td class="px-3 py-2.5 text-gray-600 dark:text-gray-400 max-w-[280px]" title={h.hospital_full_name ?? ''}>{h.hospital_full_name ?? '—'}</td>
                     <td class={tdCls}>{h.hospital_type ?? '—'}</td>
                     <td class={tdCls}>{h.region ?? '—'}</td>
@@ -690,6 +712,10 @@ const sitesJson = JSON.stringify(siteViewData.map((s: any) => ({
               <!-- Row 1: Identity -->
               <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div class="col-span-2">
+                  <label class={labelCls}>Hospital</label>
+                  <input type="text" class={hospInputCls} data-field="hospital_id_name" value={h.hospital_id_name ?? ''} placeholder="e.g. Emory University - EUH" />
+                </div>
+                <div class="col-span-2">
                   <label class={labelCls}>Hospital Full Name</label>
                   <input type="text" class={hospInputCls} data-field="hospital_full_name" value={h.hospital_full_name ?? ''} />
                 </div>
@@ -803,6 +829,7 @@ const sitesJson = JSON.stringify(siteViewData.map((s: any) => ({
       var hospContainer = document.getElementById('hospital-table-wrap');
       var viewHospBtn = document.getElementById('view-hospitals');
       var hospRows = document.querySelectorAll('[data-hosp-row]');
+      var addHospWrap = document.getElementById('add-hosp-wrap');
       var currentView = 'summary';
 
       var activeBtnCls = 'px-3 py-1.5 text-xs font-medium bg-clif-burgundy text-white';
@@ -821,6 +848,7 @@ const sitesJson = JSON.stringify(siteViewData.map((s: any) => ({
         if (summaryContainer) summaryContainer.classList.toggle('hidden', !showSummary);
         if (tableContainer) tableContainer.classList.toggle('hidden', !showSites);
         if (hospContainer) hospContainer.classList.toggle('hidden', !showHosp);
+        if (addHospWrap) addHospWrap.classList.toggle('hidden', !showHosp);
         if (viewSummaryBtn) { viewSummaryBtn.className = showSummary ? activeBtnCls : inactiveBtnCls; }
         if (viewTableBtn) { viewTableBtn.className = showSites ? activeBtnCls : inactiveBtnCls; }
         if (viewHospBtn) { viewHospBtn.className = showHosp ? activeBtnCls : inactiveBtnCls; }
@@ -829,6 +857,47 @@ const sitesJson = JSON.stringify(siteViewData.map((s: any) => ({
       if (viewSummaryBtn) viewSummaryBtn.addEventListener('click', function() { setView('summary'); });
       if (viewTableBtn) viewTableBtn.addEventListener('click', function() { setView('table'); });
       if (viewHospBtn) viewHospBtn.addEventListener('click', function() { setView('hospitals'); });
+      // Land on the hospitals view after an add/save reload (and for #hospitals links).
+      if (window.location.hash === '#hospitals' && viewHospBtn) setView('hospitals');
+
+      // ---- Add a blank hospital row for a site to fill in ----
+      var addHospBtn = document.getElementById('add-hosp-btn');
+      if (addHospBtn) {
+        addHospBtn.addEventListener('click', async function() {
+          var siteSelect = document.getElementById('add-hosp-site');
+          var siteId = siteSelect ? siteSelect.value : this.getAttribute('data-only-site');
+          var statusEl = document.getElementById('add-hosp-status');
+          if (!siteId) return;
+
+          this.disabled = true;
+          this.textContent = 'Adding...';
+          statusEl.classList.add('hidden');
+
+          try {
+            var res = await fetch('/api/hospitals/create', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ siteId: siteId }),
+            });
+            if (res.ok) {
+              window.location.hash = 'hospitals';
+              window.location.reload();
+              return;
+            }
+            var errData = await res.json();
+            statusEl.textContent = errData.error || 'Failed to add row';
+            statusEl.className = 'text-sm text-red-600 dark:text-red-400';
+            statusEl.classList.remove('hidden');
+          } catch (err) {
+            statusEl.textContent = 'Network error';
+            statusEl.className = 'text-sm text-red-600 dark:text-red-400';
+            statusEl.classList.remove('hidden');
+          }
+
+          this.disabled = false;
+          this.textContent = '+ Add hospital';
+        });
+      }
 
       // Column filter state (sites table uses contains-match, hospitals exact-match)
       var colFilters = {};
@@ -1094,6 +1163,7 @@ const sitesJson = JSON.stringify(siteViewData.map((s: any) => ({
               statusEl.textContent = 'Saved!';
               statusEl.className = 'hosp-save-status text-sm text-green-600 dark:text-green-400';
               statusEl.classList.remove('hidden');
+              window.location.hash = 'hospitals';
               setTimeout(function() { window.location.reload(); }, 800);
             } else {
               var errData = await res.json();
