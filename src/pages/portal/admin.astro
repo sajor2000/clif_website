@@ -66,15 +66,27 @@ try {
 
         <!-- Pending Approvals -->
         <div class="mb-8">
-          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-            Pending Approvals
-            {pendingUsers.length > 0 && (
-              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
-                {pendingUsers.length}
-              </span>
-            )}
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <button
+              id="pending-toggle"
+              type="button"
+              class="flex items-center gap-2 hover:text-clif-burgundy transition-colors"
+              aria-expanded="true"
+              aria-controls="pending-list"
+            >
+              <svg id="pending-chevron" class="w-4 h-4 text-gray-400 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+              Pending Approvals
+              {pendingUsers.length > 0 && (
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
+                  {pendingUsers.length}
+                </span>
+              )}
+            </button>
           </h2>
 
+          <div id="pending-list">
           {pendingUsers.length === 0 ? (
             <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6 text-center text-gray-500 dark:text-gray-400 text-sm">
               No pending approvals.
@@ -107,6 +119,7 @@ try {
               ))}
             </div>
           )}
+          </div>
         </div>
 
         <!-- Approved Members -->
@@ -352,6 +365,25 @@ try {
   {/* Pass site editors data to client JS */}
   <script is:inline define:vars={{ siteEditorsJson: JSON.stringify(siteEditors) }}>
     document.addEventListener('DOMContentLoaded', function() {
+      // ---- Collapse/expand the Pending Approvals list (remembered per browser) ----
+      var pendingToggle = document.getElementById('pending-toggle');
+      var pendingList = document.getElementById('pending-list');
+      var pendingChevron = document.getElementById('pending-chevron');
+      if (pendingToggle && pendingList) {
+        var setPending = function(open) {
+          pendingList.hidden = !open;
+          pendingToggle.setAttribute('aria-expanded', String(open));
+          if (pendingChevron) pendingChevron.style.transform = open ? '' : 'rotate(-90deg)';
+          try { localStorage.setItem('clif-pending-collapsed', open ? '0' : '1'); } catch (e) {}
+        };
+        var stored = null;
+        try { stored = localStorage.getItem('clif-pending-collapsed'); } catch (e) {}
+        if (stored === '1') setPending(false);
+        pendingToggle.addEventListener('click', function() {
+          setPending(pendingList.hidden);
+        });
+      }
+
       document.querySelectorAll('.approve-btn').forEach(function(btn) {
         btn.addEventListener('click', async function() {
           var userId = this.getAttribute('data-user-id');
