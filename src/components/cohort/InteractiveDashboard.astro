@@ -739,7 +739,17 @@ const categories = Array.from(groupedChars.keys());
     'Encounters with >=1 sepsis event, n (%)',
     'Encounters with >=1 ICU episode, n (%)'
   ];
-  const isHiddenCharacteristic = (char) => HIDDEN_CHARACTERISTICS.includes((char || '').trim());
+  // Hidden as a group: the synthetic 'IMV outcome' heading and every
+  // 'IMV outcome: …' row under it. Prefix-matched because those labels have
+  // been renamed before (processing.md rules 2e-2f). The rows stay in the data
+  // — 'Extubation failure ≤48hr, n (% of extubated)' denominates on
+  // 'IMV outcome: extubated'.
+  const HIDDEN_PREFIXES = ['IMV outcome'];
+  const isHiddenCharacteristic = (char) => {
+    const trimmed = (char || '').trim();
+    if (HIDDEN_CHARACTERISTICS.includes(trimmed)) return true;
+    return HIDDEN_PREFIXES.some((p) => trimmed === p || trimmed.startsWith(p + ':'));
+  };
 
 
   /**
