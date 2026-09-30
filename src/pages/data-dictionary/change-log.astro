@@ -344,7 +344,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            New mCIDE Values (22 updates · 265 new values) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Sep 14, 2026</span>
+            New mCIDE Values (23 updates · 266 new values) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Sep 30, 2026</span>
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -365,6 +365,12 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">assessment_category (1)</td>
+                  <td class="px-4 py-3 text-sm"><code>patient_assessments.assessment_category</code> added <code>other</code> (assessment group <code>other</code>) as a catch-all for assessments not otherwise classified.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/171" class="text-clif-burgundy hover:underline">Issue #171</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Sep 30, 2026</td>
+                </tr>
                 <tr>
                   <td class="px-4 py-3 text-sm font-mono">lab_category (2)</td>
                   <td class="px-4 py-3 text-sm">Added <code>po2_ecmo_pre</code> and <code>po2_ecmo_post</code> as new <code>labs.lab_category</code> values for pre- and post-oxygenator PO2 drawn from the ECMO circuit — reference unit <code>mmhg</code>, order category <code>blood_gas</code>, specimen <code>plasma_blood</code>. The post-oxygenator value reflects circuit oxygenation, not the patient's arterial PO2, and commonly runs far above physiologic range.</td>
