@@ -1157,6 +1157,26 @@ const categories = Array.from(groupedChars.keys());
     });
   }
 
+  // Subtitle text for the year scope. The range comes from the selected years
+  // the selected sites actually have data for: the year filter spans every
+  // site's years (2011+), but a site whose data starts in 2017 has only empty
+  // 2011-2016 rows, and the charts draw no bars for those.
+  function yearsScopeLabel() {
+    const withData = new Set(
+      getFilteredData()
+        .filter((d) => Object.values(d.characteristics).some((v) => typeof v === 'string' && v.trim()))
+        .map((d) => d.year)
+    );
+    const years = selectedYears.filter((y) => withData.has(y));
+    if (years.length === 0) years.push(...selectedYears);
+    const range = years.length === 1 ? years[0] : `${years[0]}-${years[years.length - 1]}`;
+
+    if (selectedYears.length === consortiumData.allYears.length) return `Years: All (${range})`;
+    if (years.length === 1) return `Year: ${years[0]}`;
+    if (years.length <= 4) return `Years: ${years.join(', ')}`;
+    return `Years: ${range} (${years.length} years)`;
+  }
+
   function extractNumber(value) {
     if (!value) return 0;
     const match = value.match(/^[\d,]+/);
@@ -3829,15 +3849,7 @@ const categories = Array.from(groupedChars.keys());
       // Years info
       subtitle += ' | ';
 
-      if (selectedYears.length === 1) {
-        subtitle += `Year: ${selectedYears[0]}`;
-      } else if (selectedYears.length <= 4) {
-        subtitle += `Years: ${selectedYears.join(', ')}`;
-      } else if (selectedYears.length === consortiumData.allYears.length) {
-        subtitle += `Years: All (${selectedYears[0]}-${selectedYears[selectedYears.length-1]})`;
-      } else {
-        subtitle += `Years: ${selectedYears[0]}-${selectedYears[selectedYears.length-1]} (${selectedYears.length} selected)`;
-      }
+      subtitle += yearsScopeLabel();
 
       // Add aggregation note for percentage variables
       if (isCategoricalPercentage) {
@@ -4409,13 +4421,7 @@ const categories = Array.from(groupedChars.keys());
         subtitle += `Sites: ${selectedSites.length} selected`;
       }
       subtitle += ' | ';
-      if (selectedYears.length === consortiumData.allYears.length) {
-        subtitle += `Years: All (${selectedYears[0]}-${selectedYears[selectedYears.length-1]})`;
-      } else if (selectedYears.length <= 4) {
-        subtitle += `Years: ${selectedYears.join(', ')}`;
-      } else {
-        subtitle += `Years: ${selectedYears[0]}-${selectedYears[selectedYears.length-1]} (${selectedYears.length} selected)`;
-      }
+      subtitle += yearsScopeLabel();
       subtitleEl.textContent = subtitle;
     }
 
@@ -4763,13 +4769,7 @@ const categories = Array.from(groupedChars.keys());
         subtitle += `Sites: ${selectedSites.length} selected`;
       }
       subtitle += ' | ';
-      if (selectedYears.length === consortiumData.allYears.length) {
-        subtitle += `Years: All (${selectedYears[0]}-${selectedYears[selectedYears.length-1]})`;
-      } else if (selectedYears.length <= 4) {
-        subtitle += `Years: ${selectedYears.join(', ')}`;
-      } else {
-        subtitle += `Years: ${selectedYears[0]}-${selectedYears[selectedYears.length-1]} (${selectedYears.length} selected)`;
-      }
+      subtitle += yearsScopeLabel();
       subtitleEl.textContent = subtitle;
     }
 
@@ -5099,13 +5099,7 @@ const categories = Array.from(groupedChars.keys());
         subtitle += `Sites: ${selectedSites.length} selected`;
       }
       subtitle += ' | ';
-      if (selectedYears.length === consortiumData.allYears.length) {
-        subtitle += `Years: All (${selectedYears[0]}-${selectedYears[selectedYears.length-1]})`;
-      } else if (selectedYears.length <= 4) {
-        subtitle += `Years: ${selectedYears.join(', ')}`;
-      } else {
-        subtitle += `Years: ${selectedYears[0]}-${selectedYears[selectedYears.length-1]} (${selectedYears.length} selected)`;
-      }
+      subtitle += yearsScopeLabel();
       subtitleEl.textContent = subtitle;
     }
 
