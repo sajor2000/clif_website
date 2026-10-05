@@ -320,3 +320,32 @@ CREATE TABLE IF NOT EXISTS hospitals (
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_hospitals_site_name ON hospitals(site_key, hospital_id_name);
 CREATE INDEX IF NOT EXISTS idx_hospitals_site_id ON hospitals(site_id);
+
+-- mCIDE Surveyor (migrations/023). Loaded from the TableOne Box export by
+-- scripts/build-mcide-mappings.mjs; the repo is public, so this data lives only
+-- here. doc = gzipped MappingDoc JSON (src/utils/mcideMappings.ts); summary =
+-- the per-site scorecard the landing page renders.
+CREATE TABLE IF NOT EXISTS mcide_mapping_docs (
+  field_key TEXT PRIMARY KEY,          -- e.g. respiratory_support.device_category
+  table_name TEXT NOT NULL,
+  run_label TEXT NOT NULL,             -- e.g. 'CLIF TableOne, Sep 2026'
+  summary TEXT NOT NULL,               -- JSON FieldSummary
+  doc BLOB NOT NULL,                   -- gzipped JSON MappingDoc
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- One row per (field, raw name, category) for the server-side name lookup.
+CREATE TABLE IF NOT EXISTS mcide_mapping_names (
+  id INTEGER PRIMARY KEY,
+  field_key TEXT NOT NULL,
+  name TEXT NOT NULL,                  -- raw, as exported
+  norm TEXT NOT NULL,                  -- lower-cased, punctuation collapsed
+  category TEXT NOT NULL,
+  status TEXT NOT NULL,                -- valid | case_variant | off_schema | unmapped
+  sites TEXT NOT NULL,                 -- JSON {site: records}
+  n_all INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_mcide_names_norm ON mcide_mapping_names(norm);
+CREATE INDEX IF NOT EXISTS idx_mcide_names_field_cat ON mcide_mapping_names(field_key, category);
+CREATE VIRTUAL TABLE IF NOT EXISTS mcide_mapping_names_fts
+  USING fts5(name, content='mcide_mapping_names', content_rowid='id', tokenize='trigram');
