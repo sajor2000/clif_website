@@ -21,7 +21,7 @@ const fields = {
   description: 'Short summary',
   instructions: 'Run it',
   purpose: 'conference',
-  purpose_detail: 'ATS 2026',
+  purpose_detail: 'ATS 2027',
   results_deadline: '2099-01-01',
   clif_version: '2.1',
   required_tables: [runnableTables('2.1')[0]],

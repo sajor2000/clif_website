@@ -14,7 +14,7 @@ export type ProjectRunStatus = (typeof PROJECT_RUN_STATUSES)[number];
  * as text on project_runs.conference, so bumping this for next year leaves
  * earlier runs labelled with their own year.
  */
-export const CURRENT_ATS = 'ATS 2026';
+export const CURRENT_ATS = 'ATS 2027';
 
 export const STATUS_BADGE: Record<ProjectRunStatus, { label: string; classes: string }> = {
   upcoming: {

@@ -27,7 +27,7 @@ export interface ProjectRunSlackInput {
   purpose: string | null;
   purposeDetail: string | null;
   deadline: string | null;
-  /** Conference tag, e.g. 'ATS 2026'. */
+  /** Conference tag, e.g. 'ATS 2027'. */
   conference?: string | null;
   requestedBy: string | null;
   projectUrl: string;
