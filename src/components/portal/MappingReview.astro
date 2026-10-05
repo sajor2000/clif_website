@@ -8,10 +8,8 @@ import type { FieldSummary } from '../../utils/mcideMappings';
 
 interface Props {
   summaries: FieldSummary[];
-  /** Admins see which sites are behind each mapping; everyone else sees a count. */
-  isAdmin?: boolean;
 }
-const { summaries, isAdmin = false } = Astro.props;
+const { summaries } = Astro.props;
 
 const byTable = new Map<string, FieldSummary[]>();
 for (const s of summaries) {
@@ -30,7 +28,7 @@ const selectCls =
 const muted = 'text-sm text-gray-500 dark:text-gray-400';
 ---
 
-<div id="mapping-review" class="mr-root" data-show-sites={isAdmin ? '1' : undefined}>
+<div id="mapping-review" class="mr-root">
   <!-- Controls: one row -->
   <div class="flex flex-col sm:flex-row gap-2 sm:items-center">
     <div class="relative flex-1">
@@ -237,12 +235,12 @@ const muted = 'text-sm text-gray-500 dark:text-gray-400';
   import type { WheelLeaf, WheelNode, Match } from '../../utils/mappingWheel';
 
   interface FieldMeta { field: string; table: string; nameCol: string; names: number; categories: number; sites: string[]; vague: VagueBucket[] }
-  // Sites are only counted here, not named: the review is about mappings, not
-  // about which institution made them. Admins are the exception (SHOW_SITES).
+  // Sites are counted and named: every portal member sees which sites are
+  // behind a mapping.
   interface Leaf extends WheelLeaf {
     rows: MappingRow[];
     sites: number;
-    /** The site codes behind `sites`, A–Z. Rendered for admins only. */
+    /** The site codes behind `sites`, A–Z. */
     siteCodes: string[];
     status: MappingStatus;
     meta?: FieldMeta;
@@ -262,7 +260,6 @@ const muted = 'text-sm text-gray-500 dark:text-gray-400';
   function init(root: HTMLElement) {
     const FIELDS: FieldMeta[] = JSON.parse(root.dataset.fields ?? '[]');
     const fieldMeta = (field: string) => FIELDS.find((f) => f.field === field);
-    const SHOW_SITES = root.dataset.showSites === '1';
     const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
     const fmt = (n: number) => n.toLocaleString('en-US');
     const el = (tag: string, cls = '', text?: string) => {
@@ -546,9 +543,9 @@ const muted = 'text-sm text-gray-500 dark:text-gray-400';
     function sitesText(n: number) {
       return n === 1 ? '1 site maps it' : `${n} sites map it`;
     }
-    /** The site count, with the site codes after it for admins. */
+    /** The site count, with the site codes after it. */
     function sitesLine(l: Leaf) {
-      return SHOW_SITES && l.siteCodes.length ? `${sitesText(l.sites)}: ${l.siteCodes.join(', ')}` : sitesText(l.sites);
+      return l.siteCodes.length ? `${sitesText(l.sites)}: ${l.siteCodes.join(', ')}` : sitesText(l.sites);
     }
 
     /**
@@ -987,7 +984,7 @@ const muted = 'text-sm text-gray-500 dark:text-gray-400';
       } else if (l.meta) {
         lines.push(`${l.meta.table} · ${fmt(l.meta.categories)} categories`);
         lines.push(`${fmt(l.meta.names)} raw names · ${l.meta.sites.length} sites`);
-        if (SHOW_SITES && l.siteCodes.length) lines.push(l.siteCodes.join(', '));
+        if (l.siteCodes.length) lines.push(l.siteCodes.join(', '));
         lines.push('Click to open');
       } else {
         if (state.category === null) lines.push(`${fmt(l.rows.length)} raw name${l.rows.length === 1 ? '' : 's'} · ${sitesLine(l)}`);
@@ -1147,12 +1144,11 @@ const muted = 'text-sm text-gray-500 dark:text-gray-400';
       body.append(sw, `${HEAT_WORDS[heatOf(l.weight)].replace(/^./, (c) => c.toUpperCase())} records on this wheel`);
       detail.append(body);
 
-      if (SHOW_SITES && l.siteCodes.length) {
+      if (l.siteCodes.length) {
         const s = el('div', 'px-4 pb-3 text-sm text-gray-700 dark:text-gray-300 flex flex-wrap items-baseline gap-x-2 gap-y-1');
         s.append(
           el('span', 'text-gray-500 dark:text-gray-400', state.category === null ? 'Sites mapping to this category:' : 'Sites mapping this name here:'),
           el('span', 'font-mono text-xs', l.siteCodes.join(', ')),
-          el('span', 'text-[10px] font-semibold uppercase tracking-wide bg-gray-100 text-gray-600 dark:bg-neutral-700 dark:text-gray-300 px-1.5 py-0.5 rounded', 'Admin only'),
         );
         detail.append(s);
       }
@@ -1180,8 +1176,7 @@ const muted = 'text-sm text-gray-500 dark:text-gray-400';
             const b = el('button', 'font-mono underline decoration-dotted hover:text-clif-burgundy', categoryLabel(ck));
             b.type = 'button';
             b.addEventListener('click', () => { drill(ck); });
-            const who = SHOW_SITES ? [...sites].sort().join(', ') : `${sites.size} site${sites.size === 1 ? '' : 's'}`;
-            p.append(b, el('span', 'opacity-70', ` (${who})${i < elsewhere.size - 1 ? ', ' : ''}`));
+            p.append(b, el('span', 'opacity-70', ` (${[...sites].sort().join(', ')})${i < elsewhere.size - 1 ? ', ' : ''}`));
           });
           detail.append(p);
         }

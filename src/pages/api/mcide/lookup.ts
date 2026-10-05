@@ -13,7 +13,7 @@ import { norm, EXCLUDED_FIELDS } from '../../../utils/mcideMappings';
 //   2. partial — the query appears inside a name (FTS5 trigram; LIKE on norm
 //      if the index is unavailable), biggest names first
 // Each hit says how many sites map that name to that category and the records
-// behind it. Which sites they are is added for admins only.
+// behind it, and which sites they are.
 
 const MIN_QUERY = 3;
 const LIMIT = 120; // enough for a results wheel, well under its leaf cap
@@ -33,11 +33,11 @@ interface Hit {
   n_sites: number;
   n_all: number;
   tier: 'exact' | 'partial';
-  /** Site codes behind n_sites. Admins only. */
-  sites?: string[];
+  /** Site codes behind n_sites, A–Z. */
+  sites: string[];
 }
 
-function toHit(row: Record<string, unknown>, tier: Hit['tier'], withSites: boolean): Hit {
+function toHit(row: Record<string, unknown>, tier: Hit['tier']): Hit {
   const sites = Object.keys(JSON.parse(String(row.sites)));
   return {
     field_key: String(row.field_key),
@@ -47,7 +47,7 @@ function toHit(row: Record<string, unknown>, tier: Hit['tier'], withSites: boole
     n_sites: sites.length,
     n_all: Number(row.n_all),
     tier,
-    ...(withSites ? { sites: sites.sort() } : {}),
+    sites: sites.sort(),
   };
 }
 
@@ -55,7 +55,6 @@ export const GET: APIRoute = async ({ locals, url }) => {
   const user = locals.user;
   if (!user || !user.is_approved) return json({ error: 'Unauthorized' }, 401);
 
-  const isAdmin = user.role === 'admin';
   const q = (url.searchParams.get('q') ?? '').trim();
   const field = url.searchParams.get('field');
   if (q.length < MIN_QUERY) return json({ error: `Query must be at least ${MIN_QUERY} characters` }, 400);
@@ -76,7 +75,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
     sql: `SELECT ${cols} FROM mcide_mapping_names n WHERE n.norm = ?${fieldClause} ORDER BY n.n_all DESC LIMIT ?`,
     args: [key, ...fieldArgs, LIMIT],
   });
-  const hits: Hit[] = exact.rows.map((r) => toHit(r as Record<string, unknown>, 'exact', isAdmin));
+  const hits: Hit[] = exact.rows.map((r) => toHit(r as Record<string, unknown>, 'exact'));
   const seen = new Set(hits.map((h) => `${h.field_key}\t${h.name}\t${h.category}`));
 
   const remaining = LIMIT - hits.length;
@@ -98,7 +97,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
       });
     }
     for (const r of partial.rows) {
-      const hit = toHit(r as Record<string, unknown>, 'partial', isAdmin);
+      const hit = toHit(r as Record<string, unknown>, 'partial');
       const id = `${hit.field_key}\t${hit.name}\t${hit.category}`;
       if (seen.has(id)) continue;
       seen.add(id);
