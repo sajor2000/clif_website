@@ -54,7 +54,7 @@ export const portalGroups: PortalGroup[] = [
       },
       {
         label: 'mCIDE Surveyor',
-        href: '/portal/mapping-review',
+        href: '/portal/mcide-surveyor',
         icon: 'check-circle',
         wip: true,
         description:

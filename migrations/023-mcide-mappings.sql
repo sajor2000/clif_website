@@ -1,6 +1,6 @@
 -- Apply once:  node --env-file=.env scripts/apply-migration.mjs migrations/023-mcide-mappings.sql
 --
--- mCIDE Surveyor (/portal/mapping-review): what each site maps its raw
+-- mCIDE Surveyor (/portal/mcide-surveyor): what each site maps its raw
 -- EHR `*_name` strings to, per mCIDE `*_category` field.
 --
 -- Loaded by scripts/build-mcide-mappings.mjs from the TableOne Box export; the

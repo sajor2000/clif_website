@@ -1,5 +1,5 @@
 // Load the TableOne run's raw-name → mCIDE-category mappings into Turso for
-// the members-only mCIDE Surveyor (/portal/mapping-review).
+// the members-only mCIDE Surveyor (/portal/mcide-surveyor).
 //
 // Input: the merged mcide export, one CSV per (table, name column, category
 // column) shaped `<x>_name,<x>_category[,extra...],N__<Site>...,N__ALL`. The

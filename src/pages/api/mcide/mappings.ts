@@ -4,7 +4,7 @@ import type { APIRoute } from 'astro';
 import { getDb } from '../../../lib/turso';
 import { EXCLUDED_FIELDS } from '../../../utils/mcideMappings';
 
-// Members-only mapping docs for /portal/mapping-review.
+// Members-only mapping docs for /portal/mcide-surveyor.
 //
 // GET /api/mcide/mappings            → the fields loaded, with their run label
 // GET /api/mcide/mappings?field=<key> → that field's MappingDoc, served as the
