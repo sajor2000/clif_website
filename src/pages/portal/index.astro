@@ -4,20 +4,9 @@ export const prerender = false;
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PortalNav from '../../components/portal/PortalNav.astro';
 import PendingTasks from '../../components/portal/PendingTasks.astro';
+import { portalGroups } from '../../data/portal-nav';
 
 const profile = Astro.locals.user;
-
-const portalSections = [
-  { title: 'Site Details', description: 'Institution metadata, data sources, date ranges, and ICU bed counts', href: '/portal/site-details', icon: 'building' },
-{ title: 'Member Directory', description: 'Contact information for consortium members', href: '/portal/directory', icon: 'users' },
-  { title: 'Authorship Tool', description: 'Build a formatted author block (Vancouver / AMA) with numbered affiliations for abstracts, manuscripts, grants, and posters', href: '/portal/authorship', icon: 'document' },
-  { title: 'Project Run Tracker', description: 'Request that the consortium run a project and track which sites have run it', href: '/portal/project-runs', icon: 'check' },
-  { title: 'Letter of Support Tracker', description: 'Request a consortium letter of support for a grant; steering approves support', href: '/portal/los-requests', icon: 'document' },
-  { title: 'Manuscript Tracker', description: 'Consortium manuscripts: status, leads, journals, and repositories', href: '/portal/status', icon: 'check' },
-  { title: 'Calendar', description: 'Upcoming meetings, events, and Zoom links', href: '/portal/calendar', icon: 'calendar-days' },
-  { title: 'Voting', description: 'Vote on consortium proposals and view results', href: '/portal/voting', icon: 'vote' },
-  { title: 'Secure Masking', description: 'Deterministic additive masking for secure count data aggregation', href: '/portal/crypto', icon: 'lock' },
-];
 ---
 
 <BaseLayout title="Members Portal">
@@ -39,19 +28,31 @@ const portalSections = [
 
         {profile?.id && <PendingTasks userId={profile.id} role={profile.role} />}
 
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {portalSections.map((section) => (
-            <a
-              href={section.href}
-              class="group bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6 hover:shadow-md hover:border-clif-burgundy/30 transition-all"
-            >
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-clif-burgundy transition-colors">
-                {section.title}
-              </h3>
-              <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                {section.description}
-              </p>
-            </a>
+        <div class="space-y-8">
+          {portalGroups.map((group) => (
+            <section>
+              <h2 class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">
+                {group.title}
+              </h2>
+              <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {group.items.map((item) => (
+                  <a
+                    href={item.href}
+                    class="group bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6 hover:shadow-md hover:border-clif-burgundy/30 transition-all"
+                  >
+                    <h3 class="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white group-hover:text-clif-burgundy transition-colors">
+                      {item.label}
+                      {item.wip && (
+                        <span class="text-[10px] font-semibold uppercase tracking-wide bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-1.5 py-0.5 rounded">WIP</span>
+                      )}
+                    </h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                      {item.description}
+                    </p>
+                  </a>
+                ))}
+              </div>
+            </section>
           ))}
         </div>
       </div>

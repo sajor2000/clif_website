@@ -1,0 +1,1183 @@
+---
+// The Mapping Wheel. A field's categories sit on the rim of a radial
+// dendrogram clustered by string similarity; clicking one re-grows the wheel
+// from the raw names sites map to it. Search spins the wheel so the closest
+// match lands under the pointer. Everything past the field chips is rendered
+// client-side from the field's doc.
+import type { FieldSummary } from '../../utils/mcideMappings';
+
+interface Props {
+  summaries: FieldSummary[];
+  /** Admins see which sites are behind each mapping; everyone else sees a count. */
+  isAdmin?: boolean;
+}
+const { summaries, isAdmin = false } = Astro.props;
+
+const byTable = new Map<string, FieldSummary[]>();
+for (const s of summaries) {
+  if (!byTable.has(s.table)) byTable.set(s.table, []);
+  byTable.get(s.table)!.push(s);
+}
+const tables = [...byTable.keys()].sort();
+
+// What the client needs about every field, without the per-site scorecards.
+const fieldsJson = JSON.stringify(
+  summaries.map((s) => ({ field: s.field, table: s.table, nameCol: s.nameCol, names: s.names, categories: s.categories, sites: s.sites, vague: s.vague }))
+);
+
+const selectCls =
+  'px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy';
+const muted = 'text-sm text-gray-500 dark:text-gray-400';
+---
+
+<div id="mapping-review" class="mr-root" data-show-sites={isAdmin ? '1' : undefined}>
+  <!-- Controls: one row -->
+  <div class="flex flex-col sm:flex-row gap-2 sm:items-center">
+    <div class="relative flex-1">
+      <input id="mr-q" type="search" autocomplete="off"
+        class="w-full pl-9 pr-3 py-2.5 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent"
+        placeholder="Search any raw EHR name, e.g. PROPOFOL 10 MG/ML or Nasal cannula" />
+      <svg class="absolute left-3 top-3 w-4 h-4 text-gray-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z"/></svg>
+    </div>
+    <span class="text-sm text-gray-500 dark:text-gray-400 text-center sm:px-1">or</span>
+    <select id="mr-field" class={selectCls}>
+      <option value="">Browse a field…</option>
+      {tables.map((t) => (
+        <optgroup label={t}>
+          {byTable.get(t)!.map((s) => <option value={s.field}>{s.field.split('.')[1]}</option>)}
+        </optgroup>
+      ))}
+    </select>
+  </div>
+
+  <!-- Breadcrumb -->
+  <div class="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+    <nav id="mr-crumbs" class="flex flex-wrap items-center gap-x-2 text-gray-600 dark:text-gray-400"></nav>
+    <span class="flex-1"></span>
+    <span id="mr-wheel-meta" class={muted}></span>
+    <button id="mr-export" class="hidden px-2.5 py-1 text-xs font-medium text-clif-burgundy border border-clif-burgundy/30 rounded-lg hover:bg-clif-burgundy/10">Export CSV</button>
+  </div>
+
+  <!-- Wheel: fields → categories → raw names -->
+  <div id="mr-stage" class="mt-4">
+    <div id="mr-vague" class="flex flex-wrap items-center gap-2 mb-2 text-xs"></div>
+    <div id="mr-wheel-wrap" class="mr-wheel relative mx-auto w-full max-w-[880px]">
+      <svg id="mr-svg" viewBox="0 0 880 880" class="w-full h-auto block" role="img" aria-label="Mapping wheel"></svg>
+      <div id="mr-pointer" class="mr-pointer" aria-hidden="true"></div>
+      <div id="mr-tip" class="mr-tip hidden" role="tooltip"></div>
+      <div id="mr-matches" class="mr-matches hidden"></div>
+      <div id="mr-status" class="mr-status hidden"></div>
+      <div id="mr-sectors" class="mr-sectors hidden" aria-label="Fields on this wheel"></div>
+      <div class="mr-legend" aria-label="Records per name, relative to this wheel">
+        <span>records</span>
+        <i class="heat-0"></i><i class="heat-1"></i><i class="heat-2"></i><i class="heat-3"></i><i class="heat-4"></i>
+        <span>fewer → more</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detail -->
+  <div id="mr-detail" class="hidden mt-4 bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 overflow-x-auto"></div>
+</div>
+
+<style is:global>
+  /* Global on purpose: the wheel's SVG is built by D3 at runtime, and Astro's
+     scoped styles only reach elements in the template. Everything is
+     prefixed .mr-* so nothing leaks. */
+  .mr-wheel {
+    --mr-surface: #fcfcfb;
+    --mr-ink: #0b0b0b;
+    --mr-ink-2: #52514e;
+    --mr-muted: #898781;
+    --mr-branch: #c3c2b7;
+    --mr-accent: #8b1538;
+    --mr-accent-soft: rgba(139, 21, 56, 0.45);
+    --mr-ring: rgba(11, 11, 11, 0.1);
+    /* Sequential blue (one hue, light → dark) for record volume. */
+    --mr-heat-0: #b7d3f6;
+    --mr-heat-1: #86b6ef;
+    --mr-heat-2: #5598e7;
+    --mr-heat-3: #2a78d6;
+    --mr-heat-4: #184f95;
+    --mr-wedge-alpha: 0.38;
+    color-scheme: light;
+  }
+  /* Dark steps chosen for the dark surface (tailwind darkMode: 'class'). */
+  .dark .mr-wheel {
+    --mr-surface: #1a1a19;
+    --mr-ink: #ffffff;
+    --mr-ink-2: #c3c2b7;
+    --mr-muted: #898781;
+    --mr-branch: #4a4a47;
+    --mr-accent: #d9658a;
+    --mr-accent-soft: rgba(217, 101, 138, 0.5);
+    --mr-ring: rgba(255, 255, 255, 0.1);
+    /* Same direction as light mode — lighter is always fewer — with the
+       ramp shifted up so the dark end still shows on the dark surface. */
+    --mr-heat-0: #dbe9fb;
+    --mr-heat-1: #b7d3f6;
+    --mr-heat-2: #86b6ef;
+    --mr-heat-3: #5598e7;
+    --mr-heat-4: #2a78d6;
+    --mr-wedge-alpha: 0.5;
+    color-scheme: dark;
+  }
+  .mr-wheel svg { overflow: visible; }
+  .mr-wheel .surface { fill: var(--mr-surface); }
+  .mr-wheel .branch { fill: none; stroke: var(--mr-branch); stroke-width: 1; }
+  .mr-wheel .rim { fill: none; stroke: var(--mr-ring); stroke-width: 1; }
+  .mr-wheel .clade { fill: none; stroke: var(--mr-surface); stroke-width: 2; opacity: 0.28; }
+  .mr-wheel .clade.table-0 { fill: #2a78d6; }
+  .mr-wheel .clade.table-1 { fill: #eb6834; }
+  .mr-wheel .clade.table-2 { fill: #1baf7a; }
+  .mr-wheel .clade.table-3 { fill: #eda100; }
+  .mr-wheel .clade.table-4 { fill: #e87ba4; }
+  .mr-wheel .clade.table-5 { fill: #008300; }
+  .mr-wheel .clade.table-6 { fill: #4a3aa7; }
+  .mr-wheel .clade.table-7 { fill: #e34948; }
+  .mr-wheel .wedge { stroke: none; opacity: var(--mr-wedge-alpha); }
+  .mr-wheel .wedge.heat-0 { fill: var(--mr-heat-0); }
+  .mr-wheel .wedge.heat-1 { fill: var(--mr-heat-1); }
+  .mr-wheel .wedge.heat-2 { fill: var(--mr-heat-2); }
+  .mr-wheel .wedge.heat-3 { fill: var(--mr-heat-3); }
+  .mr-wheel .wedge.heat-4 { fill: var(--mr-heat-4); }
+  .mr-wheel .clade-label { fill: var(--mr-ink-2); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; font-family: system-ui, sans-serif; }
+  .mr-wheel .clade-arc { fill: none; stroke: none; }
+  .mr-wheel .leaf .tick { stroke: var(--mr-muted); }
+  .mr-wheel .leaf.heat-0 .tick { stroke: var(--mr-heat-0); }
+  .mr-wheel .leaf.heat-1 .tick { stroke: var(--mr-heat-1); }
+  .mr-wheel .leaf.heat-2 .tick { stroke: var(--mr-heat-2); }
+  .mr-wheel .leaf.heat-3 .tick { stroke: var(--mr-heat-3); }
+  .mr-wheel .leaf.heat-4 .tick { stroke: var(--mr-heat-4); }
+  /* The legend sits on the wheel's own surface and uses the wedges' translucency,
+     so a swatch is exactly the colour of the ring it describes. */
+  .mr-wheel.mr-no-heat .mr-legend { display: none; }
+  .mr-sectors { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; padding: 4px 8px 8px; font-size: 12px; font-family: system-ui, sans-serif; }
+  .mr-sectors button { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 9999px; border: 1px solid var(--mr-ring); color: var(--mr-ink-2); background: var(--mr-surface); }
+  .mr-sectors button:hover { color: var(--mr-ink); border-color: var(--mr-accent-soft); }
+  .mr-sectors i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; opacity: 0.85; }
+  .mr-sectors b { font-weight: 600; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .mr-sectors .table-0 { background: #2a78d6; } .mr-sectors .table-1 { background: #eb6834; }
+  .mr-sectors .table-2 { background: #1baf7a; } .mr-sectors .table-3 { background: #eda100; }
+  .mr-sectors .table-4 { background: #e87ba4; } .mr-sectors .table-5 { background: #008300; }
+  .mr-sectors .table-6 { background: #4a3aa7; } .mr-sectors .table-7 { background: #e34948; }
+  .mr-legend {
+    position: absolute; left: 8px; bottom: 8px; display: flex; align-items: center; gap: 3px;
+    font-size: 11px; color: var(--mr-ink-2); font-family: system-ui, sans-serif;
+    background: var(--mr-surface); border: 1px solid var(--mr-ring); border-radius: 9999px; padding: 3px 10px;
+  }
+  .mr-legend span { margin: 0 4px; }
+  .mr-legend i { display: inline-block; width: 14px; height: 10px; border-radius: 2px; opacity: var(--mr-wedge-alpha); }
+  .mr-legend .heat-0 { background: var(--mr-heat-0); }
+  .mr-legend .heat-1 { background: var(--mr-heat-1); }
+  .mr-legend .heat-2 { background: var(--mr-heat-2); }
+  .mr-legend .heat-3 { background: var(--mr-heat-3); }
+  .mr-legend .heat-4 { background: var(--mr-heat-4); }
+  .mr-tip .heat { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: -1px; margin-right: 4px; }
+  .mr-wheel .leaf text { fill: var(--mr-ink-2); font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; cursor: pointer; }
+  .mr-wheel .leaf.is-hover text, .mr-wheel .leaf.is-selected text { fill: var(--mr-ink); font-weight: 600; }
+  .mr-wheel .leaf.is-hover .tick, .mr-wheel .leaf.is-selected .tick { stroke: var(--mr-ink); }
+  .mr-wheel .leaf.is-near text { fill: var(--mr-accent); }
+  .mr-wheel .leaf.is-near .tick { stroke: var(--mr-accent-soft); }
+  .mr-wheel .leaf.is-best text { fill: var(--mr-accent); font-weight: 700; }
+  .mr-wheel .leaf.is-best .tick { stroke: var(--mr-accent); stroke-width: 3; }
+  .mr-wheel .leaf .flag { fill: var(--mr-accent); }
+  .mr-wheel .hub text { fill: var(--mr-muted); font-size: 11px; font-family: system-ui, sans-serif; }
+  .mr-pointer {
+    position: absolute; left: 50%; top: -2px; transform: translateX(-50%);
+    width: 0; height: 0; border-left: 9px solid transparent; border-right: 9px solid transparent;
+    border-top: 16px solid var(--mr-accent); filter: drop-shadow(0 1px 1px rgba(0,0,0,.25));
+  }
+  .mr-tip {
+    position: absolute; pointer-events: none; z-index: 20; max-width: 20rem;
+    background: var(--mr-surface); color: var(--mr-ink); border: 1px solid var(--mr-ring);
+    border-radius: 8px; padding: 8px 10px; font-size: 12px; line-height: 1.35;
+    box-shadow: 0 4px 16px rgba(0,0,0,.12);
+  }
+  .mr-tip .v { font-weight: 700; font-size: 13px; }
+  .mr-tip .k { color: var(--mr-ink-2); }
+  .mr-matches {
+    position: absolute; right: 8px; top: 8px; z-index: 10; width: 19rem; max-width: 46%;
+    max-height: calc(100% - 16px); overflow: auto;
+    background: var(--mr-surface); color: var(--mr-ink); border: 1px solid var(--mr-ring);
+    border-radius: 10px; padding: 8px 10px; font-size: 12px; box-shadow: 0 4px 16px rgba(0,0,0,.12);
+  }
+  .mr-matches .hd { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--mr-muted); margin: 6px 0 2px; }
+  .mr-matches .row { display: block; width: 100%; text-align: left; padding: 3px 4px; border-radius: 6px; line-height: 1.3; }
+  .mr-matches .row:hover { background: color-mix(in srgb, var(--mr-heat-1) 25%, transparent); }
+  .mr-matches .name { display: block; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mr-matches .k { display: block; color: var(--mr-ink-2); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mr-matches .k b { color: var(--mr-accent); font-weight: 600; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .mr-matches .best .name { color: var(--mr-accent); font-weight: 700; }
+  .mr-status {
+    position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%);
+    font-size: 12px; color: var(--mr-ink-2); background: var(--mr-surface);
+    border: 1px solid var(--mr-ring); border-radius: 9999px; padding: 4px 12px;
+  }
+  @media (prefers-reduced-motion: reduce) { .mr-wheel * { transition: none !important; } }
+</style>
+
+<script define:vars={{ fieldsJson }} is:inline>
+  // Field metadata for the module script below; define:vars can't be used
+  // with a bundled script, so hand it over on the element.
+  document.getElementById('mapping-review').dataset.fields = fieldsJson;
+</script>
+
+<script>
+  import { hierarchy, cluster, type HierarchyNode } from 'd3-hierarchy';
+  import { select } from 'd3-selection';
+  import 'd3-transition';
+  import { interpolateNumber } from 'd3-interpolate';
+  import { easeCubicOut } from 'd3-ease';
+  import { norm, isUnmapped, isVague, rowTotal } from '../../utils/mcideMappings';
+  import type { MappingDoc, MappingRow, MappingStatus, VagueBucket } from '../../utils/mcideMappings';
+  import { clusterLeaves, rankMatches, MAX_LEAVES } from '../../utils/mappingWheel';
+  import type { WheelLeaf, WheelNode, Match } from '../../utils/mappingWheel';
+
+  interface FieldMeta { field: string; table: string; nameCol: string; names: number; categories: number; sites: string[]; vague: VagueBucket[] }
+  // Sites are only counted here, not named: the review is about mappings, not
+  // about which institution made them. Admins are the exception (SHOW_SITES).
+  interface Leaf extends WheelLeaf {
+    rows: MappingRow[];
+    sites: number;
+    /** The site codes behind `sites`, A–Z. Rendered for admins only. */
+    siteCodes: string[];
+    status: MappingStatus;
+    meta?: FieldMeta;
+    /** Other spellings folded into this leaf (case-only differences), most records first. */
+    variants?: string[];
+    /** On the results wheel: the mapping this leaf stands for. */
+    hit?: Hit;
+  }
+  /** A rim sector: a labelled family of leaves, tinted by its table's palette slot. */
+  interface Sector { label: string | null; leaves: WheelLeaf[]; color?: number }
+  /** One server lookup hit: a raw name mapped somewhere in the consortium. */
+  interface Hit { field_key: string; name: string; category: string; status: MappingStatus; n_sites: number; n_all: number; tier: string; sites?: string[] }
+
+  const root = document.getElementById('mapping-review');
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    const FIELDS: FieldMeta[] = JSON.parse(root.dataset.fields ?? '[]');
+    const fieldMeta = (field: string) => FIELDS.find((f) => f.field === field);
+    const SHOW_SITES = root.dataset.showSites === '1';
+    const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+    const fmt = (n: number) => n.toLocaleString('en-US');
+    const el = (tag: string, cls = '', text?: string) => {
+      const e = document.createElement(tag);
+      if (cls) e.className = cls;
+      if (text !== undefined) e.textContent = text;
+      return e;
+    };
+
+    const qInput = $<HTMLInputElement>('mr-q');
+    const fieldSel = $<HTMLSelectElement>('mr-field');
+    const crumbs = $('mr-crumbs');
+    const meta = $('mr-wheel-meta');
+    const exportBtn = $<HTMLButtonElement>('mr-export');
+    const stage = $('mr-stage');
+    const vagueBar = $('mr-vague');
+    const wrap = $('mr-wheel-wrap');
+    const svg = select<SVGSVGElement, unknown>('#mr-svg');
+    const tip = $('mr-tip');
+    const matchesBox = $('mr-matches');
+    const statusBox = $('mr-status');
+    const sectorsBox = $('mr-sectors');
+    const detail = $('mr-detail');
+
+    // ── State ───────────────────────────────────────────────────────────
+    const params = new URLSearchParams(location.search);
+    const state = {
+      field: params.get('field') ?? '',
+      category: params.get('category')?.trim().toLowerCase() ?? null, // a catKey; null = category wheel
+      q: params.get('q') ?? '',
+    };
+    const docs = new Map<string, MappingDoc>();
+    let doc: MappingDoc | null = null;
+    let leaves: Leaf[] = [];
+    let hidden = 0; // leaves beyond MAX_LEAVES
+    // A search from the field wheel builds a results wheel out of these.
+    let searchHits: Hit[] = [];
+    const inSearch = () => !state.field && searchHits.length > 0;
+    const TABLES = [...new Set(FIELDS.map((f) => f.table))].sort();
+    const tableIndex = (table: string) => Math.max(0, TABLES.indexOf(table));
+    // Declared here, not beside their helpers: the wheel is first built from
+    // this block, and a `let` further down would still be in its dead zone.
+    const HEAT_WORDS = ['very few', 'few', 'a moderate number of', 'many', 'the most'];
+    let heatCuts: number[] = []; // quantile cuts of the current wheel's weights
+    let layout: Array<HierarchyNode<WheelNode> & { x: number; y: number }> = [];
+    let rotation = 0;
+    let selected: Leaf | null = null;
+    let hovered: Leaf | null = null;
+    let matches: Match[] = [];
+    let matchNotes = new Map<string, string>(); // leaf id → what to say beside it
+    let lookupSeq = 0; // a stale server lookup never paints over a newer one
+    // What the current wheel needs to re-orient its labels as it turns.
+    let sectorDraw: (() => void) | null = null;
+
+    // ── Geometry ────────────────────────────────────────────────────────
+    const W = 880;
+    const C = W / 2;
+    let R = 318; // rim radius (leaf ticks); shrinks to make room for long labels
+    const LABEL = 8; // label offset from rim
+    const LABEL_MAX = 30; // characters shown on the rim; the tooltip has the rest
+    const trunc = (s: string) => (s.length > LABEL_MAX ? `${s.slice(0, LABEL_MAX - 1)}…` : s);
+    const toRad = (deg: number) => ((deg - 90) * Math.PI) / 180;
+    const pt = (deg: number, r: number) => [C + r * Math.cos(toRad(deg)), C + r * Math.sin(toRad(deg))] as const;
+
+    // ── Wiring ──────────────────────────────────────────────────────────
+    fieldSel.value = state.field;
+    qInput.value = state.q;
+    fieldSel.addEventListener('change', () => (fieldSel.value ? openField(fieldSel.value) : goHome()));
+    exportBtn.addEventListener('click', exportCsv);
+    let qTimer = 0;
+    qInput.addEventListener('input', () => {
+      window.clearTimeout(qTimer);
+      qTimer = window.setTimeout(() => search(qInput.value), 250);
+    });
+    qInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); search(qInput.value, true); }
+      if (e.key === 'Escape') { qInput.value = ''; search(''); }
+    });
+
+    if (state.field) openField(state.field, true);
+    else goHome();
+
+    // ── Navigation ──────────────────────────────────────────────────────
+    function syncUrl() {
+      const p = new URLSearchParams();
+      if (state.field) p.set('field', state.field);
+      if (state.category !== null) p.set('category', state.category);
+      if (state.q) p.set('q', state.q);
+      history.replaceState(null, '', p.toString() ? `?${p}` : location.pathname);
+    }
+
+    function goHome() {
+      state.field = '';
+      state.category = null;
+      doc = null;
+      fieldSel.value = '';
+      stage.classList.remove('hidden');
+      detail.classList.add('hidden');
+      rebuild();
+      if (state.q) search(state.q);
+    }
+
+    /** Back to the field wheel, with one table's sector under the pointer and its fields lit. */
+    function showTable(table: string) {
+      state.q = '';
+      qInput.value = '';
+      goHome();
+      const fields = leaves.filter((l) => l.meta?.table === table).sort((a, b) => b.weight - a.weight);
+      if (fields.length === 0) return;
+      matches = fields.map((leaf, i) => ({ leaf, score: i === 0 ? 1 : 0.9, exact: true }));
+      matchNotes = new Map(fields.map((l) => [l.id, `${fmt(l.meta!.categories)} categories · ${fmt(l.meta!.names)} names`]));
+      renderMatches(`Fields in ${table.replace(/_/g, ' ')}`);
+      paint();
+      spinTo(fields[0]);
+    }
+
+    async function openField(field: string, keepCategory = false) {
+      searchHits = [];
+      state.field = field;
+      if (!keepCategory) state.category = null;
+      fieldSel.value = field;
+      stage.classList.remove('hidden');
+      renderCrumbs();
+      setStatus('Loading…');
+      try {
+        doc = await loadDoc(field);
+      } catch (err) {
+        setStatus(`Could not load this field (${(err as Error).message}).`);
+        return;
+      }
+      if (state.category !== null && !doc.rows.some((r) => catKey(r.c) === state.category)) state.category = null;
+      rebuild();
+      if (state.q) search(state.q, true);
+    }
+
+    async function loadDoc(field: string): Promise<MappingDoc> {
+      if (docs.has(field)) return docs.get(field)!;
+      const r = await fetch(`/api/mcide/mappings?field=${encodeURIComponent(field)}`);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const d = (await r.json()) as MappingDoc;
+      docs.set(field, d);
+      return d;
+    }
+
+    function drill(category: string) {
+      state.category = category;
+      selected = null;
+      rebuild();
+    }
+
+    function keyOf(category: string) {
+      return isUnmapped(category) ? '(unmapped)' : category;
+    }
+    /** The category wheel's leaf id: spellings that differ only by case share one. */
+    function catKey(category: string) {
+      return keyOf(category).trim().toLowerCase();
+    }
+    /** Display spelling for the current category key: the mCIDE one if any site uses it. */
+    function categoryLabel(key: string) {
+      let best: { label: string; valid: boolean; records: number } | null = null;
+      for (const r of doc?.rows ?? []) {
+        if (catKey(r.c) !== key) continue;
+        const cand = { label: keyOf(r.c), valid: r.s === 'valid', records: rowTotal(r) };
+        if (!best || Number(cand.valid) - Number(best.valid) > 0 || (cand.valid === best.valid && cand.records > best.records)) best = cand;
+      }
+      return best?.label ?? key;
+    }
+
+    // ── Leaves ──────────────────────────────────────────────────────────
+    function buildLeaves(): Leaf[] {
+      if (inSearch()) {
+        // The results wheel: one leaf per matching raw name, wherever it lives.
+        return searchHits.map((h) => ({ id: `${h.field_key}\t${h.name}\t${h.category}`, label: h.name, weight: h.n_all, rows: [], sites: h.n_sites, siteCodes: h.sites ?? [], status: h.status, hit: h }));
+      }
+      if (!state.field) {
+        // The field wheel: one leaf per field, weighted by how many raw names it maps.
+        return FIELDS.map((f) => ({ id: f.field, label: f.field.split('.')[1], weight: f.names, rows: [], sites: f.sites.length, siteCodes: [...f.sites].sort(), status: 'valid' as MappingStatus, meta: f }));
+      }
+      if (!doc) return [];
+      if (state.category === null) {
+        // Categories that differ only by case are one leaf too. The mCIDE
+        // spelling (status `valid`) is the label when a site uses it; the
+        // other spellings are listed as variants and keep their status.
+        const byCat = new Map<string, { spellings: Map<string, { records: number; status: MappingStatus }>; rows: MappingRow[]; sites: Set<string> }>();
+        for (const r of doc.rows) {
+          if (r.s === 'off_schema' || r.s === 'unmapped') continue; // not a real mapping: kept out of the wheel
+          const key = catKey(r.c);
+          let g = byCat.get(key);
+          if (!g) byCat.set(key, (g = { spellings: new Map(), rows: [], sites: new Set() }));
+          const label = keyOf(r.c);
+          const sp = g.spellings.get(label) ?? { records: 0, status: r.s };
+          sp.records += rowTotal(r);
+          g.spellings.set(label, sp);
+          g.rows.push(r);
+          for (const s of Object.keys(r.k)) g.sites.add(s);
+        }
+        return [...byCat.entries()].map(([key, g]) => {
+          const ranked = [...g.spellings.entries()].sort((a, b) => Number(b[1].status === 'valid') - Number(a[1].status === 'valid') || b[1].records - a[1].records);
+          return {
+            id: key,
+            label: ranked[0][0],
+            weight: g.rows.reduce((t, r) => t + rowTotal(r), 0),
+            rows: g.rows,
+            sites: g.sites.size,
+            siteCodes: [...g.sites].sort(),
+            status: ranked[0][1].status,
+            variants: ranked.length > 1 ? ranked.slice(1).map(([s]) => s) : undefined,
+          };
+        });
+      }
+      // Raw names that differ only by case are one leaf: `Full Code` and
+      // `FULL CODE` are the same mapping decision. Punctuation and spacing
+      // differences stay separate. The most common spelling is the label.
+      const byName = new Map<string, { spellings: Map<string, number>; rows: MappingRow[]; sites: Set<string>; status: MappingStatus }>();
+      for (const r of doc.rows) {
+        if (catKey(r.c) !== state.category || r.s === 'off_schema' || r.s === 'unmapped') continue;
+        const key = r.n.trim().toLowerCase();
+        let g = byName.get(key);
+        if (!g) byName.set(key, (g = { spellings: new Map(), rows: [], sites: new Set(), status: r.s }));
+        g.spellings.set(r.n, (g.spellings.get(r.n) ?? 0) + rowTotal(r));
+        g.rows.push(r);
+        for (const s of Object.keys(r.k)) g.sites.add(s);
+      }
+      return [...byName.entries()].map(([key, g]) => {
+        const spellings = [...g.spellings.entries()].sort((a, b) => b[1] - a[1]).map(([s]) => s);
+        return {
+          id: key,
+          label: spellings[0],
+          weight: g.rows.reduce((t, r) => t + rowTotal(r), 0),
+          rows: g.rows,
+          sites: g.sites.size,
+          siteCodes: [...g.sites].sort(),
+          status: g.status,
+          variants: spellings.length > 1 ? spellings.slice(1) : undefined,
+        };
+      });
+    }
+
+    // Record volume is shown as a colour, never a number: five quantile
+    // buckets of the current wheel, so "many" always means many *here*.
+    function computeHeat() {
+      const ws = leaves.map((l) => l.weight).sort((a, b) => a - b);
+      heatCuts = ws.length ? [0.2, 0.4, 0.6, 0.8].map((q) => ws[Math.min(ws.length - 1, Math.floor(q * ws.length))]) : [];
+    }
+    function heatOf(w: number) {
+      return heatCuts.filter((c) => w > c).length; // 0..4
+    }
+    function sitesText(n: number) {
+      return n === 1 ? '1 site maps it' : `${n} sites map it`;
+    }
+    /** The site count, with the site codes after it for admins. */
+    function sitesLine(l: Leaf) {
+      return SHOW_SITES && l.siteCodes.length ? `${sitesText(l.sites)}: ${l.siteCodes.join(', ')}` : sitesText(l.sites);
+    }
+
+    /**
+     * The wheel's tree and rim sectors. The field wheel follows the data's
+     * own hierarchy (table → field) and labels each table's sector; the
+     * category and name wheels are clustered by string similarity and
+     * tinted by their three biggest families.
+     */
+    function buildTree(): { tree: WheelNode; sectors: Sector[] } {
+      if (inSearch()) {
+        // Results wheel: a sector per field, names clustered by similarity inside it.
+        const byField = new Map<string, Leaf[]>();
+        for (const l of leaves) {
+          const f = l.hit!.field_key;
+          if (!byField.has(f)) byField.set(f, []);
+          byField.get(f)!.push(l);
+        }
+        const fields = [...byField.keys()].sort();
+        const children = fields.map((f) => scaleHeights(clusterLeaves(byField.get(f)!), 0.6));
+        const sectors = fields.map((f, i) => ({ label: f.split('.')[1], leaves: leavesOf(children[i]), color: tableIndex(f.split('.')[0]) }));
+        return { tree: { children, height: 1 }, sectors };
+      }
+      if (!state.field) {
+        const tables = new Map<string, WheelNode[]>();
+        for (const l of leaves) {
+          const t = l.meta!.table;
+          if (!tables.has(t)) tables.set(t, []);
+          tables.get(t)!.push({ leaf: l, height: 0 });
+        }
+        const children = [...tables.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([, kids]) => ({ children: kids, height: 0.45 }));
+        const tree: WheelNode = { children, height: 1 };
+        const sectors = [...tables.keys()].sort().map((t, i) => ({ label: t, leaves: children[i].children!.map((c) => c.leaf!), color: tableIndex(t) }));
+        return { tree, sectors };
+      }
+      const tree = clusterLeaves(leaves);
+      return { tree, sectors: [] }; // clustered wheels carry the heat ring, not family tints
+    }
+
+    /** A subtree's merge heights, compressed so it nests under a taller root. */
+    function scaleHeights(node: WheelNode, f: number): WheelNode {
+      return node.children ? { height: node.height * f, children: node.children.map((c) => scaleHeights(c, f)) } : node;
+    }
+    function leavesOf(node: WheelNode, out: WheelLeaf[] = []): WheelLeaf[] {
+      if (node.leaf) out.push(node.leaf);
+      else for (const c of node.children ?? []) leavesOf(c, out);
+      return out;
+    }
+
+    function rebuild() {
+      const all = buildLeaves().sort((a, b) => b.weight - a.weight);
+      hidden = Math.max(0, all.length - MAX_LEAVES);
+      leaves = all.slice(0, MAX_LEAVES);
+      computeHeat();
+      selected = null;
+      hovered = null;
+      clearMatches();
+      renderCrumbs();
+      renderVague();
+      renderWheel();
+      // One name needs no choosing: show its detail at once.
+      if (state.category !== null && leaves.length === 1) selected = leaves[0];
+      paint();
+      renderDetail();
+      syncUrl();
+      exportBtn.classList.toggle('hidden', !(doc || inSearch()) || leaves.length === 0);
+      if (inSearch()) {
+        const nFields = new Set(searchHits.map((h) => h.field_key)).size;
+        meta.textContent = `${fmt(leaves.length)} matching names in ${nFields} field${nFields === 1 ? '' : 's'}`;
+        return;
+      }
+      if (!state.field) {
+        meta.textContent = `${fmt(leaves.length)} fields · ${TABLES.length} tables`;
+        return;
+      }
+      const what = state.category === null ? 'categories' : `raw ${fieldMeta(state.field)?.nameCol ?? doc?.nameCol ?? 'name'}s in ${categoryLabel(state.category)}`;
+      const offSchema = state.category === null && doc ? new Set(doc.rows.filter((r) => r.s === 'off_schema').map((r) => catKey(r.c))).size : 0;
+      meta.textContent = `${fmt(all.length)} ${what}${hidden ? ` · showing the ${fmt(MAX_LEAVES)} biggest, search reaches the rest` : ''}${offSchema ? ` · ${fmt(offSchema)} off-schema hidden` : ''}`;
+      // Unmapped rows (nan / blank) are not shown either; nothing to count there.
+    }
+
+    // ── Chrome ──────────────────────────────────────────────────────────
+    function renderCrumbs() {
+      crumbs.replaceChildren();
+      const link = (label: string, onClick: () => void) => {
+        const b = el('button', 'hover:text-clif-burgundy', label);
+        b.type = 'button';
+        b.addEventListener('click', onClick);
+        return b;
+      };
+      const sep = () => el('span', 'text-gray-300 dark:text-neutral-600', '›');
+      crumbs.append(link('All fields', () => { searchHits = []; state.q = ''; qInput.value = ''; goHome(); }));
+      if (inSearch()) {
+        crumbs.append(sep(), el('span', 'text-gray-900 dark:text-white', `search “${state.q}”`));
+        return;
+      }
+      if (!state.field) return;
+      const [table, field] = state.field.split('.');
+      // A table is a sector of the field wheel: go there and spin to it.
+      const tableLink = link(table, () => showTable(table));
+      tableLink.classList.add('font-mono');
+      crumbs.append(sep(), tableLink, sep());
+      if (state.category === null) {
+        crumbs.append(el('span', 'font-mono text-gray-900 dark:text-white', field));
+      } else {
+        const up = link(field, () => { state.category = null; rebuild(); });
+        up.classList.add('font-mono');
+        crumbs.append(up, sep(), el('span', 'font-mono text-gray-900 dark:text-white', categoryLabel(state.category)));
+      }
+    }
+
+    function renderVague() {
+      vagueBar.replaceChildren();
+      if (!doc || state.category !== null) return;
+      const vague = leaves.filter((l) => isVague(l.label)).sort((a, b) => b.weight - a.weight);
+      if (vague.length === 0) return;
+      vagueBar.append(el('span', 'text-gray-500 dark:text-gray-400', 'Look inside:'));
+      for (const l of vague) {
+        const b = el('button', 'px-2 py-0.5 rounded-full border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 text-amber-900 dark:text-amber-200 hover:bg-amber-100');
+        b.type = 'button';
+        b.append(el('span', 'font-mono', l.label), el('span', 'ml-1 opacity-70', `${l.sites} site${l.sites === 1 ? '' : 's'}`));
+        b.addEventListener('click', () => drill(l.id));
+        vagueBar.appendChild(b);
+      }
+    }
+
+    function setStatus(msg: string | null) {
+      statusBox.classList.toggle('hidden', !msg);
+      statusBox.textContent = msg ?? '';
+    }
+
+    // ── Wheel ───────────────────────────────────────────────────────────
+    function renderWheel() {
+      svg.selectAll('*').remove();
+      if (leaves.length === 0) { setStatus('Nothing to show for this filter.'); return; }
+      setStatus(null);
+
+      const { tree, sectors } = buildTree();
+      const h = hierarchy<WheelNode>(tree, (d) => d.children);
+      const n = leaves.length;
+      const step = 360 / n;
+      const labelled = sectors.some((s) => s.label);
+      // Keep the longest label (and any sector labels) inside the frame.
+      const labelBand = longestLabel() * labelFont(n) * 0.6 + LABEL + 10 + (labelled ? 34 : 0);
+      R = Math.max(150, Math.min(318, W / 2 - labelBand - 8));
+      // d3 centres each leaf in its slot (first at step/2, last at 360 - step/2),
+      // so the full circle closes with exactly one step across the seam.
+      cluster<WheelNode>().size([360, R]).separation(() => 1)(h);
+      // Inner nodes sit at their merge height; leaves on the rim.
+      h.each((d) => {
+        const nd = d as HierarchyNode<WheelNode> & { x: number; y: number };
+        nd.y = d.data.leaf ? R : Math.max(18, (1 - d.data.height) * R * 0.92);
+        // A lone leaf is also the root: put it under the pointer, not at the bottom.
+        if (n === 1) nd.x = 0;
+      });
+      layout = h.leaves() as typeof layout;
+
+      svg.append('circle').attr('class', 'surface').attr('cx', C).attr('cy', C).attr('r', W / 2);
+      const g = svg.append('g').attr('class', 'spin').attr('transform', `rotate(${rotation} ${C} ${C})`);
+
+      // Sectors behind everything; a labelled sector names itself along its
+      // outer edge, the text following the arc so it can never leave the rim.
+      const angleOf = new Map(layout.map((d) => [d.data.leaf!.id, d.x]));
+      const outer = R + labelBand - (labelled ? 30 : 0);
+      const bounds = sectors
+        .filter((s) => s.leaves.length > 0)
+        .map((s) => ({
+          sector: s,
+          a0: angleOf.get(s.leaves[0].id)! - step / 2 + 0.3,
+          a1: angleOf.get(s.leaves[s.leaves.length - 1].id)! + step / 2 - 0.3,
+        }));
+      // The ring is the heat map: each leaf's wedge is tinted by its records
+      // bucket, the same ramp as the tick and the legend.
+      // Category and name wheels carry the records heat ring. The field wheel
+      // and the results wheel are tinted by table/field instead — one
+      // encoding per ring, never both.
+      const heated = Boolean(state.field);
+      wrap.classList.toggle('mr-no-heat', !heated);
+      if (heated) {
+        g.append('g')
+          .selectAll('path')
+          .data(layout)
+          .join('path')
+          .attr('class', (d) => `wedge heat-${heatOf(d.data.leaf!.weight)}`)
+          .attr('d', (d) => annulus(d.x - step / 2, d.x + step / 2, R + 2, outer));
+      }
+      // Labelled sectors (tables on the field wheel): one colour per table, in
+      // the palette's fixed order. The label carries identity, the tint only
+      // separates neighbours, so wrapping past eight tables is safe.
+      if (labelled) {
+        bounds.forEach(({ sector, a0, a1 }, i) => {
+          g.append('path').attr('class', `clade table-${(sector.color ?? i) % 8}`).attr('d', annulus(a0, a1, R + 2, outer));
+        });
+      }
+      // Sector names are redrawn whenever the wheel turns, so they stay upright.
+      sectorDraw = () => {
+        g.selectAll('.clade-arc, .clade-label').remove();
+        bounds.forEach(({ sector, a0, a1 }, i) => {
+          if (!sector.label) return;
+          const mid = (((a0 + a1) / 2 + rotation) % 360 + 360) % 360;
+          // Only the bottom quarter runs the arc the other way, so each side of the
+          // wheel reads in one direction and no two neighbours disagree.
+          const flip = mid > 135 && mid < 225;
+          const large = a1 - a0 > 180 ? 1 : 0;
+          const arcLen = (r: number) => ((a1 - a0) / 360) * 2 * Math.PI * r - 8;
+          const base = outer + (flip ? 13 : 4);
+          // Fit the name to its sector: one arc if it fits, else wrap onto a
+          // second, outer arc; shrink the type only as a last resort.
+          const words = sector.label.replace(/_/g, ' ').split(' ');
+          let font = 11;
+          const width = (s: string) => s.length * font * 0.68;
+          let lines = [words.join(' ')];
+          if (width(lines[0]) > arcLen(base)) {
+            lines = [];
+            for (const w of words) {
+              const last = lines[lines.length - 1];
+              if (last !== undefined && width(`${last} ${w}`) <= arcLen(base)) lines[lines.length - 1] = `${last} ${w}`;
+              else lines.push(w);
+            }
+            while (lines.length > 2) lines.splice(1, 2, `${lines[1]} ${lines[2]}`);
+            while (lines.some((l) => width(l) > arcLen(base)) && font > 8) font -= 0.5;
+            // Still too long for the sliver: no label — the tooltip names it.
+            if (lines.some((l) => width(l) > arcLen(base))) return;
+          }
+          // Reading order is top-to-bottom: the first line is the outer arc on
+          // the upper half and the inner arc on the lower half.
+          const gap = font + 1;
+          const radii = lines.length === 1 ? [base] : flip ? [base, base + gap] : [base + gap, base];
+          lines.forEach((line, li) => {
+            const r = radii[li];
+            const [x0, y0] = pt(flip ? a1 : a0, r);
+            const [x1, y1] = pt(flip ? a0 : a1, r);
+            const id = `mr-sec-${i}-${li}`;
+            g.append('path')
+              .attr('class', 'clade-arc')
+              .attr('id', id)
+              .attr('d', `M${x0},${y0}A${r},${r} 0 ${large} ${flip ? 0 : 1} ${x1},${y1}`);
+            g.append('text')
+              .attr('class', 'clade-label')
+              .attr('font-size', font)
+              .append('textPath')
+              .attr('href', `#${id}`)
+              .attr('startOffset', '50%')
+              .attr('text-anchor', 'middle')
+              .text(line);
+          });
+        });
+      };
+      sectorDraw();
+      renderSectorLegend(bounds.map((b) => b.sector));
+      g.append('circle').attr('class', 'rim').attr('cx', C).attr('cy', C).attr('r', R);
+
+      // Branches: arc at the parent's radius, then a radial line to the child.
+      // A single leaf has no links, so give it a spoke from the hub.
+      if (n === 1) {
+        const [x, y] = pt(0, R);
+        g.append('path').attr('class', 'branch').attr('d', `M${C},${C}L${x},${y}`);
+      }
+      g.append('g')
+        .selectAll('path')
+        .data(h.links())
+        .join('path')
+        .attr('class', 'branch')
+        .attr('d', (l) => {
+          const s = l.source as typeof layout[number];
+          const t = l.target as typeof layout[number];
+          const [sx, sy] = pt(t.x, s.y);
+          const [ax, ay] = pt(s.x, s.y);
+          const [tx, ty] = pt(t.x, t.y);
+          const sweep = t.x > s.x ? 1 : 0;
+          const large = Math.abs(t.x - s.x) > 180 ? 1 : 0;
+          return `M${ax},${ay}A${s.y},${s.y} 0 ${large} ${sweep} ${sx},${sy}L${tx},${ty}`;
+        });
+
+      // Leaves.
+      const font = labelFont(n);
+      const showAll = n <= 220;
+      const topIds = new Set(leaves.slice().sort((a, b) => b.weight - a.weight).slice(0, 120).map((l) => l.id));
+      const maxW = Math.max(1, ...leaves.map((l) => l.weight));
+      const leafG = g
+        .append('g')
+        .selectAll('g')
+        .data(layout)
+        .join('g')
+        .attr('class', (d) => (heated ? `leaf heat-${heatOf(d.data.leaf!.weight)}` : 'leaf'))
+        .attr('data-id', (d) => d.data.leaf!.id)
+        .attr('transform', (d) => `rotate(${d.x - 90} ${C} ${C}) translate(${C + R} ${C})`);
+      leafG
+        .append('line')
+        .attr('class', 'tick')
+        .attr('x1', 0)
+        .attr('x2', (d) => 4 + 6 * Math.sqrt(d.data.leaf!.weight / maxW))
+        .attr('stroke-width', (d) => 1 + 2 * Math.sqrt(d.data.leaf!.weight / maxW));
+      leafG
+        .filter((d) => (d.data.leaf as Leaf).status === 'off_schema' || (d.data.leaf as Leaf).status === 'unmapped')
+        .append('circle')
+        .attr('class', 'flag')
+        .attr('cx', -5)
+        .attr('r', 2);
+      leafG
+        .append('text')
+        .attr('dy', '0.32em')
+        .attr('font-size', font)
+        .attr('data-top', (d) => (showAll || topIds.has(d.data.leaf!.id) ? '1' : '0'))
+        .style('display', (d) => (showAll || topIds.has(d.data.leaf!.id) ? null : 'none'))
+        .text((d) => trunc(d.data.leaf!.label));
+      orientLabels();
+
+      // Hub label.
+      const hub = svg.append('g').attr('class', 'hub');
+      const hubTitle = inSearch() ? `“${trunc(state.q)}”` : !state.field ? 'CLIF mCIDE' : state.category === null ? state.field.split('.')[1] : categoryLabel(state.category);
+      const hubCount = inSearch() ? 'matches' : !state.field ? 'fields' : state.category === null ? 'categories' : 'names';
+      hub.append('text').attr('x', C).attr('y', C - 4).attr('text-anchor', 'middle').text(hubTitle);
+      hub.append('text').attr('x', C).attr('y', C + 12).attr('text-anchor', 'middle').text(`${fmt(n)} ${hubCount}`);
+
+      // Nearest-leaf hover and click, by angle — the hit target is the wedge.
+      const node = svg.node()!;
+      node.onpointermove = (e) => {
+        const l = nearest(e);
+        if (l !== hovered) { hovered = l; paint(); }
+        if (l) showTip(e, l); else tip.classList.add('hidden');
+      };
+      node.onpointerleave = () => { hovered = null; tip.classList.add('hidden'); paint(); };
+      node.onclick = (e) => {
+        const l = nearest(e);
+        if (!l) return;
+        if (l.hit) openHit(l.hit);
+        else if (!state.field) openField(l.id);
+        else if (state.category === null) drill(l.id);
+        else { selected = l; paint(); renderDetail(); }
+      };
+      paint();
+    }
+
+    /**
+     * The results wheel's sector legend: one chip per field in its table
+     * colour, with the hit count. Slivers too thin for an arc label are still
+     * named here, and a chip spins its sector under the pointer.
+     */
+    function renderSectorLegend(sectors: Sector[]) {
+      sectorsBox.replaceChildren();
+      if (!inSearch()) { sectorsBox.classList.add('hidden'); return; }
+      sectorsBox.classList.remove('hidden');
+      for (const sector of sectors) {
+        const b = el('button');
+        b.type = 'button';
+        b.append(el('i', `table-${(sector.color ?? 0) % 8}`), el('b', '', sector.label ?? ''), el('span', '', `${sector.leaves.length}`));
+        b.addEventListener('click', () => {
+          const first = leaves.find((l) => l.id === sector.leaves[0].id);
+          if (first) spinTo(first);
+        });
+        sectorsBox.appendChild(b);
+      }
+    }
+
+    /** Point every rim label outward and upright for the wheel's current rotation. */
+    function orientLabels() {
+      svg.selectAll<SVGTextElement, typeof layout[number]>('.leaf text').each(function (d) {
+        const a = ((d.x + rotation) % 360 + 360) % 360;
+        // Flip the left half so no label is upside down, but move the seam
+        // 15° off the pointer: everything around the best match then reads the
+        // same way, and the few labels in the band tilt only slightly past vertical.
+        const flip = a >= 195 && a < 345;
+        this.setAttribute('x', String(flip ? -(LABEL + 8) : LABEL + 8));
+        this.setAttribute('text-anchor', flip ? 'end' : 'start');
+        if (flip) this.setAttribute('transform', 'rotate(180)');
+        else this.removeAttribute('transform');
+      });
+      sectorDraw?.();
+    }
+
+    function longestLabel() {
+      return Math.max(6, ...leaves.map((l) => Math.min(LABEL_MAX, l.label.length)));
+    }
+    function labelFont(n: number) {
+      return Math.max(4.5, Math.min(11, (2 * Math.PI * 318) / n / 1.25));
+    }
+    function annulus(a0: number, a1: number, r0: number, r1: number) {
+      // A full ring has coincident endpoints, which SVG draws as nothing: use two halves.
+      if (a1 - a0 >= 360) return annulus(a0, a0 + 180, r0, r1) + annulus(a0 + 180, a0 + 360, r0, r1);
+      const [x0, y0] = pt(a0, r1);
+      const [x1, y1] = pt(a1, r1);
+      const [x2, y2] = pt(a1, r0);
+      const [x3, y3] = pt(a0, r0);
+      const large = a1 - a0 > 180 ? 1 : 0;
+      return `M${x0},${y0}A${r1},${r1} 0 ${large} 1 ${x1},${y1}L${x2},${y2}A${r0},${r0} 0 ${large} 0 ${x3},${y3}Z`;
+    }
+
+    function nearest(e: PointerEvent | MouseEvent): Leaf | null {
+      const node = svg.node()!;
+      const rect = node.getBoundingClientRect();
+      const scale = W / rect.width;
+      const x = (e.clientX - rect.left) * scale - C;
+      const y = (e.clientY - rect.top) * scale - C;
+      const r = Math.hypot(x, y);
+      if (r < R * 0.55 || r > W / 2) return null;
+      let deg = ((Math.atan2(y, x) * 180) / Math.PI + 90 - rotation) % 360;
+      if (deg < 0) deg += 360;
+      let best: Leaf | null = null;
+      let bd = Infinity;
+      for (const d of layout) {
+        const delta = Math.min(Math.abs(d.x - deg), 360 - Math.abs(d.x - deg));
+        if (delta < bd) { bd = delta; best = d.data.leaf as Leaf; }
+      }
+      // Within a leaf-spacing and a half of the pointer.
+      return bd <= Math.max(1.5, (360 / layout.length) * 1.5) ? best : null;
+    }
+
+    function paint() {
+      const best = matches[0]?.leaf.id;
+      const near = new Set(matches.slice(1).map((m) => m.leaf.id));
+      svg.selectAll<SVGGElement, typeof layout[number]>('.leaf').each(function (d) {
+        const id = d.data.leaf!.id;
+        this.classList.toggle('is-hover', id === hovered?.id);
+        this.classList.toggle('is-selected', id === selected?.id);
+        this.classList.toggle('is-best', id === best);
+        this.classList.toggle('is-near', near.has(id));
+        // Past the label cap only the top leaves are labelled; a highlighted
+        // leaf always shows its label, and drops back when the highlight goes.
+        const t = this.querySelector('text');
+        if (!t) return;
+        const on = id === hovered?.id || id === selected?.id || id === best || near.has(id);
+        const labelled = t.dataset.top === '1';
+        t.style.display = on || labelled ? '' : 'none';
+      });
+    }
+
+    function showTip(e: PointerEvent | MouseEvent, l: Leaf) {
+      tip.replaceChildren();
+      tip.append(el('div', 'v', l.label));
+      const lines: string[] = [];
+      if (l.hit) {
+        lines.push(`→ ${keyOf(l.hit.category)} · ${l.hit.field_key.split('.')[1]}`);
+        lines.push(sitesLine(l));
+        if (l.status !== 'valid') lines.push(`⚑ ${l.status.replace('_', ' ')}`);
+        lines.push('Click to open');
+      } else if (l.meta) {
+        lines.push(`${l.meta.table} · ${fmt(l.meta.categories)} categories`);
+        lines.push(`${fmt(l.meta.names)} raw names · ${l.meta.sites.length} sites`);
+        if (SHOW_SITES && l.siteCodes.length) lines.push(l.siteCodes.join(', '));
+        lines.push('Click to open');
+      } else {
+        if (state.category === null) lines.push(`${fmt(l.rows.length)} raw name${l.rows.length === 1 ? '' : 's'} · ${sitesLine(l)}`);
+        else lines.push(sitesLine(l));
+        if (l.variants?.length) {
+          const shown = l.variants.slice(0, 3).join(', ');
+          lines.push(`also written: ${shown}${l.variants.length > 3 ? `, +${l.variants.length - 3} more` : ''}${state.category === null ? ' (case variant)' : ''}`);
+        }
+        if (l.status !== 'valid') lines.push(`⚑ ${l.status.replace('_', ' ')}`);
+      }
+      for (const t of lines) tip.append(el('div', 'k', t));
+      if (!l.meta) {
+        const heat = el('div', 'k');
+        const sw = el('span', 'heat');
+        sw.style.background = `var(--mr-heat-${heatOf(l.weight)})`;
+        heat.append(sw, `${HEAT_WORDS[heatOf(l.weight)]} records on this wheel`);
+        tip.append(heat);
+      }
+      tip.classList.remove('hidden');
+      const rect = wrap.getBoundingClientRect();
+      const x = e.clientX - rect.left + 14;
+      const y = e.clientY - rect.top + 14;
+      tip.style.left = `${Math.min(x, rect.width - tip.offsetWidth - 8)}px`;
+      tip.style.top = `${Math.min(y, rect.height - tip.offsetHeight - 8)}px`;
+    }
+
+    // ── Search & spin ───────────────────────────────────────────────────
+    async function search(q: string, commit = false) {
+      state.q = q.trim();
+      syncUrl();
+      if (!state.q) {
+        clearMatches();
+        if (searchHits.length) { searchHits = []; rebuild(); }
+        return;
+      }
+      // From the field wheel the search is its own wheel.
+      if (!state.field) { await searchEverywhere(state.q); return; }
+      // Nothing under 30% similar is worth pointing at.
+      matches = rankMatches(state.q, leaves, 5).filter((m) => m.score >= 0.3);
+      matchNotes = new Map();
+      renderMatches();
+      paint();
+      if (matches.length) {
+        spinTo(matches[0].leaf as Leaf);
+        if (commit && state.category !== null) { selected = matches[0].leaf as Leaf; renderDetail(); }
+      }
+      // No strong match on this wheel: the search leaves it and becomes the
+      // results wheel across every field, exactly as from the top.
+      if (!matches.length || matches[0].score < 0.5) {
+        state.field = '';
+        state.category = null;
+        doc = null;
+        fieldSel.value = '';
+        detail.classList.add('hidden');
+        await searchEverywhere(state.q);
+      }
+    }
+
+    /** Build the results wheel for a query: every matching name, across all fields. */
+    async function searchEverywhere(q: string) {
+      if (q.length < 3) return;
+      const seq = ++lookupSeq;
+      const r = await fetch(`/api/mcide/lookup?${new URLSearchParams({ q })}`);
+      if (!r.ok || seq !== lookupSeq) return;
+      const { hits } = (await r.json()) as { hits: Hit[] };
+      if (seq !== lookupSeq) return;
+      searchHits = hits;
+      rebuild();
+      if (hits.length === 0) {
+        setStatus(`No site maps a name like “${q}”. If you map it, you'll be the first.`);
+        return;
+      }
+      matches = rankMatches(q, leaves, 5).filter((m) => m.score >= 0.3);
+      paint();
+      if (matches.length) spinTo(matches[0].leaf as Leaf);
+    }
+
+    /** Leave the results wheel for the name a hit stands for. */
+    async function openHit(h: Hit) {
+      state.category = catKey(h.category);
+      state.q = h.name;
+      qInput.value = h.name;
+      searchHits = [];
+      await openField(h.field_key, true);
+    }
+
+    function clearMatches() {
+      matches = [];
+      matchNotes = new Map();
+      matchesBox.classList.add('hidden');
+      paint();
+    }
+
+    function renderMatches(title = 'Closest on this wheel') {
+      matchesBox.replaceChildren();
+      if (matches.length === 0) { matchesBox.classList.add('hidden'); return; }
+      matchesBox.classList.remove('hidden');
+      matchesBox.append(el('div', 'hd', title));
+      matches.forEach((m, i) => {
+        const b = el('button', `row${i === 0 ? ' best' : ''}`);
+        b.type = 'button';
+        const name = el('span', 'name', m.leaf.label);
+        name.title = m.leaf.label;
+        b.append(name, el('span', 'k', matchNotes.get(m.leaf.id) ?? (m.exact ? 'exact match' : `${Math.round(m.score * 100)}% similar`)));
+        b.addEventListener('click', () => {
+          spinTo(m.leaf as Leaf);
+          if (!state.field) openField(m.leaf.id);
+          else if (state.category === null) drill(m.leaf.id);
+          else { selected = m.leaf as Leaf; paint(); renderDetail(); }
+        });
+        matchesBox.appendChild(b);
+      });
+    }
+
+    function spinTo(leaf: Leaf) {
+      const d = layout.find((x) => x.data.leaf!.id === leaf.id);
+      if (!d) return;
+      // Land the leaf under the pointer at 12 o'clock, always with a full extra turn.
+      const target = -d.x;
+      let delta = ((target - rotation) % 360 + 540) % 360 - 180;
+      if (Math.abs(delta) < 1) return;
+      delta += delta > 0 ? 360 : -360;
+      const from = rotation;
+      const to = rotation + delta;
+      const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const i = interpolateNumber(from, to);
+      svg.select('.spin')
+        .transition()
+        .duration(reduce ? 0 : 1400)
+        .ease(easeCubicOut)
+        .tween('rot', () => (t) => {
+          rotation = i(t);
+          svg.select('.spin').attr('transform', `rotate(${rotation} ${C} ${C})`);
+          orientLabels();
+        })
+        .on('end', () => {
+          rotation = ((to % 360) + 360) % 360;
+          svg.select('.spin').attr('transform', `rotate(${rotation} ${C} ${C})`);
+          orientLabels();
+        });
+    }
+
+    // ── Detail & export ─────────────────────────────────────────────────
+    function renderDetail() {
+      detail.replaceChildren();
+      const l = selected;
+      if (!l || !doc) { detail.classList.add('hidden'); return; }
+      detail.classList.remove('hidden');
+      const head = el('div', 'px-4 py-3 border-b border-gray-100 dark:border-neutral-700 flex flex-wrap items-baseline gap-x-3 gap-y-1');
+      head.append(el('span', 'font-mono text-base font-semibold text-gray-900 dark:text-white', l.label));
+      head.append(el('span', 'text-sm text-gray-500 dark:text-gray-400', `${l.status.replace('_', ' ')} · ${sitesText(l.sites)}`));
+      detail.append(head);
+
+      const body = el('div', 'px-4 py-3 text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2');
+      const sw = el('span', 'inline-block w-3 h-3 rounded-sm');
+      sw.style.background = `var(--mr-heat-${heatOf(l.weight)})`;
+      body.append(sw, `${HEAT_WORDS[heatOf(l.weight)].replace(/^./, (c) => c.toUpperCase())} records on this wheel`);
+      detail.append(body);
+
+      if (SHOW_SITES && l.siteCodes.length) {
+        const s = el('div', 'px-4 pb-3 text-sm text-gray-700 dark:text-gray-300 flex flex-wrap items-baseline gap-x-2 gap-y-1');
+        s.append(
+          el('span', 'text-gray-500 dark:text-gray-400', state.category === null ? 'Sites mapping to this category:' : 'Sites mapping this name here:'),
+          el('span', 'font-mono text-xs', l.siteCodes.join(', ')),
+          el('span', 'text-[10px] font-semibold uppercase tracking-wide bg-gray-100 text-gray-600 dark:bg-neutral-700 dark:text-gray-300 px-1.5 py-0.5 rounded', 'Admin only'),
+        );
+        detail.append(s);
+      }
+
+      if (l.variants?.length) {
+        const v = el('div', 'px-4 pb-3 text-sm text-gray-700 dark:text-gray-300');
+        v.append(el('span', 'text-gray-500 dark:text-gray-400', `Also written ${l.variants.length === 1 ? 'as' : `${l.variants.length} other ways`}: `));
+        l.variants.forEach((s, i) => v.append(el('span', 'font-mono text-xs', s), i < l.variants!.length - 1 ? ', ' : ''));
+        detail.append(v);
+      }
+
+      // A raw name that other sites send elsewhere.
+      if (state.category !== null) {
+        const key = norm(l.label);
+        const elsewhere = new Map<string, Set<string>>(); // catKey → sites
+        for (const r of doc.rows) {
+          if (norm(r.n) !== key || catKey(r.c) === state.category || r.s === 'off_schema' || r.s === 'unmapped') continue;
+          if (!elsewhere.has(catKey(r.c))) elsewhere.set(catKey(r.c), new Set());
+          for (const s of Object.keys(r.k)) elsewhere.get(catKey(r.c))!.add(s);
+        }
+        if (elsewhere.size) {
+          const p = el('div', 'px-4 py-3 border-t border-gray-100 dark:border-neutral-700 text-sm text-amber-800 dark:text-amber-300');
+          p.append(el('span', 'font-medium', 'Also mapped to: '));
+          [...elsewhere.entries()].forEach(([ck, sites], i) => {
+            const b = el('button', 'font-mono underline decoration-dotted hover:text-clif-burgundy', categoryLabel(ck));
+            b.type = 'button';
+            b.addEventListener('click', () => { drill(ck); });
+            const who = SHOW_SITES ? [...sites].sort().join(', ') : `${sites.size} site${sites.size === 1 ? '' : 's'}`;
+            p.append(b, el('span', 'opacity-70', ` (${who})${i < elsewhere.size - 1 ? ', ' : ''}`));
+          });
+          detail.append(p);
+        }
+      }
+    }
+
+    // Like the wheel, the export never carries record counts: rows keep their
+    // most-records-first order, but the numbers themselves stay out of the file.
+    function exportCsv() {
+      if (leaves.length === 0) return;
+      const cell = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+      if (inSearch()) {
+        const rows = leaves.map((l) => [l.label, keyOf(l.hit!.category), l.hit!.field_key, l.status, l.sites]);
+        download(['name', 'category', 'field', 'status', 'sites'], rows, `search.${state.q}.csv`);
+        return;
+      }
+      if (!doc) return;
+      const head = [state.category === null ? 'category' : doc.nameCol, state.category === null ? 'raw_names' : 'category', 'status', 'sites', ...(state.category === null ? [] : ['other_spellings'])];
+      const rows = buildLeaves()
+        .sort((a, b) => b.weight - a.weight)
+        .map((l) => [l.label, state.category === null ? l.rows.length : state.category, l.status, l.sites, ...(state.category === null ? [] : [(l.variants ?? []).join(' | ')])]);
+      download(head, rows, `${state.field}${state.category !== null ? `.${state.category}` : ''}.csv`);
+
+      function download(head: string[], rows: unknown[][], filename: string) {
+        const csv = [head.join(','), ...rows.map((r) => r.map(cell).join(','))].join('\n');
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(a.href);
+      }
+    }
+  }
+</script>

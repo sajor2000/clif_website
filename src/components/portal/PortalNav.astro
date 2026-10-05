@@ -2,6 +2,7 @@
 import { getDb } from '../../lib/turso';
 import { unreadCount } from '../../lib/notifications';
 import { pendingTaskCount } from '../../lib/tasks';
+import { portalGroups } from '../../data/portal-nav';
 
 interface Props {
   currentPath: string;
@@ -32,28 +33,16 @@ if (currentUser?.id) {
   ]);
 }
 
-// Dashboard stays pinned first; everything after it is sorted alphabetically by label.
-const portalItems = [
-  { label: 'Dashboard', href: '/portal', icon: 'grid', wip: false },
-  { label: 'Authorship Tool', href: '/portal/authorship', icon: 'document', wip: false },
-  { label: 'Calendar', href: '/portal/calendar', icon: 'calendar', wip: false },
-  { label: 'Hospital & Site Details', href: '/portal/site-details', icon: 'building', wip: false },
-  { label: 'Letter of Support Tracker', href: '/portal/los-requests', icon: 'document', wip: false },
-  { label: 'Manuscript Tracker', href: '/portal/status', icon: 'check-circle', wip: false },
-  { label: 'Member Directory', href: '/portal/directory', icon: 'users', wip: false },
-  { label: 'Project Run Tracker', href: '/portal/project-runs', icon: 'check-circle', wip: false },
-  { label: 'Secure Masking', href: '/portal/crypto', icon: 'lock', wip: false },
-  { label: 'Voting', href: '/portal/voting', icon: 'ballot', wip: false },
-];
-
 function isActive(href: string): boolean {
   if (href === '/portal') return currentPath === '/portal' || currentPath === '/portal/';
   return currentPath.startsWith(href);
 }
 
-// Inline heroicon (outline) paths, keyed by the icon name used above. Icons are only
-// visible when the sidebar is collapsed, giving each item a recognizable glyph.
+// Inline heroicon (outline) paths, keyed by icon name. Apart from the pinned Home
+// icon, icons are only visible when the sidebar is collapsed, giving each item a
+// recognizable glyph.
 const ICON_PATHS: Record<string, string> = {
+  home: 'm2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25',
   grid: 'M3.75 6A2.25 2.25 0 0 1 6 3.75h1.5A2.25 2.25 0 0 1 9.75 6v1.5A2.25 2.25 0 0 1 7.5 9.75H6A2.25 2.25 0 0 1 3.75 7.5V6ZM3.75 16.5A2.25 2.25 0 0 1 6 14.25h1.5A2.25 2.25 0 0 1 9.75 16.5V18A2.25 2.25 0 0 1 7.5 20.25H6A2.25 2.25 0 0 1 3.75 18v-1.5ZM14.25 6A2.25 2.25 0 0 1 16.5 3.75H18A2.25 2.25 0 0 1 20.25 6v1.5A2.25 2.25 0 0 1 18 9.75h-1.5A2.25 2.25 0 0 1 14.25 7.5V6ZM14.25 16.5A2.25 2.25 0 0 1 16.5 14.25H18A2.25 2.25 0 0 1 20.25 16.5V18A2.25 2.25 0 0 1 18 20.25h-1.5A2.25 2.25 0 0 1 14.25 18v-1.5Z',
   document: 'M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z',
   calendar: 'M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5',
@@ -77,12 +66,28 @@ function iconSvg(name: string): string {
   class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-4"
   aria-label="Portal navigation"
 >
-  <div class="nav-header flex items-center justify-between mb-3 px-3">
-    <h2 class="nav-title text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 tracking-wider">Portal</h2>
+  <!-- Home (the portal landing page) shares the top row with the collapse toggle. -->
+  <div class="nav-header flex items-center gap-1">
+    <a
+      href="/portal"
+      title="Portal home"
+      class={`nav-link flex-1 min-w-0 flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
+        isActive('/portal')
+          ? 'bg-clif-burgundy/10 text-clif-burgundy dark:bg-clif-burgundy/20'
+          : 'text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-neutral-700'
+      }`}
+      aria-current={isActive('/portal') ? 'page' : undefined}
+    >
+      <span class="nav-icon nav-icon-pinned shrink-0" set:html={iconSvg('home')} />
+      <span class="nav-label">Home</span>
+      {taskCount > 0 && (
+        <span class="admin-count ml-auto inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 text-[10px] font-bold text-white bg-clif-burgundy rounded-full" title={`${taskCount} pending task${taskCount === 1 ? '' : 's'}`}>{taskCount > 99 ? '99+' : taskCount}</span>
+      )}
+    </a>
     <button
       type="button"
       id="portal-nav-toggle"
-      class="hidden lg:inline-flex items-center justify-center rounded-md p-1 text-gray-400 hover:text-clif-burgundy hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors"
+      class="hidden lg:inline-flex shrink-0 items-center justify-center rounded-md p-1 text-gray-400 hover:text-clif-burgundy hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors"
       aria-label="Toggle sidebar"
       aria-expanded="true"
     >
@@ -91,31 +96,37 @@ function iconSvg(name: string): string {
       </svg>
     </button>
   </div>
-  <ul class="space-y-1">
-    {portalItems.map((item) => (
-      <li>
-        <a
-          href={item.href}
-          title={item.label}
-          class={`nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-            isActive(item.href)
-              ? 'bg-clif-burgundy/10 text-clif-burgundy dark:bg-clif-burgundy/20'
-              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700'
-          }`}
-          aria-current={isActive(item.href) ? 'page' : undefined}
-        >
-          <span class="nav-icon shrink-0" set:html={iconSvg(item.icon)} />
-          <span class="nav-label">{item.label}</span>
-          {item.wip && (
-            <span class="wip-badge ml-auto text-[10px] font-semibold uppercase tracking-wide bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-1.5 py-0.5 rounded">WIP</span>
-          )}
-          {item.href === '/portal' && taskCount > 0 && (
-            <span class="admin-count ml-auto inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 text-[10px] font-bold text-white bg-clif-burgundy rounded-full" title={`${taskCount} pending task${taskCount === 1 ? '' : 's'}`}>{taskCount > 99 ? '99+' : taskCount}</span>
-          )}
-        </a>
+  <ul>
+    {portalGroups.map((group) => (
+      <li class="nav-group mt-3 pt-3 border-t border-gray-200 dark:border-neutral-700">
+        <h2 class="nav-group-title px-3 text-[11px] font-bold uppercase tracking-widest text-gray-900 dark:text-white">
+          {group.title}
+        </h2>
+        <ul class="nav-group-items mt-2 ml-3 pl-2 space-y-1 border-l border-gray-200 dark:border-neutral-700">
+          {group.items.map((item) => (
+            <li>
+              <a
+                href={item.href}
+                title={item.label}
+                class={`nav-link flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  isActive(item.href)
+                    ? 'bg-clif-burgundy/10 text-clif-burgundy dark:bg-clif-burgundy/20'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-700'
+                }`}
+                aria-current={isActive(item.href) ? 'page' : undefined}
+              >
+                <span class="nav-icon shrink-0" set:html={iconSvg(item.icon)} />
+                <span class="nav-label">{item.label}</span>
+                {item.wip && (
+                  <span class="wip-badge ml-auto text-[10px] font-semibold uppercase tracking-wide bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-1.5 py-0.5 rounded">WIP</span>
+                )}
+              </a>
+            </li>
+          ))}
+        </ul>
       </li>
     ))}
-    <li class="pt-2 mt-2 border-t border-gray-200 dark:border-neutral-700">
+    <li class="nav-group mt-3 pt-3 border-t border-gray-200 dark:border-neutral-700">
       <a
         href="/portal/notifications"
         title="Notifications"
@@ -134,7 +145,7 @@ function iconSvg(name: string): string {
       </a>
     </li>
     {isAdmin && (
-      <li>
+      <li class="mt-1">
         <a
           href="/portal/admin"
           title="Admin Panel"
@@ -157,15 +168,19 @@ function iconSvg(name: string): string {
 </nav>
 
 <style>
-  /* Icons only show once the sidebar collapses; expanded view stays label-only. */
+  /* Icons only show once the sidebar collapses; expanded view stays label-only,
+     except Home, whose icon is pinned on. */
   #portal-nav .nav-icon {
     display: none;
+  }
+  #portal-nav .nav-icon.nav-icon-pinned {
+    display: inline-flex;
   }
 
   /* Collapse behavior applies on lg+ where the sidebar sits beside the content.
      Below that the nav stacks on top and always shows full labels. */
   @media (min-width: 1024px) {
-    #portal-nav.is-collapsed .nav-title,
+    #portal-nav.is-collapsed .nav-group-title,
     #portal-nav.is-collapsed .nav-label,
     #portal-nav.is-collapsed .wip-badge {
       display: none;
@@ -173,8 +188,20 @@ function iconSvg(name: string): string {
     #portal-nav.is-collapsed .nav-icon {
       display: inline-flex;
     }
+    /* Collapsed: the toggle stacks above the Home icon, and each group drops its
+       heading and indent rail, leaving just the divider between icon clusters. */
     #portal-nav.is-collapsed .nav-header {
-      justify-content: center;
+      flex-direction: column-reverse;
+      align-items: stretch;
+    }
+    #portal-nav.is-collapsed .nav-group {
+      margin-top: 0.5rem;
+      padding-top: 0.5rem;
+    }
+    #portal-nav.is-collapsed .nav-group-items {
+      margin: 0;
+      padding-left: 0;
+      border-left-width: 0;
     }
     #portal-nav.is-collapsed .nav-link {
       justify-content: center;
