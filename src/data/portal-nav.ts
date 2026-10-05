@@ -56,7 +56,6 @@ export const portalGroups: PortalGroup[] = [
         label: 'mCIDE Surveyor',
         href: '/portal/mcide-surveyor',
         icon: 'check-circle',
-        wip: true,
         description:
           'What every site maps its raw EHR names to: look up a string, see inside vague categories like "other", and find where sites disagree',
       },
