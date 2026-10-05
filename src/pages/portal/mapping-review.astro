@@ -5,7 +5,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import PortalNav from '../../components/portal/PortalNav.astro';
 import MappingReview from '../../components/portal/MappingReview.astro';
 import { getDb } from '../../lib/turso';
-import type { FieldSummary } from '../../utils/mcideMappings';
+import { EXCLUDED_FIELDS, type FieldSummary } from '../../utils/mcideMappings';
 
 const user = Astro.locals.user;
 
@@ -17,7 +17,9 @@ try {
   const result = await getDb().execute(
     'SELECT field_key, run_label, summary, updated_at FROM mcide_mapping_docs ORDER BY field_key'
   );
-  summaries = result.rows.map((row) => JSON.parse(String(row.summary)) as FieldSummary);
+  summaries = result.rows
+    .filter((row) => !EXCLUDED_FIELDS.has(String(row.field_key)))
+    .map((row) => JSON.parse(String(row.summary)) as FieldSummary);
   if (result.rows.length > 0) {
     runLabel = String(result.rows[0].run_label);
   }

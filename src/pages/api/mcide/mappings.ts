@@ -2,6 +2,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { getDb } from '../../../lib/turso';
+import { EXCLUDED_FIELDS } from '../../../utils/mcideMappings';
 
 // Members-only mapping docs for /portal/mapping-review.
 //
@@ -31,16 +32,19 @@ export const GET: APIRoute = async ({ locals, url }) => {
       'SELECT field_key, table_name, run_label, summary, updated_at FROM mcide_mapping_docs ORDER BY field_key'
     );
     return json(
-      result.rows.map((row) => ({
-        field_key: row.field_key,
-        table_name: row.table_name,
-        run_label: row.run_label,
-        summary: JSON.parse(String(row.summary)),
-        updated_at: row.updated_at,
-      }))
+      result.rows
+        .filter((row) => !EXCLUDED_FIELDS.has(String(row.field_key)))
+        .map((row) => ({
+          field_key: row.field_key,
+          table_name: row.table_name,
+          run_label: row.run_label,
+          summary: JSON.parse(String(row.summary)),
+          updated_at: row.updated_at,
+        }))
     );
   }
 
+  if (EXCLUDED_FIELDS.has(field)) return json({ error: 'Unknown field' }, 404);
   const result = await db.execute({
     sql: 'SELECT doc FROM mcide_mapping_docs WHERE field_key = ?',
     args: [field],

@@ -2,7 +2,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { getDb } from '../../../lib/turso';
-import { norm } from '../../../utils/mcideMappings';
+import { norm, EXCLUDED_FIELDS } from '../../../utils/mcideMappings';
 
 // "What did other sites map this string to?" — the mCIDE Surveyor's search box.
 //
@@ -62,10 +62,14 @@ export const GET: APIRoute = async ({ locals, url }) => {
 
   const db = getDb();
   const key = norm(q);
-  // Off-schema mappings (a category the mCIDE does not define) stay out of
-  // the review entirely, here as on the wheel.
-  const fieldClause = (field ? ' AND n.field_key = ?' : '') + " AND n.status NOT IN ('off_schema', 'unmapped')";
-  const fieldArgs = field ? [field] : [];
+  // Off-schema mappings (a category the mCIDE does not define) and excluded
+  // fields stay out of the review entirely, here as on the wheel.
+  const excluded = [...EXCLUDED_FIELDS];
+  const fieldClause =
+    (field ? ' AND n.field_key = ?' : '') +
+    (excluded.length ? ` AND n.field_key NOT IN (${excluded.map(() => '?').join(', ')})` : '') +
+    " AND n.status NOT IN ('off_schema', 'unmapped')";
+  const fieldArgs = [...(field ? [field] : []), ...excluded];
   const cols = 'n.field_key, n.name, n.category, n.status, n.sites, n.n_all';
 
   const exact = await db.execute({

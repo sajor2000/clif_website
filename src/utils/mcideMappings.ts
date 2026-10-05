@@ -84,6 +84,14 @@ export function norm(name: string): string {
 }
 
 /**
+ * Fields kept out of the Surveyor even when sites export them.
+ * `lab_specimen_category` was not required in CLIF 2.1, so what sites put
+ * there is not a mapping anyone should copy. The build skips these and the
+ * portal page and APIs filter them, so a doc already loaded stays hidden.
+ */
+export const EXCLUDED_FIELDS: ReadonlySet<string> = new Set(['labs.lab_specimen_category']);
+
+/**
  * Values that mean "this site mapped nothing here". Mirrors NULLISH in
  * build-mcide-coverage.mjs; `unknown` and `na` are real mCIDE values and so
  * deliberately absent.

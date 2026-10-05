@@ -25,7 +25,7 @@ import { fileURLToPath } from 'node:url';
 import { parse } from 'csv-parse/sync';
 import { createClient } from '@libsql/client';
 import { tableNameFor, categoryColumnsFor, resolveField } from './build-mcide-coverage.mjs';
-import { norm, isUnmapped, isVague, statusFor } from '../src/utils/mcideMappings.ts';
+import { norm, isUnmapped, isVague, statusFor, EXCLUDED_FIELDS } from '../src/utils/mcideMappings.ts';
 
 const REPO = process.cwd();
 
@@ -366,6 +366,7 @@ export function readExports(dir, officialByField) {
     const table = tableNameFor(path.basename(file, '.csv'), columns.filter((c) => !c.startsWith(SITE_PREFIX)));
     if (EXCLUDED_TABLES.has(table)) continue;
     const fieldKey = resolveField(table, roles.catCol);
+    if (EXCLUDED_FIELDS.has(fieldKey)) continue;
     if (!fields.has(fieldKey)) {
       fields.set(fieldKey, {
         table: fieldKey.split('.')[0],
