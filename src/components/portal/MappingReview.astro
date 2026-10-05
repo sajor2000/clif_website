@@ -48,6 +48,8 @@ const muted = 'text-sm text-gray-500 dark:text-gray-400';
         </optgroup>
       ))}
     </select>
+    <button id="mr-reset" type="button" title="Clear the search and go back to all fields"
+      class="px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-600 focus:outline-none focus:ring-2 focus:ring-clif-burgundy">Reset</button>
   </div>
 
   <!-- Breadcrumb -->
@@ -244,7 +246,7 @@ const muted = 'text-sm text-gray-500 dark:text-gray-400';
     siteCodes: string[];
     status: MappingStatus;
     meta?: FieldMeta;
-    /** Other spellings folded into this leaf (case-only differences), most records first. */
+    /** Other spellings folded into this leaf (case for a raw name; case, spaces and hyphens for a category), most records first. */
     variants?: string[];
     /** On the results wheel: the mapping this leaf stands for. */
     hit?: Hit;
@@ -272,6 +274,7 @@ const muted = 'text-sm text-gray-500 dark:text-gray-400';
 
     const qInput = $<HTMLInputElement>('mr-q');
     const fieldSel = $<HTMLSelectElement>('mr-field');
+    const resetBtn = $<HTMLButtonElement>('mr-reset');
     const crumbs = $('mr-crumbs');
     const meta = $('mr-wheel-meta');
     const exportBtn = $<HTMLButtonElement>('mr-export');
@@ -289,7 +292,7 @@ const muted = 'text-sm text-gray-500 dark:text-gray-400';
     const params = new URLSearchParams(location.search);
     const state = {
       field: params.get('field') ?? '',
-      category: params.get('category')?.trim().toLowerCase() ?? null, // a catKey; null = category wheel
+      category: params.has('category') ? catKey(params.get('category')!) : null, // a catKey; null = category wheel
       q: params.get('q') ?? '',
     };
     const docs = new Map<string, MappingDoc>();
@@ -328,7 +331,8 @@ const muted = 'text-sm text-gray-500 dark:text-gray-400';
     // ── Wiring ──────────────────────────────────────────────────────────
     fieldSel.value = state.field;
     qInput.value = state.q;
-    fieldSel.addEventListener('change', () => (fieldSel.value ? openField(fieldSel.value) : goHome()));
+    fieldSel.addEventListener('change', () => (fieldSel.value ? browseField(fieldSel.value) : goHome()));
+    resetBtn.addEventListener('click', reset);
     exportBtn.addEventListener('click', exportCsv);
     let qTimer = 0;
     qInput.addEventListener('input', () => {
@@ -361,6 +365,18 @@ const muted = 'text-sm text-gray-500 dark:text-gray-400';
       detail.classList.add('hidden');
       rebuild();
       if (state.q) search(state.q);
+    }
+
+    /** Back to the page as it first loads: no search, no field, the wheel unturned. */
+    function reset() {
+      window.clearTimeout(qTimer);
+      lookupSeq++; // a lookup still in flight must not repaint the results wheel
+      svg.select('.spin').interrupt();
+      rotation = 0;
+      searchHits = [];
+      state.q = '';
+      qInput.value = '';
+      goHome();
     }
 
     /** Back to the field wheel, with one table's sector under the pointer and its fields lit. */
@@ -396,6 +412,19 @@ const muted = 'text-sm text-gray-500 dark:text-gray-400';
       if (state.q) search(state.q, true);
     }
 
+    /**
+     * Open a field the user picked by browsing. It replaces any search: a query
+     * left in the box would be re-run against this field's categories, find no
+     * strong match, and send the wheel straight back to the search results.
+     */
+    function browseField(field: string) {
+      window.clearTimeout(qTimer);
+      lookupSeq++; // a lookup still in flight must not repaint the results wheel
+      state.q = '';
+      qInput.value = '';
+      return openField(field);
+    }
+
     async function loadDoc(field: string): Promise<MappingDoc> {
       if (docs.has(field)) return docs.get(field)!;
       const r = await fetch(`/api/mcide/mappings?field=${encodeURIComponent(field)}`);
@@ -414,9 +443,14 @@ const muted = 'text-sm text-gray-500 dark:text-gray-400';
     function keyOf(category: string) {
       return isUnmapped(category) ? '(unmapped)' : category;
     }
-    /** The category wheel's leaf id: spellings that differ only by case share one. */
+    /**
+     * The category wheel's leaf id. Spellings that differ only by case, or by
+     * a space or hyphen where mCIDE has an underscore (`not prone` and
+     * `not_prone`), share one: the same folding `statusFor` uses to call a
+     * category a variant of an mCIDE value. Categories only, never raw names.
+     */
     function catKey(category: string) {
-      return keyOf(category).trim().toLowerCase();
+      return keyOf(category).trim().toLowerCase().replace(/[\s-]+/g, '_');
     }
     /** Display spelling for the current category key: the mCIDE one if any site uses it. */
     function categoryLabel(key: string) {
@@ -441,7 +475,8 @@ const muted = 'text-sm text-gray-500 dark:text-gray-400';
       }
       if (!doc) return [];
       if (state.category === null) {
-        // Categories that differ only by case are one leaf too. The mCIDE
+        // Categories that differ only by case or by space/hyphen for
+        // underscore (see `catKey`) are one leaf too. The mCIDE
         // spelling (status `valid`) is the label when a site uses it; the
         // other spellings are listed as variants and keep their status.
         const byCat = new Map<string, { spellings: Map<string, { records: number; status: MappingStatus }>; rows: MappingRow[]; sites: Set<string> }>();
@@ -840,7 +875,7 @@ const muted = 'text-sm text-gray-500 dark:text-gray-400';
         const l = nearest(e);
         if (!l) return;
         if (l.hit) openHit(l.hit);
-        else if (!state.field) openField(l.id);
+        else if (!state.field) browseField(l.id);
         else if (state.category === null) drill(l.id);
         else { selected = l; paint(); renderDetail(); }
       };
@@ -959,7 +994,7 @@ const muted = 'text-sm text-gray-500 dark:text-gray-400';
         else lines.push(sitesLine(l));
         if (l.variants?.length) {
           const shown = l.variants.slice(0, 3).join(', ');
-          lines.push(`also written: ${shown}${l.variants.length > 3 ? `, +${l.variants.length - 3} more` : ''}${state.category === null ? ' (case variant)' : ''}`);
+          lines.push(`also written: ${shown}${l.variants.length > 3 ? `, +${l.variants.length - 3} more` : ''}${state.category === null ? ' (spelling variant)' : ''}`);
         }
         if (l.status !== 'valid') lines.push(`⚑ ${l.status.replace('_', ' ')}`);
       }
@@ -1059,7 +1094,7 @@ const muted = 'text-sm text-gray-500 dark:text-gray-400';
         b.append(name, el('span', 'k', matchNotes.get(m.leaf.id) ?? (m.exact ? 'exact match' : `${Math.round(m.score * 100)}% similar`)));
         b.addEventListener('click', () => {
           spinTo(m.leaf as Leaf);
-          if (!state.field) openField(m.leaf.id);
+          if (!state.field) browseField(m.leaf.id);
           else if (state.category === null) drill(m.leaf.id);
           else { selected = m.leaf as Leaf; paint(); renderDetail(); }
         });
@@ -1167,7 +1202,7 @@ const muted = 'text-sm text-gray-500 dark:text-gray-400';
       const head = [state.category === null ? 'category' : doc.nameCol, state.category === null ? 'raw_names' : 'category', 'status', 'sites', ...(state.category === null ? [] : ['other_spellings'])];
       const rows = buildLeaves()
         .sort((a, b) => b.weight - a.weight)
-        .map((l) => [l.label, state.category === null ? l.rows.length : state.category, l.status, l.sites, ...(state.category === null ? [] : [(l.variants ?? []).join(' | ')])]);
+        .map((l) => [l.label, state.category === null ? l.rows.length : categoryLabel(state.category), l.status, l.sites, ...(state.category === null ? [] : [(l.variants ?? []).join(' | ')])]);
       download(head, rows, `${state.field}${state.category !== null ? `.${state.category}` : ''}.csv`);
 
       function download(head: string[], rows: unknown[][], filename: string) {
