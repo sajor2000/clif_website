@@ -1001,38 +1001,6 @@ const navigationSections = [
                       </ul>
                       <p class="mt-2 text-xs text-gray-300">Also applies to bicarbonate, creatinine, glucose, hematocrit, lactate, and sodium. Fingerstick glucometer glucose has its own panel: <code class="bg-white/20 px-1 rounded">glucose</code> + <code class="bg-white/20 px-1 rounded">fingerstick</code>, not <code class="bg-white/20 px-1 rounded">poc</code>.</p>
                     </div>
-                    <div class="bg-blue-500/20 p-3 rounded-lg border border-blue-400/30 text-sm mt-3">
-                      <p class="text-blue-300 font-semibold mb-2">Blood gas results — <code class="bg-white/20 px-1 rounded">blood_gas</code> or <code class="bg-white/20 px-1 rounded">poc</code>?</p>
-                      <p class="mb-2"><strong>Step 1: where was it run?</strong> If the result came from a point-of-care device (a bedside analyzer; the order or result name usually says POC, iSTAT, or bedside), <strong>every analyte on it is <code class="bg-white/20 px-1 rounded">poc</code></strong> — pH, pO2, pCO2, sO2 and HCO3⁻ included. <code class="bg-white/20 px-1 rounded">lab_category</code> is unchanged (<code class="bg-white/20 px-1 rounded">ph_arterial</code>, <code class="bg-white/20 px-1 rounded">po2_arterial</code>, …); only the panel differs.</p>
-                      <p class="mb-2"><strong>Step 2: central-lab gas analyzer.</strong> Otherwise, once you have mapped the result to its <code class="bg-white/20 px-1 rounded">lab_category</code>, look it up here:</p>
-                      <table class="w-full text-xs border-collapse mb-2">
-                        <thead>
-                          <tr class="border-b border-white/30">
-                            <th class="text-left py-1 pr-2 font-semibold">If <code class="bg-white/20 px-1 rounded">lab_category</code> is…</th>
-                            <th class="text-left py-1 font-semibold">then <code class="bg-white/20 px-1 rounded">lab_order_category</code> is</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr class="border-b border-white/10">
-                            <td class="py-1 pr-2"><code class="bg-white/20 px-1 rounded">ph_*</code>, <code class="bg-white/20 px-1 rounded">pco2_*</code>, <code class="bg-white/20 px-1 rounded">po2_*</code>, <code class="bg-white/20 px-1 rounded">so2_*</code>, <code class="bg-white/20 px-1 rounded">bicarbonate</code> (when reported alongside the gas values)</td>
-                            <td class="py-1"><code class="bg-white/20 px-1 rounded">blood_gas</code></td>
-                          </tr>
-                          <tr class="border-b border-white/10">
-                            <td class="py-1 pr-2"><code class="bg-white/20 px-1 rounded">sodium</code>, <code class="bg-white/20 px-1 rounded">potassium</code>, <code class="bg-white/20 px-1 rounded">glucose</code>, <code class="bg-white/20 px-1 rounded">lactate</code>, <code class="bg-white/20 px-1 rounded">hematocrit</code>, <code class="bg-white/20 px-1 rounded">creatinine</code></td>
-                            <td class="py-1"><code class="bg-white/20 px-1 rounded">poc</code></td>
-                          </tr>
-                          <tr class="border-b border-white/10">
-                            <td class="py-1 pr-2">any other analyte (e.g. <code class="bg-white/20 px-1 rounded">chloride</code>, <code class="bg-white/20 px-1 rounded">calcium_ionized</code>)</td>
-                            <td class="py-1">that analyte's own permitted panel in <code class="bg-white/20 px-1 rounded">clif_lab_categories.csv</code> — <code class="bg-white/20 px-1 rounded">chloride</code> → <code class="bg-white/20 px-1 rounded">bmp</code>, <code class="bg-white/20 px-1 rounded">calcium_ionized</code> → <code class="bg-white/20 px-1 rounded">misc</code></td>
-                          </tr>
-                          <tr>
-                            <td class="py-1 pr-2">the co-oximetry "hemoglobin/saturation" hemoglobin reported with the gas</td>
-                            <td class="py-1">do not map — it is not <code class="bg-white/20 px-1 rounded">hemoglobin</code> (that category is CBC hemoglobin only)</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                      <p class="text-xs text-gray-300">One central-lab gas order can therefore produce rows in several panels. Mixed-venous gases from the central lab use <code class="bg-white/20 px-1 rounded">mixed_venous_blood_gas</code> instead of <code class="bg-white/20 px-1 rounded">blood_gas</code>. Finger-stick glucometer glucose is <code class="bg-white/20 px-1 rounded">fingerstick</code>, not <code class="bg-white/20 px-1 rounded">poc</code>. <em>Why:</em> POC results can differ in accuracy from the central lab, so anything from a bedside device is kept separable as <code class="bg-white/20 px-1 rounded">poc</code>; and even on a central-lab gas analyzer the sodium, potassium, etc. are measured by an electrode method rather than the chemistry assay, so those stay <code class="bg-white/20 px-1 rounded">poc</code> too. (Decision confirmed by the labs working group, Oct 2026.)</p>
-                    </div>
                     <div class="bg-white/10 p-3 rounded-lg text-sm mt-3">
                       <p class="mb-2">Bicarbonate vs. CO2:</p>
                       <ul class="space-y-1 text-xs">
