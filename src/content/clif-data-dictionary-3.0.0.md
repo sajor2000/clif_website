@@ -38,7 +38,7 @@ The admission, discharge, and transfer (adt) table is a start-stop longitudinal 
 This table should represent what the clinician intends for the patients' limitations in care, not just what the EHR banner displays. It is **NOT** always equivalent to the code status display name in the EHR. 
 
 **Notes**: 
-- Sites will need to identify their code status orders. Additionally, sites may have separate orders for "comfort measures only" not found within the code status order that, if available, should be pulled to map it to `allow_natural_death`.
+- Sites will need to identify their code status orders. Additionally, sites may have separate orders for "comfort measures only" not found within the code status order that, if available, should be pulled to map it to `and` (Allow Natural Death).
 
 
 \
@@ -49,61 +49,6 @@ This table should represent what the clinician intends for the patients' limitat
 | 123451     | 2024-12-01 08:30:00+00:00 UTC | Do Not Resuscitate| dnr                 |
 | 123452     | 2024-12-02 14:00:00+00:00 UTC | Do Not Intubate   | dnr_or_dni             |
 | 123451     | 2024-12-03 10:15:00+00:00 UTC | Full Code         | full                |
-
-
-## renal_replacement_therapy
-
-The renal_replacement_therapy table captures Renal Replacement Therapy (RRT) data across both Continuous Renal Replacement Therapy (CRRT) sub-modes and intermittent hemodialysis (IHD), including the different modalities, operational parameters, and fluid exchange details.
-
-**Notes**:
-- **Distinguishing IHD from IUF:** Intermittent hemodialysis (`ihd`) and isolated ultrafiltration (`iuf`) share the same operational parameters in this table; the distinguishing feature is the dialysate bath. IHD uses a dialysate bath containing potassium and calcium (recorded in `potassium_bath` and `calcium_bath`), whereas IUF does not. These two fields therefore capture the difference between IHD and IUF.
-- **Fluid volumes:** This table records RRT machine settings and rates, not fluid volumes. Net ultrafiltration (fluid removed from the patient) is captured in the `output` table under `output_group = ultrafiltration`, and replacement/dialysate fluids delivered during RRT are captured in the `input` table under `input_group = renal_replacement_fluids`.
-
-**RRT Modalities and Parameter Usage**:
-
-| **Modality**      | **Blood Flow Rate** | **Pre-Filter Replacement Rate** | **Post-Filter Replacement Rate** | **Dialysate Flow Rate** |
-|-------------------|---------------------|---------------------------------|---------------------------------|-------------------------|
-| **SCUF**          | Required            | Not Used                        | Not Used                        | Not Used                |
-| **CVVH**          | Required            | Required                        | Required                        | Not Used                |
-| **CVVHD**         | Required            | Not Used                        | Not Used                        | Required                |
-| **CVVHDF**        | Required            | Required                        | Required                        | Required                |
-| **AVVH (VVH)**    | Required            | May Be Used                     | May Be Used                     | Not Used                |
-| **AVVH (VVHD)**   | Required            | Not Used                        | Not Used                        | May Be Used             |
-| **AVVH (VVHF)**   | Required            | May Be Used                     | May Be Used                     | May Be Used             |
-| **IHD**           | Required            | Not Used                        | Not Used                        | Required                |
-| **IUF**           | Required            | Not Used                        | Not Used                        | Required                |
-
-**Example**:
-| hospitalization_id | device_id | dialysis_machine_name | recorded_dttm | mode_name | mode_category | blood_flow_rate | pre_filter_replacement_fluid_rate | post_filter_replacement_fluid_rate | dialysate_flow_rate | potassium_bath | calcium_bath |
-|-------------------|-----------|--------------------------|---------------|----------------|-------------------|-----------------|-----------------------------------|------------------------------------|---------------------|----------------|--------------|
-| 201 | J0 | NxStage by Baxter | 2024-02-15 07:00:00+00:00 UTC | CVVHDF | CVVHDF | 200.0 | 1000.0 | 500.0 | 800.0 | 2 | 1.5 |
-| 202 | J0 | NxStage by Baxter | 2024-02-16 09:15:00+00:00 UTC | CVVH | CVVH | 180.0 | 1200.0 | 300.0 | NA | 4 | 2.5 |
-| 203 | J0 | Fresenius 2008T | 2024-02-17 11:45:00+00:00 UTC | HD | IHD | 350.0 | NA | NA | 50000.0 | 2 | 3.0 |
-
-
-## mcs
-
-The MCS table is a long-form (one setting/measurement per row) longitudinal table that captures mechanical circulatory support (MCS) and ECMO device configuration and operational settings over time. Each row represents a single recorded setting or measurement at a point in time, identified by `setting_category` (e.g., `rpm`, `flow`, `sweep`, `fdo2`).
-
-**Notes**:
-
-- The table covers ECMO, LVAD, and RVAD support, distinguished by `support_category`.
-- The `setting_name` / `setting_category` / `setting_value` tuple replaces the prior wide-format columns (`flow`, `sweep_set`, `fdO2_set`, `control_parameter_*`). To represent multiple settings recorded at the same `recorded_dttm`, emit one row per setting.
-- `config_category` permissible values are conditional on `support_category` (e.g., `cp`, `2_5`, `5`, `5_5`, `rp`, `rp_flex` apply to `lvad` & `device_category == impella`; `heartware`, `heartmate2`, `heartmate3` apply to `lvad`; `central` applies to `lvad` or `rvad`).
-
-**Example**:
-
-| hospitalization_id | recorded_dttm                  | support_name | support_category | device_name | device_category | config_name  | config_category | setting_name | setting_category | setting_value |
-|--------------------|--------------------------------|--------------|------------------|-------------|-----------------|--------------|-----------------|--------------|------------------|---------------|
-| 123456             | 2026-01-01 12:00:00+00:00 UTC  | ECMO         | ecmo             | CARDIOHELP  | cardiohelp      | VA ECMO      | v_a             | RPM          | rpm              | 2700          |
-| 123456             | 2026-01-01 12:00:00+00:00 UTC  | ECMO         | ecmo             | CARDIOHELP  | cardiohelp      | VA ECMO      | v_a             | Flow         | flow             | 4.2           |
-| 123456             | 2026-01-01 12:00:00+00:00 UTC  | ECMO         | ecmo             | CARDIOHELP  | cardiohelp      | VA ECMO      | v_a             | Sweep        | sweep            | 4             |
-| 123456             | 2026-01-01 12:00:00+00:00 UTC  | ECMO         | ecmo             | CARDIOHELP  | cardiohelp      | VA ECMO      | v_a             | FDO2         | fdo2             | 1             |
-| 123456             | 2026-01-01 12:00:00+00:00 UTC  | LVAD         | lvad             | Impella     | impella         | Impella 5.5  | 5_5             | P            | performance      | 4             |
-| 123456             | 2026-01-01 12:00:00+00:00 UTC  | LVAD         | lvad             | Impella     | impella         | Impella 5.5  | 5_5             | Flow         | flow             | 3.2           |
-| 654321             | 2026-01-02 12:00:00+00:00 UTC  | ECMO         | ecmo             | CentriMag   | centrimag       | V-PA ECMO    | v_pa_single     | RPM          | rpm              | 2800          |
-| 555555             | 2026-01-03 12:00:00+00:00 UTC  | RVAD         | rvad             | CentriMag   | centrimag       | RVAD         | v_pa_single     | RPM          | rpm              | 2800          |
-
 
 
 ## hospitalization
@@ -126,17 +71,17 @@ The hospitalization table contains information about each hospitalization event.
 \
 **Example**:
 
-| patient_id | hospitalization_id | hospitalization_joined_id | admission_dttm | discharge_dttm | age_at_admission | admission_type_name | admission_type_category | discharge_name | discharge_category | zipcode_five_digit | zipcode_nine_digit | census_block_group_code | latitude | longitude | fips_version |
-|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|
-| 101001 | 12345678 | 22334455 | 2024-11-01 08:15:00+00:00 UTC | 2024-11-04 14:30:00+00:00 UTC | 65 | Direct admission | Inpatient | Discharged to Home or Self Care (Routine Discharge) | home | 60637 | 606370000 | 170313202001 | 41.81030 | -87.59697 | 2020 |
-| 101002 | 87654321 | 22334455 | 2024-11-04 15:00:00+00:00 UTC | 2024-11-07 11:00:00+00:00 UTC | 72 | Transfer from another hospital | Acute Care Transfer | Transferred to Acute Inpatient Rehab Facility | acute_ip_rehab | 46311 | 463110000 | 170313301002 | 41.55030 | -87.30101 | 2020 |
-| 101003 | 11223344 | 11223344 | 2024-10-20 07:45:00+00:00 UTC | 2024-10-22 10:20:00+00:00 UTC | 59 | Pre-op surgical | Pre-op | Expired | expired | 60446 | 604460000 | 170313401003 | 41.70010 | -87.60315 | 2020 |
+| patient_id | hospitalization_id | hospitalization_joined_id | admission_dttm | discharge_dttm | age_at_admission | admission_type_name | admission_type_category | discharge_name | discharge_category | zipcode_five_digit | zipcode_nine_digit | census_block_group_code | fips_version |
+|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|
+| 101001 | 12345678 | 22334455 | 2024-11-01 08:15:00+00:00 UTC | 2024-11-04 14:30:00+00:00 UTC | 65 | Direct admission | direct | Discharged to Home or Self Care (Routine Discharge) | home | 60637 | 606370000 | 170313202001 | 2020 |
+| 101002 | 87654321 | 22334455 | 2024-11-04 15:00:00+00:00 UTC | 2024-11-07 11:00:00+00:00 UTC | 72 | Transfer from another hospital | osh | Transferred to Acute Inpatient Rehab Facility | acute_ip_rehab | 46311 | 463110000 | 170313301002 | 2020 |
+| 101003 | 11223344 | 11223344 | 2024-10-20 07:45:00+00:00 UTC | 2024-10-22 10:20:00+00:00 UTC | 59 | Pre-op surgical | elective | Expired | expired | 60446 | 604460000 | 170313401003 | 2020 |
 
 ## hospital_diagnosis
 
 Finalized billing diagnosis codes for hospital reimbursement, e.g. calculation of a Diagnosis Related Group (DRG). These diagnoses also do not have timestamps, as they are often finalized after discharge. The `hospital_diagnosis` table is appropriate for calculation of comorbidity scores but should not be used as input features into a prediction model for an inpatient event.
 \
-All other diagnosis codes for a patient are included under concept table `patient_diagnosis` which has start and end timestamps.
+All other diagnosis codes for a patient are included under alpha table `patient_diagnosis` which has start and end timestamps.
 
 **Example**:
 | hospitalization_id | diagnosis_code | diagnosis_code_format | diagnosis_primary | poa_present |
@@ -233,7 +178,7 @@ The labs table is a long form (one lab result per row) longitudinal table.
 
 This table captures medications administered as fixed doses at discrete time points. Examples include antibiotics, steroids, and other medications given as boluses or scheduled doses. Each row represents ONE observation for each medication administered.
 
-This table has exactly the same schema as [`medication_admin_continuous`](#medication-admin-continuous). The consortium decided to separate the medications that are administered intermittently from the continuously administered medications. In 3.0, the `med_dose_unit` is **standardized per `med_category`** — every `med_category` in the [intermittent mCIDE](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/medication_admin_intermittent/clif_medication_admin_intermittent_med_categories.csv) is tied to a fixed dose unit drawn from a closed set: `mg`, `g`, `mcg`, `mmol`, `ml`, `meq`, `cells`. Raw EHR doses should be converted into the category-specific unit (e.g. an `ampicillin` row charted as `2000 mg` should be ingested as `2 g`).
+This table has exactly the same schema as [`medication_admin_continuous`](#medication-admin-continuous). The consortium decided to separate the medications that are administered intermittently from the continuously administered medications. In 3.0, the `med_dose_unit` is **standardized per `med_category`** — every `med_category` in the [intermittent mCIDE](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/medication_admin_intermittent/clif_medication_admin_intermittent_med_categories.csv) is tied to a fixed dose unit drawn from a closed set: `mg`, `g`, `mcg`, `mmol`, `ml`, `meq`, `units`, `cells`. Raw EHR doses should be converted into the category-specific unit (e.g. an `ampicillin` row charted as `2000 mg` should be ingested as `2 g`).
 
 **Example**:
 
@@ -257,14 +202,14 @@ The medication admin continuous table is a long-form (one medication administrat
 
 **Example**:
 
-| hospitalization_id | administering_provider_id | admin_dttm                | med_name                                                           | med_category  | med_group     | med_route_name | med_route_category | med_dose | med_dose_unit | volume_infusion_rate | volume_infusion_rate_unit | mar_action_name | mar_action_group      |
-|-------------------|---------------------------|---------------------------|--------------------------------------------------------------------|---------------|---------------|----------------|-------------------|----------|---------------|---------------|---------------------|----------------|----------------------|
-| 792391            | PROV2087                  | 2123-11-13 12:28:00+00:00 UTC | PROPOFOL 10 MG/ML INTRAVENOUS EMULSION                            | propofol      | sedation      | Intravenous    | NA                | 75.0000  | mcg/kg/min    | 45.0          | mL/hr               | New Bag        | administered         |
-| 792391            | PROV2087                  | 2123-11-13 13:49:00+00:00 UTC | REMIFENTANIL CONTINUOUS IV (ANESTHESIA)                           | remifentanil  | sedation      | NA             | NA                | 0.0500   | mcg/kg/min    | 12.5          | mL/hr               | New Bag        | administered         |
-| 792391            | PROV2087                  | 2123-11-13 14:03:00+00:00 UTC | PROPOFOL 10 MG/ML INTRAVENOUS EMULSION                            | propofol      | sedation      | Intravenous    | NA                | 0.0000   | mcg/kg/min    | 0.0           | mL/hr               | Stopped        | not_administered     |
-| 370921            | PROV3391                  | 2123-02-12 03:07:00+00:00 UTC | PHENYLEPHRINE 5 MG/50 ML (100 MCG/ML) IN 0.9 % SODIUM CHLORIDE    | phenylephrine | vasoactives   | Intravenous    | NA                | 20.0000  | mcg/min       | 10.0          | mL/hr               | New Bag        | administered         |
-| 370921            | PROV3391                  | 2123-02-12 03:14:00+00:00 UTC | PHENYLEPHRINE 5 MG/50 ML (100 MCG/ML) IN 0.9 % SODIUM CHLORIDE    | phenylephrine | vasoactives   | Intravenous    | NA                | 50.0000  | mcg/min       | 25.0          | mL/hr               | Rate Change    | administered         |
-| 702344            | PROV5502                  | 2123-04-27 04:30:00+00:00 UTC | HEPARIN (PORCINE) 25,000 UNIT/250 ML IN 0.45 % SODIUM CHLORIDE    | heparin       | anticoagulation| Intravenous    | NA                | 18.0000  | Units/kg/hr   | 18.0          | mL/hr               | New Bag        | administered         |
+| hospitalization_id | administering_provider_id | admin_dttm                | med_name                                                           | med_category  | med_group     | med_route_name | med_route_category | med_dose | med_dose_unit | volume_infusion_rate | volume_infusion_rate_unit | mar_action_name | mar_action_category | mar_action_group      |
+|-------------------|---------------------------|---------------------------|--------------------------------------------------------------------|---------------|---------------|----------------|-------------------|----------|---------------|---------------|---------------------|----------------|---------------------|----------------------|
+| 792391            | PROV2087                  | 2123-11-13 12:28:00+00:00 UTC | PROPOFOL 10 MG/ML INTRAVENOUS EMULSION                            | propofol      | sedation      | Intravenous    | NA                | 75.0000  | mcg/kg/min    | 45.0          | mL/hr               | New Bag        | going               | administered         |
+| 792391            | PROV2087                  | 2123-11-13 13:49:00+00:00 UTC | REMIFENTANIL CONTINUOUS IV (ANESTHESIA)                           | remifentanil  | sedation      | NA             | NA                | 0.0500   | mcg/kg/min    | 12.5          | mL/hr               | New Bag        | going               | administered         |
+| 792391            | PROV2087                  | 2123-11-13 14:03:00+00:00 UTC | PROPOFOL 10 MG/ML INTRAVENOUS EMULSION                            | propofol      | sedation      | Intravenous    | NA                | 0.0000   | mcg/kg/min    | 0.0           | mL/hr               | Stopped        | stop                | not_administered     |
+| 370921            | PROV3391                  | 2123-02-12 03:07:00+00:00 UTC | PHENYLEPHRINE 5 MG/50 ML (100 MCG/ML) IN 0.9 % SODIUM CHLORIDE    | phenylephrine | vasoactives   | Intravenous    | NA                | 20.0000  | mcg/min       | 10.0          | mL/hr               | New Bag        | going               | administered         |
+| 370921            | PROV3391                  | 2123-02-12 03:14:00+00:00 UTC | PHENYLEPHRINE 5 MG/50 ML (100 MCG/ML) IN 0.9 % SODIUM CHLORIDE    | phenylephrine | vasoactives   | Intravenous    | NA                | 50.0000  | mcg/min       | 25.0          | mL/hr               | Rate Change    | dose_change         | administered         |
+| 702344            | PROV5502                  | 2123-04-27 04:30:00+00:00 UTC | HEPARIN (PORCINE) 25,000 UNIT/250 ML IN 0.45 % SODIUM CHLORIDE    | heparin       | anticoagulation| Intravenous    | NA                | 18.0000  | Units/kg/hr   | 18.0          | mL/hr               | New Bag        | going               | administered         |
 
 
 **Notes**:
@@ -308,7 +253,7 @@ This table contains demographic information about the patient that does not vary
 The patient_assessments table captures various assessments performed on patients across different domains, including neurological status, sedation levels, pain, and withdrawal. The table is designed to provide detailed information about the assessments, such as the name of the assessment, the category, and the recorded values.
 
 **Example**:
-| hospitalization_id | administering_provider_id | recorded_dttm                | assessment_name                                | assessment_category    | assessment_group | numerical_value | categorical_value | text_value |
+| hospitalization_id | documenting_provider_id  | recorded_dttm                | assessment_name                                | assessment_category    | assessment_group | numerical_value | categorical_value | text_value |
 |-------------------|--------------------------|----------------------------|----------------------------------------------|---------------------|----------------|----------------|-----------------|------------|
 | 12345             | PROV2087                 | 2024-12-01 08:15:00+00:00 UTC | NUR RA GLASGOW ADULT EYE OPENING             | gcs_eye            | Neurological   | 4              | NA              | NA         |
 | 12345             | PROV2087                 | 2024-12-01 08:15:00+00:00 UTC | NUR RA GLASGOW ADULT VERBAL RESPONSE         | gcs_verbal         | Neurological   | 5              | NA              | NA         |
@@ -453,6 +398,61 @@ The vitals table is a long-form (one vital sign per row) longitudinal table.
 ## Alpha Tables
 
 Constructed at least partially at one site, but not yet used in a federated project. The table structure and mCIDE elements are taking shape based on real implementation experience, though the table has not yet been tested across sites. Changes remain likely as the design is validated against additional sites.
+
+## renal_replacement_therapy
+
+The renal_replacement_therapy table captures Renal Replacement Therapy (RRT) data across both Continuous Renal Replacement Therapy (CRRT) sub-modes and intermittent hemodialysis (IHD), including the different modalities, operational parameters, and fluid exchange details.
+
+**Notes**:
+- **Distinguishing IHD from IUF:** Intermittent hemodialysis (`ihd`) and isolated ultrafiltration (`iuf`) share the same operational parameters in this table; the distinguishing feature is the dialysate bath. IHD uses a dialysate bath containing potassium and calcium (recorded in `potassium_bath` and `calcium_bath`), whereas IUF does not. These two fields therefore capture the difference between IHD and IUF.
+- **Fluid volumes:** This table records RRT machine settings and rates, not fluid volumes. Net ultrafiltration (fluid removed from the patient) is captured in the `output` table under `output_group = ultrafiltration`, and replacement/dialysate fluids delivered during RRT are captured in the `input` table under `input_group = renal_replacement_fluids`.
+
+**RRT Modalities and Parameter Usage**:
+
+| **Modality**      | **Blood Flow Rate** | **Pre-Filter Replacement Rate** | **Post-Filter Replacement Rate** | **Dialysate Flow Rate** |
+|-------------------|---------------------|---------------------------------|---------------------------------|-------------------------|
+| **SCUF**          | Required            | Not Used                        | Not Used                        | Not Used                |
+| **CVVH**          | Required            | Required                        | Required                        | Not Used                |
+| **CVVHD**         | Required            | Not Used                        | Not Used                        | Required                |
+| **CVVHDF**        | Required            | Required                        | Required                        | Required                |
+| **AVVH (VVH)**    | Required            | May Be Used                     | May Be Used                     | Not Used                |
+| **AVVH (VVHD)**   | Required            | Not Used                        | Not Used                        | May Be Used             |
+| **AVVH (VVHF)**   | Required            | May Be Used                     | May Be Used                     | May Be Used             |
+| **IHD**           | Required            | Not Used                        | Not Used                        | Required                |
+| **IUF**           | Required            | Not Used                        | Not Used                        | Required                |
+
+**Example**:
+| hospitalization_id | device_id | dialysis_machine_name | recorded_dttm | mode_name | mode_category | blood_flow_rate | pre_filter_replacement_fluid_rate | post_filter_replacement_fluid_rate | dialysate_flow_rate | potassium_bath | calcium_bath |
+|-------------------|-----------|--------------------------|---------------|----------------|-------------------|-----------------|-----------------------------------|------------------------------------|---------------------|----------------|--------------|
+| 201 | J0 | NxStage by Baxter | 2024-02-15 07:00:00+00:00 UTC | CVVHDF | CVVHDF | 200.0 | 1000.0 | 500.0 | 800.0 | 2 | 1.5 |
+| 202 | J0 | NxStage by Baxter | 2024-02-16 09:15:00+00:00 UTC | CVVH | CVVH | 180.0 | 1200.0 | 300.0 | NA | 4 | 2.5 |
+| 203 | J0 | Fresenius 2008T | 2024-02-17 11:45:00+00:00 UTC | HD | IHD | 350.0 | NA | NA | 50000.0 | 2 | 3.0 |
+
+
+## mcs
+
+The MCS table is a long-form (one setting/measurement per row) longitudinal table that captures mechanical circulatory support (MCS) and ECMO device configuration and operational settings over time. Each row represents a single recorded setting or measurement at a point in time, identified by `setting_category` (e.g., `rpm`, `flow`, `sweep`, `fdo2`).
+
+**Notes**:
+
+- The table covers ECMO, LVAD, and RVAD support, distinguished by `support_category`.
+- The `setting_name` / `setting_category` / `setting_value` tuple replaces the prior wide-format columns (`flow`, `sweep_set`, `fdO2_set`, `control_parameter_*`). To represent multiple settings recorded at the same `recorded_dttm`, emit one row per setting.
+- `config_category` permissible values are conditional on `support_category` (e.g., `cp`, `2_5`, `5`, `5_5`, `rp`, `rp_flex` apply to `lvad` & `device_category == impella`; `heartware`, `heartmate2`, `heartmate3` apply to `lvad`; `central` applies to `lvad` or `rvad`).
+
+**Example**:
+
+| hospitalization_id | recorded_dttm                  | support_name | support_category | device_name | device_category | config_name  | config_category | setting_name | setting_category | setting_value |
+|--------------------|--------------------------------|--------------|------------------|-------------|-----------------|--------------|-----------------|--------------|------------------|---------------|
+| 123456             | 2026-01-01 12:00:00+00:00 UTC  | ECMO         | ecmo             | CARDIOHELP  | cardiohelp      | VA ECMO      | v_a             | RPM          | rpm              | 2700          |
+| 123456             | 2026-01-01 12:00:00+00:00 UTC  | ECMO         | ecmo             | CARDIOHELP  | cardiohelp      | VA ECMO      | v_a             | Flow         | flow             | 4.2           |
+| 123456             | 2026-01-01 12:00:00+00:00 UTC  | ECMO         | ecmo             | CARDIOHELP  | cardiohelp      | VA ECMO      | v_a             | Sweep        | sweep            | 4             |
+| 123456             | 2026-01-01 12:00:00+00:00 UTC  | ECMO         | ecmo             | CARDIOHELP  | cardiohelp      | VA ECMO      | v_a             | FDO2         | fdo2             | 1             |
+| 123456             | 2026-01-01 12:00:00+00:00 UTC  | LVAD         | lvad             | Impella     | impella         | Impella 5.5  | 5_5             | P            | performance      | 4             |
+| 123456             | 2026-01-01 12:00:00+00:00 UTC  | LVAD         | lvad             | Impella     | impella         | Impella 5.5  | 5_5             | Flow         | flow             | 3.2           |
+| 654321             | 2026-01-02 12:00:00+00:00 UTC  | ECMO         | ecmo             | CentriMag   | centrimag       | V-PA ECMO    | v_pa_single     | RPM          | rpm              | 2800          |
+| 555555             | 2026-01-03 12:00:00+00:00 UTC  | RVAD         | rvad             | CentriMag   | centrimag       | RVAD         | v_pa_single     | RPM          | rpm              | 2800          |
+
+
 
 ## Concept Tables
 

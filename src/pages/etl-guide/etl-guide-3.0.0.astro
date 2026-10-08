@@ -85,7 +85,7 @@ const navigationSections = [
               <div class="text-sm text-green-700">
                 <p class="mb-2">Convert all timestamps to UTC:</p>
                 <div class="bg-green-100 p-2 rounded font-mono text-xs">
-                  admit_dttm &lt;- as_datetime(admit_dttm, tz = "UTC")
+                  admission_dttm &lt;- as_datetime(admission_dttm, tz = "UTC")
                 </div>
               </div>
             </div>
@@ -146,7 +146,6 @@ const navigationSections = [
               <h4 class="font-semibold text-gray-800 mb-2">Validation Tools</h4>
               <ul class="text-sm space-y-2">
                 <li class="flex items-center">
-                <li class="flex items-center">
                   <svg class="w-4 h-4 text-clif-burgundy mr-2" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                   </svg>
@@ -178,14 +177,14 @@ const navigationSections = [
               <p class="text-sm text-clif-burgundy">
                 Follow mCIDE (minimum Common ICU Data Elements) mapping guidelines for consistent data transformation across all institutions.
               </p>
-              <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/tree/main/mCIDE" target="_blank" class="text-clif-burgundy hover:underline text-xs mt-2 inline-block">
+              <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/tree/3.0/mCIDE" target="_blank" class="text-clif-burgundy hover:underline text-xs mt-2 inline-block">
                 View mCIDE Documentation →
               </a>
             </div>
             <div class="bg-clif-burgundy/5 p-4 rounded-lg">
               <h4 class="font-semibold text-clif-burgundy mb-2">Sample Mapping</h4>
               <p class="text-sm text-clif-burgundy">
-                Example of mapping site-specific discharge names to standardized <code>discharge_category</code> values for the <code>hospitalization</code> table.
+                Example of mapping site-specific discharge names to standardized <code>discharge_category</code> values for the <code>hospitalization</code> table. All 3.0 category values are lowercase snake_case, exactly as listed in the mCIDE CSV.
               </p>
               <div class="mt-3">
                 <table class="text-xs bg-white rounded shadow border mt-2">
@@ -198,23 +197,23 @@ const navigationSections = [
                   <tbody>
                     <tr>
                       <td class="px-2 py-1 border-b">Acute Rehab Facility</td>
-                      <td class="px-2 py-1 border-b">Acute Inpatient Rehab Facility	</td>
+                      <td class="px-2 py-1 border-b"><code>acute_ip_rehab</code></td>
                     </tr>
                     <tr>
                       <td class="px-2 py-1 border-b">Rehab Facility - Inpatient</td>
-                      <td class="px-2 py-1 border-b">Acute Inpatient Rehab Facility</td>
+                      <td class="px-2 py-1 border-b"><code>acute_ip_rehab</code></td>
                     </tr>
                     <tr>
                       <td class="px-2 py-1 border-b">Short Term Hospital</td>
-                      <td class="px-2 py-1 border-b">Acute Care Hospital</td>
+                      <td class="px-2 py-1 border-b"><code>acute_care_hosp</code></td>
                     </tr>
                     <tr>
                       <td class="px-2 py-1 border-b">Mental Health Jud Commit Anoka</td>
-                      <td class="px-2 py-1 border-b">Psychiatric Hospital</td>
+                      <td class="px-2 py-1 border-b"><code>mental_health_hosp</code></td>
                     </tr>
                     <tr>
                       <td class="px-2 py-1 border-b">IRTS</td>
-                      <td class="px-2 py-1 border-b">Home</td>
+                      <td class="px-2 py-1 border-b"><code>home</code></td>
                     </tr>
                   </tbody>
                 </table>
@@ -238,7 +237,7 @@ const navigationSections = [
           <div>
             <h3 class="text-lg font-semibold text-yellow-800 mb-2">Procedural areas &amp; OR data — important scope note</h3>
             <ul class="text-sm text-gray-800 space-y-1.5">
-              <li>• Procedural areas and operating rooms should be mapped to <code class="bg-yellow-100 px-1.5 py-0.5 rounded font-mono text-yellow-900">Procedural</code> in the <code class="bg-yellow-100 px-1.5 py-0.5 rounded font-mono text-yellow-900">adt</code> table's <code class="bg-yellow-100 px-1.5 py-0.5 rounded font-mono text-yellow-900">location_category</code>.</li>
+              <li>• Procedural areas and operating rooms should be mapped to <code class="bg-yellow-100 px-1.5 py-0.5 rounded font-mono text-yellow-900">procedural</code> in the <code class="bg-yellow-100 px-1.5 py-0.5 rounded font-mono text-yellow-900">adt</code> table's <code class="bg-yellow-100 px-1.5 py-0.5 rounded font-mono text-yellow-900">location_category</code>.</li>
               <li>• Pre/Intra/Post-procedural and OR EHR data (such as anesthesia flowsheet records from Vitals, Scores, Respiratory Support) are <strong>not currently represented in CLIF</strong>.</li>
             </ul>
           </div>
@@ -256,7 +255,7 @@ const navigationSections = [
             <p class="text-sm text-gray-800 mb-2">For <code class="bg-amber-100 px-1.5 py-0.5 rounded font-mono text-amber-900">microbiology_culture</code> and <code class="bg-amber-100 px-1.5 py-0.5 rounded font-mono text-amber-900">microbiology_nonculture</code>, EHRs frequently emit multiple interim <code class="bg-amber-100 px-1.5 py-0.5 rounded font-mono text-amber-900">result_dttm</code> rows during a single workup (e.g., "no growth at 24h / 48h / 72h", "no bacteria seen at 6h / 12h"). CLIF 3.0 collapses those interim rows on negative results:</p>
             <ul class="text-sm text-gray-800 space-y-1.5">
               <li>• <strong>Positives</strong> — for positive cultures, positive gram stains, and positive non-culture results, keep <strong>every</strong> interval/processing-step row as the EHR records it.</li>
-              <li>• <strong>Negatives</strong> — keep only <strong>one</strong> row per workup: the <strong>final</strong> no-growth row for cultures (<code class="bg-amber-100 px-1.5 py-0.5 rounded font-mono text-amber-900">method_category = culture</code>), the <strong>first</strong> no-bacteria-seen row for gram stains (<code class="bg-amber-100 px-1.5 py-0.5 rounded font-mono text-amber-900">method_category = gram stain</code>), and the <strong>final</strong> negative-result row for non-culture results.</li>
+              <li>• <strong>Negatives</strong> — keep only <strong>one</strong> row per workup: the <strong>final</strong> no-growth row for cultures (<code class="bg-amber-100 px-1.5 py-0.5 rounded font-mono text-amber-900">method_category = culture</code>), the <strong>first</strong> no-bacteria-seen row for gram stains (<code class="bg-amber-100 px-1.5 py-0.5 rounded font-mono text-amber-900">method_category = gram_stain</code>), and the <strong>final</strong> negative-result row for non-culture results.</li>
             </ul>
             <p class="text-xs text-gray-600 mt-3">See <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/180" class="underline text-amber-800 hover:text-amber-900">Issue #180</a> for the decision thread.</p>
           </div>
@@ -294,9 +293,10 @@ const navigationSections = [
                     <h5 class="text-lg font-semibold mb-2 text-yellow-300">Important Notes</h5>
                     <ul class="space-y-2 text-sm">
                       <li>• ADT represents the patient's <strong>physical location</strong>, NOT the patient "status"</li>
-                      <li>• Procedural areas and operating rooms should be mapped to <code class="bg-white/20 px-1 rounded">Procedural</code></li>
+                      <li>• Procedural areas and operating rooms should be mapped to <code class="bg-white/20 px-1 rounded">location_category = procedural</code></li>
                       <li>• Pre/Intra/Post-procedural and OR EHR data (e.g., anesthesia flowsheet records from Vitals, Scores, Respiratory Support) are not currently represented in CLIF</li>
                       <li>• <code class="bg-white/20 px-1 rounded">location_type</code> represents the <strong>nursing capabilities of the unit</strong>, derived from ADT data alone — do NOT map it based on who the attending clinician or service is</li>
+                      <li>• <strong>New in 3.0:</strong> <code class="bg-white/20 px-1 rounded">room_id</code> and <code class="bg-white/20 px-1 rounded">bed_id</code> are free-text room and bed identifiers carried through from the source EHR for each ADT segment. No standardization across sites is required; <code class="bg-white/20 px-1 rounded">bed_id</code> is optional</li>
                     </ul>
                   </div>
 
@@ -306,12 +306,12 @@ const navigationSections = [
                     <p class="text-sm mb-3">Before transforming your ADT data, prepare two mapping files:</p>
                     <div class="space-y-3 text-sm">
                       <div class="bg-white/10 p-3 rounded-lg">
-                        <p><strong class="text-blue-300">a. Location Category Mapping:</strong> Map all site-specific <code class="bg-white/20 px-1 rounded">location_name</code> values to standardized CLIF <code class="bg-white/20 px-1 rounded">location_category</code> values</p>
-                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/adt/clif_adt_location_categories.csv" target="_blank" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_adt_location_categories.csv</a>
+                        <p><strong class="text-blue-300">a. Location Category Mapping:</strong> Map all site-specific <code class="bg-white/20 px-1 rounded">location_name</code> values to standardized CLIF <code class="bg-white/20 px-1 rounded">location_category</code> values. Permissible values (lowercase snake_case): <code class="bg-white/20 px-1 rounded">ed</code>, <code class="bg-white/20 px-1 rounded">ward</code>, <code class="bg-white/20 px-1 rounded">stepdown</code>, <code class="bg-white/20 px-1 rounded">icu</code>, <code class="bg-white/20 px-1 rounded">procedural</code>, <code class="bg-white/20 px-1 rounded">l_and_d</code> (labor and delivery), <code class="bg-white/20 px-1 rounded">hospice</code>, <code class="bg-white/20 px-1 rounded">psych</code>, <code class="bg-white/20 px-1 rounded">rehab</code>, <code class="bg-white/20 px-1 rounded">radiology</code>, <code class="bg-white/20 px-1 rounded">dialysis</code>, <code class="bg-white/20 px-1 rounded">other</code></p>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/adt/clif_adt_location_categories.csv" target="_blank" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_adt_location_categories.csv</a>
                       </div>
                       <div class="bg-white/10 p-3 rounded-lg">
                         <p><strong class="text-blue-300">b. ICU Location Type Mapping:</strong> For ICU locations, map <code class="bg-white/20 px-1 rounded">location_name</code> to the appropriate <code class="bg-white/20 px-1 rounded">location_type</code>. The mapping should reflect the nursing capabilities of the unit, derived from ADT data alone — do not assign <code class="bg-white/20 px-1 rounded">location_type</code> based on who the attending clinician or service is</p>
-                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/adt/clif_adt_location_type.csv" target="_blank" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_adt_location_type.csv</a>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/adt/clif_adt_location_type.csv" target="_blank" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_adt_location_type.csv</a>
                       </div>
                     </div>
                   </div>
@@ -357,7 +357,8 @@ const navigationSections = [
                   <!-- Step 5 -->
                   <div>
                     <h5 class="text-xl font-semibold mb-3">Step 5: Create hospital_type Column</h5>
-                    <p class="text-sm">Assign the appropriate <code class="bg-white/20 px-1 rounded">hospital_type</code> value from the CLIF permissible set based on your institution's characteristics.</p>
+                    <p class="text-sm">Assign the appropriate <code class="bg-white/20 px-1 rounded">hospital_type</code> value for each <code class="bg-white/20 px-1 rounded">hospital_id</code> from the CLIF permissible set: <code class="bg-white/20 px-1 rounded">academic</code>, <code class="bg-white/20 px-1 rounded">community</code>, or <code class="bg-white/20 px-1 rounded">ltach</code> (long-term acute care hospital).</p>
+                    <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/adt/clif_adt_hospital_type.csv" target="_blank" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_adt_hospital_type.csv</a>
                   </div>
 
                   <!-- Step 6 -->
@@ -433,7 +434,8 @@ const navigationSections = [
                     <ul class="space-y-2 text-sm">
                       <li>• This table should represent what the clinician intends for the patients' limitations in care, not just what the EHR banner displays</li>
                       <li>• It is <strong>NOT</strong> always equivalent to the code status display name in the EHR</li>
-                      <li>• Sites will need to identify their code status orders. Additionally, sites may have separate orders for "comfort measures only" not found within the code status order that, if available, should be pulled to map it to <code class="bg-white/20 px-1 rounded">allow_natural_death</code></li>
+                      <li>• Sites will need to identify their code status orders. Additionally, sites may have separate orders for "comfort measures only" not found within the code status order that, if available, should be pulled to map it to <code class="bg-white/20 px-1 rounded">code_status_category = and</code> (Allow Natural Death)</li>
+                      <li>• The 3.0 table is keyed on <code class="bg-white/20 px-1 rounded">patient_id</code> and has no <code class="bg-white/20 px-1 rounded">hospitalization_id</code>. Columns: <code class="bg-white/20 px-1 rounded">patient_id</code>, <code class="bg-white/20 px-1 rounded">start_dttm</code>, <code class="bg-white/20 px-1 rounded">code_status_name</code>, <code class="bg-white/20 px-1 rounded">code_status_category</code></li>
                     </ul>
                   </div>
 
@@ -443,8 +445,8 @@ const navigationSections = [
                     <p class="text-sm mb-3">Before transforming your code status data, prepare the mapping file:</p>
                     <div class="space-y-3 text-sm">
                       <div class="bg-white/10 p-3 rounded-lg">
-                        <p><strong class="text-blue-300">Code Status Category Mapping:</strong> Map all site-specific <code class="bg-white/20 px-1 rounded">code_status_name</code> values to standardized CLIF <code class="bg-white/20 px-1 rounded">code_status_category</code> values</p>
-                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/code_status/clif_code_status_categories.csv" target="_blank" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_code_status_categories.csv</a>
+                        <p><strong class="text-blue-300">Code Status Category Mapping:</strong> Map all site-specific <code class="bg-white/20 px-1 rounded">code_status_name</code> values to standardized CLIF <code class="bg-white/20 px-1 rounded">code_status_category</code> values. Permissible values: <code class="bg-white/20 px-1 rounded">dnr</code>, <code class="bg-white/20 px-1 rounded">dnar</code>, <code class="bg-white/20 px-1 rounded">udnr</code>, <code class="bg-white/20 px-1 rounded">dnr_or_dni</code>, <code class="bg-white/20 px-1 rounded">dnar_or_dni</code>, <code class="bg-white/20 px-1 rounded">dni_only</code>, <code class="bg-white/20 px-1 rounded">and</code>, <code class="bg-white/20 px-1 rounded">full</code>, <code class="bg-white/20 px-1 rounded">presume_full</code>, <code class="bg-white/20 px-1 rounded">other</code></p>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/code_status/clif_code_status_categories.csv" target="_blank" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_code_status_categories.csv</a>
                       </div>
                     </div>
                   </div>
@@ -452,7 +454,7 @@ const navigationSections = [
                   <!-- Step 2 -->
                   <div>
                     <h5 class="text-xl font-semibold mb-3">Step 2: Filter to Patients with Inpatient Hospitalizations</h5>
-                    <p class="text-sm">Filter your code status data to include only patients with an inpatient hospitalization. Since code status is at the patient level, include only patients whose <code class="bg-white/20 px-1 rounded">hospitalization_id</code> exists in your CLIF ADT table.</p>
+                    <p class="text-sm">Code status is recorded at the patient level, so filter on <code class="bg-white/20 px-1 rounded">patient_id</code> rather than on an encounter. Keep only rows whose <code class="bg-white/20 px-1 rounded">patient_id</code> exists in your CLIF <code class="bg-white/20 px-1 rounded">patient</code> table (i.e., patients with at least one inpatient hospitalization in your CLIF <code class="bg-white/20 px-1 rounded">hospitalization</code> table).</p>
                   </div>
                 </div>
 
@@ -492,7 +494,7 @@ const navigationSections = [
                       </li>
                       <li class="flex items-start">
                         <span class="text-green-300 mr-2">✓</span>
-                        Ensure all <code class="bg-white/20 px-1 rounded">hospitalization_id</code> values exist in ADT table
+                        Ensure all <code class="bg-white/20 px-1 rounded">patient_id</code> values exist in the <code class="bg-white/20 px-1 rounded">patient</code> table
                       </li>
                     </ul>
                   </div>
@@ -522,14 +524,24 @@ const navigationSections = [
 
               <div class="expanded-content">
                 <div class="space-y-6">
+                  <!-- Important Notes -->
+                  <div class="bg-yellow-500/20 p-4 rounded-lg border border-yellow-400/30">
+                    <h5 class="text-lg font-semibold mb-2 text-yellow-300">Important Notes (3.0)</h5>
+                    <ul class="space-y-2 text-sm">
+                      <li>• The table now covers both continuous RRT (CRRT) modes and intermittent hemodialysis. Two new identifier columns: <code class="bg-white/20 px-1 rounded">device_id</code> (unique ID of the individual dialysis machine, e.g. ACZ3RV91) and <code class="bg-white/20 px-1 rounded">dialysis_machine_name</code> (the machine's brand or model name)</li>
+                      <li>• Two new dialysate-bath columns: <code class="bg-white/20 px-1 rounded">potassium_bath</code> (integer, mEq/L, 0–4) and <code class="bg-white/20 px-1 rounded">calcium_bath</code> (float, mEq/L, 0–4). These distinguish <code class="bg-white/20 px-1 rounded">ihd</code> (dialysate bath contains potassium and calcium, so both fields are populated) from <code class="bg-white/20 px-1 rounded">iuf</code> (no dialysate bath, so both fields are null)</li>
+                      <li>• This table records machine settings and rates, not fluid volumes. There is no <code class="bg-white/20 px-1 rounded">ultrafiltration_out</code> column in 3.0: net ultrafiltration (fluid removed from the patient) goes in the <code class="bg-white/20 px-1 rounded">output</code> table under <code class="bg-white/20 px-1 rounded">output_group = ultrafiltration</code>, and replacement/dialysate fluids delivered go in the <code class="bg-white/20 px-1 rounded">input</code> table under <code class="bg-white/20 px-1 rounded">input_group = renal_replacement_fluids</code></li>
+                    </ul>
+                  </div>
+
                   <!-- Step 1 -->
                   <div>
                     <h5 class="text-xl font-semibold mb-3">Step 1: Create RRT Mode Mappings</h5>
                     <p class="text-sm mb-3">Before transforming your RRT data, prepare the mapping file:</p>
                     <div class="space-y-3 text-sm">
                       <div class="bg-white/10 p-3 rounded-lg">
-                        <p><strong class="text-blue-300">Mode Category Mapping:</strong> Map all site-specific <code class="bg-white/20 px-1 rounded">mode_name</code> values to standardized CLIF <code class="bg-white/20 px-1 rounded">mode_category</code> values</p>
-                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/renal_replacement_therapy/clif_renal_replacement_therapy_mode_categories.csv" target="_blank" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_renal_replacement_therapy_mode_categories.csv</a>
+                        <p><strong class="text-blue-300">Mode Category Mapping:</strong> Map all site-specific <code class="bg-white/20 px-1 rounded">mode_name</code> values to standardized CLIF <code class="bg-white/20 px-1 rounded">mode_category</code> values. Permissible values: <code class="bg-white/20 px-1 rounded">scuf</code>, <code class="bg-white/20 px-1 rounded">cvvh</code>, <code class="bg-white/20 px-1 rounded">cvvhd</code>, <code class="bg-white/20 px-1 rounded">cvvhdf</code>, <code class="bg-white/20 px-1 rounded">avvh</code> (accelerated veno-venous hemofiltration, also called ARRT or PIRRT), <code class="bg-white/20 px-1 rounded">ihd</code> (intermittent hemodialysis), <code class="bg-white/20 px-1 rounded">iuf</code> (isolated ultrafiltration)</p>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/renal_replacement_therapy/clif_renal_replacement_therapy_mode_categories.csv" target="_blank" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_renal_replacement_therapy_mode_categories.csv</a>
                       </div>
                     </div>
                   </div>
@@ -570,17 +582,28 @@ const navigationSections = [
                             <td class="py-1 text-gray-300">0.2 L/min → 200 mL/min</td>
                           </tr>
                           <tr class="border-b border-white/10">
+                            <td class="py-1 pr-2"><code class="bg-white/20 px-1 rounded">pre_filter_replacement_fluid_rate</code></td>
+                            <td class="py-1 pr-2 text-green-300">mL/hr</td>
+                            <td class="py-1 text-gray-300">1 L/hr → 1000 mL/hr (CRRT modes only; null for ihd/iuf)</td>
+                          </tr>
+                          <tr class="border-b border-white/10">
+                            <td class="py-1 pr-2"><code class="bg-white/20 px-1 rounded">post_filter_replacement_fluid_rate</code></td>
+                            <td class="py-1 pr-2 text-green-300">mL/hr</td>
+                            <td class="py-1 text-gray-300">0.5 L/hr → 500 mL/hr (CRRT modes only; null for ihd/iuf)</td>
+                          </tr>
+                          <tr class="border-b border-white/10">
                             <td class="py-1 pr-2"><code class="bg-white/20 px-1 rounded">dialysate_flow_rate</code></td>
                             <td class="py-1 pr-2 text-green-300">mL/hr</td>
-                            <td class="py-1 text-gray-300">2 L/hr → 2000 mL/hr</td>
+                            <td class="py-1 text-gray-300">2 L/hr → 2000 mL/hr; IHD sources often record mL/min, so multiply by 60 (500 mL/min → 30000 mL/hr)</td>
                           </tr>
                           <tr>
-                            <td class="py-1 pr-2"><code class="bg-white/20 px-1 rounded">ultrafiltration_out</code></td>
-                            <td class="py-1 pr-2 text-green-300">mL/hr</td>
-                            <td class="py-1 text-gray-300">1.5 L/hr → 1500 mL/hr</td>
+                            <td class="py-1 pr-2"><code class="bg-white/20 px-1 rounded">potassium_bath</code>, <code class="bg-white/20 px-1 rounded">calcium_bath</code></td>
+                            <td class="py-1 pr-2 text-green-300">mEq/L</td>
+                            <td class="py-1 text-gray-300">Dialysate bath concentrations, range 0–4</td>
                           </tr>
                         </tbody>
                       </table>
+                      <p class="text-xs mt-2 text-gray-300">Ultrafiltration volume is not a column in this table; record it in the <code class="bg-white/20 px-1 rounded">output</code> table (<code class="bg-white/20 px-1 rounded">output_group = ultrafiltration</code>).</p>
                     </div>
                   </div>
                 </div>
@@ -589,30 +612,32 @@ const navigationSections = [
                   <!-- Step 5 -->
                   <div>
                     <h5 class="text-xl font-semibold mb-3">Step 5: Verify Missingness by Modality</h5>
-                    <p class="text-sm mb-3">Validate that parameter availability matches expected patterns for each RRT modality:</p>
+                    <p class="text-sm mb-3">Validate that parameter availability matches the expected pattern for each <code class="bg-white/20 px-1 rounded">mode_category</code> (from the 3.0 data dictionary):</p>
                     <div class="bg-white/10 p-2 rounded-lg overflow-x-auto">
                       <table class="text-xs w-full">
                         <thead>
                           <tr class="border-b border-white/20">
-                            <th class="px-2 py-1 text-left">Modality</th>
+                            <th class="px-2 py-1 text-left">mode_category</th>
                             <th class="px-2 py-1 text-left">Blood Flow</th>
                             <th class="px-2 py-1 text-left">Pre-Filter</th>
                             <th class="px-2 py-1 text-left">Post-Filter</th>
                             <th class="px-2 py-1 text-left">Dialysate</th>
-                            <th class="px-2 py-1 text-left">UF Out</th>
                           </tr>
                         </thead>
                         <tbody class="text-xs">
-                          <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">SCUF</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1"></td><td class="px-2 py-1"></td><td class="px-2 py-1"></td><td class="px-2 py-1 text-green-300">E</td></tr>
-                          <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">CVVH</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1"></td><td class="px-2 py-1 text-green-300">E</td></tr>
-                          <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">CVVHD</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1"></td><td class="px-2 py-1"></td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-green-300">E</td></tr>
-                          <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">CVVHDF</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-green-300">E</td></tr>
-                          <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">AVVH</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-yellow-300">P</td><td class="px-2 py-1 text-yellow-300">P</td><td class="px-2 py-1"></td><td class="px-2 py-1 text-green-300">E</td></tr>
-                          <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">AVVHD</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1"></td><td class="px-2 py-1"></td><td class="px-2 py-1 text-yellow-300">P</td><td class="px-2 py-1 text-green-300">E</td></tr>
-                          <tr><td class="px-2 py-1 font-semibold">AVVHF</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-yellow-300">P</td><td class="px-2 py-1 text-yellow-300">P</td><td class="px-2 py-1 text-yellow-300">P</td><td class="px-2 py-1 text-green-300">E</td></tr>
+                          <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">scuf</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1"></td><td class="px-2 py-1"></td><td class="px-2 py-1"></td></tr>
+                          <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">cvvh</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1"></td></tr>
+                          <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">cvvhd</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1"></td><td class="px-2 py-1"></td><td class="px-2 py-1 text-green-300">E</td></tr>
+                          <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">cvvhdf</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-green-300">E</td></tr>
+                          <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">avvh <span class="font-normal text-gray-300">(VVH variant)</span></td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-yellow-300">P</td><td class="px-2 py-1 text-yellow-300">P</td><td class="px-2 py-1"></td></tr>
+                          <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">avvh <span class="font-normal text-gray-300">(VVHD variant)</span></td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1"></td><td class="px-2 py-1"></td><td class="px-2 py-1 text-yellow-300">P</td></tr>
+                          <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">avvh <span class="font-normal text-gray-300">(VVHF variant)</span></td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-yellow-300">P</td><td class="px-2 py-1 text-yellow-300">P</td><td class="px-2 py-1 text-yellow-300">P</td></tr>
+                          <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">ihd</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1"></td><td class="px-2 py-1"></td><td class="px-2 py-1 text-green-300">E</td></tr>
+                          <tr><td class="px-2 py-1 font-semibold">iuf</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1"></td><td class="px-2 py-1"></td><td class="px-2 py-1 text-green-300">E</td></tr>
                         </tbody>
                       </table>
-                      <p class="text-xs mt-2 text-gray-300"><span class="text-green-300">E</span> = Expected | <span class="text-yellow-300">P</span> = Possible | Empty = Not applicable</p>
+                      <p class="text-xs mt-2 text-gray-300"><span class="text-green-300">E</span> = Required | <span class="text-yellow-300">P</span> = May be used | Empty = Not used (leave null)</p>
+                      <p class="text-xs mt-2 text-gray-300">All three AVVH variants map to <code class="bg-white/20 px-1 rounded">mode_category = avvh</code>. <code class="bg-white/20 px-1 rounded">ihd</code> and <code class="bg-white/20 px-1 rounded">iuf</code> share the same rate columns; tell them apart by <code class="bg-white/20 px-1 rounded">potassium_bath</code> / <code class="bg-white/20 px-1 rounded">calcium_bath</code> (populated for ihd, null for iuf).</p>
                     </div>
                   </div>
 
@@ -651,6 +676,10 @@ const navigationSections = [
                         <span class="text-green-300 mr-2">✓</span>
                         Check unit conversions are applied correctly
                       </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">✓</span>
+                        Confirm <code class="bg-white/20 px-1 rounded">potassium_bath</code> and <code class="bg-white/20 px-1 rounded">calcium_bath</code> are populated for <code class="bg-white/20 px-1 rounded">ihd</code> rows and null for <code class="bg-white/20 px-1 rounded">iuf</code> rows
+                      </li>
                     </ul>
                   </div>
                 </div>
@@ -682,15 +711,16 @@ const navigationSections = [
                   <div class="bg-yellow-500/20 p-4 rounded-lg border border-yellow-400/30">
                     <h5 class="text-lg font-semibold mb-2 text-yellow-300">Important Notes</h5>
                     <ul class="space-y-2 text-sm">
-                      <li>• This table only includes <strong>finalized billing diagnosis codes</strong> for hospital reimbursement</li>
-                      <li>• All other diagnosis codes for a patient are included in the concept table <code class="bg-white/20 px-1 rounded">patient_diagnosis</code></li>
+                      <li>• This table only includes <strong>finalized billing diagnosis codes</strong> for hospital reimbursement (e.g., for Diagnosis Related Group calculation)</li>
+                      <li>• These diagnoses have <strong>no timestamps</strong> because they are usually finalized after discharge. Use them for comorbidity scores, not as input features for predicting an inpatient event</li>
+                      <li>• All other diagnosis codes for a patient are included in the alpha table <code class="bg-white/20 px-1 rounded">patient_diagnosis</code>, which has start and end timestamps</li>
                     </ul>
                   </div>
 
                   <!-- Step 1 -->
                   <div>
                     <h5 class="text-xl font-semibold mb-3">Step 1: Filter to Inpatient Hospitalizations</h5>
-                    <p class="text-sm">Filter your hospital diagnosis data to include only inpatient hospitalizations.</p>
+                    <p class="text-sm">Filter your hospital diagnosis data to include only inpatient hospitalizations. Every <code class="bg-white/20 px-1 rounded">hospitalization_id</code> must match one in your CLIF <code class="bg-white/20 px-1 rounded">hospitalization</code> table.</p>
                   </div>
 
                   <!-- Step 2 -->
@@ -735,7 +765,7 @@ const navigationSections = [
                       </li>
                       <li class="flex items-start">
                         <span class="text-green-300 mr-2">•</span>
-                        <strong>UTC Conversion:</strong> Convert all datetime fields to UTC timezone
+                        <span><strong>Code Format:</strong> Populate <code class="bg-white/20 px-1 rounded">diagnosis_code_format</code> for every row alongside <code class="bg-white/20 px-1 rounded">diagnosis_code</code>. Only two values are allowed: <code class="bg-white/20 px-1 rounded">ICD10CM</code> or <code class="bg-white/20 px-1 rounded">ICD9CM</code>. This table has no datetime columns, so no UTC conversion is needed</span>
                       </li>
                       <li class="flex items-start">
                         <span class="text-green-300 mr-2">•</span>
@@ -758,7 +788,11 @@ const navigationSections = [
                       </li>
                       <li class="flex items-start">
                         <span class="text-green-300 mr-2">✓</span>
-                        Validate diagnosis codes are in expected format (ICD-10, etc.)
+                        Validate <code class="bg-white/20 px-1 rounded">diagnosis_code</code> is a valid ICD-9-CM or ICD-10-CM code and that <code class="bg-white/20 px-1 rounded">diagnosis_code_format</code> (ICD9CM / ICD10CM) matches it
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">✓</span>
+                        Ensure all <code class="bg-white/20 px-1 rounded">hospitalization_id</code> values exist in the <code class="bg-white/20 px-1 rounded">hospitalization</code> table
                       </li>
                     </ul>
                   </div>
@@ -795,7 +829,8 @@ const navigationSections = [
                   <div class="bg-yellow-500/20 p-4 rounded-lg border border-yellow-400/30">
                     <h5 class="text-lg font-semibold mb-2 text-yellow-300">Important Notes</h5>
                     <ul class="space-y-2 text-sm">
-                      <li>• If a patient is discharged to Home/Hospice, then <code class="bg-white/20 px-1 rounded">discharge_category</code> == Hospice</li>
+                      <li>• If a patient is discharged to Home/Hospice (e.g., a <code class="bg-white/20 px-1 rounded">discharge_name</code> like "Hospice - Home"), then <code class="bg-white/20 px-1 rounded">discharge_category == hospice</code></li>
+                      <li>• Mortality is identified by <code class="bg-white/20 px-1 rounded">discharge_category == expired</code>; some studies also count <code class="bg-white/20 px-1 rounded">hospice</code> as a death outcome</li>
                       <li>• Geographic indicators (<code class="bg-white/20 px-1 rounded">zipcode_nine_digit</code>, <code class="bg-white/20 px-1 rounded">census_block_code</code>, etc.) should be added if available. <strong>zipcode_nine_digit</strong> is preferred over zipcode_five_digit; <strong>census_block_code</strong> is ideal for census-based indicators</li>
                       <li>• If a patient is <strong>transferred between different hospitals</strong> within a health system, create a <strong>new hospitalization_id</strong></li>
                       <li>• If a patient is seen in ER at hospital A then admitted to inpatient at hospital B, use <strong>one hospitalization_id</strong> for both stays</li>
@@ -809,12 +844,12 @@ const navigationSections = [
                     <p class="text-sm mb-3">Before transforming your hospitalization data, prepare the mapping files:</p>
                     <div class="space-y-3 text-sm">
                       <div class="bg-white/10 p-3 rounded-lg">
-                        <p><strong class="text-blue-300">a. Admission Type Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">admission_type_name</code> to <code class="bg-white/20 px-1 rounded">admission_type_category</code></p>
-                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/hospitalization/clif_hospitalization_admission_type_categories.csv" target="_blank" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_hospitalization_admission_type_categories.csv</a>
+                        <p><strong class="text-blue-300">a. Admission Type Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">admission_type_name</code> to <code class="bg-white/20 px-1 rounded">admission_type_category</code>. Permissible values: <code class="bg-white/20 px-1 rounded">ed</code>, <code class="bg-white/20 px-1 rounded">facility</code>, <code class="bg-white/20 px-1 rounded">osh</code> (outside hospital), <code class="bg-white/20 px-1 rounded">direct</code>, <code class="bg-white/20 px-1 rounded">elective</code>, <code class="bg-white/20 px-1 rounded">other</code></p>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/hospitalization/clif_hospitalization_admission_type_categories.csv" target="_blank" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_hospitalization_admission_type_categories.csv</a>
                       </div>
                       <div class="bg-white/10 p-3 rounded-lg">
-                        <p><strong class="text-blue-300">b. Discharge Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">discharge_name</code> to <code class="bg-white/20 px-1 rounded">discharge_category</code></p>
-                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/hospitalization/clif_hospitalization_discharge_categories.csv" target="_blank" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_hospitalization_discharge_categories.csv</a>
+                        <p><strong class="text-blue-300">b. Discharge Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">discharge_name</code> to <code class="bg-white/20 px-1 rounded">discharge_category</code>. Permissible values (lowercase snake_case): <code class="bg-white/20 px-1 rounded">home</code>, <code class="bg-white/20 px-1 rounded">snf</code>, <code class="bg-white/20 px-1 rounded">expired</code>, <code class="bg-white/20 px-1 rounded">acute_ip_rehab</code>, <code class="bg-white/20 px-1 rounded">hospice</code>, <code class="bg-white/20 px-1 rounded">ltach</code>, <code class="bg-white/20 px-1 rounded">acute_care_hosp</code>, <code class="bg-white/20 px-1 rounded">group_home</code>, <code class="bg-white/20 px-1 rounded">chemical_dependency</code>, <code class="bg-white/20 px-1 rounded">ama</code>, <code class="bg-white/20 px-1 rounded">assisted_living</code>, <code class="bg-white/20 px-1 rounded">still_admitted</code>, <code class="bg-white/20 px-1 rounded">missing</code>, <code class="bg-white/20 px-1 rounded">other</code>, <code class="bg-white/20 px-1 rounded">mental_health_hosp</code>, <code class="bg-white/20 px-1 rounded">shelter</code>, <code class="bg-white/20 px-1 rounded">jail</code></p>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/hospitalization/clif_hospitalization_discharge_categories.csv" target="_blank" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_hospitalization_discharge_categories.csv</a>
                       </div>
                     </div>
                   </div>
@@ -867,12 +902,12 @@ const navigationSections = [
                       </table>
                     </div>
                     <div class="bg-white/10 p-3 rounded-lg text-xs">
-                      <p class="text-yellow-300 font-semibold mb-2">Derive from census_block_id:</p>
+                      <p class="text-yellow-300 font-semibold mb-2">Derive from census_block_code:</p>
                       <div class="font-mono space-y-1">
-                        <div>state_code = census_block_id[0:2]</div>
-                        <div>county_code = census_block_id[0:5]</div>
-                        <div>census_tract = census_block_id[0:11]</div>
-                        <div>census_block_group_code = census_block_id[0:12]</div>
+                        <div>state_code = census_block_code[0:2]</div>
+                        <div>county_code = census_block_code[0:5]</div>
+                        <div>census_tract = census_block_code[0:11]</div>
+                        <div>census_block_group_code = census_block_code[0:12]</div>
                       </div>
                     </div>
                     <div class="bg-white/10 p-3 rounded-lg text-xs mt-3">
@@ -934,7 +969,7 @@ const navigationSections = [
               </h4>
               <ul class="text-sm text-gray-600 space-y-2">
                 <li>• Lab order & category mapping (mCIDE)</li>
-                <li>• Blood/plasma/serum specimens only</li>
+                <li>• Specimen mapping: plasma_blood, urine, pleural, peritoneal, bal</li>
                 <li>• Unit standardization to CLIF reference units</li>
                 <li>• Numeric value parsing</li>
               </ul>
@@ -980,29 +1015,66 @@ const navigationSections = [
                       <p class="mb-2">Point-of-care example — POC results can differ in accuracy from the central lab, so the panel keeps them separable without a separate <code class="bg-white/20 px-1 rounded">lab_category</code>:</p>
                       <ul class="space-y-1 text-xs">
                         <li>• Potassium off a BMP → <code class="bg-white/20 px-1 rounded">lab_category = potassium</code>, <code class="bg-white/20 px-1 rounded">lab_order_category = bmp</code></li>
-                        <li>• POC / iSTAT potassium → <code class="bg-white/20 px-1 rounded">lab_category = potassium</code>, <code class="bg-white/20 px-1 rounded">lab_order_category = poc</code></li>
+                        <li>• POC potassium (bedside or gas analyzer) → <code class="bg-white/20 px-1 rounded">lab_category = potassium</code>, <code class="bg-white/20 px-1 rounded">lab_order_category = poc</code></li>
                       </ul>
                       <p class="mt-2 text-xs text-gray-300">Also applies to bicarbonate, creatinine, glucose, hematocrit, lactate, and sodium. Fingerstick glucometer glucose has its own panel: <code class="bg-white/20 px-1 rounded">glucose</code> + <code class="bg-white/20 px-1 rounded">fingerstick</code>, not <code class="bg-white/20 px-1 rounded">poc</code>.</p>
+                    </div>
+                    <div class="bg-blue-500/20 p-3 rounded-lg border border-blue-400/30 text-sm mt-3">
+                      <p class="text-blue-300 font-semibold mb-2">Results that came off a blood gas analyzer (bedside handheld or lab machine) — <code class="bg-white/20 px-1 rounded">blood_gas</code> or <code class="bg-white/20 px-1 rounded">poc</code>?</p>
+                      <p class="mb-2"><strong>The panel follows the analyte, not the order it arrived in.</strong> Once you have mapped the result to its <code class="bg-white/20 px-1 rounded">lab_category</code>, look it up here:</p>
+                      <table class="w-full text-xs border-collapse mb-2">
+                        <thead>
+                          <tr class="border-b border-white/30">
+                            <th class="text-left py-1 pr-2 font-semibold">If <code class="bg-white/20 px-1 rounded">lab_category</code> is…</th>
+                            <th class="text-left py-1 font-semibold">then <code class="bg-white/20 px-1 rounded">lab_order_category</code> is</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr class="border-b border-white/10">
+                            <td class="py-1 pr-2"><code class="bg-white/20 px-1 rounded">ph_*</code>, <code class="bg-white/20 px-1 rounded">pco2_*</code>, <code class="bg-white/20 px-1 rounded">po2_*</code>, <code class="bg-white/20 px-1 rounded">so2_*</code>, <code class="bg-white/20 px-1 rounded">bicarbonate</code> (when reported alongside the gas values)</td>
+                            <td class="py-1"><code class="bg-white/20 px-1 rounded">blood_gas</code></td>
+                          </tr>
+                          <tr class="border-b border-white/10">
+                            <td class="py-1 pr-2"><code class="bg-white/20 px-1 rounded">sodium</code>, <code class="bg-white/20 px-1 rounded">potassium</code>, <code class="bg-white/20 px-1 rounded">glucose</code>, <code class="bg-white/20 px-1 rounded">lactate</code>, <code class="bg-white/20 px-1 rounded">hematocrit</code>, <code class="bg-white/20 px-1 rounded">creatinine</code></td>
+                            <td class="py-1"><code class="bg-white/20 px-1 rounded">poc</code></td>
+                          </tr>
+                          <tr class="border-b border-white/10">
+                            <td class="py-1 pr-2">any other analyte (e.g. <code class="bg-white/20 px-1 rounded">chloride</code>, <code class="bg-white/20 px-1 rounded">calcium_ionized</code>)</td>
+                            <td class="py-1">that analyte's own permitted panel in <code class="bg-white/20 px-1 rounded">clif_lab_categories.csv</code> — <code class="bg-white/20 px-1 rounded">chloride</code> → <code class="bg-white/20 px-1 rounded">bmp</code>, <code class="bg-white/20 px-1 rounded">calcium_ionized</code> → <code class="bg-white/20 px-1 rounded">misc</code></td>
+                          </tr>
+                          <tr>
+                            <td class="py-1 pr-2">the co-oximetry "hemoglobin/saturation" hemoglobin reported with the gas</td>
+                            <td class="py-1">do not map — it is not <code class="bg-white/20 px-1 rounded">hemoglobin</code> (that category is CBC hemoglobin only)</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                      <p class="text-xs text-gray-300"><strong>Ignore the order name.</strong> An order called "POC blood gas" or "ABG with electrolytes" still splits this way — one order can produce rows in several panels. Mixed-venous gases use <code class="bg-white/20 px-1 rounded">mixed_venous_blood_gas</code> instead of <code class="bg-white/20 px-1 rounded">blood_gas</code>. Finger-stick glucometer glucose is <code class="bg-white/20 px-1 rounded">fingerstick</code>, not <code class="bg-white/20 px-1 rounded">poc</code>. <em>Why:</em> the sodium, potassium, etc. on a gas are measured by the analyzer's electrode method rather than the central chemistry assay, so they are kept separable as <code class="bg-white/20 px-1 rounded">poc</code> even when the gas is run in the core lab.</p>
                     </div>
                     <div class="bg-white/10 p-3 rounded-lg text-sm mt-3">
                       <p class="mb-2">Bicarbonate vs. CO2:</p>
                       <ul class="space-y-1 text-xs">
                         <li>• BMP bicarbonate (often reported as "CO2") → <code class="bg-white/20 px-1 rounded">bicarbonate</code> + <code class="bg-white/20 px-1 rounded">bmp</code></li>
-                        <li>• HCO3⁻ off an ABG / VBG → <code class="bg-white/20 px-1 rounded">bicarbonate</code> + <code class="bg-white/20 px-1 rounded">blood_gas</code>; POC HCO3⁻ → <code class="bg-white/20 px-1 rounded">bicarbonate</code> + <code class="bg-white/20 px-1 rounded">poc</code></li>
+                        <li>• HCO3⁻ reported alongside gas values (pH, pCO2, pO2) on any analyzer, bedside or core lab → <code class="bg-white/20 px-1 rounded">bicarbonate</code> + <code class="bg-white/20 px-1 rounded">blood_gas</code></li>
+                        <li>• Bicarbonate from a POC chemistry cartridge that reports no gas values → <code class="bg-white/20 px-1 rounded">bicarbonate</code> + <code class="bg-white/20 px-1 rounded">poc</code></li>
                         <li>• pCO2 → <code class="bg-white/20 px-1 rounded">pco2_arterial</code> / <code class="bg-white/20 px-1 rounded">pco2_venous</code>, never bicarbonate</li>
-                        <li>• Total CO2 (tCO2, e.g. iSTAT TCO2) → do not map</li>
+                        <li>• Total CO2 (tCO2, reported by some gas analyzers) → do not map</li>
+                        <li>• Co-oximetry "hemoglobin/saturation" off a gas → do not map (not <code class="bg-white/20 px-1 rounded">hemoglobin</code>; it disagrees with CBC hemoglobin)</li>
                       </ul>
                     </div>
                   </div>
 
                   <!-- Step 4 -->
                   <div>
-                    <h5 class="text-xl font-semibold mb-3">Step 4: Filter Specimen Types</h5>
+                    <h5 class="text-xl font-semibold mb-3">Step 4: Map Specimen Types</h5>
                     <div class="bg-white/10 p-3 rounded-lg text-sm">
-                      <p class="text-green-300 font-semibold mb-2">Include only:</p>
-                      <p>Blood, Plasma, Serum samples</p>
-                      <p class="text-red-300 font-semibold mt-2 mb-1">Exclude:</p>
-                      <p>Urine and other fluid specimens</p>
+                      <p class="text-green-300 font-semibold mb-2">Keep rows whose specimen maps to one of the five <code class="bg-white/20 px-1 rounded">lab_specimen_category</code> values:</p>
+                      <ul class="space-y-1 text-xs mb-2">
+                        <li>• <code class="bg-white/20 px-1 rounded">plasma_blood</code> — whole blood, plasma, or serum (default for systemic labs)</li>
+                        <li>• <code class="bg-white/20 px-1 rounded">urine</code></li>
+                        <li>• <code class="bg-white/20 px-1 rounded">pleural</code> — pleural fluid from thoracentesis or pleural catheter</li>
+                        <li>• <code class="bg-white/20 px-1 rounded">peritoneal</code> — peritoneal / ascitic fluid from paracentesis or peritoneal catheter</li>
+                        <li>• <code class="bg-white/20 px-1 rounded">bal</code> — bronchoalveolar lavage fluid</li>
+                      </ul>
                     </div>
                     <div class="bg-blue-500/20 p-3 rounded-lg border border-blue-400/30 text-sm mt-3">
                       <p class="text-blue-300 font-semibold mb-2">Blood specimens:</p>
@@ -1121,16 +1193,16 @@ const navigationSections = [
                     <p class="text-sm mb-3">Before transforming your medication data, prepare the mapping files:</p>
                     <div class="space-y-3 text-sm">
                       <div class="bg-white/10 p-3 rounded-lg">
-                        <p><strong class="text-blue-300">a. Action Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">mar_action_name</code> → <code class="bg-white/20 px-1 rounded">mar_action_category</code></p>
-                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/medication_admin_continuous/clif_medication_admin_continuous_action_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_medication_admin_continuous_action_categories.csv</a>
+                        <p><strong class="text-blue-300">a. Action Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">mar_action_name</code> → <code class="bg-white/20 px-1 rounded">mar_action_category</code>. The same CSV gives each category's <code class="bg-white/20 px-1 rounded">mar_action_group</code> (<code class="bg-white/20 px-1 rounded">administered</code>, <code class="bg-white/20 px-1 rounded">not_administered</code>, <code class="bg-white/20 px-1 rounded">other</code>) — carry it into the table.</p>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/medication_admin_continuous/clif_medication_admin_continuous_action_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_medication_admin_continuous_action_categories.csv</a>
                       </div>
                       <div class="bg-white/10 p-3 rounded-lg">
                         <p><strong class="text-blue-300">b. Med Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">med_name</code> → <code class="bg-white/20 px-1 rounded">med_category</code></p>
-                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/medication_admin_continuous/clif_medication_admin_continuous_med_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_medication_admin_continuous_med_categories.csv</a>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/medication_admin_continuous/clif_medication_admin_continuous_med_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_medication_admin_continuous_med_categories.csv</a>
                       </div>
                       <div class="bg-white/10 p-3 rounded-lg">
                         <p><strong class="text-blue-300">c. Route Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">med_route_name</code> → <code class="bg-white/20 px-1 rounded">med_route_category</code></p>
-                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/medication_admin_continuous/clif_medication_admin_continuous_med_route_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_medication_admin_continuous_med_route_categories.csv</a>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/medication_admin_continuous/clif_medication_admin_continuous_med_route_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_medication_admin_continuous_med_route_categories.csv</a>
                       </div>
                     </div>
                   </div>
@@ -1145,16 +1217,27 @@ const navigationSections = [
                   <div>
                     <h5 class="text-xl font-semibold mb-3">Step 3: Apply Mappings</h5>
                     <p class="text-sm">Join the mapping files to add category columns.</p>
+                    <div class="bg-white/10 p-3 rounded-lg text-sm mt-3">
+                      <p class="text-yellow-300 font-semibold mb-2">Recording the end of an infusion:</p>
+                      <p class="text-xs">There is no end-time column; each row records a rate change. When an infusion stops or pauses, write a new row with <code class="bg-white/20 px-1 rounded">med_dose = 0</code>, the raw <code class="bg-white/20 px-1 rounded">mar_action_name</code> (e.g. "Stopped", "Paused"), <code class="bg-white/20 px-1 rounded">mar_action_category = stop</code> and <code class="bg-white/20 px-1 rounded">mar_action_group = not_administered</code>.</p>
+                    </div>
                   </div>
 
                   <!-- Step 4 -->
                   <div>
-                    <h5 class="text-xl font-semibold mb-3">Step 4: Filter Continuous Medications</h5>
+                    <h5 class="text-xl font-semibold mb-3">Step 4: Filter Continuous Medications & Standardize Units</h5>
                     <div class="bg-white/10 p-3 rounded-lg text-sm">
-                      <p class="mb-2">Include only medications with time-based dosing units:</p>
-                      <div class="font-mono text-xs bg-white/10 p-2 rounded">
-                        filter(grepl("min|hr|day", med_dose_unit, ignore.case = TRUE))
-                      </div>
+                      <p class="mb-2">Keep the rows whose <code class="bg-white/20 px-1 rounded">med_name</code> maps to a <code class="bg-white/20 px-1 rounded">med_category</code> in <code class="bg-white/20 px-1 rounded">clif_medication_admin_continuous_med_categories.csv</code>. Do not filter on the unit string: a regex such as <code class="bg-white/20 px-1 rounded">min|hr|day</code> drops five categories whose standard unit has no time component — <code class="bg-white/20 px-1 rounded">albuterol</code> (mg), <code class="bg-white/20 px-1 rounded">terbutaline</code> (mg), <code class="bg-white/20 px-1 rounded">baclofen</code> (ml), <code class="bg-white/20 px-1 rounded">ipratropium</code> (ml), <code class="bg-white/20 px-1 rounded">nitric_oxide</code> (ppm).</p>
+                      <p class="text-xs">Some categories (e.g. <code class="bg-white/20 px-1 rounded">fentanyl</code>, <code class="bg-white/20 px-1 rounded">propofol</code>, <code class="bg-white/20 px-1 rounded">heparin</code>) appear in both the continuous and the intermittent CSV. A dose charted as a quantity per unit time (a running infusion) belongs here; a fixed quantity given at one time (a bolus) belongs in <code class="bg-white/20 px-1 rounded">medication_admin_intermittent</code>.</p>
+                    </div>
+                    <div class="bg-white/10 p-3 rounded-lg text-xs mt-2">
+                      <p class="text-blue-300 font-semibold mb-2">Convert to the category's unit:</p>
+                      <p>Each <code class="bg-white/20 px-1 rounded">med_category</code> has one <code class="bg-white/20 px-1 rounded">med_dose_unit</code> in the CSV (e.g. <code class="bg-white/20 px-1 rounded">fentanyl</code> → <code class="bg-white/20 px-1 rounded">mcg/hr</code>, <code class="bg-white/20 px-1 rounded">propofol</code> → <code class="bg-white/20 px-1 rounded">mcg/kg/min</code>). Convert the raw rate into it; if the raw rate is in mL/hr, use the concentration in <code class="bg-white/20 px-1 rounded">med_name</code>. Weight-based units (per kg) need the patient's weight.</p>
+                      <p class="mt-1 text-gray-300">e.g. "FENTANYL 2500 MCG/50 ML IV INFUSION" running at 2 mL/hr → <code class="bg-white/20 px-1 rounded">med_dose = 100</code>, <code class="bg-white/20 px-1 rounded">med_dose_unit = mcg/hr</code></p>
+                    </div>
+                    <div class="bg-white/10 p-3 rounded-lg text-xs mt-2">
+                      <p class="text-blue-300 font-semibold mb-2">Also record the pump rate:</p>
+                      <p><code class="bg-white/20 px-1 rounded">volume_infusion_rate</code> is the fluid volume per time (e.g. 2 mL/hr), separate from <code class="bg-white/20 px-1 rounded">med_dose</code>, which is the drug quantity per time. Fill <code class="bg-white/20 px-1 rounded">volume_infusion_rate_unit</code> from the CSV's <code class="bg-white/20 px-1 rounded">volume_infusion_rate_units</code> column (<code class="bg-white/20 px-1 rounded">ml/hr</code> for pumped infusions; <code class="bg-white/20 px-1 rounded">NA</code> for inhaled categories such as <code class="bg-white/20 px-1 rounded">albuterol</code> and <code class="bg-white/20 px-1 rounded">nitric_oxide</code>).</p>
                     </div>
                   </div>
 
@@ -1162,7 +1245,7 @@ const navigationSections = [
                   <div>
                     <h5 class="text-xl font-semibold mb-3">Step 5: Special Case - Inhaled Nitric Oxide</h5>
                     <div class="bg-yellow-500/20 p-3 rounded-lg border border-yellow-400/30 text-sm">
-                      <p>If inhaled nitric oxide is not in your medication admin table, refer to <strong>flowsheets data</strong>. The order typically goes in as an RT order (not medication order) and is documented in flowsheets rather than MAR.</p>
+                      <p>If inhaled nitric oxide is not in your medication admin table, refer to <strong>flowsheets data</strong>. The order typically goes in as an RT order (not medication order) and is documented in flowsheets rather than MAR. Map it to <code class="bg-white/20 px-1 rounded">nitric_oxide</code> with <code class="bg-white/20 px-1 rounded">med_dose_unit = ppm</code>; it is a continuous-only category.</p>
                     </div>
                   </div>
                 </div>
@@ -1173,22 +1256,20 @@ const navigationSections = [
                     <h5 class="text-xl font-semibold mb-3">Step 6: Handle Combination & Trial Drugs</h5>
                     <h5 class="text-xl font-semibold mb-3">A. Combination Drugs</h5>
                     <div class="bg-white/10 p-3 rounded-lg text-sm mb-3">
-                      <p class="text-yellow-300 font-semibold mb-2">When to duplicate rows:</p>
-                      <p class="text-xs mb-2">Only duplicate combo meds that are <strong>not</strong> in the mCIDE as a med_category itself. Assign a duplicated row for each component med_category.</p>
+                      <p class="text-yellow-300 font-semibold mb-2">One row per administration:</p>
+                      <p class="text-xs mb-2">Do not split a combination product into one row per component. First check whether the CSV lists the combination itself as a <code class="bg-white/20 px-1 rounded">med_category</code>; if so, use it. Otherwise map the row to the <strong>primary active ingredient</strong> — the dictionary's example is <code class="bg-white/20 px-1 rounded">ACETAMIN-CALCIUM-MAG-CAFFEINE ORAL</code> → <code class="bg-white/20 px-1 rounded">acetaminophen</code>. The 3.0 continuous CSV has no combination categories, so continuous combinations always map to the primary ingredient.</p>
                     </div>
                     <div class="bg-white/10 p-3 rounded-lg text-xs">
-                      <p class="text-green-300 font-semibold mb-2">Example: "MedA MedB 5-325mg Tab"</p>
-                      <p class="mb-2">If medA_medB is not a CLIF med_category, but medA and medB are separate categories:</p>
+                      <p class="text-green-300 font-semibold mb-2">Example: "MedA-MedB 7.5-325 MG/15 ML" running at 30 mL/hr</p>
+                      <p class="mb-2">If medA_medB is not a CLIF med_category and MedA is the primary ingredient:</p>
                       <div class="space-y-1 ml-2">
-                        <p>→ Row 1: med_category = "medA", med_dose = 5mg</p>
-                        <p>→ Row 2: med_category = "medB", med_dose = 325mg</p>
+                        <p>→ one row: med_category = "medA", med_dose = 15, med_dose_unit = medA's unit in the CSV (here mg/hr)</p>
                       </div>
-                      <p class="mt-2 text-gray-300">Both rows maintain same: hospitalization_id, admin_dttm, med_name</p>
+                      <p class="mt-2 text-gray-300"><code class="bg-white/20 px-1 rounded">med_name</code> keeps the full raw string, so the other component is not lost.</p>
                     </div>
                     <div class="bg-white/10 p-3 rounded-lg text-xs mt-2">
-                      <p class="text-blue-300 font-semibold mb-2">Unit Conversion (mL → mg):</p>
-                      <p>If original unit is mL, convert to mg using concentration from med_name.</p>
-                      <p class="mt-1 text-gray-300">e.g., "MedA-MedB 7.5-325 MG/15 ML" at 30 mL → 15mg MedA, 650mg MedB</p>
+                      <p class="text-blue-300 font-semibold mb-2">Unit Conversion (mL → the category's med_dose_unit):</p>
+                      <p>If the raw rate is in mL/hr, convert to the mapped category's <code class="bg-white/20 px-1 rounded">med_dose_unit</code> using the concentration of the <em>mapped</em> ingredient in <code class="bg-white/20 px-1 rounded">med_name</code> (see Step 4).</p>
                     </div>
                   </div>
 
@@ -1196,18 +1277,19 @@ const navigationSections = [
                   <div>
                     <h5 class="text-xl font-semibold mb-3">B. Trial Drugs & Placebos</h5>
                     <div class="bg-white/10 p-3 rounded-lg text-sm mb-3">
-                      <p class="mb-2">Map trial drugs to <code class="bg-white/20 px-1 rounded">trial_drug</code> as med_category. Leave <code class="bg-white/20 px-1 rounded">med_group</code> empty if with placebo.</p>
+                      <p class="mb-2">There is no <code class="bg-white/20 px-1 rounded">trial_drug</code> category. Map a trial drug to its active ingredient's <code class="bg-white/20 px-1 rounded">med_category</code> like any other row; <code class="bg-white/20 px-1 rounded">med_group</code> then follows from the CSV.</p>
                       <div class="bg-white/10 p-2 rounded text-xs mt-2">
-                        <p class="text-yellow-300 font-semibold mb-1">Example:</p>
-                        <p class="text-gray-300">"ACYCLOVIR OR PLACEBO CAPSULE (IRB 171591) 400 MG"</p>
-                        <p class="mt-1">→ med_category: <span class="text-green-300">trial_drug</span></p>
-                        <p>→ med_group: <span class="text-gray-400">None</span></p>
+                        <p class="text-yellow-300 font-semibold mb-1">Examples:</p>
+                        <p class="text-gray-300">"ACETAMINOPHEN (IRB 140122) 325 MG ORAL TAB"</p>
+                        <p class="mt-1">→ med_category: <span class="text-green-300">acetaminophen</span></p>
+                        <p class="mt-2 text-gray-300">"ACYCLOVIR OR PLACEBO CAPSULE (IRB 171591) 400 MG"</p>
+                        <p class="mt-1">→ the patient may have received placebo, so the active ingredient cannot be known: leave <code class="bg-white/20 px-1 rounded">med_category</code> unmapped (the raw string stays in <code class="bg-white/20 px-1 rounded">med_name</code>)</p>
                       </div>
                     </div>
                     <ul class="space-y-2 text-sm">
                       <li class="flex items-start">
                         <span class="text-blue-300 mr-2">•</span>
-                        <strong>Brand Names:</strong> Map to generic, preserve brand in notes
+                        <span><strong>Brand Names:</strong> Map to the generic active ingredient's <code class="bg-white/20 px-1 rounded">med_category</code>; the raw brand string is preserved in <code class="bg-white/20 px-1 rounded">med_name</code></span>
                       </li>
                     </ul>
                   </div>
@@ -1241,11 +1323,11 @@ const navigationSections = [
                       </li>
                       <li class="flex items-start">
                         <span class="text-green-300 mr-2">✓</span>
-                        Verify continuous med filter captures time-based units
+                        Verify every row's <code class="bg-white/20 px-1 rounded">med_dose_unit</code> equals its category's unit in the CSV
                       </li>
                       <li class="flex items-start">
                         <span class="text-green-300 mr-2">✓</span>
-                        Check combo drug rows have correct dose splits
+                        Check combination and trial drugs produce one row each, mapped to the explicit combo category or the primary active ingredient
                       </li>
                     </ul>
                   </div>
@@ -1282,16 +1364,16 @@ const navigationSections = [
                     <p class="text-sm mb-3">Before transforming your medication data, prepare the mapping files:</p>
                     <div class="space-y-3 text-sm">
                       <div class="bg-white/10 p-3 rounded-lg">
-                        <p><strong class="text-blue-300">a. Action Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">mar_action_name</code> → <code class="bg-white/20 px-1 rounded">mar_action_category</code></p>
-                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/medication_admin_intermittent/clif_medication_admin_intermittent_action_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_medication_admin_intermittent_action_categories.csv</a>
+                        <p><strong class="text-blue-300">a. Action Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">mar_action_name</code> → <code class="bg-white/20 px-1 rounded">mar_action_category</code>. The same CSV gives each category's <code class="bg-white/20 px-1 rounded">mar_action_group</code> (<code class="bg-white/20 px-1 rounded">administered</code>, <code class="bg-white/20 px-1 rounded">not_administered</code>, <code class="bg-white/20 px-1 rounded">other</code>) — carry it into the table.</p>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/medication_admin_intermittent/clif_medication_admin_intermittent_action_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_medication_admin_intermittent_action_categories.csv</a>
                       </div>
                       <div class="bg-white/10 p-3 rounded-lg">
                         <p><strong class="text-blue-300">b. Med Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">med_name</code> → <code class="bg-white/20 px-1 rounded">med_category</code></p>
-                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/medication_admin_intermittent/clif_medication_admin_intermittent_med_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_medication_admin_intermittent_med_categories.csv</a>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/medication_admin_intermittent/clif_medication_admin_intermittent_med_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_medication_admin_intermittent_med_categories.csv</a>
                       </div>
                       <div class="bg-white/10 p-3 rounded-lg">
                         <p><strong class="text-blue-300">c. Route Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">med_route_name</code> → <code class="bg-white/20 px-1 rounded">med_route_category</code></p>
-                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/medication_admin_intermittent/clif_medication_admin_intermittent_med_route_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_medication_admin_intermittent_med_route_categories.csv</a>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/medication_admin_intermittent/clif_medication_admin_intermittent_med_route_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_medication_admin_intermittent_med_route_categories.csv</a>
                       </div>
                     </div>
                   </div>
@@ -1312,18 +1394,21 @@ const navigationSections = [
                   <div>
                     <h5 class="text-xl font-semibold mb-3">Step 4: Filter Intermittent Medications</h5>
                     <div class="bg-white/10 p-3 rounded-lg text-sm">
-                      <p class="mb-2"><strong>Exclude</strong> medications with time-based dosing units (keep only intermittent):</p>
-                      <div class="font-mono text-xs bg-white/10 p-2 rounded">
-                        filter(!grepl("min|hr|day", med_dose_unit, ignore.case = TRUE))
-                      </div>
+                      <p class="mb-2">Keep the rows whose <code class="bg-white/20 px-1 rounded">med_name</code> maps to a <code class="bg-white/20 px-1 rounded">med_category</code> in <code class="bg-white/20 px-1 rounded">clif_medication_admin_intermittent_med_categories.csv</code>. Do not filter on the unit string alone.</p>
+                      <p class="text-xs">Some categories (e.g. <code class="bg-white/20 px-1 rounded">fentanyl</code>, <code class="bg-white/20 px-1 rounded">propofol</code>, <code class="bg-white/20 px-1 rounded">heparin</code>) appear in both the intermittent and the continuous CSV. A fixed quantity given at one time (a bolus) belongs here, even for a drug usually run as a drip; a dose charted as a quantity per unit time (a running infusion) belongs in <code class="bg-white/20 px-1 rounded">medication_admin_continuous</code>.</p>
                     </div>
                   </div>
 
-                  <!-- Step 5 - Inhaled Nitric Oxide -->
+                  <!-- Step 5 - Standardize med_dose_unit -->
                   <div>
-                    <h5 class="text-xl font-semibold mb-3">Step 5: Special Case - Inhaled Nitric Oxide</h5>
-                    <div class="bg-yellow-500/20 p-3 rounded-lg border border-yellow-400/30 text-sm">
-                      <p>If inhaled nitric oxide is not in your medication admin table, refer to <strong>flowsheets data</strong>. The order typically goes in as an RT order (not medication order) and is documented in flowsheets rather than MAR.</p>
+                    <h5 class="text-xl font-semibold mb-3">Step 5: Convert to the Category's med_dose_unit</h5>
+                    <div class="bg-yellow-500/20 p-3 rounded-lg border border-yellow-400/30 text-sm mb-3">
+                      <p class="text-yellow-300 font-semibold mb-2">3.0 requirement:</p>
+                      <p>Every intermittent <code class="bg-white/20 px-1 rounded">med_category</code> is tied to one <code class="bg-white/20 px-1 rounded">med_dose_unit</code> in the CSV, drawn from a closed set: <code class="bg-white/20 px-1 rounded">mg</code>, <code class="bg-white/20 px-1 rounded">g</code>, <code class="bg-white/20 px-1 rounded">mcg</code>, <code class="bg-white/20 px-1 rounded">mmol</code>, <code class="bg-white/20 px-1 rounded">ml</code>, <code class="bg-white/20 px-1 rounded">meq</code>, <code class="bg-white/20 px-1 rounded">units</code>, <code class="bg-white/20 px-1 rounded">cells</code>. Convert each raw dose into its category's unit; a single category may not mix units.</p>
+                    </div>
+                    <div class="bg-white/10 p-3 rounded-lg text-xs">
+                      <p class="mb-1">e.g. "AMPICILLIN 2000 MG IV" → <code class="bg-white/20 px-1 rounded">ampicillin</code>, <code class="bg-white/20 px-1 rounded">med_dose = 2</code>, <code class="bg-white/20 px-1 rounded">med_dose_unit = g</code></p>
+                      <p>If the raw dose is in mL, convert using the concentration in <code class="bg-white/20 px-1 rounded">med_name</code>: "ACETAMINOPHEN 160 MG/5 ML" given as 10 mL → <code class="bg-white/20 px-1 rounded">acetaminophen</code>, <code class="bg-white/20 px-1 rounded">med_dose = 320</code>, <code class="bg-white/20 px-1 rounded">med_dose_unit = mg</code>.</p>
                     </div>
                   </div>
                 </div>
@@ -1334,22 +1419,20 @@ const navigationSections = [
                     <h5 class="text-xl font-semibold mb-3">Step 6: Handle Combination & Trial Drugs</h5>
                     <h5 class="text-xl font-semibold mb-3">A. Combination Drugs</h5>
                     <div class="bg-white/10 p-3 rounded-lg text-sm mb-3">
-                      <p class="text-yellow-300 font-semibold mb-2">When to duplicate rows:</p>
-                      <p class="text-xs mb-2">Only duplicate combo meds that are <strong>not</strong> in the mCIDE as a med_category itself. Assign a duplicated row for each component med_category.</p>
+                      <p class="text-yellow-300 font-semibold mb-2">One row per administration:</p>
+                      <p class="text-xs mb-2">Do not split a combination product into one row per component. First check whether the CSV lists the combination itself as a <code class="bg-white/20 px-1 rounded">med_category</code> — the 3.0 intermittent CSV has explicit entries such as <code class="bg-white/20 px-1 rounded">amoxicillin_clavulanate</code>, <code class="bg-white/20 px-1 rounded">ampicillin_sulbactam</code>, <code class="bg-white/20 px-1 rounded">piperacillin_tazobactam</code>, <code class="bg-white/20 px-1 rounded">trimethoprim_sulfamethoxazole</code>, <code class="bg-white/20 px-1 rounded">dipyridamole_aspirin</code>, <code class="bg-white/20 px-1 rounded">sulbactam_durlobactam</code>, <code class="bg-white/20 px-1 rounded">sulfadiazine_trimethoprim</code> and others, so search the CSV first. If it does, use it. Otherwise map the row to the <strong>primary active ingredient</strong> — the dictionary's example is <code class="bg-white/20 px-1 rounded">ACETAMIN-CALCIUM-MAG-CAFFEINE ORAL</code> → <code class="bg-white/20 px-1 rounded">acetaminophen</code>.</p>
                     </div>
                     <div class="bg-white/10 p-3 rounded-lg text-xs">
-                      <p class="text-green-300 font-semibold mb-2">Example: "MedA MedB 5-325mg Tab"</p>
-                      <p class="mb-2">If medA_medB is not a CLIF med_category, but medA and medB are separate categories:</p>
+                      <p class="text-green-300 font-semibold mb-2">Example: "MedA-MedB 7.5-325 MG/15 ML" given as 30 mL</p>
+                      <p class="mb-2">If medA_medB is not a CLIF med_category and MedA is the primary ingredient:</p>
                       <div class="space-y-1 ml-2">
-                        <p>→ Row 1: med_category = "medA", med_dose = 5mg</p>
-                        <p>→ Row 2: med_category = "medB", med_dose = 325mg</p>
+                        <p>→ one row: med_category = "medA", med_dose = 15, med_dose_unit = medA's unit in the CSV (here mg)</p>
                       </div>
-                      <p class="mt-2 text-gray-300">Both rows maintain same: hospitalization_id, admin_dttm, med_name</p>
+                      <p class="mt-2 text-gray-300"><code class="bg-white/20 px-1 rounded">med_name</code> keeps the full raw string, so the other component is not lost.</p>
                     </div>
                     <div class="bg-white/10 p-3 rounded-lg text-xs mt-2">
-                      <p class="text-blue-300 font-semibold mb-2">Unit Conversion (mL → mg):</p>
-                      <p>If original unit is mL, convert to mg using concentration from med_name.</p>
-                      <p class="mt-1 text-gray-300">e.g., "MedA-MedB 7.5-325 MG/15 ML" at 30 mL → 15mg MedA, 650mg MedB</p>
+                      <p class="text-blue-300 font-semibold mb-2">Unit Conversion (mL → the category's med_dose_unit):</p>
+                      <p>If the raw dose is in mL, convert to the mapped category's <code class="bg-white/20 px-1 rounded">med_dose_unit</code> using the concentration of the <em>mapped</em> ingredient in <code class="bg-white/20 px-1 rounded">med_name</code> (see Step 5).</p>
                     </div>
                   </div>
 
@@ -1357,18 +1440,19 @@ const navigationSections = [
                   <div>
                     <h5 class="text-xl font-semibold mb-3">B. Trial Drugs & Placebos</h5>
                     <div class="bg-white/10 p-3 rounded-lg text-sm mb-3">
-                      <p class="mb-2">Map trial drugs to <code class="bg-white/20 px-1 rounded">trial_drug</code> as med_category. Leave <code class="bg-white/20 px-1 rounded">med_group</code> empty if with placebo.</p>
+                      <p class="mb-2">There is no <code class="bg-white/20 px-1 rounded">trial_drug</code> category. Map a trial drug to its active ingredient's <code class="bg-white/20 px-1 rounded">med_category</code> like any other row; <code class="bg-white/20 px-1 rounded">med_group</code> then follows from the CSV.</p>
                       <div class="bg-white/10 p-2 rounded text-xs mt-2">
-                        <p class="text-yellow-300 font-semibold mb-1">Example:</p>
-                        <p class="text-gray-300">"ACYCLOVIR OR PLACEBO CAPSULE (IRB 171591) 400 MG"</p>
-                        <p class="mt-1">→ med_category: <span class="text-green-300">trial_drug</span></p>
-                        <p>→ med_group: <span class="text-gray-400">None</span></p>
+                        <p class="text-yellow-300 font-semibold mb-1">Examples:</p>
+                        <p class="text-gray-300">"ACETAMINOPHEN (IRB 140122) 325 MG ORAL TAB"</p>
+                        <p class="mt-1">→ med_category: <span class="text-green-300">acetaminophen</span></p>
+                        <p class="mt-2 text-gray-300">"ACYCLOVIR OR PLACEBO CAPSULE (IRB 171591) 400 MG"</p>
+                        <p class="mt-1">→ the patient may have received placebo, so the active ingredient cannot be known: leave <code class="bg-white/20 px-1 rounded">med_category</code> unmapped (the raw string stays in <code class="bg-white/20 px-1 rounded">med_name</code>)</p>
                       </div>
                     </div>
                     <ul class="space-y-2 text-sm">
                       <li class="flex items-start">
                         <span class="text-blue-300 mr-2">•</span>
-                        <strong>Brand Names:</strong> Map to generic, preserve brand in notes
+                        <span><strong>Brand Names:</strong> Map to the generic active ingredient's <code class="bg-white/20 px-1 rounded">med_category</code>; the raw brand string is preserved in <code class="bg-white/20 px-1 rounded">med_name</code></span>
                       </li>
                     </ul>
                   </div>
@@ -1402,11 +1486,11 @@ const navigationSections = [
                       </li>
                       <li class="flex items-start">
                         <span class="text-green-300 mr-2">✓</span>
-                        Verify intermittent med filter excludes time-based units
+                        Verify every row's <code class="bg-white/20 px-1 rounded">med_dose_unit</code> equals its category's unit in the CSV
                       </li>
                       <li class="flex items-start">
                         <span class="text-green-300 mr-2">✓</span>
-                        Check combo drug rows have correct dose splits
+                        Check combination and trial drugs produce one row each, mapped to the explicit combo category or the primary active ingredient
                       </li>
                     </ul>
                   </div>
@@ -1446,19 +1530,19 @@ const navigationSections = [
                     <div class="space-y-3 text-sm">
                       <div class="bg-white/10 p-3 rounded-lg">
                         <p><strong class="text-blue-300">a. Race Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">race_name</code> → <code class="bg-white/20 px-1 rounded">race_category</code></p>
-                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/patient/clif_patient_race_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_patient_race_categories.csv</a>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/patient/clif_patient_race_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_patient_race_categories.csv</a>
                       </div>
                       <div class="bg-white/10 p-3 rounded-lg">
                         <p><strong class="text-blue-300">b. Sex Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">sex_name</code> → <code class="bg-white/20 px-1 rounded">sex_category</code></p>
-                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/patient/clif_patient_sex_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_patient_sex_categories.csv</a>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/patient/clif_patient_sex_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_patient_sex_categories.csv</a>
                       </div>
                       <div class="bg-white/10 p-3 rounded-lg">
                         <p><strong class="text-blue-300">c. Ethnicity Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">ethnicity_name</code> → <code class="bg-white/20 px-1 rounded">ethnicity_category</code></p>
-                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/patient/clif_patient_ethinicity_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_patient_ethinicity_categories.csv</a>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/patient/clif_patient_ethinicity_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_patient_ethinicity_categories.csv</a>
                       </div>
                       <div class="bg-white/10 p-3 rounded-lg">
                         <p><strong class="text-blue-300">d. Language Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">language_name</code> → <code class="bg-white/20 px-1 rounded">language_category</code></p>
-                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/patient/clif_patient_language_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_patient_language_categories.csv</a>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/patient/clif_patient_language_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_patient_language_categories.csv</a>
                       </div>
                     </div>
                   </div>
@@ -1466,7 +1550,7 @@ const navigationSections = [
                   <!-- Step 2 -->
                   <div>
                     <h5 class="text-xl font-semibold mb-3">Step 2: Filter to Inpatient Patients</h5>
-                    <p class="text-sm">Filter your patient data to include only patients whose hospitalization_id exists in your CLIF ADT table.</p>
+                    <p class="text-sm">Filter your patient data to include only patients whose <code class="bg-white/20 px-1 rounded">patient_id</code> appears in your CLIF hospitalization table. The patient table has no <code class="bg-white/20 px-1 rounded">hospitalization_id</code>.</p>
                   </div>
 
                   <!-- Step 3 -->
@@ -1474,13 +1558,14 @@ const navigationSections = [
                     <h5 class="text-xl font-semibold mb-3">Step 3: Apply Mappings & Handle Missing Values</h5>
                     <p class="text-sm mb-3">Join the mapping files to add category columns, then fill missing values:</p>
                     <div class="bg-white/10 p-3 rounded-lg text-sm">
-                      <p class="text-yellow-300 font-semibold mb-2">Fill missing/null values:</p>
+                      <p class="text-yellow-300 font-semibold mb-2">Fill missing/null values (every patient CSV has a lowercase <code class="bg-white/20 px-1 rounded">unknown</code> category):</p>
                       <ul class="space-y-1 text-xs">
-                        <li>• <code class="bg-white/20 px-1 rounded">race_category</code> → <span class="text-green-300">"Unknown"</span></li>
-                        <li>• <code class="bg-white/20 px-1 rounded">sex_category</code> → <span class="text-green-300">"Unknown"</span></li>
-                        <li>• <code class="bg-white/20 px-1 rounded">ethnicity_category</code> → <span class="text-green-300">"Unknown"</span></li>
-                        <li>• <code class="bg-white/20 px-1 rounded">language_category</code> → <span class="text-green-300">"Unknown or NA"</span></li>
+                        <li>• <code class="bg-white/20 px-1 rounded">race_category</code> → <span class="text-green-300">"unknown"</span></li>
+                        <li>• <code class="bg-white/20 px-1 rounded">sex_category</code> → <span class="text-green-300">"unknown"</span></li>
+                        <li>• <code class="bg-white/20 px-1 rounded">ethnicity_category</code> → <span class="text-green-300">"unknown"</span></li>
+                        <li>• <code class="bg-white/20 px-1 rounded">language_category</code> → <span class="text-green-300">"unknown"</span></li>
                       </ul>
+                      <p class="mt-2 text-xs text-gray-300">Optional: <code class="bg-white/20 px-1 rounded">language_interpreter</code> = 1 if the EHR flags the patient as needing a medical interpreter, else 0.</p>
                     </div>
                   </div>
                 </div>
@@ -1571,7 +1656,7 @@ const navigationSections = [
                     <div class="space-y-3 text-sm">
                       <div class="bg-white/10 p-3 rounded-lg">
                         <p><strong class="text-blue-300">Assessment Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">assessment_name</code> → <code class="bg-white/20 px-1 rounded">assessment_category</code></p>
-                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/patient_assessments/clif_patient_assessment_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_patient_assessment_categories.csv</a>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/patient_assessments/clif_patient_assessment_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_patient_assessment_categories.csv</a>
                       </div>
                     </div>
                   </div>
@@ -1651,9 +1736,9 @@ const navigationSections = [
                 <span class="text-xs text-gray-500">Click to flip</span>
               </h4>
               <ul class="text-sm text-gray-600 space-y-2">
-                <li>• CPT codes (HCPCS Level 1) only</li>
+                <li>• All CPT codes (HCPCS Level 1), professional and hospital billing</li>
                 <li>• ICD-10-PCS procedure codes</li>
-                <li>• Filter to relevant procedure codes</li>
+                <li>• Record code format, provider IDs and billed time</li>
               </ul>
             </div>
             <div class="flip-card-back bg-clif-burgundy rounded-lg shadow-md p-6 text-white overflow-y-auto">
@@ -1668,32 +1753,47 @@ const navigationSections = [
                     <ul class="space-y-2 text-sm">
                       <li>• Contains standardized procedural billing codes (HCPCS) for hospitalizations</li>
                       <li>• Only includes procedures that were <strong>performed/completed</strong> (not cancelled)</li>
-                      <li>• <strong>Includes:</strong> CPT codes billed by clinicians (HCPCS Level 1 - professional billing)</li>
-                      <li>• <strong>Excludes:</strong> Hospital billing codes (HCPCS Level 2 - products, supplies, services without CPT codes)</li>
+                      <li>• <strong>Includes:</strong> <strong>all</strong> CPT codes (HCPCS Level 1), both those billed by clinicians (professional billing) and those recorded in hospital billing encounters (e.g., PT/OT codes). Do not filter to a subset of codes.</li>
+                      <li>• <strong>Excludes:</strong> HCPCS Level 2 products, supplies and services that have no CPT code</li>
                       <li>• Also contains <strong>ICD-10-PCS</strong> procedure codes (used for DRG calculation, may appear in hospital_diagnosis)</li>
                     </ul>
                   </div>
 
                   <!-- Step 1 -->
                   <div>
-                    <h5 class="text-xl font-semibold mb-3">Step 1: Identify Relevant Procedure Codes</h5>
-                    <p class="text-sm mb-3">Identify the relevant procedure codes required for CLIF:</p>
+                    <h5 class="text-xl font-semibold mb-3">Step 1: Pull Every Procedure Code</h5>
+                    <p class="text-sm mb-3">Pull every completed procedure code from <strong>both</strong> professional billing and hospital billing sources. Unlike earlier versions, 3.0 does not restrict the table to a code list: ETL every CPT code and every ICD-10-PCS code.</p>
                     <div class="bg-white/10 p-3 rounded-lg text-sm">
-                      <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/patient_procedures/clif_patient_procedure_codes.csv" target="_blank" class="text-blue-300 hover:underline text-xs">→ clif_patient_procedure_codes.csv</a>
+                      <p class="text-xs mb-1">The mCIDE folder still carries a short reference list of procedure codes. In 3.0 it is <strong>not</strong> an inclusion filter.</p>
+                      <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/patient_procedures/clif_patient_procedure_codes.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs">→ clif_patient_procedure_codes.csv</a>
                     </div>
+                  </div>
+
+                  <!-- Step 2 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 2: Filter to Inpatient Hospitalizations</h5>
+                    <p class="text-sm">Filter to inpatient hospitalizations. Keep all codes for those hospitalizations.</p>
                   </div>
                 </div>
 
                 <div class="space-y-6">
-                  <!-- Step 2 -->
-                  <div>
-                    <h5 class="text-xl font-semibold mb-3">Step 2: Filter Data</h5>
-                    <p class="text-sm">Filter to inpatient hospitalizations and only include the relevant procedure codes identified in Step 1.</p>
-                  </div>
-
                   <!-- Step 3 -->
                   <div>
-                    <h5 class="text-xl font-semibold mb-3">Step 3: Final Cleanup</h5>
+                    <h5 class="text-xl font-semibold mb-3">Step 3: Populate the 3.0 Columns</h5>
+                    <p class="text-sm mb-3">The 3.0 table has six columns:</p>
+                    <div class="bg-white/10 p-3 rounded-lg text-xs space-y-1">
+                      <div>• <span class="font-mono text-yellow-300">hospitalization_id</span></div>
+                      <div>• <span class="font-mono text-yellow-300">billing_provider_id</span> — ID of the provider who billed the procedure</div>
+                      <div>• <span class="font-mono text-yellow-300">performing_provider_id</span> — ID of the provider who performed it</div>
+                      <div>• <span class="font-mono text-yellow-300">procedure_code</span> — the code itself (valid CPT, ICD-10-PCS or HCPCS code)</div>
+                      <div>• <span class="font-mono text-yellow-300">procedure_code_format</span> — one of <span class="font-mono">CPT</span>, <span class="font-mono">ICD10PCS</span>, <span class="font-mono">HCPCS</span></div>
+                      <div>• <span class="font-mono text-yellow-300">procedure_billed_dttm</span> — when the procedure was billed (may differ from when it was performed), in UTC</div>
+                    </div>
+                  </div>
+
+                  <!-- Step 4 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 4: Final Cleanup</h5>
                     <ul class="space-y-2 text-sm">
                       <li class="flex items-start">
                         <span class="text-green-300 mr-2">•</span>
@@ -1731,11 +1831,15 @@ const navigationSections = [
                     <ul class="space-y-2 text-sm">
                       <li class="flex items-start">
                         <span class="text-green-300 mr-2">✓</span>
-                        Verify procedure codes are valid CPT or ICD-10-PCS codes
+                        Verify procedure codes are valid CPT, ICD-10-PCS or HCPCS codes and that procedure_code_format matches each code
                       </li>
                       <li class="flex items-start">
                         <span class="text-green-300 mr-2">✓</span>
                         Ensure only completed procedures are included
+                      </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">✓</span>
+                        Confirm hospital billing CPT codes (e.g., PT/OT) are present, not only professional billing codes
                       </li>
                     </ul>
                   </div>
@@ -1755,10 +1859,10 @@ const navigationSections = [
               </h4>
               <ul class="text-sm text-gray-600 space-y-2">
                 <li>• Free text position standardization</li>
-                <li>• Bed angle/position exclusion</li>
-                <li>• Prone position detection</li>
-                <li>• Supine-type consolidation</li>
-                <li>• Missing label handling</li>
+                <li>• Only two values: prone / not_prone</li>
+                <li>• Prone (face-down) detection</li>
+                <li>• Every other position → not_prone</li>
+                <li>• Keep bed-angle rows (not_prone)</li>
               </ul>
             </div>
             <div class="flip-card-back bg-clif-burgundy rounded-lg shadow-md p-6 text-white overflow-y-auto">
@@ -1787,65 +1891,38 @@ const navigationSections = [
 
                   <!-- Step 3 -->
                   <div>
-                    <h5 class="text-xl font-semibold mb-3">Step 3: Separate Patient Position from Bed Position</h5>
-                    <p class="text-sm mb-3">Patient position and bed position are distinct concepts and should be treated as separate categories. <strong>Patient position</strong> refers to the patient's body orientation (prone, supine, sitting, etc.), while <strong>bed position</strong> refers to bed angles and configurations (Trendelenburg, 30 degrees, etc.). Only patient position should be mapped to position_category.</p>
+                    <h5 class="text-xl font-semibold mb-3">Step 3: Apply the Two-Value Rule</h5>
+                    <p class="text-sm mb-3"><code class="bg-white/20 px-1 rounded">position_category</code> has exactly two permitted values. The rule is mechanical: anything that documents the patient lying <strong>face-down</strong> (on their stomach) is <span class="font-mono text-green-300">prone</span>; <strong>every other</strong> documented position is <span class="font-mono text-blue-300">not_prone</span>.</p>
 
                     <div class="bg-white/10 p-3 rounded-lg text-sm mb-3">
-                        <p class="text-red-300 font-semibold mb-2">Bed Position (exclude):</p>
-                        <div class="text-xs space-y-1">
-                          <div>• Trendelenburg, Reverse Trendelenburg</div>
-                          <div>• Bed angle degrees (30°, 45°, etc.)</div>
-                          <div>• Head of bed elevation</div>
-                        </div>
+                      <p class="text-yellow-300 font-semibold mb-2">Keep bed-angle rows:</p>
+                      <p class="text-xs mb-2">Do not drop rows that only describe the bed (head-of-bed angle, Trendelenburg, which is the bed tilted head-down). They are documented positions and map to <span class="font-mono text-blue-300">not_prone</span>. The data dictionary example keeps "30 Degrees" as not_prone.</p>
                     </div>
 
                     <div class="bg-white/10 p-3 rounded-lg text-sm mb-3">
-                      <p class="text-yellow-300 font-semibold mb-2">Combined Records:</p>
-                      <p class="text-xs mb-2">Sometimes both are recorded together in a single field. Extract only the patient position component:</p>
-                      <div class="text-xs space-y-1 mb-3">
-                        <div>• "prone/trendelenburg" → extract <span class="text-green-300">"prone"</span></div>
-                        <div>• "supine, HOB 30 degrees" → extract <span class="text-green-300">"supine"</span></div>
-                        <div>• "semi-fowlers/reverse trendelenburg" → extract <span class="text-green-300">"semi-fowlers"</span></div>
+                      <p class="text-yellow-300 font-semibold mb-2">Combined records:</p>
+                      <p class="text-xs mb-2">When one field documents several things at once, the row is prone if any part of it documents face-down positioning:</p>
+                      <div class="text-xs space-y-1">
+                        <div>• "prone/trendelenburg" → <span class="text-green-300">prone</span></div>
+                        <div>• "supine, HOB 30 degrees" → <span class="text-blue-300">not_prone</span></div>
+                        <div>• "Supine–turn intolerant,microturn L;Supine–back" → <span class="text-blue-300">not_prone</span></div>
                       </div>
                     </div>
                   </div>
 
                   <!-- Step 4 -->
                   <div>
-                    <h5 class="text-xl font-semibold mb-3">Step 4: Identify Prone Positions</h5>
+                    <h5 class="text-xl font-semibold mb-3">Step 4: Derive position_category</h5>
                     <div class="bg-white/10 p-3 rounded-lg">
                       <div class="text-sm">
-                        <p class="mb-2 text-yellow-300 font-semibold">Prone detection using regex:</p>
+                        <p class="mb-2 text-yellow-300 font-semibold">Prone detection using regex, everything else not_prone:</p>
                         <div class="font-mono text-xs bg-white/10 p-2 rounded">
-mutate(prone = if_else(str_detect(position_name, <br/>
-  regex("prone", ignore_case = TRUE)), 1, 0))
+mutate(position_category = if_else(<br/>
+&nbsp;&nbsp;str_detect(position_name, regex("prone|face down|swimm", ignore_case = TRUE)),<br/>
+&nbsp;&nbsp;"prone", "not_prone"))
                         </div>
+                        <p class="text-xs mt-2">Review the distinct <code class="bg-white/20 px-1 rounded">position_name</code> values the regex matches before trusting it. A name that mentions prone but documents something else (e.g., a note that the patient could not tolerate proning) must be mapped by hand.</p>
                       </div>
-                    </div>
-                  </div>
-
-                  <!-- Step 5 -->
-                  <div>
-                    <h5 class="text-xl font-semibold mb-3">Step 5: Identify Supine-Type Positions</h5>
-                    <div class="bg-white/10 p-3 rounded-lg text-xs font-mono space-y-1">
-                      <div>supine = if_else(str_detect(position_name, regex("supin|supine", ignore_case = TRUE)), 1, NaN)</div>
-                      <div>fowlers = if_else(str_detect(position_name, regex("fowler", ignore_case = TRUE)), 1, NaN)</div>
-                      <div>sitting = if_else(str_detect(position_name, regex("sitting", ignore_case = TRUE)), 1, NaN)</div>
-                    </div>
-                  </div>
-
-                  <!-- Step 6 -->
-                  <div>
-                    <h5 class="text-xl font-semibold mb-3">Step 6: Consolidate Supine-Type</h5>
-                    <p class="text-sm mb-2">Group related positions (Fowlers, Sitting) as supine-type.</p>
-                  </div>
-
-                  <!-- Step 7 -->
-                  <div>
-                    <h5 class="text-xl font-semibold mb-3">Step 7: Handle Missing Labels</h5>
-                    <div class="bg-white/10 p-3 rounded-lg text-xs font-mono space-y-1">
-                      <div>supine = if_else(is.na(supine) & prone == 0, 1, supine)</div>
-                      <div>supine = if_else(is.na(supine) & prone == 1, 0, supine)</div>
                     </div>
                   </div>
                 </div>
@@ -1854,9 +1931,10 @@ mutate(prone = if_else(str_detect(position_name, <br/>
                   <!-- Position Categories -->
                   <div>
                     <h5 class="text-xl font-semibold mb-3">Position Categories</h5>
+                    <p class="text-xs mb-3">Example source names from the mCIDE file and the data dictionary:</p>
                     <div class="space-y-3 text-sm">
                       <div class="bg-white/10 p-3 rounded-lg">
-                        <p class="text-green-300 font-semibold mb-2">Prone Positions:</p>
+                        <p class="text-green-300 font-semibold mb-2">prone (lying face down):</p>
                         <div class="space-y-1 text-xs">
                           <div>• "Prone" / "Proning" / "Prone positioning"</div>
                           <div>• "Face Down"</div>
@@ -1867,19 +1945,23 @@ mutate(prone = if_else(str_detect(position_name, <br/>
                       </div>
 
                       <div class="bg-white/10 p-3 rounded-lg">
-                        <p class="text-blue-300 font-semibold mb-2">Supine-Type Positions:</p>
+                        <p class="text-blue-300 font-semibold mb-2">not_prone (any other position):</p>
                         <div class="space-y-1 text-xs">
-                          <div>• "Supine"</div>
-                          <div>• "Fowlers" / "Semi-Fowlers"</div>
-                          <div>• "Sitting"</div>
+                          <div>• "Supine" / "Supine–turn R" / "Supine–back"</div>
+                          <div>• "Semi-Fowler's" (head of bed raised partway)</div>
+                          <div>• "30 Degrees" and other bed angles</div>
+                          <div>• "Trendelenburg" / "Reverse Trendelenburg"</div>
                         </div>
                       </div>
                     </div>
+                    <div class="bg-white/10 p-3 rounded-lg text-xs mt-3">
+                      <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/position/clif_position_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline">→ clif_position_categories.csv</a>
+                    </div>
                   </div>
 
-                  <!-- Step 8 -->
+                  <!-- Step 5 -->
                   <div>
-                    <h5 class="text-xl font-semibold mb-3">Step 8: Final Cleanup</h5>
+                    <h5 class="text-xl font-semibold mb-3">Step 5: Final Cleanup</h5>
                     <ul class="space-y-2 text-sm">
                       <li class="flex items-start">
                         <span class="text-green-300 mr-2">•</span>
@@ -1902,11 +1984,11 @@ mutate(prone = if_else(str_detect(position_name, <br/>
                     <ul class="space-y-2 text-sm">
                       <li class="flex items-start">
                         <span class="text-green-300 mr-2">✓</span>
-                        Verify prone/supine are mutually exclusive (if prone=1, then supine=0)
+                        Verify position_category contains only "prone" and "not_prone" (no nulls where position_name is populated)
                       </li>
                       <li class="flex items-start">
                         <span class="text-green-300 mr-2">✓</span>
-                        Check position categories are correctly classified
+                        Spot-check the distinct position_name values mapped to prone
                       </li>
                     </ul>
                   </div>
@@ -1929,7 +2011,7 @@ mutate(prone = if_else(str_detect(position_name, <br/>
                 <li>• Map mode_name → mode_category</li>
                 <li>• Pivot flowsheets from long to wide</li>
                 <li>• Create tracheostomy variable</li>
-                <li>• Validate IMV vs Non-IMV settings</li>
+                <li>• Validate imv vs non-imv settings</li>
               </ul>
             </div>
             <div class="flip-card-back bg-clif-burgundy rounded-lg shadow-md p-6 text-white overflow-y-auto">
@@ -1945,11 +2027,11 @@ mutate(prone = if_else(str_detect(position_name, <br/>
                     <div class="space-y-3 text-sm">
                       <div class="bg-white/10 p-3 rounded-lg">
                         <p><strong class="text-blue-300">a. Device Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">device_name</code> → <code class="bg-white/20 px-1 rounded">device_category</code></p>
-                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/respiratory_support/clif_respiratory_support_device_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_respiratory_support_device_categories.csv</a>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/respiratory_support/clif_respiratory_support_device_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_respiratory_support_device_categories.csv</a>
                       </div>
                       <div class="bg-white/10 p-3 rounded-lg">
                         <p><strong class="text-blue-300">b. Mode Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">mode_name</code> → <code class="bg-white/20 px-1 rounded">mode_category</code></p>
-                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/respiratory_support/clif_respiratory_support_mode_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_respiratory_support_mode_categories.csv</a>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/respiratory_support/clif_respiratory_support_mode_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_respiratory_support_mode_categories.csv</a>
                       </div>
                       <div class="bg-white/10 p-3 rounded-lg mt-3">
                         <p><strong class="text-yellow-300">c. Handling Multiple Source Measures:</strong></p>
@@ -1996,7 +2078,7 @@ mutate(prone = if_else(str_detect(position_name, <br/>
                             </tbody>
                           </table>
                         </div>
-                        <p class="text-xs mt-3 mb-2"><strong>Pivot and coalesce to get final value:</strong></p>
+                        <p class="text-xs mt-3 mb-2"><strong>Pivot and coalesce to get final value</strong> (these are raw <code class="bg-white/20 px-1 rounded">device_name</code> strings; mapping to <code class="bg-white/20 px-1 rounded">device_category</code> happens in Step 3):</p>
                         <div class="overflow-x-auto">
                           <table class="text-xs w-full border-collapse">
                             <thead>
@@ -2012,23 +2094,23 @@ mutate(prone = if_else(str_detect(position_name, <br/>
                               <tr>
                                 <td class="border border-white/30 px-2 py-1">123</td>
                                 <td class="border border-white/30 px-2 py-1 text-gray-400 italic">NULL</td>
-                                <td class="border border-white/30 px-2 py-1 bg-green-900/30">Nasal Cannula</td>
-                                <td class="border border-white/30 px-2 py-1">Room Air</td>
-                                <td class="border border-white/30 px-2 py-1 font-semibold text-green-300">Nasal Cannula</td>
+                                <td class="border border-white/30 px-2 py-1 bg-green-900/30">Low Flow Nasal Cannula</td>
+                                <td class="border border-white/30 px-2 py-1">Room Air - No O2</td>
+                                <td class="border border-white/30 px-2 py-1 font-semibold text-green-300">Low Flow Nasal Cannula</td>
                               </tr>
                               <tr>
                                 <td class="border border-white/30 px-2 py-1">456</td>
-                                <td class="border border-white/30 px-2 py-1 bg-green-900/30">High Flow NC</td>
+                                <td class="border border-white/30 px-2 py-1 bg-green-900/30">High Flow Oxygen Therapy</td>
                                 <td class="border border-white/30 px-2 py-1 text-gray-400 italic">NULL</td>
-                                <td class="border border-white/30 px-2 py-1">High Flow NC</td>
-                                <td class="border border-white/30 px-2 py-1 font-semibold text-green-300">High Flow NC</td>
+                                <td class="border border-white/30 px-2 py-1">High Flow Oxygen Therapy</td>
+                                <td class="border border-white/30 px-2 py-1 font-semibold text-green-300">High Flow Oxygen Therapy</td>
                               </tr>
                               <tr>
                                 <td class="border border-white/30 px-2 py-1">789</td>
                                 <td class="border border-white/30 px-2 py-1 text-gray-400 italic">NULL</td>
                                 <td class="border border-white/30 px-2 py-1 text-gray-400 italic">NULL</td>
-                                <td class="border border-white/30 px-2 py-1 bg-green-900/30">Room Air</td>
-                                <td class="border border-white/30 px-2 py-1 font-semibold text-green-300">Room Air</td>
+                                <td class="border border-white/30 px-2 py-1 bg-green-900/30">Room Air - No O2</td>
+                                <td class="border border-white/30 px-2 py-1 font-semibold text-green-300">Room Air - No O2</td>
                               </tr>
                             </tbody>
                           </table>
@@ -2069,14 +2151,14 @@ wide_resp_df = resp_df.pivot(<br/>
                   <div>
                     <h5 class="text-xl font-semibold mb-3">Step 5: Create Tracheostomy Variable</h5>
                     <div class="bg-white/10 p-3 rounded-lg text-sm">
-                      <p class="mb-2">Create the <span class="font-mono text-yellow-300">tracheostomy</span> variable by:</p>
+                      <p class="mb-2">Create the <span class="font-mono text-yellow-300">tracheostomy</span> variable (0 = No, 1 = Yes) by:</p>
                       <ul class="text-xs space-y-1">
-                        <li>• Identifying any fields capturing presence of tracheostomy</li>
+                        <li>• Identifying any fields capturing presence of a tracheostomy (a breathing tube placed through the neck)</li>
                         <li>• Checking if device_name contains "trach"</li>
                       </ul>
                       <div class="mt-3 p-2 bg-white/10 rounded">
                         <p class="text-yellow-300 font-semibold text-xs mb-1">Special Case:</p>
-                        <p class="text-xs">If device_name contains "Vent" (e.g., "Trach Collar: Vent") AND other respiratory settings are observed, then device_category ≠ "Trach Collar"</p>
+                        <p class="text-xs">A tracheostomy does not by itself mean <span class="font-mono">trach_collar</span>. If device_name contains "Vent" (e.g., "Trach Collar: Vent", "Tracheostomy Ventilation") AND ventilator settings are recorded, the patient is on a ventilator through the tracheostomy: set <span class="font-mono">device_category = "imv"</span> and <span class="font-mono">tracheostomy = 1</span>. Use <span class="font-mono">trach_collar</span> only when oxygen flows through the tracheostomy without a ventilator.</p>
                       </div>
                     </div>
                   </div>
@@ -2084,26 +2166,29 @@ wide_resp_df = resp_df.pivot(<br/>
                   <!-- Step 6 -->
                   <div>
                     <h5 class="text-xl font-semibold mb-3">Step 6: Device Category Logic</h5>
+                    <p class="text-sm mb-3">The 3.0 <code class="bg-white/20 px-1 rounded">device_category</code> values are lower-case snake_case: <span class="font-mono text-xs">imv, nippv, cpap, hfnc, face_mask, trach_collar, t_piece, blow_by, nasal_cannula, room_air, other</span>. If you derive them with pattern rules, <strong>order matters</strong>: the specific rules must fire before the generic ones, otherwise "High Flow Nasal Cannula" lands in nasal_cannula, "CPAP Mask" in face_mask and "Non-Invasive Ventilation" in imv. Apply the first rule that matches, top to bottom:</p>
                     <div class="space-y-3 text-sm">
                       <div class="bg-white/10 p-3 rounded-lg">
-                        <p class="text-green-300 font-semibold mb-2">Invasive Mechanical Ventilation (IMV):</p>
-                        <div class="font-mono text-xs">
-grepl('Vent', device_name, ignore.case = TRUE) &<br/>
-&nbsp;&nbsp;!grepl('Venturi Mask', device_name, ignore.case = TRUE) ~ 'IMV'
+                        <p class="text-blue-300 font-semibold mb-2">Ordered rules (first match wins):</p>
+                        <div class="font-mono text-xs space-y-1">
+                          <div>1. bipap|nippv|niv|non-invasive|avaps → 'nippv'</div>
+                          <div>2. cpap → 'cpap'</div>
+                          <div>3. high flow|hfnc|optiflow → 'hfnc'</div>
+                          <div>4. mask|non-rebreather → 'face_mask'</div>
+                          <div>5. vent|endotracheal|intubat → 'imv'</div>
+                          <div>6. trach → 'trach_collar'</div>
+                          <div>7. t-piece|t piece → 't_piece'</div>
+                          <div>8. blow → 'blow_by'</div>
+                          <div>9. cannula|\bnc\b → 'nasal_cannula'</div>
+                          <div>10. room air|^ra$ → 'room_air'</div>
+                          <div>11. everything else → 'other'</div>
                         </div>
+                        <p class="text-xs mt-2">All patterns are case-insensitive. Rule 4 sits before rule 5 so a name like "Venturi Mask" is caught by "mask" and not by "vent". Rule 5 sits before rule 6 so "Tracheostomy Ventilation" is imv (see Step 5).</p>
                       </div>
 
                       <div class="bg-white/10 p-3 rounded-lg">
-                        <p class="text-blue-300 font-semibold mb-2">Other Categories:</p>
-                        <div class="font-mono text-xs space-y-1">
-                          <div>NIPPV|Bipap → 'NIPPV'</div>
-                          <div>CPAP → 'CPAP'</div>
-                          <div>High Flow NC → 'High Flow NC'</div>
-                          <div>Cannula → 'Nasal Cannula'</div>
-                          <div>Mask|Non-Rebreather → 'Face Mask'</div>
-                          <div>Room Air → 'Room Air'</div>
-                          <div>Trach Collar → 'Trach Collar'</div>
-                        </div>
+                        <p class="text-yellow-300 font-semibold mb-2">Test your rules against the CSV:</p>
+                        <p class="text-xs">The <code class="bg-white/20 px-1 rounded">device_name_examples</code> column of <code class="bg-white/20 px-1 rounded">clif_respiratory_support_device_categories.csv</code> is a ready-made test set, e.g. "Endotracheal Tube Ventilation" → imv, "CPAP Mask" → cpap, "Low Flow Nasal Cannula" → nasal_cannula, "NC 1-6L" → nasal_cannula, "Trach Collar with Aerosol" → trach_collar, "Room Air - No O2" → room_air. Prefer an explicit lookup table of your site's distinct device_name values over regex alone.</p>
                       </div>
                     </div>
                   </div>
@@ -2112,17 +2197,33 @@ grepl('Vent', device_name, ignore.case = TRUE) &<br/>
                 <div class="space-y-6">
                   <!-- Mode-Based Override -->
                   <div>
-                    <h5 class="text-xl font-semibold mb-3">Mode-Based Category Override</h5>
+                    <h5 class="text-xl font-semibold mb-3">Mode Category Mapping</h5>
                     <p class="text-sm leading-relaxed mb-3">
-                      Mode names can override device categories when conflicts exist:
+                      The 3.0 <code class="bg-white/20 px-1 rounded">mode_category</code> values, with example <code class="bg-white/20 px-1 rounded">mode_name</code> strings from the mCIDE file:
+                    </p>
+                    <div class="bg-white/10 p-3 rounded-lg mb-3">
+                      <div class="font-mono text-xs space-y-1">
+                        <div>"AC-VC", "Volume Assist Control" → 'acvc'</div>
+                        <div>"PC", "Pressure Control Ventilation" → 'pressure_control'</div>
+                        <div>"PRVC", "AutoFlow" → 'prvc'</div>
+                        <div>"SIMV-VC", "SIMV-PC" → 'simv'</div>
+                        <div>"PS", "CPAP Mode" → 'ps_or_cpap'</div>
+                        <div>"VS", "Volume Support Mode" → 'volume_support'</div>
+                        <div>"APRV", "Bilevel", "Bi-Vent" → 'aprv'</div>
+                        <div>"AVAPS", "iVAPS" → 'avaps'</div>
+                        <div>"PAV+", "NAVA" → 'other'</div>
+                      </div>
+                    </div>
+                    <p class="text-sm leading-relaxed mb-3">
+                      <strong>Mode-based device override:</strong> a mode name can override the device category when the two conflict, because a ventilator mode is only possible on a ventilator:
                     </p>
                     <div class="bg-white/10 p-3 rounded-lg">
                       <div class="font-mono text-xs space-y-1">
-                        <div>"SIMV - PC PS" → "IMV"</div>
-                        <div>"A/C Volume" → "IMV"</div>
-                        <div>"CPAP" → "CPAP"</div>
-                        <div>"NIV-PC" → "NIPPV"</div>
-                        <div>"BiPAP" → "NIPPV"</div>
+                        <div>"SIMV - PC PS" → 'imv'</div>
+                        <div>"A/C Volume" → 'imv'</div>
+                        <div>"CPAP" → 'cpap'</div>
+                        <div>"NIV-PC" → 'nippv'</div>
+                        <div>"BiPAP" → 'nippv'</div>
                       </div>
                     </div>
                   </div>
@@ -2132,112 +2233,103 @@ grepl('Vent', device_name, ignore.case = TRUE) &<br/>
                     <h5 class="text-xl font-semibold mb-3">Step 7: Unit Conversions</h5>
                     <p class="text-sm mb-3">If your source data uses different units for device settings, convert to CLIF standards:</p>
                     <div class="bg-white/10 p-3 rounded-lg text-xs">
-                      <p class="text-yellow-300 font-semibold mb-2">Example:</p>
-                      <p>minute_vent_obs is required to be in <strong>liters</strong>. If source data is in mL, convert accordingly (divide by 1000).</p>
+                      <p class="text-yellow-300 font-semibold mb-2">Units from the DDL:</p>
+                      <ul class="space-y-1">
+                        <li>• <span class="font-mono">fio2_set</span> is a <strong>fraction</strong> (e.g., 0.21, not 21). If source data is a percentage, divide by 100.</li>
+                        <li>• <span class="font-mono">minute_vent_obs</span> is in <strong>liters</strong>. If source data is in mL, divide by 1000.</li>
+                        <li>• <span class="font-mono">tidal_volume_set</span> / <span class="font-mono">tidal_volume_obs</span> are in <strong>mL</strong>.</li>
+                        <li>• Pressures (<span class="font-mono">peep_set</span>, <span class="font-mono">pressure_support_set</span>, <span class="font-mono">pressure_control_set</span>, <span class="font-mono">peak_inspiratory_pressure_set</span>, the <span class="font-mono">_pressure_obs</span> columns) are in <strong>cmH2O</strong>.</li>
+                        <li>• <span class="font-mono">inspiratory_time_set</span> is in <strong>seconds</strong>; <span class="font-mono">lpm_set</span> and <span class="font-mono">flow_rate_set</span> in <strong>liters per minute</strong>.</li>
+                      </ul>
                     </div>
                   </div>
 
                   <!-- Step 8 -->
                   <div>
-                    <h5 class="text-xl font-semibold mb-3">Step 8: Sanity Check for IMV vs Non-IMV</h5>
-                    <p class="text-sm mb-3">Verify device_category matches expected settings. If a hospitalization has respiratory settings typically used for IMV, device_category should not be a non-IMV device like Room Air, Face Mask, Nasal Cannula, etc.</p>
+                    <h5 class="text-xl font-semibold mb-3">Step 8: Sanity Check for imv vs Non-imv</h5>
+                    <p class="text-sm mb-3">Verify device_category matches expected settings. If a row carries ventilator settings (tidal_volume_set, resp_rate_set, pressure_control_set and so on), device_category should not be a non-ventilator device like room_air, face_mask or nasal_cannula.</p>
 
                     <div class="bg-white/10 p-3 rounded-lg mb-3">
-                      <p class="text-yellow-300 font-semibold text-sm mb-1">Note: Expect NAs outside IMV/NIPPV</p>
-                      <p class="text-xs">Most respiratory_support columns (mode_category and the ventilator settings/observations) only apply when <code class="bg-white/20 px-1 rounded">device_category</code> is <strong>IMV</strong> or <strong>NIPPV</strong>. For all other device categories, these columns will be mostly NA — this is expected and not a data quality problem. Simpler oxygen devices typically only populate <code class="bg-white/20 px-1 rounded">fio2_set</code> and/or <code class="bg-white/20 px-1 rounded">lpm_set</code> (see the tables below).</p>
+                      <p class="text-yellow-300 font-semibold text-sm mb-1">Note: Expect NAs outside imv / nippv / cpap</p>
+                      <p class="text-xs">The dictionary sets <code class="bg-white/20 px-1 rounded">mode_category</code> to <strong>ps_or_cpap</strong> for nippv and cpap, and to NA for hfnc, face_mask, trach_collar and nasal_cannula; only imv rows carry the full range of modes. Likewise most ventilator settings and observations only apply to imv and nippv. For simpler oxygen devices these columns will be mostly NA — this is expected and not a data quality problem. Those devices typically only populate <code class="bg-white/20 px-1 rounded">fio2_set</code> and/or <code class="bg-white/20 px-1 rounded">lpm_set</code> (see the tables below).</p>
                     </div>
 
                     <div class="bg-white/10 p-3 rounded-lg mb-3">
-                      <p class="text-green-300 font-semibold mb-2 text-sm">Non-IMV Expected Settings:</p> 
+                      <p class="text-green-300 font-semibold mb-2 text-sm">Non-imv Required Settings (from the data dictionary):</p>
                       <div class="overflow-x-auto">
                         <table class="text-xs w-full">
                           <thead>
                             <tr class="border-b border-white/20">
-                              <th class="text-left py-1 pr-2">Device</th>
-                              <th class="text-left py-1 pr-2">Mode</th>
-                              <th class="text-left py-1 pr-2">Req Settings</th>
-                              <th class="text-left py-1">Req Obs</th>
+                              <th class="text-left py-1 pr-2">device_category</th>
+                              <th class="text-left py-1 pr-2">mode_category</th>
+                              <th class="text-left py-1">Required settings</th>
                             </tr>
                           </thead>
                           <tbody class="text-xs">
                             <tr class="border-b border-white/10">
-                              <td class="py-1 pr-2">CPAP</td>
-                              <td class="py-1 pr-2">PS/CPAP</td>
-                              <td class="py-1 pr-2">fio2_set, peep_set</td>
-                              <td class="py-1">tidal_volume_obs, resp_rate_obs</td>
+                              <td class="py-1 pr-2">nippv</td>
+                              <td class="py-1 pr-2">ps_or_cpap</td>
+                              <td class="py-1">fio2_set, peep_set, and either pressure_support_set OR peak_inspiratory_pressure_set (IPAP)</td>
                             </tr>
                             <tr class="border-b border-white/10">
-                              <td class="py-1 pr-2">Face Mask</td>
-                              <td class="py-1 pr-2">-</td>
-                              <td class="py-1 pr-2">lpm_set, fio2_set (possible)</td>
-                              <td class="py-1">-</td>
+                              <td class="py-1 pr-2">cpap</td>
+                              <td class="py-1 pr-2">ps_or_cpap</td>
+                              <td class="py-1">fio2_set, peep_set</td>
                             </tr>
                             <tr class="border-b border-white/10">
-                              <td class="py-1 pr-2">High Flow NC</td>
-                              <td class="py-1 pr-2">-</td>
-                              <td class="py-1 pr-2">fio2_set, lpm_set</td>
-                              <td class="py-1">-</td>
+                              <td class="py-1 pr-2">hfnc</td>
+                              <td class="py-1 pr-2">NA</td>
+                              <td class="py-1">fio2_set, lpm_set</td>
                             </tr>
                             <tr class="border-b border-white/10">
-                              <td class="py-1 pr-2">Nasal Cannula</td>
-                              <td class="py-1 pr-2">-</td>
-                              <td class="py-1 pr-2">lpm_set</td>
-                              <td class="py-1">-</td>
+                              <td class="py-1 pr-2">face_mask</td>
+                              <td class="py-1 pr-2">NA</td>
+                              <td class="py-1">lpm_set (fio2_set possible)</td>
                             </tr>
                             <tr class="border-b border-white/10">
-                              <td class="py-1 pr-2">NIPPV</td>
-                              <td class="py-1 pr-2">Vol Support</td>
-                              <td class="py-1 pr-2">fio2, peep, tv, rr, insp_time</td>
-                              <td class="py-1">-</td>
+                              <td class="py-1 pr-2">trach_collar</td>
+                              <td class="py-1 pr-2">NA</td>
+                              <td class="py-1">lpm_set</td>
                             </tr>
                             <tr class="border-b border-white/10">
-                              <td class="py-1 pr-2">NIPPV</td>
-                              <td class="py-1 pr-2">PS/CPAP</td>
-                              <td class="py-1 pr-2">fio2, peep, pip, rr, insp_time</td>
-                              <td class="py-1">-</td>
+                              <td class="py-1 pr-2">nasal_cannula</td>
+                              <td class="py-1 pr-2">NA</td>
+                              <td class="py-1">lpm_set</td>
                             </tr>
-                            <tr class="border-b border-white/10">
-                              <td class="py-1 pr-2">Room Air</td>
-                              <td class="py-1 pr-2">-</td>
-                              <td class="py-1 pr-2">No settings</td>
-                              <td class="py-1">No obs</td>
+                            <tr class="border-b border-white/10 italic text-white/70">
+                              <td class="py-1 pr-2">room_air</td>
+                              <td class="py-1 pr-2">NA</td>
+                              <td class="py-1">suggestion: no settings (dictionary is silent)</td>
                             </tr>
-                            <tr class="border-b border-white/10">
-                              <td class="py-1 pr-2">Trach Collar</td>
-                              <td class="py-1 pr-2">-</td>
-                              <td class="py-1 pr-2">lpm_set, fio2_set</td>
-                              <td class="py-1">No obs</td>
+                            <tr class="border-b border-white/10 italic text-white/70">
+                              <td class="py-1 pr-2">t_piece</td>
+                              <td class="py-1 pr-2">NA</td>
+                              <td class="py-1">suggestion: lpm_set or fio2_set (dictionary is silent)</td>
                             </tr>
-                            <tr class="border-b border-white/10">
-                              <td class="py-1 pr-2">T-Piece</td>
-                              <td class="py-1 pr-2">-</td>
-                              <td class="py-1 pr-2">lpm_set or fio2_set (either one)</td>
-                              <td class="py-1">No obs</td>
-                            </tr>
-                            <tr>
-                              <td class="py-1 pr-2">Blow By</td>
-                              <td class="py-1 pr-2">-</td>
-                              <td class="py-1 pr-2">lpm_set or fio2_set (either one)</td>
-                              <td class="py-1">No obs</td>
+                            <tr class="italic text-white/70">
+                              <td class="py-1 pr-2">blow_by</td>
+                              <td class="py-1 pr-2">NA</td>
+                              <td class="py-1">suggestion: lpm_set or fio2_set (dictionary is silent)</td>
                             </tr>
                           </tbody>
                         </table>
                       </div>
+                      <p class="text-xs mt-2">The dictionary does not require any <code class="bg-white/20 px-1 rounded">_obs</code> column for these devices. Italic rows (room_air, t_piece, blow_by) are not covered by the dictionary; treat them as suggestions, not checks. IPAP is the inspiratory pressure setting on a non-invasive ventilator and is stored in peak_inspiratory_pressure_set.</p>
                     </div>
 
                     <div class="bg-white/10 p-3 rounded-lg">
-                      <p class="text-blue-300 font-semibold mb-2 text-sm">IMV Expected Settings by Mode (device_category == "IMV"):</p>
+                      <p class="text-blue-300 font-semibold mb-2 text-sm">imv Expected Settings by Mode (device_category == "imv"):</p>
                       <div class="overflow-x-auto">
                         <table class="text-xs w-full">
                           <thead>
                             <tr class="border-b border-white/20">
                               <th class="text-left py-1 pr-1">ventilator_setting</th>
-                              <th class="text-center py-1 px-1">AC-VC</th>
-                              <th class="text-center py-1 px-1">PS/CPAP</th>
-                              <th class="text-center py-1 px-1">PC</th>
-                              <th class="text-center py-1 px-1">PRVC</th>
-                              <th class="text-center py-1 px-1">SIMV</th>
-                              <th class="text-center py-1 px-1">Vol Sup</th>
+                              <th class="text-center py-1 px-1">acvc</th>
+                              <th class="text-center py-1 px-1">ps_or_cpap</th>
+                              <th class="text-center py-1 px-1">pressure_control</th>
+                              <th class="text-center py-1 px-1">prvc</th>
+                              <th class="text-center py-1 px-1">simv</th>
+                              <th class="text-center py-1 px-1">volume_support</th>
                             </tr>
                           </thead>
                           <tbody class="text-xs">
@@ -2316,7 +2408,7 @@ grepl('Vent', device_name, ignore.case = TRUE) &<br/>
                           </tbody>
                         </table>
                       </div>
-                      <p class="text-xs mt-2"><span class="text-green-300">E</span> = Expected | <span class="text-yellow-300">P</span> = Possible | Empty = Not applicable</p>
+                      <p class="text-xs mt-2"><span class="text-green-300">E</span> = Expected | <span class="text-yellow-300">P</span> = Possible | Empty = Not applicable. The dictionary gives no expected-settings column for aprv, avaps or other.</p>
                     </div>
                   </div>
 
@@ -2349,7 +2441,7 @@ grepl('Vent', device_name, ignore.case = TRUE) &<br/>
                       </li>
                       <li class="flex items-start">
                         <span class="text-green-300 mr-2">✓</span>
-                        Check IMV rows have expected observations populated
+                        Check imv rows have the expected settings for their mode_category populated
                       </li>
                       <li class="flex items-start">
                         <span class="text-green-300 mr-2">✓</span>
@@ -2376,6 +2468,7 @@ grepl('Vent', device_name, ignore.case = TRUE) &<br/>
                 <li>• Handle BP split (sbp/dbp extraction)</li>
                 <li>• Standardize units (temp, spo2, weight, height)</li>
                 <li>• Specify invasive vs non-invasive in meas_site_name</li>
+                <li>• Optional measured_dttm (bedside time)</li>
               </ul>
             </div>
             <div class="flip-card-back bg-clif-burgundy rounded-lg shadow-md p-6 text-white overflow-y-auto">
@@ -2391,7 +2484,7 @@ grepl('Vent', device_name, ignore.case = TRUE) &<br/>
                     <div class="space-y-3 text-sm">
                       <div class="bg-white/10 p-3 rounded-lg">
                         <p><strong class="text-blue-300">Vital Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">vital_name</code> → <code class="bg-white/20 px-1 rounded">vital_category</code></p>
-                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/vitals/clif_vitals_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_vitals_categories.csv</a>
+                        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/vitals/clif_vitals_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_vitals_categories.csv</a>
                       </div>
                     </div>
                   </div>
@@ -2411,22 +2504,28 @@ grepl('Vent', device_name, ignore.case = TRUE) &<br/>
                         <div><strong>sbp:</strong> Systolic blood pressure. Can include both invasive (arterial line) and non-invasive (cuff) measurements; specify in meas_site_name.</div>
                         <div><strong>dbp:</strong> Diastolic blood pressure. Can include both invasive (arterial line) and non-invasive (cuff) measurements; specify in meas_site_name.</div>
                         <div><strong>map:</strong> Mean arterial pressure. Can include both invasive and non-invasive. Source type should be indicated in meas_site_name.</div>
+                        <div><strong>intracranial_pressure</strong> (new in 3.0): pressure inside the skull, read from an invasive monitor (e.g., an external ventricular drain). Unit: mmHg. Example names: "ICP", "Intracranial Pressure", "EVD ICP".</div>
+                        <div><strong>pulse_pressure_variation</strong> (new in 3.0): percent swing in pulse pressure over a breathing cycle, computed from an arterial line waveform. Unit: %. Example names: "PPV", "Pulse Pressure Variation", "Arterial PPV".</div>
                       </div>
                     </div>
+                    <p class="text-xs mt-3">The 11 permitted <code class="bg-white/20 px-1 rounded">vital_category</code> values are: <span class="font-mono">dbp, heart_rate, height_cm, intracranial_pressure, map, pulse_pressure_variation, respiratory_rate, sbp, spo2, temp_c, weight_kg</span>.</p>
                   </div>
 
                   <!-- Step 4 -->
                   <div>
                     <h5 class="text-xl font-semibold mb-3">Step 4: Blood Pressure Split</h5>
-                    <p class="text-sm mb-3">If blood pressure is not available separately as sbp and dbp, split to create the respective vital_category:</p>
+                    <p class="text-sm mb-3">There is no combined "blood pressure" vital_category. If your source stores blood pressure as one "120/80" string, the raw row maps to <strong>two</strong> output rows: one with vital_category <span class="font-mono text-green-300">sbp</span> (the number before the slash) and one with <span class="font-mono text-green-300">dbp</span> (the number after it). Filter on the raw <code class="bg-white/20 px-1 rounded">vital_name</code>, not on a category:</p>
                     <div class="bg-white/10 p-3 rounded-lg">
                       <div class="font-mono text-xs">
-bp_df = filtered_df.filter(pl.col("vital_category") == "blood_pressure")<br/>
-bp_df_pd['bp_split'] = bp_df_pd['vital_value'].str.strip().str.split('/')<br/>
-bp_df_pd['sbp'] = bp_df_pd['bp_split'].str[0]<br/>
-bp_df_pd['dbp'] = bp_df_pd['bp_split'].str[1]
+# raw rows whose vital_name holds a combined "sbp/dbp" string<br/>
+bp_df = raw_df.filter(pl.col("vital_name") == "BLOOD PRESSURE")  # your site's raw name<br/>
+bp_df = bp_df.with_columns(pl.col("vital_value").str.strip_chars().str.split("/").alias("bp_split"))<br/>
+sbp_df = bp_df.with_columns(vital_category=pl.lit("sbp"), vital_value=pl.col("bp_split").list.get(0).cast(pl.Float64))<br/>
+dbp_df = bp_df.with_columns(vital_category=pl.lit("dbp"), vital_value=pl.col("bp_split").list.get(1).cast(pl.Float64))<br/>
+vitals_df = pl.concat([other_rows, sbp_df.drop("bp_split"), dbp_df.drop("bp_split")])
                       </div>
                     </div>
+                    <p class="text-xs mt-2">If the source already reports systolic and diastolic as separate rows (e.g., "BLOOD PRESSURE (SYSTOLIC)"), map each directly and skip the split. Mean arterial pressure stays its own <span class="font-mono">map</span> row.</p>
                   </div>
                 </div>
 
@@ -2460,9 +2559,17 @@ bp_df_pd['dbp'] = bp_df_pd['bp_split'].str[1]
                             <td class="py-1 pr-3">height_cm</td>
                             <td class="py-1">Centimeters (cm)</td>
                           </tr>
-                          <tr>
+                          <tr class="border-b border-white/10">
                             <td class="py-1 pr-3">weight_kg</td>
                             <td class="py-1">Kilograms (kg)</td>
+                          </tr>
+                          <tr class="border-b border-white/10">
+                            <td class="py-1 pr-3">intracranial_pressure</td>
+                            <td class="py-1">mmHg</td>
+                          </tr>
+                          <tr>
+                            <td class="py-1 pr-3">pulse_pressure_variation</td>
+                            <td class="py-1">Percent (%)</td>
                           </tr>
                         </tbody>
                       </table>
@@ -2471,7 +2578,16 @@ bp_df_pd['dbp'] = bp_df_pd['bp_split'].str[1]
 
                   <!-- Step 6 -->
                   <div>
-                    <h5 class="text-xl font-semibold mb-3">Step 6: Final Cleanup</h5>
+                    <h5 class="text-xl font-semibold mb-3">Step 6: Optional measured_dttm</h5>
+                    <div class="bg-white/10 p-3 rounded-lg text-xs">
+                      <p class="mb-2">3.0 adds an optional <span class="font-mono text-yellow-300">measured_dttm</span> column: when the vital was actually measured at the bedside. It can differ from <span class="font-mono">recorded_dttm</span>, the time the value was entered into the EHR (e.g., vitals written on paper and entered later at shift change).</p>
+                      <p>If your source does not distinguish the two timestamps, omit the column or leave it null. Like every datetime, it must be timezone-aware and in UTC.</p>
+                    </div>
+                  </div>
+
+                  <!-- Step 7 -->
+                  <div>
+                    <h5 class="text-xl font-semibold mb-3">Step 7: Final Cleanup</h5>
                     <ul class="space-y-2 text-sm">
                       <li class="flex items-start">
                         <span class="text-green-300 mr-2">•</span>
@@ -2500,6 +2616,10 @@ bp_df_pd['dbp'] = bp_df_pd['bp_split'].str[1]
                         <span class="text-green-300 mr-2">✓</span>
                         Validate meas_site_name populated for invasive measurements
                       </li>
+                      <li class="flex items-start">
+                        <span class="text-green-300 mr-2">✓</span>
+                        Confirm vital_category only holds the 11 permitted values
+                      </li>
                     </ul>
                   </div>
                 </div>
@@ -2517,9 +2637,9 @@ bp_df_pd['dbp'] = bp_df_pd['bp_split'].str[1]
 
       <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg mb-8">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <a href="/tools#clifpy-validator" class="bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-            <h4 class="font-medium text-clif-burgundy mb-2">CLIFpy Validator</h4>
-            <p class="text-sm text-gray-600">Python package with data validation features</p>
+          <a href="/tools#clifpy-python-package" class="bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+            <h4 class="font-medium text-clif-burgundy mb-2">clifpy Python Package</h4>
+            <p class="text-sm text-gray-600">Python package with built-in data validation</p>
           </a>
           <a href="/tools#clif-assistant" class="bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow">
             <h4 class="font-medium text-clif-burgundy mb-2">CLIF Assistant</h4>
@@ -2714,4 +2834,3 @@ bp_df_pd['dbp'] = bp_df_pd['bp_split'].str[1]
       });
     }
   });
-</script>
