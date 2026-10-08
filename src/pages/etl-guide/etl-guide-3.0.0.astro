@@ -1020,8 +1020,9 @@ const navigationSections = [
                       <p class="mt-2 text-xs text-gray-300">Also applies to bicarbonate, creatinine, glucose, hematocrit, lactate, and sodium. Fingerstick glucometer glucose has its own panel: <code class="bg-white/20 px-1 rounded">glucose</code> + <code class="bg-white/20 px-1 rounded">fingerstick</code>, not <code class="bg-white/20 px-1 rounded">poc</code>.</p>
                     </div>
                     <div class="bg-blue-500/20 p-3 rounded-lg border border-blue-400/30 text-sm mt-3">
-                      <p class="text-blue-300 font-semibold mb-2">Results that came off a blood gas analyzer (bedside handheld or lab machine) — <code class="bg-white/20 px-1 rounded">blood_gas</code> or <code class="bg-white/20 px-1 rounded">poc</code>?</p>
-                      <p class="mb-2"><strong>The panel follows the analyte, not the order it arrived in.</strong> Once you have mapped the result to its <code class="bg-white/20 px-1 rounded">lab_category</code>, look it up here:</p>
+                      <p class="text-blue-300 font-semibold mb-2">Blood gas results — <code class="bg-white/20 px-1 rounded">blood_gas</code> or <code class="bg-white/20 px-1 rounded">poc</code>?</p>
+                      <p class="mb-2"><strong>Step 1: where was it run?</strong> If the result came from a point-of-care device (a bedside analyzer; the order or result name usually says POC, iSTAT, or bedside), <strong>every analyte on it is <code class="bg-white/20 px-1 rounded">poc</code></strong> — pH, pO2, pCO2, sO2 and HCO3⁻ included. <code class="bg-white/20 px-1 rounded">lab_category</code> is unchanged (<code class="bg-white/20 px-1 rounded">ph_arterial</code>, <code class="bg-white/20 px-1 rounded">po2_arterial</code>, …); only the panel differs.</p>
+                      <p class="mb-2"><strong>Step 2: central-lab gas analyzer.</strong> Otherwise, once you have mapped the result to its <code class="bg-white/20 px-1 rounded">lab_category</code>, look it up here:</p>
                       <table class="w-full text-xs border-collapse mb-2">
                         <thead>
                           <tr class="border-b border-white/30">
@@ -1048,14 +1049,14 @@ const navigationSections = [
                           </tr>
                         </tbody>
                       </table>
-                      <p class="text-xs text-gray-300"><strong>Ignore the order name.</strong> An order called "POC blood gas" or "ABG with electrolytes" still splits this way — one order can produce rows in several panels. Mixed-venous gases use <code class="bg-white/20 px-1 rounded">mixed_venous_blood_gas</code> instead of <code class="bg-white/20 px-1 rounded">blood_gas</code>. Finger-stick glucometer glucose is <code class="bg-white/20 px-1 rounded">fingerstick</code>, not <code class="bg-white/20 px-1 rounded">poc</code>. <em>Why:</em> the sodium, potassium, etc. on a gas are measured by the analyzer's electrode method rather than the central chemistry assay, so they are kept separable as <code class="bg-white/20 px-1 rounded">poc</code> even when the gas is run in the core lab.</p>
+                      <p class="text-xs text-gray-300">One central-lab gas order can therefore produce rows in several panels. Mixed-venous gases from the central lab use <code class="bg-white/20 px-1 rounded">mixed_venous_blood_gas</code> instead of <code class="bg-white/20 px-1 rounded">blood_gas</code>. Finger-stick glucometer glucose is <code class="bg-white/20 px-1 rounded">fingerstick</code>, not <code class="bg-white/20 px-1 rounded">poc</code>. <em>Why:</em> POC results can differ in accuracy from the central lab, so anything from a bedside device is kept separable as <code class="bg-white/20 px-1 rounded">poc</code>; and even on a central-lab gas analyzer the sodium, potassium, etc. are measured by an electrode method rather than the chemistry assay, so those stay <code class="bg-white/20 px-1 rounded">poc</code> too. (Decision confirmed by the labs working group, Oct 2026.)</p>
                     </div>
                     <div class="bg-white/10 p-3 rounded-lg text-sm mt-3">
                       <p class="mb-2">Bicarbonate vs. CO2:</p>
                       <ul class="space-y-1 text-xs">
                         <li>• BMP bicarbonate (often reported as "CO2") → <code class="bg-white/20 px-1 rounded">bicarbonate</code> + <code class="bg-white/20 px-1 rounded">bmp</code></li>
-                        <li>• HCO3⁻ reported alongside gas values (pH, pCO2, pO2) on any analyzer, bedside or core lab → <code class="bg-white/20 px-1 rounded">bicarbonate</code> + <code class="bg-white/20 px-1 rounded">blood_gas</code></li>
-                        <li>• Bicarbonate from a POC chemistry cartridge that reports no gas values → <code class="bg-white/20 px-1 rounded">bicarbonate</code> + <code class="bg-white/20 px-1 rounded">poc</code></li>
+                        <li>• HCO3⁻ from a point-of-care device (bedside analyzer) → <code class="bg-white/20 px-1 rounded">bicarbonate</code> + <code class="bg-white/20 px-1 rounded">poc</code></li>
+                        <li>• HCO3⁻ reported alongside gas values on a central-lab gas analyzer → <code class="bg-white/20 px-1 rounded">bicarbonate</code> + <code class="bg-white/20 px-1 rounded">blood_gas</code></li>
                         <li>• pCO2 → <code class="bg-white/20 px-1 rounded">pco2_arterial</code> / <code class="bg-white/20 px-1 rounded">pco2_venous</code>, never bicarbonate</li>
                         <li>• Total CO2 (tCO2, reported by some gas analyzers) → do not map</li>
                         <li>• Co-oximetry "hemoglobin/saturation" off a gas → do not map (not <code class="bg-white/20 px-1 rounded">hemoglobin</code>; it disagrees with CBC hemoglobin)</li>
