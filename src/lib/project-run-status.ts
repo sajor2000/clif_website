@@ -46,3 +46,11 @@ export function parseConference(value: unknown, existing: unknown = null): strin
   if (v && v === existing) return v;
   return null;
 }
+
+/** Labels for project_runs.purpose, shown on the tracker, in Slack posts and in the export. */
+export const PURPOSE_LABELS: Record<string, string> = {
+  grant: 'Grant',
+  conference: 'Conference / Abstract',
+  journal: 'Journal / Manuscript',
+  other: 'Exploratory / Other',
+};

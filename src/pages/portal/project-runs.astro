@@ -7,7 +7,7 @@ import { getDb } from '../../lib/turso';
 import { todayInConsortiumTz } from '../../lib/project-run-deadline';
 import { PROJECT_RUN_VERSIONS } from '../../data/clif-tables';
 import RequiredTablesPicker from '../../components/portal/RequiredTablesPicker.astro';
-import { CURRENT_ATS, STATUS_BADGE, toProjectRunStatus } from '../../lib/project-run-status';
+import { CURRENT_ATS, PURPOSE_LABELS, STATUS_BADGE, toProjectRunStatus } from '../../lib/project-run-status';
 
 const user = Astro.locals.user!;
 const isAdmin = user.role === 'admin';
@@ -83,12 +83,6 @@ function isDeadlinePassed(dateStr: string): boolean {
   return new Date(dateStr + 'T23:59:59') < new Date();
 }
 
-const PURPOSE_LABELS: Record<string, string> = {
-  grant: 'Grant',
-  conference: 'Conference / Abstract',
-  journal: 'Journal / Manuscript',
-  other: 'Exploratory / Other',
-};
 const PURPOSE_OPTIONS = Object.entries(PURPOSE_LABELS).map(([value, label]) => ({ value, label }));
 const CLIF_VERSIONS = PROJECT_RUN_VERSIONS;
 
@@ -287,6 +281,25 @@ const today = todayInConsortiumTz();
 
         {/* Run tabs share one panel; JS filters the cards (see showRuns). */}
         <div id="panel-runs" class="tab-panel hidden">
+        {/* Excel download (two sheets: runs, and a run x site matrix) of the
+            Active Runs or All Projects tab. showRuns() shows it on those tabs
+            and points the link at the tab's filter. */}
+        {projects.length > 0 && (
+          <div id="runs-export" class="hidden text-right mb-4">
+            <a
+              id="runs-export-link"
+              href="/api/project-runs/export?filter=active"
+              download
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 dark:border-neutral-600 dark:text-gray-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-clif-burgundy/50"
+              title="Download the runs on this tab and each site's status as an Excel workbook"
+            >
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 4v12m0 0l-4-4m4 4l4-4" />
+              </svg>
+              Download Excel
+            </a>
+          </div>
+        )}
         {projects.length === 0 ? (
           <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6 text-center text-gray-500 dark:text-gray-400 text-sm">
             No project run requests yet.
@@ -674,6 +687,8 @@ const today = todayInConsortiumTz();
       var panelCreate = document.getElementById('panel-create');
       var panelRuns = document.getElementById('panel-runs');
       var emptyMsg = document.getElementById('runs-empty-msg');
+      var exportWrap = document.getElementById('runs-export');
+      var exportLink = document.getElementById('runs-export-link');
       var atsTag = document.getElementById('pr-ats') ? document.getElementById('pr-ats').value : '';
 
       function setActiveTab(btn) {
@@ -709,6 +724,9 @@ const today = todayInConsortiumTz();
         setActiveTab(btn);
         if (panelCreate) panelCreate.classList.add('hidden');
         if (panelRuns) panelRuns.classList.remove('hidden');
+        var exportable = filter === 'active' || filter === 'all';
+        if (exportWrap) exportWrap.classList.toggle('hidden', !exportable);
+        if (exportLink && exportable) exportLink.href = '/api/project-runs/export?filter=' + filter;
         var visible = 0;
         document.querySelectorAll('.project-card').forEach(function (c) {
           var show = matches(c, filter);

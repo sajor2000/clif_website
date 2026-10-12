@@ -11,14 +11,7 @@
  * unset every call is a no-op, so local dev and previews stay silent.
  */
 
-// Mirrors the labels shown on /portal/project-runs. Kept local so lib/ doesn't
-// have to import from a page module.
-const PURPOSE_LABELS: Record<string, string> = {
-  grant: 'Grant',
-  conference: 'Conference / Abstract',
-  journal: 'Journal / Manuscript',
-  other: 'Exploratory / Other',
-};
+import { PURPOSE_LABELS } from './project-run-status';
 
 export interface ProjectRunSlackInput {
   projectNumber: number | null;
