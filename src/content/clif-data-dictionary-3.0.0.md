@@ -326,18 +326,22 @@ The respiratory support table is a wider longitudinal table that captures simult
 
 - `device_category` == "imv"
 
-| ventilator_setting        | acvc | ps_or_cpap | pressure_control | prvc | simv | volume_support |
-|--------------------------|:----------------------------:|:---------------------:|:---------------:|:-------------------------------:|:----:|:-------------:|
-| fio2_set                 | E                            | E                     | E               | E                               | E    | E             |
-| tidal_volume_set         | E                            |                       |                 | E                               | P    | E             |
-| resp_rate_set            | E                            |                       | E               | E                               | E    |               |
-| pressure_control_set     |                              |                       | E               |                                 | P    |               |
-| pressure_support_set     |                              | E                     |                 |                                 | E    |               |
-| flow_rate_set            | P                            |                       |                 |                                 | P    |               |
-| inspiratory_time_set     | P                            |                       | E               |                                 | P    |               |
-| peep_set                 | E                            | E                     | E               | E                               | E    | E             |
+| ventilator_setting            | acvc | ps_or_cpap | pressure_control | prvc | simv | volume_support | aprv |
+|-------------------------------|:----:|:----------:|:----------------:|:----:|:----:|:--------------:|:----:|
+| fio2_set                      | E    | E          | E                | E    | E    | E              | E    |
+| tidal_volume_set              | E    |            |                  | E    | P    | E              |      |
+| resp_rate_set                 | E    |            | E                | E    | E    |                |      |
+| pressure_control_set          |      |            | E                |      | P    |                |      |
+| pressure_support_set          |      | E          |                  |      | E    |                |      |
+| flow_rate_set                 | P    |            |                  |      | P    |                |      |
+| peak_inspiratory_pressure_set |      |            |                  |      |      |                | E    |
+| inspiratory_time_set          | P    |            | E                |      | P    |                | E    |
+| expiratory_time_set           |      |            |                  |      |      |                | E    |
+| peep_set                      | E    | E          | E                | E    | E    | E              | E    |
 
 E = Expected ventilator setting for the mode, P = possible ventilator setting for the mode.
+
+**APRV** settings map as follows: P-high → `peak_inspiratory_pressure_set`, P-low → `peep_set`, T-high → `inspiratory_time_set`, T-low → `expiratory_time_set`.
 
 - `device_category` == "nippv"
 

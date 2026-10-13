@@ -23,7 +23,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       >
         <h2 class="text-2xl font-bold text-clif-burgundy mb-4">
           Version 3.0.0
-          <span class="text-lg font-normal text-gray-600">(Last updated: Sep 30, 2026)</span>
+          <span class="text-lg font-normal text-gray-600">(Last updated: Oct 13, 2026)</span>
           <span class="ml-2 bg-gray-500 text-white text-sm px-3 py-1 rounded-full"
             >Coming Soon</span
           >
@@ -149,7 +149,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            New Fields (23 fields added) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Jun 29, 2026</span>
+            New Fields (24 fields added) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Oct 13, 2026</span>
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -173,6 +173,13 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">expiratory_time_set</td>
+                  <td class="px-4 py-3 text-sm">respiratory_support</td>
+                  <td class="px-4 py-3 text-sm">Expiratory time set (in seconds). Added so APRV T-low has a home. APRV settings map as P-high &rarr; <code>peak_inspiratory_pressure_set</code>, P-low &rarr; <code>peep_set</code>, T-high &rarr; <code>inspiratory_time_set</code>, T-low &rarr; <code>expiratory_time_set</code>.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/201" class="text-clif-burgundy hover:underline">Issue #201</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Oct 13, 2026</td>
+                </tr>
                 <tr>
                   <td class="px-4 py-3 text-sm font-mono">potassium_bath</td>
                   <td class="px-4 py-3 text-sm">renal_replacement_therapy</td>
@@ -563,7 +570,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            Revisions (20 updates) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Sep 11, 2026</span>
+            Revisions (21 updates) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Oct 13, 2026</span>
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -584,6 +591,12 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">respiratory_support (aprv settings)</td>
+                  <td class="px-4 py-3 text-sm">The <code>device_category == "imv"</code> expected-settings table gained an <code>aprv</code> column plus <code>peak_inspiratory_pressure_set</code> and <code>expiratory_time_set</code> rows. <code>peak_inspiratory_pressure_set</code> no longer says it is unused in invasive modes: it carries P-high for APRV (and IPAP for NIPPV) and is not used in other invasive modes. The <code>peep_set</code> and <code>inspiratory_time_set</code> descriptions now note that they hold P-low and T-high for APRV.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/201" class="text-clif-burgundy hover:underline">Issue #201</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Oct 13, 2026</td>
+                </tr>
                 <tr>
                   <td class="px-4 py-3 text-sm font-mono">labs.lab_category (bicarbonate)</td>
                   <td class="px-4 py-3 text-sm">Reworked how CO2-family results map. The draft 3.0 <code>co2</code> category (point-of-care total CO2) is dropped and is not a permissible <code>lab_category</code>. <code>bicarbonate</code> now permits <code>blood_gas/bmp/poc</code>: HCO3⁻ off an ABG or VBG maps to <code>bicarbonate</code> with <code>lab_order_category = blood_gas</code> (previously BMP-only, "not from ABG/VBG"), a POC HCO3⁻ maps with <code>poc</code>, and a metabolic-panel "CO2" is still bicarbonate. Do <strong>not</strong> map total CO2 (tCO2, e.g. iSTAT TCO2) at all, and map pCO2 to <code>pco2_arterial</code> / <code>pco2_venous</code>, never to bicarbonate. The ambiguous name examples <code>CO2</code>, <code>CARBON DIOXIDE</code>, and <code>POC CO2</code> were removed from the mCIDE for the same reason.</td>
