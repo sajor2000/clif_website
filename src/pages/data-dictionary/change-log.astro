@@ -23,7 +23,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       >
         <h2 class="text-2xl font-bold text-clif-burgundy mb-4">
           Version 3.0.0
-          <span class="text-lg font-normal text-gray-600">(Last updated: Oct 13, 2026)</span>
+          <span class="text-lg font-normal text-gray-600">(Last updated: Oct 21, 2026)</span>
           <span class="ml-2 bg-gray-500 text-white text-sm px-3 py-1 rounded-full"
             >Coming Soon</span
           >
@@ -92,8 +92,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   <td class="px-4 py-3 text-sm text-gray-500">May 6, 2026</td>
                 </tr>
                 <tr>
-                  <td class="px-4 py-3 text-sm font-mono">radiology</td>
-                  <td class="px-4 py-3 text-sm">Concept table capturing one row per imaging study — order/capture/report timestamps, the source order name, four mCIDE-controlled columns (modality, region, IV contrast, location), and the final report narrative.</td>
+                  <td class="px-4 py-3 text-sm font-mono">chest_xray</td>
+                  <td class="px-4 py-3 text-sm">Concept table, first proposed as <code>radiology</code> with one row per imaging study. Now one row per chest x-ray image — order/capture/report timestamps, the source order name, three mCIDE-controlled columns (modality, region, location), site-local paths to the original DICOM and the processed image, and the final report narrative.</td>
                   <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/140" class="text-clif-burgundy hover:underline">Issue #140</a></td>
                   <td class="px-4 py-3 text-sm text-gray-500">May 7, 2026</td>
                 </tr>
@@ -149,7 +149,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            New Fields (24 fields added) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Oct 13, 2026</span>
+            New Fields (26 fields added) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Oct 21, 2026</span>
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -173,6 +173,20 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">source_dicom_path</td>
+                  <td class="px-4 py-3 text-sm">chest_xray</td>
+                  <td class="px-4 py-3 text-sm">Site-local path to the original DICOM file for the image, after PHI removal. Lets a project re-read pixel data and the full header on demand. Never shared across sites.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/140" class="text-clif-burgundy hover:underline">Issue #140</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Oct 21, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">processed_image_path</td>
+                  <td class="px-4 py-3 text-sm">chest_xray</td>
+                  <td class="px-4 py-3 text-sm">Site-local path to the processed JPEG produced from <code>source_dicom_path</code> by the standardized CLIF preprocessing pipeline (bit-inversion correction, histogram equalization). Output mirrors the input folder structure.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/140" class="text-clif-burgundy hover:underline">Issue #140</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Oct 21, 2026</td>
+                </tr>
                 <tr>
                   <td class="px-4 py-3 text-sm font-mono">expiratory_time_set</td>
                   <td class="px-4 py-3 text-sm">respiratory_support</td>
@@ -570,7 +584,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            Revisions (21 updates) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Oct 13, 2026</span>
+            Revisions (22 updates) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Oct 21, 2026</span>
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -591,6 +605,12 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">radiology &rarr; chest_xray</td>
+                  <td class="px-4 py-3 text-sm">The concept <code>radiology</code> table is renamed <code>chest_xray</code> and re-scoped from one row per imaging study to <strong>one row per chest x-ray image</strong>, so it can serve as the CLIF metadata index for DICOM imaging. The team chose a chest-x-ray-specific table over a general imaging table for now. Columns lose the <code>radiology_</code> prefix (<code>accession</code>, <code>order_dttm</code>, <code>capture_dttm</code>, <code>report_dttm</code>, <code>order_name</code>, <code>modality_category</code>, <code>region_category</code>, <code>location_category</code>, <code>report_text</code>); <code>iv_contrast_category</code> is dropped, while modality and region are kept even though they are constant for chest radiographs. Rows within an accession are distinguished by <code>source_dicom_path</code>, and the study-level columns repeat across the images of a study. <code>capture_dttm</code> is now per image (DICOM acquisition time). Only original acquisitions get rows: post-processed derivatives (e.g., "clear read", bone suppression) and non-image objects stored as DICOM (e.g., PDFs) are dropped by the ETL. Linking to the EHR stays at the patient level. A standardized ETL and preprocessing pipeline will be shared across sites.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/140" class="text-clif-burgundy hover:underline">Issue #140</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Oct 21, 2026</td>
+                </tr>
                 <tr>
                   <td class="px-4 py-3 text-sm font-mono">respiratory_support (aprv settings)</td>
                   <td class="px-4 py-3 text-sm">The <code>device_category == "imv"</code> expected-settings table gained an <code>aprv</code> column plus <code>peak_inspiratory_pressure_set</code> and <code>expiratory_time_set</code> rows. <code>peak_inspiratory_pressure_set</code> no longer says it is unused in invasive modes: it carries P-high for APRV (and IPAP for NIPPV) and is not used in other invasive modes. The <code>peep_set</code> and <code>inspiratory_time_set</code> descriptions now note that they hold P-low and T-high for APRV.</td>

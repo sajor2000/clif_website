@@ -774,25 +774,31 @@ The `scores` table is a long-form (one score event per row) longitudinal table t
 | SYS-003  | 55443              | 2023-07-12 06:00:00+00:00 UTC  | 0.275       |
 
 
-## radiology
+## chest_xray
 
-The `radiology` table captures one row per imaging study, including order/capture/report timestamps, the modality and anatomic region, IV contrast status, where the study was performed, and the final report narrative. This is the long-form imaging analog to the lab and microbiology tables — each row is a single completed study with a single accession.
+The `chest_xray` table is the image-level metadata table that links DICOM chest radiographs to the CLIF EHR tables. It captures **one row per image**: the study it belongs to (accession, order/report timestamps, order name, modality, region, where it was taken, report narrative), the per-image acquisition time from the DICOM header, and site-local paths to both the original DICOM file and the processed image produced by the standardized CLIF preprocessing pipeline. Pixel data are never stored in CLIF — the table is the index that lets a federated project load the images for a cohort from the paths.
+
+The table is deliberately chest x-ray specific rather than a general imaging table. `modality_category` and `region_category` are therefore constant in practice (`xr`, `chest`) and are kept so the schema lines up with a future general imaging table.
 
 **Notes**:
 
-- One row per `radiology_accession`. The accession is the natural key within a site.
-- All four `*_category` fields are mCIDE-controlled. See the [3.0 radiology mCIDE folder](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/tree/3.0/mCIDE/radiology) for the canonical permissible values.
-- `radiology_report_text` is free text; sites that cannot share narratives may leave it null and join to a separately-governed text store via `radiology_accession`.
-- `radiology_capture_dttm` (image acquisition) and `radiology_report_dttm` (final read) typically differ — the capture time is what should be used for clinical-event timing.
+- One row per image file. A study with two views produces two rows that share the accession and the study-level columns (`order_dttm`, `report_dttm`, `order_name`, the three `*_category` fields, `report_text`). Rows within an accession are distinguished by `source_dicom_path`.
+- The study-level identifiers (patient, study, accession) sit at different levels of the DICOM file hierarchy — the ETL flattens that hierarchy so each image row carries all of them.
+- Linking to the EHR is at the patient level via `patient_id`. Join to `hospitalization` / `adt` on `patient_id` and `capture_dttm` to place an image within an encounter.
+- `capture_dttm` is per image (DICOM acquisition date/time) and is the timestamp to use for clinical-event timing. `report_dttm` (final read) is study-level and typically later.
+- **Only original acquisitions are included.** Post-processed derivative images (e.g., "clear read", bone suppression) and non-image objects mistakenly stored as DICOM (e.g., PDFs of patient information) are dropped by the ETL and do not get rows. Where the header does not flag a derivative, a classifier is used to identify and remove it.
+- `source_dicom_path` points at the original DICOM after PHI removal. `processed_image_path` points at the output of the standardized preprocessing pipeline (bit inversion correction, histogram equalization, saved as JPEG), which mirrors the input folder structure. Both paths are site-local — they are never shared across sites, and any nesting structure is acceptable as long as each path resolves directly to a file.
+- All `*_category` fields are mCIDE-controlled. See the [3.0 chest_xray mCIDE folder](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/tree/3.0/mCIDE/chest_xray) for the canonical permissible values. `location_category` here (department vs portable) is a different list from `adt.location_category`.
+- `report_text` is free text; sites that cannot share narratives may leave it null and join to a separately-governed text store via `accession`.
 
 **Example**:
 
-| patient_id | radiology_accession | radiology_order_dttm          | radiology_capture_dttm        | radiology_report_dttm         | radiology_order_name        | radiology_modality_category | radiology_region_category | iv_contrast_category | radiology_location_category | radiology_report_text                              |
-|------------|---------------------|-------------------------------|-------------------------------|-------------------------------|-----------------------------|-----------------------------|---------------------------|----------------------|-----------------------------|----------------------------------------------------|
-| 132424     | ACC0001             | 2024-11-01 08:00:00+00:00 UTC | 2024-11-01 08:25:00+00:00 UTC | 2024-11-01 09:10:00+00:00 UTC | XR CHEST PORTABLE 1V        | xr                          | chest                     | not_applicable       | portable                    | No acute cardiopulmonary process. ETT in good position. |
-| 132424     | ACC0002             | 2024-11-02 14:00:00+00:00 UTC | 2024-11-02 14:35:00+00:00 UTC | 2024-11-02 16:00:00+00:00 UTC | CT CHEST W CONTRAST         | ct                          | chest                     | with_contrast        | radiology                   | No PE. Small bilateral pleural effusions.          |
-| 132384     | ACC0003             | 2024-11-03 09:30:00+00:00 UTC | 2024-11-03 10:05:00+00:00 UTC | 2024-11-03 12:45:00+00:00 UTC | MR BRAIN W AND WO CONTRAST  | mr                          | brain                     | with_and_without_contrast | radiology               | No acute infarct. Stable chronic microvascular disease. |
-| 542367     | ACC0004             | 2024-11-04 06:15:00+00:00 UTC | 2024-11-04 06:40:00+00:00 UTC | 2024-11-04 07:30:00+00:00 UTC | US ABDOMEN COMPLETE         | us                          | abdomen                   | not_applicable       | radiology                   | Hepatomegaly. No biliary dilation.                 |
+| patient_id | source_dicom_path                         | processed_image_path                        | accession | order_dttm                    | capture_dttm                  | report_dttm                   | order_name            | modality_category | region_category | location_category | report_text                                             |
+|------------|-------------------------------------------|---------------------------------------------|-----------|-------------------------------|-------------------------------|-------------------------------|-----------------------|-------------------|-----------------|-------------------|---------------------------------------------------------|
+| 132424     | /data/dicom/132424/ACC0001/s1/img1001.dcm | /data/cxr_jpg/132424/ACC0001/s1/img1001.jpg | ACC0001   | 2024-11-01 08:00:00+00:00 UTC | 2024-11-01 08:25:00+00:00 UTC | 2024-11-01 09:10:00+00:00 UTC | XR CHEST PORTABLE 1V  | xr                | chest           | portable          | No acute cardiopulmonary process. ETT in good position. |
+| 132424     | /data/dicom/132424/ACC0002/s1/img2001.dcm | /data/cxr_jpg/132424/ACC0002/s1/img2001.jpg | ACC0002   | 2024-11-03 13:00:00+00:00 UTC | 2024-11-03 13:40:00+00:00 UTC | 2024-11-03 15:20:00+00:00 UTC | XR CHEST PA AND LAT   | xr                | chest           | radiology         | Improved aeration. No pneumothorax.                     |
+| 132424     | /data/dicom/132424/ACC0002/s2/img2002.dcm | /data/cxr_jpg/132424/ACC0002/s2/img2002.jpg | ACC0002   | 2024-11-03 13:00:00+00:00 UTC | 2024-11-03 13:41:00+00:00 UTC | 2024-11-03 15:20:00+00:00 UTC | XR CHEST PA AND LAT   | xr                | chest           | radiology         | Improved aeration. No pneumothorax.                     |
+| 132384     | /data/dicom/132384/ACC0003/s1/img3001.dcm | /data/cxr_jpg/132384/ACC0003/s1/img3001.jpg | ACC0003   | 2024-11-04 06:15:00+00:00 UTC | 2024-11-04 06:40:00+00:00 UTC | 2024-11-04 07:30:00+00:00 UTC | XR CHEST PORTABLE 1V  | xr                | chest           | portable          | Right lower lobe opacity, new from prior.               |
 
 
 ## line

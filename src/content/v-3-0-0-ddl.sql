@@ -548,20 +548,21 @@ CREATE TABLE scores (
 );
 
 -- -----------------------------------------------------
--- Table: radiology
+-- Table: chest_xray
 -- -----------------------------------------------------
-CREATE TABLE radiology (
-  patient_id VARCHAR COMMENT '{"description": "Unique identifier for each patient. Foreign key to patient.patient_id.", "permissible": "No restriction"}',
-  radiology_accession VARCHAR COMMENT '{"description": "Accession number for the radiology study. Unique per study within a site.", "permissible": "No restriction"}',
-  radiology_order_dttm DATETIME COMMENT '{"description": "Date and time the radiology study was ordered. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
-  radiology_capture_dttm DATETIME COMMENT '{"description": "Date and time the images were acquired. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
-  radiology_report_dttm DATETIME COMMENT '{"description": "Date and time the final radiology report was signed. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
-  radiology_order_name VARCHAR COMMENT '{"description": "Source-system exam name as ordered (e.g., CT CHEST W CONTRAST).", "permissible": "No restriction"}',
-  radiology_modality_category VARCHAR COMMENT '{"description": "Imaging modality. Maps source-system modality codes to a standardized list.", "permissible": "[List of radiology modality categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/radiology/clif_radiology_modality_categories.csv)"}',
-  radiology_region_category VARCHAR COMMENT '{"description": "Anatomic region imaged. Maps order-name fragments to a standardized list.", "permissible": "[List of radiology region categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/radiology/clif_radiology_region_categories.csv)"}',
-  iv_contrast_category VARCHAR COMMENT '{"description": "IV contrast administration status for the study.", "permissible": "[List of IV contrast categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/radiology/clif_radiology_iv_contrast_categories.csv)"}',
-  radiology_location_category VARCHAR COMMENT '{"description": "Where the study was performed (department vs portable/bedside).", "permissible": "[List of radiology location categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/radiology/clif_radiology_location_categories.csv)"}',
-  radiology_report_text VARCHAR COMMENT '{"description": "Final radiology report narrative text.", "permissible": "No restriction"}',
+CREATE TABLE chest_xray (
+  patient_id VARCHAR COMMENT '{"description": "Unique identifier for each patient. Foreign key to patient.patient_id. Images are linked to the EHR at the patient level.", "permissible": "No restriction"}',
+  source_dicom_path VARCHAR COMMENT '{"description": "Site-local path to the original DICOM file for this image, after PHI removal. Used to re-read pixel data and the full header on demand.", "permissible": "No restriction"}',
+  processed_image_path VARCHAR COMMENT '{"description": "Site-local path to the processed image (JPEG) produced by the standardized CLIF preprocessing pipeline from source_dicom_path. Mirrors the DICOM folder structure.", "permissible": "No restriction"}',
+  accession VARCHAR COMMENT '{"description": "Accession number for the chest x-ray study. Unique per study within a site and repeated on every image row that belongs to the study.", "permissible": "No restriction"}',
+  order_dttm DATETIME COMMENT '{"description": "Date and time the chest x-ray study was ordered. Study-level, repeated on every image row. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
+  capture_dttm DATETIME COMMENT '{"description": "Date and time this image was acquired, from the DICOM acquisition date and time. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
+  report_dttm DATETIME COMMENT '{"description": "Date and time the final radiology report was signed. Study-level, repeated on every image row. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
+  order_name VARCHAR COMMENT '{"description": "Source-system exam name as ordered (e.g., XR CHEST PORTABLE 1V).", "permissible": "No restriction"}',
+  modality_category VARCHAR COMMENT '{"description": "Imaging modality. Maps source-system modality codes to a standardized list. Always xr for this table, kept for consistency with a future general imaging table.", "permissible": "[List of chest x-ray modality categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/chest_xray/clif_chest_xray_modality_categories.csv)"}',
+  region_category VARCHAR COMMENT '{"description": "Anatomic region imaged. Maps order-name fragments to a standardized list. Always chest for this table, kept for consistency with a future general imaging table.", "permissible": "[List of chest x-ray region categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/chest_xray/clif_chest_xray_region_categories.csv)"}',
+  location_category VARCHAR COMMENT '{"description": "Where the study was performed (department vs portable/bedside).", "permissible": "[List of chest x-ray location categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/chest_xray/clif_chest_xray_location_categories.csv)"}',
+  report_text VARCHAR COMMENT '{"description": "Final radiology report narrative text. Study-level, repeated on every image row.", "permissible": "No restriction"}',
   FOREIGN KEY (patient_id) REFERENCES patient(patient_id)
 );
 
