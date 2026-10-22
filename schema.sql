@@ -356,3 +356,15 @@ CREATE INDEX IF NOT EXISTS idx_mcide_names_norm ON mcide_mapping_names(norm);
 CREATE INDEX IF NOT EXISTS idx_mcide_names_field_cat ON mcide_mapping_names(field_key, category);
 CREATE VIRTUAL TABLE IF NOT EXISTS mcide_mapping_names_fts
   USING fts5(name, content='mcide_mapping_names', content_rowid='id', tokenize='trigram');
+
+-- Deadline reminders for project runs (migrations/026). One row per
+-- (run, deadline, window) once the "deadline in a week" / "deadline tomorrow"
+-- Slack post has gone out, so the daily /api/project-runs/deadline-reminder
+-- job never repeats itself; a moved deadline gets its own reminders.
+CREATE TABLE IF NOT EXISTS project_run_reminders (
+  project_id TEXT NOT NULL REFERENCES project_runs(id) ON DELETE CASCADE,
+  deadline TEXT NOT NULL,
+  days_before INTEGER NOT NULL,  -- the reminder window this row satisfies: 7 or 1
+  sent_at TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (project_id, deadline, days_before)
+);

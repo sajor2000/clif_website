@@ -32,3 +32,15 @@ export function isValidDate(value: string): boolean {
 export function isDeadlineAhead(deadline: string, now: Date = new Date()): boolean {
   return deadline >= todayInConsortiumTz(now);
 }
+
+const DAY_MS = 86_400_000;
+
+/** The YYYY-MM-DD date `days` days after `date` (negative counts back). */
+export function addDays(date: string, days: number): string {
+  return new Date(Date.parse(date + 'T00:00:00Z') + days * DAY_MS).toISOString().slice(0, 10);
+}
+
+/** Whole days from `from` to `to`, both YYYY-MM-DD; negative once `to` is behind. */
+export function daysBetween(from: string, to: string): number {
+  return Math.round((Date.parse(to + 'T00:00:00Z') - Date.parse(from + 'T00:00:00Z')) / DAY_MS);
+}

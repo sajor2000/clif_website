@@ -110,6 +110,90 @@ export function buildProjectRunSlackMessage(r: ProjectRunSlackInput): Record<str
   };
 }
 
+export interface DeadlineReminderSlackInput {
+  projectNumber: number | null;
+  runNumber?: number | null;
+  title: string;
+  /** YYYY-MM-DD Box upload deadline. */
+  deadline: string;
+  /** Whole days from today (Chicago) to the deadline; 0 = due today. */
+  daysLeft: number;
+  conference?: string | null;
+  requestedBy: string | null;
+  /** Sites that have ticked "has run". */
+  ranCount: number;
+  /** Sites owed the run: every site minus those marked N/A. */
+  applicableCount: number;
+  naCount: number;
+  /** Names of the sites that have neither run it nor been marked N/A. */
+  pendingSites: string[];
+  projectUrl: string;
+}
+
+function dueIn(daysLeft: number): string {
+  if (daysLeft <= 0) return 'today';
+  if (daysLeft === 1) return 'tomorrow';
+  return `in ${daysLeft} days`;
+}
+
+/**
+ * Block Kit payload reminding #run_requests that a run's Box upload deadline
+ * is close: progress so far and the sites that still owe it. Posted a week
+ * out and a day out by /api/project-runs/deadline-reminder.
+ */
+export function buildDeadlineReminderSlackMessage(r: DeadlineReminderSlackInput): Record<string, unknown> {
+  const numPrefix = r.projectNumber != null ? `${runLabel(r.projectNumber, r.runNumber)}. ` : '';
+  const heading = `Box upload deadline ${dueIn(r.daysLeft)}`;
+  const pendingList = r.pendingSites.map(escapeSlack).join(', ');
+  // Distinct from the :bell: on a new-run announcement: an hourglass a week
+  // out, a rotating light when it's down to the last day.
+  const icon = r.daysLeft <= 1 ? ':rotating_light:' : ':hourglass_flowing_sand:';
+
+  const blocks: Record<string, unknown>[] = [
+    {
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: `<!channel> ${icon} *${heading}*\n<${r.projectUrl}|${escapeSlack(numPrefix + r.title)}>`,
+      },
+    },
+    {
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text:
+          `*${r.ranCount} / ${r.applicableCount} sites* have run this` +
+          (r.naCount > 0 ? ` (${r.naCount} N/A)` : '') +
+          `\n*Still pending (${r.pendingSites.length}):* ${pendingList}`,
+      },
+    },
+  ];
+
+  const bits: string[] = [`Box upload deadline *${formatDeadline(r.deadline)}*`];
+  if (r.conference) bits.push(`*${escapeSlack(r.conference)}*`);
+  if (r.requestedBy) bits.push(`Requested by *${escapeSlack(r.requestedBy)}*`);
+  blocks.push({ type: 'context', elements: [{ type: 'mrkdwn', text: bits.join('  ·  ') }] });
+
+  // Same single exit as the announcement: the tracker is where the "has run"
+  // checkbox lives.
+  blocks.push({
+    type: 'actions',
+    elements: [
+      {
+        type: 'button',
+        text: { type: 'plain_text', text: 'View in portal' },
+        url: r.projectUrl,
+        style: 'primary',
+      },
+    ],
+  });
+
+  return {
+    text: `${heading}: ${r.title} — ${r.ranCount}/${r.applicableCount} sites have run it, ${r.pendingSites.length} pending`,
+    blocks,
+  };
+}
+
 /** POST a payload to the configured webhook. Never throws. */
 export async function postSlackMessage(
   payload: Record<string, unknown>,
