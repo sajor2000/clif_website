@@ -259,10 +259,17 @@ CREATE TABLE IF NOT EXISTS project_runs (
   results_deadline TEXT,
   conference TEXT,
   status TEXT NOT NULL DEFAULT 'open', -- upcoming | open | closed
+  -- A project is identified by project_number; each run of it is one row.
+  -- run_number is 1 for the original run, 2 for the first rerun, and so on
+  -- (see migrations/013-project-number.sql and 025-project-runs-rerun.sql).
+  project_number INTEGER,
+  run_number INTEGER NOT NULL DEFAULT 1,
   created_by TEXT NOT NULL REFERENCES users(id),
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_project_runs_number ON project_runs(project_number, run_number);
 
 CREATE TABLE IF NOT EXISTS project_run_sites (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),

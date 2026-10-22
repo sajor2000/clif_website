@@ -7,7 +7,7 @@ import { getDb } from '../../lib/turso';
 import { todayInConsortiumTz } from '../../lib/project-run-deadline';
 import { PROJECT_RUN_VERSIONS } from '../../data/clif-tables';
 import RequiredTablesPicker from '../../components/portal/RequiredTablesPicker.astro';
-import { CURRENT_ATS, PURPOSE_LABELS, STATUS_BADGE, toProjectRunStatus } from '../../lib/project-run-status';
+import { CURRENT_ATS, PURPOSE_LABELS, STATUS_BADGE, isRerun, rerunLabel, toProjectRunStatus } from '../../lib/project-run-status';
 
 const user = Astro.locals.user!;
 const isAdmin = user.role === 'admin';
@@ -30,8 +30,9 @@ try {
           -- Order by the number members actually see on the card, newest first.
           -- Sorting by status first made closing a run yank it to the top; using
           -- created_at meant the sequence could disagree with the shown number.
-          -- Rows predating project_number (NULL) fall to the bottom.
-          ORDER BY p.project_number IS NULL, p.project_number DESC, p.created_at DESC`,
+          -- Rows predating project_number (NULL) fall to the bottom. A project's
+          -- reruns share its number and sit together, newest run first.
+          ORDER BY p.project_number IS NULL, p.project_number DESC, p.run_number DESC, p.created_at DESC`,
     args: [],
   });
   projects = projectsResult.rows as any[];
@@ -98,6 +99,59 @@ function parseTables(value: unknown): string[] {
 }
 // Earliest deadline a new or reopened run may have (the server enforces it too).
 const today = todayInConsortiumTz();
+
+// Reruns. A project's runs share its project_number; run_number counts them.
+// The rows arrive newest run first, so the first row seen per project is its
+// latest run. Only that run can be rerun (keeping the sequence linear), only
+// once it has actually run (not upcoming), and only by its creator or an admin.
+const latestRun = new Map<number, { id: string; run_number: number }>();
+for (const p of projects) {
+  if (p.project_number == null) continue;
+  const n = Number(p.project_number);
+  if (!latestRun.has(n)) latestRun.set(n, { id: p.id as string, run_number: Number(p.run_number ?? 1) });
+}
+// One card per project: its latest run, with earlier runs collapsed inside it
+// under "Previous runs". Rows arrive sorted by project then run (newest
+// first), so consecutive rows with the same number form a group. Rows without
+// a number are their own group.
+const groups: any[][] = [];
+for (const p of projects) {
+  const last = groups[groups.length - 1];
+  if (last && p.project_number != null && last[0].project_number === p.project_number) last.push(p);
+  else groups.push([p]);
+}
+function canRerun(p: any): boolean {
+  return (
+    canManage(p) &&
+    p.project_number != null &&
+    latestRun.get(Number(p.project_number))?.id === p.id &&
+    toProjectRunStatus(p.status) !== 'upcoming'
+  );
+}
+// Options for the create form's "rerun of" picker, each carrying the fields
+// the form prefills from the previous run (everything but the deadline).
+const rerunOptions = projects.filter(canRerun).map((p) => {
+  const status = toProjectRunStatus(p.status);
+  return {
+    id: p.id as string,
+    status,
+    label: `${p.project_number}. ${p.title} (run ${p.run_number ?? 1} · ${STATUS_BADGE[status].label})`,
+    prefill: {
+      title: p.title,
+      repo_url: p.repo_url || '',
+      box_folder_url: p.box_folder_url || '',
+      description: p.description || '',
+      instructions: p.instructions || '',
+      purpose: p.purpose || '',
+      purpose_detail: p.purpose_detail || '',
+      clif_version: p.clif_version || '',
+      required_tables: parseTables(p.required_tables),
+      prelim_shared: Number(p.prelim_shared) === 1,
+      prelim_link: p.prelim_link || '',
+      conference: p.conference || '',
+    },
+  };
+});
 ---
 
 <BaseLayout title="Project Run Tracker">
@@ -153,6 +207,32 @@ const today = todayInConsortiumTz();
         <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6 mb-8">
           <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">New Project Run Request</h2>
           <form id="create-project-form" class="space-y-4">
+            {/* Rerun of an existing project. Picking one copies that run's
+                details into the form (deadline excepted) and, on submit, files
+                the request under the same project number as its next run. Only
+                the latest run of a project the member can manage is offered. */}
+            {rerunOptions.length > 0 && (
+              <fieldset>
+                <legend class="block text-sm font-semibold text-gray-900 dark:text-white mb-2">Is this a rerun of an existing project?</legend>
+                <select id="pr-rerun-of"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent">
+                  <option value="">No — this is a new project</option>
+                  {rerunOptions.map((o) => (
+                    <option value={o.id} data-status={o.status} data-prefill={JSON.stringify(o.prefill)}>{o.label}</option>
+                  ))}
+                </select>
+                <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                  A rerun keeps the project's number, starts a fresh site checklist, and copies the previous run's details below for you to adjust. Set a new Box upload deadline.
+                </p>
+                <label id="pr-close-previous-row" class="hidden mt-3 flex items-start gap-2 cursor-pointer">
+                  <input type="checkbox" id="pr-close-previous" checked class="mt-0.5 w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy" />
+                  <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Close the previous run
+                    <span class="block text-xs font-normal text-gray-500 dark:text-gray-400 mt-0.5">It is still active. Closing it stops sites being asked for it; leave this unchecked to keep both runs open.</span>
+                  </span>
+                </label>
+              </fieldset>
+            )}
             {/* Ready now vs upcoming. An upcoming run may skip the repo, Box
                 folder and preliminary results until it launches. */}
             <fieldset>
@@ -308,7 +388,11 @@ const today = todayInConsortiumTz();
           <div class="space-y-4">
             <div id="runs-empty-msg" class="hidden bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6 text-center text-gray-500 dark:text-gray-400 text-sm">
             </div>
-            {projects.map((p) => {
+            {groups.map((g) => {
+              // Renders one run. `history` is the earlier runs' cards, nested
+              // under the latest run; a nested card is marked so the tab
+              // filter leaves it to its parent.
+              const renderCard = (p: any, history: any[], nested: boolean) => {
               const ranSites = runMap[p.id as string] || new Set();
               const ranCount = ranSites.size;
               const naSites = naMap[p.id as string] || new Map();
@@ -328,7 +412,7 @@ const today = todayInConsortiumTz();
                 !isClosed && !!p.results_deadline && isDeadlinePassed(p.results_deadline as string);
               const manage = canManage(p);
               return (
-                <div class="project-card bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700" data-project={p.id} data-status={status} data-conference={p.conference || ''} data-deadline-passed={deadlinePassed ? 'true' : 'false'}>
+                <div class={`project-card rounded-xl border border-gray-200 dark:border-neutral-700 ${nested ? 'bg-gray-50 dark:bg-neutral-900/40' : 'bg-white dark:bg-neutral-800 shadow-sm'}`} data-project={p.id} data-status={status} data-conference={p.conference || ''} data-deadline-passed={deadlinePassed ? 'true' : 'false'} data-nested={nested ? 'true' : undefined}>
                   {/* Collapsed by default: the summary carries the number, title,
                       badges and a one-line status. Detail lives in the body. */}
                   <details class="group">
@@ -343,6 +427,11 @@ const today = todayInConsortiumTz();
                         )}
                         <h3 class="text-base font-semibold text-gray-900 dark:text-white">{p.title}</h3>
                         <span class={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${badge.classes}`}>{badge.label}</span>
+                        {nested ? (
+                          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-200 text-gray-700 dark:bg-neutral-700 dark:text-gray-300">Run {p.run_number ?? 1}</span>
+                        ) : isRerun(p.run_number) && (
+                          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300" title={`Run ${p.run_number} of project ${p.project_number}`}>{rerunLabel(p.run_number)}</span>
+                        )}
                         {p.conference && (
                           <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border border-clif-burgundy/40 text-clif-burgundy dark:border-clif-burgundy/60 dark:text-red-300">{p.conference}</span>
                         )}
@@ -421,7 +510,15 @@ const today = todayInConsortiumTz();
                         <button class="delete-project-btn text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 underline" data-project-id={p.id}>Delete</button>
                       </div>
                     )}
-                    {manage && !isUpcoming && (
+                    {/* A superseded run is history: no reopen, no member notice,
+                        no rerun. The newer run carries those. */}
+                    {manage && !isUpcoming && nested && (
+                      <div class="flex items-center gap-3 shrink-0">
+                        <button class="edit-project-btn text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline" data-project-id={p.id}>Edit</button>
+                        <button class="delete-project-btn text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 underline" data-project-id={p.id}>Delete</button>
+                      </div>
+                    )}
+                    {manage && !isUpcoming && !nested && (
                       <div class="flex items-center gap-3 shrink-0">
                         {/* Close button and its info marker share one hover group, so
                             the explanation appears whenever the pointer is on either.
@@ -478,6 +575,9 @@ const today = todayInConsortiumTz();
                           </span>
                         </span>
                         <span class="w-px h-4 bg-gray-200 dark:bg-neutral-600" aria-hidden="true"></span>
+                        {canRerun(p) && (
+                          <button class="rerun-project-btn text-xs text-clif-burgundy hover:text-clif-burgundy/80 underline" data-project-id={p.id} title="Request this project again as a new run with a fresh site checklist">Rerun</button>
+                        )}
                         <button class="notify-project-btn text-xs text-clif-burgundy hover:text-clif-burgundy/80 underline" data-project-id={p.id} title="Email all approved members that this run is ready">Notify members</button>
                         <button class="edit-project-btn text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline" data-project-id={p.id}>Edit</button>
                         <button class="delete-project-btn text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 underline" data-project-id={p.id}>Delete</button>
@@ -488,7 +588,7 @@ const today = todayInConsortiumTz();
                   {/* Reopen (hidden until "Reopen run" is clicked): a reopened run
                       needs a new deadline of today or later, or the nightly
                       auto-close job would just close it again. */}
-                  {manage && isClosed && (
+                  {manage && isClosed && !nested && (
                     <form class="reopen-form hidden mt-3 rounded-lg border border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-900/40 px-4 py-3" data-project-id={p.id}>
                       <div class="flex flex-wrap items-end gap-3">
                         <div>
@@ -573,7 +673,7 @@ const today = todayInConsortiumTz();
                         <input type="checkbox" class="edit-ats w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy" value={p.conference || CURRENT_ATS} checked={!!p.conference} />
                         <span class="text-sm font-medium text-gray-700 dark:text-gray-300">This run is for {p.conference || CURRENT_ATS}</span>
                       </label>
-                      {!isUpcoming && (
+                      {!isUpcoming && !nested && (
                         <div class="flex items-center gap-2">
                           <input type="checkbox" class="edit-closed w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy" checked={isClosed} />
                           <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Mark as closed</label>
@@ -667,10 +767,28 @@ const today = todayInConsortiumTz();
                     )}
                   </div>
                   )}
+
+                  {/* Earlier runs of this project, collapsed. Each keeps its own
+                      details and site checklist (read-only once closed). */}
+                  {history.length > 0 && (
+                    <details class="project-history mt-4 pt-4 border-t border-gray-100 dark:border-neutral-700 group/hist">
+                      <summary class="list-none [&::-webkit-details-marker]:hidden cursor-pointer select-none inline-flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:text-clif-burgundy">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3 h-3 shrink-0 text-gray-400 dark:text-gray-500 transition-transform group-open/hist:rotate-90" aria-hidden="true">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+                        </svg>
+                        Previous runs
+                        <span class="text-xs font-normal text-gray-400 dark:text-gray-500">({history.length})</span>
+                      </summary>
+                      <div class="mt-3 space-y-3">{history}</div>
+                    </details>
+                  )}
                     </div>
                   </details>
                 </div>
               );
+              };
+              const older = g.slice(1).map((p) => renderCard(p, [], true));
+              return renderCard(g[0], older, false);
             })}
           </div>
         )}
@@ -728,7 +846,9 @@ const today = todayInConsortiumTz();
         if (exportWrap) exportWrap.classList.toggle('hidden', !exportable);
         if (exportLink && exportable) exportLink.href = '/api/project-runs/export?filter=' + filter;
         var visible = 0;
-        document.querySelectorAll('.project-card').forEach(function (c) {
+        // Only top-level cards are filtered; a project's earlier runs are
+        // nested inside its latest run's card and travel with it.
+        document.querySelectorAll('.project-card:not([data-nested])').forEach(function (c) {
           var show = matches(c, filter);
           c.classList.toggle('hidden', !show);
           if (show) visible++;
@@ -851,6 +971,80 @@ const today = todayInConsortiumTz();
         group.querySelector('.tables-group-none').addEventListener('click', function () { setAll(false); });
       });
 
+      // === Rerun picker ===
+      // Choosing a project copies its latest run's details into the form (the
+      // deadline is left for the requester) and offers to close that run if it
+      // is still open. "No" resets the form. The card's Rerun button lands here.
+      var rerunSelect = document.getElementById('pr-rerun-of');
+      var closePrevRow = document.getElementById('pr-close-previous-row');
+      var closePrevBox = document.getElementById('pr-close-previous');
+      function setField(id, value) {
+        var el = document.getElementById(id);
+        if (el) el.value = value == null ? '' : value;
+      }
+      function resetCreateForm() {
+        if (!createForm) return;
+        createForm.reset();
+        createForm.querySelectorAll('.table-cb').forEach(function (cb) { cb.dispatchEvent(new Event('change')); });
+        var version = document.getElementById('pr-clif-version');
+        if (version) version.dispatchEvent(new Event('change'));
+        if (prelim) prelim.dispatchEvent(new Event('change'));
+        syncCreateKind();
+      }
+      function applyRerunPrefill(opt) {
+        var raw = opt ? opt.getAttribute('data-prefill') : null;
+        var data = raw ? JSON.parse(raw) : null;
+        if (closePrevRow) closePrevRow.classList.toggle('hidden', !(opt && opt.getAttribute('data-status') === 'open'));
+        if (closePrevBox) closePrevBox.checked = true;
+        if (!data) return;
+        setField('pr-title', data.title);
+        setField('pr-repo', data.repo_url);
+        setField('pr-box', data.box_folder_url);
+        setField('pr-description', data.description);
+        setField('pr-instructions', data.instructions);
+        setField('pr-purpose', data.purpose);
+        setField('pr-purpose-detail', data.purpose_detail);
+        setField('pr-deadline', '');
+        if (atsBox) atsBox.checked = !!data.conference && data.conference === atsBox.value;
+        if (prelim) {
+          prelim.checked = !!data.prelim_shared;
+          prelim.dispatchEvent(new Event('change'));
+        }
+        setField('pr-prelim-link', data.prelim_shared ? data.prelim_link : '');
+        var version = document.getElementById('pr-clif-version');
+        if (version) {
+          version.value = data.clif_version || '';
+          version.dispatchEvent(new Event('change'));
+        }
+        var wanted = data.required_tables || [];
+        createForm.querySelectorAll('.tables-picker:not(.hidden) .table-cb').forEach(function (cb) {
+          cb.checked = wanted.indexOf(cb.value) !== -1;
+          cb.dispatchEvent(new Event('change'));
+        });
+        syncCreateKind();
+      }
+      if (rerunSelect) {
+        rerunSelect.addEventListener('change', function () {
+          var opt = this.options[this.selectedIndex];
+          if (!this.value) {
+            resetCreateForm();
+            if (closePrevRow) closePrevRow.classList.add('hidden');
+            return;
+          }
+          applyRerunPrefill(opt);
+        });
+      }
+      document.querySelectorAll('.rerun-project-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          if (!rerunSelect) return;
+          rerunSelect.value = this.getAttribute('data-project-id');
+          rerunSelect.dispatchEvent(new Event('change'));
+          showCreate();
+          rerunSelect.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          rerunSelect.focus({ preventScroll: true });
+        });
+      });
+
       // Create request
       var form = document.getElementById('create-project-form');
       wireTablesPicker(form, document.getElementById('pr-clif-version'));
@@ -883,6 +1077,11 @@ const today = todayInConsortiumTz();
               notify_all: !upcoming && document.getElementById('pr-notify').checked,
               status: upcoming ? 'upcoming' : 'open',
               conference: atsBox && atsBox.checked ? atsBox.value : '',
+              rerun_of: rerunSelect ? rerunSelect.value : '',
+              close_previous: !!(
+                rerunSelect && rerunSelect.value && closePrevBox && closePrevBox.checked &&
+                closePrevRow && !closePrevRow.classList.contains('hidden')
+              ),
             }),
           });
 
@@ -979,7 +1178,9 @@ const today = todayInConsortiumTz();
               required_tables: selectedTables(this.querySelector('.tables-picker-root')),
               prelim_shared: this.querySelector('.edit-prelim').checked,
               prelim_link: this.querySelector('.edit-prelim-link').value,
-              status: closedBox && closedBox.checked ? 'closed' : 'open',
+              // No "Mark as closed" box means the run can't be reopened from
+              // here (a superseded run); the server enforces the same rule.
+              status: !closedBox || closedBox.checked ? 'closed' : 'open',
               conference: atsEdit && atsEdit.checked ? atsEdit.value : '',
               notify_all: launching && !!notifyEdit && notifyEdit.checked,
             }),

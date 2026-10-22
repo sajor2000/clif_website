@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { CURRENT_ATS, STATUS_BADGE, parseConference, toProjectRunStatus } from './project-run-status';
+import { CURRENT_ATS, STATUS_BADGE, isRerun, parseConference, rerunLabel, runLabel, toProjectRunStatus } from './project-run-status';
 import { parseProjectRunFields } from '../pages/api/project-runs/create';
 import { runnableTables } from '../data/clif-tables';
 
@@ -84,5 +84,24 @@ describe('parseProjectRunFields', () => {
     });
     expect('error' in parseProjectRunFields({ ...notReadyYet, required_tables: [] }, 'upcoming')).toBe(true);
     expect('error' in parseProjectRunFields({ ...notReadyYet, results_deadline: '' }, 'upcoming')).toBe(true);
+  });
+});
+
+describe('run numbering', () => {
+  it('treats run 2 and up as reruns', () => {
+    expect(isRerun(1)).toBe(false);
+    expect(isRerun(null)).toBe(false);
+    expect(isRerun(undefined)).toBe(false);
+    expect(isRerun(2)).toBe(true);
+    expect(isRerun('3')).toBe(true);
+  });
+
+  it('labels a rerun by its run number and leaves originals plain', () => {
+    expect(runLabel(12, 1)).toBe('12');
+    expect(runLabel(12, null)).toBe('12');
+    expect(runLabel(12, 2)).toBe('12 (run 2)');
+    expect(runLabel(null, 2)).toBe('');
+    expect(rerunLabel(1)).toBe('');
+    expect(rerunLabel(3)).toBe('Rerun · run 3');
   });
 });

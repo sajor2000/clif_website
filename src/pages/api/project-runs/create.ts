@@ -147,17 +147,47 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
   const db = getDb();
   const now = new Date().toISOString();
 
-  // project_number is taken as MAX + 1 inside the INSERT so the read and the
-  // write are one statement — two concurrent creates can't both read the same
-  // max. A unique index backs this up.
+  // A rerun repeats an existing project: it takes that project's number and
+  // the next run_number, as a fresh row with an empty site checklist. Only the
+  // project's latest run can be rerun (so the sequence stays linear), it must
+  // have actually run (not upcoming), and only its creator or an admin may do it.
+  const rerunOf = typeof body.rerun_of === 'string' ? body.rerun_of.trim() : '';
+  let previous: { id: string; project_number: number; status: string } | null = null;
+  if (rerunOf) {
+    const prevRes = await db.execute({
+      sql: `SELECT p.id, p.project_number, p.run_number, p.status, p.created_by,
+                   (SELECT MAX(run_number) FROM project_runs WHERE project_number = p.project_number) AS latest_run
+              FROM project_runs p WHERE p.id = ?`,
+      args: [rerunOf],
+    });
+    const prev = prevRes.rows[0] as any;
+    if (!prev) return jsonError('The project to rerun was not found.', 404);
+    if (user.role !== 'admin' && prev.created_by !== user.id) {
+      return jsonError('Only the project creator or an admin can request a rerun.', 403);
+    }
+    if (prev.project_number == null) return jsonError('This project has no number and cannot be rerun.');
+    if (prev.status === 'upcoming') return jsonError('An upcoming run has not run yet, so it cannot be rerun.');
+    if (Number(prev.run_number) !== Number(prev.latest_run)) {
+      return jsonError(`Rerun the latest run of this project (run ${prev.latest_run}).`);
+    }
+    previous = { id: prev.id as string, project_number: Number(prev.project_number), status: prev.status as string };
+  }
+
+  // project_number (new project) or run_number (rerun) is taken as MAX + 1
+  // inside the INSERT so the read and the write are one statement — two
+  // concurrent creates can't both read the same max. The unique index on
+  // (project_number, run_number) backs this up.
+  const numberSql = previous
+    ? `?, (SELECT COALESCE(MAX(run_number), 0) + 1 FROM project_runs WHERE project_number = ?)`
+    : `(SELECT COALESCE(MAX(project_number), 0) + 1 FROM project_runs), 1`;
+  const numberArgs = previous ? [previous.project_number, previous.project_number] : [];
   const insertRes = await db.execute({
     sql: `INSERT INTO project_runs
             (title, repo_url, box_folder_url, prelim_shared, prelim_link, description, instructions,
              purpose, purpose_detail, results_deadline, clif_version, required_tables, conference, status,
-             created_by, created_at, updated_at, project_number)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                  (SELECT COALESCE(MAX(project_number), 0) + 1 FROM project_runs))
-          RETURNING id, project_number`,
+             created_by, created_at, updated_at, project_number, run_number)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ${numberSql})
+          RETURNING id, project_number, run_number`,
     args: [
       f.title,
       f.repo_url,
@@ -176,17 +206,40 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
       user.id,
       now,
       now,
+      ...numberArgs,
     ],
   });
+  const created = insertRes.rows[0] as any;
+  const newId = created?.id as string | undefined;
+
+  // The requester chose whether to close the run being replaced. Only an open
+  // run can be closed this way; the guard keeps a race from reopening nothing.
+  if (previous && body.close_previous && previous.status === 'open') {
+    await db.execute({
+      sql: `UPDATE project_runs SET status = 'closed', updated_at = ? WHERE id = ? AND status = 'open'`,
+      args: [now, previous.id],
+    });
+  }
 
   // An upcoming run is announced when it launches, not now.
-  const newId = insertRes.rows[0]?.id as string | undefined;
   if (newId && status === 'open') {
     announceProjectRun(newId, { origin: url.origin, notifyAll: !!body.notify_all, requester: user }).catch(() => {});
   }
 
-  return new Response(JSON.stringify({ success: true }), {
-    status: 200,
+  return new Response(
+    JSON.stringify({
+      success: true,
+      id: newId ?? null,
+      project_number: created?.project_number ?? null,
+      run_number: created?.run_number ?? null,
+    }),
+    { status: 200, headers: { 'Content-Type': 'application/json' } },
+  );
+};
+
+function jsonError(error: string, status = 400): Response {
+  return new Response(JSON.stringify({ error }), {
+    status,
     headers: { 'Content-Type': 'application/json' },
   });
-};
+}

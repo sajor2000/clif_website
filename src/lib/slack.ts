@@ -11,10 +11,12 @@
  * unset every call is a no-op, so local dev and previews stay silent.
  */
 
-import { PURPOSE_LABELS } from './project-run-status';
+import { PURPOSE_LABELS, isRerun, runLabel } from './project-run-status';
 
 export interface ProjectRunSlackInput {
   projectNumber: number | null;
+  /** 1 for an original run; 2+ marks a rerun of the same project. */
+  runNumber?: number | null;
   title: string;
   description: string | null;
   purpose: string | null;
@@ -50,7 +52,9 @@ function formatDeadline(deadline: string): string {
 
 /** Block Kit payload announcing a new project run request. */
 export function buildProjectRunSlackMessage(r: ProjectRunSlackInput): Record<string, unknown> {
-  const numPrefix = r.projectNumber != null ? `${r.projectNumber}. ` : '';
+  const rerun = isRerun(r.runNumber);
+  const numPrefix = r.projectNumber != null ? `${runLabel(r.projectNumber, r.runNumber)}. ` : '';
+  const heading = rerun ? 'Project rerun request' : 'New project run request';
   const blocks: Record<string, unknown>[] = [
     {
       type: 'section',
@@ -59,7 +63,7 @@ export function buildProjectRunSlackMessage(r: ProjectRunSlackInput): Record<str
         // <!channel> is Slack's raw token for @channel -- it notifies every
         // member of #run_requests, including those currently offline. Written
         // literally (not "@channel"), which would render as plain text.
-        text: `<!channel> :bell: *New project run request*\n<${r.projectUrl}|${escapeSlack(numPrefix + r.title)}>`,
+        text: `<!channel> :bell: *${heading}*\n<${r.projectUrl}|${escapeSlack(numPrefix + r.title)}>`,
       },
     },
   ];
@@ -101,7 +105,7 @@ export function buildProjectRunSlackMessage(r: ProjectRunSlackInput): Record<str
   return {
     // Fallback used for push/desktop notifications and any client that can't
     // render blocks — without it Slack shows an empty alert.
-    text: `New project run request: ${r.title}`,
+    text: `${heading}: ${r.title}`,
     blocks,
   };
 }

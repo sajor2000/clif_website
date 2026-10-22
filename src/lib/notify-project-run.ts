@@ -105,7 +105,7 @@ export async function announceProjectRun(
   // A channel post is opt-in to read, unlike mailing all approved members, so
   // it goes out regardless of notifyAll. No-ops when SLACK_WEBHOOK_URL is unset.
   const res = await getDb().execute({
-    sql: `SELECT project_number, title, description, purpose, purpose_detail, results_deadline, conference
+    sql: `SELECT project_number, run_number, title, description, purpose, purpose_detail, results_deadline, conference
           FROM project_runs WHERE id = ?`,
     args: [projectId],
   });
@@ -113,6 +113,7 @@ export async function announceProjectRun(
   if (!r) return;
   await notifySlackProjectRun({
     projectNumber: r.project_number == null ? null : Number(r.project_number),
+    runNumber: r.run_number == null ? null : Number(r.run_number),
     title: r.title as string,
     description: (r.description as string) || null,
     purpose: (r.purpose as string) || null,

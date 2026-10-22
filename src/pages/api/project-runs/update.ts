@@ -28,7 +28,9 @@ export const POST: APIRoute = async ({ locals, request }) => {
   const db = getDb();
 
   const existing = await db.execute({
-    sql: 'SELECT created_by, status, conference FROM project_runs WHERE id = ?',
+    sql: `SELECT p.created_by, p.status, p.conference, p.run_number,
+                 (SELECT MAX(run_number) FROM project_runs WHERE project_number = p.project_number) AS latest_run
+            FROM project_runs p WHERE p.id = ?`,
     args: [projectId],
   });
   if (existing.rows.length === 0) {
@@ -47,8 +49,15 @@ export const POST: APIRoute = async ({ locals, request }) => {
 
   // Editing never launches a run: an upcoming run stays upcoming (that's
   // /launch's job). Otherwise the form's "closed" box picks open or closed.
+  // A run that has been rerun is history and stays closed whatever the form
+  // says; the newer run is the one sites act on (see /set-status).
+  const superseded = run.latest_run != null && Number(run.run_number) < Number(run.latest_run);
   const status =
-    toProjectRunStatus(run.status) === 'upcoming' ? 'upcoming' : body.status === 'closed' ? 'closed' : 'open';
+    toProjectRunStatus(run.status) === 'upcoming'
+      ? 'upcoming'
+      : body.status === 'closed' || superseded
+        ? 'closed'
+        : 'open';
 
   // Only a run sites can act on needs every field; an upcoming or closed run
   // may still lack its repo, Box folder or preliminary results.

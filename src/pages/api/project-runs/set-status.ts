@@ -46,7 +46,10 @@ export const POST: APIRoute = async ({ locals, request }) => {
   const db = getDb();
 
   const existing = await db.execute({
-    sql: 'SELECT created_by, status, repo_url, box_folder_url, prelim_shared, prelim_link FROM project_runs WHERE id = ?',
+    sql: `SELECT p.created_by, p.status, p.repo_url, p.box_folder_url, p.prelim_shared, p.prelim_link,
+                 (SELECT MAX(run_number) FROM project_runs WHERE project_number = p.project_number) AS latest_run,
+                 p.run_number
+            FROM project_runs p WHERE p.id = ?`,
     args: [projectId],
   });
   if (existing.rows.length === 0) {
@@ -62,6 +65,10 @@ export const POST: APIRoute = async ({ locals, request }) => {
     // announces the run.
     if (run.status === 'upcoming') {
       return json({ error: 'Use Launch run to open an upcoming run.' }, 400);
+    }
+    // A run that has been rerun is history; the newer run is the one sites act on.
+    if (run.latest_run != null && Number(run.run_number) < Number(run.latest_run)) {
+      return json({ error: `This run was superseded by run ${run.latest_run}. Reopen that one instead.` }, 400);
     }
     // A run closed before it launched may still lack what sites need.
     if (!run.repo_url || !run.box_folder_url || !run.prelim_shared || !run.prelim_link) {

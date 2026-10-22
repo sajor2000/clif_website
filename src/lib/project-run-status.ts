@@ -31,6 +31,28 @@ export const STATUS_BADGE: Record<ProjectRunStatus, { label: string; classes: st
   },
 };
 
+/**
+ * A project is identified by project_number; each run of it is one
+ * project_runs row with a run_number (1 for the original, 2 for the first
+ * rerun, …). A rerun is a fresh row — new id, empty site checklist — that
+ * shares the previous run's project_number.
+ */
+export function isRerun(runNumber: unknown): boolean {
+  return Number(runNumber) > 1;
+}
+
+/** Badge text for a rerun card: "Rerun · run 2". Empty for an original run. */
+export function rerunLabel(runNumber: unknown): string {
+  return isRerun(runNumber) ? `Rerun · run ${Number(runNumber)}` : '';
+}
+
+/** "12" for an original run, "12 (run 2)" for a rerun; "" when the run has no number yet. */
+export function runLabel(projectNumber: unknown, runNumber: unknown): string {
+  if (projectNumber == null) return '';
+  const n = String(projectNumber);
+  return isRerun(runNumber) ? `${n} (run ${Number(runNumber)})` : n;
+}
+
 /** Normalize a stored status; anything unrecognized is treated as open (the column default). */
 export function toProjectRunStatus(value: unknown): ProjectRunStatus {
   return (PROJECT_RUN_STATUSES as readonly unknown[]).includes(value) ? (value as ProjectRunStatus) : 'open';

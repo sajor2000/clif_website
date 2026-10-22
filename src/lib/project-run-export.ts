@@ -21,6 +21,8 @@ export function toExportFilter(value: unknown): ExportFilter {
 export interface ExportRun {
   id: string;
   project_number?: number | null;
+  /** 1 for the original run of a project, 2+ for reruns (NULL on rows predating it). */
+  run_number?: number | null;
   title: string;
   status?: string | null;
   conference?: string | null;
@@ -73,6 +75,7 @@ export function matchesExportFilter(run: ExportRun, filter: ExportFilter, now: D
 
 const RUN_COLUMNS = [
   '#',
+  'Run',
   'Title',
   'Status',
   'Conference',
@@ -94,7 +97,7 @@ const RUN_COLUMNS = [
   'Description',
   'Instructions',
 ];
-const RUN_WIDTHS = [6, 48, 10, 11, 20, 24, 12, 40, 9, 15, 9, 18, 14, 18, 40, 40, 40, 22, 13, 60, 60];
+const RUN_WIDTHS = [6, 5, 48, 10, 11, 20, 24, 12, 40, 9, 15, 9, 18, 14, 18, 40, 40, 40, 22, 13, 60, 60];
 
 export function buildExportSheets(
   runs: ExportRun[],
@@ -118,7 +121,7 @@ export function buildExportSheets(
   }
 
   const runRows: Cell[][] = [RUN_COLUMNS];
-  const siteRows: Cell[][] = [['#', 'Title', 'Status', ...sites.map((s) => s.site_name)]];
+  const siteRows: Cell[][] = [['#', 'Run', 'Title', 'Status', ...sites.map((s) => s.site_name)]];
 
   for (const r of selected) {
     const status = toProjectRunStatus(r.status);
@@ -129,6 +132,7 @@ export function buildExportSheets(
 
     runRows.push([
       r.project_number ?? null,
+      r.run_number ?? 1,
       r.title,
       STATUS_BADGE[status].label,
       r.conference || null,
@@ -153,6 +157,7 @@ export function buildExportSheets(
 
     siteRows.push([
       r.project_number ?? null,
+      r.run_number ?? 1,
       r.title,
       STATUS_BADGE[status].label,
       ...sites.map((s) => {
@@ -169,7 +174,7 @@ export function buildExportSheets(
 
   return [
     { name: 'Runs', rows: runRows, widths: RUN_WIDTHS },
-    { name: 'Site status', rows: siteRows, widths: [6, 48, 10, ...sites.map(() => 18)] },
+    { name: 'Site status', rows: siteRows, widths: [6, 5, 48, 10, ...sites.map(() => 18)] },
   ];
 }
 

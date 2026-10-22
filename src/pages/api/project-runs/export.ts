@@ -36,7 +36,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
       `SELECT p.*, u.full_name AS creator_name
          FROM project_runs p
          LEFT JOIN users u ON p.created_by = u.id
-        ORDER BY p.project_number IS NULL, p.project_number DESC, p.created_at DESC`,
+        ORDER BY p.project_number IS NULL, p.project_number DESC, p.run_number DESC, p.created_at DESC`,
     ),
     db.execute('SELECT id, site_name FROM site_details ORDER BY site_name'),
     db.execute(

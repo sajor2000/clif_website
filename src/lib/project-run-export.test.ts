@@ -22,6 +22,7 @@ const runs: ExportRun[] = [
   {
     id: 'p1',
     project_number: 3,
+    run_number: 2,
     title: 'Open, deadline ahead',
     status: 'open',
     results_deadline: '2026-10-30',
@@ -35,8 +36,8 @@ const runs: ExportRun[] = [
     creator_name: 'Tester',
     created_at: '2026-09-01 14:03:00',
   },
-  { id: 'p2', project_number: 2, title: 'Open, deadline passed', status: 'open', results_deadline: '2026-10-11' },
-  { id: 'p3', project_number: 1, title: 'Upcoming', status: 'upcoming', conference: CURRENT_ATS },
+  { id: 'p2', project_number: 2, run_number: 1, title: 'Open, deadline passed', status: 'open', results_deadline: '2026-10-11' },
+  { id: 'p3', project_number: 1, run_number: 1, title: 'Upcoming', status: 'upcoming', conference: CURRENT_ATS },
   { id: 'p4', project_number: null, title: 'Closed', status: 'closed', results_deadline: '2026-01-01' },
 ];
 
@@ -90,18 +91,26 @@ describe('buildExportSheets', () => {
       'Requested by': 'Tester',
       'Requested on': '2026-09-01',
     });
-    expect(siteSheet.rows[0]).toEqual(['#', 'Title', 'Status', 'Emory', 'Rush', 'UChicago']);
-    expect(siteSheet.rows[1]).toEqual([3, 'Open, deadline ahead', 'Active', 'Run', 'N/A: No ECMO program', null]);
+    expect(siteSheet.rows[0]).toEqual(['#', 'Run', 'Title', 'Status', 'Emory', 'Rush', 'UChicago']);
+    expect(siteSheet.rows[1]).toEqual([3, 2, 'Open, deadline ahead', 'Active', 'Run', 'N/A: No ECMO program', null]);
+  });
+
+  it('writes the run number, defaulting rows that predate it to run 1', () => {
+    const [runsSheet] = buildExportSheets(runs, sites, statuses, 'all', now);
+    const byTitle = (t: string) => runsSheet.rows.find((r) => r[2] === t)!;
+    expect(byTitle('Open, deadline ahead').slice(0, 2)).toEqual([3, 2]);
+    expect(byTitle('Open, deadline passed').slice(0, 2)).toEqual([2, 1]);
+    expect(byTitle('Closed').slice(0, 2)).toEqual([null, 1]);
   });
 
   it('leaves site cells and counts blank for runs that have not launched', () => {
     const [runsSheet, siteSheet] = buildExportSheets(runs, sites, statuses, 'all', now);
-    const upcoming = runsSheet.rows.find((r) => r[1] === 'Upcoming')!;
-    expect(upcoming.slice(8, 11)).toEqual([null, null, null]);
-    expect(siteSheet.rows.find((r) => r[1] === 'Upcoming')!.slice(3)).toEqual([null, null, null]);
-    const passed = runsSheet.rows.find((r) => r[1] === 'Open, deadline passed')!;
-    expect(passed[12]).toBe('Yes');
-    expect(siteSheet.rows.find((r) => r[1] === 'Open, deadline passed')!.slice(3)).toEqual([null, null, 'N/A']);
+    const upcoming = runsSheet.rows.find((r) => r[2] === 'Upcoming')!;
+    expect(upcoming.slice(9, 12)).toEqual([null, null, null]);
+    expect(siteSheet.rows.find((r) => r[2] === 'Upcoming')!.slice(4)).toEqual([null, null, null]);
+    const passed = runsSheet.rows.find((r) => r[2] === 'Open, deadline passed')!;
+    expect(passed[13]).toBe('Yes');
+    expect(siteSheet.rows.find((r) => r[2] === 'Open, deadline passed')!.slice(4)).toEqual([null, null, 'N/A']);
   });
 
   it('names the file by filter and Chicago date', () => {

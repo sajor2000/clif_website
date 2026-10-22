@@ -68,6 +68,56 @@ describe('create', () => {
   });
 });
 
+describe('create a rerun', () => {
+  const previous = (over: Record<string, unknown> = {}) => ({
+    rows: [{ id: 'run1', project_number: 7, run_number: 1, status: 'open', created_by: 'u1', latest_run: 1, ...over }],
+  });
+  const inserted = { rows: [{ id: 'run2', project_number: 7, run_number: 2 }] };
+
+  it('numbers the rerun under the same project and closes the previous run on request', async () => {
+    execute.mockResolvedValueOnce(previous()).mockResolvedValueOnce(inserted).mockResolvedValueOnce({ rowsAffected: 1 });
+    const res = await call(create, { ...fields, rerun_of: 'run1', close_previous: true });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ project_number: 7, run_number: 2 });
+    const insert = execute.mock.calls[1][0];
+    expect(insert.sql).toMatch(/MAX\(run_number\)/);
+    expect(insert.args.slice(-2)).toEqual([7, 7]);
+    const close = execute.mock.calls[2][0];
+    expect(close.sql).toMatch(/status = 'closed'/);
+    expect(close.args).toContain('run1');
+    expect(announce).toHaveBeenCalledWith('run2', expect.anything());
+  });
+
+  it('leaves the previous run alone unless asked', async () => {
+    execute.mockResolvedValueOnce(previous()).mockResolvedValueOnce(inserted);
+    const res = await call(create, { ...fields, rerun_of: 'run1', close_previous: false });
+    expect(res.status).toBe(200);
+    expect(execute).toHaveBeenCalledTimes(2);
+  });
+
+  it('never closes a previous run that is already closed', async () => {
+    execute.mockResolvedValueOnce(previous({ status: 'closed' })).mockResolvedValueOnce(inserted);
+    const res = await call(create, { ...fields, rerun_of: 'run1', close_previous: true });
+    expect(res.status).toBe(200);
+    expect(execute).toHaveBeenCalledTimes(2);
+  });
+
+  it('rejects a rerun of an upcoming run, a stale run, or someone else’s project', async () => {
+    execute.mockResolvedValueOnce(previous({ status: 'upcoming' }));
+    expect((await call(create, { ...fields, rerun_of: 'run1' })).status).toBe(400);
+
+    execute.mockResolvedValueOnce(previous({ latest_run: 2 }));
+    expect((await call(create, { ...fields, rerun_of: 'run1' })).status).toBe(400);
+
+    execute.mockResolvedValueOnce(previous({ created_by: 'someone-else' }));
+    expect((await call(create, { ...fields, rerun_of: 'run1' })).status).toBe(403);
+
+    execute.mockResolvedValueOnce({ rows: [] });
+    expect((await call(create, { ...fields, rerun_of: 'missing' })).status).toBe(404);
+    expect(announce).not.toHaveBeenCalled();
+  });
+});
+
 describe('launch', () => {
   const upcomingRow = { rows: [{ created_by: 'u1', status: 'upcoming', conference: null }] };
 
