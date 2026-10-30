@@ -339,7 +339,9 @@ export function buildLosApprovalEmail(i: LosApprovalEmailInput): string {
 <head><meta charset="utf-8"></head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
   <div style="border-bottom: 3px solid #8B1538; padding-bottom: 16px; margin-bottom: 24px;">
-    <h1 style="color: #8B1538; font-size: 20px; margin: 0;">CLIF Consortium</h1>
+    <a href="https://clif-icu.com" style="text-decoration: none;">
+      <img src="https://clif-icu.com/images/logos/clif_logo_transparent_FINAL_cropped.png" alt="CLIF Consortium" width="180" height="54" style="display: block; width: 180px; height: auto; border: 0;" />
+    </a>
   </div>
 
   <p>A consortium letter of collaboration has been requested and needs your approval as a site PI:</p>
