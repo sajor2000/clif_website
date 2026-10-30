@@ -313,14 +313,14 @@ export interface LosApprovalEmailInput {
   requesterName: string;
   aimsLink: string | null;
   losLink: string | null;
-  approveUrl: string;
-  declineUrl: string;
-  trackerUrl: string;
+  /** Deep link to this request on the tracker; the PI signs in and responds there. */
+  respondUrl: string;
 }
 
 /**
- * "A letter of collaboration needs your approval" — sent to each site PI with
- * one-click Approve / Decline links carrying that PI's own token.
+ * "A letter of collaboration needs your approval" — sent to each site PI.
+ * The only action is a button to the tracker: decisions are recorded on the
+ * website after sign-in, so a mail scanner opening the link records nothing.
  */
 export function buildLosApprovalEmail(i: LosApprovalEmailInput): string {
   const meta: string[] = [];
@@ -360,17 +360,14 @@ export function buildLosApprovalEmail(i: LosApprovalEmailInput): string {
           </tr>
           <tr>
             <td align="center" style="padding: 28px 0;">
-              <a href="${i.approveUrl}" aria-label="Approve" style="background-color: #15803d; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 18px; display: inline-block; margin: 0 4px;">
-                &#128077; Approve
-              </a>
-              <a href="${i.declineUrl}" aria-label="Decline" style="background-color: #b91c1c; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 18px; display: inline-block; margin: 0 4px;">
-                &#128078; Decline
+              <a href="${i.respondUrl}" style="background-color: #8B1538; color: white; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 17px; display: inline-block;">
+                Review &amp; respond on the website
               </a>
             </td>
           </tr>
           <tr>
             <td align="center" style="text-align: center; padding-bottom: 32px;">
-              <p style="margin: 0; color: #666; font-size: 14px;">One click records your decision on the website; no sign-in needed. These links do not expire: you can change your answer any time by clicking the other thumb or from the <a href="${i.trackerUrl}" style="color: #8B1538;">letter tracker</a>, and your latest click is the one that counts. Questions: <a href="mailto:clif_consortium@uchicago.edu">clif_consortium@uchicago.edu</a>.</p>
+              <p style="margin: 0; color: #666; font-size: 14px;">You will be asked to sign in with your consortium account, then give the request a &#128077; or &#128078;. Nothing is recorded by opening this email or the link itself, and you can change your response on the tracker at any time. Questions: <a href="mailto:clif_consortium@uchicago.edu">clif_consortium@uchicago.edu</a>.</p>
             </td>
           </tr>
           <tr>

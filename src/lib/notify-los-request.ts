@@ -9,8 +9,9 @@ import { generateApprovalToken } from './los-approvals';
  *
  * Creates one `los_approvals` row per flagged PI (skipping any that already
  * exist, so re-running after new PIs are flagged only reaches the newcomers),
- * emails each PI their personal one-click Approve / Decline links at every
- * address they sign in with, and drops an in-app notification.
+ * emails each PI a link to the request on the tracker at every address they
+ * sign in with, and drops an in-app notification. Decisions are made on the
+ * website after sign-in — never from the email — so link scanners are inert.
  *
  * @returns how many PIs were emailed (0 when nobody is flagged)
  */
@@ -48,36 +49,31 @@ export async function notifyLosRequestOpened(
   if (newPis.length === 0) return { sent: 0 };
 
   const now = new Date().toISOString();
-  const tokens = new Map<string, string>();
   for (const uid of newPis) {
-    const token = generateApprovalToken();
-    tokens.set(uid, token);
     await db.execute({
       sql: `INSERT OR IGNORE INTO los_approvals (request_id, user_id, token, emailed_at) VALUES (?, ?, ?, ?)`,
-      args: [requestId, uid, token, now],
+      args: [requestId, uid, generateApprovalToken(), now],
     });
   }
 
   const requesterName =
     (r.requester_name as string | null) || (r.requester_email as string | null) || 'A CLIF member';
-  const trackerUrl = `${origin}/portal/los-requests`;
+  const respondUrl = `${origin}/portal/los-requests?request=${encodeURIComponent(requestId)}`;
   const subject = `Approval needed: letter of collaboration for ${r.grant_title as string}`;
+
+  const html = buildLosApprovalEmail({
+    grantTitle: r.grant_title as string,
+    grantType: (r.grant_type as string | null) || null,
+    grantDeadline: (r.grant_deadline as string | null) || null,
+    requesterName,
+    aimsLink: (r.aims_link as string | null) || null,
+    losLink: (r.los_link as string | null) || null,
+    respondUrl,
+  });
 
   const emailMap = await loginEmailsByUser(newPis);
   const sends: Promise<unknown>[] = [];
   for (const uid of newPis) {
-    const token = tokens.get(uid)!;
-    const html = buildLosApprovalEmail({
-      grantTitle: r.grant_title as string,
-      grantType: (r.grant_type as string | null) || null,
-      grantDeadline: (r.grant_deadline as string | null) || null,
-      requesterName,
-      aimsLink: (r.aims_link as string | null) || null,
-      losLink: (r.los_link as string | null) || null,
-      approveUrl: `${origin}/api/los-requests/respond?token=${token}&action=approve`,
-      declineUrl: `${origin}/api/los-requests/respond?token=${token}&action=decline`,
-      trackerUrl,
-    });
     for (const addr of emailMap.get(uid) ?? []) {
       sends.push(
         sendEmail(addr, subject, html).catch(() => {
@@ -90,7 +86,7 @@ export async function notifyLosRequestOpened(
         type: 'los_approval_requested',
         title: `Approve letter of collaboration: ${r.grant_title as string}`,
         body: `Requested by ${requesterName}`,
-        link: '/portal/los-requests',
+        link: `/portal/los-requests?request=${encodeURIComponent(requestId)}`,
         entityType: 'los_request',
         entityId: requestId,
         actorId: (r.created_by as string) || null,

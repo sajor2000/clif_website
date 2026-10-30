@@ -2,8 +2,9 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { Google, generateState, generateCodeVerifier } from 'arctic';
+import { safeRedirectPath, POST_LOGIN_REDIRECT_COOKIE } from '../../../../lib/safe-redirect';
 
-export const GET: APIRoute = async ({ cookies, redirect }) => {
+export const GET: APIRoute = async ({ cookies, redirect, url }) => {
   const env = process.env;
   const google = new Google(
     env['GOOGLE_CLIENT_ID'] || import.meta.env.GOOGLE_CLIENT_ID || '',
@@ -14,7 +15,7 @@ export const GET: APIRoute = async ({ cookies, redirect }) => {
   const state = generateState();
   const codeVerifier = generateCodeVerifier();
 
-  const url = google.createAuthorizationURL(state, codeVerifier, [
+  const authUrl = google.createAuthorizationURL(state, codeVerifier, [
     'openid',
     'email',
     'profile',
@@ -36,5 +37,19 @@ export const GET: APIRoute = async ({ cookies, redirect }) => {
     maxAge: 60 * 10,
   });
 
-  return redirect(url.toString());
+  // Remember where to land after Google hands back (deep links from emails).
+  const redirectTo = safeRedirectPath(url.searchParams.get('redirect'));
+  if (redirectTo) {
+    cookies.set(POST_LOGIN_REDIRECT_COOKIE, redirectTo, {
+      path: '/',
+      httpOnly: true,
+      secure: !import.meta.env.DEV,
+      sameSite: 'lax',
+      maxAge: 60 * 10,
+    });
+  } else {
+    cookies.delete(POST_LOGIN_REDIRECT_COOKIE, { path: '/' });
+  }
+
+  return redirect(authUrl.toString());
 };

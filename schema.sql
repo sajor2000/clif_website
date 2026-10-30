@@ -301,7 +301,7 @@ CREATE TABLE IF NOT EXISTS los_requests (
 );
 
 -- One row per (request, site PI): created when the request is filed, decided
--- by a one-click email link or the tracker. See migrations/027.
+-- on the tracker after sign-in. token is reserved (never emailed). See migrations/027.
 CREATE TABLE IF NOT EXISTS los_approvals (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
   request_id TEXT NOT NULL REFERENCES los_requests(id) ON DELETE CASCADE,

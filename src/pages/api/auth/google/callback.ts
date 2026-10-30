@@ -4,6 +4,7 @@ import type { APIRoute } from 'astro';
 import { Google, decodeIdToken } from 'arctic';
 import { getDb } from '../../../../lib/turso';
 import { createSession, cleanupExpiredSessions } from '../../../../lib/session';
+import { safeRedirectPath, POST_LOGIN_REDIRECT_COOKIE } from '../../../../lib/safe-redirect';
 
 interface GoogleIdTokenClaims {
   sub: string;
@@ -140,10 +141,18 @@ export const GET: APIRoute = async ({ url, cookies, redirect }) => {
     const isApproved = Boolean(status?.is_approved);
     const hasInstitution = Boolean(status?.institution);
 
+    // Deep link remembered at /api/auth/google (e.g. a request on the letter
+    // tracker from a site PI email). One-shot: consumed here whatever happens.
+    const postLogin = safeRedirectPath(cookies.get(POST_LOGIN_REDIRECT_COOKIE)?.value);
+    cookies.delete(POST_LOGIN_REDIRECT_COOKIE, { path: '/' });
+
     if (!hasInstitution) {
       return redirect('/auth/complete-profile');
     }
-    return redirect(isApproved ? '/portal' : '/auth/pending');
+    if (!isApproved) {
+      return redirect('/auth/pending');
+    }
+    return redirect(postLogin || '/portal');
   } catch (error) {
     console.error('Google OAuth error:', error);
     const msg = error instanceof Error ? error.message : 'unknown';

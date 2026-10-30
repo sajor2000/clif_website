@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import {
   generateApprovalToken,
   groupApprovalsByRequest,
-  isApprovalToken,
   parseDecision,
   tallyApprovals,
 } from './los-approvals';
@@ -34,17 +33,10 @@ describe('groupApprovalsByRequest', () => {
 });
 
 describe('tokens', () => {
-  it('generates 64 lowercase hex chars that validate', () => {
+  it('generates 64 lowercase hex chars, unique per call', () => {
     const t = generateApprovalToken();
     expect(t).toMatch(/^[0-9a-f]{64}$/);
-    expect(isApprovalToken(t)).toBe(true);
     expect(generateApprovalToken()).not.toBe(t);
-  });
-
-  it('rejects malformed tokens', () => {
-    expect(isApprovalToken('abc')).toBe(false);
-    expect(isApprovalToken('G'.repeat(64))).toBe(false);
-    expect(isApprovalToken(undefined)).toBe(false);
   });
 });
 

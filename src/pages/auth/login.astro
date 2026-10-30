@@ -3,11 +3,17 @@ export const prerender = false;
 
 import BaseLayout from '../../layouts/BaseLayout.astro';
 
+// Where to land after sign-in (set by the middleware when a protected page was
+// requested, e.g. a deep link from an email). Only same-site paths are honored.
+import { safeRedirectPath } from '../../lib/safe-redirect';
+const redirectTo = safeRedirectPath(Astro.url.searchParams.get('redirect'));
+const googleHref = redirectTo ? `/api/auth/google?redirect=${encodeURIComponent(redirectTo)}` : '/api/auth/google';
+
 // If already logged in, redirect
 const user = Astro.locals.user;
 if (user) {
   if (user.is_approved) {
-    return Astro.redirect('/portal');
+    return Astro.redirect(redirectTo || '/portal');
   } else {
     return Astro.redirect('/auth/pending');
   }
@@ -39,7 +45,7 @@ const errorMessage = error ? (errorMessages[error] || 'An error occurred. Please
         )}
 
         <a
-          href="/api/auth/google"
+          href={googleHref}
           class="w-full flex items-center justify-center gap-3 bg-white dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 hover:bg-gray-50 dark:hover:bg-neutral-600 text-gray-700 dark:text-gray-200 font-medium py-3 px-4 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:ring-offset-2"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 48 48">

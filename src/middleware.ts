@@ -31,7 +31,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   // Redirect unauthenticated users to login
   if (!user) {
-    return redirect('/auth/login?redirect=' + encodeURIComponent(pathname));
+    return redirect('/auth/login?redirect=' + encodeURIComponent(pathname + url.search));
   }
 
   // Redirect users without institution to complete profile

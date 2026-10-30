@@ -1,9 +1,10 @@
 /**
  * Site PI approvals for letters of collaboration.
  *
- * One `los_approvals` row exists per (request, site PI). Each carries a random
- * token so the PI can approve or decline straight from the notification email
- * without signing in. The tracker summarises the rows as "N of M approved".
+ * One `los_approvals` row exists per (request, site PI). PIs respond on the
+ * tracker after signing in; the tracker summarises the rows as "N of M
+ * approved". Each row also carries a random token (NOT NULL UNIQUE in the
+ * schema), reserved for a future reply-by-email flow — it is never emailed.
  */
 
 export type ApprovalDecision = 'approved' | 'declined';
@@ -55,7 +56,7 @@ export function groupApprovalsByRequest(rows: ApprovalRow[]): Map<string, Approv
   return map;
 }
 
-/** 32 random bytes as hex: the secret that identifies one PI's vote on one request. */
+/** 32 random bytes as hex, filling the reserved token column. */
 export function generateApprovalToken(): string {
   const bytes = new Uint8Array(32);
   crypto.getRandomValues(bytes);
@@ -64,12 +65,6 @@ export function generateApprovalToken(): string {
     .join('');
 }
 
-const TOKEN_RE = /^[0-9a-f]{64}$/;
-
-/** True when a string has the exact shape generateApprovalToken() produces. */
-export function isApprovalToken(s: unknown): s is string {
-  return typeof s === 'string' && TOKEN_RE.test(s);
-}
 
 /** Parse the `action` query/body value into a decision, or null. */
 export function parseDecision(v: unknown): ApprovalDecision | null {
