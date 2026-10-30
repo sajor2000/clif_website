@@ -26,7 +26,7 @@ export const portalGroups: PortalGroup[] = [
         label: 'Letters of Collaboration',
         href: '/portal/los-requests',
         icon: 'document',
-        description: 'Request a consortium letter of collaboration for a grant; steering approves requests',
+        description: 'Request a consortium letter of collaboration for a grant; site PIs from the steering committee approve requests',
       },
       {
         label: 'Manuscripts',
