@@ -55,7 +55,7 @@ function isDeadlinePassed(d: string): boolean {
 }
 ---
 
-<BaseLayout title="Letter of Support Tracker">
+<BaseLayout title="Letter of Collaboration Tracker">
   <div class="container mx-auto px-4 py-8">
     <div class="flex flex-col lg:flex-row gap-8">
       <aside class="lg:w-64 shrink-0">
@@ -64,9 +64,9 @@ function isDeadlinePassed(d: string): boolean {
 
       <div class="flex-1 min-w-0">
         <div class="mb-8">
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Letter of Support Tracker</h1>
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Letter of Collaboration Tracker</h1>
           <p class="text-gray-600 dark:text-gray-400 mt-1">
-            Request a consortium letter of support for your grant. Steering committee members approve support.
+            Request a consortium letter of collaboration for your grant. Steering committee members approve requests.
           </p>
         </div>
 
@@ -78,7 +78,7 @@ function isDeadlinePassed(d: string): boolean {
 
         {/* New request */}
         <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6 mb-8">
-          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Request a Letter of Support</h2>
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Request a Letter of Collaboration</h2>
           <form id="create-los-form" class="space-y-4">
             <div>
               <label for="los-title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Grant title <span class="text-red-500">*</span></label>
@@ -107,7 +107,7 @@ function isDeadlinePassed(d: string): boolean {
                   class="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent" />
               </div>
               <div>
-                <label for="los-los" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Link to letter of support <span class="text-red-500">*</span></label>
+                <label for="los-los" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Link to letter of collaboration <span class="text-red-500">*</span></label>
                 <input type="url" id="los-los" required placeholder="https://…"
                   class="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent" />
               </div>
@@ -123,7 +123,7 @@ function isDeadlinePassed(d: string): boolean {
         {/* Requests */}
         {requests.length === 0 ? (
           <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6 text-center text-gray-500 dark:text-gray-400 text-sm">
-            No letter of support requests yet.
+            No letter of collaboration requests yet.
           </div>
         ) : (
           <div class="space-y-4">
@@ -154,7 +154,7 @@ function isDeadlinePassed(d: string): boolean {
                           <a href={r.aims_link} target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:underline">Specific Aims &#8599;</a>
                         )}
                         {r.los_link && (
-                          <a href={r.los_link} target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:underline">Letter of support &#8599;</a>
+                          <a href={r.los_link} target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:underline">Letter of collaboration &#8599;</a>
                         )}
                         {r.status === 'approved' && r.approver_name && (
                           <span class="text-green-600 dark:text-green-400">Approved by {r.approver_name}{r.approved_at ? ` on ${formatDate(r.approved_at as string)}` : ''}</span>
@@ -196,7 +196,7 @@ function isDeadlinePassed(d: string): boolean {
                         <input type="text" class="edit-type w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" list="grant-types" value={r.grant_type || ''} placeholder="Grant type" required />
                         <input type="date" class="edit-deadline w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" value={r.grant_deadline || ''} placeholder="Grant deadline" required />
                         <input type="url" class="edit-aims w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" value={r.aims_link || ''} placeholder="Specific Aims link" required />
-                        <input type="url" class="edit-los w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" value={r.los_link || ''} placeholder="Letter of support link" required />
+                        <input type="url" class="edit-los w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" value={r.los_link || ''} placeholder="Letter of collaboration link" required />
                       </div>
                       <div class="flex gap-2">
                         <button type="submit" class="save-los-btn bg-clif-burgundy hover:bg-clif-burgundy/90 text-white font-medium py-1.5 px-3 rounded-lg text-xs transition-colors">Save</button>
@@ -254,7 +254,7 @@ function isDeadlinePassed(d: string): boolean {
       document.querySelectorAll('.los-approve-btn').forEach(function (btn) {
         btn.addEventListener('click', async function () {
           var action = this.getAttribute('data-action');
-          if (action === 'decline' && !confirm('Decline this letter of support request?')) return;
+          if (action === 'decline' && !confirm('Decline this letter of collaboration request?')) return;
           this.disabled = true;
           var res = await fetch('/api/los-requests/approve', {
             method: 'POST',

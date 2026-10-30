@@ -5,11 +5,11 @@ import { getDb } from '../../../lib/turso';
 import { hasRole } from '../../../lib/roles';
 
 // Only steering committee members (and admins) can approve / decline a
-// consortium letter of support.
+// consortium letter of collaboration.
 export const POST: APIRoute = async ({ locals, request }) => {
   const user = locals.user;
   if (!user || !user.is_approved || !hasRole(user.role, 'steering')) {
-    return new Response(JSON.stringify({ error: 'Only steering committee members can approve support.' }), {
+    return new Response(JSON.stringify({ error: 'Only steering committee members can approve requests.' }), {
       status: 403,
       headers: { 'Content-Type': 'application/json' },
     });

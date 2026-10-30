@@ -278,7 +278,7 @@ export async function computePendingTasks(user: TaskUser): Promise<PendingTask[]
     console.error('[tasks] profile-completeness check failed', e);
   }
 
-  // --- 4. Letters of support awaiting your approval (steering / admin) --------
+  // --- 4. Letters of collaboration awaiting your approval (steering / admin) --------
   if (user.role === 'steering' || user.role === 'admin') {
     try {
       const res = await db.execute({
@@ -290,14 +290,14 @@ export async function computePendingTasks(user: TaskUser): Promise<PendingTask[]
         tasks.push({
           key: `los_review:${r.id}`,
           kind: 'los_review',
-          title: `Review letter of support: ${r.grant_title}`,
+          title: `Review letter of collaboration: ${r.grant_title}`,
           detail: deadline ? `Grant deadline ${formatDate(deadline)}` : 'Awaiting steering approval',
           link: '/portal/los-requests',
           severity: 'action',
         });
       }
     } catch (e) {
-      console.error('[tasks] letter-of-support check failed', e);
+      console.error('[tasks] letter-of-collaboration check failed', e);
     }
   }
 

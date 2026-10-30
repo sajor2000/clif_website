@@ -23,10 +23,10 @@ export const portalGroups: PortalGroup[] = [
     title: 'Trackers',
     items: [
       {
-        label: 'Letters of Support',
+        label: 'Letters of Collaboration',
         href: '/portal/los-requests',
         icon: 'document',
-        description: 'Request a consortium letter of support for a grant; steering approves support',
+        description: 'Request a consortium letter of collaboration for a grant; steering approves requests',
       },
       {
         label: 'Manuscripts',

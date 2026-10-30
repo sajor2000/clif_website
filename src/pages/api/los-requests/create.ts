@@ -23,11 +23,11 @@ export function parseLosFields(body: any): { fields: LosFields } | { error: stri
   const aims_link = str(body.aims_link);
   if (!aims_link) return { error: 'Link to Specific Aims is required.' };
   const los_link = str(body.los_link);
-  if (!los_link) return { error: 'Link to the letter of support is required.' };
+  if (!los_link) return { error: 'Link to the letter of collaboration is required.' };
   return { fields: { grant_title, grant_type, grant_deadline, aims_link, los_link } };
 }
 
-// Any approved portal member can file a letter-of-support request.
+// Any approved portal member can file a letter-of-collaboration request.
 export const POST: APIRoute = async ({ locals, request }) => {
   const user = locals.user;
   if (!user || !user.is_approved) {
