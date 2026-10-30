@@ -76,13 +76,13 @@ export const GET: APIRoute = async ({ url }) => {
 
   const t = await tallyFor(a.request_id as string);
   const who = (a.full_name as string | null) ? `Thanks, ${esc(a.full_name as string)}.` : 'Thanks.';
-  const verb = decision === 'approved' ? '<span class="ok">approved</span>' : '<span class="no">declined</span>';
+  const verb = decision === 'approved' ? '<span class="ok">&#128077; approved</span>' : '<span class="no">&#128078; declined</span>';
   return page(
     decision === 'approved' ? 'Approved' : 'Declined',
     `<p>${who} You ${verb} the letter of collaboration for:</p>
      <h2>${esc(a.grant_title as string)}</h2>
      <p><strong>${t.approved} of ${t.total}</strong> site PIs have approved so far.</p>
-     <p class="muted">Changed your mind? Click the other button in the email, or respond again from the tracker.</p>
+     <p class="muted">Changed your mind? Click the other thumb in the email, or respond again from the tracker.</p>
      <a class="btn" href="/portal/los-requests">Open letter tracker</a>`,
   );
 };

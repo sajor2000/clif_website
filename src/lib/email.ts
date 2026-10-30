@@ -349,15 +349,15 @@ export function buildLosApprovalEmail(i: LosApprovalEmailInput): string {
   ${linksBlock}
 
   <div style="margin: 28px 0;">
-    <a href="${i.approveUrl}" style="background-color: #15803d; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block; margin-right: 8px;">
-      Approve
+    <a href="${i.approveUrl}" aria-label="Approve" style="background-color: #15803d; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 18px; display: inline-block; margin-right: 8px;">
+      &#128077; Approve
     </a>
-    <a href="${i.declineUrl}" style="background-color: #b91c1c; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">
-      Decline
+    <a href="${i.declineUrl}" aria-label="Decline" style="background-color: #b91c1c; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 18px; display: inline-block;">
+      &#128078; Decline
     </a>
   </div>
 
-  <p style="color: #666; font-size: 14px;">One click records your decision on the website; no sign-in needed. You can change your answer later by clicking the other button or from the <a href="${i.trackerUrl}" style="color: #8B1538;">letter tracker</a>. Questions: <a href="mailto:clif_consortium@uchicago.edu">clif_consortium@uchicago.edu</a>.</p>
+  <p style="color: #666; font-size: 14px;">One click records your decision on the website; no sign-in needed. You can change your answer later by clicking the other thumb or from the <a href="${i.trackerUrl}" style="color: #8B1538;">letter tracker</a>. Questions: <a href="mailto:clif_consortium@uchicago.edu">clif_consortium@uchicago.edu</a>.</p>
 
   <div style="border-top: 1px solid #e5e7eb; margin-top: 32px; padding-top: 16px; font-size: 12px; color: #9ca3af;">
     CLIF Consortium &middot; Common Longitudinal ICU Data Format
