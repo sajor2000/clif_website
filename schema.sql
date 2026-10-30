@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS users (
   funding TEXT,
   conflicts_of_interest TEXT,
   member_status TEXT,
+  is_site_pi INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -298,6 +299,23 @@ CREATE TABLE IF NOT EXISTS los_requests (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+-- One row per (request, site PI): created when the request is filed, decided
+-- by a one-click email link or the tracker. See migrations/027.
+CREATE TABLE IF NOT EXISTS los_approvals (
+  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  request_id TEXT NOT NULL REFERENCES los_requests(id) ON DELETE CASCADE,
+  user_id TEXT REFERENCES users(id),
+  token TEXT NOT NULL UNIQUE,
+  decision TEXT CHECK (decision IN ('approved', 'declined')),
+  decided_at TEXT,
+  decided_via TEXT,
+  emailed_at TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE (request_id, user_id)
+);
+CREATE INDEX IF NOT EXISTS idx_los_approvals_request ON los_approvals(request_id);
+CREATE INDEX IF NOT EXISTS idx_los_approvals_user ON los_approvals(user_id);
 
 
 -- Hospital-level details from the internal tracker "Hospital Details" tab.

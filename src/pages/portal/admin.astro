@@ -152,6 +152,7 @@ try {
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase">Email</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase">Institution</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase">Role</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase" title="Site PIs are emailed one-click approve / decline links for every letter of collaboration request">Site PI</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase">Joined</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase"></th>
                   </tr>
@@ -179,6 +180,15 @@ try {
                             <option value="steering" selected={u.role === 'steering'}>steering</option>
                             <option value="admin" selected={u.role === 'admin'}>admin</option>
                           </select>
+                        </td>
+                        <td class="px-4 py-3">
+                          <input
+                            type="checkbox"
+                            class="site-pi-toggle h-4 w-4 rounded border-gray-300 text-clif-burgundy focus:ring-clif-burgundy"
+                            data-user-id={u.id}
+                            checked={Boolean(u.is_site_pi)}
+                            aria-label={`${u.full_name || u.email} is a site PI`}
+                          />
                         </td>
                         <td class="px-4 py-3 text-gray-500 dark:text-gray-400 text-xs">{new Date(u.created_at).toLocaleDateString()}</td>
                         <td class="px-4 py-3 space-x-2 whitespace-nowrap">
@@ -429,6 +439,26 @@ try {
             alert(data.error || 'Failed to update role');
             this.value = prev;
           }
+        });
+      });
+
+      // Site PI flag (who gets the letter-of-collaboration approval emails)
+      document.querySelectorAll('.site-pi-toggle').forEach(function(box) {
+        box.addEventListener('change', async function() {
+          var userId = this.getAttribute('data-user-id');
+          var next = this.checked;
+          this.disabled = true;
+          var res = await fetch('/api/admin/set-site-pi', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: userId, isSitePi: next }),
+          });
+          if (!res.ok) {
+            var data = await res.json().catch(function () { return {}; });
+            alert(data.error || 'Failed to update site PI flag');
+            this.checked = !next;
+          }
+          this.disabled = false;
         });
       });
 

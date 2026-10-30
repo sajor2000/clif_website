@@ -14,7 +14,7 @@ export type TaskSeverity = 'action' | 'warning' | 'info';
 
 export interface PendingTask {
   key: string; // stable id for de-dup / keys
-  kind: 'run_project' | 'stale_site' | 'incomplete_profile' | 'los_review';
+  kind: 'run_project' | 'stale_site' | 'incomplete_profile' | 'los_review' | 'los_respond';
   title: string;
   detail?: string;
   link: string;
@@ -299,6 +299,30 @@ export async function computePendingTasks(user: TaskUser): Promise<PendingTask[]
     } catch (e) {
       console.error('[tasks] letter-of-collaboration check failed', e);
     }
+  }
+
+  // --- 5. Letters of collaboration awaiting your site PI approval -------------
+  try {
+    const res = await db.execute({
+      sql: `SELECT a.request_id, r.grant_title, r.grant_deadline
+            FROM los_approvals a
+            JOIN los_requests r ON r.id = a.request_id
+            WHERE a.user_id = ? AND a.decision IS NULL AND r.status != 'declined'`,
+      args: [user.id],
+    });
+    for (const r of res.rows as any[]) {
+      const deadline = r.grant_deadline as string | null;
+      tasks.push({
+        key: `los_respond:${r.request_id}`,
+        kind: 'los_respond',
+        title: `Approve letter of collaboration: ${r.grant_title}`,
+        detail: deadline ? `Grant deadline ${formatDate(deadline)}` : 'Awaiting your site PI response',
+        link: '/portal/los-requests',
+        severity: 'action',
+      });
+    }
+  } catch (e) {
+    console.error('[tasks] site PI approval check failed', e);
   }
 
   // Drop dismissible tasks the member has waved away — but only while the

@@ -10,6 +10,7 @@ declare namespace App {
       avatar_url: string | null;
       role: 'admin' | 'steering' | 'member';
       is_approved: boolean;
+      is_site_pi: boolean;
       created_at: string;
       updated_at: string;
     } | null;

@@ -123,6 +123,11 @@ export const POST: APIRoute = async ({ locals, request }) => {
     { sql: `UPDATE manuscripts SET updated_by = ? WHERE updated_by = ?`, args: [canonicalId, duplicateId] },
     { sql: `UPDATE project_runs SET created_by = ? WHERE created_by = ?`, args: [canonicalId, duplicateId] },
     { sql: `UPDATE project_run_sites SET updated_by = ? WHERE updated_by = ?`, args: [canonicalId, duplicateId] },
+    {
+      sql: `DELETE FROM los_approvals WHERE user_id = ? AND request_id IN (SELECT request_id FROM los_approvals WHERE user_id = ?)`,
+      args: [duplicateId, canonicalId],
+    },
+    { sql: `UPDATE los_approvals SET user_id = ? WHERE user_id = ?`, args: [canonicalId, duplicateId] },
     { sql: `UPDATE los_requests SET created_by = ? WHERE created_by = ?`, args: [canonicalId, duplicateId] },
     { sql: `UPDATE los_requests SET approved_by = ? WHERE approved_by = ?`, args: [canonicalId, duplicateId] },
 

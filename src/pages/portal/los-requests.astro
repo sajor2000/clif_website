@@ -5,13 +5,16 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import PortalNav from '../../components/portal/PortalNav.astro';
 import { getDb } from '../../lib/turso';
 import { hasRole } from '../../lib/roles';
+import { groupApprovalsByRequest, tallyApprovals, type ApprovalRow } from '../../lib/los-approvals';
 
 const user = Astro.locals.user!;
 const isAdmin = user.role === 'admin';
 const canApprove = hasRole(user.role, 'steering'); // steering + admin
+const isSitePi = Boolean(user.is_site_pi);
 
 const db = getDb();
 let requests: any[] = [];
+let approvalsByRequest = new Map<string, ApprovalRow[]>();
 let error: string | null = null;
 
 try {
@@ -24,9 +27,25 @@ try {
     args: [],
   });
   requests = result.rows as any[];
+
+  // Site PI responses: one row per (request, PI); see lib/los-approvals.
+  const approvals = await db.execute({
+    sql: `SELECT a.request_id, a.user_id, a.decision, a.decided_at, p.full_name, p.institution
+          FROM los_approvals a
+          LEFT JOIN users p ON p.id = a.user_id
+          ORDER BY p.full_name`,
+    args: [],
+  });
+  approvalsByRequest = groupApprovalsByRequest(approvals.rows as unknown as ApprovalRow[]);
 } catch (e: any) {
   error = e.message;
 }
+
+const decisionMark: Record<string, { icon: string; cls: string; word: string }> = {
+  approved: { icon: '✓', cls: 'text-green-600 dark:text-green-400', word: 'approved' },
+  declined: { icon: '✗', cls: 'text-red-500 dark:text-red-400', word: 'declined' },
+  pending: { icon: '…', cls: 'text-gray-400 dark:text-gray-500', word: 'awaiting' },
+};
 
 // Common NIH grant mechanisms offered as datalist suggestions (free text still allowed).
 const GRANT_TYPES = ['R01', 'R03', 'R21', 'R34', 'R37', 'K01', 'K08', 'K23', 'K24', 'K99/R00', 'F31', 'F32', 'T32', 'U01', 'P01', 'DP1', 'DP2', 'Foundation', 'Other'];
@@ -130,6 +149,18 @@ function isDeadlinePassed(d: string): boolean {
             {requests.map((r) => {
               const manage = canManage(r);
               const st = statusStyles[r.status as string] || statusStyles.pending;
+              const piRows = approvalsByRequest.get(r.id as string) ?? [];
+              const tally = tallyApprovals(piRows);
+              const mine = piRows.find((a) => a.user_id === user.id);
+              const myDecision = mine?.decision ?? null;
+              const tallyBadge =
+                tally.total === 0
+                  ? ''
+                  : tally.approved === tally.total
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                    : tally.declined > 0
+                      ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                      : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300';
               return (
                 <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6" data-los={r.id}>
                   <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
@@ -140,6 +171,11 @@ function isDeadlinePassed(d: string): boolean {
                           <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-clif-burgundy/10 text-clif-burgundy dark:bg-clif-burgundy/20">{r.grant_type}</span>
                         )}
                         <span class={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${st.badge}`}>{st.label}</span>
+                        {tally.total > 0 && (
+                          <span class={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${tallyBadge}`} title="Site PI approvals">
+                            {tally.label} by site PIs
+                          </span>
+                        )}
                       </div>
                       <div class="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-gray-500 dark:text-gray-400">
                         <span>By {r.creator_name || 'Unknown'}</span>
@@ -163,6 +199,34 @@ function isDeadlinePassed(d: string): boolean {
                           <span class="text-red-600 dark:text-red-400">Declined by {r.approver_name}{r.approved_at ? ` on ${formatDate(r.approved_at as string)}` : ''}</span>
                         )}
                       </div>
+                      {piRows.length > 0 && (
+                        <ul class="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-gray-600 dark:text-gray-300" aria-label="Site PI responses">
+                          {piRows.map((a) => {
+                            const m = decisionMark[a.decision ?? 'pending'];
+                            return (
+                              <li class="inline-flex items-center gap-1" title={a.decided_at ? `${m.word} ${formatDate(a.decided_at)}` : m.word}>
+                                <span class={`font-semibold ${m.cls}`} aria-hidden="true">{m.icon}</span>
+                                <span>{a.full_name || 'Former member'}{a.institution ? ` (${a.institution})` : ''}</span>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+                      {isSitePi && (
+                        <div class="flex items-center gap-2 mt-3 text-xs" data-respond={r.id}>
+                          <span class="text-gray-500 dark:text-gray-400">Your response:</span>
+                          <button
+                            class={`los-respond-btn px-2.5 py-1 rounded-full border font-medium transition-colors ${myDecision === 'approved' ? 'bg-green-600 border-green-600 text-white' : 'border-green-600 text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-900/20'}`}
+                            data-id={r.id} data-action="approve" aria-pressed={myDecision === 'approved'}>
+                            Approve
+                          </button>
+                          <button
+                            class={`los-respond-btn px-2.5 py-1 rounded-full border font-medium transition-colors ${myDecision === 'declined' ? 'bg-red-600 border-red-600 text-white' : 'border-red-500 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20'}`}
+                            data-id={r.id} data-action="decline" aria-pressed={myDecision === 'declined'}>
+                            Decline
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     <div class="flex items-center gap-3 shrink-0">
@@ -267,6 +331,26 @@ function isDeadlinePassed(d: string): boolean {
             var data = await res.json().catch(function () { return {}; });
             alert(data.error || 'Failed to update');
             this.disabled = false;
+          }
+        });
+      });
+
+      // Site PI approve / decline (own response only)
+      document.querySelectorAll('.los-respond-btn').forEach(function (btn) {
+        btn.addEventListener('click', async function () {
+          var wrap = this.closest('[data-respond]');
+          wrap.querySelectorAll('button').forEach(function (b) { b.disabled = true; });
+          var res = await fetch('/api/los-requests/respond', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: this.getAttribute('data-id'), action: this.getAttribute('data-action') }),
+          });
+          if (res.ok) {
+            window.location.reload();
+          } else {
+            var data = await res.json().catch(function () { return {}; });
+            alert(data.error || 'Failed to record your response');
+            wrap.querySelectorAll('button').forEach(function (b) { b.disabled = false; });
           }
         });
       });

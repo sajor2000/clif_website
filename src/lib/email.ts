@@ -305,3 +305,63 @@ export function buildSiteReviewEmail(
 </body>
 </html>`.trim();
 }
+
+export interface LosApprovalEmailInput {
+  grantTitle: string;
+  grantType: string | null;
+  grantDeadline: string | null;
+  requesterName: string;
+  aimsLink: string | null;
+  losLink: string | null;
+  approveUrl: string;
+  declineUrl: string;
+  trackerUrl: string;
+}
+
+/**
+ * "A letter of collaboration needs your approval" — sent to each site PI with
+ * one-click Approve / Decline links carrying that PI's own token.
+ */
+export function buildLosApprovalEmail(i: LosApprovalEmailInput): string {
+  const meta: string[] = [];
+  if (i.grantType) meta.push(`<strong>Grant type:</strong> ${escapeHtml(i.grantType)}`);
+  if (i.grantDeadline) meta.push(`<strong>Grant deadline:</strong> ${formatDeadline(i.grantDeadline)}`);
+  meta.push(`<strong>Requested by:</strong> ${escapeHtml(i.requesterName)}`);
+
+  const links: string[] = [];
+  if (i.aimsLink) links.push(`<a href="${escapeHtml(i.aimsLink)}" style="color: #8B1538;">Specific Aims</a>`);
+  if (i.losLink) links.push(`<a href="${escapeHtml(i.losLink)}" style="color: #8B1538;">Draft letter of collaboration</a>`);
+  const linksBlock = links.length ? `<p style="margin: 8px 0 0;">${links.join(' &middot; ')}</p>` : '';
+
+  return `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+  <div style="border-bottom: 3px solid #8B1538; padding-bottom: 16px; margin-bottom: 24px;">
+    <h1 style="color: #8B1538; font-size: 20px; margin: 0;">CLIF Consortium</h1>
+  </div>
+
+  <p>A consortium letter of collaboration has been requested and needs your approval as a site PI:</p>
+
+  <h2 style="font-size: 18px; color: #111; margin: 16px 0 8px;">${escapeHtml(i.grantTitle)}</h2>
+  <p style="margin: 0; color: #444;">${meta.join('<br>')}</p>
+  ${linksBlock}
+
+  <div style="margin: 28px 0;">
+    <a href="${i.approveUrl}" style="background-color: #15803d; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block; margin-right: 8px;">
+      Approve
+    </a>
+    <a href="${i.declineUrl}" style="background-color: #b91c1c; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">
+      Decline
+    </a>
+  </div>
+
+  <p style="color: #666; font-size: 14px;">One click records your decision on the website; no sign-in needed. You can change your answer later by clicking the other button or from the <a href="${i.trackerUrl}" style="color: #8B1538;">letter tracker</a>. Questions: <a href="mailto:clif_consortium@uchicago.edu">clif_consortium@uchicago.edu</a>.</p>
+
+  <div style="border-top: 1px solid #e5e7eb; margin-top: 32px; padding-top: 16px; font-size: 12px; color: #9ca3af;">
+    CLIF Consortium &middot; Common Longitudinal ICU Data Format
+  </div>
+</body>
+</html>`.trim();
+}
