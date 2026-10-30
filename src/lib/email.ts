@@ -359,7 +359,7 @@ export function buildLosApprovalEmail(i: LosApprovalEmailInput): string {
     </a>
   </div>
 
-  <p style="color: #666; font-size: 14px;">One click records your decision on the website; no sign-in needed. You can change your answer later by clicking the other thumb or from the <a href="${i.trackerUrl}" style="color: #8B1538;">letter tracker</a>. Questions: <a href="mailto:clif_consortium@uchicago.edu">clif_consortium@uchicago.edu</a>.</p>
+  <p style="color: #666; font-size: 14px;">One click records your decision on the website; no sign-in needed. These links do not expire: you can change your answer any time by clicking the other thumb or from the <a href="${i.trackerUrl}" style="color: #8B1538;">letter tracker</a>, and your latest click is the one that counts. Questions: <a href="mailto:clif_consortium@uchicago.edu">clif_consortium@uchicago.edu</a>.</p>
 
   <div style="border-top: 1px solid #e5e7eb; margin-top: 32px; padding-top: 16px; font-size: 12px; color: #9ca3af;">
     CLIF Consortium &middot; Common Longitudinal ICU Data Format
