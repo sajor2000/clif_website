@@ -369,13 +369,13 @@ export function buildLosApprovalEmail(i: LosApprovalEmailInput): string {
             </td>
           </tr>
           <tr>
-            <td align="center" style="text-align: center;">
+            <td align="center" style="text-align: center; padding-bottom: 32px;">
               <p style="margin: 0; color: #666; font-size: 14px;">One click records your decision on the website; no sign-in needed. These links do not expire: you can change your answer any time by clicking the other thumb or from the <a href="${i.trackerUrl}" style="color: #8B1538;">letter tracker</a>, and your latest click is the one that counts. Questions: <a href="mailto:clif_consortium@uchicago.edu">clif_consortium@uchicago.edu</a>.</p>
             </td>
           </tr>
           <tr>
-            <td align="center" style="border-top: 1px solid #e5e7eb; margin-top: 32px; padding-top: 16px; font-size: 12px; color: #9ca3af; text-align: center;">
-              <div style="padding-top: 16px;">CLIF Consortium &middot; Common Longitudinal ICU Data Format</div>
+            <td align="center" style="border-top: 1px solid #e5e7eb; padding-top: 16px; font-size: 12px; color: #9ca3af; text-align: center;">
+              CLIF Consortium &middot; Common Longitudinal ICU Data Format
             </td>
           </tr>
         </table>
