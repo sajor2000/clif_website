@@ -331,39 +331,57 @@ export function buildLosApprovalEmail(i: LosApprovalEmailInput): string {
   const links: string[] = [];
   if (i.aimsLink) links.push(`<a href="${escapeHtml(i.aimsLink)}" style="color: #8B1538;">Specific Aims</a>`);
   if (i.losLink) links.push(`<a href="${escapeHtml(i.losLink)}" style="color: #8B1538;">Draft letter of collaboration</a>`);
-  const linksBlock = links.length ? `<p style="margin: 8px 0 0;">${links.join(' &middot; ')}</p>` : '';
+  const linksBlock = links.length ? `<p style="margin: 8px 0 0; text-align: center;">${links.join(' &middot; ')}</p>` : '';
 
   return `
 <!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"></head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
-  <div style="border-bottom: 3px solid #8B1538; padding-bottom: 16px; margin-bottom: 24px;">
-    <a href="https://clif-icu.com" style="text-decoration: none;">
-      <img src="https://clif-icu.com/images/logos/clif_logo_transparent_FINAL_cropped.png" alt="CLIF Consortium" width="180" height="54" style="display: block; width: 180px; height: auto; border: 0;" />
-    </a>
-  </div>
-
-  <p>A consortium letter of collaboration has been requested and needs your approval as a site PI:</p>
-
-  <h2 style="font-size: 18px; color: #111; margin: 16px 0 8px;">${escapeHtml(i.grantTitle)}</h2>
-  <p style="margin: 0; color: #444;">${meta.join('<br>')}</p>
-  ${linksBlock}
-
-  <div style="margin: 28px 0;">
-    <a href="${i.approveUrl}" aria-label="Approve" style="background-color: #15803d; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 18px; display: inline-block; margin-right: 8px;">
-      &#128077; Approve
-    </a>
-    <a href="${i.declineUrl}" aria-label="Decline" style="background-color: #b91c1c; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 18px; display: inline-block;">
-      &#128078; Decline
-    </a>
-  </div>
-
-  <p style="color: #666; font-size: 14px;">One click records your decision on the website; no sign-in needed. These links do not expire: you can change your answer any time by clicking the other thumb or from the <a href="${i.trackerUrl}" style="color: #8B1538;">letter tracker</a>, and your latest click is the one that counts. Questions: <a href="mailto:clif_consortium@uchicago.edu">clif_consortium@uchicago.edu</a>.</p>
-
-  <div style="border-top: 1px solid #e5e7eb; margin-top: 32px; padding-top: 16px; font-size: 12px; color: #9ca3af;">
-    CLIF Consortium &middot; Common Longitudinal ICU Data Format
-  </div>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+<body style="margin: 0; padding: 0; background-color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #333;">
+  <!-- Centered 600px table: Outlook ignores max-width/margin on body, so a table wrapper is what actually centers the message. -->
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td align="center" style="padding: 24px 12px;">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width: 600px; max-width: 100%; text-align: center;">
+          <tr>
+            <td align="center" style="border-bottom: 3px solid #8B1538; padding-bottom: 16px;">
+              <a href="https://clif-icu.com" style="text-decoration: none;">
+                <img src="https://clif-icu.com/images/logos/clif_logo_transparent_FINAL_cropped.png" alt="CLIF Consortium" width="180" height="54" style="display: block; margin: 0 auto; width: 180px; height: auto; border: 0;" />
+              </a>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding-top: 24px; text-align: center;">
+              <p style="margin: 0 0 16px;">A consortium letter of collaboration has been requested and needs your approval as a site PI:</p>
+              <h2 style="font-size: 18px; color: #111; margin: 0 0 8px;">${escapeHtml(i.grantTitle)}</h2>
+              <p style="margin: 0; color: #444;">${meta.join('<br>')}</p>
+              ${linksBlock}
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding: 28px 0;">
+              <a href="${i.approveUrl}" aria-label="Approve" style="background-color: #15803d; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 18px; display: inline-block; margin: 0 4px;">
+                &#128077; Approve
+              </a>
+              <a href="${i.declineUrl}" aria-label="Decline" style="background-color: #b91c1c; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 18px; display: inline-block; margin: 0 4px;">
+                &#128078; Decline
+              </a>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="text-align: center;">
+              <p style="margin: 0; color: #666; font-size: 14px;">One click records your decision on the website; no sign-in needed. These links do not expire: you can change your answer any time by clicking the other thumb or from the <a href="${i.trackerUrl}" style="color: #8B1538;">letter tracker</a>, and your latest click is the one that counts. Questions: <a href="mailto:clif_consortium@uchicago.edu">clif_consortium@uchicago.edu</a>.</p>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="border-top: 1px solid #e5e7eb; margin-top: 32px; padding-top: 16px; font-size: 12px; color: #9ca3af; text-align: center;">
+              <div style="padding-top: 16px;">CLIF Consortium &middot; Common Longitudinal ICU Data Format</div>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>`.trim();
 }
