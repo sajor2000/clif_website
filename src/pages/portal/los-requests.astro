@@ -42,8 +42,8 @@ try {
 }
 
 const decisionMark: Record<string, { icon: string; cls: string; word: string }> = {
-  approved: { icon: '✓', cls: 'text-green-600 dark:text-green-400', word: 'approved' },
-  declined: { icon: '✗', cls: 'text-red-500 dark:text-red-400', word: 'declined' },
+  approved: { icon: '👍', cls: '', word: 'approved' },
+  declined: { icon: '👎', cls: '', word: 'declined' },
   pending: { icon: '…', cls: 'text-gray-400 dark:text-gray-500', word: 'awaiting' },
 };
 
@@ -217,13 +217,13 @@ function isDeadlinePassed(d: string): boolean {
                           <span class="text-gray-500 dark:text-gray-400">Your response:</span>
                           <button
                             class={`los-respond-btn px-2.5 py-1 rounded-full border font-medium transition-colors ${myDecision === 'approved' ? 'bg-green-600 border-green-600 text-white' : 'border-green-600 text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-900/20'}`}
-                            data-id={r.id} data-action="approve" aria-pressed={myDecision === 'approved'}>
-                            Approve
+                            data-id={r.id} data-action="approve" aria-pressed={myDecision === 'approved'} aria-label="Approve">
+                            <span aria-hidden="true">👍</span> Approve
                           </button>
                           <button
                             class={`los-respond-btn px-2.5 py-1 rounded-full border font-medium transition-colors ${myDecision === 'declined' ? 'bg-red-600 border-red-600 text-white' : 'border-red-500 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20'}`}
-                            data-id={r.id} data-action="decline" aria-pressed={myDecision === 'declined'}>
-                            Decline
+                            data-id={r.id} data-action="decline" aria-pressed={myDecision === 'declined'} aria-label="Decline">
+                            <span aria-hidden="true">👎</span> Decline
                           </button>
                         </div>
                       )}
