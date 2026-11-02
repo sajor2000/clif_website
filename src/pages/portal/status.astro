@@ -82,6 +82,8 @@ const clifVersions = Object.keys(
 )
   .map((p) => p.match(/clif-data-dictionary-(.+)\.md$/)?.[1])
   .filter((v): v is string => Boolean(v) && v !== '1.0.0')
+  // Display and store major.minor only (3.0.0 → 3.0).
+  .map((v) => v.replace(/\.0$/, ''))
   .sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
 
 // Approved members for the "Lead authors" checklist and "Validation buddy" dropdown.
@@ -1022,7 +1024,8 @@ const filterCtrlClass =
         setChecklist('m-lds', 'm-lead_data_scientist_other', data ? data.lead_data_scientist : '');
         setSelectValue('m-priority', data ? data.priority : '');
         setSelectValue('m-validation_buddy', data ? data.validation_buddy : '');
-        setSelectValue('m-clif_version', data ? data.clif_version : '');
+        // Older manuscripts may have stored '2.1.0'; the dropdown now uses '2.1'.
+        setSelectValue('m-clif_version', data && data.clif_version ? String(data.clif_version).replace(/\.0$/, '') : '');
         var selected = data && data.status ? data.status : [];
         form.querySelectorAll('.m-status').forEach(function (cb) {
           cb.checked = selected.indexOf(cb.value) !== -1;

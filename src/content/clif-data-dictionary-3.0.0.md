@@ -4,7 +4,7 @@ The CLIF Data Dictionary serves as a comprehensive guide to the Common Longitudi
 
 <br />
 
-<iframe src="/images/data-dictionary/clif_erd_3.0.0.html" title="CLIF 3.0.0 interactive entity-relationship diagram" loading="lazy" allowfullscreen allow="fullscreen" style="width:100%;height:760px;border:1px solid #e6ded4;border-radius:10px"></iframe>
+<iframe src="/images/data-dictionary/clif_erd_3.0.0.html" title="CLIF 3.0 interactive entity-relationship diagram" loading="lazy" allowfullscreen allow="fullscreen" style="width:100%;height:760px;border:1px solid #e6ded4;border-radius:10px"></iframe>
 
 ## Beta Tables
 
