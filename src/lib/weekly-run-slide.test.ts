@@ -4,6 +4,7 @@ import {
   buildWeeklySlideRequests,
   deadlineCell,
   longDateLabel,
+  pendingCell,
   sitesCell,
   weekAnchor,
   weeklySlideObjectId,
@@ -20,6 +21,7 @@ function run(over: Partial<WeeklyRunRow> = {}): WeeklyRunRow {
     daysLeft: 16,
     ran: 6,
     applicable: 10,
+    pending: ['Emory University', 'Johns Hopkins University'],
     ...over,
   };
 }
@@ -55,22 +57,25 @@ describe('weekly slide helpers', () => {
     expect(deadlineCell({ deadline: null, daysLeft: null })).toBe('TBD');
   });
 
-  it('shows site tallies only for active runs', () => {
+  it('shows site tallies and pending sites only for active runs', () => {
     expect(sitesCell({ status: 'open', ran: 6, applicable: 10 })).toBe('6 / 10');
     expect(sitesCell({ status: 'upcoming', ran: null, applicable: null })).toBe('—');
+    expect(pendingCell({ status: 'open', pending: ['Emory University', 'Rush University'] })).toBe('Emory University, Rush University');
+    expect(pendingCell({ status: 'open', pending: [] })).toBe('None — all sites done');
+    expect(pendingCell({ status: 'upcoming', pending: [] })).toBe('—');
   });
 });
 
 describe('buildWeeklySlideRequests', () => {
   it('creates the slide first, at the front, with a header row and one row per run', () => {
-    const reqs = buildWeeklySlideRequests({ ...base, runs: [run(), run({ label: '13 (run 2)', status: 'upcoming', deadline: null, daysLeft: null, ran: null, applicable: null, conference: null })] });
+    const reqs = buildWeeklySlideRequests({ ...base, runs: [run(), run({ label: '13 (run 2)', status: 'upcoming', deadline: null, daysLeft: null, ran: null, applicable: null, conference: null, pending: [] })] });
     const create = reqs[0].createSlide as any;
     expect(create.objectId).toBe('weeklyRuns_20261105');
     expect(create.insertionIndex).toBe(0);
 
     const table = reqs.find((r) => r.createTable)!.createTable as any;
     expect(table.rows).toBe(3);
-    expect(table.columns).toBe(5);
+    expect(table.columns).toBe(6);
     expect(table.elementProperties.pageObjectId).toBe('weeklyRuns_20261105');
 
     const cells = cellTexts(reqs);
@@ -79,10 +84,12 @@ describe('buildWeeklySlideRequests', () => {
     expect(cells.get('1,2')).toBe('Active');
     expect(cells.get('1,3')).toBe('Nov 20 · 16 days left');
     expect(cells.get('1,4')).toBe('6 / 10');
+    expect(cells.get('1,5')).toBe('Emory University, Johns Hopkins University');
     expect(cells.get('2,0')).toBe('13 (run 2)');
     expect(cells.get('2,2')).toBe('Upcoming');
     expect(cells.get('2,3')).toBe('TBD');
     expect(cells.get('2,4')).toBe('—');
+    expect(cells.get('2,5')).toBe('—');
 
     const title = reqs.find((r) => (r.insertText as any)?.objectId === 'weeklyRuns_20261105_title')!.insertText as any;
     expect(title.text).toBe('Active CLIF project runs · Wednesday, November 4, 2026');

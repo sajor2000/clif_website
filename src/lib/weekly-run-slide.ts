@@ -10,7 +10,8 @@ import { getServiceAccountAccessToken, parseServiceAccountKey } from './google-s
  * Every Thursday at 9am Chicago (vercel.json cron -> /api/project-runs/weekly-slide)
  * a new slide is inserted at the FRONT of the consortium's standing meeting deck
  * listing every active and upcoming project run: number, title, status, Box
- * upload deadline and how many applicable sites have run it. Older weekly
+ * upload deadline, how many applicable sites have run it, and which sites
+ * still have not. Older weekly
  * slides are left in place below it as a running history.
  *
  * The deck is a Google Slides file shared (as Editor) with the service
@@ -22,8 +23,8 @@ import { getServiceAccountAccessToken, parseServiceAccountKey } from './google-s
  */
 
 export const SLIDES_SCOPE = 'https://www.googleapis.com/auth/presentations';
-/** Rows that fit on one slide at 10pt; anything beyond is summarised in the footer. */
-export const MAX_SLIDE_ROWS = 12;
+/** Rows that fit on one slide at 9pt with a pending-sites column; anything beyond is summarised in the footer. */
+export const MAX_SLIDE_ROWS = 10;
 
 export interface WeeklyRunRow {
   label: string; // "12" or "12 (run 2)"; "" when unnumbered
@@ -34,6 +35,8 @@ export interface WeeklyRunRow {
   daysLeft: number | null;
   ran: number | null;
   applicable: number | null;
+  /** Applicable sites that have not run it yet (open runs only). */
+  pending: string[];
 }
 
 export interface WeeklySlideInput {
@@ -92,12 +95,17 @@ export function sitesCell(r: Pick<WeeklyRunRow, 'status' | 'ran' | 'applicable'>
   return `${r.ran} / ${r.applicable}`;
 }
 
+export function pendingCell(r: Pick<WeeklyRunRow, 'status' | 'pending'>): string {
+  if (r.status !== 'open') return '—';
+  return r.pending.length === 0 ? 'None — all sites done' : r.pending.join(', ');
+}
+
 const EMU_PER_INCH = 914400;
 const BURGUNDY = { red: 0.545, green: 0.082, blue: 0.22 };
 const GRAY = { red: 0.42, green: 0.447, blue: 0.502 };
 const WHITE = { red: 1, green: 1, blue: 1 };
-const COLUMN_FRACTIONS = [0.08, 0.5, 0.12, 0.16, 0.14];
-const HEADERS = ['#', 'Project', 'Status', 'Deadline', 'Sites run'];
+const COLUMN_FRACTIONS = [0.06, 0.3, 0.1, 0.14, 0.1, 0.3];
+const HEADERS = ['#', 'Project', 'Status', 'Deadline', 'Sites run', 'Pending sites'];
 
 function emu(v: number) {
   return { magnitude: Math.round(v), unit: 'EMU' };
@@ -191,6 +199,7 @@ export function buildWeeklySlideRequests(i: WeeklySlideInput): Record<string, un
         r.status === 'open' ? 'Active' : 'Upcoming',
         deadlineCell(r),
         sitesCell(r),
+        pendingCell(r),
       ]),
     ];
     cells.forEach((row, rowIndex) => {
@@ -204,8 +213,8 @@ export function buildWeeklySlideRequests(i: WeeklySlideInput): Record<string, un
             textRange: { type: 'ALL' },
             style:
               rowIndex === 0
-                ? { bold: true, fontSize: pt(10), foregroundColor: { opaqueColor: { rgbColor: WHITE } } }
-                : { fontSize: pt(10) },
+                ? { bold: true, fontSize: pt(9), foregroundColor: { opaqueColor: { rgbColor: WHITE } } }
+                : { fontSize: pt(9) },
             fields: rowIndex === 0 ? 'bold,fontSize,foregroundColor' : 'fontSize',
           },
         });
@@ -245,28 +254,36 @@ export async function collectWeeklyRuns(now: Date = new Date()): Promise<WeeklyR
   const runs = runsRes.rows as any[];
   if (runs.length === 0) return [];
 
-  const sitesRes = await db.execute('SELECT id, site_name FROM site_details');
-  const known = new Set(
-    (sitesRes.rows as any[]).filter((s) => !SITES_NOT_YET_RUNNING.has(s.site_name as string)).map((s) => s.id as string),
+  const sitesRes = await db.execute('SELECT id, site_name FROM site_details ORDER BY site_name');
+  const siteNames = new Map<string, string>(
+    (sitesRes.rows as any[])
+      .filter((s) => !SITES_NOT_YET_RUNNING.has(s.site_name as string))
+      .map((s) => [s.id as string, s.site_name as string]),
   );
+  const known = new Set(siteNames.keys());
   const placeholders = runs.map(() => '?').join(',');
   const statusRes = await db.execute({
     sql: `SELECT project_id, site_id, has_run, not_applicable FROM project_run_sites WHERE project_id IN (${placeholders})`,
     args: runs.map((r) => r.id as string),
   });
-  const ran = new Map<string, number>();
-  const na = new Map<string, number>();
+  const ran = new Map<string, Set<string>>();
+  const na = new Map<string, Set<string>>();
+  const add = (m: Map<string, Set<string>>, pid: string, sid: string) => {
+    if (!m.has(pid)) m.set(pid, new Set());
+    m.get(pid)!.add(sid);
+  };
   for (const s of statusRes.rows as any[]) {
     if (!known.has(s.site_id as string)) continue;
-    const pid = s.project_id as string;
-    if (Number(s.has_run) === 1) ran.set(pid, (ran.get(pid) ?? 0) + 1);
-    else if (Number(s.not_applicable) === 1) na.set(pid, (na.get(pid) ?? 0) + 1);
+    if (Number(s.has_run) === 1) add(ran, s.project_id as string, s.site_id as string);
+    else if (Number(s.not_applicable) === 1) add(na, s.project_id as string, s.site_id as string);
   }
 
   return runs.map((r) => {
     const id = r.id as string;
     const status = toProjectRunStatus(r.status) === 'upcoming' ? 'upcoming' : 'open';
     const deadline = (r.results_deadline as string) || null;
+    const ranSet = ran.get(id) ?? new Set<string>();
+    const naSet = na.get(id) ?? new Set<string>();
     return {
       label: runLabel(r.project_number, r.run_number),
       title: r.title as string,
@@ -274,8 +291,12 @@ export async function collectWeeklyRuns(now: Date = new Date()): Promise<WeeklyR
       conference: (r.conference as string) || null,
       deadline,
       daysLeft: deadline ? daysBetween(today, deadline) : null,
-      ran: status === 'open' ? (ran.get(id) ?? 0) : null,
-      applicable: status === 'open' ? known.size - (na.get(id) ?? 0) : null,
+      ran: status === 'open' ? ranSet.size : null,
+      applicable: status === 'open' ? known.size - naSet.size : null,
+      pending:
+        status === 'open'
+          ? [...siteNames].filter(([sid]) => !ranSet.has(sid) && !naSet.has(sid)).map(([, name]) => name)
+          : [],
     };
   });
 }
