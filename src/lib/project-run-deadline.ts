@@ -16,6 +16,14 @@ const dateFormatter = new Intl.DateTimeFormat('en-CA', {
   day: '2-digit',
 });
 
+const hourFormatter = new Intl.DateTimeFormat('en-US', { timeZone: CONSORTIUM_TZ, hour: 'numeric', hour12: false });
+
+/** The current hour of the day in Chicago, 0-23. */
+export function hourInConsortiumTz(now: Date = new Date()): number {
+  // "24" is what some ICU builds print for midnight.
+  return Number(hourFormatter.format(now)) % 24;
+}
+
 /** Today's date in Chicago as YYYY-MM-DD. */
 export function todayInConsortiumTz(now: Date = new Date()): string {
   return dateFormatter.format(now);

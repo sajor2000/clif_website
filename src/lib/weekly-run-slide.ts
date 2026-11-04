@@ -7,8 +7,8 @@ import { getServiceAccountAccessToken, parseServiceAccountKey } from './google-s
 /**
  * Weekly project-run summary slide.
  *
- * Every Wednesday (vercel.json cron -> /api/project-runs/weekly-slide) a new
- * slide is inserted at the FRONT of the consortium's standing meeting deck
+ * Every Thursday at 9am Chicago (vercel.json cron -> /api/project-runs/weekly-slide)
+ * a new slide is inserted at the FRONT of the consortium's standing meeting deck
  * listing every active and upcoming project run: number, title, status, Box
  * upload deadline and how many applicable sites have run it. Older weekly
  * slides are left in place below it as a running history.
@@ -202,7 +202,7 @@ export function buildWeeklySlideRequests(i: WeeklySlideInput): Record<string, un
 
   const footer =
     (hidden > 0 ? `+${hidden} more run${hidden === 1 ? '' : 's'} on the tracker. ` : '') +
-    `Generated automatically every Wednesday from ${i.trackerUrl}`;
+    `Generated automatically every Thursday from ${i.trackerUrl}`;
   requests.push(
     ...textBox(
       `${slideId}_footer`,

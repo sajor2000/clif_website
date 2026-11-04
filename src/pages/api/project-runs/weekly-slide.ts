@@ -1,13 +1,19 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
+import { hourInConsortiumTz } from '../../../lib/project-run-deadline';
 import { collectWeeklyRuns, insertWeeklyRunSlide } from '../../../lib/weekly-run-slide';
 
 /**
- * Weekly project-run slide. Invoked by Vercel Cron (see vercel.json) every
- * Wednesday at 11:00 UTC, which is early morning in Chicago year-round, and
- * inserts a summary of active/upcoming runs as the first slide of the standing
- * meeting deck (see src/lib/weekly-run-slide.ts).
+ * Weekly project-run slide: a summary of active/upcoming runs inserted as the
+ * first slide of the standing meeting deck (see src/lib/weekly-run-slide.ts)
+ * every Thursday at 9:00 Chicago time.
+ *
+ * Vercel Cron only speaks UTC, and 9am Chicago is 14:00 UTC in summer and
+ * 15:00 UTC in winter, so vercel.json fires this route at both hours every
+ * Thursday and the cron path below only acts when it is actually 9 o'clock in
+ * Chicago. (The other call of the day is a no-op either way, because today's
+ * slide already exists.)
  *
  * Auth: `Authorization: Bearer <CRON_SECRET>` from Vercel Cron, or a signed-in
  * admin visiting the URL to generate this week's slide by hand. Running it
@@ -21,6 +27,11 @@ export const GET: APIRoute = async ({ request, locals, url }) => {
   const viaCron = Boolean(secret) && auth === `Bearer ${secret}`;
   const viaAdmin = locals.user?.role === 'admin';
   if (!viaCron && !viaAdmin) return json({ error: 'Unauthorized' }, 401);
+
+  const SLIDE_HOUR_CHICAGO = 9;
+  if (viaCron && !viaAdmin && hourInConsortiumTz() !== SLIDE_HOUR_CHICAGO) {
+    return json({ success: true, skipped: true, reason: `not ${SLIDE_HOUR_CHICAGO}:00 in Chicago` });
+  }
 
   try {
     if (url.searchParams.get('dry') === '1') {

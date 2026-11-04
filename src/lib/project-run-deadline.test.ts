@@ -57,3 +57,13 @@ describe('addDays / daysBetween', () => {
     expect(daysBetween('2026-10-28', '2026-10-27')).toBe(-1);
   });
 });
+
+describe('hourInConsortiumTz', () => {
+  it('reports the Chicago hour across daylight saving time', async () => {
+    const { hourInConsortiumTz } = await import('./project-run-deadline');
+    expect(hourInConsortiumTz(new Date('2026-07-09T14:00:00Z'))).toBe(9); // CDT
+    expect(hourInConsortiumTz(new Date('2026-12-10T15:00:00Z'))).toBe(9); // CST
+    expect(hourInConsortiumTz(new Date('2026-12-10T14:00:00Z'))).toBe(8);
+    expect(hourInConsortiumTz(new Date('2026-12-10T06:00:00Z'))).toBe(0);
+  });
+});
