@@ -17,6 +17,8 @@ const db = getDb();
 let requests: any[] = [];
 let approvalsByRequest = new Map<string, ApprovalRow[]>();
 let mySignatureOnFile = true;
+// Default applicant PI for the form: "Name, degrees" as it should read in the letter.
+let applicantDefault = user.full_name || '';
 let error: string | null = null;
 
 try {
@@ -46,6 +48,10 @@ try {
     const sig = await db.execute({ sql: 'SELECT 1 FROM pi_signatures WHERE user_id = ?', args: [user.id] });
     mySignatureOnFile = sig.rows.length > 0;
   }
+
+  const me = await db.execute({ sql: 'SELECT degrees FROM users WHERE id = ?', args: [user.id] });
+  const degrees = ((me.rows[0]?.degrees as string | null) || '').trim();
+  if (applicantDefault && degrees) applicantDefault = `${applicantDefault}, ${degrees}`;
 } catch (e: any) {
   error = e.message;
 }
@@ -158,7 +164,7 @@ function isDeadlinePassed(d: string): boolean {
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label for="los-pi" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Applicant PI <span class="text-red-500">*</span></label>
-                  <input type="text" id="los-pi" required value={user.full_name || ''} placeholder="e.g. Jane Doe, MD"
+                  <input type="text" id="los-pi" required value={applicantDefault} placeholder="e.g. Jane Doe, MD"
                     class="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent" />
                 </div>
                 <div>
