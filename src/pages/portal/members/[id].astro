@@ -52,6 +52,18 @@ const showSignupEmail =
 const showGmailPersonal = canSeePrivate && !!member?.gmail_personal;
 
 const affiliationPoints = parseAffiliations(member?.affiliation);
+
+// Signature image for generated letters of collaboration: shown and managed
+// by the member themselves or an admin only.
+let hasSignature = false;
+if (canEdit && member) {
+  try {
+    const sig = await db.execute({ sql: 'SELECT 1 FROM pi_signatures WHERE user_id = ?', args: [member.id] });
+    hasSignature = sig.rows.length > 0;
+  } catch {
+    /* table missing until migration 028 runs; the section still renders */
+  }
+}
 ---
 
 <BaseLayout title={`${displayName} – Member Directory`}>
@@ -198,6 +210,39 @@ const affiliationPoints = parseAffiliations(member?.affiliation);
 
         {canEdit && member && (
           <section
+            id="signature-panel"
+            class="mt-6 bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6 sm:p-8"
+            data-user-id={member.id}
+          >
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-1">Signature for letters of collaboration</h2>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">
+              {member.is_site_pi
+                ? 'As a site PI, your signature is placed on every consortium letter of collaboration you approve.'
+                : 'Used only if you are flagged as a site PI who approves consortium letters of collaboration.'}
+              {' '}Visible only to you and admins. PNG or JPEG, up to 500 KB; a tight crop on a white or transparent background works best.
+            </p>
+            <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+              <div class="shrink-0 w-56 h-20 border border-dashed border-gray-300 dark:border-neutral-600 rounded-lg flex items-center justify-center bg-white overflow-hidden">
+                {hasSignature ? (
+                  <img id="signature-preview" src={`/api/members/signature?userId=${member.id}`} alt="Signature on file" class="max-w-full max-h-full object-contain" />
+                ) : (
+                  <span id="signature-preview" class="text-xs text-gray-400">No signature on file</span>
+                )}
+              </div>
+              <div class="flex flex-wrap items-center gap-3 text-sm">
+                <input type="file" id="signature-file" accept="image/png,image/jpeg" class="text-xs text-gray-600 dark:text-gray-300" />
+                <button id="signature-upload-btn" class="px-3 py-1.5 text-xs font-medium text-white bg-clif-burgundy hover:bg-clif-burgundy/90 rounded-lg">Upload</button>
+                {hasSignature && (
+                  <button id="signature-remove-btn" class="text-xs text-red-500 hover:text-red-700 dark:text-red-400 underline">Remove</button>
+                )}
+                <span id="signature-status" class="text-xs"></span>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {canEdit && member && (
+          <section
             id="edit-profile-panel"
             class="hidden mt-6 bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-700 p-6 sm:p-8"
             data-user-id={member.id}
@@ -318,6 +363,54 @@ const affiliationPoints = parseAffiliations(member?.affiliation);
             save.textContent = 'Save changes';
           }
         });
+
+        // Signature image: upload as base64 JSON, remove with DELETE.
+        var sigPanel = document.getElementById('signature-panel');
+        var sigFile = document.getElementById('signature-file');
+        var sigUpload = document.getElementById('signature-upload-btn');
+        var sigRemove = document.getElementById('signature-remove-btn');
+        var sigStatus = document.getElementById('signature-status');
+        function sigNote(msg, isError) {
+          if (!sigStatus) return;
+          sigStatus.textContent = msg;
+          sigStatus.className = 'text-xs ' + (isError ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400');
+        }
+        if (sigPanel && sigUpload && sigFile) {
+          sigUpload.addEventListener('click', function () {
+            var file = sigFile.files && sigFile.files[0];
+            if (!file) return sigNote('Choose a PNG or JPEG file first.', true);
+            if (file.size > 500 * 1024) return sigNote('The image must be 500 KB or smaller.', true);
+            var reader = new FileReader();
+            reader.onload = async function () {
+              sigUpload.disabled = true;
+              var res = await fetch('/api/members/signature', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: sigPanel.getAttribute('data-user-id'), data: reader.result }),
+              });
+              if (res.ok) {
+                window.location.reload();
+              } else {
+                var data = await res.json().catch(function () { return {}; });
+                sigNote(data.error || 'Upload failed', true);
+                sigUpload.disabled = false;
+              }
+            };
+            reader.readAsDataURL(file);
+          });
+        }
+        if (sigPanel && sigRemove) {
+          sigRemove.addEventListener('click', async function () {
+            if (!confirm('Remove the signature on file?')) return;
+            var res = await fetch('/api/members/signature', {
+              method: 'DELETE',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ userId: sigPanel.getAttribute('data-user-id') }),
+            });
+            if (res.ok) window.location.reload();
+            else sigNote('Could not remove the signature', true);
+          });
+        }
       });
     </script>
   )}

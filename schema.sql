@@ -292,11 +292,26 @@ CREATE TABLE IF NOT EXISTS los_requests (
   grant_deadline TEXT,
   aims_link TEXT,
   los_link TEXT,
+  -- Blanks in the fixed letter paragraph; the letter is generated from these. See migrations/028.
+  applicant_pi TEXT,
+  applicant_institution TEXT,
+  funding_agency TEXT,
+  extra_paragraph TEXT,
   status TEXT NOT NULL DEFAULT 'pending',
   approved_by TEXT REFERENCES users(id),
   approved_at TEXT,
   created_by TEXT NOT NULL REFERENCES users(id),
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- A site PI's signature image (PNG or JPEG bytes) for generated letters. See migrations/028.
+CREATE TABLE IF NOT EXISTS pi_signatures (
+  user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  mime TEXT NOT NULL,
+  data BLOB NOT NULL,
+  width INTEGER NOT NULL,
+  height INTEGER NOT NULL,
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

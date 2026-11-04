@@ -130,6 +130,12 @@ export const POST: APIRoute = async ({ locals, request }) => {
     { sql: `UPDATE los_approvals SET user_id = ? WHERE user_id = ?`, args: [canonicalId, duplicateId] },
     { sql: `UPDATE los_requests SET created_by = ? WHERE created_by = ?`, args: [canonicalId, duplicateId] },
     { sql: `UPDATE los_requests SET approved_by = ? WHERE approved_by = ?`, args: [canonicalId, duplicateId] },
+    // Keep the canonical signature when both have one; the duplicate's row cascades with the user.
+    {
+      sql: `INSERT OR IGNORE INTO pi_signatures (user_id, mime, data, width, height, updated_at)
+            SELECT ?, mime, data, width, height, updated_at FROM pi_signatures WHERE user_id = ?`,
+      args: [canonicalId, duplicateId],
+    },
 
     // Move login identities; they become non-primary under the canonical user.
     // (google_id is globally unique, so no collision is possible.)

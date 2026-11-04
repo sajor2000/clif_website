@@ -9,6 +9,10 @@
  * #run_requests). The webhook URL is bound to one channel at creation time;
  * pointing this at a different channel means issuing a new URL. With the var
  * unset every call is a no-op, so local dev and previews stay silent.
+ *
+ * Letter of collaboration requests go to #steering-committee instead, through
+ * a second webhook in SLACK_STEERING_WEBHOOK_URL (same app, added to that
+ * channel). Unset means those posts are skipped too.
  */
 
 import { PURPOSE_LABELS, isRerun, runLabel } from './project-run-status';
@@ -194,16 +198,91 @@ export function buildDeadlineReminderSlackMessage(r: DeadlineReminderSlackInput)
   };
 }
 
-/** POST a payload to the configured webhook. Never throws. */
+export interface LosRequestSlackInput {
+  grantTitle: string;
+  grantType: string | null;
+  /** YYYY-MM-DD grant deadline. */
+  grantDeadline: string | null;
+  applicantPi: string | null;
+  applicantInstitution: string | null;
+  requestedBy: string | null;
+  /** How many site PIs were asked to approve. */
+  piCount: number;
+  /** Deep link to the request on the tracker. */
+  requestUrl: string;
+}
+
+/**
+ * Block Kit payload telling #steering-committee a letter of collaboration
+ * was requested and needs the site PIs' approval on the tracker.
+ */
+export function buildLosRequestSlackMessage(r: LosRequestSlackInput): Record<string, unknown> {
+  const heading = 'New letter of collaboration request';
+  const blocks: Record<string, unknown>[] = [
+    {
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: `<!channel> :memo: *${heading}*\n<${r.requestUrl}|${escapeSlack(r.grantTitle)}>`,
+      },
+    },
+  ];
+
+  const bits: string[] = [];
+  if (r.grantType) bits.push(`*${escapeSlack(r.grantType)}*`);
+  if (r.applicantPi) {
+    bits.push(
+      `PI *${escapeSlack(r.applicantPi)}*` + (r.applicantInstitution ? `, ${escapeSlack(r.applicantInstitution)}` : ''),
+    );
+  }
+  if (r.grantDeadline) bits.push(`Grant deadline *${formatDeadline(r.grantDeadline)}*`);
+  if (r.requestedBy) bits.push(`Requested by *${escapeSlack(r.requestedBy)}*`);
+  blocks.push({ type: 'context', elements: [{ type: 'mrkdwn', text: bits.join('  ·  ') }] });
+
+  blocks.push({
+    type: 'section',
+    text: {
+      type: 'mrkdwn',
+      text:
+        r.piCount > 0
+          ? `Site PIs (${r.piCount}) have been emailed. Approve or decline on the tracker; the signed letter is generated from the approvals.`
+          : 'No site PIs are flagged yet, so nobody has been asked to approve. Flag them on the admin page.',
+    },
+  });
+
+  blocks.push({
+    type: 'actions',
+    elements: [
+      {
+        type: 'button',
+        text: { type: 'plain_text', text: 'Review in portal' },
+        url: r.requestUrl,
+        style: 'primary',
+      },
+    ],
+  });
+
+  return { text: `${heading}: ${r.grantTitle}`, blocks };
+}
+
+/** Webhook for #steering-committee; see the module comment. */
+function steeringWebhookUrl(): string | undefined {
+  return import.meta.env?.SLACK_STEERING_WEBHOOK_URL || process.env.SLACK_STEERING_WEBHOOK_URL;
+}
+
+/**
+ * POST a payload to a webhook. Never throws. Defaults to the #run_requests
+ * webhook in SLACK_WEBHOOK_URL; pass another URL to reach another channel.
+ */
 export async function postSlackMessage(
   payload: Record<string, unknown>,
+  webhookUrl: string | undefined = import.meta.env?.SLACK_WEBHOOK_URL || process.env.SLACK_WEBHOOK_URL,
 ): Promise<{ ok: boolean; error?: string }> {
   // Astro/Vite puts .env values on import.meta.env (dev); Vercel puts them on
   // process.env (prod). The `?.` matters: import.meta.env only exists under
   // Vite, so without it this module throws anywhere else — including tests.
-  const webhookUrl = import.meta.env?.SLACK_WEBHOOK_URL || process.env.SLACK_WEBHOOK_URL;
   if (!webhookUrl) {
-    return { ok: false, error: 'SLACK_WEBHOOK_URL not configured' };
+    return { ok: false, error: 'Slack webhook not configured' };
   }
 
   try {
@@ -229,4 +308,9 @@ export async function notifySlackProjectRun(
   r: ProjectRunSlackInput,
 ): Promise<{ ok: boolean; error?: string }> {
   return postSlackMessage(buildProjectRunSlackMessage(r));
+}
+
+/** Announce a letter of collaboration request in #steering-committee. */
+export async function notifySlackLosRequest(r: LosRequestSlackInput): Promise<{ ok: boolean; error?: string }> {
+  return postSlackMessage(buildLosRequestSlackMessage(r), steeringWebhookUrl());
 }
