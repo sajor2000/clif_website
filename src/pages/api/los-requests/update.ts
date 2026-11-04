@@ -51,9 +51,23 @@ export const POST: APIRoute = async ({ locals, request }) => {
   }
 
   await db.execute({
-    sql: `UPDATE los_requests SET grant_title = ?, grant_type = ?, grant_deadline = ?, aims_link = ?, los_link = ?, updated_at = ?
+    sql: `UPDATE los_requests
+          SET grant_title = ?, grant_type = ?, grant_deadline = ?, aims_link = ?, los_link = ?,
+              applicant_pi = ?, applicant_institution = ?, funding_agency = ?, extra_paragraph = ?, updated_at = ?
           WHERE id = ?`,
-    args: [f.grant_title, f.grant_type, f.grant_deadline, f.aims_link, f.los_link, new Date().toISOString(), id],
+    args: [
+      f.grant_title,
+      f.grant_type,
+      f.grant_deadline,
+      f.aims_link,
+      f.los_link,
+      f.applicant_pi,
+      f.applicant_institution,
+      f.funding_agency,
+      f.extra_paragraph,
+      new Date().toISOString(),
+      id,
+    ],
   });
 
   return new Response(JSON.stringify({ success: true }), {

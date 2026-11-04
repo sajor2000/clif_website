@@ -16,6 +16,8 @@ export interface ApprovalRow {
   decided_at: string | null;
   full_name?: string | null;
   institution?: string | null;
+  /** 1 when the PI has a signature image on file for generated letters. */
+  has_signature?: number | boolean | null;
 }
 
 export interface ApprovalTally {

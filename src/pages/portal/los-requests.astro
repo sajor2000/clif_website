@@ -6,6 +6,7 @@ import PortalNav from '../../components/portal/PortalNav.astro';
 import { getDb } from '../../lib/turso';
 import { hasRole } from '../../lib/roles';
 import { groupApprovalsByRequest, tallyApprovals, type ApprovalRow } from '../../lib/los-approvals';
+import { DEFAULT_FUNDING_AGENCY, letterParagraphs } from '../../lib/los-letter';
 
 const user = Astro.locals.user!;
 const isAdmin = user.role === 'admin';
@@ -15,6 +16,7 @@ const isSitePi = Boolean(user.is_site_pi);
 const db = getDb();
 let requests: any[] = [];
 let approvalsByRequest = new Map<string, ApprovalRow[]>();
+let mySignatureOnFile = true;
 let error: string | null = null;
 
 try {
@@ -30,16 +32,25 @@ try {
 
   // Site PI responses: one row per (request, PI); see lib/los-approvals.
   const approvals = await db.execute({
-    sql: `SELECT a.request_id, a.user_id, a.decision, a.decided_at, p.full_name, p.institution
+    sql: `SELECT a.request_id, a.user_id, a.decision, a.decided_at, p.full_name, p.institution,
+                 (s.user_id IS NOT NULL) AS has_signature
           FROM los_approvals a
           LEFT JOIN users p ON p.id = a.user_id
+          LEFT JOIN pi_signatures s ON s.user_id = a.user_id
           ORDER BY p.full_name`,
     args: [],
   });
   approvalsByRequest = groupApprovalsByRequest(approvals.rows as unknown as ApprovalRow[]);
+
+  if (isSitePi) {
+    const sig = await db.execute({ sql: 'SELECT 1 FROM pi_signatures WHERE user_id = ?', args: [user.id] });
+    mySignatureOnFile = sig.rows.length > 0;
+  }
 } catch (e: any) {
   error = e.message;
 }
+
+const canDownload = (r: any): boolean => canApprove || r.created_by === user.id;
 
 const decisionMark: Record<string, { icon: string; cls: string; word: string }> = {
   approved: { icon: '👍', cls: '', word: 'approved' },
@@ -85,9 +96,16 @@ function isDeadlinePassed(d: string): boolean {
         <div class="mb-8">
           <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Letter of Collaboration Tracker</h1>
           <p class="text-gray-600 dark:text-gray-400 mt-1">
-            Request a consortium letter of collaboration for your grant. Site PIs from the steering committee approve requests.
+            Request a consortium letter of collaboration for your grant. Site PIs approve the letter text here, and the signed letter is generated from their approvals.
           </p>
         </div>
+
+        {isSitePi && !mySignatureOnFile && !error && (
+          <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 rounded-lg p-4 text-sm mb-6">
+            You have no signature on file, so generated letters will show your name without a signature.
+            <a href={`/portal/members/${user.id}`} class="underline font-medium">Upload your signature on your profile.</a>
+          </div>
+        )}
 
         {error && (
           <div class="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg p-4 text-sm mb-6">
@@ -126,11 +144,40 @@ function isDeadlinePassed(d: string): boolean {
                   class="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent" />
               </div>
               <div>
-                <label for="los-los" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Link to letter of collaboration <span class="text-red-500">*</span></label>
-                <input type="url" id="los-los" required placeholder="https://…"
+                <label for="los-los" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Link to a draft or supporting document <span class="text-gray-400 font-normal">(optional)</span></label>
+                <input type="url" id="los-los" placeholder="https://…"
                   class="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent" />
               </div>
             </div>
+
+            <fieldset class="border-t border-gray-100 dark:border-neutral-700 pt-4">
+              <legend class="text-sm font-semibold text-gray-800 dark:text-gray-200">Letter text</legend>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 mb-3">
+                The letter uses the consortium's standard paragraph. Fill in the blanks exactly as they should read; site PIs approve this text.
+              </p>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label for="los-pi" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Applicant PI <span class="text-red-500">*</span></label>
+                  <input type="text" id="los-pi" required value={user.full_name || ''} placeholder="e.g. Jane Doe, MD"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent" />
+                </div>
+                <div>
+                  <label for="los-institution" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Applicant institution <span class="text-red-500">*</span></label>
+                  <input type="text" id="los-institution" required value={user.institution || ''} placeholder="e.g. the University of Chicago"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent" />
+                </div>
+                <div>
+                  <label for="los-agency" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Funding agency <span class="text-red-500">*</span></label>
+                  <input type="text" id="los-agency" required value={DEFAULT_FUNDING_AGENCY} placeholder="e.g. NIH"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent" />
+                </div>
+              </div>
+              <div class="mt-4">
+                <label for="los-extra" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Additional paragraph <span class="text-gray-400 font-normal">(optional)</span></label>
+                <textarea id="los-extra" rows="3" maxlength="2000" placeholder="Project-specific language to add after the standard paragraph"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-clif-burgundy focus:border-transparent"></textarea>
+              </div>
+            </fieldset>
             <div id="los-create-error" class="hidden text-sm text-red-600 dark:text-red-400"></div>
             <button type="submit" id="los-create-btn"
               class="bg-clif-burgundy hover:bg-clif-burgundy/90 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors">
@@ -153,6 +200,8 @@ function isDeadlinePassed(d: string): boolean {
               const tally = tallyApprovals(piRows);
               const mine = piRows.find((a) => a.user_id === user.id);
               const myDecision = mine?.decision ?? null;
+              const paragraphs = letterParagraphs(r);
+              const unsigned = piRows.filter((a) => a.decision === 'approved' && !a.has_signature);
               const tallyBadge =
                 tally.total === 0
                   ? ''
@@ -190,7 +239,7 @@ function isDeadlinePassed(d: string): boolean {
                           <a href={r.aims_link} target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:underline">Specific Aims &#8599;</a>
                         )}
                         {r.los_link && (
-                          <a href={r.los_link} target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:underline">Letter of collaboration &#8599;</a>
+                          <a href={r.los_link} target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:underline">Draft / supporting document &#8599;</a>
                         )}
                         {r.status === 'approved' && r.approver_name && (
                           <span class="text-green-600 dark:text-green-400">Approved by {r.approver_name}{r.approved_at ? ` on ${formatDate(r.approved_at as string)}` : ''}</span>
@@ -199,6 +248,24 @@ function isDeadlinePassed(d: string): boolean {
                           <span class="text-red-600 dark:text-red-400">Declined by {r.approver_name}{r.approved_at ? ` on ${formatDate(r.approved_at as string)}` : ''}</span>
                         )}
                       </div>
+                      <details class="mt-3 text-sm">
+                        <summary class="cursor-pointer text-xs font-medium text-gray-600 dark:text-gray-300 hover:text-clif-burgundy">Letter text</summary>
+                        <div class="mt-2 pl-3 border-l-2 border-gray-200 dark:border-neutral-600 space-y-2 text-gray-700 dark:text-gray-300">
+                          {paragraphs.map((p) => <p>{p}</p>)}
+                        </div>
+                      </details>
+                      {canDownload(r) && tally.approved > 0 && (
+                        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-3 text-xs">
+                          <span class="text-gray-500 dark:text-gray-400">Signed letter ({tally.approved} {tally.approved === 1 ? 'signature' : 'signatures'}):</span>
+                          <a href={`/api/los-requests/letter?id=${r.id}&format=docx`} class="inline-flex items-center px-2.5 py-1 rounded-full border border-clif-burgundy text-clif-burgundy font-medium hover:bg-clif-burgundy/10">Download .docx</a>
+                          <a href={`/api/los-requests/letter?id=${r.id}&format=pdf`} class="inline-flex items-center px-2.5 py-1 rounded-full border border-clif-burgundy text-clif-burgundy font-medium hover:bg-clif-burgundy/10">Download .pdf</a>
+                          {unsigned.length > 0 && (
+                            <span class="text-amber-700 dark:text-amber-400" title="These PIs approved but have no signature image on file; their name prints without a signature.">
+                              No signature on file: {unsigned.map((a) => a.full_name || 'Former member').join(', ')}
+                            </span>
+                          )}
+                        </div>
+                      )}
                       {piRows.length > 0 && (
                         <ul class="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-gray-600 dark:text-gray-300" aria-label="Site PI responses">
                           {piRows.map((a) => {
@@ -260,8 +327,17 @@ function isDeadlinePassed(d: string): boolean {
                         <input type="text" class="edit-type w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" list="grant-types" value={r.grant_type || ''} placeholder="Grant type" required />
                         <input type="date" class="edit-deadline w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" value={r.grant_deadline || ''} placeholder="Grant deadline" required />
                         <input type="url" class="edit-aims w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" value={r.aims_link || ''} placeholder="Specific Aims link" required />
-                        <input type="url" class="edit-los w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" value={r.los_link || ''} placeholder="Letter of collaboration link" required />
+                        <input type="url" class="edit-los w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" value={r.los_link || ''} placeholder="Draft / supporting document link (optional)" />
                       </div>
+                      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <input type="text" class="edit-pi w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" value={r.applicant_pi || ''} placeholder="Applicant PI" required />
+                        <input type="text" class="edit-institution w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" value={r.applicant_institution || ''} placeholder="Applicant institution" required />
+                        <input type="text" class="edit-agency w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" value={r.funding_agency || DEFAULT_FUNDING_AGENCY} placeholder="Funding agency" required />
+                      </div>
+                      <textarea class="edit-extra w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white" rows="3" maxlength="2000" placeholder="Additional paragraph (optional)">{r.extra_paragraph || ''}</textarea>
+                      {tally.approved > 0 && (
+                        <p class="text-xs text-amber-700 dark:text-amber-400">Site PIs have already approved the current letter text. If you change it, ask them to re-approve.</p>
+                      )}
                       <div class="flex gap-2">
                         <button type="submit" class="save-los-btn bg-clif-burgundy hover:bg-clif-burgundy/90 text-white font-medium py-1.5 px-3 rounded-lg text-xs transition-colors">Save</button>
                         <button type="button" class="cancel-los-edit-btn text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 underline" data-id={r.id}>Cancel</button>
@@ -309,6 +385,10 @@ function isDeadlinePassed(d: string): boolean {
               grant_deadline: document.getElementById('los-deadline').value,
               aims_link: document.getElementById('los-aims').value,
               los_link: document.getElementById('los-los').value,
+              applicant_pi: document.getElementById('los-pi').value,
+              applicant_institution: document.getElementById('los-institution').value,
+              funding_agency: document.getElementById('los-agency').value,
+              extra_paragraph: document.getElementById('los-extra').value,
             }),
           });
 
@@ -399,6 +479,10 @@ function isDeadlinePassed(d: string): boolean {
               grant_deadline: this.querySelector('.edit-deadline').value,
               aims_link: this.querySelector('.edit-aims').value,
               los_link: this.querySelector('.edit-los').value,
+              applicant_pi: this.querySelector('.edit-pi').value,
+              applicant_institution: this.querySelector('.edit-institution').value,
+              funding_agency: this.querySelector('.edit-agency').value,
+              extra_paragraph: this.querySelector('.edit-extra').value,
             }),
           });
           if (res.ok) {
