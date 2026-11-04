@@ -16,8 +16,8 @@ import { collectWeeklyRuns, insertWeeklyRunSlide } from '../../../lib/weekly-run
  * slide already exists.)
  *
  * Auth: `Authorization: Bearer <CRON_SECRET>` from Vercel Cron, or a signed-in
- * admin visiting the URL to generate this week's slide by hand. Running it
- * twice on one day is safe: the second call finds today's slide and does
+ * admin visiting the URL to generate this week's slide by hand. One slide per
+ * week, whoever asks first: a later call in the same week finds it and does
  * nothing. `?dry=1` returns the rows that would be drawn without touching the
  * deck or needing Google credentials.
  */

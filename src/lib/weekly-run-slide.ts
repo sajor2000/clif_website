@@ -15,9 +15,10 @@ import { getServiceAccountAccessToken, parseServiceAccountKey } from './google-s
  *
  * The deck is a Google Slides file shared (as Editor) with the service
  * account in GOOGLE_SERVICE_ACCOUNT_JSON; its id is
- * WEEKLY_SLIDE_PRESENTATION_ID. Each slide's objectId encodes the Chicago
- * date, so re-running the job on the same day is a no-op rather than a
- * duplicate.
+ * WEEKLY_SLIDE_PRESENTATION_ID. Each slide's objectId encodes the Thursday
+ * of the week it belongs to, so there is exactly one slide per week: an admin
+ * pushing one by hand on Wednesday satisfies that week, and the Thursday cron
+ * (or a second click) finds it and does nothing.
  */
 
 export const SLIDES_SCOPE = 'https://www.googleapis.com/auth/presentations';
@@ -44,9 +45,21 @@ export interface WeeklySlideInput {
   trackerUrl: string;
 }
 
-/** "weeklyRuns_20261104": letters, digits and underscores only, as the Slides API requires. */
-export function weeklySlideObjectId(today: string): string {
-  return `weeklyRuns_${today.replace(/-/g, '')}`;
+/**
+ * The Thursday of the Monday-to-Sunday week containing the date: the key under
+ * which that week's slide is filed, whatever day it was generated on.
+ */
+export function weekAnchor(ymd: string): string {
+  const [y, m, d] = ymd.split('-').map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  const mondayOffset = (date.getUTCDay() + 6) % 7; // Mon=0 … Sun=6
+  date.setUTCDate(date.getUTCDate() - mondayOffset + 3);
+  return date.toISOString().slice(0, 10);
+}
+
+/** "weeklyRuns_20261105" for any day in the week of Thursday 2026-11-05 (Slides-safe characters only). */
+export function weeklySlideObjectId(ymd: string): string {
+  return `weeklyRuns_${weekAnchor(ymd).replace(/-/g, '')}`;
 }
 
 /** "Wednesday, November 4, 2026" from a YYYY-MM-DD string, no timezone drift. */
@@ -274,7 +287,7 @@ export interface WeeklySlideOutcome {
   runs: number;
 }
 
-/** Insert this week's slide at the front of the deck. No-op if today's slide already exists. */
+/** Insert this week's slide at the front of the deck. No-op if this week already has one. */
 export async function insertWeeklyRunSlide(origin: string, now: Date = new Date()): Promise<WeeklySlideOutcome> {
   const presentationId = process.env.WEEKLY_SLIDE_PRESENTATION_ID || import.meta.env.WEEKLY_SLIDE_PRESENTATION_ID;
   if (!presentationId) throw new Error('WEEKLY_SLIDE_PRESENTATION_ID is not configured');

@@ -5,6 +5,7 @@ import {
   deadlineCell,
   longDateLabel,
   sitesCell,
+  weekAnchor,
   weeklySlideObjectId,
   type WeeklyRunRow,
 } from './weekly-run-slide';
@@ -23,7 +24,7 @@ function run(over: Partial<WeeklyRunRow> = {}): WeeklyRunRow {
   };
 }
 
-const base = { slideId: 'weeklyRuns_20261104', pageWidth: 9144000, pageHeight: 5143500, dateLabel: 'Wednesday, November 4, 2026', trackerUrl: 'https://clif-icu.com/portal/project-runs' };
+const base = { slideId: 'weeklyRuns_20261105', pageWidth: 9144000, pageHeight: 5143500, dateLabel: 'Wednesday, November 4, 2026', trackerUrl: 'https://clif-icu.com/portal/project-runs' };
 
 function cellTexts(requests: Record<string, unknown>[]): Map<string, string> {
   const m = new Map<string, string>();
@@ -35,8 +36,15 @@ function cellTexts(requests: Record<string, unknown>[]): Map<string, string> {
 }
 
 describe('weekly slide helpers', () => {
-  it('derives a Slides-safe object id from the Chicago date', () => {
-    expect(weeklySlideObjectId('2026-11-04')).toBe('weeklyRuns_20261104');
+  it('files every day of a week under that week\'s Thursday, so there is one slide per week', () => {
+    expect(weekAnchor('2026-11-02')).toBe('2026-11-05'); // Monday
+    expect(weekAnchor('2026-11-04')).toBe('2026-11-05'); // Wednesday
+    expect(weekAnchor('2026-11-05')).toBe('2026-11-05'); // Thursday itself
+    expect(weekAnchor('2026-11-08')).toBe('2026-11-05'); // Sunday
+    expect(weekAnchor('2026-11-09')).toBe('2026-11-12'); // next Monday
+    expect(weekAnchor('2026-12-30')).toBe('2026-12-31'); // year boundary
+    expect(weeklySlideObjectId('2026-11-04')).toBe('weeklyRuns_20261105');
+    expect(weeklySlideObjectId('2026-11-05')).toBe('weeklyRuns_20261105');
   });
 
   it('formats dates without timezone drift', () => {
@@ -57,13 +65,13 @@ describe('buildWeeklySlideRequests', () => {
   it('creates the slide first, at the front, with a header row and one row per run', () => {
     const reqs = buildWeeklySlideRequests({ ...base, runs: [run(), run({ label: '13 (run 2)', status: 'upcoming', deadline: null, daysLeft: null, ran: null, applicable: null, conference: null })] });
     const create = reqs[0].createSlide as any;
-    expect(create.objectId).toBe('weeklyRuns_20261104');
+    expect(create.objectId).toBe('weeklyRuns_20261105');
     expect(create.insertionIndex).toBe(0);
 
     const table = reqs.find((r) => r.createTable)!.createTable as any;
     expect(table.rows).toBe(3);
     expect(table.columns).toBe(5);
-    expect(table.elementProperties.pageObjectId).toBe('weeklyRuns_20261104');
+    expect(table.elementProperties.pageObjectId).toBe('weeklyRuns_20261105');
 
     const cells = cellTexts(reqs);
     expect(cells.get('0,0')).toBe('#');
@@ -76,14 +84,14 @@ describe('buildWeeklySlideRequests', () => {
     expect(cells.get('2,3')).toBe('TBD');
     expect(cells.get('2,4')).toBe('—');
 
-    const title = reqs.find((r) => (r.insertText as any)?.objectId === 'weeklyRuns_20261104_title')!.insertText as any;
+    const title = reqs.find((r) => (r.insertText as any)?.objectId === 'weeklyRuns_20261105_title')!.insertText as any;
     expect(title.text).toBe('Active CLIF project runs · Wednesday, November 4, 2026');
   });
 
   it('renders an empty state instead of a table when nothing is active', () => {
     const reqs = buildWeeklySlideRequests({ ...base, runs: [] });
     expect(reqs.some((r) => r.createTable)).toBe(false);
-    const empty = reqs.find((r) => (r.insertText as any)?.objectId === 'weeklyRuns_20261104_empty')!.insertText as any;
+    const empty = reqs.find((r) => (r.insertText as any)?.objectId === 'weeklyRuns_20261105_empty')!.insertText as any;
     expect(empty.text).toMatch(/No active or upcoming project runs/);
   });
 
@@ -91,7 +99,7 @@ describe('buildWeeklySlideRequests', () => {
     const runs = Array.from({ length: MAX_SLIDE_ROWS + 3 }, (_, k) => run({ label: String(k + 1) }));
     const reqs = buildWeeklySlideRequests({ ...base, runs });
     expect((reqs.find((r) => r.createTable)!.createTable as any).rows).toBe(MAX_SLIDE_ROWS + 1);
-    const footer = reqs.find((r) => (r.insertText as any)?.objectId === 'weeklyRuns_20261104_footer')!.insertText as any;
+    const footer = reqs.find((r) => (r.insertText as any)?.objectId === 'weeklyRuns_20261105_footer')!.insertText as any;
     expect(footer.text).toMatch(/^\+3 more runs on the tracker\./);
     expect(footer.text).toContain(base.trackerUrl);
   });
