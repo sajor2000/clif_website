@@ -740,7 +740,7 @@ The `model_registry` table is the registry of EHR-derived clinical scoring model
 **Notes**:
 
 - Each `model_id` row is unique. Sites should retain historical rows for retired model versions and use `is_live` to flag the active deployment(s).
-- `model_category` is the mCIDE-controlled cross-site identifier; sites map their local `model_name` to this standardized `vendor_modelname` snake_case label.
+- `model_category` is the mCIDE-controlled cross-site identifier; sites map their local `model_name` to this standardized `vendor_modelname` snake_case label. See [clif_model_registry_model_categories.csv](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/model_registry/clif_model_registry_model_categories.csv) for the canonical permissible values.
 - Official alert thresholds are intentionally **not** a column. Threshold tiers vary by site, change over time, and are often multi-tier (green/yellow/red); they are documented as remarks in the `model_category` mCIDE entry and are otherwise managed at the project / config-file level.
 - `is_live` distinguishes models firing live alerts to clinicians from models running silently / in shadow mode.
 
@@ -749,8 +749,8 @@ The `model_registry` table is the registry of EHR-derived clinical scoring model
 | model_id | model_name             | model_category             | model_version | release_date | is_live |
 |----------|------------------------|----------------------------|---------------|--------------|---------|
 | SYS-001  | IP Deterioration Index | epic_deterioration_index   | 0.0.2         | 2023-06-01   | TRUE    |
-| SYS-003  | Mortality Risk         | epic_mortality             | 0.3.1         | 2024-11-01   | TRUE    |
-| SYS-002  | Rush Palliative Care   | rush_palliative_care       | 1.1.0         | 2022-09-15   | FALSE   |
+| SYS-003  | Epic Sepsis Model      | epic_sepsis_model          | 0.3.1         | 2024-11-01   | TRUE    |
+| SYS-002  | Epic Fall Risk         | epic_fall_risk             | 1.1.0         | 2022-09-15   | FALSE   |
 
 
 ## scores
