@@ -1,0 +1,137 @@
+<h4 class="text-2xl font-bold mb-6">Renal Replacement Therapy</h4>
+
+<div class="etl-guide-columns">
+  <div class="space-y-6">
+    <!-- Step 1 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 1: Create RRT Mode Mappings</h5>
+      <p class="text-sm mb-3">Before transforming your RRT data, prepare the mapping file:</p>
+      <div class="space-y-3 text-sm">
+        <div class="bg-white/10 p-3 rounded-lg">
+          <p><strong class="text-blue-300">Mode Category Mapping:</strong> Map all site-specific <code class="bg-white/20 px-1 rounded">mode_name</code> values to standardized CLIF <code class="bg-white/20 px-1 rounded">mode_category</code> values</p>
+          <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/renal_replacement_therapy/clif_renal_replacement_therapy_mode_categories.csv" target="_blank" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_renal_replacement_therapy_mode_categories.csv</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 2: Filter to Inpatient Hospitalizations</h5>
+      <p class="text-sm">Filter your RRT data to include only inpatient hospitalizations.</p>
+    </div>
+
+    <!-- Step 3 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 3: Apply Mappings</h5>
+      <p class="text-sm">Join the mapping file created in Step 1 to your RRT table to add the <code class="bg-white/20 px-1 rounded">mode_category</code> column.</p>
+    </div>
+
+    <!-- Step 4 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 4: Unit Conversions</h5>
+      <div class="bg-yellow-500/20 p-3 rounded-lg border border-yellow-400/30 text-sm mb-3">
+        <p class="text-yellow-300 font-semibold mb-2">Critical Requirement:</p>
+        <p class="text-sm">All RRT parameters must be reported using CLIF units. Please refer to the data dictionary page for RRT setting units.</p>
+      </div>
+      <p class="text-sm mb-3">If your source data uses different units, convert to CLIF standards. Eg:</p>
+      <div class="bg-white/10 p-3 rounded-lg text-sm">
+        <table class="text-xs w-full">
+          <thead>
+            <tr class="border-b border-white/20">
+              <th class="text-left py-1 pr-2">Parameter</th>
+              <th class="text-left py-1 pr-2">CLIF Unit</th>
+              <th class="text-left py-1">Conversion Example</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="border-b border-white/10">
+              <td class="py-1 pr-2"><code class="bg-white/20 px-1 rounded">blood_flow_rate</code></td>
+              <td class="py-1 pr-2 text-green-300">mL/min</td>
+              <td class="py-1 text-gray-300">0.2 L/min → 200 mL/min</td>
+            </tr>
+            <tr class="border-b border-white/10">
+              <td class="py-1 pr-2"><code class="bg-white/20 px-1 rounded">dialysate_flow_rate</code></td>
+              <td class="py-1 pr-2 text-green-300">mL/hr</td>
+              <td class="py-1 text-gray-300">2 L/hr → 2000 mL/hr</td>
+            </tr>
+            <tr>
+              <td class="py-1 pr-2"><code class="bg-white/20 px-1 rounded">ultrafiltration_out</code></td>
+              <td class="py-1 pr-2 text-green-300">mL/hr</td>
+              <td class="py-1 text-gray-300">1.5 L/hr → 1500 mL/hr</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="space-y-6">
+    <!-- Step 5 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 5: Verify Missingness by Modality</h5>
+      <p class="text-sm mb-3">Validate that parameter availability matches expected patterns for each RRT modality:</p>
+      <div class="bg-white/10 p-2 rounded-lg overflow-x-auto">
+        <table class="text-xs w-full">
+          <thead>
+            <tr class="border-b border-white/20">
+              <th class="px-2 py-1 text-left">Modality</th>
+              <th class="px-2 py-1 text-left">Blood Flow</th>
+              <th class="px-2 py-1 text-left">Pre-Filter</th>
+              <th class="px-2 py-1 text-left">Post-Filter</th>
+              <th class="px-2 py-1 text-left">Dialysate</th>
+              <th class="px-2 py-1 text-left">UF Out</th>
+            </tr>
+          </thead>
+          <tbody class="text-xs">
+            <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">SCUF</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1"></td><td class="px-2 py-1"></td><td class="px-2 py-1"></td><td class="px-2 py-1 text-green-300">E</td></tr>
+            <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">CVVH</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1"></td><td class="px-2 py-1 text-green-300">E</td></tr>
+            <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">CVVHD</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1"></td><td class="px-2 py-1"></td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-green-300">E</td></tr>
+            <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">CVVHDF</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-green-300">E</td></tr>
+            <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">AVVH</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-yellow-300">P</td><td class="px-2 py-1 text-yellow-300">P</td><td class="px-2 py-1"></td><td class="px-2 py-1 text-green-300">E</td></tr>
+            <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">AVVHD</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1"></td><td class="px-2 py-1"></td><td class="px-2 py-1 text-yellow-300">P</td><td class="px-2 py-1 text-green-300">E</td></tr>
+            <tr><td class="px-2 py-1 font-semibold">AVVHF</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-yellow-300">P</td><td class="px-2 py-1 text-yellow-300">P</td><td class="px-2 py-1 text-yellow-300">P</td><td class="px-2 py-1 text-green-300">E</td></tr>
+          </tbody>
+        </table>
+        <p class="text-xs mt-2 text-gray-300"><span class="text-green-300">E</span> = Expected | <span class="text-yellow-300">P</span> = Possible | Empty = Not applicable</p>
+      </div>
+    </div>
+
+    <!-- Step 6 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 6: Final Cleanup</h5>
+      <ul class="space-y-2 text-sm">
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">•</span>
+          <strong>Deduplicate:</strong> Remove duplicate rows
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">•</span>
+          <strong>UTC Conversion:</strong> Convert all datetime fields to UTC timezone
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">•</span>
+          <strong>Data Types:</strong> Ensure all variables match data dictionary specifications
+        </li>
+      </ul>
+    </div>
+
+    <!-- Data Quality Checks -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Data Quality Checks</h5>
+      <ul class="space-y-2 text-sm">
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">✓</span>
+          Validate <code class="bg-white/20 px-1 rounded">mode_category</code> mappings against mCIDE
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">✓</span>
+          Verify parameter missingness aligns with modality expectations
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">✓</span>
+          Check unit conversions are applied correctly
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>

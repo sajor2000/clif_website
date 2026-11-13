@@ -1,0 +1,413 @@
+<h4 class="text-2xl font-bold mb-6">Respiratory Support</h4>
+
+<div class="etl-guide-columns">
+  <div class="space-y-6">
+    <!-- Step 1 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 1: Create Respiratory Support Mappings</h5>
+      <p class="text-sm mb-3">Before transforming your respiratory support data, prepare the mapping files:</p>
+      <div class="space-y-3 text-sm">
+        <div class="bg-white/10 p-3 rounded-lg">
+          <p><strong class="text-blue-300">a. Device Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">device_name</code> → <code class="bg-white/20 px-1 rounded">device_category</code></p>
+          <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/respiratory_support/clif_respiratory_support_device_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_respiratory_support_device_categories.csv</a>
+        </div>
+        <div class="bg-white/10 p-3 rounded-lg">
+          <p><strong class="text-blue-300">b. Mode Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">mode_name</code> → <code class="bg-white/20 px-1 rounded">mode_category</code></p>
+          <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/respiratory_support/clif_respiratory_support_mode_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_respiratory_support_mode_categories.csv</a>
+        </div>
+        <div class="bg-white/10 p-3 rounded-lg mt-3">
+          <p><strong class="text-yellow-300">c. Handling Multiple Source Measures:</strong></p>
+          <p class="text-xs mt-2 mb-2">Multiple flowsheet measure names can map to the same CLIF element (e.g., <code class="bg-white/20 px-1 rounded">device_name</code>). Include <strong>all</strong> matching measures and prioritize by counting unique hospitalizations where each appears.</p>
+          <p class="text-xs mt-3 mb-2"><strong>Steps:</strong></p>
+          <ol class="text-xs list-decimal list-inside space-y-1 mb-2">
+            <li>Include all flowsheet measures that map to the CLIF element</li>
+            <li>Pivot each measure into its own column (e.g., device_name_1, device_name_2, device_name_3)</li>
+            <li>Use <code class="bg-white/20 px-1 rounded">coalesce()</code> to select the first non-null value in priority order</li>
+          </ol>
+          <div class="font-mono text-xs bg-white/10 p-2 rounded">
+            COALESCE(device_name_1, device_name_2, device_name_3) AS device_name
+          </div>
+          <p class="text-xs mt-3 mb-2"><strong>Example:</strong></p>
+          <div class="overflow-x-auto">
+            <table class="text-xs w-full border-collapse mb-3">
+              <thead>
+                <tr class="bg-white/20">
+                  <th class="border border-white/30 px-2 py-1 text-left">Source Measure Name</th>
+                  <th class="border border-white/30 px-2 py-1 text-left">Hosp. Count</th>
+                  <th class="border border-white/30 px-2 py-1 text-left">Priority</th>
+                  <th class="border border-white/30 px-2 py-1 text-left">Pivoted Column</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="border border-white/30 px-2 py-1 font-mono">RT RS OXYGEN DEVICE</td>
+                  <td class="border border-white/30 px-2 py-1">100</td>
+                  <td class="border border-white/30 px-2 py-1">1</td>
+                  <td class="border border-white/30 px-2 py-1 font-mono text-yellow-300">device_name_1</td>
+                </tr>
+                <tr>
+                  <td class="border border-white/30 px-2 py-1 font-mono">RT O2 DELIVERY DEVICE</td>
+                  <td class="border border-white/30 px-2 py-1">75</td>
+                  <td class="border border-white/30 px-2 py-1">2</td>
+                  <td class="border border-white/30 px-2 py-1 font-mono text-yellow-300">device_name_2</td>
+                </tr>
+                <tr>
+                  <td class="border border-white/30 px-2 py-1 font-mono">ED RT RS OXYGEN DEVICE</td>
+                  <td class="border border-white/30 px-2 py-1">50</td>
+                  <td class="border border-white/30 px-2 py-1">3</td>
+                  <td class="border border-white/30 px-2 py-1 font-mono text-yellow-300">device_name_3</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="text-xs mt-3 mb-2"><strong>Pivot and coalesce to get final value:</strong></p>
+          <div class="overflow-x-auto">
+            <table class="text-xs w-full border-collapse">
+              <thead>
+                <tr class="bg-white/20">
+                  <th class="border border-white/30 px-2 py-1 text-left">patient_id</th>
+                  <th class="border border-white/30 px-2 py-1 text-left text-yellow-300">device_name_1</th>
+                  <th class="border border-white/30 px-2 py-1 text-left text-yellow-300">device_name_2</th>
+                  <th class="border border-white/30 px-2 py-1 text-left text-yellow-300">device_name_3</th>
+                  <th class="border border-white/30 px-2 py-1 text-left text-green-300">device_name = COALESCE(device_name_1, device_name_2, device_name_3)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="border border-white/30 px-2 py-1">123</td>
+                  <td class="border border-white/30 px-2 py-1 text-gray-400 italic">NULL</td>
+                  <td class="border border-white/30 px-2 py-1 bg-green-900/30">Nasal Cannula</td>
+                  <td class="border border-white/30 px-2 py-1">Room Air</td>
+                  <td class="border border-white/30 px-2 py-1 font-semibold text-green-300">Nasal Cannula</td>
+                </tr>
+                <tr>
+                  <td class="border border-white/30 px-2 py-1">456</td>
+                  <td class="border border-white/30 px-2 py-1 bg-green-900/30">High Flow NC</td>
+                  <td class="border border-white/30 px-2 py-1 text-gray-400 italic">NULL</td>
+                  <td class="border border-white/30 px-2 py-1">High Flow NC</td>
+                  <td class="border border-white/30 px-2 py-1 font-semibold text-green-300">High Flow NC</td>
+                </tr>
+                <tr>
+                  <td class="border border-white/30 px-2 py-1">789</td>
+                  <td class="border border-white/30 px-2 py-1 text-gray-400 italic">NULL</td>
+                  <td class="border border-white/30 px-2 py-1 text-gray-400 italic">NULL</td>
+                  <td class="border border-white/30 px-2 py-1 bg-green-900/30">Room Air</td>
+                  <td class="border border-white/30 px-2 py-1 font-semibold text-green-300">Room Air</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 2: Filter to Inpatient Hospitalizations</h5>
+      <p class="text-sm">Filter your respiratory support data to include only inpatient hospitalizations.</p>
+    </div>
+
+    <!-- Step 3 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 3: Apply Mappings</h5>
+      <p class="text-sm">Apply the device and mode mappings to your flowsheets data.</p>
+    </div>
+
+    <!-- Step 4 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 4: Pivot Long to Wide</h5>
+      <p class="text-sm mb-3">Pivot the long dataset to wide format. Data must be unique by index columns before pivoting:</p>
+      <div class="bg-white/10 p-3 rounded-lg">
+        <div class="font-mono text-xs">
+wide_resp_df = resp_df.pivot(<br/>
+&nbsp;&nbsp;index=["patient_id", "hospitalization_id", "recorded_dttm"],<br/>
+&nbsp;&nbsp;columns="unique_names",<br/>
+&nbsp;&nbsp;values="meas_value"<br/>
+)
+        </div>
+      </div>
+      <p class="text-xs text-yellow-300 mt-2">Note: Ensure no duplicate combinations of (patient_id, hospitalization_id, recorded_dttm, unique_names) before pivoting.</p>
+    </div>
+
+    <!-- Step 5 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 5: Create Tracheostomy Variable</h5>
+      <div class="bg-white/10 p-3 rounded-lg text-sm">
+        <p class="mb-2">Create the <span class="font-mono text-yellow-300">tracheostomy</span> variable by:</p>
+        <ul class="text-xs space-y-1">
+          <li>• Identifying any fields capturing presence of tracheostomy</li>
+          <li>• Checking if device_name contains "trach"</li>
+        </ul>
+        <div class="mt-3 p-2 bg-white/10 rounded">
+          <p class="text-yellow-300 font-semibold text-xs mb-1">Special Case:</p>
+          <p class="text-xs">If device_name contains "Vent" (e.g., "Trach Collar: Vent") AND other respiratory settings are observed, then device_category ≠ "Trach Collar"</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 6 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 6: Device Category Logic</h5>
+      <div class="space-y-3 text-sm">
+        <div class="bg-white/10 p-3 rounded-lg">
+          <p class="text-green-300 font-semibold mb-2">Invasive Mechanical Ventilation (IMV):</p>
+          <div class="font-mono text-xs">
+grepl('Vent', device_name, ignore.case = TRUE) &<br/>
+&nbsp;&nbsp;!grepl('Venturi Mask', device_name, ignore.case = TRUE) ~ 'IMV'
+          </div>
+        </div>
+
+        <div class="bg-white/10 p-3 rounded-lg">
+          <p class="text-blue-300 font-semibold mb-2">Other Categories:</p>
+          <div class="font-mono text-xs space-y-1">
+            <div>NIPPV|Bipap → 'NIPPV'</div>
+            <div>CPAP → 'CPAP'</div>
+            <div>High Flow NC → 'High Flow NC'</div>
+            <div>Cannula → 'Nasal Cannula'</div>
+            <div>Mask|Non-Rebreather → 'Face Mask'</div>
+            <div>Room Air → 'Room Air'</div>
+            <div>Trach Collar → 'Trach Collar'</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="space-y-6">
+    <!-- Mode-Based Override -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Mode-Based Category Override</h5>
+      <p class="text-sm leading-relaxed mb-3">
+        Mode names can override device categories when conflicts exist:
+      </p>
+      <div class="bg-white/10 p-3 rounded-lg">
+        <div class="font-mono text-xs space-y-1">
+          <div>"SIMV - PC PS" → "IMV"</div>
+          <div>"A/C Volume" → "IMV"</div>
+          <div>"CPAP" → "CPAP"</div>
+          <div>"NIV-PC" → "NIPPV"</div>
+          <div>"BiPAP" → "NIPPV"</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 7 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 7: Unit Conversions</h5>
+      <p class="text-sm mb-3">If your source data uses different units for device settings, convert to CLIF standards:</p>
+      <div class="bg-white/10 p-3 rounded-lg text-xs">
+        <p class="text-yellow-300 font-semibold mb-2">Example:</p>
+        <p>minute_vent_obs is required to be in <strong>liters</strong>. If source data is in mL, convert accordingly (divide by 1000).</p>
+      </div>
+    </div>
+
+    <!-- Step 8 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 8: Sanity Check for IMV vs Non-IMV</h5>
+      <p class="text-sm mb-3">Verify device_category matches expected settings. If a hospitalization has respiratory settings typically used for IMV, device_category should not be a non-IMV device like Room Air, Face Mask, Nasal Cannula, etc.</p>
+
+      <div class="bg-white/10 p-3 rounded-lg mb-3">
+        <p class="text-yellow-300 font-semibold text-sm mb-1">Note: Expect NAs outside IMV/NIPPV</p>
+        <p class="text-xs">Most respiratory_support columns (mode_category and the ventilator settings/observations) only apply when <code class="bg-white/20 px-1 rounded">device_category</code> is <strong>IMV</strong> or <strong>NIPPV</strong>. For all other device categories, these columns will be mostly NA — this is expected and not a data quality problem. Simpler oxygen devices typically only populate <code class="bg-white/20 px-1 rounded">fio2_set</code> and/or <code class="bg-white/20 px-1 rounded">lpm_set</code> (see the tables below).</p>
+      </div>
+
+      <div class="bg-white/10 p-3 rounded-lg mb-3">
+        <p class="text-green-300 font-semibold mb-2 text-sm">Non-IMV Expected Settings:</p> 
+        <div class="overflow-x-auto">
+          <table class="text-xs w-full">
+            <thead>
+              <tr class="border-b border-white/20">
+                <th class="text-left py-1 pr-2">Device</th>
+                <th class="text-left py-1 pr-2">Mode</th>
+                <th class="text-left py-1 pr-2">Req Settings</th>
+                <th class="text-left py-1">Req Obs</th>
+              </tr>
+            </thead>
+            <tbody class="text-xs">
+              <tr class="border-b border-white/10">
+                <td class="py-1 pr-2">CPAP</td>
+                <td class="py-1 pr-2">PS/CPAP</td>
+                <td class="py-1 pr-2">fio2_set, peep_set</td>
+                <td class="py-1">tidal_volume_obs, resp_rate_obs</td>
+              </tr>
+              <tr class="border-b border-white/10">
+                <td class="py-1 pr-2">Face Mask</td>
+                <td class="py-1 pr-2">-</td>
+                <td class="py-1 pr-2">lpm_set, fio2_set (possible)</td>
+                <td class="py-1">-</td>
+              </tr>
+              <tr class="border-b border-white/10">
+                <td class="py-1 pr-2">High Flow NC</td>
+                <td class="py-1 pr-2">-</td>
+                <td class="py-1 pr-2">fio2_set, lpm_set</td>
+                <td class="py-1">-</td>
+              </tr>
+              <tr class="border-b border-white/10">
+                <td class="py-1 pr-2">Nasal Cannula</td>
+                <td class="py-1 pr-2">-</td>
+                <td class="py-1 pr-2">lpm_set</td>
+                <td class="py-1">-</td>
+              </tr>
+              <tr class="border-b border-white/10">
+                <td class="py-1 pr-2">NIPPV</td>
+                <td class="py-1 pr-2">Vol Support</td>
+                <td class="py-1 pr-2">fio2, peep, tv, rr, insp_time</td>
+                <td class="py-1">-</td>
+              </tr>
+              <tr class="border-b border-white/10">
+                <td class="py-1 pr-2">NIPPV</td>
+                <td class="py-1 pr-2">PS/CPAP</td>
+                <td class="py-1 pr-2">fio2, peep, pip, rr, insp_time</td>
+                <td class="py-1">-</td>
+              </tr>
+              <tr class="border-b border-white/10">
+                <td class="py-1 pr-2">Room Air</td>
+                <td class="py-1 pr-2">-</td>
+                <td class="py-1 pr-2">No settings</td>
+                <td class="py-1">No obs</td>
+              </tr>
+              <tr>
+                <td class="py-1 pr-2">Trach Collar</td>
+                <td class="py-1 pr-2">-</td>
+                <td class="py-1 pr-2">lpm_set, fio2_set</td>
+                <td class="py-1">No obs</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="bg-white/10 p-3 rounded-lg">
+        <p class="text-blue-300 font-semibold mb-2 text-sm">IMV Expected Settings by Mode (device_category == "IMV"):</p>
+        <div class="overflow-x-auto">
+          <table class="text-xs w-full">
+            <thead>
+              <tr class="border-b border-white/20">
+                <th class="text-left py-1 pr-1">ventilator_setting</th>
+                <th class="text-center py-1 px-1">AC-VC</th>
+                <th class="text-center py-1 px-1">PS/CPAP</th>
+                <th class="text-center py-1 px-1">PC</th>
+                <th class="text-center py-1 px-1">PRVC</th>
+                <th class="text-center py-1 px-1">SIMV</th>
+                <th class="text-center py-1 px-1">Vol Sup</th>
+              </tr>
+            </thead>
+            <tbody class="text-xs">
+              <tr class="border-b border-white/10">
+                <td class="py-1 pr-1">fio2_set</td>
+                <td class="text-center py-1"><span class="text-green-300">E</span></td>
+                <td class="text-center py-1"><span class="text-green-300">E</span></td>
+                <td class="text-center py-1"><span class="text-green-300">E</span></td>
+                <td class="text-center py-1"><span class="text-green-300">E</span></td>
+                <td class="text-center py-1"><span class="text-green-300">E</span></td>
+                <td class="text-center py-1"><span class="text-green-300">E</span></td>
+              </tr>
+              <tr class="border-b border-white/10">
+                <td class="py-1 pr-1">tidal_volume_set</td>
+                <td class="text-center py-1"><span class="text-green-300">E</span></td>
+                <td class="text-center py-1"></td>
+                <td class="text-center py-1"></td>
+                <td class="text-center py-1"><span class="text-green-300">E</span></td>
+                <td class="text-center py-1"><span class="text-yellow-300">P</span></td>
+                <td class="text-center py-1"><span class="text-green-300">E</span></td>
+              </tr>
+              <tr class="border-b border-white/10">
+                <td class="py-1 pr-1">resp_rate_set</td>
+                <td class="text-center py-1"><span class="text-green-300">E</span></td>
+                <td class="text-center py-1"></td>
+                <td class="text-center py-1"><span class="text-green-300">E</span></td>
+                <td class="text-center py-1"><span class="text-green-300">E</span></td>
+                <td class="text-center py-1"><span class="text-green-300">E</span></td>
+                <td class="text-center py-1"></td>
+              </tr>
+              <tr class="border-b border-white/10">
+                <td class="py-1 pr-1">pressure_control_set</td>
+                <td class="text-center py-1"></td>
+                <td class="text-center py-1"></td>
+                <td class="text-center py-1"><span class="text-green-300">E</span></td>
+                <td class="text-center py-1"></td>
+                <td class="text-center py-1"><span class="text-yellow-300">P</span></td>
+                <td class="text-center py-1"></td>
+              </tr>
+              <tr class="border-b border-white/10">
+                <td class="py-1 pr-1">pressure_support_set</td>
+                <td class="text-center py-1"></td>
+                <td class="text-center py-1"><span class="text-green-300">E</span></td>
+                <td class="text-center py-1"></td>
+                <td class="text-center py-1"></td>
+                <td class="text-center py-1"><span class="text-green-300">E</span></td>
+                <td class="text-center py-1"></td>
+              </tr>
+              <tr class="border-b border-white/10">
+                <td class="py-1 pr-1">flow_rate_set</td>
+                <td class="text-center py-1"><span class="text-yellow-300">P</span></td>
+                <td class="text-center py-1"></td>
+                <td class="text-center py-1"></td>
+                <td class="text-center py-1"></td>
+                <td class="text-center py-1"><span class="text-yellow-300">P</span></td>
+                <td class="text-center py-1"></td>
+              </tr>
+              <tr class="border-b border-white/10">
+                <td class="py-1 pr-1">inspiratory_time_set</td>
+                <td class="text-center py-1"><span class="text-yellow-300">P</span></td>
+                <td class="text-center py-1"></td>
+                <td class="text-center py-1"><span class="text-green-300">E</span></td>
+                <td class="text-center py-1"></td>
+                <td class="text-center py-1"><span class="text-yellow-300">P</span></td>
+                <td class="text-center py-1"></td>
+              </tr>
+              <tr>
+                <td class="py-1 pr-1">peep_set</td>
+                <td class="text-center py-1"><span class="text-green-300">E</span></td>
+                <td class="text-center py-1"><span class="text-green-300">E</span></td>
+                <td class="text-center py-1"><span class="text-green-300">E</span></td>
+                <td class="text-center py-1"><span class="text-green-300">E</span></td>
+                <td class="text-center py-1"><span class="text-green-300">E</span></td>
+                <td class="text-center py-1"><span class="text-green-300">E</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="text-xs mt-2"><span class="text-green-300">E</span> = Expected | <span class="text-yellow-300">P</span> = Possible | Empty = Not applicable</p>
+      </div>
+    </div>
+
+    <!-- Step 9 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 9: Final Cleanup</h5>
+      <ul class="space-y-2 text-sm">
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">•</span>
+          <strong>Deduplicate:</strong> Remove duplicate rows
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">•</span>
+          <strong>UTC Conversion:</strong> Convert all datetime fields to UTC timezone
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">•</span>
+          <strong>Data Types:</strong> Ensure all variables match data dictionary specifications
+        </li>
+      </ul>
+    </div>
+
+    <!-- Data Quality Checks -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Data Quality Checks</h5>
+      <ul class="space-y-2 text-sm">
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">✓</span>
+          Verify device_category and mode_category are consistent
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">✓</span>
+          Check IMV rows have expected observations populated
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">✓</span>
+          Validate tracheostomy flag against device_name patterns
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,75 @@
+<h4 class="text-2xl font-bold mb-6">Code Status</h4>
+
+<div class="etl-guide-columns">
+  <div class="space-y-6">
+    <!-- Important Notes -->
+    <div class="bg-yellow-500/20 p-4 rounded-lg border border-yellow-400/30">
+      <h5 class="text-lg font-semibold mb-2 text-yellow-300">Important Notes</h5>
+      <ul class="space-y-2 text-sm">
+        <li>• This table should represent what the clinician intends for the patients' limitations in care, not just what the EHR banner displays</li>
+        <li>• It is <strong>NOT</strong> always equivalent to the code status display name in the EHR</li>
+        <li>• Sites will need to identify their code status orders. Additionally, sites may have separate orders for "comfort measures only" not found within the code status order that, if available, should be pulled to map it to <code class="bg-white/20 px-1 rounded">allow_natural_death</code></li>
+      </ul>
+    </div>
+
+    <!-- Step 1 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 1: Create Code Status Mappings</h5>
+      <p class="text-sm mb-3">Before transforming your code status data, prepare the mapping file:</p>
+      <div class="space-y-3 text-sm">
+        <div class="bg-white/10 p-3 rounded-lg">
+          <p><strong class="text-blue-300">Code Status Category Mapping:</strong> Map all site-specific <code class="bg-white/20 px-1 rounded">code_status_name</code> values to standardized CLIF <code class="bg-white/20 px-1 rounded">code_status_category</code> values</p>
+          <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/code_status/clif_code_status_categories.csv" target="_blank" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_code_status_categories.csv</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 2: Filter to Patients with Inpatient Hospitalizations</h5>
+      <p class="text-sm">Filter your code status data to include only patients with an inpatient hospitalization. Since code status is at the patient level, include only patients whose <code class="bg-white/20 px-1 rounded">hospitalization_id</code> exists in your CLIF ADT table.</p>
+    </div>
+  </div>
+
+  <div class="space-y-6">
+    <!-- Step 3 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 3: Apply Mappings</h5>
+      <p class="text-sm">Join the mapping file created in Step 1 to your code status table to add the <code class="bg-white/20 px-1 rounded">code_status_category</code> column.</p>
+    </div>
+
+    <!-- Step 4 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 4: Final Cleanup</h5>
+      <ul class="space-y-2 text-sm">
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">•</span>
+          <strong>Deduplicate: </strong> Remove duplicate rows 
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">•</span>
+          <strong>UTC Conversion: </strong> Convert all datetime fields to UTC timezone
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">•</span>
+          <strong>Data Types: </strong> Ensure all variables match data dictionary specifications
+        </li>
+      </ul>
+    </div>
+
+    <!-- Data Quality Checks -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Data Quality Checks</h5>
+      <ul class="space-y-2 text-sm">
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">✓</span>
+          Validate <code class="bg-white/20 px-1 rounded">code_status_category</code> mappings against mCIDE
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">✓</span>
+          Ensure all <code class="bg-white/20 px-1 rounded">hospitalization_id</code> values exist in ADT table
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>

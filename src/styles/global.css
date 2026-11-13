@@ -924,3 +924,29 @@
 .dark textarea:focus-visible {
   outline-color: #8B1538;
 }
+
+/* ETL guide partials (src/components/etl-guide/<version>/*.astro).
+   Two columns from 768px up that the browser balances automatically, so a
+   guide never needs its steps hand-sorted into a left and a right half.
+   Boxes and paragraphs stay whole; a heading stays with what follows it. */
+.etl-guide-columns {
+  column-gap: 2rem;
+  flex-shrink: 0; /* inside the flip card's flex column, keep natural height */
+}
+@media (min-width: 768px) {
+  .etl-guide-columns {
+    column-count: 2;
+  }
+}
+.etl-guide-columns > div + div {
+  margin-top: 1.5rem;
+}
+.etl-guide-columns [class*='bg-'],
+.etl-guide-columns p,
+.etl-guide-columns li,
+.etl-guide-columns table {
+  break-inside: avoid;
+}
+.etl-guide-columns h5 {
+  break-after: avoid;
+}

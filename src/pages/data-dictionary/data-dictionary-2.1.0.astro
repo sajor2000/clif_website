@@ -3,6 +3,8 @@ export const prerender = true;
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Badge from '../../components/Badge.astro';
 import HelpChat from '../../components/HelpChat.astro';
+import EtlGuideButton from '../../components/etl-guide/EtlGuideButton.astro';
+import EtlGuideDialog from '../../components/etl-guide/EtlGuideDialog.astro';
 import fs from 'node:fs';
 import path from 'node:path';
 import MarkdownIt from 'markdown-it';
@@ -244,7 +246,9 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
                 <h2 class="text-2xl font-semibold mb-4 mt-6 text-gray-900 scroll-mt-20 border-b border-gray-200 pb-2 flex items-center gap-2">
                   {table.name.replace(/_/g, ' ')}
                   <span class="badge-beta ml-2">Beta</span>
+                  <EtlGuideButton version="2.1.0" tableName={table.name} />
                 </h2>
+                <EtlGuideDialog version="2.1.0" tableName={table.name} />
                 {intro && (
                   <div class="prose mb-4" set:html={md.render(intro)} />
                 )}
@@ -308,7 +312,9 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
                 <h2 class="text-2xl font-semibold mb-4 mt-6 text-gray-900 scroll-mt-20 border-b border-gray-200 pb-2 flex items-center gap-2">
                   {table.name.replace(/_/g, ' ')}
                   <span class="badge-concept ml-2">Concept</span>
+                  <EtlGuideButton version="2.1.0" tableName={table.name} />
                                   </h2>
+                <EtlGuideDialog version="2.1.0" tableName={table.name} />
                 {intro && (
                   <div class="prose mb-4" set:html={md.render(intro)} />
                 )}

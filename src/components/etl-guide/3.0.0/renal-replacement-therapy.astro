@@ -1,0 +1,164 @@
+<h4 class="text-2xl font-bold mb-6">Renal Replacement Therapy</h4>
+
+<div class="etl-guide-columns">
+  <div class="space-y-6">
+    <!-- Important Notes -->
+    <div class="bg-yellow-500/20 p-4 rounded-lg border border-yellow-400/30">
+      <h5 class="text-lg font-semibold mb-2 text-yellow-300">Important Notes (3.0)</h5>
+      <ul class="space-y-2 text-sm">
+        <li>• The table now covers both continuous RRT (CRRT) modes and intermittent hemodialysis. Two new identifier columns: <code class="bg-white/20 px-1 rounded">device_id</code> (unique ID of the individual dialysis machine, e.g. ACZ3RV91) and <code class="bg-white/20 px-1 rounded">dialysis_machine_name</code> (the machine's brand or model name)</li>
+        <li>• Two new dialysate-bath columns: <code class="bg-white/20 px-1 rounded">potassium_bath</code> (integer, mEq/L, 0–4) and <code class="bg-white/20 px-1 rounded">calcium_bath</code> (float, mEq/L, 0–4). These distinguish <code class="bg-white/20 px-1 rounded">ihd</code> (dialysate bath contains potassium and calcium, so both fields are populated) from <code class="bg-white/20 px-1 rounded">iuf</code> (no dialysate bath, so both fields are null)</li>
+        <li>• This table records machine settings and rates, not fluid volumes. There is no <code class="bg-white/20 px-1 rounded">ultrafiltration_out</code> column in 3.0: net ultrafiltration (fluid removed from the patient) goes in the <code class="bg-white/20 px-1 rounded">output</code> table under <code class="bg-white/20 px-1 rounded">output_group = ultrafiltration</code>, and replacement/dialysate fluids delivered go in the <code class="bg-white/20 px-1 rounded">input</code> table under <code class="bg-white/20 px-1 rounded">input_group = renal_replacement_fluids</code></li>
+      </ul>
+    </div>
+
+    <!-- Step 1 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 1: Create RRT Mode Mappings</h5>
+      <p class="text-sm mb-3">Before transforming your RRT data, prepare the mapping file:</p>
+      <div class="space-y-3 text-sm">
+        <div class="bg-white/10 p-3 rounded-lg">
+          <p><strong class="text-blue-300">Mode Category Mapping:</strong> Map all site-specific <code class="bg-white/20 px-1 rounded">mode_name</code> values to standardized CLIF <code class="bg-white/20 px-1 rounded">mode_category</code> values. Permissible values: <code class="bg-white/20 px-1 rounded">scuf</code>, <code class="bg-white/20 px-1 rounded">cvvh</code>, <code class="bg-white/20 px-1 rounded">cvvhd</code>, <code class="bg-white/20 px-1 rounded">cvvhdf</code>, <code class="bg-white/20 px-1 rounded">avvh</code> (accelerated veno-venous hemofiltration, also called ARRT or PIRRT), <code class="bg-white/20 px-1 rounded">ihd</code> (intermittent hemodialysis), <code class="bg-white/20 px-1 rounded">iuf</code> (isolated ultrafiltration)</p>
+          <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/renal_replacement_therapy/clif_renal_replacement_therapy_mode_categories.csv" target="_blank" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_renal_replacement_therapy_mode_categories.csv</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 2: Filter to Inpatient Hospitalizations</h5>
+      <p class="text-sm">Filter your RRT data to include only inpatient hospitalizations.</p>
+    </div>
+
+    <!-- Step 3 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 3: Apply Mappings</h5>
+      <p class="text-sm">Join the mapping file created in Step 1 to your RRT table to add the <code class="bg-white/20 px-1 rounded">mode_category</code> column.</p>
+    </div>
+
+    <!-- Step 4 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 4: Unit Conversions</h5>
+      <div class="bg-yellow-500/20 p-3 rounded-lg border border-yellow-400/30 text-sm mb-3">
+        <p class="text-yellow-300 font-semibold mb-2">Critical Requirement:</p>
+        <p class="text-sm">All RRT parameters must be reported using CLIF units. Please refer to the data dictionary page for RRT setting units.</p>
+      </div>
+      <p class="text-sm mb-3">If your source data uses different units, convert to CLIF standards. Eg:</p>
+      <div class="bg-white/10 p-3 rounded-lg text-sm">
+        <table class="text-xs w-full">
+          <thead>
+            <tr class="border-b border-white/20">
+              <th class="text-left py-1 pr-2">Parameter</th>
+              <th class="text-left py-1 pr-2">CLIF Unit</th>
+              <th class="text-left py-1">Conversion Example</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="border-b border-white/10">
+              <td class="py-1 pr-2"><code class="bg-white/20 px-1 rounded">blood_flow_rate</code></td>
+              <td class="py-1 pr-2 text-green-300">mL/min</td>
+              <td class="py-1 text-gray-300">0.2 L/min → 200 mL/min</td>
+            </tr>
+            <tr class="border-b border-white/10">
+              <td class="py-1 pr-2"><code class="bg-white/20 px-1 rounded">pre_filter_replacement_fluid_rate</code></td>
+              <td class="py-1 pr-2 text-green-300">mL/hr</td>
+              <td class="py-1 text-gray-300">1 L/hr → 1000 mL/hr (CRRT modes only; null for ihd/iuf)</td>
+            </tr>
+            <tr class="border-b border-white/10">
+              <td class="py-1 pr-2"><code class="bg-white/20 px-1 rounded">post_filter_replacement_fluid_rate</code></td>
+              <td class="py-1 pr-2 text-green-300">mL/hr</td>
+              <td class="py-1 text-gray-300">0.5 L/hr → 500 mL/hr (CRRT modes only; null for ihd/iuf)</td>
+            </tr>
+            <tr class="border-b border-white/10">
+              <td class="py-1 pr-2"><code class="bg-white/20 px-1 rounded">dialysate_flow_rate</code></td>
+              <td class="py-1 pr-2 text-green-300">mL/hr</td>
+              <td class="py-1 text-gray-300">2 L/hr → 2000 mL/hr; IHD sources often record mL/min, so multiply by 60 (500 mL/min → 30000 mL/hr)</td>
+            </tr>
+            <tr>
+              <td class="py-1 pr-2"><code class="bg-white/20 px-1 rounded">potassium_bath</code>, <code class="bg-white/20 px-1 rounded">calcium_bath</code></td>
+              <td class="py-1 pr-2 text-green-300">mEq/L</td>
+              <td class="py-1 text-gray-300">Dialysate bath concentrations, range 0–4</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="text-xs mt-2 text-gray-300">Ultrafiltration volume is not a column in this table; record it in the <code class="bg-white/20 px-1 rounded">output</code> table (<code class="bg-white/20 px-1 rounded">output_group = ultrafiltration</code>).</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="space-y-6">
+    <!-- Step 5 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 5: Verify Missingness by Modality</h5>
+      <p class="text-sm mb-3">Validate that parameter availability matches the expected pattern for each <code class="bg-white/20 px-1 rounded">mode_category</code> (from the 3.0 data dictionary):</p>
+      <div class="bg-white/10 p-2 rounded-lg overflow-x-auto">
+        <table class="text-xs w-full">
+          <thead>
+            <tr class="border-b border-white/20">
+              <th class="px-2 py-1 text-left">mode_category</th>
+              <th class="px-2 py-1 text-left">Blood Flow</th>
+              <th class="px-2 py-1 text-left">Pre-Filter</th>
+              <th class="px-2 py-1 text-left">Post-Filter</th>
+              <th class="px-2 py-1 text-left">Dialysate</th>
+            </tr>
+          </thead>
+          <tbody class="text-xs">
+            <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">scuf</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1"></td><td class="px-2 py-1"></td><td class="px-2 py-1"></td></tr>
+            <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">cvvh</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1"></td></tr>
+            <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">cvvhd</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1"></td><td class="px-2 py-1"></td><td class="px-2 py-1 text-green-300">E</td></tr>
+            <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">cvvhdf</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-green-300">E</td></tr>
+            <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">avvh <span class="font-normal text-gray-300">(VVH variant)</span></td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-yellow-300">P</td><td class="px-2 py-1 text-yellow-300">P</td><td class="px-2 py-1"></td></tr>
+            <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">avvh <span class="font-normal text-gray-300">(VVHD variant)</span></td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1"></td><td class="px-2 py-1"></td><td class="px-2 py-1 text-yellow-300">P</td></tr>
+            <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">avvh <span class="font-normal text-gray-300">(VVHF variant)</span></td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1 text-yellow-300">P</td><td class="px-2 py-1 text-yellow-300">P</td><td class="px-2 py-1 text-yellow-300">P</td></tr>
+            <tr class="border-b border-white/10"><td class="px-2 py-1 font-semibold">ihd</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1"></td><td class="px-2 py-1"></td><td class="px-2 py-1 text-green-300">E</td></tr>
+            <tr><td class="px-2 py-1 font-semibold">iuf</td><td class="px-2 py-1 text-green-300">E</td><td class="px-2 py-1"></td><td class="px-2 py-1"></td><td class="px-2 py-1 text-green-300">E</td></tr>
+          </tbody>
+        </table>
+        <p class="text-xs mt-2 text-gray-300"><span class="text-green-300">E</span> = Required | <span class="text-yellow-300">P</span> = May be used | Empty = Not used (leave null)</p>
+        <p class="text-xs mt-2 text-gray-300">All three AVVH variants map to <code class="bg-white/20 px-1 rounded">mode_category = avvh</code>. <code class="bg-white/20 px-1 rounded">ihd</code> and <code class="bg-white/20 px-1 rounded">iuf</code> share the same rate columns; tell them apart by <code class="bg-white/20 px-1 rounded">potassium_bath</code> / <code class="bg-white/20 px-1 rounded">calcium_bath</code> (populated for ihd, null for iuf).</p>
+      </div>
+    </div>
+
+    <!-- Step 6 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 6: Final Cleanup</h5>
+      <ul class="space-y-2 text-sm">
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">•</span>
+          <strong>Deduplicate:</strong> Remove duplicate rows
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">•</span>
+          <strong>UTC Conversion:</strong> Convert all datetime fields to UTC timezone
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">•</span>
+          <strong>Data Types:</strong> Ensure all variables match data dictionary specifications
+        </li>
+      </ul>
+    </div>
+
+    <!-- Data Quality Checks -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Data Quality Checks</h5>
+      <ul class="space-y-2 text-sm">
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">✓</span>
+          Validate <code class="bg-white/20 px-1 rounded">mode_category</code> mappings against mCIDE
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">✓</span>
+          Verify parameter missingness aligns with modality expectations
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">✓</span>
+          Check unit conversions are applied correctly
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">✓</span>
+          Confirm <code class="bg-white/20 px-1 rounded">potassium_bath</code> and <code class="bg-white/20 px-1 rounded">calcium_bath</code> are populated for <code class="bg-white/20 px-1 rounded">ihd</code> rows and null for <code class="bg-white/20 px-1 rounded">iuf</code> rows
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>

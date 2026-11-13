@@ -1,0 +1,169 @@
+<h4 class="text-2xl font-bold mb-6">Medication Admin Continuous</h4>
+
+<div class="etl-guide-columns">
+  <div class="space-y-6">
+    <!-- Step 1 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 1: Create Medication Mappings</h5>
+      <p class="text-sm mb-3">Before transforming your medication data, prepare the mapping files:</p>
+      <div class="space-y-3 text-sm">
+        <div class="bg-white/10 p-3 rounded-lg">
+          <p><strong class="text-blue-300">a. Action Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">mar_action_name</code> → <code class="bg-white/20 px-1 rounded">mar_action_category</code>. The same CSV gives each category's <code class="bg-white/20 px-1 rounded">mar_action_group</code> (<code class="bg-white/20 px-1 rounded">administered</code>, <code class="bg-white/20 px-1 rounded">not_administered</code>, <code class="bg-white/20 px-1 rounded">other</code>) — carry it into the table.</p>
+          <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/medication_admin_continuous/clif_medication_admin_continuous_action_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_medication_admin_continuous_action_categories.csv</a>
+        </div>
+        <div class="bg-white/10 p-3 rounded-lg">
+          <p><strong class="text-blue-300">b. Med Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">med_name</code> → <code class="bg-white/20 px-1 rounded">med_category</code></p>
+          <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/medication_admin_continuous/clif_medication_admin_continuous_med_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_medication_admin_continuous_med_categories.csv</a>
+        </div>
+        <div class="bg-white/10 p-3 rounded-lg">
+          <p><strong class="text-blue-300">c. Route Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">med_route_name</code> → <code class="bg-white/20 px-1 rounded">med_route_category</code></p>
+          <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/medication_admin_continuous/clif_medication_admin_continuous_med_route_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_medication_admin_continuous_med_route_categories.csv</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 2: Filter to Inpatient Hospitalizations</h5>
+      <p class="text-sm">Filter your medication data to include only inpatient hospitalizations.</p>
+    </div>
+
+    <!-- Step 3 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 3: Apply Mappings</h5>
+      <p class="text-sm">Join the mapping files to add category columns.</p>
+    </div>
+
+    <!-- Step 4 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 4: Filter to Continuous Medications</h5>
+      <div class="bg-white/10 p-3 rounded-lg text-sm">
+        <ul class="space-y-2">
+          <li>• <strong>Keep by category:</strong> keep the rows whose <code class="bg-white/20 px-1 rounded">med_name</code> maps to a <code class="bg-white/20 px-1 rounded">med_category</code> in <code class="bg-white/20 px-1 rounded">clif_medication_admin_continuous_med_categories.csv</code>.</li>
+          <li>• <strong>Continuous is decided by the dose unit:</strong> if the <code class="bg-white/20 px-1 rounded">med_dose_unit</code> has a time component (e.g. <code class="bg-white/20 px-1 rounded">mcg/min</code>, <code class="bg-white/20 px-1 rounded">mg/hr</code>, <code class="bg-white/20 px-1 rounded">mcg/kg/min</code>), the row is continuous and belongs here.</li>
+          <li>• <strong>No time component:</strong> a dose in a unit such as <code class="bg-white/20 px-1 rounded">mg</code>, <code class="bg-white/20 px-1 rounded">mcg</code> or <code class="bg-white/20 px-1 rounded">units</code> belongs in <code class="bg-white/20 px-1 rounded">medication_admin_intermittent</code>. This is how categories that appear in both CSVs (e.g. <code class="bg-white/20 px-1 rounded">fentanyl</code>, <code class="bg-white/20 px-1 rounded">propofol</code>, <code class="bg-white/20 px-1 rounded">heparin</code>) are split.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Step 5 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 5: Convert to the Category's med_dose_unit</h5>
+      <div class="bg-white/10 p-3 rounded-lg text-sm">
+        <ul class="space-y-2">
+          <li>• <strong>One unit per category:</strong> each <code class="bg-white/20 px-1 rounded">med_category</code> has one <code class="bg-white/20 px-1 rounded">med_dose_unit</code> in the CSV (e.g. <code class="bg-white/20 px-1 rounded">fentanyl</code> → <code class="bg-white/20 px-1 rounded">mcg/hr</code>, <code class="bg-white/20 px-1 rounded">propofol</code> → <code class="bg-white/20 px-1 rounded">mcg/kg/min</code>). Convert the raw rate into it.</li>
+        </ul>
+      </div>
+      <div class="bg-yellow-500/20 p-3 rounded-lg border border-yellow-400/30 text-sm mt-2">
+        <p class="text-yellow-300 font-semibold mb-2">Weight-adjusted and weight-naive alternatives are accepted:</p>
+        <ul class="space-y-2">
+          <li>• <strong>mCIDE lists one unit:</strong> for simplicity, only one permissible <code class="bg-white/20 px-1 rounded">med_dose_unit</code> is documented for each <code class="bg-white/20 px-1 rounded">med_category</code> (e.g. <code class="bg-white/20 px-1 rounded">mcg/min</code> for <code class="bg-white/20 px-1 rounded">epinephrine</code>; <code class="bg-white/20 px-1 rounded">mg/kg/hr</code> for <code class="bg-white/20 px-1 rounded">ketamine</code>).</li>
+          <li>• <strong>Also OK:</strong> the kg-adjusted or weight-naive alternative of that unit — <code class="bg-white/20 px-1 rounded">mcg/kg/min</code> for epinephrine, <code class="bg-white/20 px-1 rounded">mg/hr</code> for ketamine. Sites using those units do not need to force a conversion in the ETL stage.</li>
+          <li>• <strong>Not accepted:</strong> a per-pound (or any other non-kg) weight basis. For <code class="bg-white/20 px-1 rounded">epinephrine</code>, whose listed unit is <code class="bg-white/20 px-1 rounded">mcg/min</code>, the only alternative is <code class="bg-white/20 px-1 rounded">mcg/kg/min</code>; <code class="bg-white/20 px-1 rounded">mcg/lb/min</code> is not accepted and must be converted.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Step 6 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 6: Record the Pump Rate</h5>
+      <div class="bg-white/10 p-3 rounded-lg text-sm">
+        <ul class="space-y-2">
+          <li>• <code class="bg-white/20 px-1 rounded">volume_infusion_rate</code> is the fluid volume per time (e.g. 2 mL/hr). It is separate from <code class="bg-white/20 px-1 rounded">med_dose</code>, which is the drug quantity per time.</li>
+          <li>• Fill <code class="bg-white/20 px-1 rounded">volume_infusion_rate_unit</code> from the CSV's <code class="bg-white/20 px-1 rounded">volume_infusion_rate_units</code> column: <code class="bg-white/20 px-1 rounded">ml/hr</code> for pumped infusions; <code class="bg-white/20 px-1 rounded">NA</code> for inhaled categories such as <code class="bg-white/20 px-1 rounded">albuterol</code> and <code class="bg-white/20 px-1 rounded">nitric_oxide</code>.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="space-y-6">
+    <!-- Step 7 - Inhaled Nitric Oxide -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 7: Special Case - Inhaled Nitric Oxide</h5>
+      <div class="bg-yellow-500/20 p-3 rounded-lg border border-yellow-400/30 text-sm">
+        <p>If inhaled nitric oxide is not in your medication admin table, refer to <strong>flowsheets data</strong>. The order typically goes in as an RT order (not medication order) and is documented in flowsheets rather than MAR. Map it to <code class="bg-white/20 px-1 rounded">nitric_oxide</code> with <code class="bg-white/20 px-1 rounded">med_dose_unit = ppm</code>; it is a continuous-only category.</p>
+      </div>
+    </div>
+
+    <!-- Step 8 - Combination Drugs -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 8: Handle Combination & Trial Drugs</h5>
+      <h5 class="text-xl font-semibold mb-3">A. Combination Drugs</h5>
+      <div class="bg-white/10 p-3 rounded-lg text-sm mb-3">
+        <p class="text-yellow-300 font-semibold mb-2">One row per administration:</p>
+        <p class="text-xs mb-2">Do not split a combination product into one row per component. First check whether the CSV lists the combination itself as a <code class="bg-white/20 px-1 rounded">med_category</code>; if so, use it. Otherwise map the row to the <strong>primary active ingredient</strong> — the dictionary's example is <code class="bg-white/20 px-1 rounded">ACETAMIN-CALCIUM-MAG-CAFFEINE ORAL</code> → <code class="bg-white/20 px-1 rounded">acetaminophen</code>. The 3.0 continuous CSV has no combination categories, so continuous combinations always map to the primary ingredient.</p>
+      </div>
+      <div class="bg-white/10 p-3 rounded-lg text-xs">
+        <p class="text-green-300 font-semibold mb-2">Example: "MedA-MedB 7.5-325 MG/15 ML" running at 30 mL/hr</p>
+        <p class="mb-2">If medA_medB is not a CLIF med_category and MedA is the primary ingredient:</p>
+        <div class="space-y-1 ml-2">
+          <p>→ one row: med_category = "medA", med_dose = 15, med_dose_unit = medA's unit in the CSV (here mg/hr)</p>
+        </div>
+        <p class="mt-2 text-gray-300"><code class="bg-white/20 px-1 rounded">med_name</code> keeps the full raw string, so the other component is not lost.</p>
+      </div>
+      <div class="bg-white/10 p-3 rounded-lg text-xs mt-2">
+        <p class="text-blue-300 font-semibold mb-2">Unit Conversion (mL → the category's med_dose_unit):</p>
+        <p>If the raw rate is in mL/hr, convert to the mapped category's <code class="bg-white/20 px-1 rounded">med_dose_unit</code> using the concentration of the <em>mapped</em> ingredient in <code class="bg-white/20 px-1 rounded">med_name</code> (see Step 5).</p>
+      </div>
+    </div>
+
+    <!-- Trial Drugs & Placebos -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">B. Trial Drugs & Placebos</h5>
+      <div class="bg-white/10 p-3 rounded-lg text-sm mb-3">
+        <p class="mb-2">There is no <code class="bg-white/20 px-1 rounded">trial_drug</code> category. Map a trial drug to its active ingredient's <code class="bg-white/20 px-1 rounded">med_category</code> like any other row; <code class="bg-white/20 px-1 rounded">med_group</code> then follows from the CSV.</p>
+        <div class="bg-white/10 p-2 rounded text-xs mt-2">
+          <p class="text-yellow-300 font-semibold mb-1">Examples:</p>
+          <p class="text-gray-300">"ACETAMINOPHEN (IRB 140122) 325 MG ORAL TAB"</p>
+          <p class="mt-1">→ med_category: <span class="text-green-300">acetaminophen</span></p>
+          <p class="mt-2 text-gray-300">"ACYCLOVIR OR PLACEBO CAPSULE (IRB 171591) 400 MG"</p>
+          <p class="mt-1">→ the patient may have received placebo, so the active ingredient cannot be known: leave <code class="bg-white/20 px-1 rounded">med_category</code> unmapped (the raw string stays in <code class="bg-white/20 px-1 rounded">med_name</code>)</p>
+        </div>
+      </div>
+      <ul class="space-y-2 text-sm">
+        <li class="flex items-start">
+          <span class="text-blue-300 mr-2">•</span>
+          <span><strong>Brand Names:</strong> Map to the generic active ingredient's <code class="bg-white/20 px-1 rounded">med_category</code>; the raw brand string is preserved in <code class="bg-white/20 px-1 rounded">med_name</code></span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Step 9 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 9: Final Cleanup</h5>
+      <ul class="space-y-2 text-sm">
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">•</span>
+          <strong>Deduplicate:</strong> Remove duplicate rows
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">•</span>
+          <strong>UTC Conversion:</strong> Convert all datetime fields to UTC timezone
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">•</span>
+          <strong>Data Types:</strong> Ensure all variables match data dictionary specifications
+        </li>
+      </ul>
+    </div>
+
+    <!-- Data Quality Checks -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Data Quality Checks</h5>
+      <ul class="space-y-2 text-sm">
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">✓</span>
+          Validate <code class="bg-white/20 px-1 rounded">med_category</code> mappings against mCIDE
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">✓</span>
+          <span>Verify every row's <code class="bg-white/20 px-1 rounded">med_dose_unit</code> equals its category's unit in the CSV, or that unit's kg-adjusted / weight-naive alternative</span>
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">✓</span>
+          Check combination and trial drugs produce one row each, mapped to the explicit combo category or the primary active ingredient
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>

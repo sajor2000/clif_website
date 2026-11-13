@@ -1,0 +1,140 @@
+<h4 class="text-2xl font-bold mb-6">Medication Admin Continuous</h4>
+
+<div class="etl-guide-columns">
+  <div class="space-y-6">
+    <!-- Step 1 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 1: Create Medication Mappings</h5>
+      <p class="text-sm mb-3">Before transforming your medication data, prepare the mapping files:</p>
+      <div class="space-y-3 text-sm">
+        <div class="bg-white/10 p-3 rounded-lg">
+          <p><strong class="text-blue-300">a. Action Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">mar_action_name</code> → <code class="bg-white/20 px-1 rounded">mar_action_category</code></p>
+          <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/medication_admin_continuous/clif_medication_admin_continuous_action_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_medication_admin_continuous_action_categories.csv</a>
+        </div>
+        <div class="bg-white/10 p-3 rounded-lg">
+          <p><strong class="text-blue-300">b. Med Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">med_name</code> → <code class="bg-white/20 px-1 rounded">med_category</code></p>
+          <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/medication_admin_continuous/clif_medication_admin_continuous_med_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_medication_admin_continuous_med_categories.csv</a>
+        </div>
+        <div class="bg-white/10 p-3 rounded-lg">
+          <p><strong class="text-blue-300">c. Route Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">med_route_name</code> → <code class="bg-white/20 px-1 rounded">med_route_category</code></p>
+          <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/medication_admin_continuous/clif_medication_admin_continuous_med_route_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_medication_admin_continuous_med_route_categories.csv</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 2: Filter to Inpatient Hospitalizations</h5>
+      <p class="text-sm">Filter your medication data to include only inpatient hospitalizations.</p>
+    </div>
+
+    <!-- Step 3 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 3: Apply Mappings</h5>
+      <p class="text-sm">Join the mapping files to add category columns.</p>
+    </div>
+
+    <!-- Step 4 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 4: Filter Continuous Medications</h5>
+      <div class="bg-white/10 p-3 rounded-lg text-sm">
+        <p class="mb-2">Include only medications with time-based dosing units:</p>
+        <div class="font-mono text-xs bg-white/10 p-2 rounded">
+          filter(grepl("min|hr|day", med_dose_unit, ignore.case = TRUE))
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 5 - Inhaled Nitric Oxide -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 5: Special Case - Inhaled Nitric Oxide</h5>
+      <div class="bg-yellow-500/20 p-3 rounded-lg border border-yellow-400/30 text-sm">
+        <p>If inhaled nitric oxide is not in your medication admin table, refer to <strong>flowsheets data</strong>. The order typically goes in as an RT order (not medication order) and is documented in flowsheets rather than MAR.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="space-y-6">
+    <!-- Step 6 - Combination Drugs -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 6: Handle Combination & Trial Drugs</h5>
+      <h5 class="text-xl font-semibold mb-3">A. Combination Drugs</h5>
+      <div class="bg-white/10 p-3 rounded-lg text-sm mb-3">
+        <p class="text-yellow-300 font-semibold mb-2">When to duplicate rows:</p>
+        <p class="text-xs mb-2">Only duplicate combo meds that are <strong>not</strong> in the mCIDE as a med_category itself. Assign a duplicated row for each component med_category.</p>
+      </div>
+      <div class="bg-white/10 p-3 rounded-lg text-xs">
+        <p class="text-green-300 font-semibold mb-2">Example: "MedA MedB 5-325mg Tab"</p>
+        <p class="mb-2">If medA_medB is not a CLIF med_category, but medA and medB are separate categories:</p>
+        <div class="space-y-1 ml-2">
+          <p>→ Row 1: med_category = "medA", med_dose = 5mg</p>
+          <p>→ Row 2: med_category = "medB", med_dose = 325mg</p>
+        </div>
+        <p class="mt-2 text-gray-300">Both rows maintain same: hospitalization_id, admin_dttm, med_name</p>
+      </div>
+      <div class="bg-white/10 p-3 rounded-lg text-xs mt-2">
+        <p class="text-blue-300 font-semibold mb-2">Unit Conversion (mL → mg):</p>
+        <p>If original unit is mL, convert to mg using concentration from med_name.</p>
+        <p class="mt-1 text-gray-300">e.g., "MedA-MedB 7.5-325 MG/15 ML" at 30 mL → 15mg MedA, 650mg MedB</p>
+      </div>
+    </div>
+
+    <!-- Trial Drugs & Placebos -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">B. Trial Drugs & Placebos</h5>
+      <div class="bg-white/10 p-3 rounded-lg text-sm mb-3">
+        <p class="mb-2">Map trial drugs to <code class="bg-white/20 px-1 rounded">trial_drug</code> as med_category. Leave <code class="bg-white/20 px-1 rounded">med_group</code> empty if with placebo.</p>
+        <div class="bg-white/10 p-2 rounded text-xs mt-2">
+          <p class="text-yellow-300 font-semibold mb-1">Example:</p>
+          <p class="text-gray-300">"ACYCLOVIR OR PLACEBO CAPSULE (IRB 171591) 400 MG"</p>
+          <p class="mt-1">→ med_category: <span class="text-green-300">trial_drug</span></p>
+          <p>→ med_group: <span class="text-gray-400">None</span></p>
+        </div>
+      </div>
+      <ul class="space-y-2 text-sm">
+        <li class="flex items-start">
+          <span class="text-blue-300 mr-2">•</span>
+          <strong>Brand Names:</strong> Map to generic, preserve brand in notes
+        </li>
+      </ul>
+    </div>
+
+    <!-- Step 7 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 7: Final Cleanup</h5>
+      <ul class="space-y-2 text-sm">
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">•</span>
+          <strong>Deduplicate:</strong> Remove duplicate rows
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">•</span>
+          <strong>UTC Conversion:</strong> Convert all datetime fields to UTC timezone
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">•</span>
+          <strong>Data Types:</strong> Ensure all variables match data dictionary specifications
+        </li>
+      </ul>
+    </div>
+
+    <!-- Data Quality Checks -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Data Quality Checks</h5>
+      <ul class="space-y-2 text-sm">
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">✓</span>
+          Validate <code class="bg-white/20 px-1 rounded">med_category</code> mappings against mCIDE
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">✓</span>
+          Verify continuous med filter captures time-based units
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">✓</span>
+          Check combo drug rows have correct dose splits
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>

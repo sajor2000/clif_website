@@ -1,0 +1,155 @@
+<h4 class="text-2xl font-bold mb-6">Labs</h4>
+
+<div class="etl-guide-columns">
+  <div class="space-y-6">
+    <!-- Step 1 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 1: Create Lab Mappings</h5>
+      <p class="text-sm mb-3">Before transforming your lab data, prepare the mapping files:</p>
+      <div class="space-y-3 text-sm">
+        <div class="bg-white/10 p-3 rounded-lg">
+          <p><strong class="text-blue-300">a. Lab Order Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">lab_order_name</code> to <code class="bg-white/20 px-1 rounded">lab_order_category</code></p>
+          <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/labs/clif_labs_order_categories.csv" target="_blank" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_labs_order_categories.csv</a>
+        </div>
+        <div class="bg-white/10 p-3 rounded-lg">
+          <p><strong class="text-blue-300">b. Lab Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">lab_name</code> to <code class="bg-white/20 px-1 rounded">lab_category</code></p>
+          <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/labs/clif_lab_categories.csv" target="_blank" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_lab_categories.csv</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 2: Filter to Inpatient Hospitalizations</h5>
+      <p class="text-sm">Filter your lab data to include only inpatient hospitalizations.</p>
+    </div>
+
+    <!-- Step 3 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 3: Apply Mappings</h5>
+      <p class="text-sm">Join the mapping files created in Step 1 to add <code class="bg-white/20 px-1 rounded">lab_order_category</code> and <code class="bg-white/20 px-1 rounded">lab_category</code> columns.</p>
+      <div class="bg-blue-500/20 p-3 rounded-lg border border-blue-400/30 text-sm mt-3">
+        <p class="text-blue-300 font-semibold mb-2">Multi-value cells:</p>
+        <p class="mb-2">In <code class="bg-white/20 px-1 rounded">clif_lab_categories.csv</code>, an analyte valid for more than one panel or specimen lists them slash-delimited — <code class="bg-white/20 px-1 rounded">potassium</code> shows <code class="bg-white/20 px-1 rounded">bmp/poc</code>. That list is what the analyte <em>permits</em>, not what a given result <em>is</em>.</p>
+        <p><strong>Emit one CLIF row per lab result</strong> and resolve each cell to the single applicable value. Never create a row per slash-separated value.</p>
+      </div>
+      <div class="bg-white/10 p-3 rounded-lg text-sm mt-3">
+        <p class="mb-2">Point-of-care example — POC results can differ in accuracy from the central lab, so the panel keeps them separable without a separate <code class="bg-white/20 px-1 rounded">lab_category</code>:</p>
+        <ul class="space-y-1 text-xs">
+          <li>• Potassium off a BMP → <code class="bg-white/20 px-1 rounded">lab_category = potassium</code>, <code class="bg-white/20 px-1 rounded">lab_order_category = bmp</code></li>
+          <li>• POC potassium (bedside or gas analyzer) → <code class="bg-white/20 px-1 rounded">lab_category = potassium</code>, <code class="bg-white/20 px-1 rounded">lab_order_category = poc</code></li>
+        </ul>
+        <p class="mt-2 text-xs text-gray-300">Also applies to bicarbonate, creatinine, glucose, hematocrit, lactate, and sodium. Fingerstick glucometer glucose has its own panel: <code class="bg-white/20 px-1 rounded">glucose</code> + <code class="bg-white/20 px-1 rounded">fingerstick</code>, not <code class="bg-white/20 px-1 rounded">poc</code>.</p>
+      </div>
+      <div class="bg-white/10 p-3 rounded-lg text-sm mt-3">
+        <p class="mb-2">Bicarbonate vs. CO2:</p>
+        <ul class="space-y-1 text-xs">
+          <li>• BMP bicarbonate (often reported as "CO2") → <code class="bg-white/20 px-1 rounded">bicarbonate</code> + <code class="bg-white/20 px-1 rounded">bmp</code></li>
+          <li>• HCO3⁻ from a point-of-care device (bedside analyzer) → <code class="bg-white/20 px-1 rounded">bicarbonate</code> + <code class="bg-white/20 px-1 rounded">poc</code></li>
+          <li>• HCO3⁻ reported alongside gas values on a central-lab gas analyzer → <code class="bg-white/20 px-1 rounded">bicarbonate</code> + <code class="bg-white/20 px-1 rounded">blood_gas</code></li>
+          <li>• pCO2 → <code class="bg-white/20 px-1 rounded">pco2_arterial</code> / <code class="bg-white/20 px-1 rounded">pco2_venous</code>, never bicarbonate</li>
+          <li>• Total CO2 (tCO2, reported by some gas analyzers) → do not map</li>
+          <li>• Co-oximetry "hemoglobin/saturation" off a gas → do not map (not <code class="bg-white/20 px-1 rounded">hemoglobin</code>; it disagrees with CBC hemoglobin)</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Step 4 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 4: Map Specimen Types</h5>
+      <div class="bg-white/10 p-3 rounded-lg text-sm">
+        <p class="text-green-300 font-semibold mb-2">Keep rows whose specimen maps to one of the five <code class="bg-white/20 px-1 rounded">lab_specimen_category</code> values:</p>
+        <ul class="space-y-1 text-xs mb-2">
+          <li>• <code class="bg-white/20 px-1 rounded">plasma_blood</code> — whole blood, plasma, or serum (default for systemic labs)</li>
+          <li>• <code class="bg-white/20 px-1 rounded">urine</code></li>
+          <li>• <code class="bg-white/20 px-1 rounded">pleural</code> — pleural fluid from thoracentesis or pleural catheter</li>
+          <li>• <code class="bg-white/20 px-1 rounded">peritoneal</code> — peritoneal / ascitic fluid from paracentesis or peritoneal catheter</li>
+          <li>• <code class="bg-white/20 px-1 rounded">bal</code> — bronchoalveolar lavage fluid</li>
+        </ul>
+      </div>
+      <div class="bg-blue-500/20 p-3 rounded-lg border border-blue-400/30 text-sm mt-3">
+        <p class="text-blue-300 font-semibold mb-2">Blood specimens:</p>
+        <p>For mapping purposes, we use <code class="bg-white/20 px-1 rounded">plasma_blood</code> as a broad category encompassing whole blood, plasma, and serum, while recognizing that individual labs may be performed using different blood components. Sites do not need to distinguish serum from plasma from whole blood — all three map to <code class="bg-white/20 px-1 rounded">plasma_blood</code>.</p>
+      </div>
+    </div>
+
+    <!-- Step 5 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 5: Merge Sensitive Lab Variants</h5>
+      <div class="bg-blue-500/20 p-3 rounded-lg border border-blue-400/30 text-sm mb-3">
+        <p class="text-blue-300 font-semibold mb-2">Important:</p>
+        <p>Map both regular and highly sensitive lab assays to the same <code class="bg-white/20 px-1 rounded">lab_category</code>.</p>
+      </div>
+      <div class="bg-white/10 p-3 rounded-lg text-sm">
+        <p class="mb-2">Examples:</p>
+        <ul class="space-y-1 text-xs">
+          <li>• Troponin I (ng/mL) + hs-Troponin I (ng/L) → <code class="bg-white/20 px-1 rounded">troponin_i</code></li>
+          <li>• CRP (mg/L) + hs-CRP (mg/L) → <code class="bg-white/20 px-1 rounded">crp</code></li>
+        </ul>
+        <p class="mt-2 text-xs text-gray-300">Note: Unit conversions will be handled in the next step.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="space-y-6">
+    <!-- Step 6 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 6: Standardize Reference Units</h5>
+      <div class="bg-yellow-500/20 p-3 rounded-lg border border-yellow-400/30 text-sm mb-3">
+        <p class="text-yellow-300 font-semibold mb-2">Critical Requirement:</p>
+        <p>All lab values must be reported using CLIF reference units. Only listed reference units are permissible for respective lab categories. Sites must convert raw values during ETL.</p>
+      </div>
+      <div class="bg-white/10 p-3 rounded-lg text-sm">
+        <p>Reference units for each lab category:</p>
+        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/labs/clif_lab_categories.csv" target="_blank" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_lab_categories.csv (reference_unit column)</a>
+      </div>
+    </div>
+
+    <!-- Step 7 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 7: Create Numeric Value Field</h5>
+      <p class="text-sm mb-2">Create <code class="bg-white/20 px-1 rounded">lab_value_numeric</code> by parsing the character field <code class="bg-white/20 px-1 rounded">lab_value</code> to extract only the numeric part of the string.</p>
+      <div class="bg-white/10 p-2 rounded-lg text-xs font-mono">
+        lab_value_numeric = parse_number(lab_value)
+      </div>
+    </div>
+
+    <!-- Step 8 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 8: Final Cleanup</h5>
+      <ul class="space-y-2 text-sm">
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">•</span>
+          <strong>Deduplicate:</strong> Remove duplicate rows
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">•</span>
+          <strong>UTC Conversion:</strong> Convert all datetime fields to UTC timezone
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">•</span>
+          <strong>Data Types:</strong> Ensure all variables match data dictionary specifications
+        </li>
+      </ul>
+    </div>
+
+    <!-- Data Quality Checks -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Data Quality Checks</h5>
+      <ul class="space-y-2 text-sm">
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">✓</span>
+          Validate <code class="bg-white/20 px-1 rounded">lab_category</code> mappings against mCIDE
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">✓</span>
+          Verify all units match CLIF reference units
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">✓</span>
+          Check <code class="bg-white/20 px-1 rounded">lab_value_numeric</code> parsing accuracy
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>

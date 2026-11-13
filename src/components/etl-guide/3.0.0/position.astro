@@ -1,0 +1,127 @@
+<h4 class="text-2xl font-bold mb-6">Position</h4>
+
+<div class="etl-guide-columns">
+  <div class="space-y-6">
+    <!-- Step 1 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 1: Identify Relevant Position Measurements</h5>
+      <p class="text-sm mb-3">Identify relevant position measurement names from flowsheets and filter to them:</p>
+      <div class="bg-white/10 p-3 rounded-lg text-sm">
+        <p class="text-yellow-300 font-semibold mb-2">Example flowsheet names:</p>
+        <div class="text-xs space-y-1">
+          <div>• "NUR RS POSITION"</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 2: Filter to Inpatient Hospitalizations</h5>
+      <p class="text-sm">Filter your position data to include only inpatient hospitalizations.</p>
+    </div>
+
+    <!-- Step 3 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 3: Apply the Two-Value Rule</h5>
+      <p class="text-sm mb-3"><code class="bg-white/20 px-1 rounded">position_category</code> has exactly two permitted values. The rule is mechanical: anything that documents the patient lying <strong>face-down</strong> (on their stomach) is <span class="font-mono text-green-300">prone</span>; <strong>every other</strong> documented position is <span class="font-mono text-blue-300">not_prone</span>.</p>
+
+      <div class="bg-white/10 p-3 rounded-lg text-sm mb-3">
+        <p class="text-yellow-300 font-semibold mb-2">Keep bed-angle rows:</p>
+        <p class="text-xs mb-2">Do not drop rows that only describe the bed (head-of-bed angle, Trendelenburg, which is the bed tilted head-down). They are documented positions and map to <span class="font-mono text-blue-300">not_prone</span>. The data dictionary example keeps "30 Degrees" as not_prone.</p>
+      </div>
+
+      <div class="bg-white/10 p-3 rounded-lg text-sm mb-3">
+        <p class="text-yellow-300 font-semibold mb-2">Combined records:</p>
+        <p class="text-xs mb-2">When one field documents several things at once, the row is prone if any part of it documents face-down positioning:</p>
+        <div class="text-xs space-y-1">
+          <div>• "prone/trendelenburg" → <span class="text-green-300">prone</span></div>
+          <div>• "supine, HOB 30 degrees" → <span class="text-blue-300">not_prone</span></div>
+          <div>• "Supine–turn intolerant,microturn L;Supine–back" → <span class="text-blue-300">not_prone</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 4 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 4: Derive position_category</h5>
+      <div class="bg-white/10 p-3 rounded-lg">
+        <div class="text-sm">
+          <p class="mb-2 text-yellow-300 font-semibold">Prone detection using regex, everything else not_prone:</p>
+          <div class="font-mono text-xs bg-white/10 p-2 rounded">
+mutate(position_category = if_else(<br/>
+&nbsp;&nbsp;str_detect(position_name, regex("prone|face down|swimm", ignore_case = TRUE)),<br/>
+&nbsp;&nbsp;"prone", "not_prone"))
+          </div>
+          <p class="text-xs mt-2">Review the distinct <code class="bg-white/20 px-1 rounded">position_name</code> values the regex matches before trusting it. A name that mentions prone but documents something else (e.g., a note that the patient could not tolerate proning) must be mapped by hand.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="space-y-6">
+    <!-- Position Categories -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Position Categories</h5>
+      <p class="text-xs mb-3">Example source names from the mCIDE file and the data dictionary:</p>
+      <div class="space-y-3 text-sm">
+        <div class="bg-white/10 p-3 rounded-lg">
+          <p class="text-green-300 font-semibold mb-2">prone (lying face down):</p>
+          <div class="space-y-1 text-xs">
+            <div>• "Prone" / "Proning" / "Prone positioning"</div>
+            <div>• "Face Down"</div>
+            <div>• "Prone Positioning for ARDS"</div>
+            <div>• "Prone Ventilation"</div>
+            <div>• "Swimming Position"</div>
+          </div>
+        </div>
+
+        <div class="bg-white/10 p-3 rounded-lg">
+          <p class="text-blue-300 font-semibold mb-2">not_prone (any other position):</p>
+          <div class="space-y-1 text-xs">
+            <div>• "Supine" / "Supine–turn R" / "Supine–back"</div>
+            <div>• "Semi-Fowler's" (head of bed raised partway)</div>
+            <div>• "30 Degrees" and other bed angles</div>
+            <div>• "Trendelenburg" / "Reverse Trendelenburg"</div>
+          </div>
+        </div>
+      </div>
+      <div class="bg-white/10 p-3 rounded-lg text-xs mt-3">
+        <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/position/clif_position_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline">→ clif_position_categories.csv</a>
+      </div>
+    </div>
+
+    <!-- Step 5 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 5: Final Cleanup</h5>
+      <ul class="space-y-2 text-sm">
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">•</span>
+          <strong>Deduplicate:</strong> Remove duplicate rows
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">•</span>
+          <strong>UTC Conversion:</strong> Convert all datetime fields to UTC timezone
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">•</span>
+          <strong>Data Types:</strong> Ensure all variables match data dictionary specifications
+        </li>
+      </ul>
+    </div>
+
+    <!-- Data Quality Checks -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Data Quality Checks</h5>
+      <ul class="space-y-2 text-sm">
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">✓</span>
+          Verify position_category contains only "prone" and "not_prone" (no nulls where position_name is populated)
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">✓</span>
+          Spot-check the distinct position_name values mapped to prone
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>

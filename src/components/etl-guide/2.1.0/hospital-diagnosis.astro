@@ -1,0 +1,90 @@
+<h4 class="text-2xl font-bold mb-6">Hospital Diagnosis</h4>
+
+<div class="etl-guide-columns">
+  <div class="space-y-6">
+    <!-- Important Notes -->
+    <div class="bg-yellow-500/20 p-4 rounded-lg border border-yellow-400/30">
+      <h5 class="text-lg font-semibold mb-2 text-yellow-300">Important Notes</h5>
+      <ul class="space-y-2 text-sm">
+        <li>• This table only includes <strong>finalized billing diagnosis codes</strong> for hospital reimbursement</li>
+        <li>• All other diagnosis codes for a patient are included in the concept table <code class="bg-white/20 px-1 rounded">patient_diagnosis</code></li>
+      </ul>
+    </div>
+
+    <!-- Step 1 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 1: Filter to Inpatient Hospitalizations</h5>
+      <p class="text-sm">Filter your hospital diagnosis data to include only inpatient hospitalizations.</p>
+    </div>
+
+    <!-- Step 2 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 2: Create Primary Diagnosis Flag</h5>
+      <p class="text-sm mb-3">If your source data has diagnosis ranking, create the <code class="bg-white/20 px-1 rounded">diagnosis_primary</code> column:</p>
+      <div class="bg-white/10 p-3 rounded-lg text-sm">
+        <ul class="space-y-2">
+          <li><strong class="text-green-300">1</strong> = Primary diagnosis (rank = 1)</li>
+          <li><strong class="text-yellow-300">0</strong> = Secondary diagnosis (rank ≥ 2)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="space-y-6">
+    <!-- Step 3 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 3: Filter and Assign POA Values</h5>
+      <p class="text-sm mb-3">Only include rows where <code class="bg-white/20 px-1 rounded">poa_present</code> is definitively Yes or No:</p>
+      <div class="bg-white/10 p-3 rounded-lg text-sm mb-3">
+        <p class="text-red-300 font-semibold mb-2">Exclude rows with:</p>
+        <p class="text-xs">Unknown, Null, Missing, Clinically Undetermined, Exempt from POA Reporting, Unspecified, etc.</p>
+      </div>
+      <div class="bg-white/10 p-3 rounded-lg text-sm">
+        <p class="text-green-300 font-semibold mb-2">Assign values:</p>
+        <ul class="space-y-1">
+          <li><strong class="text-green-300">1</strong> = Yes (present on admission)</li>
+          <li><strong class="text-yellow-300">0</strong> = No (not present on admission)</li>
+        </ul>
+        <p class="text-xs mt-2 text-gray-300">No other values are permitted.</p>
+      </div>
+    </div>
+
+    <!-- Step 4 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 4: Final Cleanup</h5>
+      <ul class="space-y-2 text-sm">
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">•</span>
+          <strong>Deduplicate:</strong> Remove duplicate rows
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">•</span>
+          <strong>UTC Conversion:</strong> Convert all datetime fields to UTC timezone
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">•</span>
+          <strong>Data Types:</strong> Ensure all variables match data dictionary specifications
+        </li>
+      </ul>
+    </div>
+
+    <!-- Data Quality Checks -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Data Quality Checks</h5>
+      <ul class="space-y-2 text-sm">
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">✓</span>
+          Verify <code class="bg-white/20 px-1 rounded">diagnosis_primary</code> contains only 0 or 1
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">✓</span>
+          Verify <code class="bg-white/20 px-1 rounded">poa_present</code> contains only 0 or 1
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">✓</span>
+          Validate diagnosis codes are in expected format (ICD-10, etc.)
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>

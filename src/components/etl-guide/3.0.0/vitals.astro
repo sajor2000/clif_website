@@ -1,0 +1,151 @@
+<h4 class="text-2xl font-bold mb-6">Vitals</h4>
+
+<div class="etl-guide-columns">
+  <div class="space-y-6">
+    <!-- Step 1 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 1: Create Vitals Mappings</h5>
+      <p class="text-sm mb-3">Before transforming your vitals data, prepare the mapping file:</p>
+      <div class="space-y-3 text-sm">
+        <div class="bg-white/10 p-3 rounded-lg">
+          <p><strong class="text-blue-300">Vital Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">vital_name</code> → <code class="bg-white/20 px-1 rounded">vital_category</code></p>
+          <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/vitals/clif_vitals_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_vitals_categories.csv</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 2: Filter to Inpatient Hospitalizations</h5>
+      <p class="text-sm">Filter your vitals data to include only inpatient hospitalizations.</p>
+    </div>
+
+    <!-- Step 3 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 3: Apply Mappings</h5>
+      <p class="text-sm mb-3">Apply the vital_category mappings to your flowsheets data.</p>
+      <div class="bg-yellow-500/20 border border-yellow-400/50 p-3 rounded-lg">
+        <div class="text-xs space-y-2">
+          <div><strong>sbp:</strong> Systolic blood pressure. Can include both invasive (arterial line) and non-invasive (cuff) measurements; specify in meas_site_name.</div>
+          <div><strong>dbp:</strong> Diastolic blood pressure. Can include both invasive (arterial line) and non-invasive (cuff) measurements; specify in meas_site_name.</div>
+          <div><strong>map:</strong> Mean arterial pressure. Can include both invasive and non-invasive. Source type should be indicated in meas_site_name.</div>
+          <div><strong>intracranial_pressure</strong> (new in 3.0): pressure inside the skull, read from an invasive monitor (e.g., an external ventricular drain). Unit: mmHg. Example names: "ICP", "Intracranial Pressure", "EVD ICP".</div>
+          <div><strong>pulse_pressure_variation</strong> (new in 3.0): percent swing in pulse pressure over a breathing cycle, computed from an arterial line waveform. Unit: %. Example names: "PPV", "Pulse Pressure Variation", "Arterial PPV".</div>
+        </div>
+      </div>
+      <p class="text-xs mt-3">The 11 permitted <code class="bg-white/20 px-1 rounded">vital_category</code> values are: <span class="font-mono">dbp, heart_rate, height_cm, intracranial_pressure, map, pulse_pressure_variation, respiratory_rate, sbp, spo2, temp_c, weight_kg</span>.</p>
+    </div>
+
+    <!-- Step 4 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 4: Blood Pressure Split</h5>
+      <p class="text-sm mb-3">There is no combined "blood pressure" vital_category. If your source stores blood pressure as one "120/80" string, the raw row maps to <strong>two</strong> output rows: one with vital_category <span class="font-mono text-green-300">sbp</span> (the number before the slash) and one with <span class="font-mono text-green-300">dbp</span> (the number after it). Filter on the raw <code class="bg-white/20 px-1 rounded">vital_name</code>, not on a category:</p>
+      <div class="bg-white/10 p-3 rounded-lg">
+        <div class="font-mono text-xs">
+# raw rows whose vital_name holds a combined "sbp/dbp" string<br/>
+bp_df = raw_df.filter(pl.col("vital_name") == "BLOOD PRESSURE")  # your site's raw name<br/>
+bp_df = bp_df.with_columns(pl.col("vital_value").str.strip_chars().str.split("/").alias("bp_split"))<br/>
+sbp_df = bp_df.with_columns(vital_category=pl.lit("sbp"), vital_value=pl.col("bp_split").list.get(0).cast(pl.Float64))<br/>
+dbp_df = bp_df.with_columns(vital_category=pl.lit("dbp"), vital_value=pl.col("bp_split").list.get(1).cast(pl.Float64))<br/>
+vitals_df = pl.concat([other_rows, sbp_df.drop("bp_split"), dbp_df.drop("bp_split")])
+        </div>
+      </div>
+      <p class="text-xs mt-2">If the source already reports systolic and diastolic as separate rows (e.g., "BLOOD PRESSURE (SYSTOLIC)"), map each directly and skip the split. Mean arterial pressure stays its own <span class="font-mono">map</span> row.</p>
+    </div>
+  </div>
+
+  <div class="space-y-6">
+    <!-- Step 5 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 5: Standardize Vitals Units</h5>
+      <p class="text-sm mb-3">Convert to CLIF standard units:</p>
+      <div class="bg-white/10 p-3 rounded-lg">
+        <table class="text-xs w-full">
+          <thead>
+            <tr class="border-b border-white/20">
+              <th class="text-left py-1 pr-3">Vital</th>
+              <th class="text-left py-1">Required Unit</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="border-b border-white/10">
+              <td class="py-1 pr-3">temp_c</td>
+              <td class="py-1">Celsius (°C)</td>
+            </tr>
+            <tr class="border-b border-white/10">
+              <td class="py-1 pr-3">spo2</td>
+              <td class="py-1">Percent (%)</td>
+            </tr>
+            <tr class="border-b border-white/10">
+              <td class="py-1 pr-3">map</td>
+              <td class="py-1">mmHg</td>
+            </tr>
+            <tr class="border-b border-white/10">
+              <td class="py-1 pr-3">height_cm</td>
+              <td class="py-1">Centimeters (cm)</td>
+            </tr>
+            <tr class="border-b border-white/10">
+              <td class="py-1 pr-3">weight_kg</td>
+              <td class="py-1">Kilograms (kg)</td>
+            </tr>
+            <tr class="border-b border-white/10">
+              <td class="py-1 pr-3">intracranial_pressure</td>
+              <td class="py-1">mmHg</td>
+            </tr>
+            <tr>
+              <td class="py-1 pr-3">pulse_pressure_variation</td>
+              <td class="py-1">Percent (%)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Step 6 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 6: Optional measured_dttm</h5>
+      <div class="bg-white/10 p-3 rounded-lg text-xs">
+        <p class="mb-2">3.0 adds an optional <span class="font-mono text-yellow-300">measured_dttm</span> column: when the vital was actually measured at the bedside. It can differ from <span class="font-mono">recorded_dttm</span>, the time the value was entered into the EHR (e.g., vitals written on paper and entered later at shift change).</p>
+        <p>If your source does not distinguish the two timestamps, omit the column or leave it null. Like every datetime, it must be timezone-aware and in UTC.</p>
+      </div>
+    </div>
+
+    <!-- Step 7 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 7: Final Cleanup</h5>
+      <ul class="space-y-2 text-sm">
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">•</span>
+          <strong>Deduplicate:</strong> Remove duplicate rows
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">•</span>
+          <strong>UTC Conversion:</strong> Convert all datetime fields to UTC timezone
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">•</span>
+          <strong>Data Types:</strong> Ensure all variables match data dictionary specifications
+        </li>
+      </ul>
+    </div>
+
+    <!-- Data Quality Checks -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Data Quality Checks</h5>
+      <ul class="space-y-2 text-sm">
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">✓</span>
+          Check BP split created valid sbp/dbp values
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">✓</span>
+          Validate meas_site_name populated for invasive measurements
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">✓</span>
+          Confirm vital_category only holds the 11 permitted values
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>

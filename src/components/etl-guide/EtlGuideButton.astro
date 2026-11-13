@@ -1,0 +1,32 @@
+---
+// Small "ETL Guide" pill for a data dictionary table heading. Opens the
+// matching <EtlGuideDialog>. Renders nothing when the table has no guide.
+import { getEtlGuide, tableSlug } from './guides';
+
+interface Props {
+  version: string;
+  tableName: string;
+}
+
+const { version, tableName } = Astro.props;
+const hasGuide = Boolean(getEtlGuide(version, tableName));
+---
+
+{
+  hasGuide && (
+    <button
+      type="button"
+      data-etl-open={tableSlug(tableName)}
+      aria-haspopup="dialog"
+      aria-label={`Open the ETL guide for ${tableName}`}
+      class="ml-auto inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-clif-burgundy px-4 py-2 text-base font-semibold leading-none text-white shadow-sm transition hover:bg-clif-burgundy-dark hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-clif-burgundy focus-visible:ring-offset-2"
+    >
+      <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4 4.5A1.5 1.5 0 0 1 5.5 3H10v14H5.5A1.5 1.5 0 0 1 4 15.5v-11Z" />
+        <path d="M10 3h4.5A1.5 1.5 0 0 1 16 4.5v11a1.5 1.5 0 0 1-1.5 1.5H10" />
+        <path d="M12.5 7h1M12.5 10h1" />
+      </svg>
+      ETL Guide
+    </button>
+  )
+}

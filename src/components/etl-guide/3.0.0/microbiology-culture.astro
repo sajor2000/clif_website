@@ -1,0 +1,81 @@
+<h4 class="text-2xl font-bold mb-6">Microbiology Culture</h4>
+
+<div class="etl-guide-columns">
+  <div class="space-y-6">
+    <!-- Step 1 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 1: Create Microbiology Mappings</h5>
+      <p class="text-sm mb-3">Before transforming your microbiology data, prepare the mapping files:</p>
+      <div class="space-y-3 text-sm">
+        <div class="bg-white/10 p-3 rounded-lg">
+          <p><strong class="text-blue-300">a. Fluid Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">fluid_name</code> → <code class="bg-white/20 px-1 rounded">fluid_category</code></p>
+          <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/microbiology_culture/clif_microbiology_culture_fluid_category.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_microbiology_culture_fluid_category.csv</a>
+        </div>
+        <div class="bg-white/10 p-3 rounded-lg">
+          <p><strong class="text-blue-300">b. Method Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">method_name</code> → <code class="bg-white/20 px-1 rounded">method_category</code></p>
+          <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/microbiology_culture/clif_microbiology_culture_method_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_microbiology_culture_method_categories.csv</a>
+        </div>
+        <div class="bg-white/10 p-3 rounded-lg">
+          <p><strong class="text-blue-300">c. Organism Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">organism_name</code> → <code class="bg-white/20 px-1 rounded">organism_category</code></p>
+          <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/microbiology_culture/clif_microbiology_culture_organism_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_microbiology_culture_organism_categories.csv</a>
+        </div>
+        <div class="bg-white/10 p-3 rounded-lg">
+          <p><strong class="text-blue-300">d. Organism Group:</strong> Map <code class="bg-white/20 px-1 rounded">organism_category</code> → <code class="bg-white/20 px-1 rounded">organism_group</code></p>
+          <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/microbiology_culture/clif_microbiology_culture_organism_groups.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_microbiology_culture_organism_groups.csv</a>
+        </div>
+      </div>
+      <p class="text-xs text-gray-300 mt-2"><code class="bg-white/20 px-1 rounded">method_category</code> has three values: <code class="bg-white/20 px-1 rounded">culture</code>, <code class="bg-white/20 px-1 rounded">gram_stain</code>, <code class="bg-white/20 px-1 rounded">smear</code>. <code class="bg-white/20 px-1 rounded">organism_group</code> is derived from <code class="bg-white/20 px-1 rounded">organism_category</code>, not from the raw name.</p>
+    </div>
+
+    <!-- Step 2 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 2: Filter to Inpatient Hospitalizations</h5>
+      <p class="text-sm">Filter your microbiology data to include only inpatient hospitalizations.</p>
+    </div>
+
+    <!-- Step 3 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 3: Assign Keys</h5>
+      <div class="bg-white/10 p-3 rounded-lg text-sm">
+        <ul class="space-y-1 text-xs">
+          <li>• <code class="bg-white/20 px-1 rounded">order_id</code> — Unique identifier for a single microbiology order/specimen, shared across all three method categories (culture, gram stain, smear). Distinguishes separate orders so that two simultaneous orders remain distinct. A single order can yield multiple results — each result is a separate row that shares this <code class="bg-white/20 px-1 rounded">order_id</code> and is distinguished by <code class="bg-white/20 px-1 rounded">organism_id</code>. For example, a gram stain reporting both GPC and GNR is recorded as two rows, just as a culture growing both staph and strep is two rows.</li>
+          <li>• <code class="bg-white/20 px-1 rounded">organism_id</code> — one per organism result. It is the key that links to <code class="bg-white/20 px-1 rounded">microbiology_susceptibility</code>.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Step 4 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 4: Which <code class="bg-white/20 px-1 rounded">result_dttm</code> rows to keep</h5>
+      <div class="bg-amber-500/20 p-3 rounded-lg border border-amber-400/30 text-sm">
+        <p class="mb-2"><code class="bg-white/20 px-1 rounded">result_dttm</code> — Date and time when the result was reported. For <strong>positive</strong> cultures and positive gram stains, keep <strong>every</strong> interval/processing-step row as the EHR records it. For <strong>negative</strong> results, keep only one row per workup — the <strong>final</strong> no-growth row for cultures (<code class="bg-white/20 px-1 rounded">method_category = culture</code>), and the <strong>first</strong> no-bacteria-seen row for gram stains (<code class="bg-white/20 px-1 rounded">method_category = gram_stain</code>).</p>
+        <p class="text-xs">Interim rows look like "no growth at 24h / 48h / 72h" or "no bacteria seen at 6h / 12h". Positive rows (preliminary, genus-level, species-level) share the same <code class="bg-white/20 px-1 rounded">order_dttm</code> and <code class="bg-white/20 px-1 rounded">collect_dttm</code>; consumers take <code class="bg-white/20 px-1 rounded">max(result_dttm)</code> per <code class="bg-white/20 px-1 rounded">organism_id</code> for the latest state.</p>
+        <p class="text-xs text-gray-300 mt-2">See <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/180" target="_blank" rel="noopener" class="underline text-blue-300 hover:text-blue-200">Issue #180</a> for the decision thread.</p>
+      </div>
+    </div>
+
+    <!-- Step 5 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 5: Final Cleanup</h5>
+      <div class="bg-white/10 p-3 rounded-lg text-sm">
+        <ul class="space-y-1 text-xs">
+          <li>• <strong>UTC Conversion:</strong> <code class="bg-white/20 px-1 rounded">order_dttm</code>, <code class="bg-white/20 px-1 rounded">collect_dttm</code>, <code class="bg-white/20 px-1 rounded">result_dttm</code> timezone-aware in UTC</li>
+          <li>• <strong>LOINC:</strong> populate <code class="bg-white/20 px-1 rounded">lab_loinc_code</code> when the source has it (optional)</li>
+          <li>• <strong>Raw names:</strong> keep <code class="bg-white/20 px-1 rounded">fluid_name</code>, <code class="bg-white/20 px-1 rounded">method_name</code>, <code class="bg-white/20 px-1 rounded">organism_name</code> exactly as the EHR reports them</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Quality Checks -->
+    <div class="bg-green-500/20 p-4 rounded-lg border border-green-400/30">
+      <h5 class="text-lg font-semibold mb-2 text-green-300">Data Quality Checks</h5>
+      <ul class="text-sm space-y-1">
+        <li>• Every row has an <code class="bg-white/20 px-1 rounded">order_id</code>; positive rows also have an <code class="bg-white/20 px-1 rounded">organism_id</code></li>
+        <li>• Negative workups have exactly one row per <code class="bg-white/20 px-1 rounded">order_id</code> and method</li>
+        <li>• <code class="bg-white/20 px-1 rounded">method_category</code> is one of culture / gram_stain / smear</li>
+        <li>• <code class="bg-white/20 px-1 rounded">organism_group</code> matches the group listed for its <code class="bg-white/20 px-1 rounded">organism_category</code> in the mCIDE</li>
+        <li>• <code class="bg-white/20 px-1 rounded">collect_dttm</code> ≥ <code class="bg-white/20 px-1 rounded">order_dttm</code> and <code class="bg-white/20 px-1 rounded">result_dttm</code> ≥ <code class="bg-white/20 px-1 rounded">collect_dttm</code></li>
+      </ul>
+    </div>
+  </div>
+</div>

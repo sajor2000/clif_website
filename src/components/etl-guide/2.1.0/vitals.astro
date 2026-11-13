@@ -1,0 +1,124 @@
+<h4 class="text-2xl font-bold mb-6">Vitals</h4>
+
+<div class="etl-guide-columns">
+  <div class="space-y-6">
+    <!-- Step 1 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 1: Create Vitals Mappings</h5>
+      <p class="text-sm mb-3">Before transforming your vitals data, prepare the mapping file:</p>
+      <div class="space-y-3 text-sm">
+        <div class="bg-white/10 p-3 rounded-lg">
+          <p><strong class="text-blue-300">Vital Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">vital_name</code> → <code class="bg-white/20 px-1 rounded">vital_category</code></p>
+          <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/vitals/clif_vitals_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_vitals_categories.csv</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 2: Filter to Inpatient Hospitalizations</h5>
+      <p class="text-sm">Filter your vitals data to include only inpatient hospitalizations.</p>
+    </div>
+
+    <!-- Step 3 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 3: Apply Mappings</h5>
+      <p class="text-sm mb-3">Apply the vital_category mappings to your flowsheets data.</p>
+      <div class="bg-yellow-500/20 border border-yellow-400/50 p-3 rounded-lg">
+        <div class="text-xs space-y-2">
+          <div><strong>sbp:</strong> Systolic blood pressure. Can include both invasive (arterial line) and non-invasive (cuff) measurements; specify in meas_site_name.</div>
+          <div><strong>dbp:</strong> Diastolic blood pressure. Can include both invasive (arterial line) and non-invasive (cuff) measurements; specify in meas_site_name.</div>
+          <div><strong>map:</strong> Mean arterial pressure. Can include both invasive and non-invasive. Source type should be indicated in meas_site_name.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 4 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 4: Blood Pressure Split</h5>
+      <p class="text-sm mb-3">If blood pressure is not available separately as sbp and dbp, split to create the respective vital_category:</p>
+      <div class="bg-white/10 p-3 rounded-lg">
+        <div class="font-mono text-xs">
+bp_df = filtered_df.filter(pl.col("vital_category") == "blood_pressure")<br/>
+bp_df_pd['bp_split'] = bp_df_pd['vital_value'].str.strip().str.split('/')<br/>
+bp_df_pd['sbp'] = bp_df_pd['bp_split'].str[0]<br/>
+bp_df_pd['dbp'] = bp_df_pd['bp_split'].str[1]
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="space-y-6">
+    <!-- Step 5 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 5: Standardize Vitals Units</h5>
+      <p class="text-sm mb-3">Convert to CLIF standard units:</p>
+      <div class="bg-white/10 p-3 rounded-lg">
+        <table class="text-xs w-full">
+          <thead>
+            <tr class="border-b border-white/20">
+              <th class="text-left py-1 pr-3">Vital</th>
+              <th class="text-left py-1">Required Unit</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="border-b border-white/10">
+              <td class="py-1 pr-3">temp_c</td>
+              <td class="py-1">Celsius (°C)</td>
+            </tr>
+            <tr class="border-b border-white/10">
+              <td class="py-1 pr-3">spo2</td>
+              <td class="py-1">Percent (%)</td>
+            </tr>
+            <tr class="border-b border-white/10">
+              <td class="py-1 pr-3">map</td>
+              <td class="py-1">mmHg</td>
+            </tr>
+            <tr class="border-b border-white/10">
+              <td class="py-1 pr-3">height_cm</td>
+              <td class="py-1">Centimeters (cm)</td>
+            </tr>
+            <tr>
+              <td class="py-1 pr-3">weight_kg</td>
+              <td class="py-1">Kilograms (kg)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Step 6 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 6: Final Cleanup</h5>
+      <ul class="space-y-2 text-sm">
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">•</span>
+          <strong>Deduplicate:</strong> Remove duplicate rows
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">•</span>
+          <strong>UTC Conversion:</strong> Convert all datetime fields to UTC timezone
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">•</span>
+          <strong>Data Types:</strong> Ensure all variables match data dictionary specifications
+        </li>
+      </ul>
+    </div>
+
+    <!-- Data Quality Checks -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Data Quality Checks</h5>
+      <ul class="space-y-2 text-sm">
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">✓</span>
+          Check BP split created valid sbp/dbp values
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">✓</span>
+          Validate meas_site_name populated for invasive measurements
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,106 @@
+<h4 class="text-2xl font-bold mb-6">Patient</h4>
+
+<div class="etl-guide-columns">
+  <div class="space-y-6">
+    <!-- Step 1 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 1: Create Patient Mappings</h5>
+      <p class="text-sm mb-3">Before transforming your patient data, prepare the mapping files:</p>
+      <div class="space-y-3 text-sm">
+        <div class="bg-white/10 p-3 rounded-lg">
+          <p><strong class="text-blue-300">a. Race Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">race_name</code> → <code class="bg-white/20 px-1 rounded">race_category</code></p>
+          <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/patient/clif_patient_race_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_patient_race_categories.csv</a>
+        </div>
+        <div class="bg-white/10 p-3 rounded-lg">
+          <p><strong class="text-blue-300">b. Sex Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">sex_name</code> → <code class="bg-white/20 px-1 rounded">sex_category</code></p>
+          <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/patient/clif_patient_sex_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_patient_sex_categories.csv</a>
+        </div>
+        <div class="bg-white/10 p-3 rounded-lg">
+          <p><strong class="text-blue-300">c. Ethnicity Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">ethnicity_name</code> → <code class="bg-white/20 px-1 rounded">ethnicity_category</code></p>
+          <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/patient/clif_patient_ethinicity_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_patient_ethinicity_categories.csv</a>
+        </div>
+        <div class="bg-white/10 p-3 rounded-lg">
+          <p><strong class="text-blue-300">d. Language Category Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">language_name</code> → <code class="bg-white/20 px-1 rounded">language_category</code></p>
+          <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/patient/clif_patient_language_categories.csv" target="_blank" rel="noopener" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_patient_language_categories.csv</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 2: Filter to Inpatient Patients</h5>
+      <p class="text-sm">Filter your patient data to include only patients whose hospitalization_id exists in your CLIF ADT table.</p>
+    </div>
+
+    <!-- Step 3 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 3: Apply Mappings & Handle Missing Values</h5>
+      <p class="text-sm mb-3">Join the mapping files to add category columns, then fill missing values:</p>
+      <div class="bg-white/10 p-3 rounded-lg text-sm">
+        <p class="text-yellow-300 font-semibold mb-2">Fill missing/null values:</p>
+        <ul class="space-y-1 text-xs">
+          <li>• <code class="bg-white/20 px-1 rounded">race_category</code> → <span class="text-green-300">"Unknown"</span></li>
+          <li>• <code class="bg-white/20 px-1 rounded">sex_category</code> → <span class="text-green-300">"Unknown"</span></li>
+          <li>• <code class="bg-white/20 px-1 rounded">ethnicity_category</code> → <span class="text-green-300">"Unknown"</span></li>
+          <li>• <code class="bg-white/20 px-1 rounded">language_category</code> → <span class="text-green-300">"Unknown or NA"</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="space-y-6">
+    <!-- Step 4 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 4: Handle External Death Data Sources</h5>
+      <p class="text-sm mb-3">If using an external source like a state vital records registry to extract <code class="bg-white/20 px-1 rounded">death_dttm</code> and the death records are only in date format (no timestamp):</p>
+      <ul class="space-y-2 text-sm">
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">1.</span>
+          <span><strong>Same day as discharge:</strong> If the external death date matches the patient's <code class="bg-white/20 px-1 rounded">discharge_dttm</code> date, use the <code class="bg-white/20 px-1 rounded">discharge_dttm</code> as the <code class="bg-white/20 px-1 rounded">death_dttm</code></span>
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">2.</span>
+          <span><strong>After discharge:</strong> If the death date occurs after <code class="bg-white/20 px-1 rounded">discharge_dttm</code>, use the death date and add midnight as the timestamp (format: <code class="bg-white/20 px-1 rounded">YYYY-MM-DD 00:00:00+00:00</code>)</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Step 5 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 5: Final Cleanup</h5>
+      <ul class="space-y-2 text-sm">
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">•</span>
+          <span><strong>Deduplicate:</strong> Remove duplicate rows by composite key <code class="bg-white/20 px-1 rounded">patient_id</code>. Ensure one record per patient_id</span>
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">•</span>
+          <span><strong>UTC Conversion:</strong> Convert all datetime fields to UTC timezone</span>
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">•</span>
+          <span><strong>Data Types:</strong> Ensure all variables match data dictionary specifications</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Data Quality Checks -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Data Quality Checks</h5>
+      <ul class="space-y-2 text-sm">
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">✓</span>
+          <span>Ensure one record per <code class="bg-white/20 px-1 rounded">patient_id</code></span>
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">✓</span>
+          <span>Validate all category mappings against mCIDE</span>
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">✓</span>
+          <span>Verify no null values remain in category fields</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>

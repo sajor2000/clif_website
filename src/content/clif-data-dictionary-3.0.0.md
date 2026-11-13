@@ -216,6 +216,9 @@ The medication admin continuous table is a long-form (one medication administrat
 
 - Include combination medications when mapping medication names to respective categories. Eg. `ACETAMIN-CALCIUM-MAG-CAFFEINE ORAL` -> `acetaminophen`
 - Include trial drugs when mapping medication names to respective categories.. Eg. `ACETAMINOPHEN (IRB 140122) 325 MG ORAL TAB` -> `acetaminophen`
+- In 3.0, the `med_dose_unit` is **standardized per `med_category`** — every `med_category` in the [continuous mCIDE](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/medication_admin_continuous/clif_medication_admin_continuous_med_categories.csv) is tied to one dose unit (e.g. `mcg/hr` for `fentanyl`). Raw EHR rates should be converted into the category-specific unit.
+- The kg-adjusted or weight-naive alternative of that unit is also accepted, so sites using it do not need to force a conversion (e.g. `mcg/kg/min` where the category lists `mcg/min`).
+- A per-pound (or any other non-kg) weight basis is not accepted: for `epinephrine`, whose listed unit is `mcg/min`, the only alternative is `mcg/kg/min`, and `mcg/lb/min` must be converted.
 
 ## microbiology_culture
 

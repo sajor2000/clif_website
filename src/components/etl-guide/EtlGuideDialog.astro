@@ -1,0 +1,77 @@
+---
+// Pop-up holding one table's ETL guide. Place it next to (not inside) the
+// table heading that carries the matching <EtlGuideButton>. Renders nothing
+// when the table has no guide. The burgundy surface is deliberate: the guide
+// partials are written for a dark background.
+import { getEtlGuide, tableSlug } from './guides';
+
+interface Props {
+  version: string;
+  tableName: string;
+}
+
+const { version, tableName } = Astro.props;
+const Guide = getEtlGuide(version, tableName);
+const slug = tableSlug(tableName);
+---
+
+{
+  Guide && (
+    <dialog
+      id={`etl-guide-${slug}`}
+      data-etl-dialog
+      aria-label={`ETL guide for ${tableName}`}
+      class="m-auto w-[92vw] max-w-[1200px] overflow-hidden rounded-lg bg-clif-burgundy p-0 text-left text-base font-normal text-white shadow-2xl backdrop:bg-black/80"
+    >
+      <button
+        type="button"
+        data-etl-close
+        aria-label="Close"
+        class="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-2xl leading-none text-white hover:bg-white/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+      >
+        ×
+      </button>
+      <div class="max-h-[88vh] overflow-y-auto p-4 [overflow-wrap:anywhere] md:p-8 [&>h4]:pr-12">
+        <Guide />
+      </div>
+    </dialog>
+  )
+}
+
+<script>
+  function openGuide(slug: string) {
+    const dialog = document.getElementById(`etl-guide-${slug}`);
+    if (!(dialog instanceof HTMLDialogElement) || dialog.open) return;
+    dialog.showModal();
+    dialog.scrollTop = 0;
+    document.documentElement.style.overflow = 'hidden';
+  }
+
+  function onClick(e: MouseEvent) {
+    const target = e.target;
+    if (!(target instanceof Element)) return;
+
+    const opener = target.closest<HTMLElement>('[data-etl-open]');
+    if (opener?.dataset.etlOpen) {
+      openGuide(opener.dataset.etlOpen);
+      return;
+    }
+
+    const dialog = target.closest<HTMLDialogElement>('dialog[data-etl-dialog]');
+    if (!dialog) return;
+    // A click on the dialog element itself is a click on the backdrop:
+    // the content wrapper covers the whole dialog box.
+    if (target === dialog || target.closest('[data-etl-close]')) dialog.close();
+  }
+
+  function onClose(e: Event) {
+    if (e.target instanceof HTMLDialogElement && e.target.matches('[data-etl-dialog]')) {
+      document.documentElement.style.overflow = '';
+    }
+  }
+
+  document.addEventListener('click', onClick);
+  // `close` does not bubble, so listen in the capture phase. It fires for
+  // the close button, a backdrop click, and Escape alike.
+  document.addEventListener('close', onClose, true);
+</script>

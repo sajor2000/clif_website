@@ -23,7 +23,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       >
         <h2 class="text-2xl font-bold text-clif-burgundy mb-4">
           Version 3.0
-          <span class="text-lg font-normal text-gray-600">(Last updated: Oct 13, 2026)</span>
+          <span class="text-lg font-normal text-gray-600">(Last updated: Nov 13, 2026)</span>
           <span class="ml-2 bg-gray-500 text-white text-sm px-3 py-1 rounded-full"
             >Coming Soon</span
           >
@@ -576,7 +576,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            Revisions (21 updates) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Oct 13, 2026</span>
+            Revisions (22 updates) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Nov 13, 2026</span>
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -597,6 +597,12 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">medication_admin_continuous (med_dose_unit)</td>
+                  <td class="px-4 py-3 text-sm">The <code>med_dose_unit</code> description no longer says units are not standardized across drugs with no restriction. It now states the 3.0 rule: one standardized unit per <code>med_category</code>, listed in the <code>medication_admin_continuous</code> mCIDE, with the kg-adjusted or weight-naive alternative of that unit also accepted (e.g. <code>mcg/kg/min</code> where the category lists <code>mcg/min</code>). A per-pound or other non-kg weight basis (e.g. <code>mcg/lb/min</code> for <code>epinephrine</code>) is not accepted. The table's notes gained the same statement.</td>
+                  <td class="px-4 py-3 text-sm">&mdash;</td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Nov 13, 2026</td>
+                </tr>
                 <tr>
                   <td class="px-4 py-3 text-sm font-mono">respiratory_support (aprv settings)</td>
                   <td class="px-4 py-3 text-sm">The <code>device_category == "imv"</code> expected-settings table gained an <code>aprv</code> column plus <code>peak_inspiratory_pressure_set</code> and <code>expiratory_time_set</code> rows. <code>peak_inspiratory_pressure_set</code> no longer says it is unused in invasive modes: it carries P-high for APRV (and IPAP for NIPPV) and is not used in other invasive modes. The <code>peep_set</code> and <code>inspiratory_time_set</code> descriptions now note that they hold P-low and T-high for APRV.</td>

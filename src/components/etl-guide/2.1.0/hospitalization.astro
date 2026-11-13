@@ -1,0 +1,172 @@
+<h4 class="text-2xl font-bold mb-6">Hospitalization</h4>
+
+<div class="etl-guide-columns">
+  <div class="space-y-6">
+    <!-- Important Notes -->
+    <div class="bg-yellow-500/20 p-4 rounded-lg border border-yellow-400/30">
+      <h5 class="text-lg font-semibold mb-2 text-yellow-300">Important Notes</h5>
+      <ul class="space-y-2 text-sm">
+        <li>• If a patient is discharged to Home/Hospice, then <code class="bg-white/20 px-1 rounded">discharge_category</code> == Hospice</li>
+        <li>• Geographic indicators (<code class="bg-white/20 px-1 rounded">zipcode_nine_digit</code>, <code class="bg-white/20 px-1 rounded">census_block_code</code>, etc.) should be added if available. <strong>zipcode_nine_digit</strong> is preferred over zipcode_five_digit; <strong>census_block_code</strong> is ideal for census-based indicators</li>
+        <li>• If a patient is <strong>transferred between different hospitals</strong> within a health system, create a <strong>new hospitalization_id</strong></li>
+        <li>• If a patient is seen in ER at hospital A then admitted to inpatient at hospital B, use <strong>one hospitalization_id</strong> for both stays</li>
+        <li>• A <code class="bg-white/20 px-1 rounded">hospitalization_joined_id</code> can be created from contiguous hospitalization_ids</li>
+      </ul>
+    </div>
+
+    <!-- Constructing hospitalization_id -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Constructing hospitalization_id</h5>
+      <p class="text-sm mb-3"><code class="bg-white/20 px-1 rounded">hospitalization_id</code> is the key that links most CLIF tables for one hospitalization, from emergency department arrival (or transfer in) through discharge. Most EHRs have no field that maps to it one-to-one, so each site builds it. There is no one required approach.</p>
+      <div class="bg-white/10 p-3 rounded-lg overflow-x-auto [overflow-wrap:normal]">
+        <table class="text-sm w-full">
+          <thead>
+            <tr class="border-b border-white/20 text-blue-300">
+              <th class="px-2 py-2 text-left align-top w-[26%]">Source identifier</th>
+              <th class="px-2 py-2 text-left align-top w-[32%]">What it is</th>
+              <th class="px-2 py-2 text-left align-top">How to build <code class="bg-white/20 px-1 rounded">hospitalization_id</code></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="border-b border-white/10">
+              <td class="px-2 py-2 align-top font-semibold">Encounter identifier</td>
+              <td class="px-2 py-2 align-top">Generated for each encounter the EHR records. For the same patient, separate events such as a lab draw or a vitals check can each get their own identifier, so one hospitalization can span many of them.</td>
+              <td class="px-2 py-2 align-top">
+                <ul class="space-y-2">
+                  <li>• <strong>Stitch by a time window:</strong> start from the inpatient or observation encounters and combine the same patient's other encounters within a window around them.</li>
+                  <li>• <strong>Stitch from admission to discharge:</strong> group every encounter that falls between <code class="bg-white/20 px-1 rounded">admission_dttm</code> and <code class="bg-white/20 px-1 rounded">discharge_dttm</code>.</li>
+                </ul>
+              </td>
+            </tr>
+            <tr>
+              <td class="px-2 py-2 align-top font-semibold">Hospital billing identifier</td>
+              <td class="px-2 py-2 align-top">Created for the billing cycle of a hospital stay. It often groups all of the stay's encounters.</td>
+              <td class="px-2 py-2 align-top"><strong>Use as is</strong> when it groups the stay's encounters into one hospitalization.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="text-xs text-gray-300 mt-2">Working from de-identified extracts? Ask your data provider for de-identified versions of both identifiers, so you can test which one best reproduces real hospitalizations.</p>
+    </div>
+
+    <!-- Step 1 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 1: Create Hospitalization Mappings</h5>
+      <p class="text-sm mb-3">Before transforming your hospitalization data, prepare the mapping files:</p>
+      <div class="space-y-3 text-sm">
+        <div class="bg-white/10 p-3 rounded-lg">
+          <p><strong class="text-blue-300">a. Admission Type Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">admission_type_name</code> to <code class="bg-white/20 px-1 rounded">admission_type_category</code></p>
+          <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/hospitalization/clif_hospitalization_admission_type_categories.csv" target="_blank" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_hospitalization_admission_type_categories.csv</a>
+        </div>
+        <div class="bg-white/10 p-3 rounded-lg">
+          <p><strong class="text-blue-300">b. Discharge Mapping:</strong> Map <code class="bg-white/20 px-1 rounded">discharge_name</code> to <code class="bg-white/20 px-1 rounded">discharge_category</code></p>
+          <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/hospitalization/clif_hospitalization_discharge_categories.csv" target="_blank" class="text-blue-300 hover:underline text-xs mt-1 inline-block">→ clif_hospitalization_discharge_categories.csv</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="space-y-6">
+    <!-- Step 2 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 2: Filter to Inpatient Hospitalizations</h5>
+      <p class="text-sm">Filter your hospitalization data to include only inpatient hospitalizations.</p>
+    </div>
+
+    <!-- Step 3 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 3: Apply Mappings</h5>
+      <p class="text-sm">Join the mapping files created in Step 1 to add <code class="bg-white/20 px-1 rounded">admission_type_category</code> and <code class="bg-white/20 px-1 rounded">discharge_category</code> columns.</p>
+    </div>
+
+    <!-- Step 4 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 4: Age Calculation & Filtering</h5>
+      <div class="bg-white/10 p-3 rounded-lg text-sm">
+        <ul class="space-y-2">
+          <li>• If <code class="bg-white/20 px-1 rounded">age_at_admission</code> is not present, calculate it using <code class="bg-white/20 px-1 rounded">birth_date</code></li>
+          <li>• <strong class="text-red-300">Drop encounters</strong> where age &gt; 120 years or &lt; 18 years</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Step 5 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 5: Clean Geographic Variables</h5>
+      <p class="text-sm mb-3">Clean and standardize FIPS codes by removing spaces, dashes, and special characters:</p>
+      <div class="bg-white/10 p-2 rounded-lg overflow-x-auto mb-3">
+        <table class="text-xs w-full">
+          <thead>
+            <tr class="border-b border-white/20">
+              <th class="px-2 py-1 text-left">Variable</th>
+              <th class="px-2 py-1 text-left">Digits</th>
+              <th class="px-2 py-1 text-left">Description</th>
+            </tr>
+          </thead>
+          <tbody class="text-xs">
+            <tr class="border-b border-white/10"><td class="px-2 py-1"><code class="bg-white/20 px-1 rounded">state_code</code></td><td class="px-2 py-1 text-green-300">2</td><td class="px-2 py-1">State FIPS</td></tr>
+            <tr class="border-b border-white/10"><td class="px-2 py-1"><code class="bg-white/20 px-1 rounded">county_code</code></td><td class="px-2 py-1 text-green-300">5</td><td class="px-2 py-1">State + County</td></tr>
+            <tr class="border-b border-white/10"><td class="px-2 py-1"><code class="bg-white/20 px-1 rounded">census_tract</code></td><td class="px-2 py-1 text-green-300">11</td><td class="px-2 py-1">State + County + Tract</td></tr>
+            <tr class="border-b border-white/10"><td class="px-2 py-1"><code class="bg-white/20 px-1 rounded">census_block_group_code</code></td><td class="px-2 py-1 text-green-300">12</td><td class="px-2 py-1">Tract + Block Group</td></tr>
+            <tr><td class="px-2 py-1"><code class="bg-white/20 px-1 rounded">census_block_code</code></td><td class="px-2 py-1 text-green-300">15</td><td class="px-2 py-1">Full Block ID</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="bg-white/10 p-3 rounded-lg text-xs">
+        <p class="text-yellow-300 font-semibold mb-2">Derive from census_block_id:</p>
+        <div class="font-mono space-y-1">
+          <div>state_code = census_block_id[0:2]</div>
+          <div>county_code = census_block_id[0:5]</div>
+          <div>census_tract = census_block_id[0:11]</div>
+          <div>census_block_group_code = census_block_id[0:12]</div>
+        </div>
+      </div>
+      <div class="bg-white/10 p-3 rounded-lg text-xs mt-3">
+        <p class="text-blue-300 font-semibold mb-1">fips_version:</p>
+        <p>Year of Census geography definitions (2000, 2010, 2020)</p>
+      </div>
+    </div>
+
+    <!-- Step 6 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 6: Final Cleanup</h5>
+      <ul class="space-y-2 text-sm">
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">•</span>
+          <span><strong>Deduplicate:</strong> Remove duplicate rows by composite key <code class="bg-white/20 px-1 rounded">hospitalization_id</code></span>
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">•</span>
+          <span><strong>UTC Conversion:</strong> Convert all datetime fields to UTC timezone</span>
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">•</span>
+          <span><strong>Data Types:</strong> Ensure all variables match data dictionary specifications</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Data Quality Checks -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Data Quality Checks</h5>
+      <ul class="space-y-2 text-sm">
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">✓</span>
+          <span>Ensure <code class="bg-white/20 px-1 rounded">discharge_dttm</code> ≥ <code class="bg-white/20 px-1 rounded">admission_dttm</code></span>
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">✓</span>
+          <span>Verify FIPS codes have correct digit lengths</span>
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">✓</span>
+          <span>Validate category mappings against mCIDE</span>
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">✓</span>
+          <span>Plot the hours between one <code class="bg-white/20 px-1 rounded">hospitalization_id</code>'s discharge and the same patient's next admission. A new ID within a few hours should only be a hospital transfer; many short gaps mean stays are being split. The drop-off in that histogram can set a stitching cutoff (e.g. about 6 hours)</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
