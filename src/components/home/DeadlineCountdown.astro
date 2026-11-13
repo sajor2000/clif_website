@@ -106,18 +106,29 @@ import CTAButton from '../shared/CTAButton.astro';
               MIMIC-IV in CLIF Format — Now on PhysioNet
             </h3>
             <p class="text-white/80 leading-relaxed mb-5">
-              MIMIC-IV is now available in CLIF format on PhysioNet — enabling researchers worldwide to develop and test analysis code using the CLIF standard without requiring institutional EHR access.
+              MIMIC-IV is now available in CLIF format on PhysioNet — enabling researchers worldwide to develop and test analysis code using the CLIF standard without requiring institutional EHR access. The open-source ETL pipeline is available on GitHub to generate the latest CLIF tables.
             </p>
             <p class="text-sm text-white/50 mb-5">Zewei Liao et al.</p>
-            <CTAButton
-              href="https://physionet.org/content/mimic-iv-ext-clif/1.1.0/"
-              variant="outline"
-              size="medium"
-              external={true}
-              class="!border-white !text-white hover:!bg-white hover:!text-clif-burgundy"
-            >
-              Access on PhysioNet
-            </CTAButton>
+            <div class="flex flex-wrap gap-3">
+              <CTAButton
+                href="https://physionet.org/content/mimic-iv-ext-clif/1.1.0/"
+                variant="outline"
+                size="medium"
+                external={true}
+                class="!border-white !text-white hover:!bg-white hover:!text-clif-burgundy"
+              >
+                Access on PhysioNet
+              </CTAButton>
+              <CTAButton
+                href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF-MIMIC"
+                variant="outline"
+                size="medium"
+                external={true}
+                class="!border-white !text-white hover:!bg-white hover:!text-clif-burgundy"
+              >
+                GitHub
+              </CTAButton>
+            </div>
           </div>
           <div class="hidden lg:block lg:w-80 shrink-0">
             <img
