@@ -45,8 +45,8 @@ export const CLIF_TABLES: Record<string, ClifVersionTables> = {
       'medication_orders', 'microbiology_nonculture', 'misc_icu_orders', 'model_registry', 'output', 'patient_diagnosis', 'renal_replacement_therapy', 'scores',
     ],
     concept: [
-      'airway', 'clinical_trial', 'drain', 'ed_encounter', 'line', 'patient_attributes', 'place_based_index',
-      'provider', 'radiology', 'transfusion',
+      'airway', 'chest_xray', 'clinical_trial', 'drain', 'ed_encounter', 'line', 'patient_attributes', 'place_based_index',
+      'provider', 'transfusion',
     ],
     futureProposed: ['therapy_details', 'validated_diagnosis'],
   },

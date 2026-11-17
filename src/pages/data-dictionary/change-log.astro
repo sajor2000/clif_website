@@ -23,7 +23,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       >
         <h2 class="text-2xl font-bold text-clif-burgundy mb-4">
           Version 3.0
-          <span class="text-lg font-normal text-gray-600">(Last updated: Nov 13, 2026)</span>
+          <span class="text-lg font-normal text-gray-600">(Last updated: Nov 17, 2026)</span>
           <span class="ml-2 bg-gray-500 text-white text-sm px-3 py-1 rounded-full"
             >Coming Soon</span
           >
@@ -92,9 +92,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   <td class="px-4 py-3 text-sm text-gray-500">May 6, 2026</td>
                 </tr>
                 <tr>
-                  <td class="px-4 py-3 text-sm font-mono">radiology</td>
-                  <td class="px-4 py-3 text-sm">Concept table capturing one row per imaging study — order/capture/report timestamps, the source order name, four mCIDE-controlled columns (modality, region, IV contrast, location), and the final report narrative.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/140" class="text-clif-burgundy hover:underline">Issue #140</a></td>
+                  <td class="px-4 py-3 text-sm font-mono">chest_xray</td>
+                  <td class="px-4 py-3 text-sm">Concept table, first proposed as <code>radiology</code> with one row per imaging study. Now one row per chest x-ray image — order/capture/report timestamps, the source order name, three mCIDE-controlled columns (modality, region, location), site-local paths to the original DICOM and the processed image, raw source fields (series description, modality/region/location names, manufacturer, model name), and the final report narrative.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/140" class="text-clif-burgundy hover:underline">Issue #140</a>, <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/248" class="text-clif-burgundy hover:underline">Issue #248</a></td>
                   <td class="px-4 py-3 text-sm text-gray-500">May 7, 2026</td>
                 </tr>
                 <tr>
@@ -149,7 +149,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            New Fields (24 fields added) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Oct 13, 2026</span>
+            New Fields (32 fields added) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Nov 17, 2026</span>
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -173,6 +173,62 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">series_description</td>
+                  <td class="px-4 py-3 text-sm">chest_xray</td>
+                  <td class="px-4 py-3 text-sm">Raw DICOM Series Description for the series the image belongs to (e.g., CHEST AP PORTABLE). Free text, not standardized for now.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/248" class="text-clif-burgundy hover:underline">Issue #248</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Nov 17, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">modality_name</td>
+                  <td class="px-4 py-3 text-sm">chest_xray</td>
+                  <td class="px-4 py-3 text-sm">Source modality value exactly as recorded in the DICOM Modality tag (e.g., DX, CR). The raw <code>*_name</code> counterpart that <code>modality_category</code> is mapped from.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/248" class="text-clif-burgundy hover:underline">Issue #248</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Nov 17, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">region_name</td>
+                  <td class="px-4 py-3 text-sm">chest_xray</td>
+                  <td class="px-4 py-3 text-sm">Source value for the anatomic region imaged, as recorded at the site (e.g., DICOM Body Part Examined). The raw <code>*_name</code> counterpart that <code>region_category</code> is mapped from.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/248" class="text-clif-burgundy hover:underline">Issue #248</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Nov 17, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">location_name</td>
+                  <td class="px-4 py-3 text-sm">chest_xray</td>
+                  <td class="px-4 py-3 text-sm">Source value for where the study was performed, as recorded at the site. The raw <code>*_name</code> counterpart that <code>location_category</code> is mapped from.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/248" class="text-clif-burgundy hover:underline">Issue #248</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Nov 17, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">manufacturer</td>
+                  <td class="px-4 py-3 text-sm">chest_xray</td>
+                  <td class="px-4 py-3 text-sm">Manufacturer of the equipment that acquired the image, from the DICOM header.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/248" class="text-clif-burgundy hover:underline">Issue #248</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Nov 17, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">model_name</td>
+                  <td class="px-4 py-3 text-sm">chest_xray</td>
+                  <td class="px-4 py-3 text-sm">Manufacturer model name of the equipment that acquired the image, from the DICOM header.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/248" class="text-clif-burgundy hover:underline">Issue #248</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Nov 17, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">source_dicom_path</td>
+                  <td class="px-4 py-3 text-sm">chest_xray</td>
+                  <td class="px-4 py-3 text-sm">Site-local path to the original DICOM file for the image, after PHI removal. Lets a project re-read pixel data and the full header on demand. Never shared across sites.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/248" class="text-clif-burgundy hover:underline">Issue #248</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Nov 17, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">processed_image_path</td>
+                  <td class="px-4 py-3 text-sm">chest_xray</td>
+                  <td class="px-4 py-3 text-sm">Site-local path to the processed JPEG produced from <code>source_dicom_path</code> by the standardized CLIF preprocessing pipeline (bit-inversion correction, histogram equalization). Output mirrors the input folder structure.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/248" class="text-clif-burgundy hover:underline">Issue #248</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Nov 17, 2026</td>
+                </tr>
                 <tr>
                   <td class="px-4 py-3 text-sm font-mono">expiratory_time_set</td>
                   <td class="px-4 py-3 text-sm">respiratory_support</td>
@@ -582,7 +638,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            Revisions (22 updates) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Nov 13, 2026</span>
+            Revisions (23 updates) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Nov 17, 2026</span>
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -603,6 +659,12 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">radiology &rarr; chest_xray</td>
+                  <td class="px-4 py-3 text-sm">The concept <code>radiology</code> table is renamed <code>chest_xray</code> and re-scoped from one row per imaging study to <strong>one row per chest x-ray image</strong>, so it can serve as the CLIF metadata index for DICOM imaging. The team chose a chest-x-ray-specific table over a general imaging table for now. Columns lose the <code>radiology_</code> prefix (<code>accession</code>, <code>order_dttm</code>, <code>capture_dttm</code>, <code>report_dttm</code>, <code>order_name</code>, <code>modality_category</code>, <code>region_category</code>, <code>location_category</code>, <code>report_text</code>); <code>iv_contrast_category</code> is dropped, while modality and region are kept even though they are constant for chest radiographs. Rows within an accession are distinguished by <code>source_dicom_path</code>, and the study-level columns repeat across the images of a study. <code>capture_dttm</code> is now per image (DICOM acquisition time). Six raw source fields are added (<code>series_description</code>, <code>modality_name</code>, <code>region_name</code>, <code>location_name</code>, <code>manufacturer</code>, <code>model_name</code>). The mCIDE lists for the three <code>*_category</code> columns are a work in progress. Only original acquisitions get rows: post-processed derivatives (e.g., "clear read", bone suppression) and non-image objects stored as DICOM (e.g., PDFs) are dropped by the ETL. Linking to the EHR stays at the patient level. A standardized ETL and preprocessing pipeline will be shared across sites.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/248" class="text-clif-burgundy hover:underline">Issue #248</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Nov 17, 2026</td>
+                </tr>
                 <tr>
                   <td class="px-4 py-3 text-sm font-mono">medication_admin_continuous (med_dose_unit)</td>
                   <td class="px-4 py-3 text-sm">The <code>med_dose_unit</code> description no longer says units are not standardized across drugs with no restriction. It now states the 3.0 rule: one standardized unit per <code>med_category</code>, listed in the <code>medication_admin_continuous</code> mCIDE, with the kg-adjusted or weight-naive alternative of that unit also accepted (e.g. <code>mcg/kg/min</code> where the category lists <code>mcg/min</code>). A per-pound or other non-kg weight basis (e.g. <code>mcg/lb/min</code> for <code>epinephrine</code>) is not accepted. The table's notes gained the same statement.</td>

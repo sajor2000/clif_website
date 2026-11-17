@@ -64,7 +64,7 @@ PRIMARY_KEYS = {
     "drain": "drain_id",
     "line": "line_id",
     "clinical_notes_facts": "note_id",
-    "radiology": "radiology_accession",
+    "chest_xray": "source_dicom_path",
     "model_registry": "model_id",
 }
 
@@ -106,7 +106,7 @@ DOMAINS = [
     ]),
     ("Trials, Notes, Imaging & Scores", [
         ("clinical_trial", "concept"), ("clinical_notes_facts", "concept"),
-        ("clinical_notes_text", "concept"), ("radiology", "concept"),
+        ("clinical_notes_text", "concept"), ("chest_xray", "concept"),
         ("model_registry", "concept"), ("scores", "concept"),
     ]),
 ]
