@@ -31,6 +31,11 @@ const md = new MarkdownIt({
   typographer: true
 });
 
+// Give every markdown table its own horizontal scroll container, so a wide
+// Example table scrolls by itself instead of dragging the Notes text with it.
+md.renderer.rules.table_open = () => '<div class="md-table-scroll"><table>\n';
+md.renderer.rules.table_close = () => '</table></div>\n';
+
 // Explicitly enable table rendering
 md.enable('table');
 
@@ -578,6 +583,10 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
     }
   </style>
   <style is:global>
+    .md-table-scroll {
+      overflow-x: auto;
+      max-width: 100%;
+    }
     .table-wrapper a {
       color: #8B1C3B !important;
       text-decoration: underline !important;
