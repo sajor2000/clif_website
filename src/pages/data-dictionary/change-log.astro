@@ -407,7 +407,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            New mCIDE Values (25 updates · 271 new values) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Nov 16, 2026</span>
+            New mCIDE Values (26 updates · 272 new values) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Nov 17, 2026</span>
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -428,6 +428,12 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">airway_category (1)</td>
+                  <td class="px-4 py-3 text-sm"><code>airway.airway_category</code> added <code>sga</code> for supraglottic airways (e.g., laryngeal mask or laryngeal tube; source names such as LMA, I-GEL, KING LT). The existing values <code>ett</code>, <code>npa</code>, <code>opa</code> and <code>trach</code> had no fit: NPAs and OPAs are usually transient adjuncts used with bag-valve-mask ventilation, while an SGA can be a longer-term airway (for example a prehospital or ED rescue airway), so mapping SGAs to <code>opa</code> would mix two clinically different devices.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/245" class="text-clif-burgundy hover:underline">Issue #245</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Nov 17, 2026</td>
+                </tr>
                 <tr>
                   <td class="px-4 py-3 text-sm font-mono">model_category (3)</td>
                   <td class="px-4 py-3 text-sm">New mCIDE list for <code>model_registry.model_category</code> published on the 3.0 branch with 3 initial values: <code>epic_deterioration_index</code>, <code>epic_sepsis_model</code>, <code>epic_fall_risk</code>. The data dictionary now links <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/model_registry/clif_model_registry_model_categories.csv" class="text-clif-burgundy hover:underline">clif_model_registry_model_categories.csv</a> as the permissible values.</td>
