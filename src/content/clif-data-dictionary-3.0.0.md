@@ -587,23 +587,43 @@ Source indices from validated and publicly available datasets.
 | 1002              | Area Deprivation Index    | 67.5        | ADI 2019        |
 
 
-## provider
+## treatment_team
 
-Continuous start stop record of every provider who cared for the patient.
+**Notes**:
 
-
+- This table is the internal EHR documentation of team members signing in and out of (or being assigned to or off) the patient's care team.
+- It may not reflect the actual providers at a given moment in time. Analysis performed with this table should be cross-referenced with the IDs associated with medication administration, procedures, patient assessments, etc. (e.g., `administering_provider_id`, `billing_provider_id`).
+- `provider_id` links to the `provider_type` lookup table, which holds the type of each provider.
 
 **Example**:
-| hospitalization_id | start_dttm | stop_dttm | provider_role_name | provider_role_category |
-|-------------------|------------|-----------|-------------------|----------------------|
-| 1001014 | 2023-05-01 08:00:00+00:00 UTC | 2023-05-01 20:00:00+00:00 UTC | Attending Physician | Attending |
-| 1001014 | 2023-05-01 08:00:00+00:00 UTC | 2023-05-02 08:00:00+00:00 UTC | Resident Physician | Resident |
-| 1001014 | 2023-05-01 08:00:00+00:00 UTC | 2023-05-03 08:00:00+00:00 UTC | Nurse Practitioner | Nurse Practitioner |
-| 1002025 | 2023-06-10 09:00:00+00:00 UTC | 2023-06-10 21:00:00+00:00 UTC | Critical Care Specialist | Critical Care |
-| 1002025 | 2023-06-10 09:00:00+00:00 UTC | 2023-06-11 09:00:00+00:00 UTC | Respiratory Therapist | Respiratory Therapy |
-| 1003036 | 2023-07-15 07:30:00+00:00 UTC | 2023-07-15 19:30:00+00:00 UTC | Attending Physician | Attending |
-| 1003036 | 2023-07-15 07:30:00+00:00 UTC | 2023-07-16 07:30:00+00:00 UTC | Charge Nurse | Nurse |
-| 1004047 | 2023-08-20 10:00:00+00:00 UTC | 2023-08-20 22:00:00+00:00 UTC | Physical Therapist | Therapy |
+
+| hospitalization_id | provider_id | start_dttm                    | stop_dttm                     |
+|--------------------|-------------|-------------------------------|-------------------------------|
+| 1001014            | PRV00231    | 2023-05-01 08:00:00+00:00 UTC | 2023-05-01 20:00:00+00:00 UTC |
+| 1001014            | PRV00547    | 2023-05-01 08:00:00+00:00 UTC | 2023-05-02 08:00:00+00:00 UTC |
+| 1001014            | PRV00812    | 2023-05-01 08:00:00+00:00 UTC | 2023-05-03 08:00:00+00:00 UTC |
+| 1002025            | PRV00231    | 2023-06-10 09:00:00+00:00 UTC | 2023-06-10 21:00:00+00:00 UTC |
+| 1002025            | PRV01104    | 2023-06-10 09:00:00+00:00 UTC | 2023-06-11 09:00:00+00:00 UTC |
+
+
+## provider_type
+
+The `provider_type` table is a lookup table with one row per provider and no start or stop times. It identifies the type of provider behind any provider ID in CLIF, for example the `administering_provider_id` on the medication administration tables.
+
+**Notes**:
+
+- One row per `provider_id`. The table is not tied to a hospitalization and has no `hospitalization_id`.
+- Within a dataset, the same provider must keep the same `provider_id` across all hospitalizations and the full date range.
+- The permissible values for `provider_type_category` are under development.
+
+**Example**:
+
+| provider_id | provider_type_name    | provider_type_category |
+|-------------|-----------------------|------------------------|
+| PRV00231    | Attending Physician   |                        |
+| PRV00547    | Resident Physician    |                        |
+| PRV00812    | Nurse Practitioner    |                        |
+| PRV01104    | Respiratory Therapist |                        |
 
 
 ## microbiology_susceptibility

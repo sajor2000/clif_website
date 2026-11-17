@@ -34,7 +34,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            New Tables (14 tables added) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Jun 30, 2026</span>
+            New Tables (15 tables added) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Nov 17, 2026</span>
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -138,6 +138,12 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   <td class="px-4 py-3 text-sm">Alpha table capturing miscellaneous, non-consult ICU orders and procedures, split out from the former <code>key_icu_orders</code> table. Holds 6 <code>order_category</code> values (eeg, restraints, wound_care, oob, foley, extubation). Shares identical fields with <code>consult_orders</code>.</td>
                   <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/218" class="text-clif-burgundy hover:underline">Issue #218</a></td>
                   <td class="px-4 py-3 text-sm text-gray-500">Jun 16, 2026</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">provider_type</td>
+                  <td class="px-4 py-3 text-sm">Concept lookup table with one row per provider and no start or stop times: <code>provider_id</code>, <code>provider_type_name</code> and <code>provider_type_category</code> (permissible values under development). Identifies the type of provider behind any provider ID, such as <code>administering_provider_id</code>. Not tied to a hospitalization.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/241" class="text-clif-burgundy hover:underline">Issue #241</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Nov 17, 2026</td>
                 </tr>
               </tbody>
             </table>
@@ -651,7 +657,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            Revisions (23 updates) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Nov 17, 2026</span>
+            Revisions (24 updates) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Nov 17, 2026</span>
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -672,6 +678,12 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">provider &rarr; treatment_team</td>
+                  <td class="px-4 py-3 text-sm">The concept <code>provider</code> table is renamed <code>treatment_team</code>, a better name for the source data in the EHR. The old one-line description is removed and replaced by a note: the table is the internal EHR documentation of team members signing in and out of (or being assigned to or off) the patient's care team, it may not reflect the actual providers at a given moment in time, and analyses should cross-reference the IDs on medication administration, procedures and patient assessments (e.g., <code>administering_provider_id</code>, <code>billing_provider_id</code>). <code>provider_role_name</code> and <code>provider_role_category</code> are dropped, leaving <code>hospitalization_id</code>, <code>provider_id</code>, <code>start_dttm</code> and <code>stop_dttm</code>. The type of each provider now lives in the new <code>provider_type</code> lookup table.</td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/241" class="text-clif-burgundy hover:underline">Issue #241</a></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Nov 17, 2026</td>
+                </tr>
                 <tr>
                   <td class="px-4 py-3 text-sm font-mono">radiology &rarr; chest_xray</td>
                   <td class="px-4 py-3 text-sm">The concept <code>radiology</code> table is renamed <code>chest_xray</code> and re-scoped from one row per imaging study to <strong>one row per chest x-ray image</strong>, so it can serve as the CLIF metadata index for DICOM imaging. The team chose a chest-x-ray-specific table over a general imaging table for now. Columns lose the <code>radiology_</code> prefix (<code>accession</code>, <code>order_dttm</code>, <code>capture_dttm</code>, <code>report_dttm</code>, <code>order_name</code>, <code>modality_category</code>, <code>region_category</code>, <code>location_category</code>, <code>report_text</code>); <code>iv_contrast_category</code> is dropped, while modality and region are kept even though they are constant for chest radiographs. Rows within an accession are distinguished by <code>source_dicom_path</code>, and the study-level columns repeat across the images of a study. <code>capture_dttm</code> is now per image (DICOM acquisition time). Six raw source fields are added (<code>series_description</code>, <code>modality_name</code>, <code>region_name</code>, <code>location_name</code>, <code>manufacturer</code>, <code>model_name</code>). The mCIDE lists for the three <code>*_category</code> columns are a work in progress. Only original acquisitions get rows: post-processed derivatives (e.g., "clear read", bone suppression) and non-image objects stored as DICOM (e.g., PDFs) are dropped by the ETL. Linking to the EHR stays at the patient level. A standardized ETL and preprocessing pipeline will be shared across sites.</td>

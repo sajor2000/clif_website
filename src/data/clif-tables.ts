@@ -46,7 +46,7 @@ export const CLIF_TABLES: Record<string, ClifVersionTables> = {
     ],
     concept: [
       'airway', 'chest_xray', 'clinical_trial', 'drain', 'ed_encounter', 'line', 'patient_attributes', 'place_based_index',
-      'provider', 'transfusion',
+      'provider_type', 'transfusion', 'treatment_team',
     ],
     futureProposed: ['therapy_details', 'validated_diagnosis'],
   },

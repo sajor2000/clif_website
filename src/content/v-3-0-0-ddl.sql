@@ -424,16 +424,24 @@ CREATE TABLE place_based_index (
 );
 
 -- -----------------------------------------------------
--- Table: provider
+-- Table: treatment_team
 -- -----------------------------------------------------
-CREATE TABLE provider (
+CREATE TABLE treatment_team (
   hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
-  provider_id VARCHAR COMMENT '{"description": "Unique identifier for each provider. This represents individual healthcare providers. Within a dataset, the same provider must keep the same ID across all hospitalizations and the full date range.", "permissible": "No restriction"}',
-  start_dttm DATETIME COMMENT '{"description": "Date and time when the provider’s care or involvement in the patient’s case began. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
-  stop_dttm DATETIME COMMENT '{"description": "Date and time when the provider’s care or involvement in the patient’s case ended. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
-  provider_role_name VARCHAR COMMENT '{"description": "The original string describing the role or specialty of the provider during the hospitalization", "permissible": "No restriction"}',
-  provider_role_category VARCHAR COMMENT '{"description": "Maps provider_role_name to list of standardized provider roles", "permissible": "Under development"}'
+  provider_id VARCHAR COMMENT '{"description": "Unique identifier for the team member. Links to provider_type.provider_id. Within a dataset, the same provider must keep the same ID across all hospitalizations and the full date range.", "permissible": "No restriction"}',
+  start_dttm DATETIME COMMENT '{"description": "Date and time the team member signed in to, or was assigned to, the patient’s care team. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
+  stop_dttm DATETIME COMMENT '{"description": "Date and time the team member signed out of, or was assigned off, the patient’s care team. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}'
 );
+
+-- -----------------------------------------------------
+-- Table: provider_type
+-- -----------------------------------------------------
+CREATE TABLE provider_type (
+  provider_id VARCHAR COMMENT '{"description": "Unique identifier for each provider. One row per provider. Within a dataset, the same provider must keep the same ID across all hospitalizations and the full date range.", "permissible": "No restriction"}',
+  provider_type_name VARCHAR COMMENT '{"description": "The original string describing the type of provider from the source EHR (e.g., Registered Nurse, Attending Physician)", "permissible": "No restriction"}',
+  provider_type_category VARCHAR COMMENT '{"description": "Maps provider_type_name to a list of standardized provider types", "permissible": "Under development"}'
+);
+
 
 -- -----------------------------------------------------
 -- Table: microbiology_susceptibility

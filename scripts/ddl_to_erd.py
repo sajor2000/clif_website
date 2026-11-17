@@ -73,7 +73,7 @@ PRIMARY_KEYS = {
 DOMAINS = [
     ("Patient & Encounter", [
         ("patient", "beta"), ("hospitalization", "beta"), ("adt", "beta"),
-        ("ed_encounter", "concept"), ("provider", "concept"),
+        ("ed_encounter", "concept"), ("treatment_team", "concept"), ("provider_type", "concept"),
         ("place_based_index", "concept"), ("patient_attributes", "concept"),
     ]),
     ("Diagnoses & Code Status", [
