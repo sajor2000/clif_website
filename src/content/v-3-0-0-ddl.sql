@@ -125,7 +125,7 @@ CREATE TABLE labs (
 CREATE TABLE medication_admin_continuous (
   hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
   med_order_id VARCHAR COMMENT '{"description": "Medication order ID. Foreign key to link this table to other medication tables", "permissible": "No restriction"}',
-  administering_provider_id VARCHAR COMMENT '{"description": "Uniquely identifies the provider who administered the medication.", "permissible": "No restriction"}',
+  administering_provider_id VARCHAR COMMENT '{"description": "Uniquely identifies the provider who administered the medication. Within a dataset, the same provider must keep the same ID across all hospitalizations and the full date range.", "permissible": "No restriction"}',
   admin_dttm DATETIME COMMENT '{"description": "Date and time when the medicine was administered. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   med_name VARCHAR COMMENT '{"description": "Original med name string recorded in the raw data which often contains concentration e.g. NOREPInephrine 8 mg/250 mL", "permissible": "No restriction"}',
   med_category VARCHAR COMMENT '{"description": "Maps med_name to a limited set of active ingredients for important ICU medications, e.g. norepinephrine", "permissible": "[List of continuous medication categories in CLIF](https://github.com/clif-consortium/CLIF/blob/3.0/mCIDE/medication_admin_continuous/clif_medication_admin_continuous_med_categories.csv) "}',
@@ -195,7 +195,7 @@ CREATE TABLE microbiology_nonculture(
 -- -----------------------------------------------------
 CREATE TABLE patient_assessments (
   hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
-  documenting_provider_id VARCHAR COMMENT '{"description": "Uniquely identifies the provider who documented the assessment.", "permissible": "No restriction"}',
+  documenting_provider_id VARCHAR COMMENT '{"description": "Uniquely identifies the provider who documented the assessment. Within a dataset, the same provider must keep the same ID across all hospitalizations and the full date range.", "permissible": "No restriction"}',
   recorded_dttm DATETIME COMMENT '{"description": "The exact date and time when the assessment was recorded, ensuring temporal accuracy. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   assessment_name VARCHAR COMMENT '{"description": "Assessment Tool Name. The primary name of the assessment tool used (e.g., GCS, NRS, SAT Screen).", "permissible": "No restriction"}',
   assessment_category VARCHAR COMMENT '{"description": "Maps assessment_name to a standardized list of patient assessments", "permissible": "[List of permissible assessment categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/patient_assessments/clif_patient_assessment_categories.csv)"}',
@@ -350,7 +350,7 @@ CREATE TABLE misc_icu_orders (
 CREATE TABLE medication_admin_intermittent (
   hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
   med_order_id VARCHAR COMMENT '{"description": "Medication order ID. Foreign key to link this table to other medication tables", "permissible": "No restriction"}',
-  administering_provider_id VARCHAR COMMENT '{"description": "Uniquely identifies the provider who administered the medication.", "permissible": "No restriction"}',
+  administering_provider_id VARCHAR COMMENT '{"description": "Uniquely identifies the provider who administered the medication. Within a dataset, the same provider must keep the same ID across all hospitalizations and the full date range.", "permissible": "No restriction"}',
   admin_dttm DATETIME COMMENT '{"description": "Date and time when the medicine was administered. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   med_name VARCHAR COMMENT '{"description": "Original med name string recorded in the raw data which often contains concentration e.g. NOREPInephrine 8 mg/250 mL", "permissible": "No restriction"}',
   med_category VARCHAR COMMENT '{"description": "Maps med_name to a limited set of active ingredients for important ICU medications, e.g. norepinephrine", "permissible": "[List of medication categories in CLIF](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/medication_admin_intermittent/clif_medication_admin_intermittent_med_categories.csv)"}',
@@ -371,7 +371,7 @@ CREATE TABLE medication_admin_intermittent (
 CREATE TABLE medication_orders (
   hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
   med_order_id VARCHAR COMMENT '{"description": "Unique identifier for each medication order", "permissible": "No restriction"}',
-  ordering_provider_id VARCHAR COMMENT '{"description": "Uniquely identifies the provider who placed the medication order.", "permissible": "No restriction"}',
+  ordering_provider_id VARCHAR COMMENT '{"description": "Uniquely identifies the provider who placed the medication order. Within a dataset, the same provider must keep the same ID across all hospitalizations and the full date range.", "permissible": "No restriction"}',
   order_start_dttm DATETIME COMMENT '{"description": "Date and time when the medication order was initiated. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   order_end_dttm DATETIME COMMENT '{"description": "Date and time when the medication order ended or was discontinued. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   ordered_dttm DATETIME COMMENT '{"description": "Date and time when the medication was actually ordered. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
@@ -406,8 +406,8 @@ CREATE TABLE patient_diagnosis (
 -- -----------------------------------------------------
 CREATE TABLE patient_procedures (
   hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
-  billing_provider_id VARCHAR COMMENT '{"description": "Uniquely identifies the billingprovider associated with the procedure.", "permissible": "No restriction"}',
-  performing_provider_id VARCHAR COMMENT '{"description": "Uniquely identifies the performing provider associated with the procedure.", "permissible": "No restriction"}',
+  billing_provider_id VARCHAR COMMENT '{"description": "Uniquely identifies the billingprovider associated with the procedure. Within a dataset, the same provider must keep the same ID across all hospitalizations and the full date range.", "permissible": "No restriction"}',
+  performing_provider_id VARCHAR COMMENT '{"description": "Uniquely identifies the performing provider associated with the procedure. Within a dataset, the same provider must keep the same ID across all hospitalizations and the full date range.", "permissible": "No restriction"}',
   procedure_code VARCHAR COMMENT '{"description": "Encoded procedure identifier.", "permissible": "Valid CPT, ICD-10-PCS OR HCPCS code"}',
   procedure_code_format VARCHAR COMMENT '{"description": "Code format used.", "permissible": "CPT, ICD10PCS, HCPCS"}',
   procedure_billed_dttm DATETIME COMMENT '{"description": "Date and time the procedure was billed (may differ from actual procedure time). All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}'
@@ -428,7 +428,7 @@ CREATE TABLE place_based_index (
 -- -----------------------------------------------------
 CREATE TABLE provider (
   hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter", "permissible": "No restriction"}',
-  provider_id VARCHAR COMMENT '{"description": "Unique identifier for each provider. This represents individual healthcare providers", "permissible": "No restriction"}',
+  provider_id VARCHAR COMMENT '{"description": "Unique identifier for each provider. This represents individual healthcare providers. Within a dataset, the same provider must keep the same ID across all hospitalizations and the full date range.", "permissible": "No restriction"}',
   start_dttm DATETIME COMMENT '{"description": "Date and time when the provider’s care or involvement in the patient’s case began. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   stop_dttm DATETIME COMMENT '{"description": "Date and time when the provider’s care or involvement in the patient’s case ended. All datetime variables must be timezone-aware and set to UTC.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   provider_role_name VARCHAR COMMENT '{"description": "The original string describing the role or specialty of the provider during the hospitalization", "permissible": "No restriction"}',
@@ -494,12 +494,12 @@ CREATE TABLE clinical_trial (
 -- -----------------------------------------------------
 CREATE TABLE clinical_notes_facts (
   hospitalization_id VARCHAR COMMENT '{"description": "ID variable for each patient encounter.", "permissible": "No restriction"}',
-  author_id VARCHAR COMMENT '{"description": "Unique identifier for the authoring provider.", "permissible": "No restriction"}',
+  author_id VARCHAR COMMENT '{"description": "Unique identifier for the authoring provider. Within a dataset, the same provider must keep the same ID across all hospitalizations and the full date range.", "permissible": "No restriction"}',
   note_id VARCHAR COMMENT '{"description": "Source note identifier from the EHR system.", "permissible": "No restriction"}',
   note_type VARCHAR COMMENT '{"description": "Note type code from the source data (e.g., Progress Note, Discharge Summary, H&P).", "permissible": "No restriction"}',
   note_type_category VARCHAR COMMENT '{"description": "Maps note_type to a standardized list of note type categories.", "permissible": "[h_and_p_note, progress_note, consult_note, procedure_note, discharge_summary, transfer_note, therapy_note, nutrition_note, pharmacy_note, nursing_note, case_management_note, death_pronouncement, patient_instructions](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/clinical_notes_facts/clif_clinical_notes_facts_note_type_categories.csv)"}',
   note_status VARCHAR COMMENT '{"description": "Status of the note at the time of this revision (e.g., signed, addendum, incomplete, co-signed).", "permissible": "No restriction"}',
-  cosigner_id VARCHAR COMMENT '{"description": "Unique identifier for the co-signing provider, if applicable (e.g., Attending co-signing a resident note).", "permissible": "No restriction"}',
+  cosigner_id VARCHAR COMMENT '{"description": "Unique identifier for the co-signing provider, if applicable (e.g., Attending co-signing a resident note). Within a dataset, the same provider must keep the same ID across all hospitalizations and the full date range.", "permissible": "No restriction"}',
   cosigner_specialty VARCHAR COMMENT '{"description": "Specialty of the co-signing provider, if applicable (e.g., Attending co-signing a resident note).", "permissible": "No restriction"}',
   note_author_specialty VARCHAR COMMENT '{"description": "Specialty of the note author (e.g., Critical Care, Infectious Diseases, Physical Therapy). Useful for distinguishing note provenance such as PT/OT notes from physician notes.", "permissible": "No restriction"}',
   revision_id VARCHAR COMMENT '{"description": "Unique revision identifier, rank-ordered per (hospitalization_id, note_id) by revision_dttm.", "permissible": "No restriction"}',
@@ -519,7 +519,7 @@ CREATE TABLE validated_diagnosis (
   diagnosis_end_dttm DATETIME COMMENT '{"description": "Date and time when the diagnosis was resolved or deemed no longer active (optional).", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}',
   validation_method VARCHAR COMMENT '{"description": "Method of clinician validation used for this label.", "permissible": "manual_chart_review, consensus_panel, automated_with_review"}',
   diagnosis_status VARCHAR COMMENT '{"description": "Final reviewer determination.", "permissible": "confirmed, ruled_out, uncertain"}',
-  reviewer_id VARCHAR COMMENT '{"description": "Anonymized ID of the clinician or reviewer responsible for this label.", "permissible": "No restriction"}',
+  reviewer_id VARCHAR COMMENT '{"description": "Anonymized ID of the clinician or reviewer responsible for this label. Within a dataset, the same provider must keep the same ID across all hospitalizations and the full date range.", "permissible": "No restriction"}',
   review_timestamp DATETIME COMMENT '{"description": "Time when the label was finalized or adjudicated.", "permissible": "Datetime format should be YYYY-MM-DD HH:MM:SS+00:00 (UTC)"}'
 );
 
