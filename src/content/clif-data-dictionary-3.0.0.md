@@ -851,24 +851,25 @@ The `drain` table captures drain placements during a hospitalization — one row
 
 ## airway
 
-The `airway` table captures airway device placements during a hospitalization — one row per airway. It tracks when each airway was placed and removed, the standardized airway type (`airway_category`), the device size, and whether it is cuffed.
+The `airway` table captures airway device placements during a hospitalization — one row per airway. It tracks when each airway was placed and removed, the airway device name from the source EHR (`airway_name`), the standardized airway type it maps to (`airway_category`), the device size, and whether it is cuffed.
 
 **Notes**:
 
 - Composite key is `(hospitalization_id, airway_id)`. `airway_id` maps to the Epic LDA ID where applicable.
 - `removed_dttm` is null if the airway is still in place at the time of data extraction.
+- `airway_name` holds the device name exactly as recorded in the source EHR and is mapped to `airway_category`, following the usual CLIF `*_name` → `*_category` pattern.
 - `airway_category` is mCIDE-controlled — see [clif_airway_categories.csv](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/airway/clif_airway_categories.csv) for the canonical permissible values.
 - `airway_size` is the device size as recorded (e.g., 7.5 mm internal diameter for an ETT, 8 Fr for an NPA). Unit conventions follow the source EHR.
 - `is_cuffed` is 1 if the device has an inflatable cuff (typical for ETTs and most tracheostomy tubes), 0 otherwise (typical for NPA/OPA).
 
 **Example**:
 
-| hospitalization_id | airway_id | placed_dttm                   | removed_dttm                  | airway_category | airway_size | is_cuffed |
-|--------------------|-----------|-------------------------------|-------------------------------|-----------------|-------------|-----------|
-| 123456             | LDA0701   | 2024-12-03 07:45:00+00:00 UTC | 2024-12-08 16:20:00+00:00 UTC | ett             | 7.5         | 1         |
-| 789012             | LDA0802   | 2024-12-04 13:00:00+00:00 UTC |                               | trach           | 8.0         | 1         |
-| 456789             | LDA0903   | 2024-12-05 04:30:00+00:00 UTC | 2024-12-05 06:00:00+00:00 UTC | opa             | 9           | 0         |
-| 234567             | LDA1004   | 2024-12-06 22:10:00+00:00 UTC | 2024-12-07 03:45:00+00:00 UTC | npa             | 7           | 0         |
+| hospitalization_id | airway_id | placed_dttm                   | removed_dttm                  | airway_name       | airway_category | airway_size | is_cuffed |
+|--------------------|-----------|-------------------------------|-------------------------------|-------------------|-----------------|-------------|-----------|
+| 123456             | LDA0701   | 2024-12-03 07:45:00+00:00 UTC | 2024-12-08 16:20:00+00:00 UTC | ENDOTRACHEAL TUBE | ett             | 7.5         | 1         |
+| 789012             | LDA0802   | 2024-12-04 13:00:00+00:00 UTC |                               | TRACHEOSTOMY      | trach           | 8.0         | 1         |
+| 456789             | LDA0903   | 2024-12-05 04:30:00+00:00 UTC | 2024-12-05 06:00:00+00:00 UTC | ORAL AIRWAY       | opa             | 9           | 0         |
+| 234567             | LDA1004   | 2024-12-06 22:10:00+00:00 UTC | 2024-12-07 03:45:00+00:00 UTC | NASAL TRUMPET     | npa             | 7           | 0         |
 
 
 ## patient_attributes
