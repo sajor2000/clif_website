@@ -4,6 +4,18 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Badge from '../components/Badge.astro';
 import CTAButton from '../components/shared/CTAButton.astro';
 import tablePocData from '../data/table-poc.json';
+import { CLIF_TABLES } from '../data/clif-tables';
+
+// POC rows ordered by 3.0 maturity (beta, alpha, concept, then anything else),
+// alphabetical within each group.
+const maturityGroups = [CLIF_TABLES['3.0'].beta, CLIF_TABLES['3.0'].alpha, CLIF_TABLES['3.0'].concept];
+const maturityRank = (table: string) => {
+  const i = maturityGroups.findIndex((g) => g.includes(table));
+  return i === -1 ? maturityGroups.length : i;
+};
+const sortedPocData = [...tablePocData].sort(
+  (a, b) => maturityRank(a.table) - maturityRank(b.table) || a.table.localeCompare(b.table)
+);
 ---
 
 <BaseLayout
@@ -305,7 +317,7 @@ import tablePocData from '../data/table-poc.json';
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
-                  {tablePocData.map((row) => (
+                  {sortedPocData.map((row) => (
                     <tr class="hover:bg-gray-50 transition-colors">
                       <td class="py-2 pr-4 font-mono text-xs text-gray-700">{row.table}</td>
                       <td class="py-2 text-gray-700">{row.poc}</td>
