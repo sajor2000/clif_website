@@ -21,6 +21,7 @@ interface ImportMetaEnv {
   readonly TURSO_DATABASE_URL: string;
   readonly TURSO_AUTH_TOKEN: string;
   readonly GITHUB_TOKEN: string;
+  readonly MIRROR_SYNC_TOKEN: string;
   readonly GOOGLE_CLIENT_ID: string;
   readonly GOOGLE_CLIENT_SECRET: string;
   readonly GOOGLE_REDIRECT_URI: string;
