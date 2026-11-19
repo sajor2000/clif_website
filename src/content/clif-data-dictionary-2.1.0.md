@@ -6,7 +6,7 @@ The CLIF Data Dictionary serves as a comprehensive guide to the Common Longitudi
 
 ## Beta Tables
 
-The table purpose, structure, and field names for beta tables is complete and used in at least one federated CLIF project. The minimum Common ICU Data Elements (mCIDE) for category variables is defined. Actively testing the table's practical use in projects. Breaking changes unlikely, but backward compatible updates in future minor versions possible
+The table purpose, structure, and field names for beta tables is complete and used in at least one federated CLIF project. The minimum Common ICU Data Elements (mCIDE) for category variables is defined. Actively testing the table's practical use in projects. Breaking changes unlikely, but backward compatible updates in future minor versions possible. **Beta tables are locked for this version:** their structure, field names, and existing permissible values do not change. New mCIDE values can still be added as a patch.
 
 
 ## adt
@@ -49,7 +49,6 @@ This table should represent what the clinician intends for the patients' limitat
 | 123451     | 2024-12-03 10:15:00+00:00 UTC | Full Code         | Full                |
 
 
-
 ## crrt_therapy
 
 The crrt_therapy table captures Continuous Renal Replacement Therapy (CRRT) data, including different CRRT modalities, operational parameters, and fluid exchange details. The intermittent HD, peritoneal dialysis, PERT, and SLED tables are under development.
@@ -81,22 +80,21 @@ The crrt_therapy table captures Continuous Renal Replacement Therapy (CRRT) data
 | 203 | J0 | 2024-02-17 11:45:00+00:00 UTC | SCUF | SCUF | NxStage by Baxter | 150.0 | NA | NA | NA | 800.0 |
 
 
-## ecmo_mcs
+## hospital_diagnosis
 
-The ECMO/MCS table is a wider longitudinal table that captures the start and stop times of ECMO/MCS support, the type of device used, and the work rate of the device.
-
-**Notes**:
-- This table was reworked for 3.0 — renamed to [`mcs`](/data-dictionary/data-dictionary-3.0.0#mcs) and converted to a long-form schema (one row per setting/measurement). For new implementations, refer to the [3.0 `mcs` table](/data-dictionary/data-dictionary-3.0.0#mcs).
+Finalized billing diagnosis codes for hospital reimbursement, e.g. calculation of a Diagnosis Related Group (DRG). These diagnoses also do not have timestamps, as they are often finalized after discharge. The `hospital_diagnosis` table is appropriate for calculation of comorbidity scores but should not be used as input features into a prediction model for an inpatient event.
+\
+All other diagnosis codes for a patient are included under concept table `patient_diagnosis` which has start and end timestamps.
 
 **Example**:
-
-| hospitalization_id | recorded_dttm                | device_name         | device_category     | mcs_group        | ecmo_configuration_category | control_parameter_name | control_parameter_category  | control_parameter_value | flow | sweep_set | fdO2_set |
-|-------------------|------------------------------|---------------------|---------------------|------------------|----------------------------|-----------------------|----------------------------|------------------------|------|-----------|----------|
-| 21002             | 2024-02-18 09:10:00+00:00 UTC| Impella 5.5         | impella_5_5         | impella_lvad     | NULL                       | P5                    | impella_performance        | 5                      | 4.8  | NULL      | NULL     |
-| 21003             | 2024-02-22 11:40:00+00:00 UTC| Abbott IABP         | iabp                | iabp             | NULL                       | IABP Ratio            | iabp_ratio                 | 3                      | NULL | NULL      | NULL     |
-| 21004             | 2024-02-23 14:30:00+00:00 UTC| Heart Mate III LVAD | heartmate_3         | durable_lvad     | NULL                       | RPMs                  | rpm                        | 4200                   | 3.5  | NULL      | NULL     |
-| 21005             | 2024-02-27 16:25:00+00:00 UTC| Centrimag ECMO VV   | centrimag_ecmo      | ecmo             | vv                         | RPMs                  | rpm                        | 3500                   | 3    | 1         | NULL     |
-
+| hospitalization_id | diagnosis_code | diagnosis_code_format | diagnosis_primary | poa_present |
+|-------------------|----------------|----------------------|------------------|-------------|
+| 20010012          | I10            | ICD10CM              | 1                | 1           |
+| 20010012          | E11.9          | ICD10CM              | 0                | 0           |
+| 20010015          | 250.00         | ICD9CM               | 1                | 1           |
+| 20010015          | 401.9          | ICD9CM               | 0                | 0           |
+| 20010020          | J45.909        | ICD10CM              | 1                | 1           |
+| 20010020          | 530.81         | ICD9CM               | 0                | 1           |
 
 
 ## hospitalization
@@ -125,72 +123,6 @@ The hospitalization table contains information about each hospitalization event.
 | 101002 | 87654321 | 22334455 | 2024-11-04 15:00:00+00:00 UTC | 2024-11-07 11:00:00+00:00 UTC | 72 | Transfer from another hospital | Acute Care Transfer | Transferred to Acute Inpatient Rehab Facility | Acute Inpatient Rehab Facility | 46311 | 463110000 | 170313301002 | 41.55030 | -87.30101 | 2020 |
 | 101003 | 11223344 | 11223344 | 2024-10-20 07:45:00+00:00 UTC | 2024-10-22 10:20:00+00:00 UTC | 59 | Pre-op surgical | Pre-op | Expired | Expired | 60446 | 604460000 | 170313401003 | 41.70010 | -87.60315 | 2020 |
 
-## hospital_diagnosis
-
-Finalized billing diagnosis codes for hospital reimbursement, e.g. calculation of a Diagnosis Related Group (DRG). These diagnoses also do not have timestamps, as they are often finalized after discharge. The `hospital_diagnosis` table is appropriate for calculation of comorbidity scores but should not be used as input features into a prediction model for an inpatient event.
-\
-All other diagnosis codes for a patient are included under concept table `patient_diagnosis` which has start and end timestamps.
-
-**Example**:
-| hospitalization_id | diagnosis_code | diagnosis_code_format | diagnosis_primary | poa_present |
-|-------------------|----------------|----------------------|------------------|-------------|
-| 20010012          | I10            | ICD10CM              | 1                | 1           |
-| 20010012          | E11.9          | ICD10CM              | 0                | 0           |
-| 20010015          | 250.00         | ICD9CM               | 1                | 1           |
-| 20010015          | 401.9          | ICD9CM               | 0                | 0           |
-| 20010020          | J45.909        | ICD10CM              | 1                | 1           |
-| 20010020          | 530.81         | ICD9CM               | 0                | 1           |
-
-
-## invasive_hemodynamics
-
-The `invasive_hemodynamics` table records invasive hemodynamic measurements during a patient’s hospitalization. These measurements represent pressures recorded via invasive monitoring and are expressed in millimeters of mercury (mmHg).
-
-
-**Notes**:
-
-- `measurement_value` is interpreted in the units defined by `measurement_category` (mmHg for pressures, L/min for cardiac output, L/min/m² for indices, etc.).
-- The `measurement_category` field standardizes invasive hemodynamic data:
-
-| measurement_category | Maps from | Expected value |
-|----------------------|-----------|----------------|
-| `cvp` | Central Venous Pressure, Right Atrial Pressure (mmHg) | 0–50 |
-| `rv_systolic` | Right Ventricular Systolic Pressure (mmHg) | 0–200 |
-| `rv_diastolic` | Right Ventricular Diastolic Pressure (mmHg) | Less than `rv_systolic` |
-| `pa_systolic` | Pulmonary Artery Systolic Pressure (mmHg) | 0–200 |
-| `pa_diastolic` | Pulmonary Artery Diastolic Pressure (mmHg) | 0–100 |
-| `pa_mean` | Pulmonary Artery Mean Pressure (mmHg) | Less than `pa_systolic` and greater than `pa_diastolic` |
-| `pcwp` | Pulmonary Capillary Wedge Pressure (mmHg) | 0–100 |
-| `cardiac_output_thermodilution` | Continuous Cardiac Output (L/min) | 0.1–30 |
-| `cardiac_index` | Cardiac Index (L/min/m²) | 0.1–10 |
-| `cardiac_output_fick` | Cardiac Output by Fick Equation (L/min) | 0.1–30 |
-| `sv` | Stroke Volume (mL) | 0–300 |
-| `ppv` | Pulse Pressure Variation (%) | 0–100 |
-| `svv` | Stroke Volume Variation (%) | 0–200 |
-| `svr` | Systemic Vascular Resistance / Total Peripheral Resistance (dyn·s/cm⁵) | 100–10000 |
-| `svri` | Systemic Vascular Resistance Index / Total Peripheral Resistance Index (dyn·s·m²/cm⁵) | 100–10000 |
-| `evlw` | Extravascular Lung Water (mL) | 0–100 |
-| `evlwi` | Extravascular Lung Water Index (mL/kg) | 0–150 |
-| `gef` | Global Ejection Fraction (%) | 0–100 |
-| `itbi` | Intrathoracic Blood Volume Index (mL/m²) | 0–3000 |
-| `gedv` | Global End-diastolic Volume (mL) | 0–5000 |
-| `gedvi` | Global End-diastolic Volume Index (mL/m²) | 0–3000 |
-| `lcwi` | Left Ventricular Stroke Work Index (g·m/m²/beat) | 0–100 |
-| `tfc` | Thoracic Fluid Content (%) | 0–100 |
-| `tfcd0` | Thoracic Fluid Content Delta from Baseline (%) | 0–100 |
-| `do2` | Delivery of Oxygen (mL/min/m²) | 100–10000 |
-
-\
-**Example**:
-
-| hospitalization_id | recorded_dttm                  | measurement_name                    | measurement_category | measurement_value |
-|--------------------|--------------------------------|-------------------------------------|----------------------|-------------------|
-| 1234               | 2026-04-08 23:30:00+00:00 UTC  | Central Venous Pressure             | cvp                  | 5                 |
-| 1234               | 2026-04-08 23:30:00+00:00 UTC  | Pulmonary Artery Pressure systolic  | pa_systolic          | 20                |
-| 1234               | 2026-04-08 23:30:00+00:00 UTC  | Pulmonary Artery Pressure diastolic | pa_diastolic         | 6                 |
-| 1234               | 2026-04-08 23:30:00+00:00 UTC  | Pulmonary Artery Pressure mean      | pa_mean              | 11                |
-| 1234               | 2026-04-08 23:30:00+00:00 UTC  | Cardiac Index                       | cardiac_index        | 2.9               |
-
 
 ## labs
 
@@ -213,16 +145,6 @@ The labs table is a long form (one lab result per row) longitudinal table.
 | 1003036           | 2023-07-15 06:45:00+00:00 UTC | 2023-07-15 07:00:00+00:00 UTC | 2023-07-15 07:30:00+00:00 UTC | Liver function panel          | LFT                | AST (SGOT)       | ast                  | 35       | 35               | U/L            | blood             | blood/plasma/serum   | 1920-8        |
 | 1003036           | 2023-07-15 06:45:00+00:00 UTC | 2023-07-15 07:00:00+00:00 UTC | 2023-07-15 07:30:00+00:00 UTC | Liver function panel          | LFT                | ALT (SGPT)       | alt                  | 28       | 28               | U/L            | blood             | blood/plasma/serum   | 1742-6        |
 
-
-## medication_admin_intermittent
-
-This table captures medications administered as fixed doses at discrete time points. Examples include antibiotics, steroids, and other medications given as boluses or scheduled doses. Each row represents ONE observation for each medication administered.
-
-This table has exactly the same schema as [`medication_admin_continuous`](#medication-admin-continuous). The consortium decided to separate the medications that are administered intermittently from the continuously administered medications. The mCIDE for `medication_category` for intermittent meds can be found [here](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/medication_admin_intermittent/clif_medication_admin_intermittent_med_categories.csv).
-
-**Notes**:
-- Continuous medications are included in this table when given as boluses 
-- Intermittent medications can be given at different rates
 
 ## medication_admin_continuous
 
@@ -247,6 +169,18 @@ The medication admin continuous table is a long-form (one medication administrat
 - Include combination medications when mapping medication names to respective categories. Eg. `ACETAMIN-CALCIUM-MAG-CAFFEINE ORAL` -> `acetaminophen`
 - Include trial drugs when mapping medication names to respective categories.. Eg. `ACETAMINOPHEN (IRB 140122) 325 MG ORAL TAB` -> `acetaminophen`
 
+
+## medication_admin_intermittent
+
+This table captures medications administered as fixed doses at discrete time points. Examples include antibiotics, steroids, and other medications given as boluses or scheduled doses. Each row represents ONE observation for each medication administered.
+
+This table has exactly the same schema as [`medication_admin_continuous`](#medication-admin-continuous). The consortium decided to separate the medications that are administered intermittently from the continuously administered medications. The mCIDE for `medication_category` for intermittent meds can be found [here](https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/main/mCIDE/medication_admin_intermittent/clif_medication_admin_intermittent_med_categories.csv).
+
+**Notes**:
+- Continuous medications are included in this table when given as boluses 
+- Intermittent medications can be given at different rates
+
+
 ## microbiology_culture
 
 The microbiology culture table is a longitudinal table in long format that captures the order, collection, and all result times of microbiology cultures. The result_dttm makes the table long as each time a culture is processed, updated, or finalized a new time stamp in result_dttm renders the table long. This means there are multiple result time stamps for a single test, whereas a single test will have the same non-time varying order_dttm and collect_dttm. If you wish to look at finalized cultures only, use the maximum value of order_dttm to identify the last row where the culture has been finalized.
@@ -259,16 +193,25 @@ The microbiology culture table is a longitudinal table in long format that captu
 | 12345      | HOSP12345         | ORG002      | 2025-06-05 08:15:00+00:00 | 2025-06-05 08:45:00+00:00 | 2025-06-06 12:00:00+00:00 | AFB/FUNGAL BLOOD CULTURE | Blood/Buffy Coat   | Blood culture   | culture         | Candida albicans       | candida_albicans       | candida albicans                                            |               |
 | 67890      | HOSP67890         | ORG003      | 2025-06-10 14:10:00+00:00 | 2025-06-10 14:35:00+00:00 | 2025-06-11 09:20:00+00:00 | BRAIN BIOPSY CULTURE     | Brain              | Tissue culture  | culture         | Aspergillus fumigatus  | aspergillus_fumigatus  | asperguillus fumigatus                                       |               |
 
-## microbiology_nonculture
 
-The microbiology non-culture table is a wide longitudinal table that captures the order and result times of non-culture microbiology tests, the type of fluid collected, the component of the test, and the result of the test.
+## microbiology_susceptibility
 
-**Example**:
-| patient_id | hospitalization_id | order_dttm                | collect_dttm              | result_dttm               | fluid_name           | fluid_category      | method_name | method_category | micro_order_name                        | organism_category         | organism_group                                         | result_name                                   | result_category | reference_low | reference_high | result_units | lab_loinc_code |
-|------------|-------------------|---------------------------|---------------------------|---------------------------|----------------------|---------------------|-------------|----------------|------------------------------------------|--------------------------|--------------------------------------------------------|-----------------------------------------------|-----------------|--------------|---------------|--------------|---------------|
-| 1          | 12121             | 2025-06-15 09:05:00+00:00 | 2025-06-15 09:30:00+00:00 | 2025-06-15 13:45:00+00:00 | BLOOD                | blood/buffy coat    | PCR         | pcr            | neisseria quantitative pcr, blood        | neisseria_sp             | neisseria (gonorrhoea, meningitidis, other species)    | 100,000 copies/uL of neisseria detected       | detected        |              |               | copies/mL    | 39528-5       |
-| 2          | 32332             | 2025-06-16 11:15:00+00:00 | 2025-06-16 11:40:00+00:00 | 2025-06-16 15:25:00+00:00 | cerebrospinal fluid  | meninges and csf    | PCR         | pcr            | csf hsv pcr                             | herpes_simplex_virus      | herpes simplex (hsv1, hsv2)                           | no herspes simplex DNA measured               | not_detected    |              |               | IU/mL        | 16954-2       |
-| 2          | 32332             | 2025-06-17 10:00:00+00:00 | 2025-06-17 10:20:00+00:00 | 2025-06-17 14:05:00+00:00 | feces                | feces/stool         | PCR         | pcr            | stool c. diff toxin                      | clostridioides_difficile  | clostridium difficile                                 | default in test for C. difficile toxin analysis | indeterminate   |              |               | copies/mL    | 34712-0       |
+
+
+This table is used to store the susceptibility results of the organisms identified in the `Microbiology Culture`. 
+
+
+**Example**: 
+| organism_id | antimicrobial_name                 | antimicrobial_category      | sensitivity_name      | susceptibility_name             | susceptibility_category |
+|-------------|------------------------------------|----------------------------|----------------------|-------------------------------|------------------------|
+| 1           | avycex (ceftazidime/avibactam)     | ceftazidime_avibactam      | 8 MIC                | susceptible                   | susceptible            |
+| 1           | amoxicillin clavulanic acid        | amoxicillin_clavulanate    | < 0.1 ug/mL          | susceptible                   | susceptible        |
+| 1           | meropenem                         | meropenem                  | indeterminate        | indeterminate                  | indeterminate         |
+| 1           | ampicillin 500mg                   | ampicillin                 | > 0.5 ug/mL          | resistant                     | NA                     |
+| 2           | unasyn                            | ampicillin_sulbactam       | susceptible dose dependent | susceptible             | susceptible            |
+| 2           | Ertapenem                         | ertapenem                  | not reported         | NA                            | NA                     |
+| 2           | Vancomycin (non-Cdiff)            | vancomycin                 | > 0.25 ug/mL         | non susceptible, caution       | non_susceptible        |
+
 
 ## patient
 
@@ -299,20 +242,6 @@ The patient_assessments table captures various assessments performed on patients
 | 67890             | 2024-12-01 10:30:00+00:00 UTC | BRADEN ASSESSMENT                            | braden_total       | Nursing Risk   | 18             | NA              | NA         |
 | 67890             | 2024-12-01 10:30:00+00:00 UTC | SAT SCREEN                                   | sat_delivery_pass_fail | Sedation     | NA             | Pass            | NA         |
 
-## patient_diagnosis
-
-The `patient_diagnosis` table provides a record of all diagnoses assigned to a patient. 
-    
-
-**Example**:
-
-| patient_id | hospitalization_id | diagnosis_code | diagnosis_code_format | source_type     | start_dttm                  | end_dttm                    |
-|------------|-------------------|---------------|----------------------|-----------------|-----------------------------|-----------------------------|
-| PAT1001    | HOSP1001          | I10           | ICD10CM              | problem_list    | 2024-01-01 08:00:00+00:00   | NULL                        |
-| PAT1001    | HOSP1001          | E11.9         | ICD10CM              | encounter_dx    | 2024-01-01 08:00:00+00:00   | 2024-01-10 12:00:00+00:00   |
-| PAT1002    | HOSP1002          | J18.9         | ICD10CM              | medical_history | 2024-01-05 09:30:00+00:00   | NULL                        |
-| PAT1003    | HOSP1003          | N17.9         | ICD10CM              | encounter_dx    | 2024-01-10 07:00:00+00:00   | 2024-01-15 10:00:00+00:00   |
-
 
 ## patient_procedures
 
@@ -332,7 +261,6 @@ Additionally, this table contains [ICD-10-PCS](https://www.cms.gov/medicare/codi
 | HOSP1002           | BP234              | PP890                 | G0009          | HCPCS                | 2024-01-05 09:30:00+00:00 UTC    |
 | HOSP1002           | BP234              | PP890                 | G0008          | HCPCS                | 2024-01-05 11:00:00+00:00 UTC    |
 | HOSP1003           | BP345              | PP901                 | 36620          | CPT                  | 2024-01-10 07:00:00+00:00 UTC    |
-
 
 
 ## position
@@ -409,6 +337,7 @@ E = Expected ventilator setting for the mode, P = possible ventilator setting fo
 | 67890             | 2024-12-01 10:30:00+00:00 UTC | HFNC         | DEV002    | High Flow NC    | N/A               | Other                        | N/A             | 0            | 0.30     | 60      | NA               | NA            | NA                   | NA                   | 60            | NA               | NA            | NA                   | NA                          | NA       | NA              | NA                      |
 | 67890             | 2024-12-01 11:00:00+00:00 UTC | CPAP         | DEV003    | CPAP            | CPAP              | Pressure Support/CPAP        | CPAP X          | 0            | 0.40     | 50      | NA               | NA            | NA                   | 10                   | NA            | NA               | NA            | NA                   | NA                          | 8        | NA              | NA                      |
 
+
 ## vitals
 
 The vitals table is a long-form (one vital sign per row) longitudinal table.
@@ -431,7 +360,38 @@ The vitals table is a long-form (one vital sign per row) longitudinal table.
 
 ## Concept Tables
 
-A planned future CLIF table that has yet to be used in a federated project. The table structure and CDE elements are in draft form. Permissible values of category variables may still need to be defined. Seeking conceptual feedback. Significant changes to all aspects of the table are possible.
+A planned future CLIF table that has yet to be used in a federated project. The table structure and CDE elements are in draft form. Permissible values of category variables may still need to be defined. Seeking conceptual feedback. Significant changes to all aspects of the table are possible. **Concept tables are never locked and can keep changing.**
+
+
+## clinical_trial
+
+This table captures whether a patient was enrolled in any clinical trial during their hospitalization. It enables longitudinal tracking of trial participation, including trial identifiers, arm assignment, and key consent, randomization, and withdrawal timestamps. This structure supports research into the effects of experimental therapies and interventions on patient outcomes.
+
+**Example**:
+
+| participant_id | patient_id | hospitalization_id | trial_id | trial_name                                    | arm_id     | consent_dttm                  | enrollment_dttm                | randomized_dttm                | withdrawal_dttm                |
+|----------------|-----------|--------------------|----------|-----------------------------------------------|------------|-------------------------------|-------------------------------|-------------------------------|-------------------------------|
+| PT1234         | 567890    | 234567             | T-001    | Early Vasopressor in Septic Shock (EVSS)      | Arm A      | 2024-06-01 10:15:00+00:00 UTC | 2024-06-01 14:00:00+00:00 UTC | 2024-06-01 15:00:00+00:00 UTC |                               |
+| PT2345         | 678901    | 345678             | NCT04321 | Lung Protective Ventilation                   | Standard   | 2024-06-11 12:00:00+00:00 UTC | 2024-06-11 13:15:00+00:00 UTC |                               |                               |
+| PT3456         | 789012    | 456789             | T-017    | Multi-center COVID-19 Anticoagulation Trial   | High Dose  | 2024-07-15 09:10:00+00:00 UTC | 2024-07-15 09:45:00+00:00 UTC | 2024-07-15 10:00:00+00:00 UTC | 2024-07-20 08:30:00+00:00 UTC |
+
+
+## ecmo_mcs
+
+The ECMO/MCS table is a wider longitudinal table that captures the start and stop times of ECMO/MCS support, the type of device used, and the work rate of the device.
+
+**Notes**:
+- This table was reworked for 3.0 — renamed to [`mcs`](/data-dictionary/data-dictionary-3.0.0#mcs) and converted to a long-form schema (one row per setting/measurement). For new implementations, refer to the [3.0 `mcs` table](/data-dictionary/data-dictionary-3.0.0#mcs).
+
+**Example**:
+
+| hospitalization_id | recorded_dttm                | device_name         | device_category     | mcs_group        | ecmo_configuration_category | control_parameter_name | control_parameter_category  | control_parameter_value | flow | sweep_set | fdO2_set |
+|-------------------|------------------------------|---------------------|---------------------|------------------|----------------------------|-----------------------|----------------------------|------------------------|------|-----------|----------|
+| 21002             | 2024-02-18 09:10:00+00:00 UTC| Impella 5.5         | impella_5_5         | impella_lvad     | NULL                       | P5                    | impella_performance        | 5                      | 4.8  | NULL      | NULL     |
+| 21003             | 2024-02-22 11:40:00+00:00 UTC| Abbott IABP         | iabp                | iabp             | NULL                       | IABP Ratio            | iabp_ratio                 | 3                      | NULL | NULL      | NULL     |
+| 21004             | 2024-02-23 14:30:00+00:00 UTC| Heart Mate III LVAD | heartmate_3         | durable_lvad     | NULL                       | RPMs                  | rpm                        | 4200                   | 3.5  | NULL      | NULL     |
+| 21005             | 2024-02-27 16:25:00+00:00 UTC| Centrimag ECMO VV   | centrimag_ecmo      | ecmo             | vv                         | RPMs                  | rpm                        | 3500                   | 3    | 1         | NULL     |
+
 
 ## intake_output
 
@@ -452,6 +412,55 @@ The intake_output table is long form table that captures the times intake and ou
 | 1003              | 2024-01-10 07:45:00+00:00 UTC   | Lactated Ringer's| 600     | 1           |
 | 1003              | 2024-01-10 12:00:00+00:00 UTC   | Drainage        | 200     | 0           |
 
+
+## invasive_hemodynamics
+
+The `invasive_hemodynamics` table records invasive hemodynamic measurements during a patient’s hospitalization. These measurements represent pressures recorded via invasive monitoring and are expressed in millimeters of mercury (mmHg).
+
+
+**Notes**:
+
+- `measurement_value` is interpreted in the units defined by `measurement_category` (mmHg for pressures, L/min for cardiac output, L/min/m² for indices, etc.).
+- The `measurement_category` field standardizes invasive hemodynamic data:
+
+| measurement_category | Maps from | Expected value |
+|----------------------|-----------|----------------|
+| `cvp` | Central Venous Pressure, Right Atrial Pressure (mmHg) | 0–50 |
+| `rv_systolic` | Right Ventricular Systolic Pressure (mmHg) | 0–200 |
+| `rv_diastolic` | Right Ventricular Diastolic Pressure (mmHg) | Less than `rv_systolic` |
+| `pa_systolic` | Pulmonary Artery Systolic Pressure (mmHg) | 0–200 |
+| `pa_diastolic` | Pulmonary Artery Diastolic Pressure (mmHg) | 0–100 |
+| `pa_mean` | Pulmonary Artery Mean Pressure (mmHg) | Less than `pa_systolic` and greater than `pa_diastolic` |
+| `pcwp` | Pulmonary Capillary Wedge Pressure (mmHg) | 0–100 |
+| `cardiac_output_thermodilution` | Continuous Cardiac Output (L/min) | 0.1–30 |
+| `cardiac_index` | Cardiac Index (L/min/m²) | 0.1–10 |
+| `cardiac_output_fick` | Cardiac Output by Fick Equation (L/min) | 0.1–30 |
+| `sv` | Stroke Volume (mL) | 0–300 |
+| `ppv` | Pulse Pressure Variation (%) | 0–100 |
+| `svv` | Stroke Volume Variation (%) | 0–200 |
+| `svr` | Systemic Vascular Resistance / Total Peripheral Resistance (dyn·s/cm⁵) | 100–10000 |
+| `svri` | Systemic Vascular Resistance Index / Total Peripheral Resistance Index (dyn·s·m²/cm⁵) | 100–10000 |
+| `evlw` | Extravascular Lung Water (mL) | 0–100 |
+| `evlwi` | Extravascular Lung Water Index (mL/kg) | 0–150 |
+| `gef` | Global Ejection Fraction (%) | 0–100 |
+| `itbi` | Intrathoracic Blood Volume Index (mL/m²) | 0–3000 |
+| `gedv` | Global End-diastolic Volume (mL) | 0–5000 |
+| `gedvi` | Global End-diastolic Volume Index (mL/m²) | 0–3000 |
+| `lcwi` | Left Ventricular Stroke Work Index (g·m/m²/beat) | 0–100 |
+| `tfc` | Thoracic Fluid Content (%) | 0–100 |
+| `tfcd0` | Thoracic Fluid Content Delta from Baseline (%) | 0–100 |
+| `do2` | Delivery of Oxygen (mL/min/m²) | 100–10000 |
+
+\
+**Example**:
+
+| hospitalization_id | recorded_dttm                  | measurement_name                    | measurement_category | measurement_value |
+|--------------------|--------------------------------|-------------------------------------|----------------------|-------------------|
+| 1234               | 2026-04-08 23:30:00+00:00 UTC  | Central Venous Pressure             | cvp                  | 5                 |
+| 1234               | 2026-04-08 23:30:00+00:00 UTC  | Pulmonary Artery Pressure systolic  | pa_systolic          | 20                |
+| 1234               | 2026-04-08 23:30:00+00:00 UTC  | Pulmonary Artery Pressure diastolic | pa_diastolic         | 6                 |
+| 1234               | 2026-04-08 23:30:00+00:00 UTC  | Pulmonary Artery Pressure mean      | pa_mean              | 11                |
+| 1234               | 2026-04-08 23:30:00+00:00 UTC  | Cardiac Index                       | cardiac_index        | 2.9               |
 
 
 ## key_icu_orders
@@ -492,6 +501,33 @@ This table records the ordering (not administration) of medications. The table i
 | 12352             | 456796       | 2023-10-03 20:00:00+00:00 UTC   | 2023-10-04 08:00:00+00:00 UTC   | 2023-10-03 19:45:00+00:00 UTC   | Dexamethasone 10 mg IV                                             | dexamethasone  | steroids      | active              | ongoing                 | Intravenous   | 10.0     | mg           | Once Daily    | 0   |
 
 
+## microbiology_nonculture
+
+The microbiology non-culture table is a wide longitudinal table that captures the order and result times of non-culture microbiology tests, the type of fluid collected, the component of the test, and the result of the test.
+
+**Example**:
+| patient_id | hospitalization_id | order_dttm                | collect_dttm              | result_dttm               | fluid_name           | fluid_category      | method_name | method_category | micro_order_name                        | organism_category         | organism_group                                         | result_name                                   | result_category | reference_low | reference_high | result_units | lab_loinc_code |
+|------------|-------------------|---------------------------|---------------------------|---------------------------|----------------------|---------------------|-------------|----------------|------------------------------------------|--------------------------|--------------------------------------------------------|-----------------------------------------------|-----------------|--------------|---------------|--------------|---------------|
+| 1          | 12121             | 2025-06-15 09:05:00+00:00 | 2025-06-15 09:30:00+00:00 | 2025-06-15 13:45:00+00:00 | BLOOD                | blood/buffy coat    | PCR         | pcr            | neisseria quantitative pcr, blood        | neisseria_sp             | neisseria (gonorrhoea, meningitidis, other species)    | 100,000 copies/uL of neisseria detected       | detected        |              |               | copies/mL    | 39528-5       |
+| 2          | 32332             | 2025-06-16 11:15:00+00:00 | 2025-06-16 11:40:00+00:00 | 2025-06-16 15:25:00+00:00 | cerebrospinal fluid  | meninges and csf    | PCR         | pcr            | csf hsv pcr                             | herpes_simplex_virus      | herpes simplex (hsv1, hsv2)                           | no herspes simplex DNA measured               | not_detected    |              |               | IU/mL        | 16954-2       |
+| 2          | 32332             | 2025-06-17 10:00:00+00:00 | 2025-06-17 10:20:00+00:00 | 2025-06-17 14:05:00+00:00 | feces                | feces/stool         | PCR         | pcr            | stool c. diff toxin                      | clostridioides_difficile  | clostridium difficile                                 | default in test for C. difficile toxin analysis | indeterminate   |              |               | copies/mL    | 34712-0       |
+
+
+## patient_diagnosis
+
+The `patient_diagnosis` table provides a record of all diagnoses assigned to a patient. 
+    
+
+**Example**:
+
+| patient_id | hospitalization_id | diagnosis_code | diagnosis_code_format | source_type     | start_dttm                  | end_dttm                    |
+|------------|-------------------|---------------|----------------------|-----------------|-----------------------------|-----------------------------|
+| PAT1001    | HOSP1001          | I10           | ICD10CM              | problem_list    | 2024-01-01 08:00:00+00:00   | NULL                        |
+| PAT1001    | HOSP1001          | E11.9         | ICD10CM              | encounter_dx    | 2024-01-01 08:00:00+00:00   | 2024-01-10 12:00:00+00:00   |
+| PAT1002    | HOSP1002          | J18.9         | ICD10CM              | medical_history | 2024-01-05 09:30:00+00:00   | NULL                        |
+| PAT1003    | HOSP1003          | N17.9         | ICD10CM              | encounter_dx    | 2024-01-10 07:00:00+00:00   | 2024-01-15 10:00:00+00:00   |
+
+
 ## place_based_index
 
 The place_based_index table is designed to store geospatial or community-level indices linked to a patient's hospitalization.
@@ -527,28 +563,6 @@ Continuous start stop record of every provider who cared for the patient.
 | 1004047 | 2023-08-20 10:00:00+00:00 UTC | 2023-08-20 22:00:00+00:00 UTC | Physical Therapist | Therapy |
 
 
-## microbiology_susceptibility
-
-
-
-This table is used to store the susceptibility results of the organisms identified in the `Microbiology Culture`. 
-
-
-**Example**: 
-| organism_id | antimicrobial_name                 | antimicrobial_category      | sensitivity_name      | susceptibility_name             | susceptibility_category |
-|-------------|------------------------------------|----------------------------|----------------------|-------------------------------|------------------------|
-| 1           | avycex (ceftazidime/avibactam)     | ceftazidime_avibactam      | 8 MIC                | susceptible                   | susceptible            |
-| 1           | amoxicillin clavulanic acid        | amoxicillin_clavulanate    | < 0.1 ug/mL          | susceptible                   | susceptible        |
-| 1           | meropenem                         | meropenem                  | indeterminate        | indeterminate                  | indeterminate         |
-| 1           | ampicillin 500mg                   | ampicillin                 | > 0.5 ug/mL          | resistant                     | NA                     |
-| 2           | unasyn                            | ampicillin_sulbactam       | susceptible dose dependent | susceptible             | susceptible            |
-| 2           | Ertapenem                         | ertapenem                  | not reported         | NA                            | NA                     |
-| 2           | Vancomycin (non-Cdiff)            | vancomycin                 | > 0.25 ug/mL         | non susceptible, caution       | non_susceptible        |
-
-
-
-
-
 ## therapy_details
 
 
@@ -580,26 +594,8 @@ This table provides detailed information about transfusion events linked to spec
 | 456789            | 2024-12-05 12:15:00+00:00 UTC    | 2024-12-05 13:45:00+00:00 UTC    | Plasma          |                   | 200              | mL           | F0781        |
 
 
-## clinical_trial
-
-This table captures whether a patient was enrolled in any clinical trial during their hospitalization. It enables longitudinal tracking of trial participation, including trial identifiers, arm assignment, and key consent, randomization, and withdrawal timestamps. This structure supports research into the effects of experimental therapies and interventions on patient outcomes.
-
-## clinical_trial
-
-This table captures whether a patient was enrolled in any clinical trial during their hospitalization. It enables longitudinal tracking of trial participation, including trial identifiers, arm assignment, and key consent, randomization, and withdrawal timestamps. This structure supports research into the effects of experimental therapies and interventions on patient outcomes.
-
-**Example**:
-
-| participant_id | patient_id | hospitalization_id | trial_id | trial_name                                    | arm_id     | consent_dttm                  | enrollment_dttm                | randomized_dttm                | withdrawal_dttm                |
-|----------------|-----------|--------------------|----------|-----------------------------------------------|------------|-------------------------------|-------------------------------|-------------------------------|-------------------------------|
-| PT1234         | 567890    | 234567             | T-001    | Early Vasopressor in Septic Shock (EVSS)      | Arm A      | 2024-06-01 10:15:00+00:00 UTC | 2024-06-01 14:00:00+00:00 UTC | 2024-06-01 15:00:00+00:00 UTC |                               |
-| PT2345         | 678901    | 345678             | NCT04321 | Lung Protective Ventilation                   | Standard   | 2024-06-11 12:00:00+00:00 UTC | 2024-06-11 13:15:00+00:00 UTC |                               |                               |
-| PT3456         | 789012    | 456789             | T-017    | Multi-center COVID-19 Anticoagulation Trial   | High Dose  | 2024-07-15 09:10:00+00:00 UTC | 2024-07-15 09:45:00+00:00 UTC | 2024-07-15 10:00:00+00:00 UTC | 2024-07-20 08:30:00+00:00 UTC |
-
-
 ## Future Proposed Tables
 
 These are tables without any defined structure that the consortium has not yet committed to implementing.
 \
 **Clinical Decision Support**: This table will capture the actions of clinical decision support tools embedded in the EHR. The table will have the following fields: `cds_name`, `cds_category`, `cds_value`, `cds_trigger_ddtm`.
-

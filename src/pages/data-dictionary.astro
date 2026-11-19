@@ -1,7 +1,6 @@
 ---
 export const prerender = true;
 import BaseLayout from '../layouts/BaseLayout.astro';
-import Badge from '../components/Badge.astro';
 import CTAButton from '../components/shared/CTAButton.astro';
 import tablePocData from '../data/table-poc.json';
 import { CLIF_TABLES } from '../data/clif-tables';
@@ -22,11 +21,13 @@ const sortedPocData = [...tablePocData].sort(
   title="CLIF Data Dictionary"
   description="Access the Common Longitudinal ICU data Format (CLIF) data dictionary versions and documentation"
 >
-  <div class="container mx-auto px-6 py-12">
-    <h1 class="text-4xl font-bold text-clif-burgundy mb-4">CLIF Data Dictionary</h1>
-    <p class="text-xl text-gray-600 mb-8 max-w-3xl">
-      Comprehensive documentation for implementing the Common Longitudinal ICU data Format.
-    </p>
+  <div class="container mx-auto px-4 pt-4 pb-12">
+    <header class="mb-10 pb-6 border-b border-gray-200 text-center">
+      <h1 class="text-4xl md:text-5xl font-bold tracking-tight text-clif-burgundy mb-3">CLIF Data Dictionary</h1>
+      <p class="text-lg text-gray-600 max-w-4xl mx-auto">
+        Comprehensive documentation for implementing the Common Longitudinal ICU data Format.
+      </p>
+    </header>
 
     <div class="flex flex-col lg:flex-row gap-8">
       <!-- Version Sidebar -->
@@ -41,28 +42,25 @@ const sortedPocData = [...tablePocData].sort(
                 class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 text-gray-700 transition-colors"
               >
                 <span>v3.0</span>
-                <Badge type="concept" size="small" />
+                <span class="text-xs text-gray-500 whitespace-nowrap">Coming Soon: Dec 7, 2026</span>
               </a>
               <a
                 href="/data-dictionary/data-dictionary-2.1.0"
                 class="flex items-center justify-between p-3 rounded-lg bg-clif-burgundy/5 border-l-4 border-clif-burgundy text-clif-burgundy font-medium"
               >
                 <span>v2.1</span>
-                <Badge type="beta" size="small" />
               </a>
               <a
                 href="/data-dictionary/data-dictionary-2.0.0"
                 class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 text-gray-700 transition-colors"
               >
                 <span>v2.0</span>
-                <Badge type="beta" size="small" />
               </a>
               <a
                 href="/data-dictionary/data-dictionary-1.0.0"
                 class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 text-gray-500 transition-colors"
               >
                 <span>v1.0</span>
-                <Badge type="deprecated" size="small" />
               </a>
             </nav>
           </div>
@@ -131,7 +129,6 @@ const sortedPocData = [...tablePocData].sort(
           <div class="glass-dark text-white p-6 rounded-2xl shadow-xl glow">
             <div class="flex items-center gap-3 mb-3">
               <h2 class="text-2xl font-bold">CLIF 2.1</h2>
-              <Badge type="beta" />
             </div>
             <p class="text-white/90 mb-4">
               The latest release featuring standardized tables for critical care data across multiple institutions.
@@ -162,18 +159,15 @@ const sortedPocData = [...tablePocData].sort(
           </div>
         </section>
 
-        <!-- CLIF Maturity Section -->
+        <!-- CLIF Table Maturity and Versioning -->
         <section class="mb-8">
           <div class="bg-white border border-gray-200 rounded-xl p-6">
-            <h2 class="text-xl font-semibold text-gray-800 mb-4">CLIF Maturity Levels</h2>
-            <p class="text-gray-600 text-sm mb-6">
-              CLIF is under active development. The consortium tracks maturity for both the overall format and individual tables.
-            </p>
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">CLIF Table Maturity and Versioning</h2>
 
-            <!-- Two Column Grid -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <!-- Overall Format Maturity -->
-              <div>
+            <div>
+              <!-- Overall Format Maturity: hidden for now (Nov 2026). Remove "hidden" and
+                   restore "grid grid-cols-1 lg:grid-cols-2 gap-8" on the wrapper to show it again. -->
+              <div class="hidden">
                 <h3 class="text-sm font-semibold text-gray-800 mb-4 uppercase tracking-wide">Overall Format Maturity</h3>
                 <table class="w-full text-sm">
                   <tbody class="divide-y divide-gray-100">
@@ -220,19 +214,19 @@ const sortedPocData = [...tablePocData].sort(
                       <td class="py-2 pr-3 align-top w-28">
                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-purple-100 text-purple-800 border border-purple-300 uppercase">Concept</span>
                       </td>
-                      <td class="py-2 text-gray-600 align-top">A planned future CLIF table that has yet to be used in a federated project. The table structure and CDE elements are in draft form. Permissible values of category variables may still need to be defined. Seeking conceptual feedback. Significant changes to all aspects of the table are possible.</td>
+                      <td class="py-2 text-gray-600 align-top">A planned future CLIF table that has yet to be used in a federated project. The table structure and CDE elements are in draft form. Permissible values of category variables may still need to be defined. Seeking conceptual feedback. Significant changes to all aspects of the table are possible. Never locked, can keep changing.</td>
                     </tr>
                     <tr>
                       <td class="py-2 pr-3 align-top">
                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-300 uppercase">Alpha</span>
                       </td>
-                      <td class="py-2 text-gray-600 align-top">Constructed at least partially at one site, but not yet used in a federated project. The table structure and mCIDE elements are taking shape based on real implementation experience, though the table has not yet been tested across sites. Changes remain likely as the design is validated against additional sites.</td>
+                      <td class="py-2 text-gray-600 align-top">Constructed at least partially at one site, but not yet used in a federated project. The table structure and mCIDE elements are taking shape based on real implementation experience, though the table has not yet been tested across sites. Changes remain likely as the design is validated against additional sites. Never locked, can keep changing. Moving to beta releases a new minor version.</td>
                     </tr>
                     <tr>
                       <td class="py-2 pr-3 align-top">
                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-800 border border-orange-300 uppercase">Beta</span>
                       </td>
-                      <td class="py-2 text-gray-600 align-top">Table purpose, structure, and field names complete and used in at least one federated CLIF project. CDE for category variables defined. Actively testing the table's practical use in projects.</td>
+                      <td class="py-2 text-gray-600 align-top">Table purpose, structure, and field names complete and used in at least one federated CLIF project. CDE for category variables defined. Actively testing the table's practical use in projects. Locked once the version is released.</td>
                     </tr>
                     <tr>
                       <td class="py-2 pr-3 align-top">
@@ -256,13 +250,18 @@ const sortedPocData = [...tablePocData].sort(
                 </table>
               </div>
             </div>
-          </div>
-        </section>
 
-        <!-- Versioning Policy -->
-        <section class="mb-8">
-          <div class="bg-white border border-gray-200 rounded-xl p-6">
-            <h2 class="text-xl font-semibold text-gray-800 mb-4">Versioning Policy</h2>
+            <!-- Versioning -->
+            <h3 class="text-sm font-semibold text-gray-800 mt-8 pt-6 border-t border-gray-200 mb-4 uppercase tracking-wide">Versioning</h3>
+            <div class="mb-6 rounded-lg border border-orange-200 bg-orange-50 p-4 text-sm text-gray-700">
+              <h3 class="font-semibold text-gray-800 mb-2">What is locked, and what can still change</h3>
+              <ul class="list-disc pl-5 space-y-1">
+                <li><strong>Once a version is released, its beta tables are locked.</strong> Nothing existing is renamed, removed or redefined. Before release, they can still change.</li>
+                <li><strong>New mCIDE values can still be added to a locked beta table.</strong> They are released as a patch.</li>
+                <li><strong>Alpha and concept tables are never locked.</strong></li>
+                <li><strong>When an alpha table moves to beta, a new minor version is released.</strong></li>
+              </ul>
+            </div>
             <p class="text-gray-600 text-sm mb-4">
               CLIF follows semantic versioning (Major.Minor.Patch) to communicate the nature and impact of changes.
             </p>
@@ -281,7 +280,7 @@ const sortedPocData = [...tablePocData].sort(
                   </tr>
                   <tr>
                     <td class="py-2 pr-4 font-semibold text-orange-700">Minor</td>
-                    <td class="py-2 text-gray-700">New tables added, concept tables promoted to beta, new optional fields</td>
+                    <td class="py-2 text-gray-700">New tables added, alpha tables promoted to beta, new optional fields</td>
                   </tr>
                   <tr>
                     <td class="py-2 pr-4 font-semibold text-green-700">Patch</td>
