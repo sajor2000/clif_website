@@ -257,9 +257,10 @@ const sortedPocData = [...tablePocData].sort(
               <h3 class="font-semibold text-gray-800 mb-2">What is locked, and what can still change</h3>
               <ul class="list-disc pl-5 space-y-1">
                 <li><strong>Once a version is released, its beta tables are locked.</strong> Nothing existing is renamed, removed or redefined. Before release, they can still change.</li>
-                <li><strong>New mCIDE values can still be added to a locked beta table.</strong> They are released as a patch.</li>
+                <li><strong>New mCIDE values can still be added to a locked beta table.</strong> Any addition, including new mCIDE values, is released as a minor version.</li>
                 <li><strong>Alpha and concept tables are never locked.</strong></li>
                 <li><strong>When an alpha table moves to beta, a new minor version is released.</strong></li>
+                <li><strong>A patch only corrects documentation errors.</strong> Anything that changes the tables is a minor or major version.</li>
               </ul>
             </div>
             <p class="text-gray-600 text-sm mb-4">
@@ -280,11 +281,11 @@ const sortedPocData = [...tablePocData].sort(
                   </tr>
                   <tr>
                     <td class="py-2 pr-4 font-semibold text-orange-700">Minor</td>
-                    <td class="py-2 text-gray-700">New tables added, alpha tables promoted to beta, new optional fields</td>
+                    <td class="py-2 text-gray-700">Any addition: new tables, alpha tables promoted to beta, new fields, new mCIDE values</td>
                   </tr>
                   <tr>
                     <td class="py-2 pr-4 font-semibold text-green-700">Patch</td>
-                    <td class="py-2 text-gray-700">Bug fixes, documentation updates, mCIDE value additions (can be made independently by table POC)</td>
+                    <td class="py-2 text-gray-700">Documentation error corrections only, with no change to the tables</td>
                   </tr>
                 </tbody>
               </table>
