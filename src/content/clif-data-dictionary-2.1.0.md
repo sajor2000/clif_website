@@ -6,7 +6,7 @@ The CLIF Data Dictionary serves as a comprehensive guide to the Common Longitudi
 
 ## Beta Tables
 
-The table purpose, structure, and field names for beta tables is complete and used in at least one federated CLIF project. The minimum Common ICU Data Elements (mCIDE) for category variables is defined. Actively testing the table's practical use in projects. Breaking changes unlikely, but backward compatible updates in future minor versions possible. **Beta tables are locked for this version:** their structure, field names, and existing permissible values do not change. New mCIDE values can still be added and are released as a minor version.
+The table purpose, structure, and field names for beta tables is complete and used in at least one federated CLIF project. The minimum Common ICU Data Elements (mCIDE) for category variables is defined. Actively testing the table's practical use in projects. Breaking changes unlikely, but backward compatible updates in future minor versions possible. **Beta tables are locked for this version:** their structure, field names, and existing permissible values do not change. Adding to a beta table, including new mCIDE values, requires a new minor version.
 
 
 ## adt

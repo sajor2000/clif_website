@@ -257,8 +257,8 @@ const sortedPocData = [...tablePocData].sort(
               <h3 class="font-semibold text-gray-800 mb-2">What is locked, and what can still change</h3>
               <ul class="list-disc pl-5 space-y-1">
                 <li><strong>Once a version is released, its beta tables are locked.</strong> Nothing existing is renamed, removed or redefined. Before release, they can still change.</li>
-                <li><strong>New mCIDE values can still be added to a locked beta table.</strong> Any addition, including new mCIDE values, is released as a minor version.</li>
-                <li><strong>Alpha and concept tables are never locked.</strong></li>
+                <li><strong>Adding to a released beta table requires a new minor version.</strong> This includes new mCIDE values, new columns, or anything else that extends the table without changing what already exists.</li>
+                <li><strong>Alpha and concept tables are never locked.</strong> They are under active development, so changes to them don't require a new version and aren't covered by the version's stability guarantee.</li>
                 <li><strong>When an alpha table moves to beta, a new minor version is released.</strong></li>
                 <li><strong>A patch only corrects documentation errors.</strong> Anything that changes the tables is a minor or major version.</li>
               </ul>
