@@ -174,6 +174,49 @@ export function buildProjectRunNotificationEmail(
 </html>`.trim();
 }
 
+/** Report to the consortium inbox: project repos the weekly mirror job could not copy. */
+export function buildMirrorSkipReportEmail(
+  skips: { title: string; repo_url: string; reason: string }[],
+): string {
+  const rows = skips
+    .map(
+      (s) => `
+    <tr>
+      <td style="padding: 8px 12px 8px 0; border-bottom: 1px solid #e5e7eb; vertical-align: top;">
+        <strong>${escapeHtml(s.title)}</strong><br>
+        <a href="${escapeHtml(s.repo_url)}" style="color: #8B1538; font-size: 13px;">${escapeHtml(s.repo_url)}</a>
+      </td>
+      <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; vertical-align: top; color: #444;">${escapeHtml(s.reason)}</td>
+    </tr>`,
+    )
+    .join('');
+  return `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+  <div style="border-bottom: 3px solid #8B1538; padding-bottom: 16px; margin-bottom: 24px;">
+    <h1 style="color: #8B1538; font-size: 20px; margin: 0;">CLIF Consortium</h1>
+  </div>
+
+  <p>The weekly repo mirror could not copy ${skips.length === 1 ? 'this project repo' : 'these project repos'} into the CLIF GitHub organization, so ${skips.length === 1 ? 'its' : 'their'} code is not in org-wide code search yet:</p>
+
+  <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin: 16px 0;">
+    <tr>
+      <th style="text-align: left; padding: 0 12px 8px 0; border-bottom: 2px solid #e5e7eb;">Project</th>
+      <th style="text-align: left; padding: 0 0 8px; border-bottom: 2px solid #e5e7eb;">Why it was skipped</th>
+    </tr>${rows}
+  </table>
+
+  <p style="color: #666; font-size: 14px;">Skipped repos are retried every week. You will only hear about one again if the reason changes.</p>
+
+  <div style="border-top: 1px solid #e5e7eb; margin-top: 32px; padding-top: 16px; font-size: 12px; color: #9ca3af;">
+    CLIF Consortium &middot; Common Longitudinal ICU Data Format
+  </div>
+</body>
+</html>`.trim();
+}
+
 export function buildProjectRunNudgeEmail(
   siteName: string,
   projectTitle: string,
