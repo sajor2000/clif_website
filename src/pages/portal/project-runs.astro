@@ -483,7 +483,7 @@ const rerunOptions = projects.filter(canRerun).map((p) => {
                           <a href={p.repo_url} target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:underline">Repo &#8599;</a>
                         )}
                         {p.mirror_url && p.mirror_url !== p.repo_url && (
-                          <a href={p.mirror_url as string} target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:underline" title="Snapshot of the code in the CLIF GitHub organization, taken when the run closed">Org copy &#8599;</a>
+                          <a href={p.mirror_url as string} target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:underline" title="Snapshot of the code in the CLIF GitHub organization, taken when the project's most recent run closed">Org copy &#8599;</a>
                         )}
                         {p.box_folder_url && (
                           <a href={p.box_folder_url} target="_blank" rel="noopener noreferrer" class="text-clif-burgundy hover:underline">Box folder &#8599;</a>
