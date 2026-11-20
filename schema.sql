@@ -284,6 +284,16 @@ CREATE TABLE IF NOT EXISTS project_run_sites (
 
 CREATE INDEX IF NOT EXISTS idx_project_run_sites_project ON project_run_sites(project_id);
 
+-- Authors a site names when it marks a run as run. See migrations/030-project-run-site-authors.sql.
+CREATE TABLE IF NOT EXISTS project_run_site_authors (
+  project_id TEXT NOT NULL REFERENCES project_runs(id) ON DELETE CASCADE,
+  site_id TEXT NOT NULL REFERENCES site_details(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  added_by TEXT REFERENCES users(id),
+  added_at TEXT NOT NULL,
+  PRIMARY KEY (project_id, site_id, user_id)
+);
+
 -- Letter of Support (LOS) request tracker (/portal/los-requests). See migrations/009-los-requests.sql.
 CREATE TABLE IF NOT EXISTS los_requests (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),

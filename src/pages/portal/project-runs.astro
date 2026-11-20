@@ -8,6 +8,7 @@ import { todayInConsortiumTz } from '../../lib/project-run-deadline';
 import { PROJECT_RUN_VERSIONS } from '../../data/clif-tables';
 import RequiredTablesPicker from '../../components/portal/RequiredTablesPicker.astro';
 import { CURRENT_ATS, PURPOSE_LABELS, STATUS_BADGE, isRerun, rerunLabel, toProjectRunStatus } from '../../lib/project-run-status';
+import { buildRunAuthorList, loadAuthorMembers, loadSitePicks, siteRoster, type RunAuthorList } from '../../lib/project-run-authors';
 
 const user = Astro.locals.user!;
 const isAdmin = user.role === 'admin';
@@ -65,6 +66,53 @@ try {
   }
 } catch (e: any) {
   error = e.message;
+}
+
+// Authors. A site names its authors when it marks a run as run; each run's
+// author list is built from those picks (see src/lib/project-run-authors.ts).
+// Loaded separately so the tracker still works if the authors table is missing.
+let authorsReady = false;
+// project -> site -> the user ids that site named
+const sitePickIds: Record<string, Record<string, string[]>> = {};
+// project -> ordered, formatted author list
+const authorLists: Record<string, RunAuthorList> = {};
+// site -> members the viewer may name for it (only sites the viewer can edit)
+const rosters: Record<string, { id: string; name: string }[]> = {};
+if (!error) {
+  try {
+    const [members, picks] = await Promise.all([loadAuthorMembers(), loadSitePicks()]);
+    const membersById = new Map(members.map((m) => [m.id, m]));
+    const authorSites = sites.map((s) => ({
+      id: s.id as string,
+      site_name: (s.site_name as string) || '',
+      institution: (s.institution as string | null) ?? null,
+    }));
+    const picksByProject: Record<string, typeof picks> = {};
+    for (const pick of picks) {
+      (picksByProject[pick.project_id] ||= []).push(pick);
+      ((sitePickIds[pick.project_id] ||= {})[pick.site_id] ||= []).push(pick.user_id);
+    }
+    for (const p of projects) {
+      authorLists[p.id as string] = buildRunAuthorList(
+        (p.created_by as string | null) ?? null,
+        picksByProject[p.id as string] || [],
+        authorSites,
+        membersById,
+      );
+    }
+    for (const s of authorSites) {
+      if (!editableSiteIds.has(s.id)) continue;
+      // A site's own editor can always name themselves. An admin acting for a
+      // site is listed only if they belong to it.
+      rosters[s.id] = siteRoster(s, members, isAdmin ? undefined : user.id).map((m) => ({
+        id: m.id,
+        name: m.degrees ? `${m.full_name}, ${m.degrees}` : m.full_name,
+      }));
+    }
+    authorsReady = true;
+  } catch {
+    authorsReady = false;
+  }
 }
 
 function canManage(p: any): boolean {
@@ -411,6 +459,8 @@ const rerunOptions = projects.filter(canRerun).map((p) => {
               const deadlinePassed =
                 !isClosed && !!p.results_deadline && isDeadlinePassed(p.results_deadline as string);
               const manage = canManage(p);
+              const runPicks = sitePickIds[p.id as string] || {};
+              const authorList = authorLists[p.id as string] || { ids: [], text: '' };
               return (
                 <div class={`project-card rounded-xl border border-gray-200 dark:border-neutral-700 ${nested ? 'bg-gray-50 dark:bg-neutral-900/40' : 'bg-white dark:bg-neutral-800 shadow-sm'}`} data-project={p.id} data-status={status} data-conference={p.conference || ''} data-deadline-passed={deadlinePassed ? 'true' : 'false'} data-nested={nested ? 'true' : undefined}>
                   {/* Collapsed by default: the summary carries the number, title,
@@ -702,7 +752,7 @@ const rerunOptions = projects.filter(canRerun).map((p) => {
                       Sites can start once this run launches.
                     </p>
                   ) : (
-                  <div class="mt-4 pt-4 border-t border-gray-100 dark:border-neutral-700">
+                  <div class="run-sites mt-4 pt-4 border-t border-gray-100 dark:border-neutral-700" data-project-id={p.id}>
                     <div class="flex items-center justify-between mb-3">
                       <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Sites that have run this</h4>
                       <span class="ran-count text-xs text-gray-500 dark:text-gray-400">{ranCount} / {applicableCount} sites{naSuffix}</span>
@@ -721,6 +771,7 @@ const rerunOptions = projects.filter(canRerun).map((p) => {
                           const canSetNa = !isClosed && (editable || canManage(p));
                           // The creator (or an admin) can nudge a site that hasn't run yet.
                           const canNudge = !isClosed && !checked && canManage(p);
+                          const pickCount = (runPicks[s.id as string] || []).length;
                           return (
                             <div class="site-row flex items-center gap-2 min-w-0" data-na={isNa ? 'true' : 'false'}>
                               <label class={`flex items-center gap-2 text-sm min-w-0 flex-1 ${editable ? 'cursor-pointer text-gray-700 dark:text-gray-300' : 'text-gray-500 dark:text-gray-400'}`}
@@ -743,6 +794,16 @@ const rerunOptions = projects.filter(canRerun).map((p) => {
                                   <span class={`na-reason block truncate text-[11px] text-gray-400 dark:text-gray-500 ${isNa && naReason ? '' : 'hidden'}`}>{naReason}</span>
                                 </span>
                               </label>
+                              {authorsReady && editable && (
+                                <button
+                                  type="button"
+                                  class={`site-authors-btn shrink-0 text-[11px] font-medium text-clif-burgundy hover:text-clif-burgundy/80 hover:underline ${checked ? '' : 'hidden'}`}
+                                  data-project-id={p.id}
+                                  data-site-id={s.id}
+                                  data-site-name={s.site_name}
+                                  title={`Choose the authors from ${s.site_name} for this project`}
+                                >{pickCount > 0 ? `Authors (${pickCount})` : 'Add authors'}</button>
+                              )}
                               {canSetNa && (
                                 <button
                                   type="button"
@@ -767,6 +828,49 @@ const rerunOptions = projects.filter(canRerun).map((p) => {
                           );
                         })}
                       </div>
+                    )}
+
+                    {authorsReady && (
+                      <>
+                        {/* Opened when a site ticks "Has run", or from its Authors button. */}
+                        <div class="authors-panel hidden mt-4 rounded-lg border border-clif-burgundy/30 bg-clif-burgundy/5 dark:bg-clif-burgundy/10 p-4">
+                          <h5 class="text-sm font-semibold text-gray-900 dark:text-white">Authors from <span class="authors-panel-site"></span></h5>
+                          <p class="mt-1 text-xs text-gray-600 dark:text-gray-400">
+                            Choose who from your site should be an author on this project. At least one person is required.
+                            Only approved members whose profile institution is your site are listed.
+                          </p>
+                          <div class="authors-panel-list mt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5"></div>
+                          <p class="authors-panel-error hidden mt-2 text-xs text-red-600 dark:text-red-400"></p>
+                          <div class="mt-3 flex items-center gap-3">
+                            <button type="button" class="authors-panel-save px-3 py-1.5 rounded-lg bg-clif-burgundy text-white text-xs font-semibold hover:bg-clif-burgundy/90 disabled:opacity-50 disabled:cursor-not-allowed">Save</button>
+                            <button type="button" class="authors-panel-cancel text-xs font-medium text-gray-600 dark:text-gray-300 hover:underline">Cancel</button>
+                            <span class="authors-panel-count text-xs text-gray-500 dark:text-gray-400"></span>
+                          </div>
+                        </div>
+
+                        <details class="author-list-section mt-4 group/authors">
+                          <summary class="list-none [&::-webkit-details-marker]:hidden cursor-pointer select-none inline-flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:text-clif-burgundy">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3 h-3 shrink-0 text-gray-400 dark:text-gray-500 transition-transform group-open/authors:rotate-90" aria-hidden="true">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+                            </svg>
+                            Author list
+                            <span class="text-xs font-normal text-gray-400 dark:text-gray-500">(<span class="author-count">{authorList.ids.length}</span>)</span>
+                          </summary>
+                          <p class={`author-list-empty mt-2 text-xs text-gray-500 dark:text-gray-400 ${authorList.ids.length ? 'hidden' : ''}`}>
+                            No authors yet. They are added as sites mark this project as run.
+                          </p>
+                          <div class={`author-list-body mt-2 ${authorList.ids.length ? '' : 'hidden'}`}>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">
+                              Built automatically: the project lead first, then each site's authors, then the consortium.
+                            </p>
+                            <pre class="author-list-text mt-2 whitespace-pre-wrap break-words rounded-lg bg-gray-50 dark:bg-neutral-900/60 border border-gray-200 dark:border-neutral-700 p-3 text-xs text-gray-800 dark:text-gray-200 font-sans">{authorList.text}</pre>
+                            <div class="mt-2 flex items-center gap-4">
+                              <button type="button" class="author-list-copy text-xs font-medium text-clif-burgundy hover:underline">Copy</button>
+                              <a href={`/portal/authorship?run=${p.id}`} class="text-xs font-medium text-clif-burgundy hover:underline" title="Reorder, set the corresponding author, or switch journal style">Open in Authorship Block &rarr;</a>
+                            </div>
+                          </div>
+                        </details>
+                      </>
                     )}
                   </div>
                   )}
@@ -799,6 +903,8 @@ const rerunOptions = projects.filter(canRerun).map((p) => {
       </div>
     </div>
   </div>
+
+  <script is:inline type="application/json" id="run-authors-data" set:html={JSON.stringify({ me: user.id, rosters, picks: sitePickIds }).replace(/</g, '\\u003c')}></script>
 
   <script is:inline>
     document.addEventListener('DOMContentLoaded', function () {
@@ -1332,32 +1438,238 @@ const rerunOptions = projects.filter(canRerun).map((p) => {
         if (header) header.textContent = count + ' / ' + total + ' sites' + suffix;
       }
 
+      // === Site authors ===
+      // Ticking "Has run" opens a panel where the person ticking names the
+      // authors from their site (themselves by default). The tick is only
+      // saved together with at least one author. The run's author list on the
+      // card is refreshed from the server's answer.
+      var authorsData = { me: '', rosters: {}, picks: {} };
+      try {
+        var authorsEl = document.getElementById('run-authors-data');
+        if (authorsEl) authorsData = JSON.parse(authorsEl.textContent || '{}');
+      } catch (e) { /* keep the empty defaults */ }
+      var authorsOn = !!document.querySelector('.authors-panel');
+
+      function sitePicks(projectId, siteId) {
+        return (authorsData.picks[projectId] || {})[siteId] || [];
+      }
+      function setSitePicks(projectId, siteId, ids) {
+        if (!authorsData.picks[projectId]) authorsData.picks[projectId] = {};
+        authorsData.picks[projectId][siteId] = ids;
+      }
+
+      // Show the run's author list a response carried (authorCount, authorList).
+      function refreshAuthorList(wrap, data) {
+        if (!wrap || !data || typeof data.authorCount !== 'number') return;
+        var section = wrap.querySelector('.author-list-section');
+        if (!section) return;
+        section.querySelector('.author-count').textContent = data.authorCount;
+        section.querySelector('.author-list-text').textContent = data.authorList || '';
+        section.querySelector('.author-list-empty').classList.toggle('hidden', data.authorCount > 0);
+        section.querySelector('.author-list-body').classList.toggle('hidden', data.authorCount === 0);
+      }
+
+      function setAuthorsButton(row, count, shown) {
+        var btn = row.querySelector('.site-authors-btn');
+        if (!btn) return;
+        btn.textContent = count > 0 ? 'Authors (' + count + ')' : 'Add authors';
+        btn.classList.toggle('hidden', !shown);
+      }
+
+      // Put a site row back in step with a saved state.
+      function applySiteState(box, hasRun, data) {
+        var row = box.closest('.site-row');
+        box.checked = hasRun;
+        var naBtn = row.querySelector('.na-btn');
+        if (naBtn) naBtn.classList.toggle('hidden', hasRun);
+        var remind = row.querySelector('.nudge-site-btn');
+        if (remind) remind.classList.toggle('hidden', hasRun);
+        var ids = (data && data.siteAuthorIds) || [];
+        setSitePicks(box.getAttribute('data-project-id'), box.getAttribute('data-site-id'), ids);
+        setAuthorsButton(row, ids.length, hasRun);
+        refreshAuthorList(row.closest('.run-sites'), data);
+        refreshRanCounts(box.closest('.project-card'));
+      }
+
+      async function postSite(box, hasRun, authorIds) {
+        var res = await fetch('/api/project-runs/toggle-site', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            projectId: box.getAttribute('data-project-id'),
+            siteId: box.getAttribute('data-site-id'),
+            hasRun: hasRun,
+            authorIds: authorIds || [],
+          }),
+        });
+        var data = await res.json().catch(function () { return {}; });
+        return { ok: res.ok, data: data };
+      }
+
+      // The open panel, if any: { panel, box, wasTick }.
+      var openAuthors = null;
+
+      function closeAuthorsPanel(revert) {
+        if (!openAuthors) return;
+        var o = openAuthors;
+        openAuthors = null;
+        o.panel.classList.add('hidden');
+        o.box.disabled = false;
+        // A tick that was never saved with authors is undone.
+        if (revert && o.wasTick) o.box.checked = false;
+      }
+
+      function panelSelected(panel) {
+        return Array.prototype.slice
+          .call(panel.querySelectorAll('.authors-panel-cb:checked'))
+          .map(function (cb) { return cb.value; });
+      }
+
+      function refreshPanelCount(panel) {
+        var n = panelSelected(panel).length;
+        panel.querySelector('.authors-panel-count').textContent = n + ' selected';
+        panel.querySelector('.authors-panel-save').disabled = n === 0;
+      }
+
+      function openAuthorsPanel(box, siteName, wasTick) {
+        closeAuthorsPanel(true);
+        var wrap = box.closest('.run-sites');
+        var panel = wrap.querySelector('.authors-panel');
+        var projectId = box.getAttribute('data-project-id');
+        var siteId = box.getAttribute('data-site-id');
+        var roster = authorsData.rosters[siteId] || [];
+        if (roster.length === 0) {
+          alert(
+            'No approved members have ' + siteName + ' as their profile institution, so there is no one to name as an author.\n\n' +
+            'Ask the members from this site to set their institution on their profile, then try again.'
+          );
+          if (wasTick) box.checked = false;
+          return;
+        }
+        var saved = sitePicks(projectId, siteId);
+        var preselect = saved.length ? saved : [authorsData.me];
+        var list = panel.querySelector('.authors-panel-list');
+        list.textContent = '';
+        roster.forEach(function (m) {
+          var label = document.createElement('label');
+          label.className = 'flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer min-w-0';
+          var cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.className = 'authors-panel-cb w-4 h-4 text-clif-burgundy border-gray-300 rounded focus:ring-clif-burgundy';
+          cb.value = m.id;
+          cb.checked = preselect.indexOf(m.id) !== -1;
+          var name = document.createElement('span');
+          name.className = 'truncate';
+          name.textContent = m.name + (m.id === authorsData.me ? ' (you)' : '');
+          label.appendChild(cb);
+          label.appendChild(name);
+          list.appendChild(label);
+        });
+        panel.querySelector('.authors-panel-site').textContent = siteName;
+        panel.querySelector('.authors-panel-error').classList.add('hidden');
+        refreshPanelCount(panel);
+        panel.classList.remove('hidden');
+        box.disabled = true;
+        openAuthors = { panel: panel, box: box, wasTick: wasTick };
+        panel.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+
+      document.querySelectorAll('.authors-panel').forEach(function (panel) {
+        panel.addEventListener('change', function () { refreshPanelCount(panel); });
+        panel.querySelector('.authors-panel-cancel').addEventListener('click', function () {
+          closeAuthorsPanel(true);
+        });
+        panel.querySelector('.authors-panel-save').addEventListener('click', async function () {
+          if (!openAuthors || openAuthors.panel !== panel) return;
+          var saveBtn = this;
+          var box = openAuthors.box;
+          var errEl = panel.querySelector('.authors-panel-error');
+          var ids = panelSelected(panel);
+          if (ids.length === 0) return;
+          saveBtn.disabled = true;
+          errEl.classList.add('hidden');
+          try {
+            var out = await postSite(box, true, ids);
+            if (!out.ok) {
+              errEl.textContent = out.data.error || 'Failed to save';
+              errEl.classList.remove('hidden');
+              return;
+            }
+            closeAuthorsPanel(false);
+            applySiteState(box, true, out.data);
+          } catch (e) {
+            errEl.textContent = 'Failed to save';
+            errEl.classList.remove('hidden');
+          } finally {
+            saveBtn.disabled = false;
+          }
+        });
+      });
+
+      document.querySelectorAll('.site-authors-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var box = this.closest('.site-row').querySelector('.site-run-checkbox');
+          openAuthorsPanel(box, this.getAttribute('data-site-name') || 'this site', false);
+        });
+      });
+
       // Per-site run checkboxes
       document.querySelectorAll('.site-run-checkbox').forEach(function (box) {
         box.addEventListener('change', async function () {
           var self = this;
+          var row = self.closest('.site-row');
+          var nameEl = row.querySelector('.truncate');
+          var siteName = (nameEl && nameEl.textContent) || 'this site';
+
+          // Ticking: nothing is saved until the authors are chosen.
+          if (self.checked && authorsOn) {
+            openAuthorsPanel(self, siteName, true);
+            return;
+          }
+
+          if (!self.checked) {
+            var n = sitePicks(self.getAttribute('data-project-id'), self.getAttribute('data-site-id')).length;
+            if (n > 0 && !confirm(
+              'Unticking removes the ' + n + ' author' + (n === 1 ? '' : 's') + ' from ' + siteName +
+              " from this project's author list. Continue?"
+            )) {
+              self.checked = true;
+              return;
+            }
+            if (openAuthors && openAuthors.box === self) closeAuthorsPanel(false);
+          }
+
+          var wanted = self.checked;
           self.disabled = true;
-          var res = await fetch('/api/project-runs/toggle-site', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              projectId: self.getAttribute('data-project-id'),
-              siteId: self.getAttribute('data-site-id'),
-              hasRun: self.checked,
-            }),
-          });
-          if (res.ok) {
-            self.disabled = false;
-            // A site that has run the project can't also be N/A.
-            var naBtn = self.closest('.site-row').querySelector('.na-btn');
-            if (naBtn) naBtn.classList.toggle('hidden', self.checked);
-            refreshRanCounts(self.closest('.project-card'));
-          } else {
-            var data = await res.json();
-            alert(data.error || 'Failed to update');
-            self.checked = !self.checked;
+          try {
+            var out = await postSite(self, wanted, []);
+            if (out.ok) {
+              applySiteState(self, wanted, out.data);
+            } else {
+              alert(out.data.error || 'Failed to update');
+              self.checked = !wanted;
+            }
+          } catch (e) {
+            alert('Failed to update');
+            self.checked = !wanted;
+          } finally {
             self.disabled = false;
           }
+        });
+      });
+
+      // Copy a run's author list.
+      document.querySelectorAll('.author-list-copy').forEach(function (btn) {
+        btn.addEventListener('click', async function () {
+          var self = this;
+          var text = self.closest('.author-list-section').querySelector('.author-list-text').textContent || '';
+          try {
+            await navigator.clipboard.writeText(text);
+            self.textContent = 'Copied';
+          } catch (e) {
+            self.textContent = 'Copy failed';
+          }
+          setTimeout(function () { self.textContent = 'Copy'; }, 1500);
         });
       });
 
@@ -1410,6 +1722,13 @@ const rerunOptions = projects.filter(canRerun).map((p) => {
             var remind = row.querySelector('.nudge-site-btn');
             if (remind) remind.classList.toggle('hidden', makeNa);
             self.textContent = makeNa ? 'Undo N/A' : 'Mark N/A';
+            // An N/A site names no authors.
+            if (makeNa) {
+              if (box && openAuthors && openAuthors.box === box) closeAuthorsPanel(false);
+              setSitePicks(self.getAttribute('data-project-id'), self.getAttribute('data-site-id'), []);
+              setAuthorsButton(row, 0, false);
+              refreshAuthorList(row.closest('.run-sites'), data);
+            }
             refreshRanCounts(row.closest('.project-card'));
           } catch (e) {
             alert('Failed to update');

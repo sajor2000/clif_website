@@ -2,6 +2,12 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { getDb } from '../../../lib/turso';
+import {
+  buildRunAuthorList,
+  loadAuthorMembers,
+  loadSitePicks,
+  saveSiteAuthors,
+} from '../../../lib/project-run-authors';
 
 const MAX_REASON_LENGTH = 500;
 
@@ -74,7 +80,31 @@ export const POST: APIRoute = async ({ locals, request }) => {
     args: [projectId, siteId, notApplicable, reason, now, user.id],
   });
 
-  return json({ success: true, notApplicable: notApplicable === 1, reason });
+  // A site that is N/A did not run the project, so it names no authors.
+  let authorCount: number | undefined;
+  let authorList: string | undefined;
+  if (notApplicable === 1) {
+    await saveSiteAuthors(projectId, siteId, [], user.id);
+    const [sitesRes, members, picks] = [
+      await db.execute('SELECT id, site_name, institution FROM site_details'),
+      await loadAuthorMembers(),
+      await loadSitePicks(projectId),
+    ];
+    const list = buildRunAuthorList(
+      (runRes.rows[0].created_by as string | null) ?? null,
+      picks,
+      (sitesRes.rows as any[]).map((r) => ({
+        id: String(r.id),
+        site_name: String(r.site_name || ''),
+        institution: (r.institution as string | null) ?? null,
+      })),
+      new Map(members.map((m) => [m.id, m])),
+    );
+    authorCount = list.ids.length;
+    authorList = list.text;
+  }
+
+  return json({ success: true, notApplicable: notApplicable === 1, reason, authorCount, authorList });
 };
 
 function json(data: unknown, status = 200): Response {
