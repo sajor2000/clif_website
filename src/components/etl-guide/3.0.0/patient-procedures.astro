@@ -29,12 +29,20 @@
       <h5 class="text-xl font-semibold mb-3">Step 2: Filter to Inpatient Hospitalizations</h5>
       <p class="text-sm">Filter to inpatient hospitalizations. Keep all codes for those hospitalizations.</p>
     </div>
+
+    <!-- Step 3 -->
+    <div>
+      <h5 class="text-xl font-semibold mb-3">Step 3: Remove Cancelled Procedures</h5>
+      <div class="bg-yellow-500/20 p-3 rounded-lg border border-yellow-400/30 text-sm">
+        <p><strong>Do not include cancelled CPT codes.</strong> A procedure that was cancelled was not performed, so its code does not belong in this table. Use the status in your source billing data to find cancelled codes and leave those rows out.</p>
+      </div>
+    </div>
   </div>
 
   <div class="space-y-6">
-    <!-- Step 3 -->
+    <!-- Step 4 -->
     <div>
-      <h5 class="text-xl font-semibold mb-3">Step 3: Populate the 3.0 Columns</h5>
+      <h5 class="text-xl font-semibold mb-3">Step 4: Populate the 3.0 Columns</h5>
       <p class="text-sm mb-3">The 3.0 table has six columns:</p>
       <div class="bg-white/10 p-3 rounded-lg text-xs space-y-1">
         <div>• <span class="font-mono text-yellow-300">hospitalization_id</span></div>
@@ -46,9 +54,9 @@
       </div>
     </div>
 
-    <!-- Step 4 -->
+    <!-- Step 5 -->
     <div>
-      <h5 class="text-xl font-semibold mb-3">Step 4: Final Cleanup</h5>
+      <h5 class="text-xl font-semibold mb-3">Step 5: Final Cleanup</h5>
       <ul class="space-y-2 text-sm">
         <li class="flex items-start">
           <span class="text-green-300 mr-2">•</span>
@@ -90,7 +98,7 @@
         </li>
         <li class="flex items-start">
           <span class="text-green-300 mr-2">✓</span>
-          Ensure only completed procedures are included
+          Ensure only completed procedures are included, with no cancelled CPT codes
         </li>
         <li class="flex items-start">
           <span class="text-green-300 mr-2">✓</span>
