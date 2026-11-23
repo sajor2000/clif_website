@@ -36,12 +36,33 @@
 
     <!-- Step 4 -->
     <div>
-      <h5 class="text-xl font-semibold mb-3">Step 4: Filter to Continuous Medications</h5>
+      <h5 class="text-xl font-semibold mb-3">Step 4: Decide Continuous vs Intermittent</h5>
       <div class="bg-white/10 p-3 rounded-lg text-sm">
+        <p class="mb-2"><strong>Keep by category:</strong> keep the rows whose <code class="bg-white/20 px-1 rounded">med_name</code> maps to a <code class="bg-white/20 px-1 rounded">med_category</code> in <code class="bg-white/20 px-1 rounded">clif_medication_admin_continuous_med_categories.csv</code>. Then decide which table each row goes to, in this order:</p>
+        <ol class="space-y-2 list-decimal list-inside">
+          <li><strong>Dose unit first.</strong> Look at the unit of the ordered <strong>dose</strong>, not the rate.
+            <ul class="space-y-1 mt-1 ml-4">
+              <li>• <strong>Per-unit-time component</strong> (e.g. <code class="bg-white/20 px-1 rounded">mg/hr</code>, <code class="bg-white/20 px-1 rounded">mcg/min</code>, <code class="bg-white/20 px-1 rounded">mcg/kg/min</code>): the row is continuous and belongs here.</li>
+              <li>• <strong>No time component</strong> (e.g. <code class="bg-white/20 px-1 rounded">mg</code>, <code class="bg-white/20 px-1 rounded">mcg</code>, <code class="bg-white/20 px-1 rounded">units</code>, <code class="bg-white/20 px-1 rounded">ml</code>): the row is intermittent and belongs in <code class="bg-white/20 px-1 rounded">medication_admin_intermittent</code>.</li>
+            </ul>
+          </li>
+          <li><strong>MAR action second</strong>, when the dose unit is missing (NA) and cannot decide.
+            <ul class="space-y-1 mt-1 ml-4">
+              <li>• "given", "bolus", "push", "bolus from bag" and similar actions likely mean intermittent (<code class="bg-white/20 px-1 rounded">given</code>, <code class="bg-white/20 px-1 rounded">not_given</code>, <code class="bg-white/20 px-1 rounded">bolus</code>).</li>
+              <li>• "rate change", "rate verify" and similar actions likely mean continuous (<code class="bg-white/20 px-1 rounded">start</code>, <code class="bg-white/20 px-1 rounded">stop</code>, <code class="bg-white/20 px-1 rounded">dose_change</code>, <code class="bg-white/20 px-1 rounded">going</code>, <code class="bg-white/20 px-1 rounded">verify</code>).</li>
+              <li>• Every site has its own MAR actions. Review the actions clearly associated with continuous drugs at your site and map them accordingly.</li>
+            </ul>
+          </li>
+        </ol>
+        <p class="mt-2">This is how categories that appear in both CSVs (e.g. <code class="bg-white/20 px-1 rounded">fentanyl</code>, <code class="bg-white/20 px-1 rounded">propofol</code>, <code class="bg-white/20 px-1 rounded">heparin</code>) are split.</p>
+      </div>
+      <div class="bg-yellow-500/20 p-3 rounded-lg border border-yellow-400/30 text-sm mt-2">
+        <p class="text-yellow-300 font-semibold mb-2">IV fluids: a rate alone does not make a row continuous</p>
         <ul class="space-y-2">
-          <li>• <strong>Keep by category:</strong> keep the rows whose <code class="bg-white/20 px-1 rounded">med_name</code> maps to a <code class="bg-white/20 px-1 rounded">med_category</code> in <code class="bg-white/20 px-1 rounded">clif_medication_admin_continuous_med_categories.csv</code>.</li>
-          <li>• <strong>Continuous is decided by the dose unit:</strong> if the <code class="bg-white/20 px-1 rounded">med_dose_unit</code> has a time component (e.g. <code class="bg-white/20 px-1 rounded">mcg/min</code>, <code class="bg-white/20 px-1 rounded">mg/hr</code>, <code class="bg-white/20 px-1 rounded">mcg/kg/min</code>), the row is continuous and belongs here.</li>
-          <li>• <strong>No time component:</strong> a dose in a unit such as <code class="bg-white/20 px-1 rounded">mg</code>, <code class="bg-white/20 px-1 rounded">mcg</code> or <code class="bg-white/20 px-1 rounded">units</code> belongs in <code class="bg-white/20 px-1 rounded">medication_admin_intermittent</code>. This is how categories that appear in both CSVs (e.g. <code class="bg-white/20 px-1 rounded">fentanyl</code>, <code class="bg-white/20 px-1 rounded">propofol</code>, <code class="bg-white/20 px-1 rounded">heparin</code>) are split.</li>
+          <li>• An intermittent dose with a defined weight or volume can still have a rate attached. A volume-over-time rate such as mL/hr is not enough on its own.</li>
+          <li>• <strong>Continuous</strong> means a rate with <strong>no defined</strong> volume or weight of drug to be given.</li>
+          <li>• <strong>Intermittent:</strong> a dose of 2 L of lactated Ringer's given at a rate of 500 mL/hr. The dose is a defined volume.</li>
+          <li>• <strong>Continuous:</strong> a lactated Ringer's order with a dose of 100 mL/hr and no defined volume to be given.</li>
         </ul>
       </div>
     </div>
@@ -105,6 +126,17 @@
         <p class="text-blue-300 font-semibold mb-2">Unit Conversion (mL → the category's med_dose_unit):</p>
         <p>If the raw rate is in mL/hr, convert to the mapped category's <code class="bg-white/20 px-1 rounded">med_dose_unit</code> using the concentration of the <em>mapped</em> ingredient in <code class="bg-white/20 px-1 rounded">med_name</code> (see Step 5).</p>
       </div>
+      <div class="bg-yellow-500/20 p-3 rounded-lg border border-yellow-400/30 text-sm mt-3">
+        <p class="text-yellow-300 font-semibold mb-2">Carrier fluids are not a second medication:</p>
+        <ul class="space-y-2 text-xs">
+          <li>• <strong>Map to the drug, not the fluid:</strong> when a drug is diluted in a carrier fluid such as normal saline, lactated Ringer's or Plasma-Lyte, the primary drug is the one the clinician is giving. Assign the row to that drug's <code class="bg-white/20 px-1 rounded">med_category</code>.</li>
+          <li>• <strong>Do not duplicate:</strong> do not add a second row for the carrier. e.g. "NOREPINEPHRINE 8 MG IN SODIUM CHLORIDE 0.9% 250 ML" → <code class="bg-white/20 px-1 rounded">norepinephrine</code> only, with no <code class="bg-white/20 px-1 rounded">sodium_chloride_0_9_pct</code> row.</li>
+          <li>• <strong>When the fluid is the medication:</strong> use the fluid categories (<code class="bg-white/20 px-1 rounded">sodium_chloride_0_9_pct</code>, <code class="bg-white/20 px-1 rounded">lactated_ringers_solution</code>, <code class="bg-white/20 px-1 rounded">plasma_lyte</code>) only when the fluid itself is what is given, such as a maintenance infusion.</li>
+        </ul>
+      </div>
+      <div class="bg-white/10 p-3 rounded-lg text-xs mt-2">
+        <p><strong class="text-blue-300">Not clear which component is primary?</strong> This is a clinical judgement call. Have a clinician at your site decide the <code class="bg-white/20 px-1 rounded">med_category</code>, and apply the same decision to every row with that <code class="bg-white/20 px-1 rounded">med_name</code>.</p>
+      </div>
     </div>
 
     <!-- Trial Drugs & Placebos -->
@@ -162,6 +194,10 @@
         <li class="flex items-start">
           <span class="text-green-300 mr-2">✓</span>
           Check combination and trial drugs produce one row each, mapped to the explicit combo category or the primary active ingredient
+        </li>
+        <li class="flex items-start">
+          <span class="text-green-300 mr-2">✓</span>
+          Check a drug diluted in a carrier fluid has no second row for the fluid
         </li>
       </ul>
     </div>
