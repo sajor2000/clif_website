@@ -431,8 +431,14 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 </tr>
                 <tr>
                   <td class="px-4 py-3 text-sm font-mono">microbiology_culture (spelling)</td>
-                  <td class="px-4 py-3 text-sm">Spelling corrections in the <code>microbiology_culture</code> mCIDE: <code>organism_category</code> <code>lelliottia_amigena</code> &rarr; <code>lelliottia_amnigena</code>, and <code>fluid_category</code> <code>gallbladder_billary_pancreas</code> &rarr; <code>gallbladder_biliary_pancreas</code>.</td>
-                  <td class="px-4 py-3 text-sm"></td>
+                  <td class="px-4 py-3 text-sm">Spelling corrections in the <code>microbiology_culture</code> mCIDE. Sites that mapped to the old spellings need to re-map these values.
+                    <ul class="list-disc pl-5 my-2 space-y-1">
+                      <li><code>fluid_category</code> (1): <code>gallbladder_billary_pancreas</code> &rarr; <code>gallbladder_biliary_pancreas</code> (also in <code>microbiology_nonculture</code>)</li>
+                      <li><code>organism_group</code> (4): <code>branhamelia_moraxella_catarrhalis</code> &rarr; <code>branhamella_moraxella_catarrhalis</code>, <code>torulopsis_galbrata</code> &rarr; <code>torulopsis_glabrata</code>, <code>echinoco_ocalcyst</code> &rarr; <code>echinococcal_cyst</code>, <code>propionbacterium</code> &rarr; <code>propionibacterium</code></li>
+                      <li><code>organism_category</code> (3): <code>lelliottia_amigena</code> &rarr; <code>lelliottia_amnigena</code>, <code>peptoniphilus_assacharolyticus</code> &rarr; <code>peptoniphilus_asaccharolyticus</code>, <code>corynebacterium_diptheriae</code> &rarr; <code>corynebacterium_non_diphtheriae</code> (the category covers all non-diphtheria <em>Corynebacterium</em> species, so the name now says so)</li>
+                    </ul>
+                  </td>
+                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/256" class="text-clif-burgundy hover:underline">Issue #256</a></td>
                   <td class="px-4 py-3 text-sm text-gray-500">Nov 23, 2026</td>
                 </tr>
                 <tr>
