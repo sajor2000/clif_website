@@ -60,12 +60,12 @@ All other diagnosis codes for a patient are included under alpha table `patient_
 **Example**:
 | hospitalization_id | diagnosis_code | diagnosis_code_format | diagnosis_primary | poa_present |
 |-------------------|----------------|----------------------|------------------|-------------|
-| 20010012          | I10            | ICD10CM              | 1                | 1           |
-| 20010012          | E11.9          | ICD10CM              | 0                | 0           |
-| 20010015          | 250.00         | ICD9CM               | 1                | 1           |
-| 20010015          | 401.9          | ICD9CM               | 0                | 0           |
-| 20010020          | J45.909        | ICD10CM              | 1                | 1           |
-| 20010020          | 530.81         | ICD9CM               | 0                | 1           |
+| 20010012          | I10            | icd10cm              | 1                | 1           |
+| 20010012          | E11.9          | icd10cm              | 0                | 0           |
+| 20010015          | 250.00         | icd9cm               | 1                | 1           |
+| 20010015          | 401.9          | icd9cm               | 0                | 0           |
+| 20010020          | J45.909        | icd10cm              | 1                | 1           |
+| 20010020          | 530.81         | icd9cm               | 0                | 1           |
 
 
 ## hospitalization

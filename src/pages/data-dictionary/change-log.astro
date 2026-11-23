@@ -23,7 +23,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       >
         <h2 class="text-2xl font-bold text-clif-burgundy mb-4">
           Version 3.0
-          <span class="text-lg font-normal text-gray-600">(Last updated: Nov 17, 2026)</span>
+          <span class="text-lg font-normal text-gray-600">(Last updated: Nov 23, 2026)</span>
           <span class="ml-2 bg-gray-500 text-white text-sm px-3 py-1 rounded-full"
             >Coming Soon: Dec 7, 2026</span
           >
@@ -462,7 +462,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            New mCIDE Values (26 updates · 272 new values) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Nov 17, 2026</span>
+            New mCIDE Values (27 updates · 273 new values) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Nov 23, 2026</span>
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -483,6 +483,12 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">diagnosis_code_format (1)</td>
+                  <td class="px-4 py-3 text-sm"><code>hospital_diagnosis.diagnosis_code_format</code> added <code>imo_concept_id</code>, for sites whose diagnoses are stored as Intelligent Medical Objects (IMO) concept IDs. The permissible values are now <code>icd10cm</code>, <code>icd9cm</code> and <code>imo_concept_id</code>, and <code>diagnosis_code</code> accepts an IMO concept ID when the format is <code>imo_concept_id</code>.</td>
+                  <td class="px-4 py-3 text-sm"></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Nov 23, 2026</td>
+                </tr>
                 <tr>
                   <td class="px-4 py-3 text-sm font-mono">airway_category (1)</td>
                   <td class="px-4 py-3 text-sm"><code>airway.airway_category</code> added <code>sga</code> for supraglottic airways (e.g., laryngeal mask or laryngeal tube; source names such as LMA, I-GEL, KING LT). The existing values <code>ett</code>, <code>npa</code>, <code>opa</code> and <code>trach</code> had no fit: NPAs and OPAs are usually transient adjuncts used with bag-valve-mask ventilation, while an SGA can be a longer-term airway (for example a prehospital or ED rescue airway), so mapping SGAs to <code>opa</code> would mix two clinically different devices.</td>
@@ -699,7 +705,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            Revisions (24 updates) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Nov 17, 2026</span>
+            Revisions (25 updates) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Nov 23, 2026</span>
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -720,6 +726,12 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
+                <tr>
+                  <td class="px-4 py-3 text-sm font-mono">hospital_diagnosis</td>
+                  <td class="px-4 py-3 text-sm">The permissible values of <code>diagnosis_code_format</code> are now lower case, matching the convention for other CLIF category values: <code>ICD10CM</code> &rarr; <code>icd10cm</code> and <code>ICD9CM</code> &rarr; <code>icd9cm</code>.</td>
+                  <td class="px-4 py-3 text-sm"></td>
+                  <td class="px-4 py-3 text-sm text-gray-500">Nov 23, 2026</td>
+                </tr>
                 <tr>
                   <td class="px-4 py-3 text-sm font-mono">provider &rarr; treatment_team</td>
                   <td class="px-4 py-3 text-sm">The concept <code>provider</code> table is renamed <code>treatment_team</code>, a better name for the source data in the EHR. The old one-line description is removed and replaced by a note: the table is the internal EHR documentation of team members signing in and out of (or being assigned to or off) the patient's care team, it may not reflect the actual providers at a given moment in time, and analyses should cross-reference the IDs on medication administration, procedures and patient assessments (e.g., <code>administering_provider_id</code>, <code>billing_provider_id</code>). <code>provider_role_name</code> and <code>provider_role_category</code> are dropped, leaving <code>hospitalization_id</code>, <code>provider_id</code>, <code>start_dttm</code> and <code>stop_dttm</code>. The type of each provider now lives in the new <code>provider_type</code> lookup table.</td>
