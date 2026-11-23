@@ -109,33 +109,46 @@
     <!-- Step 8 - Combination Drugs -->
     <div>
       <h5 class="text-xl font-semibold mb-3">Step 8: Handle Combination & Trial Drugs</h5>
-      <h5 class="text-xl font-semibold mb-3">A. Combination Drugs</h5>
+      <h5 class="text-xl font-semibold mb-3">A. Combination Products</h5>
       <div class="bg-white/10 p-3 rounded-lg text-sm mb-3">
-        <p class="text-yellow-300 font-semibold mb-2">One row per administration:</p>
-        <p class="text-xs mb-2">Do not split a combination product into one row per component. First check whether the CSV lists the combination itself as a <code class="bg-white/20 px-1 rounded">med_category</code>; if so, use it. Otherwise map the row to the <strong>primary active ingredient</strong> — the dictionary's example is <code class="bg-white/20 px-1 rounded">ACETAMIN-CALCIUM-MAG-CAFFEINE ORAL</code> → <code class="bg-white/20 px-1 rounded">acetaminophen</code>. The 3.0 continuous CSV has no combination categories, so continuous combinations always map to the primary ingredient.</p>
+        <p class="text-yellow-300 font-semibold mb-2">Which med_category? Work through these in order:</p>
+        <ol class="space-y-2 text-xs list-decimal list-inside">
+          <li><strong>The combination is its own <code class="bg-white/20 px-1 rounded">med_category</code>: one row, do not split.</strong> Search the CSV first. The 3.0 continuous CSV currently lists no combination drug as its own category, so for drugs this rule mostly applies to the intermittent table.</li>
+          <li><strong>It is a combination fluid: one row.</strong> Many are listed explicitly (e.g. <code class="bg-white/20 px-1 rounded">dextrose_5_sodium_chloride_0_45_pct</code>, <code class="bg-white/20 px-1 rounded">dextrose_5_lactated_ringers</code>). If yours is not, use the most appropriate <code class="bg-white/20 px-1 rounded">_other</code> category (e.g. <code class="bg-white/20 px-1 rounded">dextrose_other</code>, <code class="bg-white/20 px-1 rounded">sodium_chloride_other</code>, <code class="bg-white/20 px-1 rounded">balanced_crystalloid_other</code>).</li>
+          <li><strong>The combination is not in the CSV: one row per active ingredient.</strong> Map each ingredient to its own <code class="bg-white/20 px-1 rounded">med_category</code>, with that ingredient's own dose. An ingredient that has no <code class="bg-white/20 px-1 rounded">med_category</code> in the CSV gets no row.</li>
+        </ol>
+      </div>
+      <div class="bg-yellow-500/20 p-3 rounded-lg border border-yellow-400/30 text-sm mb-3">
+        <p class="text-yellow-300 font-semibold mb-2">What goes in med_dose?</p>
+        <ul class="space-y-2 text-xs">
+          <li>• <strong>Combination with its own category (rule 1):</strong> <code class="bg-white/20 px-1 rounded">med_dose</code> is the dose of the <strong>first drug named in the mCIDE <code class="bg-white/20 px-1 rounded">med_category</code></strong>. The order of drugs in your raw <code class="bg-white/20 px-1 rounded">med_name</code> does not matter.</li>
+          <li>• <strong>Combination fluid (rule 2):</strong> <code class="bg-white/20 px-1 rounded">med_dose</code> is the volume per time, in the category's <code class="bg-white/20 px-1 rounded">med_dose_unit</code> (<code class="bg-white/20 px-1 rounded">ml/hr</code>).</li>
+          <li>• <strong>Combination split into ingredients (rule 3):</strong> each row carries its own ingredient's dose, in that category's <code class="bg-white/20 px-1 rounded">med_dose_unit</code>.</li>
+        </ul>
       </div>
       <div class="bg-white/10 p-3 rounded-lg text-xs">
-        <p class="text-green-300 font-semibold mb-2">Example: "MedA-MedB 7.5-325 MG/15 ML" running at 30 mL/hr</p>
-        <p class="mb-2">If medA_medB is not a CLIF med_category and MedA is the primary ingredient:</p>
+        <p class="text-green-300 font-semibold mb-2">Example: "BUPIVACAINE 0.125%-FENTANYL 2 MCG/ML EPIDURAL INFUSION" running at 8 mL/hr</p>
+        <p class="mb-2">There is no bupivacaine_fentanyl category, so it becomes two rows:</p>
         <div class="space-y-1 ml-2">
-          <p>→ one row: med_category = "medA", med_dose = 15, med_dose_unit = medA's unit in the CSV (here mg/hr)</p>
+          <p>→ row 1: med_category = "bupivacaine", med_dose = 8, med_dose_unit = ml/hr</p>
+          <p>→ row 2: med_category = "fentanyl", med_dose = 16, med_dose_unit = mcg/hr</p>
         </div>
-        <p class="mt-2 text-gray-300"><code class="bg-white/20 px-1 rounded">med_name</code> keeps the full raw string, so the other component is not lost.</p>
+        <p class="mt-2 text-gray-300">Both rows keep the full raw string in <code class="bg-white/20 px-1 rounded">med_name</code> and the same <code class="bg-white/20 px-1 rounded">admin_dttm</code>, so they can be traced back to one infusion.</p>
       </div>
       <div class="bg-white/10 p-3 rounded-lg text-xs mt-2">
         <p class="text-blue-300 font-semibold mb-2">Unit Conversion (mL → the category's med_dose_unit):</p>
-        <p>If the raw rate is in mL/hr, convert to the mapped category's <code class="bg-white/20 px-1 rounded">med_dose_unit</code> using the concentration of the <em>mapped</em> ingredient in <code class="bg-white/20 px-1 rounded">med_name</code> (see Step 5).</p>
+        <p>If the raw rate is in mL/hr, convert each row using the concentration of <em>that row's</em> ingredient in <code class="bg-white/20 px-1 rounded">med_name</code> (see Step 5). In the example, fentanyl at 2 mcg/mL running at 8 mL/hr is 16 mcg/hr.</p>
       </div>
       <div class="bg-yellow-500/20 p-3 rounded-lg border border-yellow-400/30 text-sm mt-3">
         <p class="text-yellow-300 font-semibold mb-2">Carrier fluids are not a second medication:</p>
         <ul class="space-y-2 text-xs">
-          <li>• <strong>Map to the drug, not the fluid:</strong> when a drug is diluted in a carrier fluid such as normal saline, lactated Ringer's or Plasma-Lyte, the primary drug is the one the clinician is giving. Assign the row to that drug's <code class="bg-white/20 px-1 rounded">med_category</code>.</li>
+          <li>• <strong>Map to the drug, not the fluid:</strong> a carrier fluid is not an ingredient to split out. When a drug is diluted in a carrier fluid such as normal saline, lactated Ringer's or Plasma-Lyte, the primary drug is the one the clinician is giving. Assign the row to that drug's <code class="bg-white/20 px-1 rounded">med_category</code>.</li>
           <li>• <strong>Do not duplicate:</strong> do not add a second row for the carrier. e.g. "NOREPINEPHRINE 8 MG IN SODIUM CHLORIDE 0.9% 250 ML" → <code class="bg-white/20 px-1 rounded">norepinephrine</code> only, with no <code class="bg-white/20 px-1 rounded">sodium_chloride_0_9_pct</code> row.</li>
           <li>• <strong>When the fluid is the medication:</strong> use the fluid categories (<code class="bg-white/20 px-1 rounded">sodium_chloride_0_9_pct</code>, <code class="bg-white/20 px-1 rounded">lactated_ringers_solution</code>, <code class="bg-white/20 px-1 rounded">plasma_lyte</code>) only when the fluid itself is what is given, such as a maintenance infusion.</li>
         </ul>
       </div>
       <div class="bg-white/10 p-3 rounded-lg text-xs mt-2">
-        <p><strong class="text-blue-300">Not clear which component is primary?</strong> This is a clinical judgement call. Have a clinician at your site decide the <code class="bg-white/20 px-1 rounded">med_category</code>, and apply the same decision to every row with that <code class="bg-white/20 px-1 rounded">med_name</code>.</p>
+        <p><strong class="text-blue-300">Still not clear how to map a combination?</strong> This is a clinical judgement call. Have a clinician at your site decide the <code class="bg-white/20 px-1 rounded">med_category</code>, and apply the same decision to every row with that <code class="bg-white/20 px-1 rounded">med_name</code>.</p>
       </div>
     </div>
 
@@ -193,7 +206,7 @@
         </li>
         <li class="flex items-start">
           <span class="text-green-300 mr-2">✓</span>
-          Check combination and trial drugs produce one row each, mapped to the explicit combo category or the primary active ingredient
+          Check each combination is either one row in its own category (a combination drug or a combination fluid) or one row per active ingredient
         </li>
         <li class="flex items-start">
           <span class="text-green-300 mr-2">✓</span>
