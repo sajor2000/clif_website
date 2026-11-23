@@ -9,6 +9,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import MarkdownIt from 'markdown-it';
 import { CLIF_TABLES } from '../../data/clif-tables';
+import tablePocData from '../../data/table-poc.json';
 
 // Read the DDL file at build time
 const ddlPath = path.join(process.cwd(), 'src/content/v-3-0-0-ddl.sql');
@@ -73,6 +74,12 @@ function parseAllTables(ddl) {
 }
 
 const allTables = parseAllTables(ddlContent);
+
+// Point of contact per table, shown next to each table heading. Tables with
+// no assigned POC are left out, so their heading shows nothing.
+const pocByTable = Object.fromEntries(
+  tablePocData.filter((row) => row.poc).map((row) => [row.table, row.poc])
+);
 
 // For sidebar: split into Beta / Alpha / Concept tables by name. The groupings
 // live in src/data/clif-tables.ts, shared with the project run tracker.
@@ -298,6 +305,9 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
                 <h2 class="text-2xl font-semibold mb-4 mt-6 text-gray-900 scroll-mt-20 border-b border-gray-200 pb-2 flex items-center gap-2">
                   {table.name.replace(/_/g, ' ')}
                   <span class="badge-beta ml-2">Beta</span>
+                  {pocByTable[table.name] && (
+                    <span class="ml-2 text-sm font-normal text-gray-500">POC: {pocByTable[table.name]}</span>
+                  )}
                   <EtlGuideButton version="3.0.0" tableName={table.name} />
                 </h2>
                 <EtlGuideDialog version="3.0.0" tableName={table.name} />
@@ -354,6 +364,9 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
                 <h2 class="text-2xl font-semibold mb-4 mt-6 text-gray-900 scroll-mt-20 border-b border-gray-200 pb-2 flex items-center gap-2">
                   {table.name.replace(/_/g, ' ')}
                   <span class="badge-alpha ml-2">Alpha</span>
+                  {pocByTable[table.name] && (
+                    <span class="ml-2 text-sm font-normal text-gray-500">POC: {pocByTable[table.name]}</span>
+                  )}
                   <EtlGuideButton version="3.0.0" tableName={table.name} />
                 </h2>
                 <EtlGuideDialog version="3.0.0" tableName={table.name} />
@@ -410,6 +423,9 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
                 <h2 class="text-2xl font-semibold mb-4 mt-6 text-gray-900 scroll-mt-20 border-b border-gray-200 pb-2 flex items-center gap-2">
                   {table.name.replace(/_/g, ' ')}
                   <span class="badge-concept ml-2">Concept</span>
+                  {pocByTable[table.name] && (
+                    <span class="ml-2 text-sm font-normal text-gray-500">POC: {pocByTable[table.name]}</span>
+                  )}
                   <EtlGuideButton version="3.0.0" tableName={table.name} />
                                   </h2>
                                   <EtlGuideDialog version="3.0.0" tableName={table.name} />
@@ -464,6 +480,9 @@ const conceptSectionHeader = markdownTableSections['Concept_Tables'] || '';
                            class="mb-10 scroll-mt-20">
                     <h3 class="text-xl font-semibold mb-3 mt-6 text-gray-900">
                       {table.name.replace(/_/g, ' ')}
+                      {pocByTable[table.name] && (
+                        <span class="ml-2 text-sm font-normal text-gray-500">POC: {pocByTable[table.name]}</span>
+                      )}
                     </h3>
                     {intro && (
                       <div class="prose" set:html={md.render(intro)} />
