@@ -29,133 +29,18 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           >
         </h2>
 
-        <!-- New Tables -->
-        <details class="mb-4 bg-white rounded-lg border border-gray-200 overflow-hidden">
-          <summary
-            class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
-          >
-            New Tables (15 tables added) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Nov 17, 2026</span>
-          </summary>
-          <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-              <thead class="bg-gray-50">
-                <tr>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >Table Name</th
-                  >
-                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >Description</th
-                  >
-                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >Status</th
-                  >
-                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >Date</th
-                  >
-                </tr>
-              </thead>
-              <tbody class="bg-white divide-y divide-gray-200">
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">validated_diagnosis</td>
-                  <td class="px-4 py-3 text-sm">Future proposed table for clinician-validated diagnostic labels for research purposes. Designed for studies requiring confirmed diagnoses through chart review or consensus adjudication, enabling high-quality phenotyping for research cohorts.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/121" class="text-clif-burgundy hover:underline">Issue #121</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">Dec 12, 2025</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">output</td>
-                  <td class="px-4 py-3 text-sm">Alpha table capturing patient fluid output events during hospitalization, including output name, category, group, and volume in mL.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/142" class="text-clif-burgundy hover:underline">Issue #142</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">Feb 12, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">clinical_notes_facts</td>
-                  <td class="px-4 py-3 text-sm">Alpha table capturing clinical note metadata (note type, author, co-signer, revision timestamps) for efficient filtering and time-aware revision selection. Note text is not stored in CLIF — notes are provisioned "just in time" by querying site CDWs and extracted as plain text files named [hospitalization_id]__[note_id]_[revision_id].txt.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/141" class="text-clif-burgundy hover:underline">Issue #141</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">Feb 12, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">input</td>
-                  <td class="px-4 py-3 text-sm">Alpha table capturing patient fluid intake events during hospitalization, replacing the intake side of the former intake_output table. Includes input name, standardized category/group, and volume in mL.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/179" class="text-clif-burgundy hover:underline">Issue #179</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">Mar 5, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">model_registry</td>
-                  <td class="px-4 py-3 text-sm">Alpha table cataloging predictive scoring models deployed at the site (model id, name, mCIDE category, version, release date, live flag). Acts as the metadata reference for rows in the scores table; per the 2026-04-30 call, alert thresholds are documented as mCIDE remarks rather than columns.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/186" class="text-clif-burgundy hover:underline">Issue #186</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">May 6, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">scores</td>
-                  <td class="px-4 py-3 text-sm">Alpha table storing long-form predictive score outputs emitted by models registered in model_registry, with one row per (model_id, hospitalization_id, recorded_dttm) and the numeric score_value.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/186" class="text-clif-burgundy hover:underline">Issue #186</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">May 6, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">chest_xray</td>
-                  <td class="px-4 py-3 text-sm">Concept table, first proposed as <code>radiology</code> with one row per imaging study. Now one row per chest x-ray image — order/capture/report timestamps, three mCIDE-controlled columns (modality, region, location), site-local paths to the original DICOM and the processed image, raw source fields (series description, image type, view position, patient orientation, modality/region/location names, requesting type, manufacturer, model name), and the final report narrative.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/140" class="text-clif-burgundy hover:underline">Issue #140</a>, <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/248" class="text-clif-burgundy hover:underline">Issue #248</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">May 7, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">line</td>
-                  <td class="px-4 py-3 text-sm">Concept table capturing vascular line placements, one row per line with composite key <code>(hospitalization_id, line_id)</code>. Tracks <code>placed_dttm</code>/<code>removed_dttm</code>, <code>line_category</code> (cvc, art_line, picc, midline, dialysis_catheter, swan_ganz, cordis, piv), <code>line_site</code> (right/left ij/subclavian/femoral/radial/brachial, other), and <code>lumen_count</code>. Per the steering committee vote, lines/drains/airways are kept as three separate tables rather than a unified LDA table.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/208" class="text-clif-burgundy hover:underline">Issue #208</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">May 28, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">drain</td>
-                  <td class="px-4 py-3 text-sm">Concept table capturing drain placements, one row per drain with composite key <code>(hospitalization_id, drain_id)</code>. Tracks <code>placed_dttm</code>/<code>removed_dttm</code>, <code>drain_category</code> (chest_tube, foley, jp_drain, eud, evd, pigtail, ng_tube, og_tube, peg_tube, dobhoff), and free-text <code>anatomical_location</code>.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/208" class="text-clif-burgundy hover:underline">Issue #208</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">May 28, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">airway</td>
-                  <td class="px-4 py-3 text-sm">Concept table capturing airway placements, one row per airway with composite key <code>(hospitalization_id, airway_id)</code>. Tracks <code>placed_dttm</code>/<code>removed_dttm</code>, <code>airway_category</code> (ett, trach, npa, opa), <code>airway_size</code> (e.g., 6.0, 7.5), and <code>is_cuffed</code> (0/1).</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/208" class="text-clif-burgundy hover:underline">Issue #208</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">May 28, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">patient_attributes</td>
-                  <td class="px-4 py-3 text-sm">Long EAV-style concept table for dynamic patient-level attributes — the time-varying counterpart to the static <code>patient</code> table. Composite key <code>(patient_id, recorded_dttm, attribute_category)</code>; 15 permissible <code>attribute_category</code> values covering social, behavioral, functional, reproductive, and administrative domains (housing_status, smoking_status, marital_status, employment_status, food_insecurity, functional_status, organ_donor, pregnancy_status, etc.) rolling up to 6 <code>attribute_group</code> families. Per the steering discussion, BMI is excluded (belongs on vitals), isolation belongs on adt, and insurance belongs on hospitalization.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/211" class="text-clif-burgundy hover:underline">Issue #211</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">May 29, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">ed_encounter</td>
-                  <td class="px-4 py-3 text-sm">Concept table capturing emergency-department workflow not expressible in <code>adt</code> alone — one row per ED encounter keyed by <code>(hospitalization_id, ed_encounter_id)</code>. Covers arrival mode, triage system + 5-level acuity, chief complaint, ED disposition, destination after ED, and an observation-pathway flag, each with paired raw-name and standardized-category columns. <code>ed_destination_category</code> permissibles align with <code>hospitalization.discharge_category</code> so post-ED transitions and final hospital outcomes share a vocabulary. Boarding and length-of-stay metrics are intentionally derived downstream from the timestamps rather than stored.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/178" class="text-clif-burgundy hover:underline">Issue #178</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">May 29, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">consult_orders</td>
-                  <td class="px-4 py-3 text-sm">Alpha table capturing consult/service orders placed during ICU stays, split out from the former <code>key_icu_orders</code> table. Holds 15 <code>order_category</code> values (pt, ot, speech, swallowing, nutrition, respiratory, social_work, skin_care, ostomy_care, pain_services, addiction_sud, psychiatry, pastoral_services, palliative_care, interpreter). Shares identical fields with <code>misc_icu_orders</code> and differs only in the kinds of orders it contains; per the issue, CLIF does not dictate which type of clinician performs the consult/service.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/218" class="text-clif-burgundy hover:underline">Issue #218</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">Jun 16, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">misc_icu_orders</td>
-                  <td class="px-4 py-3 text-sm">Alpha table capturing miscellaneous, non-consult ICU orders and procedures, split out from the former <code>key_icu_orders</code> table. Holds 6 <code>order_category</code> values (eeg, restraints, wound_care, oob, foley, extubation). Shares identical fields with <code>consult_orders</code>.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/218" class="text-clif-burgundy hover:underline">Issue #218</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">Jun 16, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">provider_type</td>
-                  <td class="px-4 py-3 text-sm">Concept lookup table with one row per provider and no start or stop times: <code>provider_id</code>, <code>provider_type_name</code> and <code>provider_type_category</code> (permissible values under development). Identifies the type of provider behind any provider ID, such as <code>administering_provider_id</code>. Not tied to a hospitalization.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/241" class="text-clif-burgundy hover:underline">Issue #241</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">Nov 17, 2026</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </details>
-
+        <p class="text-base text-gray-700 mb-4">
+          This change log lists changes to <strong>beta</strong> tables only. Alpha and concept tables
+          are under active development and are not locked, so their changes are not tracked here.
+          See the <a href="/data-dictionary/data-dictionary-3.0.0" class="text-clif-burgundy hover:underline">3.0 data dictionary</a>
+          for their current definitions. Version 3.0 adds no new beta tables.
+        </p>
         <!-- New Fields -->
         <details class="mb-4 bg-white rounded-lg border border-gray-200 overflow-hidden">
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            New Fields (39 fields added) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Nov 18, 2026</span>
+            New Fields (14 fields added) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Nov 23, 2026</span>
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -180,130 +65,11 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
                 <tr>
-                  <td class="px-4 py-3 text-sm font-mono">airway_name</td>
-                  <td class="px-4 py-3 text-sm">airway</td>
-                  <td class="px-4 py-3 text-sm">Name of the airway device as recorded in the source EHR (e.g., ENDOTRACHEAL TUBE, LMA). The raw <code>*_name</code> counterpart that <code>airway_category</code> is mapped from, which the table was missing.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/247" class="text-clif-burgundy hover:underline">Issue #247</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">Nov 17, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">series_description</td>
-                  <td class="px-4 py-3 text-sm">chest_xray</td>
-                  <td class="px-4 py-3 text-sm">Raw DICOM Series Description for the series the image belongs to (e.g., CHEST AP PORTABLE). Free text, not standardized for now.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/248" class="text-clif-burgundy hover:underline">Issue #248</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">Nov 17, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">modality_name</td>
-                  <td class="px-4 py-3 text-sm">chest_xray</td>
-                  <td class="px-4 py-3 text-sm">Source modality value exactly as recorded in the DICOM Modality tag (e.g., DX, CR). The raw <code>*_name</code> counterpart that <code>modality_category</code> is mapped from.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/248" class="text-clif-burgundy hover:underline">Issue #248</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">Nov 17, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">region_name</td>
-                  <td class="px-4 py-3 text-sm">chest_xray</td>
-                  <td class="px-4 py-3 text-sm">Source value for the anatomic region imaged, as recorded at the site (e.g., DICOM Body Part Examined). The raw <code>*_name</code> counterpart that <code>region_category</code> is mapped from.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/248" class="text-clif-burgundy hover:underline">Issue #248</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">Nov 17, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">study_location_name</td>
-                  <td class="px-4 py-3 text-sm">chest_xray</td>
-                  <td class="px-4 py-3 text-sm">Source value for where the study was performed, as recorded at the site. The raw <code>*_name</code> counterpart that <code>study_location_category</code> is mapped from.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/248" class="text-clif-burgundy hover:underline">Issue #248</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">Nov 17, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">series_dttm</td>
-                  <td class="px-4 py-3 text-sm">chest_xray</td>
-                  <td class="px-4 py-3 text-sm">Date and time the series an image belongs to started, from the DICOM Series Date and Series Time. Series-level, repeated on every image row in the series.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/248" class="text-clif-burgundy hover:underline">Issue #248</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">Nov 18, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">acquisition_dttm</td>
-                  <td class="px-4 py-3 text-sm">chest_xray</td>
-                  <td class="px-4 py-3 text-sm">Date and time an image was acquired, from the DICOM Acquisition Date and Acquisition Time. Per image, and the timestamp to use for clinical-event timing. <code>capture_dttm</code> is the study-level DICOM Study Date/Time.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/248" class="text-clif-burgundy hover:underline">Issue #248</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">Nov 18, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">image_type</td>
-                  <td class="px-4 py-3 text-sm">chest_xray</td>
-                  <td class="px-4 py-3 text-sm">Raw DICOM Image Type for the image (e.g., ORIGINAL / PRIMARY, DERIVED / PRIMARY). Stored as recorded in the header.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/248" class="text-clif-burgundy hover:underline">Issue #248</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">Nov 18, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">view_position</td>
-                  <td class="px-4 py-3 text-sm">chest_xray</td>
-                  <td class="px-4 py-3 text-sm">Raw DICOM View Position for the image (e.g., AP, PA, LL). Stored as recorded in the header.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/248" class="text-clif-burgundy hover:underline">Issue #248</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">Nov 18, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">patient_orientation</td>
-                  <td class="px-4 py-3 text-sm">chest_xray</td>
-                  <td class="px-4 py-3 text-sm">Raw DICOM Patient Orientation for the image, the patient direction of the image rows and columns (e.g., L / F). Stored as recorded in the header.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/248" class="text-clif-burgundy hover:underline">Issue #248</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">Nov 18, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">requesting_type</td>
-                  <td class="px-4 py-3 text-sm">chest_xray</td>
-                  <td class="px-4 py-3 text-sm">Source value for the type of unit or service that requested the study, as recorded at the site (e.g., EU, OR, ICU). Study-level.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/248" class="text-clif-burgundy hover:underline">Issue #248</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">Nov 18, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">manufacturer</td>
-                  <td class="px-4 py-3 text-sm">chest_xray</td>
-                  <td class="px-4 py-3 text-sm">Manufacturer of the equipment that acquired the image, from the DICOM header.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/248" class="text-clif-burgundy hover:underline">Issue #248</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">Nov 17, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">model_name</td>
-                  <td class="px-4 py-3 text-sm">chest_xray</td>
-                  <td class="px-4 py-3 text-sm">Manufacturer model name of the equipment that acquired the image, from the DICOM header.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/248" class="text-clif-burgundy hover:underline">Issue #248</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">Nov 17, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">source_dicom_path</td>
-                  <td class="px-4 py-3 text-sm">chest_xray</td>
-                  <td class="px-4 py-3 text-sm">Site-local path to the original DICOM file for the image, after PHI removal. Lets a project re-read pixel data and the full header on demand. Never shared across sites.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/248" class="text-clif-burgundy hover:underline">Issue #248</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">Nov 17, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">processed_image_path</td>
-                  <td class="px-4 py-3 text-sm">chest_xray</td>
-                  <td class="px-4 py-3 text-sm">Site-local path to the processed JPEG produced from <code>source_dicom_path</code> by the standardized CLIF preprocessing pipeline (bit-inversion correction, histogram equalization). Output mirrors the input folder structure.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/248" class="text-clif-burgundy hover:underline">Issue #248</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">Nov 17, 2026</td>
-                </tr>
-                <tr>
                   <td class="px-4 py-3 text-sm font-mono">expiratory_time_set</td>
                   <td class="px-4 py-3 text-sm">respiratory_support</td>
                   <td class="px-4 py-3 text-sm">Expiratory time set (in seconds). Added so APRV T-low has a home. APRV settings map as P-high &rarr; <code>peak_inspiratory_pressure_set</code>, P-low &rarr; <code>peep_set</code>, T-high &rarr; <code>inspiratory_time_set</code>, T-low &rarr; <code>expiratory_time_set</code>.</td>
                   <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/201" class="text-clif-burgundy hover:underline">Issue #201</a></td>
                   <td class="px-4 py-3 text-sm text-gray-500">Oct 13, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">potassium_bath</td>
-                  <td class="px-4 py-3 text-sm">renal_replacement_therapy</td>
-                  <td class="px-4 py-3 text-sm">Potassium concentration of the dialysate bath (mEq/L)</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/224" class="text-clif-burgundy hover:underline">Issue #224</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">Jun 29, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">calcium_bath</td>
-                  <td class="px-4 py-3 text-sm">renal_replacement_therapy</td>
-                  <td class="px-4 py-3 text-sm">Calcium concentration of the dialysate bath (mEq/L)</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/224" class="text-clif-burgundy hover:underline">Issue #224</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">Jun 29, 2026</td>
                 </tr>
                 <tr>
                   <td class="px-4 py-3 text-sm font-mono">loinc_version</td>
@@ -348,13 +114,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   <td class="px-4 py-3 text-sm text-gray-500">May 6, 2026</td>
                 </tr>
                 <tr>
-                  <td class="px-4 py-3 text-sm font-mono">rx_norm_code</td>
-                  <td class="px-4 py-3 text-sm">medication_orders</td>
-                  <td class="px-4 py-3 text-sm">RxNorm RXCUI code identifying the specific drug formulation for the order. Same definition as on the admin tables.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/23" class="text-clif-burgundy hover:underline">Issue #23</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">May 6, 2026</td>
-                </tr>
-                <tr>
                   <td class="px-4 py-3 text-sm font-mono">room_id</td>
                   <td class="px-4 py-3 text-sm">adt</td>
                   <td class="px-4 py-3 text-sm">Free-text identifier for the room the patient was assigned to during this ADT segment. Not standardized across sites.</td>
@@ -367,13 +126,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   <td class="px-4 py-3 text-sm">Free-text identifier for the bed the patient was assigned to during this ADT segment. Not standardized across sites.</td>
                   <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/193" class="text-clif-burgundy hover:underline">Issue #193</a></td>
                   <td class="px-4 py-3 text-sm text-gray-500">May 21, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">component_category</td>
-                  <td class="px-4 py-3 text-sm">transfusion</td>
-                  <td class="px-4 py-3 text-sm">Maps <code>component_name</code> to a standardized list of blood component categories — <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/transfusion/clif_transfusion_component_categories.csv" class="text-clif-burgundy hover:underline">cryoprecipitate, plasma, platelets, prbc, whole_blood</a>.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/190" class="text-clif-burgundy hover:underline">Issue #190</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">May 27, 2026</td>
                 </tr>
                 <tr>
                   <td class="px-4 py-3 text-sm font-mono">language_interpreter</td>
@@ -410,48 +162,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/tree/3.0/mCIDE/microbiology_culture" class="text-clif-burgundy hover:underline">3.0 mCIDE</a></td>
                   <td class="px-4 py-3 text-sm text-gray-500">Jun 5, 2026</td>
                 </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">ordering_provider_id</td>
-                  <td class="px-4 py-3 text-sm">medication_orders</td>
-                  <td class="px-4 py-3 text-sm">Uniquely identifies the provider who placed the medication order.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/139" class="text-clif-burgundy hover:underline">Issue #139</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">Jun 12, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">output_unit</td>
-                  <td class="px-4 py-3 text-sm">output</td>
-                  <td class="px-4 py-3 text-sm">Unit of <code>output_value</code>: <code>mL</code> for quantitative fluid volumes, or <code>occurrences</code> for unmeasured/counted events (e.g., number of emesis episodes). Added alongside the <code>output_volume</code> &rarr; <code>output_value</code> rename.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/142" class="text-clif-burgundy hover:underline">Issue #142</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">Jun 12, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">lda_id</td>
-                  <td class="px-4 py-3 text-sm">input</td>
-                  <td class="px-4 py-3 text-sm">Identifier linking an input event to a specific line, drain, or airway (LDA) device, when attributable to one.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/179" class="text-clif-burgundy hover:underline">Issue #179</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">Jun 12, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">lda_id</td>
-                  <td class="px-4 py-3 text-sm">output</td>
-                  <td class="px-4 py-3 text-sm">Identifier linking an output event to a specific line, drain, or airway (LDA) device, when attributable to one.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/142" class="text-clif-burgundy hover:underline">Issue #142</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">Jun 12, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">order_status_name</td>
-                  <td class="px-4 py-3 text-sm">consult_orders</td>
-                  <td class="px-4 py-3 text-sm">Status of the order from source EHR data (e.g. sent, completed), added alongside the existing <code>order_status_category</code> per CLIF name/category convention.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/218" class="text-clif-burgundy hover:underline">Issue #218</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">Jun 16, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">order_status_name</td>
-                  <td class="px-4 py-3 text-sm">misc_icu_orders</td>
-                  <td class="px-4 py-3 text-sm">Status of the order from source EHR data (e.g. sent, completed), added alongside the existing <code>order_status_category</code> per CLIF name/category convention.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/218" class="text-clif-burgundy hover:underline">Issue #218</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">Jun 16, 2026</td>
-                </tr>
               </tbody>
             </table>
           </div>
@@ -462,7 +172,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            New mCIDE Values (27 updates · 273 new values) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Nov 23, 2026</span>
+            New mCIDE Values (19 updates · 227 new values) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Nov 23, 2026</span>
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -483,24 +193,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">diagnosis_code_format (1)</td>
-                  <td class="px-4 py-3 text-sm"><code>hospital_diagnosis.diagnosis_code_format</code> added <code>imo_concept_id</code>, for sites whose diagnoses are stored as Intelligent Medical Objects (IMO) concept IDs. The permissible values are now <code>icd10cm</code>, <code>icd9cm</code> and <code>imo_concept_id</code>, and <code>diagnosis_code</code> accepts an IMO concept ID when the format is <code>imo_concept_id</code>.</td>
-                  <td class="px-4 py-3 text-sm"></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">Nov 23, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">airway_category (1)</td>
-                  <td class="px-4 py-3 text-sm"><code>airway.airway_category</code> added <code>sga</code> for supraglottic airways (e.g., laryngeal mask or laryngeal tube; source names such as LMA, I-GEL, KING LT). The existing values <code>ett</code>, <code>npa</code>, <code>opa</code> and <code>trach</code> had no fit: NPAs and OPAs are usually transient adjuncts used with bag-valve-mask ventilation, while an SGA can be a longer-term airway (for example a prehospital or ED rescue airway), so mapping SGAs to <code>opa</code> would mix two clinically different devices.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/245" class="text-clif-burgundy hover:underline">Issue #245</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">Nov 17, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">model_category (3)</td>
-                  <td class="px-4 py-3 text-sm">New mCIDE list for <code>model_registry.model_category</code> published on the 3.0 branch with 3 initial values: <code>epic_deterioration_index</code>, <code>epic_sepsis_model</code>, <code>epic_fall_risk</code>. The data dictionary now links <a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/model_registry/clif_model_registry_model_categories.csv" class="text-clif-burgundy hover:underline">clif_model_registry_model_categories.csv</a> as the permissible values.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/tree/3.0/mCIDE/model_registry" class="text-clif-burgundy hover:underline">3.0 branch</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">Nov 6, 2026</td>
-                </tr>
                 <tr>
                   <td class="px-4 py-3 text-sm font-mono">assessment_category (1)</td>
                   <td class="px-4 py-3 text-sm"><code>patient_assessments.assessment_category</code> added <code>other</code> (assessment group <code>other</code>) as a catch-all for assessments not otherwise classified.</td>
@@ -542,12 +234,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   <td class="px-4 py-3 text-sm">Added <code>neuron_specific_enolase</code> (NSE) as a new <code>labs.lab_category</code> value — order category <code>misc</code>, specimen <code>plasma_blood</code></td>
                   <td class="px-4 py-3 text-sm"><span class="text-gray-500"></span></td>
                   <td class="px-4 py-3 text-sm text-gray-500">Jun 30, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">mode_category (2)</td>
-                  <td class="px-4 py-3 text-sm">Added <code>ihd</code> and <code>iuf</code> as permissible values for renal_replacement_therapy mode categories</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/224" class="text-clif-burgundy hover:underline">Issue #224</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">Jun 29, 2026</td>
                 </tr>
                 <tr>
                   <td class="px-4 py-3 text-sm font-mono">device_category (1)</td>
@@ -620,43 +306,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   <td class="px-4 py-3 text-sm text-gray-500">May 21, 2026</td>
                 </tr>
                 <tr>
-                  <td class="px-4 py-3 text-sm font-mono">order_status_category (4)</td>
-                  <td class="px-4 py-3 text-sm">New <code>order_status_category</code> mCIDE standardizing order statuses on both <code>consult_orders</code> and <code>misc_icu_orders</code>: <code>sent</code>, <code>completed</code>, <code>resulted</code>, <code>canceled</code>.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/196" class="text-clif-burgundy hover:underline">Issue #196</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">May 21, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">order_category (misc) (6)</td>
-                  <td class="px-4 py-3 text-sm"><code>misc_icu_orders.order_category</code> mCIDE for non-consult ICU orders: <code>eeg</code> (carried over from the former key_icu_orders), plus 5 new operational orders <code>restraints</code>, <code>wound_care</code>, <code>oob</code>, <code>foley</code>, <code>extubation</code>. (The consult categories live on <code>consult_orders</code>; renames are logged under Revisions.)</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/218" class="text-clif-burgundy hover:underline">Issue #218</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">Jun 16, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">organism_category (nonculture) (21)</td>
-                  <td class="px-4 py-3 text-sm">
-                    Expanded <code>microbiology_nonculture.organism_category</code> with 21 respiratory-virus and atypical-pathogen values, grouped by <code>organism_group</code>:
-                    <ul class="list-disc pl-5 my-2 space-y-1">
-                      <li><strong>influenza</strong> (5): <code>influenza_a</code>, <code>influenza_a_h1</code>, <code>influenza_a_h1_2009</code>, <code>influenza_a_h3</code>, <code>influenza_b</code></li>
-                      <li><strong>viral_other</strong> (5): <code>coronavirus_229e</code>, <code>coronavirus_hku1</code>, <code>coronavirus_nl63</code>, <code>coronavirus_oc43</code>, <code>human_metapneumovirus</code></li>
-                      <li><strong>parainfluenza</strong> (4): <code>parainfluenza_1</code>, <code>parainfluenza_2</code>, <code>parainfluenza_3</code>, <code>parainfluenza_4</code></li>
-                      <li><strong>bacteria_other</strong> (2): <code>bordetella_parapertussis</code>, <code>bordetella_pertussis</code></li>
-                      <li><strong>adenovirus</strong> (1): <code>adenovirus</code></li>
-                      <li><strong>chlamydia</strong> (1): <code>chlamydia_pneumoniae</code></li>
-                      <li><strong>mycoplasma</strong> (1): <code>mycoplasma_pneumoniae</code></li>
-                      <li><strong>pneumocystis</strong> (1): <code>pneumocystis_jirovecii</code></li>
-                      <li><strong>rhinovirus</strong> (1): <code>human_rhinovirus_enterovirus</code></li>
-                    </ul>
-                  </td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/blob/3.0/mCIDE/microbiology_nonculture/clif_microbiology_nonculture_organism_category.csv" class="text-clif-burgundy hover:underline">3.0 mCIDE</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">May 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">organism_group (nonculture) (8)</td>
-                  <td class="px-4 py-3 text-sm">New <code>microbiology_nonculture.organism_group</code> mCIDE grouping the non-culture organisms, with 8 new groups: <code>adenovirus</code>, <code>bacteria_other</code>, <code>chlamydia</code>, <code>influenza</code>, <code>mycoplasma</code>, <code>parainfluenza</code>, <code>pneumocystis</code>, <code>rhinovirus</code> (alongside the existing <code>clostridium_difficile</code>, <code>respiratory_syncytial_virus</code>, <code>viral_other</code>).</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/209" class="text-clif-burgundy hover:underline">Issue #209</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">May 2026</td>
-                </tr>
-                <tr>
                   <td class="px-4 py-3 text-sm font-mono">lab_order_category (11)</td>
                   <td class="px-4 py-3 text-sm">Expanded <code>labs.lab_order_category</code> with 11 new categories: <code>aki_biomarkers</code>, <code>bal_panel</code>, <code>cardiac</code>, <code>inflammatory</code>, <code>mixed_venous_blood_gas</code>, <code>peritoneal_fluid_panel</code>, <code>pleural_fluid_panel</code>, <code>poc</code>, <code>tft</code>, <code>urine_chemistry</code>, <code>urine_toxicology</code>.</td>
                   <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/203" class="text-clif-burgundy hover:underline">Issue #203</a></td>
@@ -705,7 +354,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <summary
             class="cursor-pointer bg-clif-burgundy/5 px-4 py-3 font-semibold text-clif-burgundy hover:bg-clif-burgundy/10 transition-colors"
           >
-            Revisions (25 updates) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Nov 23, 2026</span>
+            Revisions (19 updates) <span class="text-sm font-normal text-gray-600 ml-2">Last updated: Nov 23, 2026</span>
           </summary>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -731,18 +380,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   <td class="px-4 py-3 text-sm">The permissible values of <code>diagnosis_code_format</code> are now lower case, matching the convention for other CLIF category values: <code>ICD10CM</code> &rarr; <code>icd10cm</code> and <code>ICD9CM</code> &rarr; <code>icd9cm</code>.</td>
                   <td class="px-4 py-3 text-sm"></td>
                   <td class="px-4 py-3 text-sm text-gray-500">Nov 23, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">provider &rarr; treatment_team</td>
-                  <td class="px-4 py-3 text-sm">The concept <code>provider</code> table is renamed <code>treatment_team</code>, a better name for the source data in the EHR. The old one-line description is removed and replaced by a note: the table is the internal EHR documentation of team members signing in and out of (or being assigned to or off) the patient's care team, it may not reflect the actual providers at a given moment in time, and analyses should cross-reference the IDs on medication administration, procedures and patient assessments (e.g., <code>administering_provider_id</code>, <code>billing_provider_id</code>). <code>provider_role_name</code> and <code>provider_role_category</code> are dropped, leaving <code>hospitalization_id</code>, <code>provider_id</code>, <code>start_dttm</code> and <code>stop_dttm</code>. The type of each provider now lives in the new <code>provider_type</code> lookup table.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/241" class="text-clif-burgundy hover:underline">Issue #241</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">Nov 17, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">radiology &rarr; chest_xray</td>
-                  <td class="px-4 py-3 text-sm">The concept <code>radiology</code> table is renamed <code>chest_xray</code> and re-scoped from one row per imaging study to <strong>one row per chest x-ray image</strong>, so it can serve as the CLIF metadata index for DICOM imaging. The team chose a chest-x-ray-specific table over a general imaging table for now. Columns lose the <code>radiology_</code> prefix (<code>accession</code>, <code>order_dttm</code>, <code>capture_dttm</code>, <code>report_dttm</code>, <code>modality_category</code>, <code>region_category</code>, <code>study_location_category</code>, <code>report_text</code>); <code>iv_contrast_category</code> and the order name are dropped, while modality and region are kept even though they are constant for chest radiographs. Rows within an accession are distinguished by <code>source_dicom_path</code>, and the study-level columns repeat across the images of a study. <code>capture_dttm</code> stays study-level (DICOM Study Date/Time), and the per-image DICOM acquisition time is the new <code>acquisition_dttm</code>. Twelve DICOM/source fields are added (<code>series_dttm</code>, <code>acquisition_dttm</code>, <code>series_description</code>, <code>image_type</code>, <code>view_position</code>, <code>patient_orientation</code>, <code>requesting_type</code>, <code>modality_name</code>, <code>region_name</code>, <code>study_location_name</code>, <code>manufacturer</code>, <code>model_name</code>). <code>modality_category</code> is <code>xr</code> and <code>region_category</code> is <code>chest</code>; the <code>study_location_category</code> list is a work in progress. Only original acquisitions get rows: post-processed derivatives (e.g., "clear read", bone suppression) and non-image objects stored as DICOM (e.g., PDFs) are dropped by the ETL. Linking to the EHR stays at the patient level. A standardized ETL and preprocessing pipeline will be shared across sites.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/248" class="text-clif-burgundy hover:underline">Issue #248</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">Nov 17, 2026</td>
                 </tr>
                 <tr>
                   <td class="px-4 py-3 text-sm font-mono">medication_admin_continuous (med_dose_unit)</td>
@@ -805,12 +442,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   <td class="px-4 py-3 text-sm text-gray-500">Jun 29, 2026</td>
                 </tr>
                 <tr>
-                  <td class="px-4 py-3 text-sm font-mono">output_volume &rarr; output_value</td>
-                  <td class="px-4 py-3 text-sm">Renamed <code>output.output_volume</code> &rarr; <code>output_value</code> and added <code>output_unit</code> so a row can report either a quantitative volume (<code>mL</code>) or an unmeasured count (<code>occurrences</code>, e.g. emesis episodes).</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/142" class="text-clif-burgundy hover:underline">Issue #142</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">Jun 12, 2026</td>
-                </tr>
-                <tr>
                   <td class="px-4 py-3 text-sm font-mono">assessment_group</td>
                   <td class="px-4 py-3 text-sm">Reclassified <code>braden_mobility</code> from <code>Nursing Risk</code> to <code>Mobility/Activity</code> in the patient_assessments mCIDE — Braden mobility is a mobility assessment, not a nursing risk score.</td>
                   <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/183" class="text-clif-burgundy hover:underline">Issue #183</a></td>
@@ -833,18 +464,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   <td class="px-4 py-3 text-sm">Standardized <code>med_dose_unit</code> per <code>med_category</code> in the <code>medication_admin_intermittent</code> mCIDE — every category now maps to one of <code>mg, g, mcg, mmol, ml, meq, cells</code>. Sites must convert raw EHR doses to the category-specific unit on ingest.</td>
                   <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/184" class="text-clif-burgundy hover:underline">Issue #184</a></td>
                   <td class="px-4 py-3 text-sm text-gray-500">May 7, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">invasive_hemodynamics</td>
-                  <td class="px-4 py-3 text-sm">Revised from 2.1: <code>measurement_category</code> expanded 9 &rarr; 26 standardized parameters — split <code>ra</code>/<code>rv</code> into <code>rv_systolic</code>/<code>rv_diastolic</code> and added advanced indices <code>cco</code>, <code>co_thermodilution</code>, <code>co_index</code>, <code>co_fick</code>, <code>sv</code>, <code>svv</code>, <code>sv_index</code>, <code>svr</code>, <code>svr_index</code>, <code>evlw</code>, <code>evlw_index</code>, <code>gef</code>, <code>itbv_index</code>, <code>gedv</code>, <code>gedv_index</code>, <code>lvsw_index</code>, <code>tfcd0</code>, <code>tfc</code>, <code>do2</code>.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/44" class="text-clif-burgundy hover:underline">Issue #44</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">May 13, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">ecmo_mcs &rarr; mcs</td>
-                  <td class="px-4 py-3 text-sm">Renamed <code>ecmo_mcs</code> &rarr; <code>mcs</code> and revised to a long-form schema (one row per setting/measurement). New standardized columns: <code>support_category</code> (<code>ecmo</code>/<code>lvad</code>/<code>rvad</code>), <code>device_category</code> (<code>cardiohelp</code>, <code>rotaflow</code>, <code>centrimag</code>, <code>tandemheart</code>, <code>impella</code>, <code>durable</code>), <code>config_category</code>, and <code>setting_category</code>/<code>setting_value</code> — replacing the prior wide-format columns (<code>flow</code>, <code>sweep_set</code>, <code>fdO2_set</code>, <code>mcs_group</code>, <code>ecmo_configuration_category</code>, <code>control_parameter_*</code>).</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/72" class="text-clif-burgundy hover:underline">Issue #72</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">May 13, 2026</td>
                 </tr>
                 <tr>
                   <td class="px-4 py-3 text-sm font-mono">device_category</td>
@@ -876,12 +495,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                   </td>
                   <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/180" class="text-clif-burgundy hover:underline">Issue #180</a></td>
                   <td class="px-4 py-3 text-sm text-gray-500">May 29, 2026</td>
-                </tr>
-                <tr>
-                  <td class="px-4 py-3 text-sm font-mono">key_icu_orders &rarr; consult_orders + misc_icu_orders</td>
-                  <td class="px-4 py-3 text-sm">Split the former <code>key_icu_orders</code> table into two tables with identical fields, differing only in the kinds of orders each holds: <code>consult_orders</code> (consult/service orders) and <code>misc_icu_orders</code> (non-consult operational orders and procedures). Renamed three consult categories to drop the clinician-type assumption — <code>et_nurse</code> &rarr; <code>ostomy_care</code>, <code>addiction_nurse</code> &rarr; <code>addiction_sud</code>, <code>psych_liaison_nurse</code> &rarr; <code>psychiatry</code> — moved <code>eeg</code> to <code>misc_icu_orders</code>, dropped the catch-all <code>other</code>, and added <code>order_status_name</code> to both tables per CLIF name/category convention.</td>
-                  <td class="px-4 py-3 text-sm"><a href="https://github.com/Common-Longitudinal-ICU-data-Format/CLIF/issues/218" class="text-clif-burgundy hover:underline">Issue #218</a></td>
-                  <td class="px-4 py-3 text-sm text-gray-500">Jun 16, 2026</td>
                 </tr>
               </tbody>
             </table>
