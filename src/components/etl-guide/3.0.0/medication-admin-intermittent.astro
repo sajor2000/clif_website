@@ -102,7 +102,8 @@
       <div class="bg-yellow-500/20 p-3 rounded-lg border border-yellow-400/30 text-sm mb-3">
         <p class="text-yellow-300 font-semibold mb-2">What goes in med_dose?</p>
         <ul class="space-y-2 text-xs">
-          <li>• <strong>Combination with its own category (rule 1):</strong> <code class="bg-white/20 px-1 rounded">med_dose</code> is the dose of the <strong>first</strong> drug in the combination. One double-strength tablet of trimethoprim-sulfamethoxazole contains trimethoprim 160 mg and sulfamethoxazole 800 mg, so one tablet is <code class="bg-white/20 px-1 rounded">trimethoprim_sulfamethoxazole</code>, <code class="bg-white/20 px-1 rounded">med_dose = 160</code>, <code class="bg-white/20 px-1 rounded">med_dose_unit = mg</code>.</li>
+          <li>• <strong>Combination with its own category (rule 1):</strong> <code class="bg-white/20 px-1 rounded">med_dose</code> is the dose of the <strong>first drug named in the mCIDE <code class="bg-white/20 px-1 rounded">med_category</code></strong>. One double-strength tablet of trimethoprim-sulfamethoxazole contains trimethoprim 160 mg and sulfamethoxazole 800 mg, so one tablet is <code class="bg-white/20 px-1 rounded">trimethoprim_sulfamethoxazole</code>, <code class="bg-white/20 px-1 rounded">med_dose = 160</code>, <code class="bg-white/20 px-1 rounded">med_dose_unit = mg</code>.</li>
+          <li>• <strong>"First" comes from the mCIDE name, not from your source:</strong> the order of drugs in your raw <code class="bg-white/20 px-1 rounded">med_name</code> does not matter. A site may have both "SULFAMETHOXAZOLE-TRIMETHOPRIM" and "TRIMETHOPRIM-SULFAMETHOXAZOLE" rows. The category is <code class="bg-white/20 px-1 rounded">trimethoprim_sulfamethoxazole</code>, so trimethoprim is first and every one of those rows records the trimethoprim dose.</li>
           <li>• <strong>Combination split into ingredients (rule 3):</strong> each row carries its own ingredient's dose, in that category's <code class="bg-white/20 px-1 rounded">med_dose_unit</code>.</li>
         </ul>
       </div>
@@ -186,7 +187,7 @@
         </li>
         <li class="flex items-start">
           <span class="text-green-300 mr-2">✓</span>
-          Check each combination is either one row in its own combination category (dose of the first drug) or one row per active ingredient
+          Check each combination is either one row in its own combination category (dose of the first drug named in the mCIDE category) or one row per active ingredient
         </li>
         <li class="flex items-start">
           <span class="text-green-300 mr-2">✓</span>
