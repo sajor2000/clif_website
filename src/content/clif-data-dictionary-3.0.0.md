@@ -622,10 +622,10 @@ The `patient_diagnosis` table provides a record of all diagnoses assigned to a p
 
 | patient_id | hospitalization_id | diagnosis_code | diagnosis_code_format | source_type     | start_dttm                  | end_dttm                    |
 |------------|-------------------|---------------|----------------------|-----------------|-----------------------------|-----------------------------|
-| PAT1001    | HOSP1001          | I10           | ICD10CM              | problem_list    | 2024-01-01 08:00:00+00:00   | NULL                        |
-| PAT1001    | HOSP1001          | E11.9         | ICD10CM              | encounter_dx    | 2024-01-01 08:00:00+00:00   | 2024-01-10 12:00:00+00:00   |
-| PAT1002    | HOSP1002          | J18.9         | ICD10CM              | medical_history | 2024-01-05 09:30:00+00:00   | NULL                        |
-| PAT1003    | HOSP1003          | N17.9         | ICD10CM              | encounter_dx    | 2024-01-10 07:00:00+00:00   | 2024-01-15 10:00:00+00:00   |
+| PAT1001    | HOSP1001          | I10           | icd10cm              | problem_list    | 2024-01-01 08:00:00+00:00   | NULL                        |
+| PAT1001    | HOSP1001          | E11.9         | icd10cm              | encounter_dx    | 2024-01-01 08:00:00+00:00   | 2024-01-10 12:00:00+00:00   |
+| PAT1002    | HOSP1002          | J18.9         | icd10cm              | medical_history | 2024-01-05 09:30:00+00:00   | NULL                        |
+| PAT1003    | HOSP1003          | N17.9         | icd10cm              | encounter_dx    | 2024-01-10 07:00:00+00:00   | 2024-01-15 10:00:00+00:00   |
 
 
 ## renal_replacement_therapy
