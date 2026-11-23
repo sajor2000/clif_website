@@ -40,7 +40,7 @@
       <div class="bg-white/10 p-3 rounded-lg text-sm">
         <p class="mb-2"><strong>Keep by category:</strong> keep the rows whose <code class="bg-white/20 px-1 rounded">med_name</code> maps to a <code class="bg-white/20 px-1 rounded">med_category</code> in <code class="bg-white/20 px-1 rounded">clif_medication_admin_continuous_med_categories.csv</code>. Then decide which table each row goes to, in this order:</p>
         <ol class="space-y-2 list-decimal list-inside">
-          <li><strong>Dose unit first.</strong> Look at the unit of the <strong>dose</strong> on the administration record, not the rate.
+          <li><strong>Dose unit first.</strong> Look at the unit of the <strong>dose</strong> on the administration record, not the volume infusion rate (e.g. mL/hr).
             <ul class="space-y-1 mt-1 ml-4">
               <li>• <strong>Per-unit-time component</strong> (e.g. <code class="bg-white/20 px-1 rounded">mg/hr</code>, <code class="bg-white/20 px-1 rounded">mcg/min</code>, <code class="bg-white/20 px-1 rounded">mcg/kg/min</code>): the row is continuous and belongs here.</li>
               <li>• <strong>No time component</strong> (e.g. <code class="bg-white/20 px-1 rounded">mg</code>, <code class="bg-white/20 px-1 rounded">mcg</code>, <code class="bg-white/20 px-1 rounded">units</code>, <code class="bg-white/20 px-1 rounded">ml</code>): the row is intermittent and belongs in <code class="bg-white/20 px-1 rounded">medication_admin_intermittent</code>.</li>
@@ -48,8 +48,8 @@
           </li>
           <li><strong>MAR action second</strong>, when the dose unit is missing (NA) and cannot decide.
             <ul class="space-y-1 mt-1 ml-4">
-              <li>• "given", "bolus", "push", "bolus from bag" and similar actions likely mean intermittent (<code class="bg-white/20 px-1 rounded">given</code>, <code class="bg-white/20 px-1 rounded">not_given</code>, <code class="bg-white/20 px-1 rounded">bolus</code>).</li>
-              <li>• "rate change", "rate verify" and similar actions likely mean continuous (<code class="bg-white/20 px-1 rounded">start</code>, <code class="bg-white/20 px-1 rounded">stop</code>, <code class="bg-white/20 px-1 rounded">dose_change</code>, <code class="bg-white/20 px-1 rounded">going</code>, <code class="bg-white/20 px-1 rounded">verify</code>).</li>
+              <li>• "given", "bolus", "push", "bolus from bag" and similar actions likely mean intermittent.</li>
+              <li>• "rate change", "rate verify" and similar actions likely mean continuous.</li>
               <li>• Every site has its own MAR actions. Review the actions clearly associated with continuous drugs at your site and map them accordingly.</li>
             </ul>
           </li>
