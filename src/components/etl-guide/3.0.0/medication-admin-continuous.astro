@@ -40,7 +40,7 @@
       <div class="bg-white/10 p-3 rounded-lg text-sm">
         <p class="mb-2"><strong>Keep by category:</strong> keep the rows whose <code class="bg-white/20 px-1 rounded">med_name</code> maps to a <code class="bg-white/20 px-1 rounded">med_category</code> in <code class="bg-white/20 px-1 rounded">clif_medication_admin_continuous_med_categories.csv</code>. Then decide which table each row goes to, in this order:</p>
         <ol class="space-y-2 list-decimal list-inside">
-          <li><strong>Dose unit first.</strong> Look at the unit of the <strong>dose</strong> on the administration record, not the volume infusion rate (e.g. mL/hr).
+          <li><strong>Dose unit first.</strong> Look at the unit of the <strong>dose</strong> on the administration record, not the volume infusion rate.
             <ul class="space-y-1 mt-1 ml-4">
               <li>• <strong>Per-unit-time component</strong> (e.g. <code class="bg-white/20 px-1 rounded">mg/hr</code>, <code class="bg-white/20 px-1 rounded">mcg/min</code>, <code class="bg-white/20 px-1 rounded">mcg/kg/min</code>): the row is continuous and belongs here.</li>
               <li>• <strong>No time component</strong> (e.g. <code class="bg-white/20 px-1 rounded">mg</code>, <code class="bg-white/20 px-1 rounded">mcg</code>, <code class="bg-white/20 px-1 rounded">units</code>, <code class="bg-white/20 px-1 rounded">ml</code>): the row is intermittent and belongs in <code class="bg-white/20 px-1 rounded">medication_admin_intermittent</code>.</li>
@@ -76,11 +76,11 @@
         </ul>
       </div>
       <div class="bg-yellow-500/20 p-3 rounded-lg border border-yellow-400/30 text-sm mt-2">
-        <p class="text-yellow-300 font-semibold mb-2">Weight-adjusted and weight-naive alternatives are accepted:</p>
+        <p class="text-yellow-300 font-semibold mb-2">Accepted dose units:</p>
         <ul class="space-y-2">
-          <li>• <strong>mCIDE lists one unit:</strong> for simplicity, only one permissible <code class="bg-white/20 px-1 rounded">med_dose_unit</code> is documented for each <code class="bg-white/20 px-1 rounded">med_category</code> (e.g. <code class="bg-white/20 px-1 rounded">mcg/min</code> for <code class="bg-white/20 px-1 rounded">epinephrine</code>; <code class="bg-white/20 px-1 rounded">mg/kg/hr</code> for <code class="bg-white/20 px-1 rounded">ketamine</code>).</li>
-          <li>• <strong>Also OK:</strong> the kg-adjusted or weight-naive alternative of that unit — <code class="bg-white/20 px-1 rounded">mcg/kg/min</code> for epinephrine, <code class="bg-white/20 px-1 rounded">mg/hr</code> for ketamine. Sites using those units do not need to force a conversion in the ETL stage.</li>
-          <li>• <strong>Not accepted:</strong> a per-pound (or any other non-kg) weight basis. For <code class="bg-white/20 px-1 rounded">epinephrine</code>, whose listed unit is <code class="bg-white/20 px-1 rounded">mcg/min</code>, the only alternative is <code class="bg-white/20 px-1 rounded">mcg/kg/min</code>; <code class="bg-white/20 px-1 rounded">mcg/lb/min</code> is not accepted and must be converted.</li>
+          <li>• <strong>Listed unit:</strong> the mCIDE lists one <code class="bg-white/20 px-1 rounded">med_dose_unit</code> for each <code class="bg-white/20 px-1 rounded">med_category</code>, for example <code class="bg-white/20 px-1 rounded">mcg/min</code> for <code class="bg-white/20 px-1 rounded">epinephrine</code> and <code class="bg-white/20 px-1 rounded">mg/kg/hr</code> for <code class="bg-white/20 px-1 rounded">ketamine</code>.</li>
+          <li>• <strong>Also accepted:</strong> the same unit with or without a per-kilogram weight basis: <code class="bg-white/20 px-1 rounded">mcg/kg/min</code> for <code class="bg-white/20 px-1 rounded">epinephrine</code> and <code class="bg-white/20 px-1 rounded">mg/hr</code> for <code class="bg-white/20 px-1 rounded">ketamine</code>. Sites that record doses this way do not need to convert them.</li>
+          <li>• <strong>Not accepted:</strong> a weight basis other than kilograms. For example, <code class="bg-white/20 px-1 rounded">mcg/lb/min</code> must be converted.</li>
         </ul>
       </div>
     </div>
@@ -189,7 +189,7 @@
         </li>
         <li class="flex items-start">
           <span class="text-green-300 mr-2">✓</span>
-          <span>Verify every row's <code class="bg-white/20 px-1 rounded">med_dose_unit</code> equals its category's unit in the CSV, or that unit's kg-adjusted / weight-naive alternative</span>
+          <span>Verify every row's <code class="bg-white/20 px-1 rounded">med_dose_unit</code> equals its category's unit in the CSV, or the same unit with or without a per-kilogram weight basis</span>
         </li>
         <li class="flex items-start">
           <span class="text-green-300 mr-2">✓</span>
