@@ -13,7 +13,9 @@
     "format": "prettier --write \"**/*.{js,ts,astro,json,css,md}\"",
     "format:check": "prettier --check \"**/*.{js,ts,astro,json,css,md}\"",
     "typecheck": "tsc --noEmit",
-    "erd": "python3 scripts/ddl_to_erd.py"
+    "test": "vitest run",
+    "erd": "python3 scripts/ddl_to_erd.py",
+    "sync-ddl": "node scripts/sync-ddl.mjs"
   },
   "keywords": [
     "healthcare",

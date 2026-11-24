@@ -153,7 +153,11 @@ src/
 When you add, remove, or rename anything in the data dictionary, propagate the
 change to **every** place that mirrors it, and **always recount**:
 
-1. **DDL** — `src/content/v-<version>-ddl.sql` (source of truth for columns).
+1. **DDL** — the source of truth is the CLIF standards repo (`ddl/` folder,
+   checkout expected at `../CLIF`). `src/content/v-<version>-ddl.sql` is a copy:
+   change the CLIF repo first, then run `npm run sync-ddl` to copy it in
+   (`npm run sync-ddl -- --check` only reports differences). The data dictionary
+   column tables render from these copies.
 2. **Markdown doc** — `src/content/clif-data-dictionary-<version>.md` (intro text
    AND the rendered "Example" tables; keep example column headers in sync with
    the schema).
@@ -186,7 +190,9 @@ Category cell carries its own per-row value count in parentheses — e.g.
   values" count is the sum of the per-row value counts — they are different
   numbers and both must be kept current.
 
-Finish by running `npm run build` to confirm the data dictionary still renders.
+Finish by running `npm test` (`src/lib/ddl-alignment.test.ts` fails when the
+groupings, markdown sections, Example columns, ERD or POC list disagree with the
+DDL) and `npm run build` to confirm the data dictionary still renders.
 
 ## Known Issues
 
