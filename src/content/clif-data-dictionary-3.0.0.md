@@ -251,11 +251,11 @@ Additionally, this table contains [ICD-10-PCS](https://www.cms.gov/medicare/codi
 
 | hospitalization_id | billing_provider_id | performing_provider_id | procedure_code | procedure_code_format | procedure_billed_dttm           |
 |--------------------|--------------------|-----------------------|----------------|----------------------|----------------------------------|
-| HOSP1001           | BP123              | PP456                 | 36556          | CPT                  | 2024-01-01 08:00:00+00:00 UTC    |
-| HOSP1001           | BP123              | PP789                 | 32551          | CPT                  | 2024-01-01 10:00:00+00:00 UTC    |
-| HOSP1002           | BP234              | PP890                 | G0009          | HCPCS                | 2024-01-05 09:30:00+00:00 UTC    |
-| HOSP1002           | BP234              | PP890                 | G0008          | HCPCS                | 2024-01-05 11:00:00+00:00 UTC    |
-| HOSP1003           | BP345              | PP901                 | 36620          | CPT                  | 2024-01-10 07:00:00+00:00 UTC    |
+| HOSP1001           | BP123              | PP456                 | 36556          | cpt                  | 2024-01-01 08:00:00+00:00 UTC    |
+| HOSP1001           | BP123              | PP789                 | 32551          | cpt                  | 2024-01-01 10:00:00+00:00 UTC    |
+| HOSP1002           | BP234              | PP890                 | G0009          | hcpcs                | 2024-01-05 09:30:00+00:00 UTC    |
+| HOSP1002           | BP234              | PP890                 | G0008          | hcpcs                | 2024-01-05 11:00:00+00:00 UTC    |
+| HOSP1003           | BP345              | PP901                 | 36620          | cpt                  | 2024-01-10 07:00:00+00:00 UTC    |
 
 
 ## position
