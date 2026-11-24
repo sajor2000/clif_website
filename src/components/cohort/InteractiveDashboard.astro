@@ -3289,7 +3289,10 @@ const categories = Array.from(groupedChars.keys());
 
   function filterCategorySidebar(searchTerm) {
     const term = searchTerm.toLowerCase();
-    const categories = document.querySelectorAll('.category-section');
+    // Only this tab's sidebar: Data Distributions reuses the .category-section
+    // class, and its sections have no characteristic items, so an unscoped
+    // query would hide them all.
+    const categories = document.querySelectorAll('#categories-list .category-section');
 
     categories.forEach(category => {
       const characteristics = category.querySelectorAll('.characteristic-item');
