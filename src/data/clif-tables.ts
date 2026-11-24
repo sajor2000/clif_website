@@ -41,11 +41,11 @@ export const CLIF_TABLES: Record<string, ClifVersionTables> = {
       'patient_assessments', 'patient_procedures', 'position', 'respiratory_support', 'vitals',
     ],
     alpha: [
-      'chest_xray', 'clinical_notes_facts', 'consult_orders', 'input', 'invasive_hemodynamics', 'mcs',
+      'chest_xray', 'clinical_notes_facts', 'clinical_trial', 'consult_orders', 'input', 'invasive_hemodynamics', 'mcs',
       'medication_orders', 'microbiology_nonculture', 'misc_icu_orders', 'model_registry', 'output', 'patient_diagnosis', 'renal_replacement_therapy', 'scores',
     ],
     concept: [
-      'airway', 'clinical_trial', 'drain', 'ed_encounter', 'line', 'patient_attributes', 'place_based_index',
+      'airway', 'drain', 'ed_encounter', 'line', 'patient_attributes', 'place_based_index',
       'provider_type', 'transfusion', 'treatment_team',
     ],
     futureProposed: ['therapy_details', 'validated_diagnosis'],
