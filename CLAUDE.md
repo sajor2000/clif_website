@@ -150,6 +150,17 @@ src/
 
 ### Editing the Data Dictionary / Change Log
 
+A daily job (`.github/workflows/sync-ddl.yml`) copies the DDL from the CLIF
+repo and runs `scripts/sync-ddl-mirrors.mjs`, which updates the 3.0 mirrors
+below from the DDL (ERD, Example table headers, groupings, POC rows, change-log
+rows for beta tables). If the alignment test then passes it commits to `main`
+and opens a "DDL sync: decisions needed" issue for what the DDL cannot say (a
+new table's maturity, POC, sample values and ERD group, a change-log issue
+link, whether a drop plus an add was a rename). If the test fails, `main` is
+left alone and the attempt is parked on the `sync/clif-ddl` branch with an
+issue. To do the same by hand: `npm run sync-ddl && npm run sync-ddl-mirrors`.
+The script only covers 3.0 and only what the DDL determines, so check its work.
+
 When you add, remove, or rename anything in the data dictionary, propagate the
 change to **every** place that mirrors it, and **always recount**:
 

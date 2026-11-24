@@ -5,8 +5,9 @@
 // Source of truth: the CLIF standards repo (ddl/ folder). The site's
 // src/content/v-<version>-ddl.sql files are copies (see scripts/sync-ddl.mjs),
 // and the data dictionary's column tables are rendered straight from them.
-// These tests cover the hand-kept copies around them: the table groupings, the
+// These tests cover the copies kept around them: the table groupings, the
 // markdown sections and Example tables, the ERD and the POC list.
+// scripts/sync-ddl-mirrors.mjs brings those back in step after a DDL change.
 
 import { describe, it, expect } from 'vitest';
 import { execFileSync } from 'node:child_process';
@@ -14,29 +15,14 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { CLIF_TABLES } from '../data/clif-tables';
 import tablePoc from '../data/table-poc.json';
+import { parseDdl as parseDdlFile } from '../../scripts/lib/parse-ddl.mjs';
 
 const root = process.cwd();
 const read = (p: string) => readFileSync(join(root, p), 'utf8');
 
-interface Column {
-  name: string;
-  type: string;
-}
-
-/** Same parsing rules as the data dictionary pages. */
-function parseDdl(ddl: string): Record<string, Column[]> {
-  const tables: Record<string, Column[]> = {};
-  const tableRegex = /CREATE TABLE ([a-zA-Z0-9_]+)\s*\(([^;]*?)\);/gis;
-  let match: RegExpExecArray | null;
-  while ((match = tableRegex.exec(ddl)) !== null) {
-    const body = match[2].replace(/FOREIGN KEY\s*\([^)]+\)\s*REFERENCES\s*[^,)]+/gi, '');
-    const columnRegex = /([a-zA-Z0-9_]+)\s+([A-Z]+(?:\([^)]*\))?)(?:\s+COMMENT\s+'([^']*)')?/g;
-    const columns: Column[] = [];
-    let col: RegExpExecArray | null;
-    while ((col = columnRegex.exec(body)) !== null) columns.push({ name: col[1], type: col[2] });
-    if (columns.length > 0) tables[match[1]] = columns;
-  }
-  return tables;
+/** Column lists by table, parsed with the same rules as the data dictionary pages. */
+function parseDdl(ddl: string): Record<string, { name: string; type: string }[]> {
+  return Object.fromEntries(Object.entries(parseDdlFile(ddl)).map(([table, { columns }]) => [table, columns]));
 }
 
 /** Markdown `## table_name` sections, as the data dictionary pages split them. */

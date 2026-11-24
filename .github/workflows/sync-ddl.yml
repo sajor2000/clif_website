@@ -1,11 +1,19 @@
 name: Sync DDL from the CLIF repo
 
 # Once a day, copy the DDL files from the CLIF standards repo (the source of
-# truth) into src/content/. If anything changed, open or update one pull
-# request with the new copies. It never pushes to main: a new or renamed column
-# also needs its Example table, ERD and change log updated by hand, and the PR
-# body says whether the alignment test still passes.
-# See scripts/sync-ddl.mjs and src/lib/ddl-alignment.test.ts.
+# truth) into src/content/ and bring the 3.0 files that mirror them back in
+# step (Example tables, ERD, groupings, POC list, change log).
+#
+#  - Alignment test passes: commit straight to main. Whatever the DDL cannot
+#    say (a new table's maturity, POC, sample values, an issue link) gets a
+#    safe default, and one issue lists those for a person to finish.
+#  - Alignment test fails: main is left alone. The attempt goes to the
+#    sync/clif-ddl branch and an issue carries the test output.
+#
+# A push made with the workflow token does not start other workflows, so these
+# commits do not send the data dictionary email (email-notifications.yml).
+# See scripts/sync-ddl.mjs, scripts/sync-ddl-mirrors.mjs and
+# src/lib/ddl-alignment.test.ts.
 
 on:
   schedule:
@@ -14,7 +22,7 @@ on:
 
 permissions:
   contents: write
-  pull-requests: write
+  issues: write
 
 concurrency:
   group: sync-ddl
@@ -23,6 +31,8 @@ concurrency:
 env:
   BRANCH: sync/clif-ddl
   CLIF_REPO: ${{ github.workspace }}/clif-standard
+  DECISIONS_TITLE: 'DDL sync: decisions needed'
+  FAILED_TITLE: 'DDL sync: could not update the site automatically'
 
 jobs:
   sync:
@@ -57,52 +67,107 @@ jobs:
             git diff --stat -- src/content
           fi
 
-      - name: Run the alignment test
+      - name: Update the mirrors and run the alignment test
         if: steps.diff.outputs.changed == 'true'
         id: test
         run: |
+          # For the later steps too (the runner's temp path is not known at workflow level).
+          NOTES="$RUNNER_TEMP/sync-ddl-notes.md"
+          TEST_OUTPUT="$RUNNER_TEMP/sync-ddl-test.txt"
+          echo "NOTES=$NOTES" >> "$GITHUB_ENV"
+          echo "TEST_OUTPUT=$TEST_OUTPUT" >> "$GITHUB_ENV"
           npm ci
-          if npx vitest run src/lib/ddl-alignment.test.ts > test-output.txt 2>&1; then
+          : > "$NOTES"
+          if node scripts/sync-ddl-mirrors.mjs --notes "$NOTES" > "$TEST_OUTPUT" 2>&1 \
+            && npx vitest run src/lib/ddl-alignment.test.ts >> "$TEST_OUTPUT" 2>&1; then
             echo "result=pass" >> "$GITHUB_OUTPUT"
           else
             echo "result=fail" >> "$GITHUB_OUTPUT"
           fi
-          tail -40 test-output.txt
+          tail -60 "$TEST_OUTPUT"
 
-      - name: Open or update the pull request
+      - name: Commit
         if: steps.diff.outputs.changed == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TEST_RESULT: ${{ steps.test.outputs.result }}
+        id: commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout -B "$BRANCH"
-          git add src/content/v-*-ddl.sql
-          git commit -m "docs(data-dictionary): sync DDL copies from the CLIF repo"
-          git push --force origin "$BRANCH"
-
+          # Only the DDL copies and the files that mirror them.
+          git add src/content/v-*-ddl.sql src/content/clif-data-dictionary-3.0.0.md \
+            src/data/clif-tables.ts src/data/table-poc.json \
+            public/images/data-dictionary/clif_erd_3.0.0.html \
+            src/pages/data-dictionary/change-log.astro
           {
-            echo "The DDL in the CLIF repo changed. This updates the copies in \`src/content/\`."
+            echo "docs(data-dictionary): sync DDL from the CLIF repo"
             echo
-            echo '```'
-            git diff --stat HEAD~1 HEAD
-            echo '```'
+            echo "CLIF repo 3.0 at $(git -C "$CLIF_REPO" rev-parse --short origin/3.0), main at $(git -C "$CLIF_REPO" rev-parse --short origin/main)."
             echo
-            if [ "$TEST_RESULT" = "pass" ]; then
-              echo "**Alignment test: passes.** Only wording or links changed, so this can be merged as is."
-            else
-              echo "**Alignment test: fails.** A table or column changed. Before merging, update whatever the test names: the Example table in the markdown, the ERD, \`clif-tables.ts\`, \`table-poc.json\`, and the change log."
-              echo
-              echo '```'
-              grep -E "×|FAIL|AssertionError|expected" test-output.txt | head -30
-              echo '```'
-            fi
-          } > pr-body.md
+            git diff --cached --stat
+          } > "$RUNNER_TEMP/commit-message.txt"
+          git commit --quiet -F "$RUNNER_TEMP/commit-message.txt"
+          echo "sha=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
-          if [ -n "$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number')" ]; then
-            gh pr edit "$BRANCH" --body-file pr-body.md
-          else
-            gh pr create --base main --head "$BRANCH" \
-              --title "Sync DDL copies from the CLIF repo" --body-file pr-body.md
+      - name: Push to main
+        if: steps.diff.outputs.changed == 'true' && steps.test.outputs.result == 'pass'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ steps.commit.outputs.sha }}
+        run: |
+          # No force: if main moved since checkout this fails and tomorrow's run retries.
+          git push origin HEAD:main
+
+          issue() { gh issue list --state open --limit 200 --json number,title --jq "[.[] | select(.title == \"$1\")][0].number // empty"; }
+
+          if [ -s "$NOTES" ]; then
+            {
+              echo "The daily DDL sync pushed $SHA to main. The data dictionary was updated automatically, with a default wherever the DDL does not say. These still need a person:"
+              echo
+              cat "$NOTES"
+            } > "$RUNNER_TEMP/issue.md"
+            open="$(issue "$DECISIONS_TITLE")"
+            if [ -n "$open" ]; then
+              gh issue comment "$open" --body-file "$RUNNER_TEMP/issue.md"
+            else
+              gh issue create --title "$DECISIONS_TITLE" --body-file "$RUNNER_TEMP/issue.md"
+            fi
           fi
+
+          # A failed attempt from an earlier day is now resolved.
+          failed="$(issue "$FAILED_TITLE")"
+          if [ -n "$failed" ]; then
+            gh issue close "$failed" --comment "Resolved: the sync pushed $SHA to main."
+          fi
+          if git ls-remote --exit-code --heads origin "$BRANCH" > /dev/null; then
+            git push origin --delete "$BRANCH"
+          fi
+
+      - name: Park on a branch and open an issue
+        if: steps.diff.outputs.changed == 'true' && steps.test.outputs.result == 'fail'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git push --force origin "HEAD:refs/heads/$BRANCH"
+          {
+            echo "The DDL in the CLIF repo changed, and the site could not be brought in step with it automatically, so **main was not changed**. The attempt is on the [\`$BRANCH\`]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/compare/main...$BRANCH) branch."
+            echo
+            echo "Fix what the test names (on that branch, or on main after \`npm run sync-ddl && npm run sync-ddl-mirrors\`). This issue closes itself once a sync reaches main."
+            echo
+            echo '```'
+            grep -vE '^\s*$' "$TEST_OUTPUT" | tail -60
+            echo '```'
+            if [ -s "$NOTES" ]; then
+              echo
+              echo "Also still needs a person:"
+              echo
+              cat "$NOTES"
+            fi
+          } > "$RUNNER_TEMP/issue.md"
+          open="$(gh issue list --state open --limit 200 --json number,title --jq "[.[] | select(.title == \"$FAILED_TITLE\")][0].number // empty")"
+          if [ -n "$open" ]; then
+            # Same failure on a later day: refresh the issue instead of adding a comment a day.
+            gh issue edit "$open" --body-file "$RUNNER_TEMP/issue.md"
+          else
+            gh issue create --title "$FAILED_TITLE" --body-file "$RUNNER_TEMP/issue.md"
+          fi
+          echo "::error::The mirrors could not be updated automatically. See the '$FAILED_TITLE' issue."
+          exit 1

@@ -60,5 +60,5 @@ if (check && different > 0) {
   process.exit(1);
 }
 if (!check && different > 0) {
-  console.log('\nNow update the Example tables, ERD, groupings, POC list and change log, then run `npm test` and `npm run build`.');
+  console.log('\nNow run `npm run sync-ddl-mirrors` to update the Example tables, ERD, groupings, POC list and change log, then `npm test` and `npm run build`.');
 }
