@@ -1,0 +1,108 @@
+name: Sync DDL from the CLIF repo
+
+# Once a day, copy the DDL files from the CLIF standards repo (the source of
+# truth) into src/content/. If anything changed, open or update one pull
+# request with the new copies. It never pushes to main: a new or renamed column
+# also needs its Example table, ERD and change log updated by hand, and the PR
+# body says whether the alignment test still passes.
+# See scripts/sync-ddl.mjs and src/lib/ddl-alignment.test.ts.
+
+on:
+  schedule:
+    - cron: '0 13 * * *' # daily, 13:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: sync-ddl
+  cancel-in-progress: false
+
+env:
+  BRANCH: sync/clif-ddl
+  CLIF_REPO: ${{ github.workspace }}/clif-standard
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check out the CLIF repo (all branches)
+        uses: actions/checkout@v4
+        with:
+          repository: Common-Longitudinal-ICU-data-Format/CLIF
+          path: clif-standard
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Copy the DDL files in
+        run: node scripts/sync-ddl.mjs
+
+      - name: Stop if nothing changed
+        id: diff
+        run: |
+          if git diff --quiet -- src/content; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "DDL copies already match the CLIF repo."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            git diff --stat -- src/content
+          fi
+
+      - name: Run the alignment test
+        if: steps.diff.outputs.changed == 'true'
+        id: test
+        run: |
+          npm ci
+          if npx vitest run src/lib/ddl-alignment.test.ts > test-output.txt 2>&1; then
+            echo "result=pass" >> "$GITHUB_OUTPUT"
+          else
+            echo "result=fail" >> "$GITHUB_OUTPUT"
+          fi
+          tail -40 test-output.txt
+
+      - name: Open or update the pull request
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TEST_RESULT: ${{ steps.test.outputs.result }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$BRANCH"
+          git add src/content/v-*-ddl.sql
+          git commit -m "docs(data-dictionary): sync DDL copies from the CLIF repo"
+          git push --force origin "$BRANCH"
+
+          {
+            echo "The DDL in the CLIF repo changed. This updates the copies in \`src/content/\`."
+            echo
+            echo '```'
+            git diff --stat HEAD~1 HEAD
+            echo '```'
+            echo
+            if [ "$TEST_RESULT" = "pass" ]; then
+              echo "**Alignment test: passes.** Only wording or links changed, so this can be merged as is."
+            else
+              echo "**Alignment test: fails.** A table or column changed. Before merging, update whatever the test names: the Example table in the markdown, the ERD, \`clif-tables.ts\`, \`table-poc.json\`, and the change log."
+              echo
+              echo '```'
+              grep -E "×|FAIL|AssertionError|expected" test-output.txt | head -30
+              echo '```'
+            fi
+          } > pr-body.md
+
+          if [ -n "$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number')" ]; then
+            gh pr edit "$BRANCH" --body-file pr-body.md
+          else
+            gh pr create --base main --head "$BRANCH" \
+              --title "Sync DDL copies from the CLIF repo" --body-file pr-body.md
+          fi
